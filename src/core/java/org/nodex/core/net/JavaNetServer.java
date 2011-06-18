@@ -47,28 +47,22 @@ public class JavaNetServer {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       Channel ch = e.getChannel();
-      
       JavaNetSocket sock = new JavaNetSocket(ch);
       socketMap.put(ch, sock);
-      
       callback.on_connect(sock);
-      
-      System.out.println("Channel connected");
     }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       JavaNetSocket sock = socketMap.get(ch);
-      sock.dataReceived(e.getMessage().toString());
-      
-      System.out.println("data received");
+      String str = ((ChannelBuffer)e.getMessage()).toString("UTF-8");
+      sock.dataReceived(str);
     } 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       e.getCause().printStackTrace();
-      
       Channel ch = e.getChannel();
       ch.close();
     }

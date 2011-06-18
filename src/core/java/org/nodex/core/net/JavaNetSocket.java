@@ -1,10 +1,7 @@
 package org.nodex.core.net;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
+import java.io.IOException;
 import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.*;
-import org.jboss.netty.bootstrap.*;
 import org.jboss.netty.buffer.*;
 
 public class JavaNetSocket {
@@ -15,7 +12,13 @@ public class JavaNetSocket {
    }
    
    public void write(String data) {
-     channel.write(data);
+     try
+     {
+      //TEMP hack - convert to message
+      ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(data.getBytes("UTF-8"));
+      channel.write(buffer);
+     } catch (IOException ignore) {
+     }
    }
    
    public void set_callback(SocketCallback callback) {
@@ -23,7 +26,6 @@ public class JavaNetSocket {
    }
    
    public void dataReceived(String data) {
-     System.out.println("calling ruby data_received");
      callback.data_received(data);
    }
 

@@ -43,16 +43,13 @@ class Socket < SocketCallback
   
   def data(&data_block)
     @data_block = data_block
-    puts "data block is #{data_block}"
   end
   
   def data_received(data)
-    puts "data received in ruby #{data}"
     @data_block.call(data) if @data_block
   end
   
   def write(data)
-    puts "Writing data #{data}"
     @java_socket.write(data)
   end
   
