@@ -16,7 +16,7 @@ Running Ruby example
 --------------------
 
 cd src/examples/ruby
-./echo_server.sh
+./echo_server.rb
 
 This runs a simple Ruby echo server, analogous to the node.js echo server from the docs
 
