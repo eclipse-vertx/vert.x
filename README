@@ -10,7 +10,7 @@ ant
 
 Building core
 -------------
-ant from root dir builds the core jar
+from root dir: ant
 
 Running Ruby example
 --------------------
@@ -19,6 +19,12 @@ cd src/examples/ruby
 ./echo_server.sh
 
 This runs a simple Ruby echo server, analogous to the node.js echo server from the docs
+
+Then from another console:
+
+telnet localhost 8080
+
+to see the echo server working
 
 
 
