@@ -35,7 +35,7 @@ API
 The API will be based around a simple event callback model, much like node.js.
 
 You will be able to use a compact continuation passing style (CPS) if you so wish. Or you don't like CPS style you will
-be able to specify callbacks as methods on your objects (more of an eventmachine style).
+be able to specify a callback object which will get invoked when events arrive (similar to eventmachine)
 
 The API will provide a large set of modules for working with various protocols including for instance:
 
