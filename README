@@ -1,21 +1,53 @@
 node.x
 ------
 
+What is node.x
+
+* Node.js for JVM languages - bring the success of node.js to a much larger developer audience. Node.js. On steroids. For more languages.
+
+* All the simplicity, power and expressivity of an event based model like node.js
+
+* Polyglot: We provide the same api in Ruby (JRuby), Java, (+ Scala?, Groovy?, Clojure?, Mira? etc going ahead)
+
+* Understands 10+ protocols out of the box (TCP, SSL, HTTP, HTTPS, etc)
+
+* Truly scalable. It's multi-threaded (unlike node.js) so actually uses all the cores on your server, and reduces you having to spin up multiple processes to make it scale.
+
+* A simple programming model that insulates you from the difficulties of dealing with multi-threaded issues with safe shared data structures
+
+* Interface safely with legacy blocking applications without compromising your application
+
+* The foundation for a cross language ecosystem on top of which could be built web frameworks, application containers etc.
+
+(Imagine a node.x on Rails (like RoR) where the same framework could be used from Java, Ruby, Scala, but is truly scalable)
+
+
+So far
+------
+
+So far, it hasn't really been started. But I have hacked (and I mean *hacked* in a few hours) together a simple working Net Server (like the Net module in node.js)
+which can read and write from TCP connections
+
+Just to give a taste of what it can do, I've provided a few examples (see below)
+
 Prerequisites
 -------------
 
 java
-JRuby
+jruby
 ant
 
 Building core
 -------------
 from root dir: ant
 
-Running Ruby example
+Running Ruby examples
 --------------------
 
 cd src/examples/ruby
+
+a) Echo
+
 ./echo_server.rb
 
 This runs a simple Ruby echo server, analogous to the node.js echo server from the docs
@@ -26,5 +58,28 @@ telnet localhost 8080
 
 to see the echo server working
 
+b) Fanout
 
+./fanout_example.rb
+
+As above but fans out data to all connections
+
+Start multiple telnet connections as above and start typing to see data fan out
+
+c) Pub-sub
+
+./pubsub_example.rb
+
+A basic, functioning and highly scalable pub/sub server. (The parsing could be improved but it's really just to
+demonstrate a point)
+
+From a telnet client do:
+
+To subscribe to a topic:
+
+subscribe,<topic_name>
+
+To publish to a topic:
+
+publish,<topic_name>,<string_to_publish>
 
