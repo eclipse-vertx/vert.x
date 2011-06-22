@@ -1,13 +1,13 @@
 node.x
 ------
 
-What is node.x
+What is node.x?
 
-* Node.js for JVM languages - bring the success of node.js to a much larger developer audience. Node.js. On steroids. For more languages.
+* It is Node.js for JVM languages - bring the success of a node.js-like API to a much larger developer audience. Node.js. On steroids. For more languages.
 
 * All the simplicity, power and expressivity of an event based model like node.js
 
-* Polyglot: We provide the same api in Ruby (JRuby), Java, (+ Scala?, Groovy?, Clojure?, Mira? etc going ahead)
+* Polyglot: We provide the same api in multiple languages, including: Ruby (JRuby), Java, (+ Scala?, Groovy?, Clojure?, Mira? etc going ahead)
 
 * Understands 10+ protocols out of the box (TCP, SSL, HTTP, HTTPS, etc)
 
@@ -20,6 +20,30 @@ What is node.x
 * The foundation for a cross language ecosystem on top of which could be built web frameworks, application containers etc.
 
 (Imagine a node.x on Rails (like RoR) where the same framework could be used from Java, Ruby, Scala, but is truly scalable)
+
+Architecture
+------------
+
+The node.x core will be written most probably in Java or Scala. There is where it all happens.
+
+We then provide the thin node.x API in multiple languages. The language specific API layer will be very thin and will
+delegate to the node.x core to get the work done.
+
+API
+---
+
+The API will be based around a simple event callback model, much like node.js.
+
+You will be able to use a compact continuation passing style (CPS) if you so wish. Or you don't like CPS style you will
+be able to specify callbacks as methods on your objects (more of an eventmachine style).
+
+The API will provide a large set of modules for working with various protocols including for instance:
+
+TCP, SSL, UDP, HTTP, HTTPS, Websockets, Socket.IO
+
+And going ahead:
+
+SMTP, AMQP, STOMP, memcached etc
 
 
 So far

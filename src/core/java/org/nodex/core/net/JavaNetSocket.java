@@ -14,9 +14,9 @@ public class JavaNetSocket {
    public void write(String data) {
      try
      {
-      //TEMP hack - convert to message
-      ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(data.getBytes("UTF-8"));
-      channel.write(buffer);
+       //TEMP hack - convert to message
+       ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(data.getBytes("UTF-8"));
+       channel.write(buffer);
      } catch (IOException ignore) {
      }
    }
