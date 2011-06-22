@@ -48,7 +48,7 @@ cd src/examples/ruby
 
 a) Echo
 
-./echo_server.rb
+./echo_server.sh
 
 This runs a simple Ruby echo server, analogous to the node.js echo server from the docs
 
@@ -60,7 +60,7 @@ to see the echo server working
 
 b) Fanout
 
-./fanout_example.rb
+./fanout_example.sh
 
 As above but fans out data to all connections
 
@@ -68,7 +68,7 @@ Start multiple telnet connections as above and start typing to see data fan out
 
 c) Pub-sub
 
-./pubsub_example.rb
+./pubsub_example.sh
 
 A basic, functioning and highly scalable pub/sub server. (The parsing could be improved but it's really just to
 demonstrate a point)
