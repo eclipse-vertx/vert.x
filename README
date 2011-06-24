@@ -7,7 +7,7 @@ What is node.x?
 
 * All the simplicity, power and expressivity of an event based model like node.js
 
-* Polyglot: We provide the same api in multiple languages, including: Ruby (JRuby), Java, (+ Scala?, Groovy?, Clojure?, Mira? etc going ahead)
+* Polyglot: We provide the same api in multiple languages, including: Ruby (JRuby), Java, (+ Scala?, Groovy?, Clojure?, Mira?, Jython?, Rhino? etc going ahead)
 
 * Understands 10+ protocols out of the box (TCP, SSL, HTTP, HTTPS, etc)
 

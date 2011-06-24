@@ -1,8 +1,7 @@
 package org.nodex.core.net;
 
-import java.io.IOException;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.buffer.*;
+import org.jboss.netty.channel.Channel;
+import org.nodex.core.buffer.JavaBuffer;
 
 public class JavaNetSocket {
    private Channel channel;
@@ -11,21 +10,15 @@ public class JavaNetSocket {
      this.channel = channel;
    }
    
-   public void write(String data) {
-     try
-     {
-       //TEMP hack - convert to message
-       ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(data.getBytes("UTF-8"));
-       channel.write(buffer);
-     } catch (IOException ignore) {
-     }
+   public void write(JavaBuffer data) {
+     channel.write(data._toChannelBuffer());
    }
    
    public void set_callback(SocketCallback callback) {
      this.callback = callback;
    }
    
-   public void dataReceived(String data) {
+   public void dataReceived(JavaBuffer data) {
      callback.data_received(data);
    }
 

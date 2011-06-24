@@ -1,13 +1,18 @@
 package org.nodex.core.net;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.*;
-import org.jboss.netty.bootstrap.*;
-import org.jboss.netty.buffer.*;
-import java.util.*;
-import java.util.concurrent.*;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.nodex.core.buffer.JavaBuffer;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+
 
 public class JavaNetServer {
 
@@ -39,7 +44,11 @@ public class JavaNetServer {
   private Map<Channel, JavaNetSocket> socketMap = new ConcurrentHashMap<Channel, JavaNetSocket>();
   
   public void listen(int port, String host) {
-    bootstrap.bind(new InetSocketAddress(port));
+    try {
+        bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+    } catch (UnknownHostException e) {
+      e.printStackTrace();
+    }
   }
   
   class ServerChannelHandler extends SimpleChannelHandler {
@@ -56,15 +65,15 @@ public class JavaNetServer {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       JavaNetSocket sock = socketMap.get(ch);
-      String str = ((ChannelBuffer)e.getMessage()).toString("UTF-8");
-      sock.dataReceived(str);
+      sock.dataReceived(new JavaBuffer((ChannelBuffer)e.getMessage()));
     } 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-      e.getCause().printStackTrace();
       Channel ch = e.getChannel();
       ch.close();
+      e.getCause().printStackTrace();
+      callback.on_exception(e.getCause());
     }
   }  
   
