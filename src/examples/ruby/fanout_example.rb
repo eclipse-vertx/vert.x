@@ -1,6 +1,3 @@
-#There must be a better way of doing this!!
-$LOAD_PATH << ENV['LOAD_PATH']
-
 require "net"
 
 Server.create_server{ |socket|
