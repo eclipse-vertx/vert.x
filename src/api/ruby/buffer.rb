@@ -5,15 +5,15 @@ class Buffer
   end
 
   def Buffer.new_fixed(size)
-    @buffer = org.nodex.core.buffer.Buffer.newFixed(size)
+    Buffer.new(org.nodex.core.buffer.Buffer.newFixed(size))
   end
 
   def Buffer.new_dynamic(size)
-    @buffer = org.nodex.core.buffer.Buffer.newDynamic(size)
+    Buffer.new(org.nodex.core.buffer.Buffer.newDynamic(size))
   end
 
-  def Buffer.from_string(str, enc = "UTF-8")
-    @buffer = org.nodex.core.buffer.Buffer.fromString(str, enc)
+  def Buffer.from_str(str, enc = "UTF-8")
+    Buffer.new(org.nodex.core.buffer.Buffer.fromString(str, enc))
   end
 
   def write(str, offset = 0, enc = "UTF-8")
@@ -24,7 +24,7 @@ class Buffer
     @buffer.byteAt(pos)
   end
 
-  def to_s(enc)
+  def to_s(enc = "UTF-8")
     @buffer.toString(enc)
   end
 

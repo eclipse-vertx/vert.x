@@ -40,7 +40,7 @@ public class Server {
     return new Server(connectCallback);
   }
 
-  public void listen(int port, String host){
+  public void listen(int port, String host) {
     try {
         bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
         System.out.println("Net server listening on " + host + ":" + port);

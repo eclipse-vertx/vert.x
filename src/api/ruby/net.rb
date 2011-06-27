@@ -38,6 +38,34 @@ class Server
 
 end
 
+class Client
+
+  class ConnectCallback < org.nodex.core.Callback
+
+    def initialize(connect_block)
+      super()
+      @connect_block = connect_block
+    end
+
+    def onEvent(java_socket)
+      sock = Socket.new(java_socket)
+      @connect_block.call(sock)
+    end
+  end
+
+  def Client.connect(port, host, &connect_block)
+    Client.new(port, host, connect_block)
+  end
+
+  def initialize(port, host, connect_block)
+    super()
+    @java_client = org.nodex.core.net.Client.connect(port, host, ConnectCallback.new(connect_block))
+  end
+
+  private :initialize
+
+end
+
 class Socket
   @data_block = nil
 
