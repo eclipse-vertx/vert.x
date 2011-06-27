@@ -1,7 +1,7 @@
 package org.nodex.core.stomp;
 
-
 import org.nodex.core.Callback;
+import org.nodex.core.net.Server;
 import org.nodex.core.net.Socket;
 
 /**
@@ -10,11 +10,10 @@ import org.nodex.core.net.Socket;
  * Time: 19:33
  */
 public class StompServer {
-  public static org.nodex.core.net.Server createServer(final Callback<Connection> connectCallback) {
-    return org.nodex.core.net.Server.createServer(new Callback<Socket>() {
+  public static Server createServer(final Callback<Connection> connectCallback) {
+    return Server.createServer(new Callback<Socket>() {
       public void onEvent(Socket socket) {
-        Connection conn = new Connection(socket);
-        connectCallback.onEvent(conn);
+        connectCallback.onEvent(new Connection(socket));
       }
     });
   }

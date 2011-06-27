@@ -31,11 +31,19 @@ public class Parser extends Callback<Buffer> {
   };
 
   private final Callback<Frame> output;
-  private Map<String, String> headers = new HashMap<String, String>();
-  private LineSplitter headerParser = new LineSplitter((byte)'\n', headerHandler);
-  private LineSplitter bodyParser = new LineSplitter((byte)0, bodyHandler);
+  private final Map<String, String> headers = new HashMap<String, String>();
+  private final LineSplitter headerParser = new LineSplitter((byte)'\n', headerHandler);
+  private final LineSplitter bodyParser = new LineSplitter((byte)0, bodyHandler);
   private String command;
   private boolean inHeaders = true;
+
+  public void onEvent(Buffer buffer) {
+    if (inHeaders) {
+      headerParser.onEvent(buffer);
+    } else {
+      bodyParser.onEvent(buffer);
+    }
+  }
 
   private void handleLine(Buffer buffer) {
     String line = buffer.toString().trim();
@@ -59,13 +67,5 @@ public class Parser extends Callback<Buffer> {
     inHeaders = true;
     headerParser.reset(bodyParser.remainingBuffer());
     output.onEvent(frame);
-  }
-
-  public void onEvent(Buffer buffer) {
-    if (inHeaders) {
-      headerParser.onEvent(buffer);
-    } else {
-      bodyParser.onEvent(buffer);
-    }
   }
 }
