@@ -13,22 +13,22 @@ import java.nio.charset.Charset;
  * Time: 16:46
  * To change this template use File | Settings | File Templates.
  */
-public class JavaBuffer {
+public class Buffer {
     private ChannelBuffer buffer;
 
-    public JavaBuffer(ChannelBuffer buffer) {
+    public Buffer(ChannelBuffer buffer) {
         this.buffer = buffer;
     }
 
-    public JavaBuffer(int size) {
+    public Buffer(int size) {
       buffer = ChannelBuffers.buffer(size);
     }
 
-    public JavaBuffer(byte[] bytes) {
+    public Buffer(byte[] bytes) {
       buffer = ChannelBuffers.wrappedBuffer(bytes);
     }
 
-    public JavaBuffer(String str, String enc) {
+    public Buffer(String str, String enc) {
        buffer = ChannelBuffers.copiedBuffer(str, Charset.forName(enc));
     }
 

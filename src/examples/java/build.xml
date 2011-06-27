@@ -1,0 +1,35 @@
+<project name="node.x.java.examples" default="compile" basedir=".">
+
+	<description>
+        Build script for node.x Java examples
+        </description>
+
+	<!-- set global properties for this build -->
+	<property name="target" location="target"/>	
+	<property name="examples-src" location="."/>
+        <property name="examples-target" location="target/examples/classes"/>  
+	<property name="core-lib" location="../../core/resources/jars"/>
+        <property name="core-jar" location="../../../target/node.x.jar"/>
+  
+	<path id="compile-classpath">
+		<fileset dir="${core-lib}">
+			<include name="*.jar" />
+		</fileset>
+                <pathelement path="${core-jar}"/>
+	</path>
+
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp/>
+	</target>
+	
+	<target name="compile" depends="init" description="compile the source for the examples">	
+	  <mkdir dir="${examples-target}"/>
+          <javac srcdir="${examples-src}" destdir="${examples-target}" classpathref="compile-classpath" debug="on"/>
+	</target>
+
+	<target name="clean" description="clean up">
+		<delete dir="${target}"/>
+	</target>
+	
+</project>
