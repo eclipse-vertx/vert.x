@@ -1,11 +1,16 @@
 package org.nodex.core.http;
 
+import java.util.Map;
+
 /**
- * Created by IntelliJ IDEA.
  * User: timfox
  * Date: 25/06/2011
  * Time: 19:20
- * To change this template use File | Settings | File Templates.
  */
 public class Response {
+  public final Map<String, String> headers;
+
+  protected Response(Map<String, String> headers) {
+    this.headers = headers;
+  }
 }

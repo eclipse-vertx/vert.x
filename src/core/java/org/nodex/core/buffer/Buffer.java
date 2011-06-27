@@ -59,8 +59,29 @@ public class Buffer {
     return buffer.toString(Charset.forName(enc));
   }
 
-  public void append(Buffer buff) {
+  public Buffer append(Buffer buff) {
     buffer.writeBytes(buff._toChannelBuffer());
+    return this;
+  }
+
+  public Buffer append(byte[] bytes) {
+    buffer.writeBytes(bytes);
+    return this;
+  }
+
+  public Buffer append(byte b) {
+    buffer.writeByte(b);
+    return this;
+  }
+
+  public Buffer append(String str, String enc) {
+    try {
+      byte[] bytes = str.getBytes(enc);
+      buffer.writeBytes(bytes);
+      return this;
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e.getMessage());
+    }
   }
 
   public int length() {
