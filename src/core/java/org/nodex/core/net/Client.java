@@ -1,6 +1,16 @@
 package org.nodex.core.net;
 
+import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.nodex.core.Callback;
+import org.nodex.core.buffer.Buffer;
+
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 /**
  * User: timfox
@@ -8,7 +18,68 @@ import org.nodex.core.Callback;
  * Time: 08:41
  */
 public class Client {
-  void connect(int port, String host, Callback<Socket> connectCallback) {
 
+  //Singleton
+  private static Client client = new Client();
+
+  private ClientBootstrap bootstrap;
+  private Map<Channel, Socket> socketMap = new ConcurrentHashMap<Channel, Socket>();
+
+  public static void connect(int port, String host, Callback<Socket> connectCallback) {
+    client.doConnect(port, host, connectCallback);
   }
+
+  private void doConnect(int port, String host, final Callback<Socket> connectCallback) {
+   ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
+   future.addListener(new ChannelFutureListener() {
+     public void operationComplete(ChannelFuture channelFuture) throws Exception {
+       if (channelFuture.isSuccess()) {
+         Channel ch = channelFuture.getChannel();
+         Socket sock = new Socket(ch);
+         socketMap.put(ch, sock);
+         connectCallback.onEvent(sock);
+       }
+     }
+   });
+  }
+
+  private Client() {
+    bootstrap = new ClientBootstrap(
+        new NioClientSocketChannelFactory(
+            Executors.newCachedThreadPool(),
+            Executors.newCachedThreadPool()));
+
+    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+      public ChannelPipeline getPipeline() throws Exception {
+        return Channels.pipeline(new ClientHandler());
+      }
+    });
+  }
+
+  private class ClientHandler extends SimpleChannelUpstreamHandler {
+
+    @Override
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+    }
+
+    @Override
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      socketMap.remove(ctx.getChannel());
+    }
+
+    @Override
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
+      Socket sock = socketMap.get(ctx.getChannel());
+      if (sock != null) {
+        ChannelBuffer cb = (ChannelBuffer)e.getMessage();
+        sock.dataReceived(new Buffer(cb));
+      }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+      e.getChannel().close();
+    }
+  }
+
 }

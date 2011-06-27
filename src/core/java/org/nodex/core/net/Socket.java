@@ -20,6 +20,10 @@ public class Socket {
      this.dataCallback = dataCallback;
    }
 
+   public void close() {
+     channel.close();
+   }
+
    protected void dataReceived(Buffer data) {
      dataCallback.onEvent(data);
    }

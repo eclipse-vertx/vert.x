@@ -29,6 +29,10 @@ public class Buffer {
     return new Buffer(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
   }
 
+  public static Buffer fromString(String str) {
+    return Buffer.fromString(str, "UTF-8");
+  }
+
   public Buffer(ChannelBuffer buffer) {
     this.buffer = buffer;
   }
@@ -45,6 +49,10 @@ public class Buffer {
 
   public byte byteAt(int pos) {
     return buffer.getByte(pos);
+  }
+
+  public String toString() {
+    return buffer.toString(Charset.forName("UTF-8"));
   }
 
   public String toString(String enc) {

@@ -2,8 +2,8 @@ package org.nodex.examples.net;
 
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.net.Socket;
 import org.nodex.core.net.Server;
+import org.nodex.core.net.Socket;
 import org.nodex.core.parsetools.LineEmitter;
 
 /**

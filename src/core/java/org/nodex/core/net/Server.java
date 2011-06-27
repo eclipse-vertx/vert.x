@@ -63,6 +63,12 @@ public class Server {
     }
 
     @Override
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      Channel ch = e.getChannel();
+      socketMap.remove(ch);
+    }
+
+    @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       Socket sock = socketMap.get(ch);
