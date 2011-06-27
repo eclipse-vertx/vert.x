@@ -7,7 +7,7 @@ package org.nodex.core;
  * Time: 19:39
  * To change this template use File | Settings | File Templates.
  */
-public class System {
+public class Nodex {
   public static int setTimeout(Callback<?> callback, long delay) {
     return -1;
   }

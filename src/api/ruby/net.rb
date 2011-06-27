@@ -16,7 +16,9 @@ class Server
     end
   end
 
-  def Server.create_server(&connect_block)
+  #Can take either a proc or a block
+  def Server.create_server(proc = nil, &connect_block)
+    connect_block = proc if proc
     Server.new(connect_block)
   end
 
@@ -53,7 +55,9 @@ class Client
     end
   end
 
-  def Client.connect(port, host, &connect_block)
+  #Can take either a proc or a block
+  def Client.connect(port, host = "localhost", proc = nil, &connect_block)
+    connect_block = proc if proc
     Client.new(port, host, connect_block)
   end
 
@@ -90,7 +94,11 @@ class Socket
     @java_socket.write(data._to_java_buffer)
   end
 
-  def data(&data_block)
+  #Can take either a proc or a block
+  def data(proc = nil, &data_block)
+    data_block = proc if proc
+    puts "calling socket data with #{data_block}"
+
     @java_socket.data(DataCallback.new(data_block))
   end
 

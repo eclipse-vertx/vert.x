@@ -40,16 +40,25 @@ public class Server {
     return new Server(connectCallback);
   }
 
-  public void listen(int port, String host) {
+  public Server listen(int port) {
+    return listen(port, "0.0.0.0");
+  }
+
+  public Server listen(int port, String host) {
     try {
         bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
         System.out.println("Net server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }
+    return this;
   }
 
   public void stop() {
+    for (Socket sock: socketMap.values()) {
+      sock.close();
+    }
+    bootstrap.releaseExternalResources();
   }
 
   private class ServerHandler extends SimpleChannelHandler {

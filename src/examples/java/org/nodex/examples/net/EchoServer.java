@@ -7,7 +7,7 @@ import org.nodex.core.net.Socket;
 
 public class EchoServer {
   public static void main(String[] args) throws Exception {
-    Server.createServer(new Callback<Socket>() {
+    Server server = Server.createServer(new Callback<Socket>() {
       public void onEvent(final Socket socket) {
         socket.data(new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {
@@ -15,9 +15,11 @@ public class EchoServer {
           }
         });
       }
-    }).listen(8080, "localhost");
+    }).listen(8080);
 
     System.out.println("Any key to exit");
     System.in.read();
+
+    server.stop();
   }
 }

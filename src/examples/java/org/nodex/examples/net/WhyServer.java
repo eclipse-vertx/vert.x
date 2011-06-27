@@ -4,7 +4,7 @@ import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.net.Server;
 import org.nodex.core.net.Socket;
-import org.nodex.core.parsetools.LineEmitter;
+import org.nodex.core.parsetools.ParserTools;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,8 +17,7 @@ public class WhyServer {
   public static void main(String[] args) throws Exception {
     Server.createServer(new Callback<Socket>() {
       public void onEvent(final Socket socket) {
-
-        socket.data(new LineEmitter((byte)'\n', new Callback<Buffer>() {
+        socket.data(ParserTools.splitOnDelimiter((byte) '\n', new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {
             String line = buffer.toString("UTF-8");
             line = "Why? ".concat(line).concat("\n");

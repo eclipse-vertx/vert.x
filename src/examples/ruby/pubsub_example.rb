@@ -1,10 +1,12 @@
 require "net"
+require "parser_tools"
 
 Server.create_server{ |socket|
-  LineReader.readLine(socket) { |line|
-    line = line.rstrip
+  socket.data(ParserTools.split_on_delimiter("\n") { |line|
+    line = line.to_s.rstrip
     if line.start_with?("subscribe,")
       topic_name = line.split(",", 2)[1]
+      puts "subscribing to #{topic_name}"
       @topics ||= {}
       topic = @topics[topic_name]
       if (topic.nil?)
@@ -14,27 +16,15 @@ Server.create_server{ |socket|
       topic << socket
     elsif line.start_with?("publish,")
       sp = line.split(',', 3)
+      puts "publishing to #{sp[1]} with #{sp[2]}"
       topic = @topics[sp[1]]
       if (topic)
-        topic.each{|socket| socket.write(sp[2])}
+        topic.each{|socket| socket.write(Buffer.from_str(sp[2]))}
       end
     end
-  }
-}.listen(8080, "127.0.0.1")
+  })
+}.listen(8080)
 
-
-# This is really boilerplate and would be provided in API - no need for dev to write this
-module LineReader
-  def LineReader.readLine(socket, &on_read_line_block)
-    line = ""
-    socket.data{ |data|
-      line += data
-      if (line.include?("\n"))
-        sp = line.split("\n", 2)
-        line = sp[1]
-        on_read_line_block.call(sp[0])
-      end
-    }
-  end
-end
-
+puts "hit enter to stop server"
+STDIN.gets
+server.stop

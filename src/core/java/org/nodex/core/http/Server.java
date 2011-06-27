@@ -13,10 +13,14 @@ public class Server {
     return new Server(callback);
   }
 
-  public void listen(int port, String host){
+  public void listen(int port, String host) {
   }
 
-  public void close() {
+  public void listen(int port) {
+    listen(port, "0.0.0.0");
+  }
+
+  public void stop() {
   }
 
   private final HttpCallback callback;

@@ -29,6 +29,10 @@ public class Client {
     client.doConnect(port, host, connectCallback);
   }
 
+  public static void connect(int port, Callback<Socket> connectCallback) {
+    client.doConnect(port, "localhost", connectCallback);
+  }
+
   private void doConnect(int port, String host, final Callback<Socket> connectCallback) {
    ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
    future.addListener(new ChannelFutureListener() {

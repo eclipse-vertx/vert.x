@@ -7,5 +7,9 @@ Server.create_server{ |socket|
       |socket| socket.write(data)
     }
   }
-}.listen(8080, "127.0.0.1")
+}.listen(8080)
+
+puts "hit enter to stop server"
+STDIN.gets
+server.stop
 
