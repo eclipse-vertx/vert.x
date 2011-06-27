@@ -3,6 +3,7 @@ package org.nodex.examples.net;
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.net.Socket;
+import org.nodex.core.net.Server;
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,7 +14,7 @@ import org.nodex.core.net.Socket;
  */
 public class EchoServer {
   public static void main(String[] args) throws Exception {
-    Net.createServer(new Callback<Socket>() {
+    Server.createServer(new Callback<Socket>() {
       public void onEvent(final Socket socket) {
         socket.data(new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {

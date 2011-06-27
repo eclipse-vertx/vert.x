@@ -1,6 +1,9 @@
-require "../../api/ruby/net"
+#There must be a better way of doing this!!
+$LOAD_PATH << ENV['LOAD_PATH']
 
-Net.create_server{ |socket|
+require "net"
+
+Server.create_server{ |socket|
   (@sockets ||= []) << socket
   socket.data{
     |data| @sockets.each{
@@ -9,5 +12,3 @@ Net.create_server{ |socket|
   }
 }.listen(8080, "127.0.0.1")
 
-#Prevent script from exiting
-STDIN.gets

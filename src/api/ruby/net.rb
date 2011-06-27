@@ -1,70 +1,70 @@
-require "EchoServer"
+include Java
 require "buffer"
 
-include_class "org.nodex.core.net.NettyServer"
-include_class "org.nodex.core.net.Socket"
-include_class "org.nodex.core.net.ServerCallback"
-include_class "org.nodex.core.net.SocketCallback"
+class Server
 
-class NetServer < ServerCallback
+  class ConnectCallback < org.nodex.core.Callback
+
+    def initialize(connect_block)
+      super()
+      @connect_block = connect_block
+    end
+
+    def onEvent(java_socket)
+      sock = Socket.new(java_socket)
+      @connect_block.call(sock)
+    end
+  end
+
+  def Server.create_server(&connect_block)
+    Server.new(connect_block)
+  end
 
   def initialize(connect_block)
     super()
-    @connect_block = connect_block
-    @java_server = NettyServer.new(self)
+    @java_server = org.nodex.core.net.Server.createServer(ConnectCallback.new(connect_block))
   end
 
   def listen(port, host = "0.0.0.0")
     @java_server.listen(port, host)
-    puts "Listening on #{host}:#{port}"
     self
   end
-  
-  def on_connect(java_socket)
-    socket = Socket.new(java_socket)
-    @connect_block.call(socket)
-    socket
+
+  def stop
+    @java_server.stop
   end
 
-  def on_close
-  end
-
-  def on_exception(exception)
-    puts "Exception occurred #{exception}"
-  end
+  private :initialize
 
 end
 
-class Socket < SocketCallback
+class Socket
   @data_block = nil
-  
+
+  class DataCallback < org.nodex.core.Callback
+    def initialize(data_block)
+      super()
+      @data_block = data_block
+    end
+
+    def onEvent(java_buffer)
+      buf = Buffer.new(java_buffer)
+      @data_block.call(buf) if @data_block
+    end
+  end
+
   def initialize(java_socket)
     super()
     @java_socket = java_socket
-    @java_socket.set_callback(self)
-  end
-  
-  def data(&data_block)
-    @data_block = data_block
   end
 
-  def end(&end_block)
-    @end_block = end_block
-  end
-  
-  def data_received(data)
-    @data_block.call(Buffer.new(data)) if @data_block
-  end
-  
   def write(data)
     @java_socket.write(data._to_java_buffer)
   end
-end
 
-module Net
-  def Net.create_server(&connect_block)
-    NetServer.new(connect_block)  
+  def data(&data_block)
+    @java_socket.data(DataCallback.new(data_block))
   end
-end
 
+end
 

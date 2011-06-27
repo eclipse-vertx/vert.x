@@ -1,8 +1,9 @@
-require "../../api/ruby/net"
+#There must be a better way of doing this!!
+$LOAD_PATH << ENV['LOAD_PATH']
 
-# I am a Ruby newb so the Ruby code here could probably be improved by someone with more Ruby experience
+require "net"
 
-Net.create_server{ |socket|
+Server.create_server{ |socket|
   LineReader.readLine(socket) { |line|
     line = line.rstrip
     if line.start_with?("subscribe,")
@@ -40,5 +41,3 @@ module LineReader
   end
 end
 
-#Prevent script from exiting
-STDIN.gets

@@ -2,16 +2,7 @@ package org.nodex.core.net;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
@@ -52,12 +43,13 @@ public class Server {
   public void listen(int port, String host){
     try {
         bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+        System.out.println("Net server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }
   }
 
-  public void close() {
+  public void stop() {
   }
 
   private class ServerHandler extends SimpleChannelHandler {

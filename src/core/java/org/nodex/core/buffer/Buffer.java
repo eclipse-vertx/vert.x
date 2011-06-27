@@ -1,9 +1,7 @@
 package org.nodex.core.buffer;
 
-import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import sun.tools.tree.ReturnStatement;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;

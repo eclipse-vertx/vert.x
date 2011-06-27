@@ -3,6 +3,7 @@ package org.nodex.examples.net;
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.net.Socket;
+import org.nodex.core.net.Server;
 import org.nodex.core.parsetools.LineEmitter;
 
 /**
@@ -14,7 +15,7 @@ import org.nodex.core.parsetools.LineEmitter;
  */
 public class WhyServer {
   public static void main(String[] args) throws Exception {
-    Net.createServer(new Callback<Socket>() {
+    Server.createServer(new Callback<Socket>() {
       public void onEvent(final Socket socket) {
 
         socket.data(new LineEmitter((byte)'\n', new Callback<Buffer>() {

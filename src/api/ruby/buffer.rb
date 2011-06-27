@@ -1,21 +1,19 @@
-require "EchoServer"
-
-include_class "org.nodex.core.buffer.Buffer"
-
 class Buffer
 
-  def initialize(*args)
-    arg0 = args[0]
-    case arg0
-      when Buffer
-        @buffer = arg0
-      when Array
-        @buffer = Buffer.new(arg0)
-      when Integer
-        @buffer = Buffer.new(arg0)
-      when String
-        @buffer = Buffer.new(arg0, args[1])
-    end
+  def initialize(java_buffer)
+    @buffer = java_buffer
+  end
+
+  def Buffer.new_fixed(size)
+    @buffer = org.nodex.core.buffer.Buffer.newFixed(size)
+  end
+
+  def Buffer.new_dynamic(size)
+    @buffer = org.nodex.core.buffer.Buffer.newDynamic(size)
+  end
+
+  def Buffer.from_string(str, enc = "UTF-8")
+    @buffer = org.nodex.core.buffer.Buffer.fromString(str, enc)
   end
 
   def write(str, offset = 0, enc = "UTF-8")
