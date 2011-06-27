@@ -1,20 +1,20 @@
-require "java"
+require "EchoServer"
 
-include_class "org.nodex.core.buffer.JavaBuffer"
+include_class "org.nodex.core.buffer.Buffer"
 
 class Buffer
 
   def initialize(*args)
     arg0 = args[0]
     case arg0
-      when JavaBuffer
+      when Buffer
         @buffer = arg0
       when Array
-        @buffer = JavaBuffer.new(arg0)
+        @buffer = Buffer.new(arg0)
       when Integer
-        @buffer = JavaBuffer.new(arg0)
+        @buffer = Buffer.new(arg0)
       when String
-        @buffer = JavaBuffer.new(arg0, args[1])
+        @buffer = Buffer.new(arg0, args[1])
     end
   end
 

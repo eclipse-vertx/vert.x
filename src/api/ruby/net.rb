@@ -1,8 +1,8 @@
-require "java"
+require "EchoServer"
 require "buffer"
 
-include_class "org.nodex.core.net.JavaNetServer"
-include_class "org.nodex.core.net.JavaNetSocket"
+include_class "org.nodex.core.net.NettyServer"
+include_class "org.nodex.core.net.Socket"
 include_class "org.nodex.core.net.ServerCallback"
 include_class "org.nodex.core.net.SocketCallback"
 
@@ -11,7 +11,7 @@ class NetServer < ServerCallback
   def initialize(connect_block)
     super()
     @connect_block = connect_block
-    @java_server = JavaNetServer.new(self)
+    @java_server = NettyServer.new(self)
   end
 
   def listen(port, host = "0.0.0.0")

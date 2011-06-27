@@ -50,7 +50,7 @@ Rabbit.subscribe("myqueue") {
 #    GemFire.lookup("key", self.on_gemfire_lookup)
 #  end
 #
-#  def run
+#  def onEvent
 #    Rabbit.subscribe2("myqueue", on_message)
 #  end
 #
