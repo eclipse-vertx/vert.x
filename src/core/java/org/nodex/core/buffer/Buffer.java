@@ -96,6 +96,10 @@ public class Buffer {
     return new Buffer(buffer.copy(start, end - start));
   }
 
+  public Buffer duplicate() {
+    return new Buffer(buffer.duplicate());
+  }
+
   public ChannelBuffer _toChannelBuffer() {
     return buffer;
   }

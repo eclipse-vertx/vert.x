@@ -5,7 +5,6 @@ import org.nodex.core.net.Server;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -15,8 +14,6 @@ import java.util.concurrent.ConcurrentMap;
  * Time: 00:19
  */
 public class StompPubSub {
-
-
 
   public static Server createServer() {
     return StompServer.createServer(new Callback<Connection>() {
@@ -45,14 +42,20 @@ public class StompPubSub {
       public void onEvent(final Connection conn) {
         conn.data(new Callback<Frame>() {
           public void onEvent(Frame frame) {
-            if ("subscribe".equals(frame.command)) {
+            if ("CONNECT".equals(frame.command)) {
+              System.out.println("Got CONNECT");
+            }
+            else if ("SUBSCRIBE".equals(frame.command)) {
               String dest = frame.headers.get("destination");
+              System.out.println("Got SUBSCRIBE for dest " + dest);
               subscribe(dest, conn);
-            } else if ("unsubscribe".equals(frame.command)) {
+            } else if ("UNSUBSCRIBE".equals(frame.command)) {
               String dest = frame.headers.get("destination");
+              System.out.println("Got UNSUBSCRIBE for dest " + dest);
               unsubscribe(dest, conn);
-            } else if ("message".equals(frame.command)) {
+            } else if ("SEND".equals(frame.command)) {
               String dest = frame.headers.get("destination");
+              System.out.println("Got SEND for dest " + dest);
               List<Connection> conns = subscriptions.get(dest);
               if (conns != null) {
                 for (Connection conn : conns) {
@@ -63,10 +66,6 @@ public class StompPubSub {
           }
         });
       }
-
-
     });
   }
-
-
 }

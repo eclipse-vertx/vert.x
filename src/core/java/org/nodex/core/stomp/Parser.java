@@ -2,7 +2,7 @@ package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.parsetools.LineSplitter;
+import org.nodex.core.parsetools.RecordParser;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,54 +18,48 @@ public class Parser extends Callback<Buffer> {
     this.output = output;
   }
 
-  private Callback<Buffer> headerHandler = new Callback<Buffer>() {
-    public void onEvent(Buffer buffer) {
-      handleLine(buffer);
-    }
-  };
-
-  private Callback<Buffer> bodyHandler = new Callback<Buffer>() {
-    public void onEvent(Buffer buffer) {
-      handleBody(buffer);
-    }
-  };
-
   private final Callback<Frame> output;
-  private final Map<String, String> headers = new HashMap<String, String>();
-  private final LineSplitter headerParser = new LineSplitter((byte)'\n', headerHandler);
-  private final LineSplitter bodyParser = new LineSplitter((byte)0, bodyHandler);
+  private Map<String, String> headers = new HashMap<String, String>();
+  private final RecordParser frameParser = RecordParser.newDelimited((byte)'\n', new Callback<Buffer>() {
+    public void onEvent(Buffer line) {
+      handleLine(line);
+    }
+  });
   private String command;
   private boolean inHeaders = true;
 
   public void onEvent(Buffer buffer) {
-    if (inHeaders) {
-      headerParser.onEvent(buffer);
-    } else {
-      bodyParser.onEvent(buffer);
-    }
+    frameParser.onEvent(buffer);
   }
 
   private void handleLine(Buffer buffer) {
     String line = buffer.toString().trim();
-    if (command == null) {
-      command = line;
-    }
-    else if ("".equals(line)) {
-      //End of headers
-      bodyParser.reset(headerParser.remainingBuffer());
-      inHeaders = false;
+    if (inHeaders) {
+      if (command == null) {
+        command = line;
+      }
+      else if ("".equals(line)) {
+        //End of headers
+        inHeaders = false;
+        String sHeader = headers.get("content-length");
+        if (sHeader != null)
+        {
+          int contentLength = Integer.valueOf(sHeader);
+          frameParser.fixedSizeMode(contentLength);
+        } else {
+          frameParser.delimitedMode((byte)0);
+        }
+      } else {
+        String[] aline = line.split(":");
+        headers.put(aline[0], aline[1]);
+      }
     } else {
-      String[] aline = line.split(":");
-      headers.put(aline[0], aline[1]);
+      Frame frame = new Frame(command, headers, buffer);
+      command = null;
+      headers = new HashMap<String, String>();
+      inHeaders = true;
+      frameParser.delimitedMode((byte)'\n');
+      output.onEvent(frame);
     }
-  }
-
-  private void handleBody(Buffer buffer) {
-    Frame frame = new Frame(command, headers, buffer);
-    command = null;
-    headers.clear();
-    inHeaders = true;
-    headerParser.reset(bodyParser.remainingBuffer());
-    output.onEvent(frame);
   }
 }

@@ -16,7 +16,9 @@ public class Connection {
    }
 
    public void write(Frame frame) {
-     socket.write(frame.toBuffer());
+     //Need to duplicate the buffer since frame can be written to multiple connections concurrently
+     //which will change the internal Netty readerIndex
+     socket.write(frame.toBuffer().duplicate());
    }
 
    public void data(Callback<Frame> frameCallback) {
