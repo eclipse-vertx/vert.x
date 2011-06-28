@@ -5,10 +5,11 @@ import org.nodex.core.net.Socket;
 
 public class Client {
   public static void connect(int port, final Callback<Connection> connectCallback) {
-    connect(port, "localhost", connectCallback);
+    connect(port, "localhost", null, null, connectCallback);
   }
 
-  public static void connect(int port, String host, final Callback<Connection> connectCallback) {
+  public static void connect(int port, String host, String username, String password,
+                             final Callback<Connection> connectCallback) {
     org.nodex.core.net.Client.connect(port, host, new Callback<Socket>() {
       public void onEvent(Socket sock) {
         connectCallback.onEvent(new Connection(sock));

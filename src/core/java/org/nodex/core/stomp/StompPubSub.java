@@ -5,6 +5,7 @@ import org.nodex.core.net.Server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -44,6 +45,7 @@ public class StompPubSub {
           public void onEvent(Frame frame) {
             if ("CONNECT".equals(frame.command)) {
               System.out.println("Got CONNECT");
+              conn.write(Frame.connectedFrame(UUID.randomUUID().toString()));
             }
             else if ("SUBSCRIBE".equals(frame.command)) {
               String dest = frame.headers.get("destination");
@@ -56,9 +58,11 @@ public class StompPubSub {
             } else if ("SEND".equals(frame.command)) {
               String dest = frame.headers.get("destination");
               System.out.println("Got SEND for dest " + dest);
+              frame.command = "MESSAGE";
               List<Connection> conns = subscriptions.get(dest);
               if (conns != null) {
                 for (Connection conn : conns) {
+                  frame.putHeader("message-id", UUID.randomUUID().toString());
                   conn.write(frame);
                 }
               }

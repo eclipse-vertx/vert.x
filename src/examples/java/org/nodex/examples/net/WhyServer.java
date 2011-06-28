@@ -17,7 +17,7 @@ public class WhyServer {
   public static void main(String[] args) throws Exception {
     Server.createServer(new Callback<Socket>() {
       public void onEvent(final Socket socket) {
-        socket.data(RecordParser.newDelimited((byte) '\n', new Callback<Buffer>() {
+        socket.data(RecordParser.newDelimited("\n", "UTF-8", new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {
             String line = buffer.toString("UTF-8");
             line = "Why? ".concat(line).concat("\n");

@@ -60,7 +60,9 @@ public class Buffer {
   }
 
   public Buffer append(Buffer buff) {
+    ChannelBuffer cb = buff._toChannelBuffer();
     buffer.writeBytes(buff._toChannelBuffer());
+    cb.readerIndex(0); // Need to reset readerindex since Netty write modifies readerIndex of source!
     return this;
   }
 

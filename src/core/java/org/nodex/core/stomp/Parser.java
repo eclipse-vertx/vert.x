@@ -20,7 +20,9 @@ public class Parser extends Callback<Buffer> {
 
   private final Callback<Frame> output;
   private Map<String, String> headers = new HashMap<String, String>();
-  private final RecordParser frameParser = RecordParser.newDelimited((byte)'\n', new Callback<Buffer>() {
+  private static final byte[] EOL_DELIM = new byte[] { (byte)'\n'};
+  private static final byte[] EOM_DELIM = new byte[] { 0 };
+  private final RecordParser frameParser = RecordParser.newDelimited(EOL_DELIM, new Callback<Buffer>() {
     public void onEvent(Buffer line) {
       handleLine(line);
     }
@@ -47,7 +49,7 @@ public class Parser extends Callback<Buffer> {
           int contentLength = Integer.valueOf(sHeader);
           frameParser.fixedSizeMode(contentLength);
         } else {
-          frameParser.delimitedMode((byte)0);
+          frameParser.delimitedMode(EOM_DELIM);
         }
       } else {
         String[] aline = line.split(":");
@@ -58,7 +60,7 @@ public class Parser extends Callback<Buffer> {
       command = null;
       headers = new HashMap<String, String>();
       inHeaders = true;
-      frameParser.delimitedMode((byte)'\n');
+      frameParser.delimitedMode(EOL_DELIM);
       output.onEvent(frame);
     }
   }
