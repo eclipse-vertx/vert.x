@@ -16,6 +16,7 @@ public class RecordParser extends Callback<Buffer> {
   private int pos;            // Current position in buffer
   private int start;          // Position of beginning of current record
   private int delimPos;       // Position of current match in delimeter array
+  private boolean reset;      // Allows user to toggle mode / change delim when records are emitted
 
   private boolean delimited;
   private byte[] delim;
@@ -57,32 +58,27 @@ public class RecordParser extends Callback<Buffer> {
   public void delimitedMode(byte[] delim) {
    delimited = true;
    this.delim = delim;
+   delimPos = 0;
+   reset = true;
   }
 
   public void fixedSizeMode(int size) {
     delimited = false;
     recordSize = size;
+    reset = true;
   }
 
   private void handleParsing() {
     int len = buff.length();
-    if (delimited) {
-      for (; pos < len; pos++) {
-        if (buff.byteAt(pos) == delim[delimPos]) {
-          delimPos++;
-          if (delimPos == delim.length) {
-            Buffer ret = buff.slice(start, pos + 1);
-            start = pos + 1;
-            delimPos = 0;
-            output.onEvent(ret);
-          }
-        }
-      }
-    } else {
-      if (len - start >= recordSize) {
+    do {
+      reset = false;
+      if (delimited) {
+        parseDelimited();
+      } else {
         parseFixed();
       }
-    }
+    } while (reset);
+
     if (start == len) {
       //Nothing left
       buff = null;
@@ -94,10 +90,29 @@ public class RecordParser extends Callback<Buffer> {
     start = 0;
   }
 
+  private void parseDelimited() {
+    int len = buff.length();
+    for (; pos < len && !reset; pos++) {
+      if (buff.byteAt(pos) == delim[delimPos]) {
+        delimPos++;
+        if (delimPos == delim.length) {
+          Buffer ret = buff.slice(start, pos + 1);
+          start = pos + 1;
+          delimPos = 0;
+          output.onEvent(ret);
+        }
+      }
+    }
+  }
+
   private void parseFixed() {
-    int end = start + recordSize;
-    Buffer ret = buff.slice(start, end);
-    start = end;
+    int len = buff.length();
+    while (len - start >= recordSize && !reset) {
+      int end = start + recordSize;
+      Buffer ret = buff.slice(start, end);
+      start = end;
+      output.onEvent(ret);
+    }
   }
 
   public void onEvent(Buffer buffer) {
