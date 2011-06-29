@@ -60,10 +60,16 @@ public class Frame {
     return frame;
   }
 
-  public static Frame sendFrame(String destination, byte[] body) {
-    Frame frame = new Frame("SEND", Buffer.newWrapped(body));
+  public static Frame sendFrame(String destination, Buffer body) {
+    Frame frame = new Frame("SEND", body);
     frame.putHeader("destination", destination);
-    frame.putHeader("content-length", String.valueOf(body.length));
+    frame.putHeader("content-length", String.valueOf(body.length()));
+    return frame;
+  }
+
+  public static Frame receiptFrame(String receipt) {
+    Frame frame = new Frame("RECEIPT", null);
+    frame.putHeader("receipt-id", receipt);
     return frame;
   }
 
@@ -90,8 +96,10 @@ public class Frame {
   private StringBuilder headersString() {
     StringBuilder sb = new StringBuilder();
     sb.append(command).append('\n');
-    for (Map.Entry<String, String> entry: headers.entrySet()) {
-      sb.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
+    if (headers != null) {
+      for (Map.Entry<String, String> entry: headers.entrySet()) {
+        sb.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
+      }
     }
     sb.append('\n');
     return sb;

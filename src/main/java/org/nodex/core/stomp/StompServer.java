@@ -2,6 +2,7 @@ package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
 import org.nodex.core.net.Server;
+import org.nodex.core.net.Socket;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,10 +15,11 @@ import java.util.concurrent.ConcurrentMap;
  * Date: 28/06/2011
  * Time: 00:19
  */
-public class StompPubSub {
+public class StompServer {
 
   public static Server createServer() {
-    return StompServer.createServer(new Callback<Connection>() {
+
+    return Server.createServer(new Callback<Socket>() {
 
       private ConcurrentMap<String, List<Connection>> subscriptions = new ConcurrentHashMap<String, List<Connection>>();
 
@@ -40,24 +42,30 @@ public class StompPubSub {
         }
       }
 
-      public void onEvent(final Connection conn) {
-        conn.data(new Callback<Frame>() {
+      private void checkReceipt(Frame frame, Connection conn) {
+        String receipt = frame.headers.get("receipt");
+        if (receipt != null) {
+          conn.write(Frame.receiptFrame(receipt));
+        }
+      }
+
+      public void onEvent(final Socket sock) {
+        final ServerConnection conn = new ServerConnection(sock);
+        conn.frameHandler(new Callback<Frame>() {
           public void onEvent(Frame frame) {
             if ("CONNECT".equals(frame.command)) {
-              System.out.println("Got CONNECT");
               conn.write(Frame.connectedFrame(UUID.randomUUID().toString()));
+              return;
             }
-            else if ("SUBSCRIBE".equals(frame.command)) {
+            //The following can have optional receipt
+            if ("SUBSCRIBE".equals(frame.command)) {
               String dest = frame.headers.get("destination");
-              System.out.println("Got SUBSCRIBE for dest " + dest);
               subscribe(dest, conn);
             } else if ("UNSUBSCRIBE".equals(frame.command)) {
               String dest = frame.headers.get("destination");
-              System.out.println("Got UNSUBSCRIBE for dest " + dest);
               unsubscribe(dest, conn);
             } else if ("SEND".equals(frame.command)) {
               String dest = frame.headers.get("destination");
-              System.out.println("Got SEND for dest " + dest);
               frame.command = "MESSAGE";
               List<Connection> conns = subscriptions.get(dest);
               if (conns != null) {
@@ -67,6 +75,7 @@ public class StompPubSub {
                 }
               }
             }
+            checkReceipt(frame, conn);
           }
         });
       }

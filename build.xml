@@ -6,9 +6,9 @@
 
 	<!-- set global properties for this build -->
 	<property name="target" location="target"/>	
-	<property name="core-src" location="src/core/java"/>
+	<property name="core-src" location="src/main/java"/>
   <property name="core-target" location="target/core/classes"/>  
-	<property name="core-lib" location="src/core/resources/jars"/>
+	<property name="core-lib" location="src/main/resources/jars"/>
   
 	<path id="core-lib-classpath">
 		<fileset dir="${core-lib}">

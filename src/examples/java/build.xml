@@ -8,7 +8,7 @@
 	<property name="target" location="target"/>	
 	<property name="examples-src" location="."/>
         <property name="examples-target" location="target/examples/classes"/>  
-	<property name="core-lib" location="../../core/resources/jars"/>
+	<property name="core-lib" location="../../main/resources/jars"/>
         <property name="core-jar" location="../../../target/node.x.jar"/>
   
 	<path id="compile-classpath">
