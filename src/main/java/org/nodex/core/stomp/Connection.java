@@ -1,6 +1,7 @@
 package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
+import org.nodex.core.FutureAction;
 import org.nodex.core.NoArgCallback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.net.Socket;
@@ -48,62 +49,65 @@ public class Connection {
 
   // Send without receipt
   public void send(String dest, Buffer body) {
-    send(dest, new HashMap<String, String>(4), body);
+    send(dest, new HashMap<String, String>(4), body, false);
   }
 
   // Send without receipt
   public void send(String dest, Map<String, String> headers, Buffer body) {
-    Frame frame = new Frame("SEND", headers, body);
-    frame.putHeader("destination", dest);
-    write(frame);
+    System.out.println("In Java connection.send");
+    send(dest, headers, body, false);
   }
 
   // Send with receipt
-  public void send(String dest, Buffer body, NoArgCallback callback) {
-    send(dest, new HashMap<String, String>(4), body, callback);
+  public FutureAction send(String dest, Buffer body, boolean receipt) {
+    return send(dest, new HashMap<String, String>(4), body, receipt);
   }
 
   // Send with receipt
-  public void send(String dest, Map<String, String> headers, Buffer body, NoArgCallback callback) {
+  public FutureAction send(String dest, Map<String, String> headers, Buffer body, boolean receipt) {
     Frame frame = new Frame("SEND", headers, body);
-    frame.putHeader("destination", dest);
-    if (callback != null) {
-      addReceipt(frame, callback);
-    }
+    frame.headers.put("destination", dest);
+    FutureAction fa = receipt ? addReceipt(frame) : null;
     write(frame);
+    return fa;
   }
 
   // Subscribe without receipt
   public synchronized void subscribe(String dest, Callback<Frame> messageCallback) {
-    subscribe(dest, messageCallback, null);
+    subscribe(dest, messageCallback, false);
   }
 
   // Subscribe with receipt
-  public synchronized void subscribe(String dest, Callback<Frame> messageCallback, NoArgCallback callback) {
+  public synchronized FutureAction subscribe(String dest, Callback<Frame> messageCallback, boolean receipt) {
+    System.out.println("In java subscribe");
     if (subscriptions.containsKey(dest)) {
       throw new IllegalArgumentException("Already subscribed to " + dest);
     }
     subscriptions.put(dest, messageCallback);
     Frame frame = Frame.subscribeFrame(dest);
-    if (callback != null) {
-      addReceipt(frame, callback);
-    }
+    FutureAction fa = receipt ? addReceipt(frame) : null;
     write(frame);
+    return fa;
   }
 
   // Unsubscribe without receipt
   public synchronized void unsubscribe(String dest) {
-    unsubscribe(dest, null);
+    unsubscribe(dest, false);
   }
 
   //Unsubscribe with receipt
-  public synchronized void unsubscribe(String dest, NoArgCallback callback) {
+  public synchronized FutureAction unsubscribe(String dest, boolean receipt) {
     subscriptions.remove(dest);
     Frame frame = Frame.unsubscribeFrame(dest);
-    if (callback != null) {
-      addReceipt(frame, callback);
-    }
+    FutureAction fa = receipt ? addReceipt(frame) : null;
     write(frame);
+    return fa;
+  }
+
+  public void write(Frame frame) {
+    //Need to duplicate the buffer since frame can be written to multiple connections concurrently
+    //which will change the internal Netty readerIndex
+    socket.write(frame.toBuffer().duplicate());
   }
 
   protected void connect(String username, String password, final NoArgCallback connectCallback) {
@@ -111,10 +115,10 @@ public class Connection {
     write(Frame.connectFrame(username, password));
   }
 
-  public void write(Frame frame) {
-    //Need to duplicate the buffer since frame can be written to multiple connections concurrently
-    //which will change the internal Netty readerIndex
-    socket.write(frame.toBuffer().duplicate());
+  private FutureAction addReceipt(Frame frame) {
+    FutureAction fa = new FutureAction();
+    addReceipt(frame, fa);
+    return fa;
   }
 
   private synchronized void handleMessage(Frame msg) {
@@ -125,7 +129,7 @@ public class Connection {
 
   private void addReceipt(Frame frame, NoArgCallback callback) {
     String receipt = UUID.randomUUID().toString();
-    frame.putHeader("receipt", receipt);
+    frame.headers.put("receipt", receipt);
     waitingReceipts.put(receipt, callback);
   }
 

@@ -4,11 +4,11 @@ import org.nodex.core.Callback;
 import org.nodex.core.net.Server;
 import org.nodex.core.net.Socket;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: timfox
@@ -28,7 +28,7 @@ public class StompServer {
       private synchronized void subscribe(String dest, Connection conn) {
         List<Connection> conns = subscriptions.get(dest);
         if (conns == null) {
-          conns = new ArrayList<Connection>();
+          conns = new CopyOnWriteArrayList<Connection>();
           subscriptions.put(dest, conns);
         }
         conns.add(conn);
@@ -72,7 +72,7 @@ public class StompServer {
               List<Connection> conns = subscriptions.get(dest);
               if (conns != null) {
                 for (Connection conn : conns) {
-                  frame.putHeader("message-id", UUID.randomUUID().toString());
+                  frame.headers.put("message-id", UUID.randomUUID().toString());
                   conn.write(frame);
                 }
               }

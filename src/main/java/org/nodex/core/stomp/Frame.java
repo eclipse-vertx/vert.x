@@ -23,62 +23,54 @@ public class Frame {
     this.body = body;
   }
 
-  public static Frame connectFrame() {
+  protected static Frame connectFrame() {
     return connectFrame(null, null);
   }
 
-  public static Frame connectFrame(String username, String password) {
+  protected static Frame connectFrame(String username, String password) {
     Frame frame = new Frame("CONNECT", null);
-    frame.putHeader("login", username);
-    frame.putHeader("passcode", password);
+    frame.headers.put("login", username);
+    frame.headers.put("passcode", password);
     return frame;
   }
 
-  public static Frame connectedFrame(String sessionID) {
+  protected static Frame connectedFrame(String sessionID) {
     Frame frame = new Frame("CONNECTED", null);
-    frame.putHeader("session", sessionID);
+    frame.headers.put("session", sessionID);
     return frame;
   }
 
-  public static Frame subscribeFrame(String destination) {
+  protected static Frame subscribeFrame(String destination) {
     Frame frame = new Frame("SUBSCRIBE", null);
-    frame.putHeader("destination", destination);
+    frame.headers.put("destination", destination);
     return frame;
   }
 
-  public static Frame unsubscribeFrame(String destination) {
+  protected static Frame unsubscribeFrame(String destination) {
     Frame frame = new Frame("UNSUBSCRIBE", null);
-    frame.putHeader("destination", destination);
+    frame.headers.put("destination", destination);
     return frame;
   }
 
-  public static Frame sendFrame(String destination, String body) {
+  protected static Frame sendFrame(String destination, String body) {
     Buffer buff = Buffer.fromString(body, "UTF-8");
     Frame frame = new Frame("SEND", buff);
-    frame.putHeader("destination", destination);
-    frame.putHeader("content-length", String.valueOf(buff.length()));
+    frame.headers.put("destination", destination);
+    frame.headers.put("content-length", String.valueOf(buff.length()));
     return frame;
   }
 
-  public static Frame sendFrame(String destination, Buffer body) {
+  protected static Frame sendFrame(String destination, Buffer body) {
     Frame frame = new Frame("SEND", body);
-    frame.putHeader("destination", destination);
-    frame.putHeader("content-length", String.valueOf(body.length()));
+    frame.headers.put("destination", destination);
+    frame.headers.put("content-length", String.valueOf(body.length()));
     return frame;
   }
 
-  public static Frame receiptFrame(String receipt) {
+  protected static Frame receiptFrame(String receipt) {
     Frame frame = new Frame("RECEIPT", null);
-    frame.putHeader("receipt-id", receipt);
+    frame.headers.put("receipt-id", receipt);
     return frame;
-  }
-
-  public void putHeader(String key, String val) {
-    headers.put(key, val);
-  }
-
-  public void removeHeader(String key) {
-    headers.remove(key);
   }
 
   public Buffer toBuffer() {

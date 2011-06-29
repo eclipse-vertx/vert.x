@@ -18,28 +18,27 @@ public class StompClient {
 
     Client.connect(8080, new Callback<Connection>() {
       public void onEvent(final Connection conn) {
-        try {
-          conn.subscribe("test-topic", new Callback<Frame>() {
-            public void onEvent(Frame frame) {
-              System.out.println("Received message: " + frame.body.toString());
+
+        // Subscribe to a topic
+        conn.subscribe("test-topic", new Callback<Frame>() {
+          public void onEvent(Frame frame) {
+            System.out.println("Received message: " + frame.body.toString());
+          }
+        });
+
+        // Send some messages (without receipt)
+        for (int i = 0; i < 5; i++) {
+          conn.send("test-topic", Buffer.fromString("message " + i));
+        }
+
+        // Now send some more with receipts
+        for (int i = 5; i < 10; i++) {
+          final int count = i;
+          conn.send("test-topic", Buffer.fromString("message " + i), true).onComplete(new NoArgCallback() {
+            public void onEvent() {
+              System.out.println("Got receipt " + count);
             }
           });
-          for (int i = 0; i < 5; i++) {
-            conn.send("test-topic", Buffer.fromString("message " + i));
-          }
-
-          //Now send some with receipt
-          for (int i = 5; i < 10; i++) {
-            final int count = i;
-            conn.send("test-topic", Buffer.fromString("message " + i), new NoArgCallback() {
-              public void onEvent() {
-                System.out.println("Got receipt " + count);
-              }
-            });
-          }
-
-        } catch (Exception e) {
-          e.printStackTrace();
         }
       }
     });

@@ -13,37 +13,31 @@ import org.nodex.core.stomp.Frame;
  */
 public class StompPerf {
 
+  private static volatile long start = 0;
+
   public static void main(String[] args) throws Exception {
 
     Client.connect(8080, new Callback<Connection>() {
       public void onEvent(final Connection conn) {
-        try {
-          final int warmup = 100000;
-          final int numMessages = 200000;
-
-          conn.subscribe("test-topic", new Callback<Frame>() {
-            int count;
-            long start;
-
-            public void onEvent(Frame frame) {
-              count++;
-
-              if (count == warmup) {
-                start = System.currentTimeMillis();
-              }
-
-              if (count == warmup + numMessages) {
-                double rate = 1000 * (double) numMessages / (System.currentTimeMillis() - start);
-                System.out.println("Done, rate " + rate);
-              }
+        final int warmup = 500000;
+        final int numMessages = 1000000;
+        conn.subscribe("test-topic", new Callback<Frame>() {
+          int count;
+          public void onEvent(Frame frame) {
+            count++;
+            if (count == warmup + numMessages) {
+              double rate = 1000 * (double) numMessages / (System.currentTimeMillis() - start);
+              System.out.println("Done, rate " + rate);
             }
-          });
-          for (int i = 0; i < numMessages + warmup; i++) {
-            conn.send("test-topic", Buffer.fromString("message " + i));
           }
-
-        } catch (Exception e) {
-          e.printStackTrace();
+        });
+        Buffer buff = Buffer.fromString("msg");
+        for (int i = 0; i < warmup; i++) {
+          conn.send("test-topic", buff);
+        }
+        start = System.currentTimeMillis();
+        for (int i = 0; i < numMessages; i++) {
+          conn.send("test-topic", buff);
         }
       }
     });
