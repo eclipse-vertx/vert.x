@@ -44,7 +44,7 @@ public class RecordParser extends Callback<Buffer> {
   }
 
   private static byte[] delimToByteArray(String delim, String enc) {
-   try {
+    try {
       return delim.getBytes(enc);
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException("Unsupported encoding " + enc);
@@ -56,10 +56,10 @@ public class RecordParser extends Callback<Buffer> {
   }
 
   public void delimitedMode(byte[] delim) {
-   delimited = true;
-   this.delim = delim;
-   delimPos = 0;
-   reset = true;
+    delimited = true;
+    this.delim = delim;
+    delimPos = 0;
+    reset = true;
   }
 
   public void fixedSizeMode(int size) {

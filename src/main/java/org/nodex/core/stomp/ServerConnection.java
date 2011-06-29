@@ -1,10 +1,7 @@
 package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
-import org.nodex.core.NoArgCallback;
 import org.nodex.core.net.Socket;
-
-import java.util.UUID;
 
 /**
  * User: tim

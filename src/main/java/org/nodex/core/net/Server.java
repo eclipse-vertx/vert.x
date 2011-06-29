@@ -2,7 +2,16 @@ package org.nodex.core.net;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
@@ -22,14 +31,14 @@ public class Server {
 
   private Server(Callback<Socket> connectCallback) {
     ChannelFactory factory =
-    new NioServerSocketChannelFactory(
+        new NioServerSocketChannelFactory(
             Executors.newCachedThreadPool(),
             Executors.newCachedThreadPool());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-        public ChannelPipeline getPipeline() {
-            return Channels.pipeline(new ServerHandler());
-        }
+      public ChannelPipeline getPipeline() {
+        return Channels.pipeline(new ServerHandler());
+      }
     });
     bootstrap.setOption("child.tcpNoDelay", true);
     bootstrap.setOption("child.keepAlive", true);
@@ -46,8 +55,8 @@ public class Server {
 
   public Server listen(int port, String host) {
     try {
-        bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
-        System.out.println("Net server listening on " + host + ":" + port);
+      bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+      System.out.println("Net server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }
@@ -55,7 +64,7 @@ public class Server {
   }
 
   public void stop() {
-    for (Socket sock: socketMap.values()) {
+    for (Socket sock : socketMap.values()) {
       sock.close();
     }
     bootstrap.releaseExternalResources();
@@ -81,7 +90,7 @@ public class Server {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       Socket sock = socketMap.get(ch);
-      sock.dataReceived(new Buffer((ChannelBuffer)e.getMessage()));
+      sock.dataReceived(new Buffer((ChannelBuffer) e.getMessage()));
     }
 
     @Override

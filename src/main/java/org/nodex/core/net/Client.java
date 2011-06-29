@@ -2,7 +2,17 @@ package org.nodex.core.net;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
@@ -34,17 +44,17 @@ public class Client {
   }
 
   private void doConnect(int port, String host, final Callback<Socket> connectCallback) {
-   ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
-   future.addListener(new ChannelFutureListener() {
-     public void operationComplete(ChannelFuture channelFuture) throws Exception {
-       if (channelFuture.isSuccess()) {
-         Channel ch = channelFuture.getChannel();
-         Socket sock = new Socket(ch);
-         socketMap.put(ch, sock);
-         connectCallback.onEvent(sock);
-       }
-     }
-   });
+    ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
+    future.addListener(new ChannelFutureListener() {
+      public void operationComplete(ChannelFuture channelFuture) throws Exception {
+        if (channelFuture.isSuccess()) {
+          Channel ch = channelFuture.getChannel();
+          Socket sock = new Socket(ch);
+          socketMap.put(ch, sock);
+          connectCallback.onEvent(sock);
+        }
+      }
+    });
   }
 
   private Client() {
@@ -75,7 +85,7 @@ public class Client {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Socket sock = socketMap.get(ctx.getChannel());
       if (sock != null) {
-        ChannelBuffer cb = (ChannelBuffer)e.getMessage();
+        ChannelBuffer cb = (ChannelBuffer) e.getMessage();
         sock.dataReceived(new Buffer(cb));
       }
     }

@@ -87,17 +87,18 @@ public class Frame {
       Buffer buff = Buffer.newFixed(bytes.length + (body == null ? 0 : body.length()) + 1);
       buff.append(bytes);
       if (body != null) buff.append(body);
-      buff.append((byte)0);
+      buff.append((byte) 0);
       return buff;
     } catch (UnsupportedEncodingException thisWillNeverHappen) {
       return null;
     }
   }
+
   private StringBuilder headersString() {
     StringBuilder sb = new StringBuilder();
     sb.append(command).append('\n');
     if (headers != null) {
-      for (Map.Entry<String, String> entry: headers.entrySet()) {
+      for (Map.Entry<String, String> entry : headers.entrySet()) {
         sb.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
       }
     }

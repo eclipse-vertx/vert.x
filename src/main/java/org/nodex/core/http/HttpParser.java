@@ -9,7 +9,7 @@ import org.nodex.core.buffer.Buffer;
  * Time: 15:57
  */
 public class HttpParser {
-   public static Callback<Buffer> parseHttp(final HttpCallback emitter) {
+  public static Callback<Buffer> parseHttp(final HttpCallback emitter) {
     return new Callback<Buffer>() {
       public void onEvent(Buffer buffer) {
       }

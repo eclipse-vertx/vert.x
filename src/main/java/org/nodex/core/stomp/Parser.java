@@ -20,8 +20,8 @@ public class Parser extends Callback<Buffer> {
 
   private final Callback<Frame> output;
   private Map<String, String> headers = new HashMap<String, String>();
-  private static final byte[] EOL_DELIM = new byte[] { (byte)'\n'};
-  private static final byte[] EOM_DELIM = new byte[] { 0 };
+  private static final byte[] EOL_DELIM = new byte[]{(byte) '\n'};
+  private static final byte[] EOM_DELIM = new byte[]{0};
   private final RecordParser frameParser = RecordParser.newDelimited(EOL_DELIM, new Callback<Buffer>() {
     public void onEvent(Buffer line) {
       handleLine(line);
@@ -39,13 +39,11 @@ public class Parser extends Callback<Buffer> {
     if (inHeaders) {
       if (command == null) {
         command = line;
-      }
-      else if ("".equals(line)) {
+      } else if ("".equals(line)) {
         //End of headers
         inHeaders = false;
         String sHeader = headers.get("content-length");
-        if (sHeader != null)
-        {
+        if (sHeader != null) {
           int contentLength = Integer.valueOf(sHeader);
           frameParser.fixedSizeMode(contentLength);
         } else {

@@ -5,27 +5,27 @@ import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
 
 public class Socket {
-   private Channel channel;
-   private Callback<Buffer> dataCallback;
+  private Channel channel;
+  private Callback<Buffer> dataCallback;
 
-   protected Socket(Channel channel) {
-     this.channel = channel;
-   }
-   
-   public void write(Buffer data) {
-     channel.write(data._toChannelBuffer());
-   }
+  protected Socket(Channel channel) {
+    this.channel = channel;
+  }
 
-   public void data(Callback<Buffer> dataCallback) {
-     this.dataCallback = dataCallback;
-   }
+  public void write(Buffer data) {
+    channel.write(data._toChannelBuffer());
+  }
 
-   public void close() {
-     channel.close();
-   }
+  public void data(Callback<Buffer> dataCallback) {
+    this.dataCallback = dataCallback;
+  }
 
-   protected void dataReceived(Buffer data) {
-     dataCallback.onEvent(data);
-   }
+  public void close() {
+    channel.close();
+  }
+
+  protected void dataReceived(Buffer data) {
+    dataCallback.onEvent(data);
+  }
 }
 
