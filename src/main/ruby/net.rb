@@ -81,7 +81,7 @@ class Socket
 
     def onEvent(java_buffer)
       buf = Buffer.new(java_buffer)
-      @data_block.call(buf) if @data_block
+      @data_block.call(buf)
     end
   end
 
