@@ -25,7 +25,18 @@ public class Socket {
   }
 
   protected void dataReceived(Buffer data) {
-    dataCallback.onEvent(data);
+    try {
+      dataCallback.onEvent(data);
+    } catch (Throwable t) {
+      //We log errors otherwise they will get swallowed
+      //TODO logging can be improved
+      t.printStackTrace();
+      if (t instanceof RuntimeException) {
+        throw (RuntimeException)t;
+      } else if (t instanceof Error) {
+        throw (Error)t;
+      }
+    }
   }
 }
 

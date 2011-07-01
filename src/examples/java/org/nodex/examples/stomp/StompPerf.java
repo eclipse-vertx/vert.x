@@ -4,7 +4,9 @@ import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.stomp.Client;
 import org.nodex.core.stomp.Connection;
-import org.nodex.core.stomp.Frame;
+import org.nodex.core.stomp.MessageCallback;
+
+import java.util.Map;
 
 /**
  * User: tfox
@@ -21,9 +23,9 @@ public class StompPerf {
       public void onEvent(final Connection conn) {
         final int warmup = 500000;
         final int numMessages = 1000000;
-        conn.subscribe("test-topic", new Callback<Frame>() {
+        conn.subscribe("test-topic", new MessageCallback() {
           int count;
-          public void onEvent(Frame frame) {
+          public void onMessage(Map<String, String> headers, Buffer body) {
             count++;
             if (count == warmup + numMessages) {
               double rate = 1000 * (double) numMessages / (System.currentTimeMillis() - start);

@@ -6,7 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Frame {
+class Frame {
   public String command;
   public final Map<String, String> headers;
   public final Buffer body;

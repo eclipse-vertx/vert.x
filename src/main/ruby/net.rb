@@ -94,7 +94,6 @@ module Net
     #Can take either a proc or a block
     def data(proc = nil, &data_block)
       data_block = proc if proc
-      puts "calling socket data with #{data_block}"
       @java_socket.data(DataCallback.new(data_block))
     end
   end

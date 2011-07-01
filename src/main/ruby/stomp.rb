@@ -59,20 +59,18 @@ module Stomp
     end
 
     def subscribe(dest, proc = nil, &message_block)
-      puts "In ruby subscribe"
       message_block = proc if proc
-      @java_connection.subscribe(dest, MessageCallback.new(message_block))
+      @java_connection.subscribe(dest, MsgCallback.new(message_block))
     end
 
-    class MessageCallback < org.nodex.core.Callback
+    class MsgCallback < org.nodex.core.stomp.MessageCallback
       def initialize(message_block)
         super()
         @message_block = message_block
       end
 
-      def onEvent(msg)
-        # FIXME - convert message to Ruby wrapper?
-        @message_block.call(msg)
+      def onMessage(java_headers, java_body)
+        @message_block.call(java_headers, Buffer.new(java_body))
       end
     end
 
@@ -90,48 +88,5 @@ module Stomp
     private :initialize
 
   end
-
-  class Parser < org.nodex.core.Callback
-    def onEvent(java_frame)
-      @java_parser.on_event(java_frame)
-    end
-
-    class OutputCallback < org.nodex.core.Callback
-      def initialize(output_block)
-        super()
-        @output_block = output_block
-      end
-
-      def onEvent(frame)
-        @output_block.call(frame)
-      end
-    end
-
-    def initialize(proc = nil, &output_block)
-      output_block = proc if proc
-      @output_block = output_block
-      @java_parser = org.nodex.core.stomp.Parser.new(OutputCallback.new(output_block))
-    end
-  end
-
-  class Frame
-    def initialize(java_frame)
-      @java_frame = java_frame
-
-      @command = java_frame.command
-      @headers = org.jruby.RubyHash.new(java_frame.headers)
-      @body = Buffer.new(java_frame.body)
-
-      def to_buffer
-        java_buf = @java_frame.toBuffer
-        Buffer.new(java_buf)
-      end
-
-      def to_s
-        @java_frame.toString
-      end
-    end
-  end
-
 end
 

@@ -17,32 +17,38 @@ module ParserTools
       end
     end
 
+    def initialize(java_parser)
+      @java_parser = java_parser
+    end
+
     def RecordParser.new_delimited(delim, enc = "UTF-8", proc = nil, &output_block)
       output_block = proc if proc
-      org.nodex.core.parsetools.RecordParser.newDelimited(delim, enc, OutputCallback.new(output_block))
+      RecordParser.new(@java_parser.newDelimited(delim, enc, OutputCallback.new(output_block)))
     end
 
     def RecordParser.new_bytes_delimited(bytes, proc = nil, &output_block)
       output_block = proc if proc
-      org.nodex.core.parsetools.RecordParser.newDelimited(bytes, OutputCallback.new(output_block))
+      RecordParser.new(@java_parser.newDelimited(bytes, OutputCallback.new(output_block)))
     end
 
     def RecordParser.new_fixed(size, proc = nil, &output_block)
       output_block = proc if proc
-      org.nodex.core.parsetools.RecordParser.newFixed(size, OutputCallback.new(output_block))
+      RecordParser.new(@java_parser.newFixed(size, OutputCallback.new(output_block)))
     end
 
     def delimited_mode(delim, enc)
-      org.nodex.core.parsetools.RecordParser.delimitedMode(delim, enc)
+      @java_parser.delimitedMode(delim, enc)
     end
 
     def bytes_delimited_mode(bytes)
-      org.nodex.core.parsetools.RecordParser.delimitedMode(bytes)
+       @java_parser.delimitedMode(bytes)
     end
 
     def fixed_mode(size)
-      org.nodex.core.parsetools.RecordParser.fixedSizeMode(size)
+       @java_parser.fixedSizeMode(size)
     end
+
+    private :initialize
   end
 
 end

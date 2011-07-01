@@ -5,7 +5,9 @@ import org.nodex.core.NoArgCallback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.stomp.Client;
 import org.nodex.core.stomp.Connection;
-import org.nodex.core.stomp.Frame;
+import org.nodex.core.stomp.MessageCallback;
+
+import java.util.Map;
 
 /**
  * User: tfox
@@ -20,9 +22,9 @@ public class StompClient {
       public void onEvent(final Connection conn) {
 
         // Subscribe to a topic
-        conn.subscribe("test-topic", new Callback<Frame>() {
-          public void onEvent(Frame frame) {
-            System.out.println("Received message: " + frame.body.toString());
+        conn.subscribe("test-topic", new MessageCallback() {
+          public void onMessage(Map<String, String> headers, Buffer body) {
+            System.out.println("Received message: " + body.toString());
           }
         });
 

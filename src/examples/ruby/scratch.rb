@@ -1,41 +1,14 @@
+include Java
 
 puts "starting scratch"
 
 
+java_map = java.util.HashMap.new
 
+java_map.put("foo", "bar")
 
-class Client
+puts "java map is #{java_map}"
 
-  def fire_receipt
-    @action.fire_receipt
-  end
-
-  def subscribe(dest, &message_block)
-    @action = Action.new
-  end
-
-  class Action
-
-    def fire_receipt
-      @receipt_block.call
-    end
-
-    def on_receipt(&receipt_block)
-      @receipt_block = receipt_block
-    end
-  end
-
-
-end
-
-client = Client.new
-
-client.subscribe("mydest") { |msg|
-  puts "got message #{msg}"
-}.on_receipt{
-  puts "got receipt"
-}
-
-client.fire_receipt
+puts "foo is #{java_map["foo"]}"
 
 

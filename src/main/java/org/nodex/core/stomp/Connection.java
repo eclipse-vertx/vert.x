@@ -19,11 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Connection {
 
   private final Socket socket;
-  private Callback<Frame> messageCallback;
   private Callback<Frame> errorCallback;
   private NoArgCallback connectCallback;
   protected boolean connected;
-  private Map<String, Callback<Frame>> subscriptions = new HashMap<String, Callback<Frame>>();
+  private Map<String, MessageCallback> subscriptions = new HashMap<String, MessageCallback>();
   private Map<String, NoArgCallback> waitingReceipts = new ConcurrentHashMap<String, NoArgCallback>();
 
   protected Connection(Socket socket) {
@@ -33,10 +32,6 @@ public class Connection {
         handleFrame(frame);
       }
     }));
-  }
-
-  public void message(Callback<Frame> messageCallback) {
-    this.messageCallback = messageCallback;
   }
 
   public void error(Callback<Frame> errorCallback) {
@@ -54,7 +49,6 @@ public class Connection {
 
   // Send without receipt
   public void send(String dest, Map<String, String> headers, Buffer body) {
-    System.out.println("In Java connection.send");
     send(dest, headers, body, false);
   }
 
@@ -73,13 +67,12 @@ public class Connection {
   }
 
   // Subscribe without receipt
-  public synchronized void subscribe(String dest, Callback<Frame> messageCallback) {
+  public synchronized void subscribe(String dest, MessageCallback messageCallback) {
     subscribe(dest, messageCallback, false);
   }
 
   // Subscribe with receipt
-  public synchronized FutureAction subscribe(String dest, Callback<Frame> messageCallback, boolean receipt) {
-    System.out.println("In java subscribe");
+  public synchronized FutureAction subscribe(String dest, MessageCallback messageCallback, boolean receipt) {
     if (subscriptions.containsKey(dest)) {
       throw new IllegalArgumentException("Already subscribed to " + dest);
     }
@@ -123,8 +116,8 @@ public class Connection {
 
   private synchronized void handleMessage(Frame msg) {
     String dest = msg.headers.get("destination");
-    Callback<Frame> sub = subscriptions.get(dest);
-    sub.onEvent(msg);
+    MessageCallback sub = subscriptions.get(dest);
+    sub.onMessage(msg.headers, msg.body);
   }
 
   private void addReceipt(Frame frame, NoArgCallback callback) {
