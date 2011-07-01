@@ -25,9 +25,7 @@ Net::Server.create_server{ |socket|
     end
   }
 
-  socket.data{ |data|
-    parser.input(data)
-  }
+  socket.data(parser)
 
 }.listen(8080)
 

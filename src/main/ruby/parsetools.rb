@@ -20,6 +20,10 @@ module ParserTools
       @java_parser = java_parser
     end
 
+    def call(data)
+      input(data)
+    end
+
     def input(data)
       @java_parser.on_event(data._to_java_buffer)
     end
