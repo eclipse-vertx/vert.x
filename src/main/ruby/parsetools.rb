@@ -12,7 +12,6 @@ module ParserTools
       end
 
       def onEvent(java_frame)
-        #FIXME - convert to Ruby frame??
         @output_block.call(java_frame);
       end
     end
@@ -21,19 +20,23 @@ module ParserTools
       @java_parser = java_parser
     end
 
+    def input(data)
+      @java_parser.on_event(data._to_java_buffer)
+    end
+
     def RecordParser.new_delimited(delim, enc = "UTF-8", proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(@java_parser.newDelimited(delim, enc, OutputCallback.new(output_block)))
+      RecordParser.new(org.nodex.core.parsetools.RecordParser.newDelimited(delim, enc, OutputCallback.new(output_block)))
     end
 
     def RecordParser.new_bytes_delimited(bytes, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(@java_parser.newDelimited(bytes, OutputCallback.new(output_block)))
+      RecordParser.new(org.nodex.core.parsetools.RecordParser.newDelimited(bytes, OutputCallback.new(output_block)))
     end
 
     def RecordParser.new_fixed(size, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(@java_parser.newFixed(size, OutputCallback.new(output_block)))
+      RecordParser.new(org.nodex.core.parsetools.RecordParser.newFixed(size, OutputCallback.new(output_block)))
     end
 
     def delimited_mode(delim, enc)
@@ -41,11 +44,11 @@ module ParserTools
     end
 
     def bytes_delimited_mode(bytes)
-       @java_parser.delimitedMode(bytes)
+      @java_parser.delimitedMode(bytes)
     end
 
     def fixed_mode(size)
-       @java_parser.fixedSizeMode(size)
+      @java_parser.fixedSizeMode(size)
     end
 
     private :initialize

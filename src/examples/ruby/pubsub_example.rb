@@ -1,8 +1,9 @@
 require "net"
-require "parser_tools"
+require "parsetools"
 
-Server.create_server{ |socket|
-  socket.data(ParserTools.split_on_delimiter("\n") { |line|
+Net::Server.create_server{ |socket|
+
+  parser = ParserTools::RecordParser.new_delimited("\n"){ |line|
     line = line.to_s.rstrip
     if line.start_with?("subscribe,")
       topic_name = line.split(",", 2)[1]
@@ -22,7 +23,12 @@ Server.create_server{ |socket|
         topic.each{|socket| socket.write(Buffer.from_str(sp[2]))}
       end
     end
-  })
+  }
+
+  socket.data{ |data|
+    parser.input(data)
+  }
+
 }.listen(8080)
 
 puts "hit enter to stop server"
