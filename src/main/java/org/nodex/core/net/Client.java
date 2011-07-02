@@ -15,12 +15,12 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.nodex.core.Callback;
+import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 
 /**
  * User: timfox
@@ -60,8 +60,9 @@ public class Client {
   private Client() {
     bootstrap = new ClientBootstrap(
         new NioClientSocketChannelFactory(
-            Executors.newCachedThreadPool(),
-            Executors.newCachedThreadPool()));
+            Nodex.instance.getAcceptorPool(),
+            Nodex.instance.getCorePool(),
+            Nodex.instance.getCoreThreadPoolSize()));
 
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {

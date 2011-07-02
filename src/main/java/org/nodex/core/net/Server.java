@@ -14,6 +14,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.nodex.core.Callback;
+import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
@@ -21,7 +22,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 
 public class Server {
   private ServerBootstrap bootstrap;
@@ -32,8 +32,9 @@ public class Server {
   private Server(Callback<Socket> connectCallback) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
-            Executors.newCachedThreadPool(),
-            Executors.newCachedThreadPool());
+            Nodex.instance.getAcceptorPool(),
+            Nodex.instance.getCorePool(),
+            Nodex.instance.getCoreThreadPoolSize());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {
