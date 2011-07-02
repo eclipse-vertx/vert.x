@@ -1,19 +1,48 @@
 package org.nodex.core.concurrent;
 
+import org.cliffc.high_scale_lib.NonBlockingHashMap;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * User: timfox
  * Date: 29/06/2011
  * Time: 21:20
  *
+ * We wrap Cliff Click's super scalable concurrent map implementation
+ *
  */
-public class ConcurrentMap<K, V> implements Map<K, V> {
+public class SafeMap<K, V> implements ConcurrentMap<K, V> {
 
-  private Map<K, V> map = new ConcurrentSkipListMap<K, V>();
+  private final ConcurrentMap<K, V> map;
+
+  public SafeMap() {
+    map = new NonBlockingHashMap<K, V>();
+  }
+
+  public SafeMap(Map<? extends K,? extends V> m) {
+    this();
+    map.putAll(m);
+  }
+
+  public V putIfAbsent(K k, V v) {
+    return map.putIfAbsent(k, v);
+  }
+
+  public boolean remove(Object o, Object o1) {
+    return map.remove(o, o1);
+  }
+
+  public boolean replace(K k, V v, V v1) {
+    return map.replace(k, v, v1);
+  }
+
+  public V replace(K k, V v) {
+    return map.replace(k, v);
+  }
 
   public int size() {
     return map.size();

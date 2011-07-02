@@ -1,7 +1,10 @@
 package org.nodex.core.file;
 
+import org.nodex.core.Callback;
 import org.nodex.core.NoArgCallback;
 import org.nodex.core.buffer.Buffer;
+
+import java.util.Map;
 
 /**
  * User: timfox
@@ -9,59 +12,88 @@ import org.nodex.core.buffer.Buffer;
  * Time: 21:52
  */
 public class FileSystem {
-  public static void rename(String from, String to, NoArgCallback onCompletion) {
+
+  // File meta operations
+
+  public void rename(String from, String to, NoArgCallback onCompletion) {
 
   }
 
-  public static void truncate(String path, int len, NoArgCallback onCompletion) {
+  public void truncate(String path, int len, NoArgCallback onCompletion) {
 
   }
 
-  public static void chmod(String path, int mode, NoArgCallback onCompletion) {
+  public void chmod(String path, int mode, NoArgCallback onCompletion) {
 
   }
 
-  public static void link(String src, String dest, NoArgCallback onCompletion) {
+  public void link(String src, String dest, NoArgCallback onCompletion) {
 
   }
 
-  public static void symlink(String src, String dest, NoArgCallback onCompletion) {
+  public void symlink(String src, String dest, NoArgCallback onCompletion) {
 
   }
 
-  public static void unlink(String path, NoArgCallback onCompletion) {
+  public void unlink(String path, NoArgCallback onCompletion) {
 
   }
 
-  public static void mkdir(String path, int mode, NoArgCallback onCompletion) {
+  public void mkdir(String path, int mode, NoArgCallback onCompletion) {
 
   }
 
-  public static void readDir(String path, NoArgCallback onCompletion) {
+  public void readDir(String path, NoArgCallback onCompletion) {
 
   }
 
-  public static void close(int fd, NoArgCallback onCompletion) {
+  public void stat(String path, Callback<Map<String, String>> callback) {
 
   }
 
-  public static void open(String path, int flags, int mode, NoArgCallback onCompletion) {
+  public void lstat(String path, Callback<Map<String, String>> callback) {
 
   }
 
-  public static void write(int fd, Buffer buffer, int offset, int length, int position, NoArgCallback onCompletion) {
+  public void fstat(int fd, Callback<Map<String, String>> callback) {
 
   }
 
-  public static void read(int fd, Buffer buffer, int offset, int length, int position, NoArgCallback onCompletion) {
+  // Close and open
+
+  public void close(int fd, NoArgCallback onCompletion) {
 
   }
 
-  public static void readFile(String path, String encoding, NoArgCallback callback) {
+  public void open(String path, int flags, int mode, Callback<Integer> onCompletion) {
 
   }
 
-  public static void writeFile(String path, Buffer data, String encoding, NoArgCallback callback) {
+  // Random access
+
+  public void write(int fd, Buffer buffer, int offset, int length, int position, NoArgCallback onCompletion) {
+
+  }
+
+  public void read(int fd, Buffer buffer, int offset, int length, int position, NoArgCallback onCompletion) {
+
+  }
+
+  // Read and write entire files (data will arrive in chunks)
+
+  public void readFile(String path, String encoding, Callback<String> dataCallback) {
+
+  }
+
+  public void readFile(String path, Callback<Buffer> dataCallback) {
+
+  }
+
+  public void writeFile(String path, String data, String encoding, NoArgCallback onCompletion) {
+
+  }
+
+  public void writeFile(String path, Buffer data, NoArgCallback onCompletion) {
 
   }
 
