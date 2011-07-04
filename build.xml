@@ -10,12 +10,16 @@
     <property name="core-target" location="target/core/classes"/>
     <property name="core-lib" location="src/main/resources/jars"/>
     <property name="rabbit-lib" location="src/main/resources/jars/rabbit"/>
+    <property name="jedis-lib" location="src/main/resources/jars/jedis"/>
 
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
             <include name="*.jar"/>
         </fileset>
         <fileset dir="${rabbit-lib}">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${jedis-lib}">
             <include name="*.jar"/>
         </fileset>
     </path>
