@@ -1,56 +1,29 @@
 package org.nodex.core.http;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.codec.http.Cookie;
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.jboss.netty.util.CharsetUtil;
+import org.jboss.netty.handler.codec.http.*;
+import org.nodex.core.Callback;
+import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.getHost;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.isKeepAlive;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class Server {
   private ServerBootstrap bootstrap;
-  private HttpCallback httpCallback;
+  private Callback<Connection> connectCallback;
+  private Map<Channel, Connection> connectionMap = new ConcurrentHashMap<Channel, Connection>();
 
-  private Server(HttpCallback httpCallback) {
+  private Server(Callback<Connection> connectCallback) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
             Executors.newCachedThreadPool(),
@@ -78,11 +51,11 @@ public class Server {
     });
     bootstrap.setOption("child.tcpNoDelay", true);
     bootstrap.setOption("child.keepAlive", true);
-    this.httpCallback = httpCallback;
+    this.connectCallback = connectCallback;
   }
 
-  public static Server createServer(HttpCallback httpCallback) {
-    return new Server(httpCallback);
+  public static Server createServer(Callback<Connection> connectCallback) {
+    return new Server(connectCallback);
   }
 
   public Server listen(int port) {
@@ -105,17 +78,36 @@ public class Server {
 
   public class HttpRequestHandler extends SimpleChannelUpstreamHandler {
 
-    private HttpRequest request;
-    private boolean readingChunks;
-    /**
-     * Buffer that stores the response content
-     */
-    private final StringBuilder buf = new StringBuilder();
-
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+
+      Channel ch = e.getChannel();
+      Connection conn = connectionMap.get(ch);
+
+      if (e.getMessage() instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest)e.getMessage();
+        //FIXME = what to do here?
+//        if (HttpHeaders.is100ContinueExpected((HttpMessage)e)) {
+//          send100Continue(e);
+//        }
+        Map<String, String> headers = new HashMap<String, String>();
+        //Why doesn't Netty provide a map?
+        for (Map.Entry<String, String> h : request.getHeaders()) {
+          headers.put(h.getKey(), h.getValue());
+        }
+        Request req = new Request(request.getMethod().toString(), request.getUri(), headers);
+        conn.handleRequest(req);
+      } else if (e.getMessage() instanceof HttpChunk) {
+        HttpChunk chunk = (HttpChunk)e.getMessage();
+        Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
+        conn.handleChunk(buff);
+      } else {
+        throw new IllegalStateException("Invalid object " + e.getMessage());
+      }
+
+         /*
       if (!readingChunks) {
-        HttpRequest request = this.request = (HttpRequest) e.getMessage();
+        HttpRequest request = this.request = (HttpRequest)e.getMessage();
 
         if (is100ContinueExpected(request)) {
           send100Continue(e);
@@ -178,8 +170,10 @@ public class Server {
           buf.append("CHUNK: " + chunk.getContent().toString(CharsetUtil.UTF_8) + "\r\n");
         }
       }
+      */
     }
 
+    /*
     private void writeResponse(MessageEvent e) {
       // Decide whether to close the connection or not.
       boolean keepAlive = isKeepAlive(request);
@@ -217,6 +211,7 @@ public class Server {
         future.addListener(ChannelFutureListener.CLOSE);
       }
     }
+    */
 
     private void send100Continue(MessageEvent e) {
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, CONTINUE);
@@ -228,6 +223,20 @@ public class Server {
         throws Exception {
       e.getCause().printStackTrace();
       e.getChannel().close();
+    }
+
+    @Override
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      Channel ch = e.getChannel();
+      Connection conn = new Connection(ch);
+      connectionMap.put(ch, conn);
+      connectCallback.onEvent(conn);
+    }
+
+    @Override
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      Channel ch = e.getChannel();
+      connectionMap.remove(ch);
     }
   }
 

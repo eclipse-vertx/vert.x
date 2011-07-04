@@ -1,5 +1,7 @@
 package org.nodex.core;
 
+import org.nodex.core.util.OrderedExecutor;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -94,6 +96,10 @@ public final class Nodex {
           });
     }
     return corePool;
+  }
+
+  public Executor getOrderedBackgroundExecutor() {
+    return new OrderedExecutor(getBackgroundPool());
   }
 
   public int setTimeout(Callback<?> callback, long delay) {
