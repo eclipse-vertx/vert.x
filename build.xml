@@ -1,37 +1,41 @@
 <project name="node.x" default="jar-core" basedir=".">
 
-	<description>
+    <description>
         Build script for node.x
-  </description>
+    </description>
 
-	<!-- set global properties for this build -->
-	<property name="target" location="target"/>	
-	<property name="core-src" location="src/main/java"/>
-  <property name="core-target" location="target/core/classes"/>  
-	<property name="core-lib" location="src/main/resources/jars"/>
-  
-	<path id="core-lib-classpath">
-		<fileset dir="${core-lib}">
-			<include name="*.jar" />
-		</fileset>
-	</path>
+    <!-- set global properties for this build -->
+    <property name="target" location="target"/>
+    <property name="core-src" location="src/main/java"/>
+    <property name="core-target" location="target/core/classes"/>
+    <property name="core-lib" location="src/main/resources/jars"/>
+    <property name="rabbit-lib" location="src/main/resources/jars/rabbit"/>
 
-	<target name="init">
-		<!-- Create the time stamp -->
-		<tstamp/>
-	</target>
-	
-	<target name="compile-core" depends="init" description="compile the source for the core">	
-	  <mkdir dir="${core-target}"/>
-		<javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on"/>
-	</target>
+    <path id="core-lib-classpath">
+        <fileset dir="${core-lib}">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${rabbit-lib}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
 
-	<target name="jar-core" depends="compile-core" description="generate the core jar">
-		<jar jarfile="target/node.x.jar" basedir="${core-target}"	includes="**/*.class"/>
-	</target>
+    <target name="init">
+        <!-- Create the time stamp -->
+        <tstamp/>
+    </target>
 
-	<target name="clean" description="clean up">
-		<delete dir="${target}"/>
-	</target>
-	
+    <target name="compile-core" depends="init" description="compile the source for the core">
+        <mkdir dir="${core-target}"/>
+        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on"/>
+    </target>
+
+    <target name="jar-core" depends="compile-core" description="generate the core jar">
+        <jar jarfile="target/node.x.jar" basedir="${core-target}" includes="**/*.class"/>
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="${target}"/>
+    </target>
+
 </project>

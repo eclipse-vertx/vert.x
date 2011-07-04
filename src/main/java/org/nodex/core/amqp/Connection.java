@@ -19,19 +19,20 @@ public class Connection {
     this.conn = conn;
   }
 
-  public void createChannel(final Callback<Channel> channelCallback) throws IOException {
+  public void createChannel(final Callback<Channel> channelCallback) {
      Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channelCallback.onEvent(new Channel(conn.createChannel()));
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
+          e.printStackTrace();
         }
       }
     });
   }
 
-  public void close(final NoArgCallback doneCallback) throws IOException {
+  public void close(final NoArgCallback doneCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
@@ -40,6 +41,7 @@ public class Connection {
           doneCallback.onEvent();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
+          e.printStackTrace();
         }
       }
     });

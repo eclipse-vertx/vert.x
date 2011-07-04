@@ -22,10 +22,12 @@ public class Channel {
     this.channel = channel;
   }
 
-  public void publish(String exchange, String routingKey, String message) throws IOException {
+  public void publish(final String exchange, final String routingKey, final String message) {
     try {
       channel.basicPublish(exchange, routingKey, null, message.getBytes("UTF-8"));
-    } catch (UnsupportedEncodingException willNeverHappen) {
+    } catch (IOException e) {
+      //TODO handle exception by passing them back on callback
+      e.printStackTrace();
     }
   }
 
@@ -38,14 +40,13 @@ public class Channel {
           doneCallback.onEvent();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
+          e.printStackTrace();
         }
       }
     });
-
-
   }
 
-  public void subscribe(final String queueName, final boolean autoAck, final Callback<String> messageCallback) throws IOException {
+  public void subscribe(final String queueName, final boolean autoAck, final Callback<String> messageCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
@@ -62,13 +63,14 @@ public class Channel {
               });
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
+          e.printStackTrace();
         }
       }
     });
   }
 
 
-  public void close(final NoArgCallback doneCallback) throws IOException {
+  public void close(final NoArgCallback doneCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
@@ -76,6 +78,7 @@ public class Channel {
           doneCallback.onEvent();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
+          e.printStackTrace();
         }
       }
     });

@@ -47,13 +47,14 @@ public class Client {
     return this;
   }
 
-  public void connect(final Callback<Connection> connectCallback) throws IOException {
+  public void connect(final Callback<Connection> connectCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           connectCallback.onEvent(new Connection(cf.newConnection()));
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
+          e.printStackTrace();
         }
       }
     });
