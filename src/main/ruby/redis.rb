@@ -1,3 +1,5 @@
+include Java
+
 module Redis
   class Client
 
@@ -32,12 +34,12 @@ module Redis
 
   class Connection
 
-    class OnCompleteCallback < org.nodex.core.Callback
+    class OnCompleteCallback < org.nodex.core.NoArgCallback
       def initialize(complete_block)
         super()
         @complete_block = complete_block
       end
-      def onEvent(connection)
+      def onEvent()
         @complete_block.call
       end
       private :initialize

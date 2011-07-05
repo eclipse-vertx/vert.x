@@ -1,11 +1,18 @@
 require "amqp"
-include Redis
+include Amqp
 
-Client.create_client.connect(6379, "localhost") { |conn|
-  conn.set("foo", "bar") {
-    conn.get("foo") { |val|
-      puts "value for foo is #{val}"
-      conn.close
+queue = "test-queue"
+
+Client.create_client.connect { |conn|
+  conn.create_channel { |chan|
+    chan.declare(queue, false, true, true) {
+      chan.subscribe(queue, true) { |msg|
+        puts "Received message #{msg}"
+      }
+      (1..10).each {|i| chan.publish("", queue, "message #{i}") }
     }
   }
 }
+
+
+STDIN.gets

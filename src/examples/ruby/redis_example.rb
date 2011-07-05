@@ -9,3 +9,5 @@ Client.create_client.connect(6379, "localhost") { |conn|
     }
   }
 }
+
+STDIN.gets
