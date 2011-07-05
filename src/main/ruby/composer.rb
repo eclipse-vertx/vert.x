@@ -46,8 +46,8 @@ class Action < Composable
 
 end
 
-class Redis
-  def Redis.lookup(key, &block)
+class RedisExample
+  def RedisExample.lookup(key, &block)
     block.call(1234)
   end
 end
@@ -55,13 +55,13 @@ end
 composer = Composer.compose
 
 action1 = Action.new { |action|
-  Redis.lookup(343) { |value|
+  RedisExample.lookup(343) { |value|
     action.set_result(value)
   }
 }
 
 action2 = Action.new { |action|
-  Redis.lookup(8786) { |value|
+  RedisExample.lookup(8786) { |value|
     action.set_result(value)
   }
 }
@@ -74,8 +74,8 @@ action2.run
 action3.run
 
 #or something like
-Composer.compose.parallel(Action.new { |action| Redis.lookup(343) { |value| action.set_result(value) } },
-                          Action.new { |action| Redis.lookup(76776) { |value| action.set_result(value) } }).
+Composer.compose.parallel(Action.new { |action| RedisExample.lookup(343) { |value| action.set_result(value) } },
+                          Action.new { |action| RedisExample.lookup(76776) { |value| action.set_result(value) } }).
     then(Composable.new { puts "result is #{action1.result + action2.result}" })
 
 
