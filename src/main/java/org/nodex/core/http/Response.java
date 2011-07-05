@@ -35,24 +35,12 @@ public class Response {
     this.keepAlive = keepAlive;
   }
 
-  public void setHeader(String key, String value) {
-    headers.put(key, value);
+  public Response write(Buffer chunk) {
+    return write(chunk._toChannelBuffer());
   }
 
-  public String getHeader(String key) {
-    return headers.get(key);
-  }
-
-  public void removeHeader(String key) {
-    headers.remove(key);
-  }
-
-  public void write(Buffer chunk) {
-    write(chunk._toChannelBuffer());
-  }
-
-  public void write(String chunk, String enc) {
-    write(Buffer.fromString(chunk, enc)._toChannelBuffer());
+  public Response write(String chunk, String enc) {
+    return write(Buffer.fromString(chunk, enc)._toChannelBuffer());
   }
 
   public void end() {
@@ -62,7 +50,7 @@ public class Response {
     }
   }
 
-  private void write(ChannelBuffer chunk) {
+  private Response write(ChannelBuffer chunk) {
 
     if (!headWritten) {
 
@@ -99,8 +87,6 @@ public class Response {
       //FIXME??
       //HttpChunk nettychunk = new HttpChunk(chunk._toChannelBuffer());
     }
+    return this;
   }
-
-
-
 }

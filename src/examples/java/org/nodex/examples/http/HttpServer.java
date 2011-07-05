@@ -21,9 +21,8 @@ public class HttpServer {
             for (Map.Entry<String, String> headers: req.headers.entrySet()) {
               System.out.println(headers.getKey() + ":" + headers.getValue());
             }
-            resp.setHeader("content-type", "text/plain; charset=UTF-8");
-            resp.write("<html><body><h1>Node.x is here</h1></body></html>", "UTF-8");
-            resp.end();
+            resp.headers.put("Content-Type", "text/html; charset=UTF-8");
+            resp.write("<html><body><h1>Hello from node.x!</h1></body></html>", "UTF-8").end();
           }
         });
       }
