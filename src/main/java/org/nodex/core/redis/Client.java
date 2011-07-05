@@ -4,8 +4,6 @@ import org.nodex.core.Callback;
 import org.nodex.core.Nodex;
 import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
-
 /**
  * User: tim
  * Date: 04/07/11

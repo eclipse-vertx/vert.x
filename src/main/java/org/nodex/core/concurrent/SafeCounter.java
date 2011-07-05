@@ -6,7 +6,7 @@ import org.cliffc.high_scale_lib.ConcurrentAutoTable;
  * User: timfox
  * Date: 02/07/2011
  * Time: 18:25
- *
+ * <p/>
  * Highly concurrent counter
  */
 public class SafeCounter {

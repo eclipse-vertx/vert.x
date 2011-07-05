@@ -34,9 +34,9 @@ puts "Starting"
 #Using blocks
 
 Rabbit.subscribe("myqueue") {
-  |msg| GemFire.lookup("key") {
-    |val1| Riak.lookup("key") {
-      |val2| Rabbit.send("exchange", "routing", combine(val1, val2))
+    |msg| GemFire.lookup("key") {
+      |val1| Riak.lookup("key") {
+        |val2| Rabbit.send("exchange", "routing", combine(val1, val2))
     }
   }
 }

@@ -13,7 +13,7 @@ import redis.clients.jedis.Jedis;
 public class Connection {
   private Jedis jedis;
 
-  Connection(Jedis jedis){
+  Connection(Jedis jedis) {
     this.jedis = jedis;
   }
 

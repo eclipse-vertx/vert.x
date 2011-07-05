@@ -20,7 +20,7 @@ public class Connection {
   }
 
   public void createChannel(final Callback<Channel> channelCallback) {
-     Nodex.instance.executeInBackground(new Runnable() {
+    Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channelCallback.onEvent(new Channel(conn.createChannel()));

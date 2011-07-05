@@ -1,10 +1,26 @@
 package org.nodex.core.http;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.codec.http.*;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.nodex.core.Callback;
+import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
@@ -13,7 +29,6 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -26,8 +41,9 @@ public class Server {
   private Server(Callback<Connection> connectCallback) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
-            Executors.newCachedThreadPool(),
-            Executors.newCachedThreadPool());
+            Nodex.instance.getAcceptorPool(),
+            Nodex.instance.getCorePool(),
+            Nodex.instance.getCoreThreadPoolSize());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {
@@ -85,7 +101,7 @@ public class Server {
       Connection conn = connectionMap.get(ch);
 
       if (e.getMessage() instanceof HttpRequest) {
-        HttpRequest request = (HttpRequest)e.getMessage();
+        HttpRequest request = (HttpRequest) e.getMessage();
         //FIXME = what to do here?
 //        if (HttpHeaders.is100ContinueExpected((HttpMessage)e)) {
 //          send100Continue(e);
@@ -97,15 +113,19 @@ public class Server {
         }
         Request req = new Request(request.getMethod().toString(), request.getUri(), headers);
         conn.handleRequest(req);
+        ChannelBuffer requestBody = request.getContent();
+        if (requestBody.readable()) {
+          conn.handleChunk(new Buffer(requestBody));
+        }
       } else if (e.getMessage() instanceof HttpChunk) {
-        HttpChunk chunk = (HttpChunk)e.getMessage();
+        HttpChunk chunk = (HttpChunk) e.getMessage();
         Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
         conn.handleChunk(buff);
       } else {
         throw new IllegalStateException("Invalid object " + e.getMessage());
       }
 
-         /*
+      /*
       if (!readingChunks) {
         HttpRequest request = this.request = (HttpRequest)e.getMessage();
 

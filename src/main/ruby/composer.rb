@@ -1,5 +1,3 @@
-
-
 class Composer
   def Composer.compose
     Composer.new
@@ -56,29 +54,29 @@ end
 
 composer = Composer.compose
 
-action1 = Action.new{ |action|
+action1 = Action.new { |action|
   Redis.lookup(343) { |value|
     action.set_result(value)
   }
 }
 
-action2 = Action.new{ |action|
+action2 = Action.new { |action|
   Redis.lookup(8786) { |value|
     action.set_result(value)
   }
 }
 
 
-action3 = Composable.new{ puts "result is #{action1.result + action2.result}"}
+action3 = Composable.new { puts "result is #{action1.result + action2.result}" }
 
 action1.run
 action2.run
 action3.run
 
 #or something like
-Composer.compose.parallel(Action.new{ |action| Redis.lookup(343) { |value| action.set_result(value) } },
-                          Action.new{ |action| Redis.lookup(76776) { |value| action.set_result(value) }}).
-                 then(Composable.new{ puts "result is #{action1.result + action2.result}"})
+Composer.compose.parallel(Action.new { |action| Redis.lookup(343) { |value| action.set_result(value) } },
+                          Action.new { |action| Redis.lookup(76776) { |value| action.set_result(value) } }).
+    then(Composable.new { puts "result is #{action1.result + action2.result}" })
 
 
 

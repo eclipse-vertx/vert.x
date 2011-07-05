@@ -48,8 +48,7 @@ module Http
       end
 
       def onRequest(req, resp)
-        #FIXME - convert to Ruby classes
-        @request_block.call(req, resp)
+        @request_block.call(Request.new(req), Response.new(resp))
       end
 
       private :initialize
@@ -111,7 +110,12 @@ module Http
       @headers = java_resp.headers
     end
 
-    def write(buffer)
+    def write_str(str, enc)
+      @java_resp.write(str, enc)
+      self
+    end
+
+    def write_buffer(buffer)
       @java_resp.write(buffer._to_java_buffer)
       self
     end

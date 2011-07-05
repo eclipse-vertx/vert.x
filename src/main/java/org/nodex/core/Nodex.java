@@ -57,28 +57,17 @@ public final class Nodex {
   //running tasks
   public synchronized Executor getBackgroundPool() {
     if (backgroundPool == null) {
-      final AtomicInteger threadCount = new AtomicInteger(0);
-      backgroundPool = Executors.newFixedThreadPool(backgroundPoolSize,
-          new ThreadFactory() {
-            public Thread newThread(Runnable runnable) {
-              return new Thread(runnable, "node.x-background-thread-" + threadCount.getAndIncrement());
-            }
-          });
+      backgroundPool = Executors.newFixedThreadPool(backgroundPoolSize, new NodeThreadFactory("node.x-background-thread-"));
     }
     return backgroundPool;
   }
+
 
   //The worker pool is fixed size with an unbounded feed queue
   //By default we initialise it to a size equal to number of cores
   public synchronized Executor getCorePool() {
     if (corePool == null) {
-      final AtomicInteger threadCount = new AtomicInteger(0);
-      corePool = Executors.newFixedThreadPool(corePoolSize,
-          new ThreadFactory() {
-            public Thread newThread(Runnable runnable) {
-              return new Thread(runnable, "node.x-core-thread-" + threadCount.getAndIncrement());
-            }
-          });
+      corePool = Executors.newFixedThreadPool(corePoolSize, new NodeThreadFactory("node.x-core-thread-"));
     }
     return corePool;
   }
@@ -116,5 +105,21 @@ public final class Nodex {
 
   public void runDeferred(Runnable runnable) {
     getCorePool().execute(runnable);
+  }
+
+  private static class NodeThreadFactory implements ThreadFactory {
+
+    private String prefix;
+    private AtomicInteger threadCount = new AtomicInteger(0);
+
+    NodeThreadFactory(String prefix) {
+      this.prefix = prefix;
+    }
+
+    public Thread newThread(Runnable runnable) {
+      Thread t = new Thread(runnable, prefix + threadCount.getAndIncrement());
+      t.setDaemon(true);
+      return t;
+    }
   }
 }

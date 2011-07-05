@@ -11,9 +11,8 @@ import java.util.concurrent.ConcurrentMap;
  * User: timfox
  * Date: 29/06/2011
  * Time: 21:20
- *
+ * <p/>
  * We wrap Cliff Click's super scalable concurrent map implementation
- *
  */
 public class SafeMap<K, V> implements ConcurrentMap<K, V> {
 
@@ -23,7 +22,7 @@ public class SafeMap<K, V> implements ConcurrentMap<K, V> {
     map = new NonBlockingHashMap<K, V>();
   }
 
-  public SafeMap(Map<? extends K,? extends V> m) {
+  public SafeMap(Map<? extends K, ? extends V> m) {
     this();
     map.putAll(m);
   }

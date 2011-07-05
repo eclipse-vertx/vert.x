@@ -1,16 +1,12 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.NoArgCallback;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: timfox
  * Date: 02/07/2011
  * Time: 18:47
- *
  */
 public class Composer {
 

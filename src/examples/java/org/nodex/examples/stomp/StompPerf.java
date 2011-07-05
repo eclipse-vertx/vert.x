@@ -25,6 +25,7 @@ public class StompPerf {
         final int numMessages = 1000000;
         conn.subscribe("test-topic", new MessageCallback() {
           int count;
+
           public void onMessage(Map<String, String> headers, Buffer body) {
             count++;
             if (count == warmup + numMessages) {

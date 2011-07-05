@@ -25,8 +25,7 @@ public class Connection {
   }
 
   void handleRequest(Request req) {
-    try
-    {
+    try {
       this.currentRequest = req;
       if (httpCallback != null) {
         httpCallback.onRequest(req, new Response(channel, false));
@@ -37,8 +36,7 @@ public class Connection {
   }
 
   void handleChunk(Buffer chunk) {
-    try
-    {
+    try {
       if (currentRequest != null) {
         currentRequest.dataReceived(chunk);
       }
@@ -52,9 +50,9 @@ public class Connection {
     //TODO logging can be improved
     t.printStackTrace();
     if (t instanceof RuntimeException) {
-      throw (RuntimeException)t;
+      throw (RuntimeException) t;
     } else if (t instanceof Error) {
-      throw (Error)t;
+      throw (Error) t;
     }
   }
 

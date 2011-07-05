@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * User: timfox
  * Date: 02/07/2011
  * Time: 18:13
- *
+ * <p/>
  * We wrap ConcurrentLinkedQueue
  */
 public class SafeQueue<E> implements Queue<E> {

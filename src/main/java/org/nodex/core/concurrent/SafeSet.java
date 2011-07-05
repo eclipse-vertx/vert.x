@@ -10,7 +10,6 @@ import java.util.Set;
  * User: timfox
  * Date: 02/07/2011
  * Time: 18:22
- *
  */
 public class SafeSet<E> implements Set<E> {
 

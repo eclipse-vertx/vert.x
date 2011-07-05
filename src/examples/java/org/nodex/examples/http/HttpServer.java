@@ -1,7 +1,11 @@
 package org.nodex.examples.http;
 
 import org.nodex.core.Callback;
-import org.nodex.core.http.*;
+import org.nodex.core.http.Connection;
+import org.nodex.core.http.HttpCallback;
+import org.nodex.core.http.Request;
+import org.nodex.core.http.Response;
+import org.nodex.core.http.Server;
 
 import java.util.Map;
 
@@ -18,7 +22,7 @@ public class HttpServer {
           public void onRequest(Request req, Response resp) {
             System.out.println("Got request " + req.uri);
             System.out.println("Headers are: ");
-            for (Map.Entry<String, String> headers: req.headers.entrySet()) {
+            for (Map.Entry<String, String> headers : req.headers.entrySet()) {
               System.out.println(headers.getKey() + ":" + headers.getValue());
             }
             resp.headers.put("Content-Type", "text/html; charset=UTF-8");

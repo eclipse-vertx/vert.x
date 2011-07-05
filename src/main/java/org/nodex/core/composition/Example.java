@@ -18,15 +18,15 @@ public class Example {
 
     public static Deferred lookup(final int key, final Callback<Integer> cb) {
       return new Deferred() {
-          public void perform() {
-            Redis.do_lookup(key, new Callback<Integer>() {
-              public void onEvent(Integer res) {
-                cb.onEvent(res);
-                complete();
-              }
-            });
-          }
-        };
+        public void perform() {
+          Redis.do_lookup(key, new Callback<Integer>() {
+            public void onEvent(Integer res) {
+              cb.onEvent(res);
+              complete();
+            }
+          });
+        }
+      };
     }
 
   }

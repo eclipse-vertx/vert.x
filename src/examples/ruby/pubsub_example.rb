@@ -1,9 +1,9 @@
 require "net"
 require "parsetools"
 
-Net::Server.create_server{ |socket|
+Net::Server.create_server { |socket|
 
-  parser = ParserTools::RecordParser.new_delimited("\n"){ |line|
+  parser = ParserTools::RecordParser.new_delimited("\n") { |line|
     line = line.to_s.rstrip
     if line.start_with?("subscribe,")
       topic_name = line.split(",", 2)[1]
@@ -20,7 +20,7 @@ Net::Server.create_server{ |socket|
       puts "publishing to #{sp[1]} with #{sp[2]}"
       topic = @topics[sp[1]]
       if (topic)
-        topic.each{|socket| socket.write(Buffer.from_str(sp[2]))}
+        topic.each { |socket| socket.write(Buffer.from_str(sp[2])) }
       end
     end
   }

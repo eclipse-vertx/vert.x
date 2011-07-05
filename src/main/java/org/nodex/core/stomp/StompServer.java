@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * User: timfox
  * Date: 28/06/2011
  * Time: 00:19
- *
+ * <p/>
  * Simple STOMP 1.0 server implementation - doesn't currently handle transactions or acks and just does basic pub/sub
  */
 public class StompServer {

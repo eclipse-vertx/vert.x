@@ -32,9 +32,9 @@ public class Socket {
       //TODO logging can be improved
       t.printStackTrace();
       if (t instanceof RuntimeException) {
-        throw (RuntimeException)t;
+        throw (RuntimeException) t;
       } else if (t instanceof Error) {
-        throw (Error)t;
+        throw (Error) t;
       }
     }
   }

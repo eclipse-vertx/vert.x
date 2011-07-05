@@ -8,7 +8,6 @@ import org.nodex.core.NoArgCallback;
 import org.nodex.core.Nodex;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 /**
  * User: timfox

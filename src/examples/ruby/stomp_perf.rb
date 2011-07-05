@@ -17,11 +17,11 @@ Client.connect(8080, "localhost") { |conn|
     end
   }
   buf = Buffer.from_str("msg")
-  (1..warmup).each {|i|
+  (1..warmup).each { |i|
     conn.send("test-topic", buf)
   }
   start = Time.now
-  (1..num_messages).each {|i|
+  (1..num_messages).each { |i|
     conn.send("test-topic", buf)
   }
 }
