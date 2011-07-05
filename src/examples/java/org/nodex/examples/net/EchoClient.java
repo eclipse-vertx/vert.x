@@ -12,14 +12,14 @@ public class EchoClient {
       public void onEvent(Socket socket) {
         socket.data(new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {
-            System.out.println("Client receiving: " + buffer.toString("UTF-8"));
+            System.out.println("AmqpClient receiving: " + buffer.toString("UTF-8"));
           }
         });
 
         //Now send some data
         for (int i = 0; i < 10; i++) {
           String str = "hello" + i + "\n";
-          System.out.print("Client sending: " + str);
+          System.out.print("AmqpClient sending: " + str);
           socket.write(Buffer.fromString(str));
         }
       }

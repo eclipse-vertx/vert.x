@@ -11,12 +11,12 @@ import org.nodex.core.amqp.Connection;
  * Date: 04/07/11
  * Time: 10:35
  */
-public class ClientExample {
+public class AmqpClient {
 
   private static String QUEUE_NAME = "my-queue";
 
   public static void main(String[] args) {
-    Client.createClient().connect(new Callback<Connection>() {
+    org.nodex.core.amqp.Client.createClient().connect(new Callback<Connection>() {
       public void onEvent(Connection conn) {
         conn.createChannel(new Callback<Channel>() {
           public void onEvent(final Channel channel) {
