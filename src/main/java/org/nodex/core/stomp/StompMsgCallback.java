@@ -9,6 +9,6 @@ import java.util.Map;
  * Date: 01/07/11
  * Time: 15:58
  */
-public abstract class MessageCallback {
+public abstract class StompMsgCallback {
   public abstract void onMessage(Map<String, String> headers, Buffer body);
 }

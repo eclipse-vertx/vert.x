@@ -11,10 +11,10 @@ import org.nodex.core.composition.Completion;
  * Date: 04/07/11
  * Time: 13:03
  */
-public class Connection {
+public class RedisConnection {
   private Jedis jedis;
 
-  Connection(Jedis jedis) {
+  RedisConnection(Jedis jedis) {
     this.jedis = jedis;
   }
 

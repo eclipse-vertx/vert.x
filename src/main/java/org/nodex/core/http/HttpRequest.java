@@ -10,12 +10,12 @@ import java.util.Map;
  * Date: 25/06/2011
  * Time: 19:19
  */
-public class Request {
+public class HttpRequest {
   public final String method;
   public final String uri;
   public final Map<String, String> headers;
 
-  protected Request(String method, String uri, Map<String, String> headers) {
+  protected HttpRequest(String method, String uri, Map<String, String> headers) {
     this.method = method;
     this.uri = uri;
     this.headers = headers;

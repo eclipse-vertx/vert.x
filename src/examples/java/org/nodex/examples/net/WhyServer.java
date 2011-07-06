@@ -2,8 +2,8 @@ package org.nodex.examples.net;
 
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.net.Server;
-import org.nodex.core.net.Socket;
+import org.nodex.core.net.NetServer;
+import org.nodex.core.net.NetSocket;
 import org.nodex.core.parsetools.RecordParser;
 
 /**
@@ -15,8 +15,8 @@ import org.nodex.core.parsetools.RecordParser;
  */
 public class WhyServer {
   public static void main(String[] args) throws Exception {
-    Server.createServer(new Callback<Socket>() {
-      public void onEvent(final Socket socket) {
+    NetServer.createServer(new Callback<NetSocket>() {
+      public void onEvent(final NetSocket socket) {
         socket.data(RecordParser.newDelimited("\n", "UTF-8", new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {
             String line = buffer.toString("UTF-8");

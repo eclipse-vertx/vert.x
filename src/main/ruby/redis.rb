@@ -17,7 +17,7 @@ module Redis
     end
 
     def Client.create_client
-      Client.new(org.nodex.core.redis.Client.createClient)
+      Client.new(org.nodex.core.redis.RedisClient.createClient)
     end
 
     def initialize(java_client)

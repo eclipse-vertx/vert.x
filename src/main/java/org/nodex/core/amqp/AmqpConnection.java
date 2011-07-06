@@ -11,11 +11,11 @@ import java.io.IOException;
  * Date: 02/07/2011
  * Time: 07:22
  */
-public class Connection {
+public class AmqpConnection {
 
   private com.rabbitmq.client.Connection conn;
 
-  Connection(com.rabbitmq.client.Connection conn) {
+  AmqpConnection(com.rabbitmq.client.Connection conn) {
     this.conn = conn;
   }
 

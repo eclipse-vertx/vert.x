@@ -5,7 +5,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.nodex.core.buffer.Buffer;
 
 import java.util.HashMap;
@@ -20,7 +19,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * Date: 25/06/2011
  * Time: 19:20
  */
-public class Response {
+public class HttpResponse {
   public final Map<String, String> headers = new HashMap<String, String>();
   public int statusCode;
 
@@ -30,16 +29,16 @@ public class Response {
   private final boolean keepAlive;
   private ChannelFuture writeFuture;
 
-  Response(Channel channel, boolean keepAlive) {
+  HttpResponse(Channel channel, boolean keepAlive) {
     this.channel = channel;
     this.keepAlive = keepAlive;
   }
 
-  public Response write(Buffer chunk) {
+  public HttpResponse write(Buffer chunk) {
     return write(chunk._toChannelBuffer());
   }
 
-  public Response write(String chunk, String enc) {
+  public HttpResponse write(String chunk, String enc) {
     return write(Buffer.fromString(chunk, enc)._toChannelBuffer());
   }
 
@@ -50,11 +49,11 @@ public class Response {
     }
   }
 
-  private Response write(ChannelBuffer chunk) {
+  private HttpResponse write(ChannelBuffer chunk) {
 
     if (!headWritten) {
 
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+      org.jboss.netty.handler.codec.http.HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       response.setContent(chunk);
       //response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
 

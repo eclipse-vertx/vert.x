@@ -1,15 +1,15 @@
 package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
-import org.nodex.core.net.Socket;
+import org.nodex.core.net.NetSocket;
 
 /**
  * User: tim
  * Date: 29/06/11
  * Time: 09:37
  */
-class ServerConnection extends Connection {
-  protected ServerConnection(Socket socket) {
+class StompServerConnection extends StompConnection {
+  protected StompServerConnection(NetSocket socket) {
     super(socket);
   }
 

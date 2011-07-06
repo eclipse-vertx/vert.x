@@ -8,27 +8,27 @@ import org.nodex.core.buffer.Buffer;
  * Date: 04/07/11
  * Time: 16:30
  */
-public class Connection {
+public class HttpConnection {
 
   private final Channel channel;
 
-  Connection(Channel channel) {
+  HttpConnection(Channel channel) {
     this.channel = channel;
   }
 
   private HttpCallback httpCallback;
 
-  private volatile Request currentRequest;
+  private volatile HttpRequest currentRequest;
 
   public void request(HttpCallback httpCallback) {
     this.httpCallback = httpCallback;
   }
 
-  void handleRequest(Request req) {
+  void handleRequest(HttpRequest req) {
     try {
       this.currentRequest = req;
       if (httpCallback != null) {
-        httpCallback.onRequest(req, new Response(channel, false));
+        httpCallback.onRequest(req, new HttpResponse(channel, false));
       }
     } catch (Throwable t) {
       handleThrowable(t);

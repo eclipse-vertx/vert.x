@@ -4,7 +4,7 @@ import org.nodex.core.Callback;
 import org.nodex.core.NoArgCallback;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.composition.Completion;
-import org.nodex.core.net.Socket;
+import org.nodex.core.net.NetSocket;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,16 +16,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * Date: 27/06/11
  * Time: 18:31
  */
-public class Connection {
+public class StompConnection {
 
-  private final Socket socket;
+  private final NetSocket socket;
   private Callback<Frame> errorCallback;
   private NoArgCallback connectCallback;
   protected boolean connected;
-  private Map<String, MessageCallback> subscriptions = new HashMap<String, MessageCallback>();
+  private Map<String, StompMsgCallback> subscriptions = new HashMap<String, StompMsgCallback>();
   private Map<String, NoArgCallback> waitingReceipts = new ConcurrentHashMap<String, NoArgCallback>();
 
-  protected Connection(Socket socket) {
+  protected StompConnection(NetSocket socket) {
     this.socket = socket;
     socket.data(new Parser(new Callback<Frame>() {
       public void onEvent(Frame frame) {
@@ -65,23 +65,23 @@ public class Connection {
     write(frame);
   }
 
-  // Request-response pattern
+  // HttpRequest-response pattern
 
-  private Map<String, MessageCallback> callbacks = new ConcurrentHashMap<String, MessageCallback>();
+  private Map<String, StompMsgCallback> callbacks = new ConcurrentHashMap<String, StompMsgCallback>();
   private volatile String responseQueue;
   private static final String CORRELATION_ID_HEADER = "___NODEX_C_ID";
 
   private synchronized void setupResponseHandler() {
     if (responseQueue == null) {
       String queueName = UUID.randomUUID().toString();
-      subscribe(queueName, new MessageCallback() {
+      subscribe(queueName, new StompMsgCallback() {
         public void onMessage(Map<String, String> headers, Buffer body) {
           String cid = headers.get(CORRELATION_ID_HEADER);
           if (cid == null) {
             //TODO better error reporting
             System.err.println("No correlation id");
           } else {
-            MessageCallback cb = callbacks.remove(cid);
+            StompMsgCallback cb = callbacks.remove(cid);
             if (cb == null) {
               System.err.println("No callback for correlation id");
             } else {
@@ -94,21 +94,28 @@ public class Connection {
     }
   }
 
-  // Request-response pattern
-  public void request(String dest, Map<String, String> headers, Buffer body, MessageCallback responseCallback) {
+  // HttpRequest-response pattern
+  public Completion request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
+    final Completion c = new Completion();
     if (responseQueue == null) setupResponseHandler();
     String cid = UUID.randomUUID().toString();
     headers.put(CORRELATION_ID_HEADER, cid);
-    callbacks.put(cid, responseCallback);
+    callbacks.put(cid, new StompMsgCallback() {
+      public void onMessage(Map<String, String> headers, Buffer body) {
+        responseCallback.onMessage(headers, body);
+        c.complete();
+      }
+    });
+    return c;
   }
 
   // Subscribe without receipt
-  public synchronized void subscribe(String dest, MessageCallback messageCallback) {
+  public synchronized void subscribe(String dest, StompMsgCallback messageCallback) {
     subscribe(dest, messageCallback, null);
   }
 
   // Subscribe with receipt
-  public synchronized void subscribe(String dest, MessageCallback messageCallback, NoArgCallback completeCallback) {
+  public synchronized void subscribe(String dest, StompMsgCallback messageCallback, NoArgCallback completeCallback) {
     if (subscriptions.containsKey(dest)) {
       throw new IllegalArgumentException("Already subscribed to " + dest);
     }
@@ -144,7 +151,7 @@ public class Connection {
 
   private synchronized void handleMessage(Frame msg) {
     String dest = msg.headers.get("destination");
-    MessageCallback sub = subscriptions.get(dest);
+    StompMsgCallback sub = subscriptions.get(dest);
     sub.onMessage(msg.headers, msg.body);
   }
 

@@ -15,7 +15,6 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
@@ -33,12 +32,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-public class Server {
+public class HttpServer {
   private ServerBootstrap bootstrap;
-  private Callback<Connection> connectCallback;
-  private Map<Channel, Connection> connectionMap = new ConcurrentHashMap<Channel, Connection>();
+  private Callback<HttpConnection> connectCallback;
+  private Map<Channel, HttpConnection> connectionMap = new ConcurrentHashMap<Channel, HttpConnection>();
 
-  private Server(Callback<Connection> connectCallback) {
+  private HttpServer(Callback<HttpConnection> connectCallback) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
             Nodex.instance.getAcceptorPool(),
@@ -70,15 +69,15 @@ public class Server {
     this.connectCallback = connectCallback;
   }
 
-  public static Server createServer(Callback<Connection> connectCallback) {
-    return new Server(connectCallback);
+  public static HttpServer createServer(Callback<HttpConnection> connectCallback) {
+    return new HttpServer(connectCallback);
   }
 
-  public Server listen(int port) {
+  public HttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  public Server listen(int port, String host) {
+  public HttpServer listen(int port, String host) {
     try {
       bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       System.out.println("Net server listening on " + host + ":" + port);
@@ -98,10 +97,10 @@ public class Server {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
 
       Channel ch = e.getChannel();
-      Connection conn = connectionMap.get(ch);
+      HttpConnection conn = connectionMap.get(ch);
 
-      if (e.getMessage() instanceof HttpRequest) {
-        HttpRequest request = (HttpRequest) e.getMessage();
+      if (e.getMessage() instanceof org.jboss.netty.handler.codec.http.HttpRequest) {
+        org.jboss.netty.handler.codec.http.HttpRequest request = (org.jboss.netty.handler.codec.http.HttpRequest) e.getMessage();
         //FIXME = what to do here?
 //        if (HttpHeaders.is100ContinueExpected((HttpMessage)e)) {
 //          send100Continue(e);
@@ -111,7 +110,7 @@ public class Server {
         for (Map.Entry<String, String> h : request.getHeaders()) {
           headers.put(h.getKey(), h.getValue());
         }
-        Request req = new Request(request.getMethod().toString(), request.getUri(), headers);
+        HttpRequest req = new HttpRequest(request.getMethod().toString(), request.getUri(), headers);
         conn.handleRequest(req);
         ChannelBuffer requestBody = request.getContent();
         if (requestBody.readable()) {
@@ -248,7 +247,7 @@ public class Server {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       Channel ch = e.getChannel();
-      Connection conn = new Connection(ch);
+      HttpConnection conn = new HttpConnection(ch);
       connectionMap.put(ch, conn);
       connectCallback.onEvent(conn);
     }

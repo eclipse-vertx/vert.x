@@ -2,13 +2,13 @@ package org.nodex.examples.net;
 
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.net.Server;
-import org.nodex.core.net.Socket;
+import org.nodex.core.net.NetServer;
+import org.nodex.core.net.NetSocket;
 
 public class EchoServer {
   public static void main(String[] args) throws Exception {
-    Server server = Server.createServer(new Callback<Socket>() {
-      public void onEvent(final Socket socket) {
+    NetServer server = NetServer.createServer(new Callback<NetSocket>() {
+      public void onEvent(final NetSocket socket) {
         socket.data(new Callback<Buffer>() {
           public void onEvent(Buffer buffer) {
             socket.write(buffer);

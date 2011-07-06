@@ -6,5 +6,5 @@ package org.nodex.core.http;
  * Time: 19:16
  */
 public abstract class HttpCallback {
-  public abstract void onRequest(Request req, Response resp);
+  public abstract void onRequest(HttpRequest req, HttpResponse resp);
 }

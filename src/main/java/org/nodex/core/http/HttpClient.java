@@ -1,6 +1,6 @@
 package org.nodex.core.http;
 
 
-public class Client {
+public class HttpClient {
 
 }

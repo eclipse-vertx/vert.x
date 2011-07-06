@@ -2,9 +2,9 @@ package org.nodex.examples.stomp;
 
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.stomp.Client;
-import org.nodex.core.stomp.Connection;
-import org.nodex.core.stomp.MessageCallback;
+import org.nodex.core.stomp.StompClient;
+import org.nodex.core.stomp.StompConnection;
+import org.nodex.core.stomp.StompMsgCallback;
 
 import java.util.Map;
 
@@ -19,11 +19,11 @@ public class StompPerf {
 
   public static void main(String[] args) throws Exception {
 
-    Client.connect(8080, new Callback<Connection>() {
-      public void onEvent(final Connection conn) {
+    StompClient.connect(8080, new Callback<StompConnection>() {
+      public void onEvent(final StompConnection conn) {
         final int warmup = 500000;
         final int numMessages = 1000000;
-        conn.subscribe("test-topic", new MessageCallback() {
+        conn.subscribe("test-topic", new StompMsgCallback() {
           int count;
 
           public void onMessage(Map<String, String> headers, Buffer body) {

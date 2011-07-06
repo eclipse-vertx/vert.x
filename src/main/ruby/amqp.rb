@@ -6,7 +6,7 @@ module Amqp
     attr_accessor :host, :port, :username, :password, :virtual_host
 
     def Client.create_client
-      java_client = org.nodex.core.amqp.Client.createClient
+      java_client = org.nodex.core.amqp.AmqpClient.createClient
       Client.new(java_client)
     end
 

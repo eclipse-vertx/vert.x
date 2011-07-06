@@ -56,7 +56,7 @@ public class Channel {
     });
   }
 
-  public void subscribe(final String queueName, final boolean autoAck, final MessageCallback messageCallback) {
+  public void subscribe(final String queueName, final boolean autoAck, final AmqpMsgCallback messageCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
@@ -79,7 +79,7 @@ public class Channel {
     });
   }
 
-  private Map<String, MessageCallback> callbacks = new ConcurrentHashMap<String, MessageCallback>();
+  private Map<String, AmqpMsgCallback> callbacks = new ConcurrentHashMap<String, AmqpMsgCallback>();
   private volatile String responseQueue;
   private Completion responseQueueSetup = new Completion();
 
@@ -90,14 +90,14 @@ public class Channel {
         public void onEvent() {
           responseQueue = queueName;
           responseQueueSetup.complete(); //Queue is now set up
-          subscribe(queueName, true, new MessageCallback() {
+          subscribe(queueName, true, new AmqpMsgCallback() {
             public void onMessage(AMQP.BasicProperties props, byte[] body) {
               String cid = props.getCorrelationId();
               if (cid == null) {
                 //TODO better error reporting
                 System.err.println("No correlation id");
               } else {
-                MessageCallback cb = callbacks.get(cid);
+                AmqpMsgCallback cb = callbacks.get(cid);
                 if (cb == null) {
                   System.err.println("No callback for correlation id");
                 } else {
@@ -111,8 +111,8 @@ public class Channel {
     }
   }
 
-  // Request-response pattern
-  public void request(final String exchange, final String routingKey, final AMQP.BasicProperties props, final byte[] body, MessageCallback responseCallback) {
+  // HttpRequest-response pattern
+  public void request(final String exchange, final String routingKey, final AMQP.BasicProperties props, final byte[] body, AmqpMsgCallback responseCallback) {
     if (responseQueue == null) createResponseQueue();
     //We make sure we don't actually send until the response queue has been setup, this is done by using a
     //Completion

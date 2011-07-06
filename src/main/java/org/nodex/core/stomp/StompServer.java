@@ -1,8 +1,8 @@
 package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
-import org.nodex.core.net.Server;
-import org.nodex.core.net.Socket;
+import org.nodex.core.net.NetServer;
+import org.nodex.core.net.NetSocket;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,23 +19,23 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class StompServer {
 
-  public static Server createServer() {
+  public static NetServer createServer() {
 
-    return Server.createServer(new Callback<Socket>() {
+    return NetServer.createServer(new Callback<NetSocket>() {
 
-      private ConcurrentMap<String, List<Connection>> subscriptions = new ConcurrentHashMap<String, List<Connection>>();
+      private ConcurrentMap<String, List<StompConnection>> subscriptions = new ConcurrentHashMap<String, List<StompConnection>>();
 
-      private synchronized void subscribe(String dest, Connection conn) {
-        List<Connection> conns = subscriptions.get(dest);
+      private synchronized void subscribe(String dest, StompConnection conn) {
+        List<StompConnection> conns = subscriptions.get(dest);
         if (conns == null) {
-          conns = new CopyOnWriteArrayList<Connection>();
+          conns = new CopyOnWriteArrayList<StompConnection>();
           subscriptions.put(dest, conns);
         }
         conns.add(conn);
       }
 
-      private synchronized void unsubscribe(String dest, Connection conn) {
-        List<Connection> conns = subscriptions.get(dest);
+      private synchronized void unsubscribe(String dest, StompConnection conn) {
+        List<StompConnection> conns = subscriptions.get(dest);
         if (conns == null) {
           conns.remove(conn);
           if (conns.isEmpty()) {
@@ -44,15 +44,15 @@ public class StompServer {
         }
       }
 
-      private void checkReceipt(Frame frame, Connection conn) {
+      private void checkReceipt(Frame frame, StompConnection conn) {
         String receipt = frame.headers.get("receipt");
         if (receipt != null) {
           conn.write(Frame.receiptFrame(receipt));
         }
       }
 
-      public void onEvent(final Socket sock) {
-        final ServerConnection conn = new ServerConnection(sock);
+      public void onEvent(final NetSocket sock) {
+        final StompServerConnection conn = new StompServerConnection(sock);
         conn.frameHandler(new Callback<Frame>() {
           public void onEvent(Frame frame) {
             if ("CONNECT".equals(frame.command)) {
@@ -69,9 +69,9 @@ public class StompServer {
             } else if ("SEND".equals(frame.command)) {
               String dest = frame.headers.get("destination");
               frame.command = "MESSAGE";
-              List<Connection> conns = subscriptions.get(dest);
+              List<StompConnection> conns = subscriptions.get(dest);
               if (conns != null) {
-                for (Connection conn : conns) {
+                for (StompConnection conn : conns) {
                   frame.headers.put("message-id", UUID.randomUUID().toString());
                   conn.write(frame);
                 }

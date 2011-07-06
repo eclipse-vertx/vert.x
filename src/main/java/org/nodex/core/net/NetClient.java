@@ -27,29 +27,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * Date: 26/06/2011
  * Time: 08:41
  */
-public class Client {
+public class NetClient {
 
   //Singleton
-  private static Client client = new Client();
+  private static NetClient client = new NetClient();
 
   private ClientBootstrap bootstrap;
-  private Map<Channel, Socket> socketMap = new ConcurrentHashMap<Channel, Socket>();
+  private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
 
-  public static void connect(int port, String host, Callback<Socket> connectCallback) {
+  public static void connect(int port, String host, Callback<NetSocket> connectCallback) {
     client.doConnect(port, host, connectCallback);
   }
 
-  public static void connect(int port, Callback<Socket> connectCallback) {
+  public static void connect(int port, Callback<NetSocket> connectCallback) {
     client.doConnect(port, "localhost", connectCallback);
   }
 
-  private void doConnect(int port, String host, final Callback<Socket> connectCallback) {
+  private void doConnect(int port, String host, final Callback<NetSocket> connectCallback) {
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
           Channel ch = channelFuture.getChannel();
-          Socket sock = new Socket(ch);
+          NetSocket sock = new NetSocket(ch);
           socketMap.put(ch, sock);
           connectCallback.onEvent(sock);
         }
@@ -57,7 +57,7 @@ public class Client {
     });
   }
 
-  private Client() {
+  private NetClient() {
     bootstrap = new ClientBootstrap(
         new NioClientSocketChannelFactory(
             Nodex.instance.getAcceptorPool(),
@@ -84,7 +84,7 @@ public class Client {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      Socket sock = socketMap.get(ctx.getChannel());
+      NetSocket sock = socketMap.get(ctx.getChannel());
       if (sock != null) {
         ChannelBuffer cb = (ChannelBuffer) e.getMessage();
         sock.dataReceived(new Buffer(cb));

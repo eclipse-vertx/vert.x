@@ -24,7 +24,7 @@ module Net
 
     def initialize(connect_block)
       super()
-      @java_server = org.nodex.core.net.Server.createServer(ConnectCallback.new(connect_block))
+      @java_server = org.nodex.core.net.NetServer.createServer(ConnectCallback.new(connect_block))
     end
 
     def listen(port, host = "0.0.0.0")
@@ -61,7 +61,7 @@ module Net
 
     def initialize(port, host, connect_block)
       super()
-      @java_client = org.nodex.core.net.Client.connect(port, host, ConnectCallback.new(connect_block))
+      @java_client = org.nodex.core.net.NetClient.connect(port, host, ConnectCallback.new(connect_block))
     end
 
     private :initialize

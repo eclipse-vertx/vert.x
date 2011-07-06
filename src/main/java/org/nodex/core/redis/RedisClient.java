@@ -9,22 +9,22 @@ import redis.clients.jedis.Jedis;
  * Date: 04/07/11
  * Time: 13:00
  */
-public class Client {
-  public static Client createClient() {
-    return new Client();
+public class RedisClient {
+  public static RedisClient createClient() {
+    return new RedisClient();
   }
 
-  private Client() {
+  private RedisClient() {
   }
 
-  public void connect(int port, String host, final Callback<Connection> connectCallback) {
+  public void connect(int port, String host, final Callback<RedisConnection> connectCallback) {
     final Jedis jedis = new Jedis(host, port);
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         System.out.println("Connecting jedis");
         jedis.connect();
         System.out.println("Connected ok");
-        connectCallback.onEvent(new Connection(jedis));
+        connectCallback.onEvent(new RedisConnection(jedis));
       }
     });
   }

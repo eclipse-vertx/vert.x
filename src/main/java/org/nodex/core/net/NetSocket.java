@@ -4,11 +4,11 @@ import org.jboss.netty.channel.Channel;
 import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
 
-public class Socket {
+public class NetSocket {
   private Channel channel;
   private Callback<Buffer> dataCallback;
 
-  protected Socket(Channel channel) {
+  protected NetSocket(Channel channel) {
     this.channel = channel;
   }
 

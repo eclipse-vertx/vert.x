@@ -1,11 +1,10 @@
 package org.nodex.examples.http;
 
 import org.nodex.core.Callback;
-import org.nodex.core.http.Connection;
+import org.nodex.core.http.HttpConnection;
 import org.nodex.core.http.HttpCallback;
-import org.nodex.core.http.Request;
-import org.nodex.core.http.Response;
-import org.nodex.core.http.Server;
+import org.nodex.core.http.HttpRequest;
+import org.nodex.core.http.HttpResponse;
 
 import java.util.Map;
 
@@ -16,10 +15,10 @@ import java.util.Map;
  */
 public class HttpServer {
   public static void main(String[] args) throws Exception {
-    Server server = Server.createServer(new Callback<Connection>() {
-      public void onEvent(final Connection conn) {
+    org.nodex.core.http.HttpServer server = org.nodex.core.http.HttpServer.createServer(new Callback<HttpConnection>() {
+      public void onEvent(final HttpConnection conn) {
         conn.request(new HttpCallback() {
-          public void onRequest(Request req, Response resp) {
+          public void onRequest(HttpRequest req, HttpResponse resp) {
             System.out.println("Got request " + req.uri);
             System.out.println("Headers are: ");
             for (Map.Entry<String, String> headers : req.headers.entrySet()) {

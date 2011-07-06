@@ -24,7 +24,7 @@ module Http
 
     def initialize(connect_block)
       @connect_block = connect_block
-      @java_server = org.nodex.core.http.Server.createServer(ConnectCallback.new(@connect_block))
+      @java_server = org.nodex.core.http.HttpServer.createServer(ConnectCallback.new(@connect_block))
     end
 
     def listen(port, host = "0.0.0.0")

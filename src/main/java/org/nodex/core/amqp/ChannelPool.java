@@ -1,13 +1,7 @@
 package org.nodex.core.amqp;
 
-import com.rabbitmq.client.ConnectionFactory;
 import org.nodex.core.Callback;
-import org.nodex.core.Nodex;
 import org.nodex.core.composition.Completion;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * User: tim
@@ -20,10 +14,10 @@ public class ChannelPool {
   }
 
   private ChannelPool() {
-    client = Client.createClient();
+    client = AmqpClient.createClient();
   }
 
-  private Client client;
+  private AmqpClient client;
 
   private int maxConnections = 10;
 
@@ -58,13 +52,13 @@ public class ChannelPool {
   }
 
   //FIXME - for demo we just have one connection
-  private volatile Connection connection;
+  private volatile AmqpConnection connection;
   private Completion connected;
 
   private synchronized void createConnection() {
     if (connection == null) {
-      client.connect(new Callback<Connection>() {
-        public void onEvent(Connection conn) {
+      client.connect(new Callback<AmqpConnection>() {
+        public void onEvent(AmqpConnection conn) {
           connection = conn;
           connected.complete();
         }

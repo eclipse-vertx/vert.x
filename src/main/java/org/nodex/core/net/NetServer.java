@@ -23,13 +23,13 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Server {
+public class NetServer {
   private ServerBootstrap bootstrap;
-  private Map<Channel, Socket> socketMap = new ConcurrentHashMap<Channel, Socket>();
-  private final Callback<Socket> connectCallback;
+  private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
+  private final Callback<NetSocket> connectCallback;
   private Callback<Exception> exceptionCallback;
 
-  private Server(Callback<Socket> connectCallback) {
+  private NetServer(Callback<NetSocket> connectCallback) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
             Nodex.instance.getAcceptorPool(),
@@ -46,15 +46,15 @@ public class Server {
     this.connectCallback = connectCallback;
   }
 
-  public static Server createServer(Callback<Socket> connectCallback) {
-    return new Server(connectCallback);
+  public static NetServer createServer(Callback<NetSocket> connectCallback) {
+    return new NetServer(connectCallback);
   }
 
-  public Server listen(int port) {
+  public NetServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  public Server listen(int port, String host) {
+  public NetServer listen(int port, String host) {
     try {
       bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       System.out.println("Net server listening on " + host + ":" + port);
@@ -65,7 +65,7 @@ public class Server {
   }
 
   public void stop() {
-    for (Socket sock : socketMap.values()) {
+    for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
     bootstrap.releaseExternalResources();
@@ -76,7 +76,7 @@ public class Server {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       Channel ch = e.getChannel();
-      Socket sock = new Socket(ch);
+      NetSocket sock = new NetSocket(ch);
       socketMap.put(ch, sock);
       connectCallback.onEvent(sock);
     }
@@ -90,7 +90,7 @@ public class Server {
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
-      Socket sock = socketMap.get(ch);
+      NetSocket sock = socketMap.get(ch);
       sock.dataReceived(new Buffer((ChannelBuffer) e.getMessage()));
     }
 

@@ -24,7 +24,7 @@ module Stomp
 
     def initialize(port, host, connect_block)
       super()
-      @java_client = org.nodex.core.stomp.Client.connect(port, host, ConnectCallback.new(connect_block))
+      @java_client = org.nodex.core.stomp.StompClient.connect(port, host, ConnectCallback.new(connect_block))
     end
 
     private :initialize
@@ -63,7 +63,7 @@ module Stomp
       @java_connection.subscribe(dest, MsgCallback.new(message_block))
     end
 
-    class MsgCallback < org.nodex.core.stomp.MessageCallback
+    class MsgCallback < org.nodex.core.stomp.StompMsgCallback
       def initialize(message_block)
         super()
         @message_block = message_block
