@@ -1,6 +1,7 @@
 package org.nodex.core.amqp;
 
 import org.nodex.core.Callback;
+import org.nodex.core.NoArgCallback;
 import org.nodex.core.composition.Completion;
 
 /**
@@ -53,7 +54,7 @@ public class ChannelPool {
 
   //FIXME - for demo we just have one connection
   private volatile AmqpConnection connection;
-  private Completion connected;
+  private Completion connected = new Completion();
 
   private synchronized void createConnection() {
     if (connection == null) {
@@ -66,10 +67,16 @@ public class ChannelPool {
     }
   }
 
-  public void getChannel(Callback<Channel> channelCallback) {
+  public void getChannel(final Callback<Channel> channelCallback) {
     if (connection == null) createConnection();
-    //FIXME - for the demo we just get a new channel each time
-    connection.createChannel(channelCallback);
+    connected.onComplete(new NoArgCallback() {
+      public void onEvent() {
+        //FIXME - for the demo we just get a new channel each time
+        //Also this is broken since if more than one call to getChannel comes in before connection is created
+        //previous request will be overwritten
+        connection.createChannel(channelCallback);
+      }
+    });
   }
 
   public void returnChannel(Channel channel) {

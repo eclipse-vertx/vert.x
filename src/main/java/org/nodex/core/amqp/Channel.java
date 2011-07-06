@@ -112,18 +112,27 @@ public class Channel {
   }
 
   // HttpRequest-response pattern
-  public void request(final String exchange, final String routingKey, final AMQP.BasicProperties props, final byte[] body, AmqpMsgCallback responseCallback) {
+  public Completion request(final String exchange, final String routingKey, final AMQP.BasicProperties props, final byte[] body, final AmqpMsgCallback responseCallback) {
     if (responseQueue == null) createResponseQueue();
     //We make sure we don't actually send until the response queue has been setup, this is done by using a
     //Completion
+    final Completion c = new Completion();
     responseQueueSetup.onComplete(new NoArgCallback() {
       public void onEvent() {
+        AmqpMsgCallback cb = new AmqpMsgCallback() {
+          public void onMessage(AMQP.BasicProperties props, byte[] body) {
+            responseCallback.onMessage(props, body);
+            c.complete();
+          }
+        };
         String cid = UUID.randomUUID().toString();
         props.setCorrelationId(cid);
         props.setReplyTo(responseQueue);
+        callbacks.put(cid, cb);
         publish(exchange, routingKey, props, body);
       }
     });
+    return c;
   }
 
 

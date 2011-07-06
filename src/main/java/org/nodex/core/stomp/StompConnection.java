@@ -18,6 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class StompConnection {
 
+  public static final String CORRELATION_ID_HEADER = "correlation-id";
+  public static final String REPLY_TO_HEADER = "reply-to";
+
   private final NetSocket socket;
   private Callback<Frame> errorCallback;
   private NoArgCallback connectCallback;
@@ -69,7 +72,6 @@ public class StompConnection {
 
   private Map<String, StompMsgCallback> callbacks = new ConcurrentHashMap<String, StompMsgCallback>();
   private volatile String responseQueue;
-  private static final String CORRELATION_ID_HEADER = "___NODEX_C_ID";
 
   private synchronized void setupResponseHandler() {
     if (responseQueue == null) {
@@ -83,7 +85,7 @@ public class StompConnection {
           } else {
             StompMsgCallback cb = callbacks.remove(cid);
             if (cb == null) {
-              System.err.println("No callback for correlation id");
+              System.err.println("No STOMP callback for correlation id");
             } else {
               cb.onMessage(headers, body);
             }
@@ -94,18 +96,21 @@ public class StompConnection {
     }
   }
 
-  // HttpRequest-response pattern
+  // Request-response pattern
   public Completion request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
     final Completion c = new Completion();
     if (responseQueue == null) setupResponseHandler();
     String cid = UUID.randomUUID().toString();
     headers.put(CORRELATION_ID_HEADER, cid);
-    callbacks.put(cid, new StompMsgCallback() {
+    headers.put(REPLY_TO_HEADER, responseQueue);
+    StompMsgCallback cb = new StompMsgCallback() {
       public void onMessage(Map<String, String> headers, Buffer body) {
         responseCallback.onMessage(headers, body);
         c.complete();
       }
-    });
+    };
+    callbacks.put(cid, cb);
+    send(dest, headers, body);
     return c;
   }
 

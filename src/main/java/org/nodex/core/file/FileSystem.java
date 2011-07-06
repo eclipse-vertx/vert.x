@@ -4,6 +4,9 @@ import org.nodex.core.Callback;
 import org.nodex.core.NoArgCallback;
 import org.nodex.core.buffer.Buffer;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -12,6 +15,8 @@ import java.util.Map;
  * Time: 21:52
  */
 public class FileSystem {
+
+  public static FileSystem instance = new FileSystem();
 
   // File meta operations
 
@@ -86,7 +91,19 @@ public class FileSystem {
   }
 
   public void readFile(String path, Callback<Buffer> dataCallback) {
-
+    //For now we just fake this
+    System.out.println("Reading file " + path);
+    try {
+      File f= new File(path);
+      byte[] bytes = new byte[(int)f.length()];
+      FileInputStream fis = new FileInputStream(f);
+      fis.read(bytes);
+      fis.close();
+      Buffer buff = Buffer.newWrapped(bytes);
+      dataCallback.onEvent(buff);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   public void writeFile(String path, String data, String encoding, NoArgCallback onCompletion) {
