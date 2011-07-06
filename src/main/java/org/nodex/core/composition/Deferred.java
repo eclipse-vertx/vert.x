@@ -3,33 +3,21 @@ package org.nodex.core.composition;
 import org.nodex.core.NoArgCallback;
 
 /**
- * User: timfox
- * Date: 03/07/2011
- * Time: 17:15
+ * User: tim
+ * Date: 05/07/11
+ * Time: 15:44
  */
-public abstract class Deferred {
+public class Deferred extends Completion {
 
-  protected abstract void perform();
+  private final NoArgCallback cb;
 
-  private NoArgCallback onComplete;
-
-  public synchronized void onComplete(NoArgCallback onComplete) {
-    this.onComplete = onComplete;
-    if (complete) {
-      onComplete.onEvent();
-    }
+  public Deferred(NoArgCallback cb) {
+    this.cb = cb;
   }
 
+  @Override
   public void execute() {
-    perform();
-  }
-
-  private boolean complete;
-
-  protected synchronized void complete() {
-    if (onComplete != null) {
-      onComplete.onEvent();
-    }
-    complete = true;
+    cb.onEvent();
+    complete();
   }
 }

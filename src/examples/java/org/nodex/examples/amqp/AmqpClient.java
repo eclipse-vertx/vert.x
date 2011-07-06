@@ -3,7 +3,6 @@ package org.nodex.examples.amqp;
 import org.nodex.core.Callback;
 import org.nodex.core.NoArgCallback;
 import org.nodex.core.amqp.Channel;
-import org.nodex.core.amqp.Client;
 import org.nodex.core.amqp.Connection;
 
 /**
@@ -20,7 +19,7 @@ public class AmqpClient {
       public void onEvent(Connection conn) {
         conn.createChannel(new Callback<Channel>() {
           public void onEvent(final Channel channel) {
-            channel.declare(QUEUE_NAME, false, true, true, new NoArgCallback() {
+            channel.declareQueue(QUEUE_NAME, false, true, true, new NoArgCallback() {
               public void onEvent() {
                 channel.subscribe(QUEUE_NAME, true, new Callback<String>() {
                   public void onEvent(String msg) {

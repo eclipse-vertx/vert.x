@@ -1,7 +1,10 @@
 package org.nodex.core.composition;
 
+import org.nodex.core.NoArgCallback;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: timfox
@@ -20,15 +23,61 @@ public class Composer {
   private Composer() {
   }
 
-  public Composer parallel(Deferred... deferred) {
+  public Composer parallel(final Completion... completions) {
+    Runnable run = new Runnable() {
+      public void run() {
+        final AtomicInteger countDown = new AtomicInteger(completions.length);
+        NoArgCallback cb = new NoArgCallback() {
+          public void onEvent() {
+            if (countDown.decrementAndGet() == 0) {
+              next();
+            }
+          }
+        };
+        for (Completion c: completions) {
+          c.execute();
+          c.onComplete(cb);
+        }
+      }
+    };
+    runList.add(run);
     return this;
   }
 
-  public Composer then(Deferred d) {
+  public Composer then(final Completion completion) {
+    Runnable run = new Runnable() {
+      public void run() {
+        completion.execute();
+        completion.onComplete(new NoArgCallback() {
+          public void onEvent() {
+            next();
+          }
+        });
+      }
+    };
+    runList.add(run);
     return this;
+  }
+
+  public Composer afterDelay(long delay, final Completion completion) {
+    return this;
+  }
+
+  private void next() {
+    pos++;
+    if (pos < runList.size()) {
+      runCurrent();
+    }
+  }
+
+  private void runCurrent() {
+    Runnable run = runList.get(pos);
+    run.run();
   }
 
   public void run() {
+    pos = 0;
+    runCurrent();
   }
 
 }

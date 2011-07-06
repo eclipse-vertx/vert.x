@@ -16,8 +16,8 @@ public class Example {
       //This would do the actual redis lookup and cb would be called with the result
     }
 
-    public static Deferred lookup(final int key, final Callback<Integer> cb) {
-      return new Deferred() {
+    public static Completion lookup(final int key, final Callback<Integer> cb) {
+      return new Completion() {
         public void perform() {
           Redis.do_lookup(key, new Callback<Integer>() {
             public void onEvent(Integer res) {
@@ -35,7 +35,7 @@ public class Example {
 
     final AtomicInteger res1 = new AtomicInteger(0);
 
-    final Deferred d1 = Redis.lookup(1234, new Callback<Integer>() {
+    final Completion d1 = Redis.lookup(1234, new Callback<Integer>() {
       public void onEvent(Integer res) {
         res1.set(res);
       }
@@ -43,13 +43,13 @@ public class Example {
 
     final AtomicInteger res2 = new AtomicInteger(0);
 
-    final Deferred d2 = Redis.lookup(7263, new Callback<Integer>() {
+    final Completion d2 = Redis.lookup(7263, new Callback<Integer>() {
       public void onEvent(Integer res) {
         res2.set(res);
       }
     });
 
-    final Deferred after = new Deferred() {
+    final Completion after = new Completion() {
       public void perform() {
         System.out.println("Total is " + (res1.get() + res2.get()));
       }

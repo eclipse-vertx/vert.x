@@ -1,9 +1,9 @@
 package org.nodex.core.stomp;
 
 import org.nodex.core.Callback;
-import org.nodex.core.FutureAction;
 import org.nodex.core.NoArgCallback;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.composition.Completion;
 import org.nodex.core.net.Socket;
 
 import java.util.HashMap;
@@ -44,57 +44,91 @@ public class Connection {
 
   // Send without receipt
   public void send(String dest, Buffer body) {
-    send(dest, new HashMap<String, String>(4), body, false);
+    send(dest, new HashMap<String, String>(4), body, null);
   }
 
   // Send without receipt
   public void send(String dest, Map<String, String> headers, Buffer body) {
-    send(dest, headers, body, false);
+    send(dest, headers, body, null);
   }
 
   // Send with receipt
-  public FutureAction send(String dest, Buffer body, boolean receipt) {
-    return send(dest, new HashMap<String, String>(4), body, receipt);
+  public void send(String dest, Buffer body, NoArgCallback completeCallback) {
+    send(dest, new HashMap<String, String>(4), body, completeCallback);
   }
 
   // Send with receipt
-  public FutureAction send(String dest, Map<String, String> headers, Buffer body, boolean receipt) {
+  public void send(String dest, Map<String, String> headers, Buffer body, NoArgCallback completeCallback) {
     Frame frame = new Frame("SEND", headers, body);
     frame.headers.put("destination", dest);
-    FutureAction fa = receipt ? addReceipt(frame) : null;
+    addReceipt(frame, completeCallback);
     write(frame);
-    return fa;
+  }
+
+  // Request-response pattern
+
+  private Map<String, MessageCallback> callbacks = new ConcurrentHashMap<String, MessageCallback>();
+  private volatile String responseQueue;
+  private static final String CORRELATION_ID_HEADER = "___NODEX_C_ID";
+
+  private synchronized void setupResponseHandler() {
+    if (responseQueue == null) {
+      String queueName = UUID.randomUUID().toString();
+      subscribe(queueName, new MessageCallback() {
+        public void onMessage(Map<String, String> headers, Buffer body) {
+          String cid = headers.get(CORRELATION_ID_HEADER);
+          if (cid == null) {
+            //TODO better error reporting
+            System.err.println("No correlation id");
+          } else {
+            MessageCallback cb = callbacks.remove(cid);
+            if (cb == null) {
+              System.err.println("No callback for correlation id");
+            } else {
+              cb.onMessage(headers, body);
+            }
+          }
+        }
+      });
+      responseQueue = queueName;
+    }
+  }
+
+  // Request-response pattern
+  public void request(String dest, Map<String, String> headers, Buffer body, MessageCallback responseCallback) {
+    if (responseQueue == null) setupResponseHandler();
+    String cid = UUID.randomUUID().toString();
+    headers.put(CORRELATION_ID_HEADER, cid);
+    callbacks.put(cid, responseCallback);
   }
 
   // Subscribe without receipt
   public synchronized void subscribe(String dest, MessageCallback messageCallback) {
-    subscribe(dest, messageCallback, false);
+    subscribe(dest, messageCallback, null);
   }
 
   // Subscribe with receipt
-  public synchronized FutureAction subscribe(String dest, MessageCallback messageCallback, boolean receipt) {
+  public synchronized void subscribe(String dest, MessageCallback messageCallback, NoArgCallback completeCallback) {
     if (subscriptions.containsKey(dest)) {
       throw new IllegalArgumentException("Already subscribed to " + dest);
     }
     subscriptions.put(dest, messageCallback);
     Frame frame = Frame.subscribeFrame(dest);
-    FutureAction fa = receipt ? addReceipt(frame) : null;
+    addReceipt(frame, completeCallback);
     write(frame);
-    return fa;
   }
 
   // Unsubscribe without receipt
   public synchronized void unsubscribe(String dest) {
-    unsubscribe(dest, false);
+    unsubscribe(dest, null);
   }
 
   //Unsubscribe with receipt
-  public synchronized FutureAction unsubscribe(String dest, boolean receipt) {
+  public synchronized void unsubscribe(String dest, NoArgCallback completeCallback) {
     subscriptions.remove(dest);
     Frame frame = Frame.unsubscribeFrame(dest);
-    FutureAction fa = receipt ? addReceipt(frame) : null;
+    addReceipt(frame, completeCallback);
     write(frame);
-    return fa;
   }
 
   public void write(Frame frame) {
@@ -108,12 +142,6 @@ public class Connection {
     write(Frame.connectFrame(username, password));
   }
 
-  private FutureAction addReceipt(Frame frame) {
-    FutureAction fa = new FutureAction();
-    addReceipt(frame, fa);
-    return fa;
-  }
-
   private synchronized void handleMessage(Frame msg) {
     String dest = msg.headers.get("destination");
     MessageCallback sub = subscriptions.get(dest);
@@ -121,9 +149,11 @@ public class Connection {
   }
 
   private void addReceipt(Frame frame, NoArgCallback callback) {
-    String receipt = UUID.randomUUID().toString();
-    frame.headers.put("receipt", receipt);
-    waitingReceipts.put(receipt, callback);
+    if (callback != null) {
+      String receipt = UUID.randomUUID().toString();
+      frame.headers.put("receipt", receipt);
+      waitingReceipts.put(receipt, callback);
+    }
   }
 
   protected void handleFrame(Frame frame) {
