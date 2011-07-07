@@ -3,13 +3,13 @@ include Java
 module Redis
   class Client
 
-    class ConnectionCallback < org.nodex.core.Callback
+    class ConnectionCallback < org.nodex.core.redis.RedisConnectHandler
       def initialize(connect_block)
         super()
         @connect_block = connect_block
       end
 
-      def onEvent(connection)
+      def onConnect(connection)
         @connect_block.call(Connection.new(connection))
       end
 
@@ -34,23 +34,23 @@ module Redis
 
   class Connection
 
-    class OnCompleteCallback < org.nodex.core.NoArgCallback
+    class OnCompleteCallback < org.nodex.core.DoneHandler
       def initialize(complete_block)
         super()
         @complete_block = complete_block
       end
-      def onEvent()
+      def onDone()
         @complete_block.call
       end
       private :initialize
     end
 
-    class ResultCallback < org.nodex.core.Callback
+    class ResultCallback < org.nodex.core.redis.ResultHandler
       def initialize(result_block)
         super()
         @result_block = result_block
       end
-      def onEvent(value)
+      def onResult(value)
         @result_block.call(value)
       end
       private :initialize

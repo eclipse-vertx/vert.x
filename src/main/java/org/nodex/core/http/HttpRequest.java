@@ -1,8 +1,8 @@
 package org.nodex.core.http;
 
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.buffer.DataHandler;
 
 import java.util.List;
 import java.util.Map;
@@ -24,10 +24,10 @@ public class HttpRequest {
     this.headers = headers;
   }
 
-  private Callback<Buffer> dataCallback;
+  private DataHandler dataHandler;
 
-  public void data(Callback<Buffer> dataCallback) {
-    this.dataCallback = dataCallback;
+  public void data(DataHandler dataHandler) {
+    this.dataHandler = dataHandler;
   }
 
   public String getParam(String param) {
@@ -44,8 +44,8 @@ public class HttpRequest {
   }
 
   void dataReceived(Buffer data) {
-    if (dataCallback != null) {
-      dataCallback.onEvent(data);
+    if (dataHandler != null) {
+      dataHandler.onData(data);
     }
   }
 

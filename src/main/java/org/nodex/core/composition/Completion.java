@@ -1,6 +1,6 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 
 /**
  * User: timfox
@@ -9,19 +9,19 @@ import org.nodex.core.NoArgCallback;
  */
 public class Completion {
 
-  private NoArgCallback onComplete;
+  private DoneHandler onComplete;
   private boolean complete;
 
-  public synchronized void onComplete(NoArgCallback onComplete) {
+  public synchronized void onComplete(DoneHandler onComplete) {
     this.onComplete = onComplete;
     if (complete) {
-      onComplete.onEvent();
+      onComplete.onDone();
     }
   }
 
   public synchronized void complete() {
     if (onComplete != null) {
-      onComplete.onEvent();
+      onComplete.onDone();
     }
     complete = true;
   }

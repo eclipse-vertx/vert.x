@@ -1,6 +1,6 @@
 package org.nodex.core.stomp;
 
-import org.nodex.core.Callback;
+import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 
@@ -21,7 +21,7 @@ public class StompServer {
 
   public static NetServer createServer() {
 
-    return NetServer.createServer(new Callback<NetSocket>() {
+    return NetServer.createServer(new NetConnectHandler() {
 
       private ConcurrentMap<String, List<StompConnection>> subscriptions = new ConcurrentHashMap<String, List<StompConnection>>();
 
@@ -51,10 +51,10 @@ public class StompServer {
         }
       }
 
-      public void onEvent(final NetSocket sock) {
+      public void onConnect(final NetSocket sock) {
         final StompServerConnection conn = new StompServerConnection(sock);
-        conn.frameHandler(new Callback<Frame>() {
-          public void onEvent(Frame frame) {
+        conn.frameHandler(new FrameHandler() {
+          public void onFrame(Frame frame) {
             if ("CONNECT".equals(frame.command)) {
               conn.write(Frame.connectedFrame(UUID.randomUUID().toString()));
               return;

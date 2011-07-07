@@ -2,19 +2,8 @@ package org.nodex.core.net;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.nodex.core.Callback;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
@@ -35,15 +24,15 @@ public class NetClient {
   private ClientBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
 
-  public static void connect(int port, String host, Callback<NetSocket> connectCallback) {
-    client.doConnect(port, host, connectCallback);
+  public static void connect(int port, String host, NetConnectHandler connectHandler) {
+    client.doConnect(port, host, connectHandler);
   }
 
-  public static void connect(int port, Callback<NetSocket> connectCallback) {
-    client.doConnect(port, "localhost", connectCallback);
+  public static void connect(int port, NetConnectHandler connectHandler) {
+    client.doConnect(port, "localhost", connectHandler);
   }
 
-  private void doConnect(int port, String host, final Callback<NetSocket> connectCallback) {
+  private void doConnect(int port, String host, final NetConnectHandler connectHandler) {
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
@@ -51,7 +40,7 @@ public class NetClient {
           Channel ch = channelFuture.getChannel();
           NetSocket sock = new NetSocket(ch);
           socketMap.put(ch, sock);
-          connectCallback.onEvent(sock);
+          connectHandler.onConnect(sock);
         }
       }
     });

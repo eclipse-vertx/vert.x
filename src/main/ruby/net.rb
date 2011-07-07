@@ -3,14 +3,14 @@ require "buffer"
 
 module Net
   class Server
-    class ConnectCallback < org.nodex.core.Callback
+    class ConnectCallback < org.nodex.core.net.NetConnectHandler
 
       def initialize(connect_block)
         super()
         @connect_block = connect_block
       end
 
-      def onEvent(java_socket)
+      def onConnect(java_socket)
         sock = Socket.new(java_socket)
         @connect_block.call(sock)
       end
@@ -40,14 +40,14 @@ module Net
   end
 
   class Client
-    class ConnectCallback < org.nodex.core.Callback
+    class ConnectCallback < org.nodex.core.net.NetConnectHandler
 
       def initialize(connect_block)
         super()
         @connect_block = connect_block
       end
 
-      def onEvent(java_socket)
+      def onConnect(java_socket)
         sock = Socket.new(java_socket)
         @connect_block.call(sock)
       end
@@ -70,13 +70,13 @@ module Net
   class Socket
     @data_block = nil
 
-    class DataCallback < org.nodex.core.Callback
+    class DataCallback < org.nodex.core.buffer.DataHandler
       def initialize(data_block)
         super()
         @data_block = data_block
       end
 
-      def onEvent(java_buffer)
+      def onData(java_buffer)
         buf = Buffer.new(java_buffer)
         @data_block.call(buf)
       end

@@ -9,14 +9,14 @@ module Http
       Server.new(connect_block)
     end
 
-    class ConnectCallback < org.nodex.core.Callback
+    class ConnectCallback < org.nodex.core.http.HttpConnectHandler
 
       def initialize(connect_block)
         super()
         @connect_block = connect_block
       end
 
-      def onEvent(java_connection)
+      def onConnect(java_connection)
         conn = Connection.new(java_connection)
         @connect_block.call(conn)
       end
@@ -72,13 +72,13 @@ module Http
 
     attr_reader :method, :uri, :headers
 
-    class DataCallback < org.nodex.core.Callback
+    class DataCallback < org.nodex.core.buffer.DataHandler
       def initialize(data_block)
         super()
         @data_block = data_block
       end
 
-      def onEvent(buffer)
+      def onData(buffer)
         @data_block.call(Buffer.new(buffer))
       end
 

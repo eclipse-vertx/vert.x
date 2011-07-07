@@ -1,7 +1,6 @@
 package org.nodex.core.amqp;
 
-import org.nodex.core.Callback;
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 
 import java.io.IOException;
@@ -19,11 +18,11 @@ public class AmqpConnection {
     this.conn = conn;
   }
 
-  public void createChannel(final Callback<Channel> channelCallback) {
+  public void createChannel(final ChannelHandler channelHandler) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
-          channelCallback.onEvent(new Channel(conn.createChannel()));
+          channelHandler.onCreate(new Channel(conn.createChannel()));
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();
@@ -32,13 +31,13 @@ public class AmqpConnection {
     });
   }
 
-  public void close(final NoArgCallback doneCallback) {
+  public void close(final DoneHandler doneCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           conn.close();
           //FIXME - again this is sync
-          doneCallback.onEvent();
+          doneCallback.onDone();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();

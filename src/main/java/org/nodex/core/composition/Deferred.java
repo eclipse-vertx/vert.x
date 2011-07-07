@@ -1,6 +1,6 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 
 /**
  * User: tim
@@ -9,15 +9,15 @@ import org.nodex.core.NoArgCallback;
  */
 public class Deferred extends Completion {
 
-  private final NoArgCallback cb;
+  private final DoneHandler cb;
 
-  public Deferred(NoArgCallback cb) {
+  public Deferred(DoneHandler cb) {
     this.cb = cb;
   }
 
   @Override
   public void execute() {
-    cb.onEvent();
+    cb.onDone();
     complete();
   }
 }

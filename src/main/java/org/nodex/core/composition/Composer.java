@@ -1,6 +1,6 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +27,8 @@ public class Composer {
     Runnable run = new Runnable() {
       public void run() {
         final AtomicInteger countDown = new AtomicInteger(completions.length);
-        NoArgCallback cb = new NoArgCallback() {
-          public void onEvent() {
+        DoneHandler cb = new DoneHandler() {
+          public void onDone() {
             if (countDown.decrementAndGet() == 0) {
               next();
             }
@@ -48,8 +48,8 @@ public class Composer {
     Runnable run = new Runnable() {
       public void run() {
         completion.execute();
-        completion.onComplete(new NoArgCallback() {
-          public void onEvent() {
+        completion.onComplete(new DoneHandler() {
+          public void onDone() {
             next();
           }
         });

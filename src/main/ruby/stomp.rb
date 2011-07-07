@@ -3,14 +3,14 @@ require "buffer"
 
 module Stomp
   class Client
-    class ConnectCallback < org.nodex.core.Callback
+    class ConnectCallback < org.nodex.core.stomp.StompConnectHandler
 
       def initialize(connect_block)
         super()
         @connect_block = connect_block
       end
 
-      def onEvent(java_connection)
+      def onConnect(java_connection)
         conn = Connection.new(java_connection)
         @connect_block.call(conn)
       end
@@ -74,13 +74,13 @@ module Stomp
       end
     end
 
-    class ReceiptCallback < org.nodex.core.Callback
+    class ReceiptCallback < org.nodex.core.DoneHandler
       def initialize(receipt_block)
         super()
         @receipt_block = receipt_block
       end
 
-      def onEvent
+      def onDone
         @receipt_block.call()
       end
     end

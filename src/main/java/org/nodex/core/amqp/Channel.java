@@ -3,7 +3,7 @@ package org.nodex.core.amqp;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.composition.Completion;
 
@@ -25,29 +25,36 @@ public class Channel {
     this.channel = channel;
   }
 
-  public void publish(final String exchange, final String routingKey, final AMQP.BasicProperties props, final byte[] body) {
+  public void publish(final String exchange, final String routingKey, AmqpProps props, final byte[] body) {
     try {
-      channel.basicPublish(exchange, routingKey, props, body);
+      if (props == null) {
+        props = new AmqpProps();
+      }
+      System.out.println("publishing msg");
+      AMQP.BasicProperties aprops = props.toBasicProperties();
+      channel.basicPublish(exchange, routingKey, null, body);
+      System.out.println("Published msg");
     } catch (IOException e) {
       //TODO handle exception by passing them back on callback
       e.printStackTrace();
     }
   }
 
-  public void publish(final String exchange, final String routingKey, final AMQP.BasicProperties props, final String message) {
+  public void publish(final String exchange, final String routingKey, final AmqpProps props, final String message) {
     try {
       publish(exchange, routingKey, null, message.getBytes("UTF-8"));
-    } catch (UnsupportedEncodingException willNeverHappen) {
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
     }
   }
 
   public void declareQueue(final String queueName, final boolean durable, final boolean exclusive, final boolean autoDelete,
-                           final NoArgCallback doneCallback) {
+                           final DoneHandler doneCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.queueDeclare(queueName, durable, exclusive, autoDelete, null);
-          doneCallback.onEvent();
+          doneCallback.onDone();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();
@@ -68,7 +75,8 @@ public class Channel {
                                            AMQP.BasicProperties properties,
                                            byte[] body)
                     throws IOException {
-                  messageCallback.onMessage(properties, body);
+                  AmqpProps props = properties == null ? null : new AmqpProps(properties);
+                  messageCallback.onMessage(props, body);
                 }
               });
         } catch (IOException e) {
@@ -86,13 +94,13 @@ public class Channel {
   private synchronized void createResponseQueue() {
     if (responseQueue == null) {
       final String queueName = UUID.randomUUID().toString();
-      declareQueue(queueName, false, true, true, new NoArgCallback() {
-        public void onEvent() {
+      declareQueue(queueName, false, true, true, new DoneHandler() {
+        public void onDone() {
           responseQueue = queueName;
           responseQueueSetup.complete(); //Queue is now set up
           subscribe(queueName, true, new AmqpMsgCallback() {
-            public void onMessage(AMQP.BasicProperties props, byte[] body) {
-              String cid = props.getCorrelationId();
+            public void onMessage(AmqpProps props, byte[] body) {
+              String cid = props.correlationId;
               if (cid == null) {
                 //TODO better error reporting
                 System.err.println("No correlation id");
@@ -112,22 +120,22 @@ public class Channel {
   }
 
   // HttpRequest-response pattern
-  public Completion request(final String exchange, final String routingKey, final AMQP.BasicProperties props, final byte[] body, final AmqpMsgCallback responseCallback) {
+  public Completion request(final String exchange, final String routingKey, final AmqpProps props, final byte[] body, final AmqpMsgCallback responseCallback) {
     if (responseQueue == null) createResponseQueue();
     //We make sure we don't actually send until the response queue has been setup, this is done by using a
     //Completion
     final Completion c = new Completion();
-    responseQueueSetup.onComplete(new NoArgCallback() {
-      public void onEvent() {
+    responseQueueSetup.onComplete(new DoneHandler() {
+      public void onDone() {
         AmqpMsgCallback cb = new AmqpMsgCallback() {
-          public void onMessage(AMQP.BasicProperties props, byte[] body) {
+          public void onMessage(AmqpProps props, byte[] body) {
             responseCallback.onMessage(props, body);
             c.complete();
           }
         };
         String cid = UUID.randomUUID().toString();
-        props.setCorrelationId(cid);
-        props.setReplyTo(responseQueue);
+        props.correlationId = cid;
+        props.replyTo = responseQueue;
         callbacks.put(cid, cb);
         publish(exchange, routingKey, props, body);
       }
@@ -136,12 +144,12 @@ public class Channel {
   }
 
 
-  public void close(final NoArgCallback doneCallback) {
+  public void close(final DoneHandler doneCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.close();
-          doneCallback.onEvent();
+          doneCallback.onDone();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();

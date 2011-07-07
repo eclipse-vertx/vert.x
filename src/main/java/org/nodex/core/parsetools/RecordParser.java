@@ -1,7 +1,7 @@
 package org.nodex.core.parsetools;
 
-import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.buffer.DataHandler;
 
 import java.io.UnsupportedEncodingException;
 
@@ -10,7 +10,7 @@ import java.io.UnsupportedEncodingException;
  * Date: 27/06/11
  * Time: 17:49
  */
-public class RecordParser extends Callback<Buffer> {
+public class RecordParser extends DataHandler {
 
   private Buffer buff;
   private int pos;            // Current position in buffer
@@ -21,23 +21,23 @@ public class RecordParser extends Callback<Buffer> {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
-  private final Callback<Buffer> output;
+  private final DataHandler output;
 
-  private RecordParser(Callback<Buffer> output) {
+  private RecordParser(DataHandler output) {
     this.output = output;
   }
 
-  public static RecordParser newDelimited(final String delim, final String enc, final Callback<Buffer> output) {
+  public static RecordParser newDelimited(final String delim, final String enc, final DataHandler output) {
     return newDelimited(delimToByteArray(delim, enc), output);
   }
 
-  public static RecordParser newDelimited(byte[] delim, Callback<Buffer> output) {
+  public static RecordParser newDelimited(byte[] delim, DataHandler output) {
     RecordParser ls = new RecordParser(output);
     ls.delimitedMode(delim);
     return ls;
   }
 
-  public static RecordParser newFixed(int size, Callback<Buffer> output) {
+  public static RecordParser newFixed(int size, DataHandler output) {
     RecordParser ls = new RecordParser(output);
     ls.fixedSizeMode(size);
     return ls;
@@ -99,7 +99,7 @@ public class RecordParser extends Callback<Buffer> {
           Buffer ret = buff.slice(start, pos + 1);
           start = pos + 1;
           delimPos = 0;
-          output.onEvent(ret);
+          output.onData(ret);
         }
       }
     }
@@ -111,11 +111,11 @@ public class RecordParser extends Callback<Buffer> {
       int end = start + recordSize;
       Buffer ret = buff.slice(start, end);
       start = end;
-      output.onEvent(ret);
+      output.onData(ret);
     }
   }
 
-  public void onEvent(Buffer buffer) {
+  public void onData(Buffer buffer) {
     if (buff == null) {
       buff = Buffer.newDynamic(buffer.length());
     }

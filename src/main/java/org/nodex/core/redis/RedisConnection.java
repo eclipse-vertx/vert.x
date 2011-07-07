@@ -1,10 +1,9 @@
 package org.nodex.core.redis;
 
-import org.nodex.core.Callback;
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
-import redis.clients.jedis.Jedis;
 import org.nodex.core.composition.Completion;
+import redis.clients.jedis.Jedis;
 
 /**
  * User: tim
@@ -18,12 +17,12 @@ public class RedisConnection {
     this.jedis = jedis;
   }
 
-  public Completion set(final String key, final String value, final NoArgCallback onComplete) {
+  public Completion set(final String key, final String value, final DoneHandler onComplete) {
     final Completion df = new Completion();
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         jedis.set(key, value);
-        onComplete.onEvent();
+        onComplete.onDone();
         df.complete();
       }
     });
@@ -31,12 +30,12 @@ public class RedisConnection {
     return df;
   }
 
-  public Completion get(final String key, final Callback<String> resultCallback) {
+  public Completion get(final String key, final ResultHandler resultHandler) {
     final Completion df = new Completion();
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         String val = jedis.get(key);
-        resultCallback.onEvent(val);
+        resultHandler.onResult(val);
         df.complete();
       }
     });

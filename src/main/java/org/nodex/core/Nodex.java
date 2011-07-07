@@ -91,11 +91,11 @@ public final class Nodex {
     return new OrderedExecutor(getBackgroundPool());
   }
 
-  public int setTimeout(Callback<?> callback, long delay) {
+  public int setTimeout(DoneHandler callback, long delay) {
     return -1;
   }
 
-  public int setPeriodic(Callback<?> callback, long delay, long period) {
+  public int setPeriodic(DoneHandler callback, long delay, long period) {
     return -1;
   }
 

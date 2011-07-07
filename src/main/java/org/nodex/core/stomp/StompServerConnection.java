@@ -1,6 +1,5 @@
 package org.nodex.core.stomp;
 
-import org.nodex.core.Callback;
 import org.nodex.core.net.NetSocket;
 
 /**
@@ -13,14 +12,14 @@ class StompServerConnection extends StompConnection {
     super(socket);
   }
 
-  private Callback<Frame> frameHandler;
+  private FrameHandler frameHandler;
 
-  protected void frameHandler(Callback<Frame> frameHandler) {
+  protected void frameHandler(FrameHandler frameHandler) {
     this.frameHandler = frameHandler;
   }
 
   @Override
   protected void handleFrame(Frame frame) {
-    frameHandler.onEvent(frame);
+    frameHandler.onFrame(frame);
   }
 }

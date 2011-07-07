@@ -1,7 +1,6 @@
 package org.nodex.core.amqp;
 
-import org.nodex.core.Callback;
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.composition.Completion;
 
 /**
@@ -58,8 +57,8 @@ public class ChannelPool {
 
   private synchronized void createConnection() {
     if (connection == null) {
-      client.connect(new Callback<AmqpConnection>() {
-        public void onEvent(AmqpConnection conn) {
+      client.connect(new AmqpConnectHandler() {
+        public void onConnect(AmqpConnection conn) {
           connection = conn;
           connected.complete();
         }
@@ -67,14 +66,14 @@ public class ChannelPool {
     }
   }
 
-  public void getChannel(final Callback<Channel> channelCallback) {
+  public void getChannel(final ChannelHandler channelHandler) {
     if (connection == null) createConnection();
-    connected.onComplete(new NoArgCallback() {
-      public void onEvent() {
+    connected.onComplete(new DoneHandler() {
+      public void onDone() {
         //FIXME - for the demo we just get a new channel each time
         //Also this is broken since if more than one call to getChannel comes in before connection is created
         //previous request will be overwritten
-        connection.createChannel(channelCallback);
+        connection.createChannel(channelHandler);
       }
     });
   }

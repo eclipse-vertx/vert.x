@@ -2,23 +2,10 @@ package org.nodex.core.http;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.nodex.core.Callback;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
@@ -34,10 +21,10 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpServer {
   private ServerBootstrap bootstrap;
-  private Callback<HttpConnection> connectCallback;
+  private HttpConnectHandler connectHandler;
   private Map<Channel, HttpConnection> connectionMap = new ConcurrentHashMap<Channel, HttpConnection>();
 
-  private HttpServer(Callback<HttpConnection> connectCallback) {
+  private HttpServer(HttpConnectHandler connectHandler) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
             Nodex.instance.getAcceptorPool(),
@@ -66,11 +53,11 @@ public class HttpServer {
     });
     bootstrap.setOption("child.tcpNoDelay", true);
     bootstrap.setOption("child.keepAlive", true);
-    this.connectCallback = connectCallback;
+    this.connectHandler = connectHandler;
   }
 
-  public static HttpServer createServer(Callback<HttpConnection> connectCallback) {
-    return new HttpServer(connectCallback);
+  public static HttpServer createServer(HttpConnectHandler connectHandler) {
+    return new HttpServer(connectHandler);
   }
 
   public HttpServer listen(int port) {
@@ -249,7 +236,7 @@ public class HttpServer {
       Channel ch = e.getChannel();
       HttpConnection conn = new HttpConnection(ch);
       connectionMap.put(ch, conn);
-      connectCallback.onEvent(conn);
+      connectHandler.onConnect(conn);
     }
 
     @Override

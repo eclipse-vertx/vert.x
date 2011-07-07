@@ -1,13 +1,12 @@
 package org.nodex.core.file;
 
-import org.nodex.core.Callback;
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.buffer.DataHandler;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * User: timfox
@@ -20,77 +19,77 @@ public class FileSystem {
 
   // File meta operations
 
-  public void rename(String from, String to, NoArgCallback onCompletion) {
+  public void rename(String from, String to, DoneHandler onCompletion) {
 
   }
 
-  public void truncate(String path, int len, NoArgCallback onCompletion) {
+  public void truncate(String path, int len, DoneHandler onCompletion) {
 
   }
 
-  public void chmod(String path, int mode, NoArgCallback onCompletion) {
+  public void chmod(String path, int mode, DoneHandler onCompletion) {
 
   }
 
-  public void link(String src, String dest, NoArgCallback onCompletion) {
+  public void link(String src, String dest, DoneHandler onCompletion) {
 
   }
 
-  public void symlink(String src, String dest, NoArgCallback onCompletion) {
+  public void symlink(String src, String dest, DoneHandler onCompletion) {
 
   }
 
-  public void unlink(String path, NoArgCallback onCompletion) {
+  public void unlink(String path, DoneHandler onCompletion) {
 
   }
 
-  public void mkdir(String path, int mode, NoArgCallback onCompletion) {
+  public void mkdir(String path, int mode, DoneHandler onCompletion) {
 
   }
 
-  public void readDir(String path, NoArgCallback onCompletion) {
+  public void readDir(String path, DoneHandler onCompletion) {
 
   }
 
-  public void stat(String path, Callback<Map<String, String>> callback) {
+  public void stat(String path, StatsHandler handler) {
 
   }
 
-  public void lstat(String path, Callback<Map<String, String>> callback) {
+  public void lstat(String path, StatsHandler handler) {
 
   }
 
-  public void fstat(int fd, Callback<Map<String, String>> callback) {
+  public void fstat(int fd, StatsHandler handler) {
 
   }
 
   // Close and open
 
-  public void close(int fd, NoArgCallback onCompletion) {
+  public void close(int fd, DoneHandler onCompletion) {
 
   }
 
-  public void open(String path, int flags, int mode, Callback<Integer> onCompletion) {
+  public void open(String path, int flags, int mode, OpenHandler handler) {
 
   }
 
   // Random access
 
-  public void write(int fd, Buffer buffer, int offset, int length, int position, NoArgCallback onCompletion) {
+  public void write(int fd, Buffer buffer, int offset, int length, int position, DoneHandler onCompletion) {
 
   }
 
-  public void read(int fd, Buffer buffer, int offset, int length, int position, NoArgCallback onCompletion) {
+  public void read(int fd, Buffer buffer, int offset, int length, int position, DoneHandler onCompletion) {
 
   }
 
   // Read and write entire files (data will arrive in chunks)
 
-  public void readFile(String path, String encoding, Callback<String> dataCallback) {
+  public void readFile(String path, String encoding, DataHandler handler) {
 
   }
 
-  public void readFile(String path, Callback<Buffer> dataCallback) {
+  public void readFile(String path, DataHandler dataHandler) {
     //For now we just fake this
     System.out.println("Reading file " + path);
     try {
@@ -100,17 +99,17 @@ public class FileSystem {
       fis.read(bytes);
       fis.close();
       Buffer buff = Buffer.newWrapped(bytes);
-      dataCallback.onEvent(buff);
+      dataHandler.onData(buff);
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  public void writeFile(String path, String data, String encoding, NoArgCallback onCompletion) {
+  public void writeFile(String path, String data, String encoding, DoneHandler onCompletion) {
 
   }
 
-  public void writeFile(String path, Buffer data, NoArgCallback onCompletion) {
+  public void writeFile(String path, Buffer data, DoneHandler onCompletion) {
 
   }
 

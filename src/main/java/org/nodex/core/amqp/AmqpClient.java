@@ -1,7 +1,6 @@
 package org.nodex.core.amqp;
 
 import com.rabbitmq.client.ConnectionFactory;
-import org.nodex.core.Callback;
 import org.nodex.core.Nodex;
 
 import java.io.IOException;
@@ -47,11 +46,11 @@ public class AmqpClient {
     return this;
   }
 
-  public void connect(final Callback<AmqpConnection> connectCallback) {
+  public void connect(final AmqpConnectHandler connectHandler) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
-          connectCallback.onEvent(new AmqpConnection(cf.newConnection()));
+          connectHandler.onConnect(new AmqpConnection(cf.newConnection()));
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();

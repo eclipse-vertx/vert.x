@@ -1,7 +1,6 @@
 package org.nodex.core.stomp;
 
-import org.nodex.core.Callback;
-import org.nodex.core.NoArgCallback;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.composition.Completion;
 import org.nodex.core.net.NetSocket;
@@ -22,23 +21,23 @@ public class StompConnection {
   public static final String REPLY_TO_HEADER = "reply-to";
 
   private final NetSocket socket;
-  private Callback<Frame> errorCallback;
-  private NoArgCallback connectCallback;
+  private FrameHandler errorHandler;
+  private DoneHandler connectHandler;
   protected boolean connected;
   private Map<String, StompMsgCallback> subscriptions = new HashMap<String, StompMsgCallback>();
-  private Map<String, NoArgCallback> waitingReceipts = new ConcurrentHashMap<String, NoArgCallback>();
+  private Map<String, DoneHandler> waitingReceipts = new ConcurrentHashMap<String, DoneHandler>();
 
   protected StompConnection(NetSocket socket) {
     this.socket = socket;
-    socket.data(new Parser(new Callback<Frame>() {
-      public void onEvent(Frame frame) {
+    socket.data(new Parser(new FrameHandler() {
+      public void onFrame(Frame frame) {
         handleFrame(frame);
       }
     }));
   }
 
-  public void error(Callback<Frame> errorCallback) {
-    this.errorCallback = errorCallback;
+  public void error(FrameHandler errorHandler) {
+    this.errorHandler = errorHandler;
   }
 
   public void close() {
@@ -56,12 +55,12 @@ public class StompConnection {
   }
 
   // Send with receipt
-  public void send(String dest, Buffer body, NoArgCallback completeCallback) {
+  public void send(String dest, Buffer body, DoneHandler completeCallback) {
     send(dest, new HashMap<String, String>(4), body, completeCallback);
   }
 
   // Send with receipt
-  public void send(String dest, Map<String, String> headers, Buffer body, NoArgCallback completeCallback) {
+  public void send(String dest, Map<String, String> headers, Buffer body, DoneHandler completeCallback) {
     Frame frame = new Frame("SEND", headers, body);
     frame.headers.put("destination", dest);
     addReceipt(frame, completeCallback);
@@ -120,7 +119,7 @@ public class StompConnection {
   }
 
   // Subscribe with receipt
-  public synchronized void subscribe(String dest, StompMsgCallback messageCallback, NoArgCallback completeCallback) {
+  public synchronized void subscribe(String dest, StompMsgCallback messageCallback, DoneHandler completeCallback) {
     if (subscriptions.containsKey(dest)) {
       throw new IllegalArgumentException("Already subscribed to " + dest);
     }
@@ -136,7 +135,7 @@ public class StompConnection {
   }
 
   //Unsubscribe with receipt
-  public synchronized void unsubscribe(String dest, NoArgCallback completeCallback) {
+  public synchronized void unsubscribe(String dest, DoneHandler completeCallback) {
     subscriptions.remove(dest);
     Frame frame = Frame.unsubscribeFrame(dest);
     addReceipt(frame, completeCallback);
@@ -149,8 +148,8 @@ public class StompConnection {
     socket.write(frame.toBuffer().duplicate());
   }
 
-  protected void connect(String username, String password, final NoArgCallback connectCallback) {
-    this.connectCallback = connectCallback;
+  protected void connect(String username, String password, final DoneHandler connectHandler) {
+    this.connectHandler = connectHandler;
     write(Frame.connectFrame(username, password));
   }
 
@@ -160,7 +159,7 @@ public class StompConnection {
     sub.onMessage(msg.headers, msg.body);
   }
 
-  private void addReceipt(Frame frame, NoArgCallback callback) {
+  private void addReceipt(Frame frame, DoneHandler callback) {
     if (callback != null) {
       String receipt = UUID.randomUUID().toString();
       frame.headers.put("receipt", receipt);
@@ -175,16 +174,16 @@ public class StompConnection {
         throw new IllegalStateException("Expected CONNECTED frame, got: " + frame.command);
       }
       connected = true;
-      connectCallback.onEvent();
+      connectHandler.onDone();
     } else if ("MESSAGE".equals(frame.command)) {
       handleMessage(frame);
     } else if ("RECEIPT".equals(frame.command)) {
       String receipt = frame.headers.get("receipt-id");
-      NoArgCallback callback = waitingReceipts.get(receipt);
-      callback.onEvent();
+      DoneHandler callback = waitingReceipts.get(receipt);
+      callback.onDone();
     } else if ("ERROR".equals(frame.command)) {
-      if (errorCallback != null) {
-        errorCallback.onEvent(frame);
+      if (errorHandler != null) {
+        errorHandler.onFrame(frame);
       }
     }
   }

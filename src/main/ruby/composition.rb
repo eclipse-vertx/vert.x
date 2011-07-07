@@ -38,7 +38,7 @@ module Composition
       @java_deferred.onComplete(CompleteCallback.new(complete_block))
     end
 
-    class CompleteCallback < org.nodex.core.NoArgCallback
+    class CompleteCallback < org.nodex.core.DoneHandler
       def initialize(callback)
         super()
         @callback = callback

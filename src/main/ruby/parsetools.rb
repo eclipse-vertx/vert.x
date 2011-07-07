@@ -5,13 +5,13 @@ module ParserTools
 
   class RecordParser
 
-    class OutputCallback < org.nodex.core.Callback
+    class OutputCallback < org.nodex.core.buffer.DataHandler
       def initialize(output_block)
         super()
         @output_block = output_block
       end
 
-      def onEvent(java_frame)
+      def onData(java_frame)
         @output_block.call(java_frame);
       end
     end
@@ -25,7 +25,7 @@ module ParserTools
     end
 
     def input(data)
-      @java_parser.on_event(data._to_java_buffer)
+      @java_parser.onData(data._to_java_buffer)
     end
 
     def RecordParser.new_delimited(delim, enc = "UTF-8", proc = nil, &output_block)

@@ -1,12 +1,12 @@
 package org.nodex.core.net;
 
 import org.jboss.netty.channel.Channel;
-import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.buffer.DataHandler;
 
 public class NetSocket {
   private Channel channel;
-  private Callback<Buffer> dataCallback;
+  private DataHandler dataHandler;
 
   protected NetSocket(Channel channel) {
     this.channel = channel;
@@ -16,8 +16,8 @@ public class NetSocket {
     channel.write(data._toChannelBuffer());
   }
 
-  public void data(Callback<Buffer> dataCallback) {
-    this.dataCallback = dataCallback;
+  public void data(DataHandler dataHandler) {
+    this.dataHandler = dataHandler;
   }
 
   public void close() {
@@ -26,7 +26,7 @@ public class NetSocket {
 
   protected void dataReceived(Buffer data) {
     try {
-      dataCallback.onEvent(data);
+      dataHandler.onData(data);
     } catch (Throwable t) {
       //We log errors otherwise they will get swallowed
       //TODO logging can be improved

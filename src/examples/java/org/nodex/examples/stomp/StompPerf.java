@@ -1,7 +1,7 @@
 package org.nodex.examples.stomp;
 
-import org.nodex.core.Callback;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.stomp.StompConnectHandler;
 import org.nodex.core.stomp.StompClient;
 import org.nodex.core.stomp.StompConnection;
 import org.nodex.core.stomp.StompMsgCallback;
@@ -19,8 +19,8 @@ public class StompPerf {
 
   public static void main(String[] args) throws Exception {
 
-    StompClient.connect(8080, new Callback<StompConnection>() {
-      public void onEvent(final StompConnection conn) {
+    StompClient.connect(8080, new StompConnectHandler() {
+      public void onConnect(final StompConnection conn) {
         final int warmup = 500000;
         final int numMessages = 1000000;
         conn.subscribe("test-topic", new StompMsgCallback() {
@@ -30,7 +30,7 @@ public class StompPerf {
             count++;
             if (count == warmup + numMessages) {
               double rate = 1000 * (double) numMessages / (System.currentTimeMillis() - start);
-              System.out.println("Done, rate " + rate);
+              System.out.println("DoneHandler, rate " + rate);
             }
           }
         });

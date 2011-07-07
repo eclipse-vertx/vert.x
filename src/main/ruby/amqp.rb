@@ -21,13 +21,13 @@ module Amqp
 
     private :initialize
 
-    class ConnectionCallback < org.nodex.core.Callback
+    class ConnectionCallback < org.nodex.core.amqp.AmqpConnectHandler
       def initialize(connect_block)
         super()
         @connect_block = connect_block
       end
 
-      def onEvent(connection)
+      def onConnect(connection)
         @connect_block.call(Connection.new(connection))
       end
 
@@ -51,13 +51,13 @@ module Amqp
 
     private :initialize
 
-    class ChannelCallback < org.nodex.core.Callback
+    class ChannelCallback < org.nodex.core.amqp.ChannelHandler
       def initialize(channel_block)
         super()
         @channel_block = channel_block
       end
 
-      def onEvent(channel)
+      def onCreate(channel)
         @channel_block.call(Channel.new(channel))
       end
 
@@ -71,8 +71,12 @@ module Amqp
       @java_channel = java_channel
     end
 
+    def publish_with_props(exchange, routing_key, props, message)
+      @java_channel.publish(exchange, routing_key, props, message.to_s)
+    end
+
     def publish(exchange, routing_key, message)
-      @java_channel.publish(exchange, routing_key, message)
+      publish_with_props(exchange, routing_key, nil, message)
     end
 
     def subscribe(queue_name, auto_ack, proc = nil, &message_handler)
@@ -80,9 +84,9 @@ module Amqp
       @java_channel.subscribe(queue_name, auto_ack, MessageHandler.new(message_handler))
     end
 
-    def declare(queue_name, durable, exclusive, auto_delete, proc = nil, &complete_block)
+    def declare_queue(queue_name, durable, exclusive, auto_delete, proc = nil, &complete_block)
       complete_block = proc if proc
-      @java_channel.declare(queue_name, durable, exclusive, auto_delete, CompleteCallback.new(complete_block))
+      @java_channel.declareQueue(queue_name, durable, exclusive, auto_delete, CompleteCallback.new(complete_block))
     end
 
     def close
@@ -91,30 +95,76 @@ module Amqp
 
     private :initialize
 
-    class MessageHandler < org.nodex.core.Callback
+    class MessageHandler < org.nodex.core.amqp.AmqpMsgCallback
       def initialize(messageHandler)
         super()
         @messageHandler = messageHandler
       end
 
-      def onEvent(msg)
-        @messageHandler.call(msg)
+      def onMessage(props, body)
+        java_string = java.lang.String.new(body, "UTF-8")
+        @messageHandler.call(Props.from_java_props(props), java_string)
       end
 
       private :initialize
     end
 
-    class CompleteCallback < org.nodex.core.NoArgCallback
+    class CompleteCallback < org.nodex.core.DoneHandler
       def initialize(callback)
         super()
         @callback = callback
       end
 
-      def onEvent()
+      def onDone()
         @callback.call
       end
 
       private :initialize
     end
+  end
+
+  class Props
+
+    attr_accessor :app_id, :class_id, :class_name, :cluster_id, :content_encoding, :content_type,
+                  :correlation_id, :delivery_mode, :expiration, :headers, :message_id, :priority,
+                  :reply_to, :timestamp, :type, :user_id
+
+    def Props.from_java_props(java_props)
+      props = Props.new
+      props.app_id = java_props.appId;
+      props.class_id = java_props.classId;
+      props.cluster_id = java_props.clusterId;
+      props.content_encoding = java_props.contentEncoding;
+      props.content_type = java_props.contentType;
+      props.correlation_id = java_props.correlationId;
+      props.delivery_mode = java_props.deliveryMode;
+      props.expiration = java_props.expiration;
+      props.headers = java_props.headers
+      props.message_id = java_props.messageId
+      props.priority = java_props.priority
+      props.reply_to = java_props.replyTo
+      props.timestamp = java_props.timestamp
+      props.type = java_props.type
+      props.user_id = java_props.userId
+      props
+    end
+
+    def to_java_props
+      java_props = org.nodex.core.amqp.AmqpProps.new
+      java_props.appId = app_id
+      java_props.classId = class_id
+      java_props.clusterId = cluster_id
+      java_props.contentEncoding = content_encoding
+      java_props.correlationId = correlation_id
+      java_props.deliveryMode = delivery_mode
+      java_props.expiration = expiration
+      java_props.headers = headers
+      java_props.messageId = message_id
+      java_props.replyTo = reply_to
+      java_props.timestamp = timestamp
+      java_props.type = type
+      java_props.userId = user_id
+    end
+
   end
 end
