@@ -1,13 +1,13 @@
 include Java
 
 module Amqp
-  class Client
+  class AmqpClient
 
     attr_accessor :host, :port, :username, :password, :virtual_host
 
-    def Client.create_client
+    def AmqpClient.create_client
       java_client = org.nodex.core.amqp.AmqpClient.createClient
-      Client.new(java_client)
+      AmqpClient.new(java_client)
     end
 
     def initialize(java_client)
@@ -79,6 +79,11 @@ module Amqp
       publish_with_props(exchange, routing_key, nil, message)
     end
 
+    def request(exchange, routing_key, message, proc = nil, &response_block)
+      response_block = proc if proc
+      @java_channel.request(exchange, routing_key, nil, message.to_s, MessageHandler.new(response_block))
+    end
+
     def subscribe(queue_name, auto_ack, proc = nil, &message_handler)
       message_handler = proc if proc
       @java_channel.subscribe(queue_name, auto_ack, MessageHandler.new(message_handler))
@@ -129,6 +134,10 @@ module Amqp
                   :correlation_id, :delivery_mode, :expiration, :headers, :message_id, :priority,
                   :reply_to, :timestamp, :type, :user_id
 
+    def initialize
+      @headers = {}
+    end
+
     def Props.from_java_props(java_props)
       props = Props.new
       props.app_id = java_props.appId;
@@ -166,5 +175,39 @@ module Amqp
       java_props.userId = user_id
     end
 
+  end
+
+  class ChannelPool
+    attr_accessor :host, :port, :username, :password, :virtual_host
+
+    def initialize(java_pool)
+      @java_pool = java_pool
+    end
+
+    def ChannelPool.create_pool
+      java_pool = org.nodex.core.amqp.ChannelPool.createPool
+      ChannelPool.new(java_pool)
+    end
+
+    def get_channel(proc = nil, &channel_handler)
+      channel_handler = proc if proc
+      @java_pool.getChannel(ChannelHandler.new(channel_handler))
+    end
+
+    class ChannelHandler < org.nodex.core.amqp.ChannelHandler
+
+      def initialize(channel_handler)
+        super()
+        @channel_handler = channel_handler
+      end
+
+      def onCreate(java_channel)
+        @channel_handler.call(Channel.new(java_channel))
+      end
+
+      private :initialize
+    end
+
+    private :initialize
   end
 end

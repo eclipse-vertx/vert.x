@@ -32,7 +32,7 @@ public class Channel {
       }
       System.out.println("publishing msg");
       AMQP.BasicProperties aprops = props.toBasicProperties();
-      channel.basicPublish(exchange, routingKey, null, body);
+      channel.basicPublish(exchange, routingKey, aprops, body);
       System.out.println("Published msg");
     } catch (IOException e) {
       //TODO handle exception by passing them back on callback
@@ -119,8 +119,20 @@ public class Channel {
     }
   }
 
-  // HttpRequest-response pattern
+  // Request-response pattern
+
+  public Completion request(final String exchange, final String routingKey, final AmqpProps props, final String body, final AmqpMsgCallback responseCallback) {
+    try {
+      System.out.println("Calling request with props " + props);
+      return request(exchange, routingKey, props, body.getBytes("UTF-8"), responseCallback);
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
   public Completion request(final String exchange, final String routingKey, final AmqpProps props, final byte[] body, final AmqpMsgCallback responseCallback) {
+    final AmqpProps theProps = props == null ? new AmqpProps() : props;
     if (responseQueue == null) createResponseQueue();
     //We make sure we don't actually send until the response queue has been setup, this is done by using a
     //Completion
@@ -134,10 +146,10 @@ public class Channel {
           }
         };
         String cid = UUID.randomUUID().toString();
-        props.correlationId = cid;
-        props.replyTo = responseQueue;
+        theProps.correlationId = cid;
+        theProps.replyTo = responseQueue;
         callbacks.put(cid, cb);
-        publish(exchange, routingKey, props, body);
+        publish(exchange, routingKey, theProps, body);
       }
     });
     return c;

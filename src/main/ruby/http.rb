@@ -2,11 +2,11 @@ include Java
 require "buffer"
 
 module Http
-  class Server
+  class HttpServer
 
-    def Server.create_server(proc = nil, &connect_block)
+    def HttpServer.create_server(proc = nil, &connect_block)
       connect_block = proc if proc
-      Server.new(connect_block)
+      HttpServer.new(connect_block)
     end
 
     class ConnectCallback < org.nodex.core.http.HttpConnectHandler
@@ -95,6 +95,10 @@ module Http
     def data(proc = nil, &data_block)
       data_block = proc if proc
       @java_req.data(DataCallback.new(data_block))
+    end
+
+    def get_param(param)
+      @java_req.getParam(param)
     end
 
     protected :initialize

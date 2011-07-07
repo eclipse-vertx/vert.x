@@ -8,12 +8,17 @@ module Composition
       @java_composer = org.nodex.core.composition.Composer.compose
     end
 
-    def parallel(*deferreds)
-      @java_composer.parallel(deferreds)
+    # parallel and then can be combined
+
+    def parallel(*completions)
+      java_completions = []
+      completions.each {|c| java_completions << c._to_java_completion}
+      puts "converting array"
+      @java_composer.parallel(java_completions.to_java("org.nodex.core.composition.Completion".to_sym))
     end
 
-    def then(deferred)
-      @java_composer.then(deferred)
+    def then(completion)
+      @java_composer.then(completion._to_java_completion)
     end
 
     def run
@@ -23,33 +28,50 @@ module Composition
     private :initialize
   end
 
-  class Deferred
+  class Completion
 
-    def initialize(java_deferred)
-      @java_deferred = deferred
-    end
-
-    def execute
-      @java_deferred.execute
+    def initialize
+      @java_completion = org.nodex.core.composition.Completion.new
     end
 
     def on_complete(proc = nil, &complete_block)
       complete_block = proc if proc
-      @java_deferred.onComplete(CompleteCallback.new(complete_block))
+      @java_completion.onComplete(CompleteHandler.new(complete_block))
     end
 
-    class CompleteCallback < org.nodex.core.DoneHandler
-      def initialize(callback)
-        super()
-        @callback = callback
-      end
+    def complete
+      @java_completion.complete
+    end
 
-      def onEvent()
-        @callback.call
-      end
-
-      private :initialize
+    def _to_java_completion
+      @java_completion
     end
 
   end
+
+  class Deferred
+    def initialize(proc = nil, &block)
+      block = proc if proc
+      @java_deffered = org.nodex.core.composition.Deferred.new(CompleteHandler.new(block))
+    end
+
+    def _to_java_completion
+      @java_completion
+    end
+
+  end
+
+  class CompleteHandler < org.nodex.core.DoneHandler
+    def initialize(callback)
+      super()
+      @callback = callback
+    end
+
+    def onDone()
+      @callback.call
+    end
+
+    private :initialize
+  end
+
 end

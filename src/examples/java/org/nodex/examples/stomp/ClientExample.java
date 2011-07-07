@@ -17,7 +17,7 @@ public class ClientExample {
 
   public static void main(String[] args) throws Exception {
 
-    org.nodex.core.stomp.StompClient.connect(8080, new StompConnectHandler() {
+    org.nodex.core.stomp.StompClient.connect(8181, new StompConnectHandler() {
       public void onConnect(final StompConnection conn) {
 
         // Subscribe to a topic

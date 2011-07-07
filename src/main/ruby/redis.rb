@@ -1,7 +1,7 @@
 include Java
 
 module Redis
-  class Client
+  class RedisClient
 
     class ConnectionCallback < org.nodex.core.redis.RedisConnectHandler
       def initialize(connect_block)
@@ -16,8 +16,8 @@ module Redis
       private :initialize
     end
 
-    def Client.create_client
-      Client.new(org.nodex.core.redis.RedisClient.createClient)
+    def RedisClient.create_client
+      RedisClient.new(org.nodex.core.redis.RedisClient.createClient)
     end
 
     def initialize(java_client)

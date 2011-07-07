@@ -96,6 +96,11 @@ public class StompConnection {
   }
 
   // Request-response pattern
+
+  public Completion request(String dest, Buffer body, final StompMsgCallback responseCallback){
+    return request(dest, new HashMap<String, String>(), body, responseCallback);
+  }
+
   public Completion request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
     final Completion c = new Completion();
     if (responseQueue == null) setupResponseHandler();

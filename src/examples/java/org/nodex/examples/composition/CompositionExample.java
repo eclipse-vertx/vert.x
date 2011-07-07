@@ -40,17 +40,17 @@ public class CompositionExample {
   private static final String STOMP_DESTINATION = "availability-request";
 
   private void run() {
-    startStompServer();
-    startHttpServer();
-    startAMQPWorker();
-    startSTOMPWorker();
+    stompServer();
+    httpServer();
+    amqpWorker();
+    stompWorker();
   }
 
-  private void startStompServer() {
+  private void stompServer() {
     StompServer.createServer().listen(8181);
   }
 
-  private void startHttpServer() {
+  private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
     HttpServer.createServer(new HttpConnectHandler() {
       public void onConnect(final HttpConnection conn) {
@@ -96,7 +96,7 @@ public class CompositionExample {
    from the STOMP queue to get the stock availability of the item. This is done in parallel.
    When both results are in, it sends back a message with both results
    */
-  private void startAMQPWorker() {
+  private void amqpWorker() {
 
     final AtomicReference<RedisConnection> redisConn = new AtomicReference<RedisConnection>();
     final Completion redisConnected = new Completion();
@@ -187,7 +187,7 @@ public class CompositionExample {
   /*
   The STOMP worker consumes from the price queue and sends back the number of items in stock for the item
    */
-  private void startSTOMPWorker() {
+  private void stompWorker() {
     StompClient.connect(8181, new StompConnectHandler() {
       public void onConnect(final StompConnection conn) {
         conn.subscribe(STOMP_DESTINATION, new StompMsgCallback() {

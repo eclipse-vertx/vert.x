@@ -2,7 +2,7 @@ include Java
 require "buffer"
 
 module Stomp
-  class Client
+  class StompClient
     class ConnectCallback < org.nodex.core.stomp.StompConnectHandler
 
       def initialize(connect_block)
@@ -17,9 +17,9 @@ module Stomp
     end
 
     #Can take either a proc or a block
-    def Client.connect(port, host = "localhost", proc = nil, &connect_block)
+    def StompClient.connect(port, host = "localhost", proc = nil, &connect_block)
       connect_block = proc if proc
-      Client.new(port, host, connect_block)
+      StompClient.new(port, host, connect_block)
     end
 
     def initialize(port, host, connect_block)
@@ -51,16 +51,23 @@ module Stomp
     end
 
     def send(dest, body)
-      @java_connection.send(dest, body._to_java_buffer)
+      java_buff = body._to_java_buffer if body != nil
+      @java_connection.send(dest, java_buff)
     end
 
     def send_with_headers(dest, headers, body)
-      @java_connection.send(dest, headers, body._to_java_buffer)
+      java_buff = body._to_java_buffer if body != nil
+      @java_connection.send(dest, headers, java_buff)
     end
 
     def subscribe(dest, proc = nil, &message_block)
       message_block = proc if proc
       @java_connection.subscribe(dest, MsgCallback.new(message_block))
+    end
+
+    def request(dest, headers, body, proc = nil, &response_block)
+      response_block = proc if proc
+      @java_connection.request(dest, headers, body, MsgCallback.new(response_block))
     end
 
     class MsgCallback < org.nodex.core.stomp.StompMsgCallback
