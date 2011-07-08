@@ -23,6 +23,11 @@ public class Composer {
   private Composer() {
   }
 
+  public Composer when(final DoneHandler handler) {
+    Deferred deff = new Deferred(handler);
+    return when(deff);
+  }
+
   public Composer when(final Completion completion) {
     return when(new Completion[] { completion });
   }

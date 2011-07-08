@@ -6,7 +6,6 @@ import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.composition.Completion;
 import org.nodex.core.composition.Composer;
-import org.nodex.core.composition.Deferred;
 import org.nodex.core.file.FileSystem;
 import org.nodex.core.http.*;
 import org.nodex.core.redis.RedisClient;
@@ -189,13 +188,13 @@ public class CompositionExample {
 
                   comp.when(redisConnected, stompConnected)     // First make sure we are connected to redis and stomp
                       .when(redisGet, responseReturned)         // Then execute redis get and stomp request/response in parallel
-                      .when(new Deferred(new DoneHandler() {    // Then send back a response with the price and stock
+                      .when(new DoneHandler() {                 // Then send back a response with the price and stock
                         public void onDone() {
                           props.headers.put("price", price.get());
                           props.headers.put("stock", stock.get());
                           ch.publish("", props.replyTo, props, (byte[]) null);
                         }
-                      }))
+                      })
                       .end();
                 }
               });
