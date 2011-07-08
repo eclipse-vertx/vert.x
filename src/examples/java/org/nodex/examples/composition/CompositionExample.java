@@ -24,6 +24,31 @@ import java.util.concurrent.atomic.AtomicReference;
  * User: tim
  * Date: 05/07/11
  * Time: 15:58
+ *
+ * This somewhat elaborate example shows an interaction including HTTP, STOMP, AMQP and Redis
+ *
+ * Summary: We have a website which allows the user to check the price and stock count for inventory items.
+ *
+ * It contains the following components In real life these would probably be running on different nodes.
+ *
+ * 1) HTTP server. We create an HTTP server which serves the index.html page from disk, and responds to HTTP requests for an item.
+ * when it receives a request it uses the request-response pattern to send that request in an AMQP message to a queue
+ * and sets a handler for the response.
+ * When the response returns it formats the price and stock count in the html page returned to the browser.
+ *
+ * 2) AMQP consumer. We create an AMQP consumer that consumes from the AMQP queue, and then does two things in parallel
+ * a) Call redis to get the price for the item
+ * b) Send a STOMP message, using the request-response pattern to a STOMP destination to request the stock count
+ * When both a) and b) asynchronously complete, we return an AMQP message as the response to the HTTP server that made
+ * the request
+ *
+ * 3) A redis server
+ *
+ * 4) A STOMP server
+ *
+ * 5) STOMP consumer. We create a STOMP consumer that subscribes to the STOMP destination, calculates a stock count and
+ * sends that back in a response message
+ *
  */
 public class CompositionExample {
   public static void main(String[] args) throws Exception {
@@ -141,10 +166,11 @@ public class CompositionExample {
                 public void onMessage(final AmqpProps props, byte[] body) {
                   final String item = props.headers.get("item").toString();
                   Composer comp = Composer.compose();
+
+                  // Get price from redis
                   final AtomicInteger price = new AtomicInteger(0);
                   Completion redisGet = redisConn.get().get(item, new ResultHandler() {
                     public void onResult(String value) {
-                      System.out.println("redis return value is " + value);
                       price.set(Integer.parseInt(value));
                     }
                   });
@@ -152,22 +178,19 @@ public class CompositionExample {
                   Map<String, String> headers = new HashMap<String, String>();
                   headers.put("item", item);
 
+                  // Get stock from STOMP worker
                   final AtomicInteger stock = new AtomicInteger(0);
                   Completion responseReturned = stompConn.get().request(STOMP_DESTINATION, headers, null, new StompMsgCallback() {
                     public void onMessage(Map<String, String> headers, Buffer body) {
-
                       int st = Integer.valueOf(headers.get("stock"));
-                      System.out.println("Amount of stock is " + st);
-
                       stock.set(st);
                     }
                   });
 
                   comp.parallel(redisConnected, stompConnected) // First make sure we are connected to redis and stomp
                       .parallel(redisGet, responseReturned)     // Then execute redis get and stomp request/response in parallel
-                      .then(new Deferred(new DoneHandler() {  // Then send back a response with the price and stock
+                      .then(new Deferred(new DoneHandler() {    // Then send back a response with the price and stock
                         public void onDone() {
-                          //Now we send back a message with the price and stock
                           props.headers.put("price", price.get());
                           props.headers.put("stock", stock.get());
                           ch.publish("", props.replyTo, props, (byte[]) null);
