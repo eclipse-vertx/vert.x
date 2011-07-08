@@ -19,7 +19,8 @@ module Composition
       self
     end
 
-    def then(completion)
+    def then(completion = nil, &block)
+      completion = Deferred.new(block) if !completion
       @java_composer.then(completion._to_java_completion)
       self
     end
