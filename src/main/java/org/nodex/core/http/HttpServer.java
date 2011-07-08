@@ -67,7 +67,7 @@ public class HttpServer {
   public HttpServer listen(int port, String host) {
     try {
       bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
-      System.out.println("Net server listening on " + host + ":" + port);
+      System.out.println("HTTP server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }

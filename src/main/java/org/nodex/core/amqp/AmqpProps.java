@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class AmqpProps {
   public String appId;
-  public int classId;
+  public int classId = -1;
   public String className;
   public String clusterId;
   public String contentEncoding;
@@ -20,9 +20,9 @@ public class AmqpProps {
   public String correlationId;
   public int deliveryMode = 1;
   public String expiration;
-  public final Map<String, Object> headers = new HashMap<String, Object>();
+  public Map<String, Object> headers = new HashMap<String, Object>();
   public String messageId;
-  public int priority;
+  public int priority = 4;
   public String replyTo;
   public long timestamp;
   public String type;

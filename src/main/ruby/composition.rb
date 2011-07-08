@@ -10,15 +10,18 @@ module Composition
 
     # parallel and then can be combined
 
+    COMPLETION_CLASS_SYM = "org.nodex.core.composition.Completion".to_sym
+
     def parallel(*completions)
       java_completions = []
       completions.each {|c| java_completions << c._to_java_completion}
-      puts "converting array"
-      @java_composer.parallel(java_completions.to_java("org.nodex.core.composition.Completion".to_sym))
+      @java_composer.parallel(java_completions.to_java(COMPLETION_CLASS_SYM))
+      self
     end
 
     def then(completion)
       @java_composer.then(completion._to_java_completion)
+      self
     end
 
     def run
@@ -30,8 +33,16 @@ module Composition
 
   class Completion
 
-    def initialize
-      @java_completion = org.nodex.core.composition.Completion.new
+    def Completion.create
+      Completion.new(org.nodex.core.composition.Completion.new)
+    end
+
+    def Completion.create_from_java_completion(java_completion)
+      Completion.new(java_completion)
+    end
+
+    def initialize(java_completion)
+      @java_completion = java_completion
     end
 
     def on_complete(proc = nil, &complete_block)
@@ -47,6 +58,8 @@ module Composition
       @java_completion
     end
 
+    private :initialize
+
   end
 
   class Deferred
@@ -56,7 +69,7 @@ module Composition
     end
 
     def _to_java_completion
-      @java_completion
+      @java_deffered
     end
 
   end

@@ -1,5 +1,7 @@
 include Java
 
+require "composition"
+
 module Redis
   class RedisClient
 
@@ -67,8 +69,9 @@ module Redis
 
     def get(key, proc = nil, &result_callback)
       result_callback = proc if proc
-      @java_connection.get(key, ResultCallback.new(result_callback))
-    end          \
+      java_completion = @java_connection.get(key, ResultCallback.new(result_callback))
+      Completion.create_from_java_completion(java_completion)
+    end
 
     def close
       @java_connection.close

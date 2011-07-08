@@ -1,5 +1,6 @@
 include Java
 require "buffer"
+require "composition"
 
 module Stomp
   class StompClient
@@ -67,7 +68,8 @@ module Stomp
 
     def request(dest, headers, body, proc = nil, &response_block)
       response_block = proc if proc
-      @java_connection.request(dest, headers, body, MsgCallback.new(response_block))
+      java_completion = @java_connection.request(dest, headers, body, MsgCallback.new(response_block))
+      Completion.create_from_java_completion(java_completion)
     end
 
     class MsgCallback < org.nodex.core.stomp.StompMsgCallback

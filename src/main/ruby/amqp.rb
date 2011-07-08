@@ -1,5 +1,7 @@
 include Java
 
+require "composition"
+
 module Amqp
   class AmqpClient
 
@@ -72,16 +74,17 @@ module Amqp
     end
 
     def publish_with_props(exchange, routing_key, props, message)
-      @java_channel.publish(exchange, routing_key, props, message.to_s)
+      @java_channel.publish(exchange, routing_key, props.to_java_props, message.to_s)
     end
 
     def publish(exchange, routing_key, message)
       publish_with_props(exchange, routing_key, nil, message)
     end
 
-    def request(exchange, routing_key, message, proc = nil, &response_block)
+    def request(exchange, routing_key, props, message, proc = nil, &response_block)
       response_block = proc if proc
-      @java_channel.request(exchange, routing_key, nil, message.to_s, MessageHandler.new(response_block))
+      java_completion = @java_channel.request(exchange, routing_key, props.to_java_props, message.to_s, MessageHandler.new(response_block))
+      Completion.create_from_java_completion(java_completion)
     end
 
     def subscribe(queue_name, auto_ack, proc = nil, &message_handler)
@@ -136,6 +139,8 @@ module Amqp
 
     def initialize
       @headers = {}
+      @delivery_mode = 1
+
     end
 
     def Props.from_java_props(java_props)
@@ -173,6 +178,7 @@ module Amqp
       java_props.timestamp = timestamp
       java_props.type = type
       java_props.userId = user_id
+      java_props
     end
 
   end

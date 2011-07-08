@@ -20,9 +20,7 @@ public class RedisClient {
     final Jedis jedis = new Jedis(host, port);
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
-        System.out.println("Connecting jedis");
         jedis.connect();
-        System.out.println("Connected ok");
         connectHandler.onConnect(new RedisConnection(jedis));
       }
     });

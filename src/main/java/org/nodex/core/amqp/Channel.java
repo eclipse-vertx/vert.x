@@ -30,10 +30,8 @@ public class Channel {
       if (props == null) {
         props = new AmqpProps();
       }
-      System.out.println("publishing msg");
       AMQP.BasicProperties aprops = props.toBasicProperties();
       channel.basicPublish(exchange, routingKey, aprops, body);
-      System.out.println("Published msg");
     } catch (IOException e) {
       //TODO handle exception by passing them back on callback
       e.printStackTrace();
@@ -42,7 +40,7 @@ public class Channel {
 
   public void publish(final String exchange, final String routingKey, final AmqpProps props, final String message) {
     try {
-      publish(exchange, routingKey, null, message.getBytes("UTF-8"));
+      publish(exchange, routingKey, props, message.getBytes("UTF-8"));
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     }
@@ -123,8 +121,7 @@ public class Channel {
 
   public Completion request(final String exchange, final String routingKey, final AmqpProps props, final String body, final AmqpMsgCallback responseCallback) {
     try {
-      System.out.println("Calling request with props " + props);
-      return request(exchange, routingKey, props, body.getBytes("UTF-8"), responseCallback);
+      return request(exchange, routingKey, props, body == null ? null : body.getBytes("UTF-8"), responseCallback);
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
       return null;

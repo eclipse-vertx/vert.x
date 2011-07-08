@@ -39,7 +39,7 @@ def http_server
             price = resp_props.headers["price"]
             stock = resp_props.headers["stock"]
             content = "<html><body>Price is: #{price}<br>Stock is: #{stock}</body></html>"
-            resp.write(content, "UTF-8").end
+            resp.write_str(content, "UTF-8").end
           }
         }
       end
@@ -54,7 +54,7 @@ def amqp_worker
 
   # First we need to create a connection to redis
   redis_conn = nil
-  redis_connected = Completion.new
+  redis_connected = Completion.create
   RedisClient.create_client.connect(6379, "localhost") { |conn|
     # We add a little reference data that we're going to need later
     conn.set("bicycle", "125") {
@@ -67,7 +67,7 @@ def amqp_worker
 
   # And we create a connection to the STOMP broker
   stomp_conn = nil
-  stomp_connected = Completion.new
+  stomp_connected = Completion.create
   StompClient.connect(8181) { |conn|
     stomp_conn = conn
     stomp_connected.complete
@@ -79,16 +79,17 @@ def amqp_worker
     conn.create_channel{ |chan|
       chan.declare_queue(AMQP_QUEUE, false, true, true) {
         chan.subscribe(AMQP_QUEUE, true) { |props, body|
-          item = props.headers["item"]
+          item = props.headers["item"].to_s
           comp = Composer.compose
+
           price = nil
           redis_get = redis_conn.get(item) { |val|
-            puts "redis return value is #{val}"
             price = val
           }
 
-          response_returned = stomp_conn.request(STOMP_DESTINATION, props.headers, nil) { |headers, body|
-            price = headers["stock"]
+          stock = nil
+          response_returned = stomp_conn.request(STOMP_DESTINATION, {"item" => item}, nil) { |headers, body|
+            stock = headers["stock"]
           }
 
           comp.parallel(redis_connected, stomp_connected).
@@ -96,7 +97,7 @@ def amqp_worker
                then(Deferred.new{
                       props.headers["price"] = price
                       props.headers["stock"] = stock
-                      chan.publish("", props.reply_to, props, nil)}).
+                      chan.publish_with_props("", props.reply_to, props, nil)}).
                run
         }
       }

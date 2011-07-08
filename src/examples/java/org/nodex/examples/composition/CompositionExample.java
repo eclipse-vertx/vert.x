@@ -73,7 +73,7 @@ public class CompositionExample {
                 public void onCreate(final Channel ch) {
                   AmqpProps props = new AmqpProps();
                   props.headers.put("item", item);
-                  ch.request("", AMQP_QUEUE, props, null, new AmqpMsgCallback() {
+                  ch.request("", AMQP_QUEUE, props, (String)null, new AmqpMsgCallback() {
                     public void onMessage(AmqpProps respProps, byte[] bod) {
                       //We get a response back with the price and number of items in stock
                       int price = (Integer)respProps.headers.get("price");

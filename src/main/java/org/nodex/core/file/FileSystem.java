@@ -91,7 +91,6 @@ public class FileSystem {
 
   public void readFile(String path, DataHandler dataHandler) {
     //For now we just fake this
-    System.out.println("Reading file " + path);
     try {
       File f= new File(path);
       byte[] bytes = new byte[(int)f.length()];
