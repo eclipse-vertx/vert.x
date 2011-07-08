@@ -96,7 +96,7 @@ public class RecordParser extends DataHandler {
       if (buff.byteAt(pos) == delim[delimPos]) {
         delimPos++;
         if (delimPos == delim.length) {
-          Buffer ret = buff.slice(start, pos + 1);
+          Buffer ret = buff.slice(start, pos);
           start = pos + 1;
           delimPos = 0;
           output.onData(ret);

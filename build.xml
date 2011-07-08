@@ -12,6 +12,10 @@
     <property name="rabbit-lib" location="src/main/resources/jars/rabbit"/>
     <property name="jedis-lib" location="src/main/resources/jars/jedis"/>
 
+    <property name="unit-test-lib" location="src/unit-tests/resources/jars"/>
+    <property name="unit-tests-target" location="target/unit-tests/classes"/>
+    <property name="unit-tests-src" location="src/unit-tests"/>
+
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
             <include name="*.jar"/>
@@ -23,6 +27,17 @@
             <include name="*.jar"/>
         </fileset>
     </path>
+
+    <path id="unit-test-classpath">
+        <path refid="core-lib-classpath"/>
+        <fileset dir="${unit-test-lib}">
+            <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${unit-tests-target}"/>
+    </path>
+
+    <taskdef name="testng" classpathref="unit-test-classpath"
+             classname="org.testng.TestNGAntTask"/>
 
     <target name="init">
         <!-- Create the time stamp -->
@@ -40,6 +55,17 @@
 
     <target name="clean" description="clean up">
         <delete dir="${target}"/>
+    </target>
+
+    <target name="compile-unit-tests" depends="jar-core">
+        <mkdir dir="${unit-tests-target}"/>
+        <javac srcdir="${unit-tests-src}" destdir="${unit-tests-target}" classpathref="unit-test-classpath" debug="on"/>
+    </target>
+
+    <target name="unit-tests" depends="compile-unit-tests">
+        <testng classpathref="unit-test-classpath">
+            <classfileset dir="${unit-tests-target}" includes="**/*.class"/>
+        </testng>
     </target>
 
 </project>
