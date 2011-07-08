@@ -18,7 +18,7 @@ include Composition
 #
 # Summary: We have a website which allows the user to check the price and stock count for inventory items.
 #
-# It contains the following components In real life these would probably be running on different nodes.
+# It contains the following components (In real life these would probably be running on different nodes).
 #
 # 1) HTTP server. We create an HTTP server which serves the index.html page from disk, and responds to HTTP requests for an item.
 # when it receives a request it uses the request-response pattern to send that request in an AMQP message to a queue
