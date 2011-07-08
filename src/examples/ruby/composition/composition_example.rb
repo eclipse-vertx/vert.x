@@ -72,10 +72,9 @@ def http_server
   }.listen(8080, "localhost")
 end
 
-# The AMQP worker consumes from the queue and then calls redis to get the price for the item, and does a request/response
-# from the STOMP queue to get the stock availability of the item. This is done in parallel.
-# When both results are in, it sends back a message with both results
 def amqp_worker
+
+  #First we need to setup the connections and add some reference data
 
   # First we need to create a connection to redis
   redis_conn = nil
@@ -98,6 +97,14 @@ def amqp_worker
     stomp_connected.complete
   }
 
+  # We need to make sure we are connected before we can do anything
+  Composer.compose.when(redis_connected, stomp_connected).when { do_amqp_worker(redis_conn, stomp_conn) }.end
+end
+
+def do_amqp_worker(redis_conn, stomp_conn)
+
+  puts "in do_amqp_worker"
+
   # Create and start the AMQP worker
 
   AmqpClient.create_client.connect{ |conn|
@@ -119,12 +126,10 @@ def amqp_worker
             stock = headers["stock"]
           }
 
-          comp.when(redis_connected, stomp_connected).  # Make sure connections are made before we do anything else
-               when(redis_get, response_returned).      # Get price and stock information
-               when{  props.headers["price"] = price        # Format response message with info before sending
+          comp.when(redis_get, response_returned).      # Get price and stock information
+               when{  props.headers["price"] = price    # Format response message with info before sending
                       props.headers["stock"] = stock
-                      chan.publish_with_props("", props.reply_to, props, nil)}.
-               end
+                      chan.publish_with_props("", props.reply_to, props, nil)}.end
         }
       }
     }

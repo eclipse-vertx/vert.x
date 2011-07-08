@@ -115,12 +115,9 @@ public class CompositionExample {
     }).listen(8080);
   }
 
-  /*
-  The AMQP worker consumes from the queue and then calls redis to get the price for the item, and does a request/response
-   from the STOMP queue to get the stock availability of the item. This is done in parallel.
-   When both results are in, it sends back a message with both results
-   */
   private void amqpWorker() {
+
+    //First we need to set up the redis and Stomp connections (and add some reference data)
 
     final AtomicReference<RedisConnection> redisConn = new AtomicReference<RedisConnection>();
     final Completion redisConnected = new Completion();
@@ -153,6 +150,17 @@ public class CompositionExample {
       }
     });
 
+    // Once the connections are setup (asynchronously) we can start the worker
+    Composer.compose().when(redisConnected, stompConnected).
+                       when(new DoneHandler() {
+                         public void onDone() {
+                           setupConnections(redisConn.get(), stompConn.get());
+                         }
+                       }).end();
+  }
+
+  private void setupConnections(final RedisConnection redisConn, final StompConnection stompConn) {
+
     // Create and start the worker
     AmqpClient.createClient().connect(new AmqpConnectHandler() {
       public void onConnect(AmqpConnection conn) {
@@ -168,7 +176,7 @@ public class CompositionExample {
 
                   // Get price from redis
                   final AtomicInteger price = new AtomicInteger(0);
-                  Completion redisGet = redisConn.get().get(item, new ResultHandler() {
+                  Completion redisGet = redisConn.get(item, new ResultHandler() {
                     public void onResult(String value) {
                       price.set(Integer.parseInt(value));
                     }
@@ -179,15 +187,14 @@ public class CompositionExample {
 
                   // Get stock from STOMP worker
                   final AtomicInteger stock = new AtomicInteger(0);
-                  Completion responseReturned = stompConn.get().request(STOMP_DESTINATION, headers, null, new StompMsgCallback() {
+                  Completion responseReturned = stompConn.request(STOMP_DESTINATION, headers, null, new StompMsgCallback() {
                     public void onMessage(Map<String, String> headers, Buffer body) {
                       int st = Integer.valueOf(headers.get("stock"));
                       stock.set(st);
                     }
                   });
 
-                  comp.when(redisConnected, stompConnected)     // First make sure we are connected to redis and stomp
-                      .when(redisGet, responseReturned)         // Then execute redis get and stomp request/response in parallel
+                  comp.when(redisGet, responseReturned)         // Execute redis get and stomp request/response in parallel
                       .when(new DoneHandler() {                 // Then send back a response with the price and stock
                         public void onDone() {
                           props.headers.put("price", price.get());

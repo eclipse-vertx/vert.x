@@ -3,7 +3,7 @@ include Amqp
 
 queue = "test-queue"
 
-Client.create_client.connect { |conn|
+AmqpClient.create_client.connect { |conn|
   conn.create_channel { |chan|
     chan.declare_queue(queue, false, true, true) {
       chan.subscribe(queue, true) { |props, body|

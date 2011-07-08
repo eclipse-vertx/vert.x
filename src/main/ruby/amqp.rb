@@ -78,7 +78,7 @@ module Amqp
     end
 
     def publish(exchange, routing_key, message)
-      publish_with_props(exchange, routing_key, nil, message)
+      publish_with_props(exchange, routing_key, Props.new, message)
     end
 
     def request(exchange, routing_key, props, message, proc = nil, &response_block)
