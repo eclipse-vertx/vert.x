@@ -119,12 +119,12 @@ def amqp_worker
             stock = headers["stock"]
           }
 
-          comp.parallel(redis_connected, stomp_connected).  # Make sure connections are made before we do anything else
-               parallel(redis_get, response_returned).      # Get price and stock information
-               then{  props.headers["price"] = price        # Format response message with info before sending
+          comp.when(redis_connected, stomp_connected).  # Make sure connections are made before we do anything else
+               when(redis_get, response_returned).      # Get price and stock information
+               when{  props.headers["price"] = price        # Format response message with info before sending
                       props.headers["stock"] = stock
                       chan.publish_with_props("", props.reply_to, props, nil)}.
-               run
+               end
         }
       }
     }

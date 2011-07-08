@@ -187,16 +187,16 @@ public class CompositionExample {
                     }
                   });
 
-                  comp.parallel(redisConnected, stompConnected) // First make sure we are connected to redis and stomp
-                      .parallel(redisGet, responseReturned)     // Then execute redis get and stomp request/response in parallel
-                      .then(new Deferred(new DoneHandler() {    // Then send back a response with the price and stock
+                  comp.when(redisConnected, stompConnected)     // First make sure we are connected to redis and stomp
+                      .when(redisGet, responseReturned)         // Then execute redis get and stomp request/response in parallel
+                      .when(new Deferred(new DoneHandler() {    // Then send back a response with the price and stock
                         public void onDone() {
                           props.headers.put("price", price.get());
                           props.headers.put("stock", stock.get());
                           ch.publish("", props.replyTo, props, (byte[]) null);
                         }
                       }))
-                      .run();
+                      .end();
                 }
               });
               }

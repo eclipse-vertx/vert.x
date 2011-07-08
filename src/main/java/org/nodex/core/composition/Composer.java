@@ -23,7 +23,11 @@ public class Composer {
   private Composer() {
   }
 
-  public Composer parallel(final Completion... completions) {
+  public Composer when(final Completion completion) {
+    return when(new Completion[] { completion });
+  }
+
+  public Composer when(final Completion... completions) {
     Runnable run = new Runnable() {
       public void run() {
         final AtomicInteger countDown = new AtomicInteger(completions.length);
@@ -38,21 +42,6 @@ public class Composer {
           c.execute();
           c.onComplete(cb);
         }
-      }
-    };
-    runList.add(run);
-    return this;
-  }
-
-  public Composer then(final Completion completion) {
-    Runnable run = new Runnable() {
-      public void run() {
-        completion.execute();
-        completion.onComplete(new DoneHandler() {
-          public void onDone() {
-            next();
-          }
-        });
       }
     };
     runList.add(run);
@@ -75,7 +64,7 @@ public class Composer {
     run.run();
   }
 
-  public void run() {
+  public void end() {
     pos = 0;
     runCurrent();
   }

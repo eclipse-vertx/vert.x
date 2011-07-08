@@ -12,6 +12,17 @@ module Composition
 
     COMPLETION_CLASS_SYM = "org.nodex.core.composition.Completion".to_sym
 
+    def when(*completions, &block)
+      if block
+        completion = Deferred.new(block)
+        completions = [completion]
+      end
+      java_completions = []
+      completions.each {|c| java_completions << c._to_java_completion}
+      @java_composer.when(java_completions.to_java(COMPLETION_CLASS_SYM))
+      self
+    end
+
     def parallel(*completions)
       java_completions = []
       completions.each {|c| java_completions << c._to_java_completion}
@@ -25,8 +36,8 @@ module Composition
       self
     end
 
-    def run
-      @java_composer.run
+    def end
+      @java_composer.end
     end
 
     private :initialize
