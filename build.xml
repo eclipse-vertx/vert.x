@@ -34,6 +34,7 @@
             <include name="*.jar"/>
         </fileset>
         <pathelement location="${unit-tests-target}"/>
+        <pathelement location="target/node.x.jar"/>
     </path>
 
     <taskdef name="testng" classpathref="unit-test-classpath"
