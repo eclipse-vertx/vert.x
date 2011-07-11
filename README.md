@@ -4,6 +4,7 @@
 
 * A general purpose framework that uses an asynchronous event based style for building highly scalable network or file system aware applications
 * Runs on the JVM.
+* Everything is asynchronous.
 * Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*. Plus some.
 * Polyglot. The same (or similar) API will be available in multiple languages: Ruby, Java, Groovy, (Python?, JS?, Clojure?), etc
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
@@ -12,13 +13,15 @@
 * Understands multiple protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, AMQP, STOMP, Redis etc
 * Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
 
-## What is the status of Node.x?
-
-It's at the proof of concept stage. I have implemented enough to create a few working examples but the real work is yet to come!
+## Ok, cut the crap, show me some examples
 
 Take a look at some of these working Ruby examples to see the kind of things you can do with Node.x
 
 [Ruby examples](src/examples/ruby "Ruby examples")
+
+## What is the status of Node.x?
+
+It's at the proof of concept stage. I have implemented enough to create a few working examples but the real work is yet to come!
 
 ## What is the architecture?
 
