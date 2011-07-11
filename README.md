@@ -17,7 +17,7 @@
 
 Take a look at some of these working Ruby examples to see the kind of things you can do with Node.x
 
-[Ruby examples](node.x/tree/master/src/examples/ruby "Ruby examples")
+[Ruby examples](https://github.com/purplefox/node.x/tree/master/src/examples/ruby "Ruby examples")
 
 ## What is the status of Node.x?
 
