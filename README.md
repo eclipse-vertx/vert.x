@@ -41,11 +41,15 @@ Pre-requisites: ant, jruby, java
 
 From root directory 'ant'
 
-### Examples
+## Examples
 
 Ruby examples are in 'src/examples/ruby'
 
 To run example, make sure core is built first, then cd to example directory, read the README (if it exists), then run the .sh file. (Sorry no Windows batch files as yet)
+
+## Development discussions
+
+[node.x dev Google Group](http://groups.google.com/group/nodex-dev "Node.x dev")
 
 ## Join us!!
 
