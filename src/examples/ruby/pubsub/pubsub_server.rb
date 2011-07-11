@@ -2,6 +2,14 @@ require "net"
 require "parsetools"
 include Net
 
+# A trivial publish-subscribe server.
+# The server understands the following commands:
+# SUBSCRIBE,<topic name> - to subscribe to a named topic
+# UNSUBSCRIBE,<topic name> - to unsubscribe to the named topic
+# PUBLISH,<topic name>,<string to publish> - all subscribers to the named topic will get the published string
+#
+# To try this out open a few sessions using telnet localhost 8080 and type the protocol by hand
+
 Server.create_server { |socket|
   parser = ParserTools::RecordParser.new_delimited("\n") { |line|
     line = line.to_s.rstrip
