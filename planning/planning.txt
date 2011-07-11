@@ -42,7 +42,7 @@ Allow async actions to be composed together
 Concurrent
 ----------
 
-Provide set of scalable non blocking data structures.
+Provide set of scalable non blocking data structures. Wrap Cliff Click's classes.
 
 File
 ----

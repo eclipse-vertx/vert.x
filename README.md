@@ -6,7 +6,7 @@
 * Runs on the JVM.
 * Everything is asynchronous.
 * Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*. Plus some.
-* Polyglot. The same (or similar) API will be available in multiple languages: Ruby, Java, Groovy, (Python?, JS?, Clojure?), etc
+* Polyglot. The same (or similar) API will be available in multiple languages: Ruby, Java, Groovy, (Python, JS, Clojure, Scala)
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True threading. Unlike node.js, Python Twisted or Ruby EventMachine, it has true multi-threaded scalability. No more spinning up 32 instances just to utilise the cores on your server.

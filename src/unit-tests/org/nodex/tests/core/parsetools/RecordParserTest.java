@@ -42,7 +42,7 @@ public class RecordParserTest {
   Test parsing with fixed size records
    */
   public void fixed() {
-    int lines = 100;
+    int lines = 50;
     Buffer[] expected = new Buffer[lines];
 
     //We create lines of length zero to <lines> and shuffle them
@@ -141,7 +141,7 @@ public class RecordParserTest {
   And then passes them into the RecordParser in chunk sizes from 0 to twice the total input buffer size
    */
   private void delimited(byte[] delim) {
-    int lines = 100;
+    int lines = 50;
     Buffer[] expected = new Buffer[lines];
 
     //We create lines of length zero to <lines> and shuffle them
