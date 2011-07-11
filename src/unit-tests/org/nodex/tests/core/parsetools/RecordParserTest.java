@@ -37,8 +37,6 @@ public class RecordParserTest {
     delimited(new byte[] {0, 3, 2, 5, 6, 4, 6});
   }
 
-
-
   @Test
   /*
   Test parsing with fixed size records
@@ -273,10 +271,5 @@ public class RecordParserTest {
     }
     return Buffer.newWrapped(line);
   }
-
-
-
-
-
 
 }
