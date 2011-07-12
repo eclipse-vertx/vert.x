@@ -1,4 +1,6 @@
 .idea
 target
 out
-node.x.iml
+*.iml
+test-output
+Scratch.java
