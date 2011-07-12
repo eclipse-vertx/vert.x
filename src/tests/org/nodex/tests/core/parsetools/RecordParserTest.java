@@ -3,6 +3,7 @@ package org.nodex.tests.core.parsetools;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.parsetools.RecordParser;
+import org.nodex.tests.core.org.nodex.tests.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -101,35 +102,35 @@ public class RecordParserTest {
     MyHandler out = new MyHandler();
     Buffer[] expected = new Buffer[lines];
     Buffer input = Buffer.newDynamic(100);
-    expected[0] = randomFixedBuffer(10);
+    expected[0] = Utils.generateRandomBuffer(10);
     input.append(expected[0]);
     types.add(expected[0].length());
-    expected[1] = randomFixedBuffer(100);
+    expected[1] = Utils.generateRandomBuffer(100);
     input.append(expected[1]);
     types.add(expected[1].length());
     byte[] delim = new byte[] { 23, -120, 100, 3};
-    expected[2] = randomBuffer(50, true, delim[0]);
+    expected[2] = Utils.generateRandomBuffer(50, true, delim[0]);
     input.append(expected[2]);
     types.add(delim);
     input.append(Buffer.newWrapped(delim));
-    expected[3] = randomFixedBuffer(1000);
+    expected[3] = Utils.generateRandomBuffer(1000);
     input.append(expected[3]);
     types.add(expected[3].length());
-    expected[4] = randomBuffer(230, true, delim[0]);
+    expected[4] = Utils.generateRandomBuffer(230, true, delim[0]);
     input.append(expected[4]);
     types.add(delim);
     input.append(Buffer.newWrapped(delim));
     delim = new byte[] { 17 };
-    expected[5] = randomBuffer(341, true, delim[0]);
+    expected[5] = Utils.generateRandomBuffer(341, true, delim[0]);
     input.append(expected[5]);
     types.add(delim);
     input.append(Buffer.newWrapped(delim));
     delim = new byte[] { 54, -32, 0};
-    expected[6] = randomBuffer(1234, true, delim[0]);
+    expected[6] = Utils.generateRandomBuffer(1234, true, delim[0]);
     input.append(expected[6]);
     types.add(delim);
     input.append(Buffer.newWrapped(delim));
-    expected[7] = randomFixedBuffer(100);
+    expected[7] = Utils.generateRandomBuffer(100);
     input.append(expected[7]);
     types.add(expected[7].length());
 
@@ -205,14 +206,6 @@ public class RecordParserTest {
     checkResults(expected, results);
   }
 
-  private boolean buffersEqual(Buffer b1, Buffer b2) {
-    if (b1.length() != b2.length()) return false;
-    for (int i = 0; i < b1.length(); i++) {
-      if (b1.byteAt(i) != b2.byteAt(i)) return false;
-    }
-    return true;
-  }
-
   private void feedChunks(Buffer input, RecordParser parser, Integer[] chunkSizes) {
     int pos = 0;
     int chunkPos = 0;
@@ -229,7 +222,7 @@ public class RecordParserTest {
 
   private void checkResults(Buffer[] expected, Buffer[] results) {
      for (int i = 0; i < expected.length; i++) {
-       assert buffersEqual(expected[i], results[i]) : "Expected:" + expected[i] + " length:" + expected[i].length() +
+       assert Utils.buffersEqual(expected[i], results[i]) : "Expected:" + expected[i] + " length:" + expected[i].length() +
            " Actual:" + results[i] + " length:" + results[i].length();
      }
    }
@@ -238,7 +231,7 @@ public class RecordParserTest {
     //We create lines of length zero to <lines> and shuffle them
     List<Buffer> lineList = new ArrayList<Buffer>();
     for (int i = 0; i < lines; i++) {
-      lineList.add(randomBuffer(i, delim, delimByte));
+      lineList.add(Utils.generateRandomBuffer(i, delim, delimByte));
     }
     Collections.shuffle(lineList);
     return lineList;
@@ -252,24 +245,4 @@ public class RecordParserTest {
     }
     return chunkSizes;
   }
-
-  private Buffer randomFixedBuffer(int length) {
-    return this.randomBuffer(length, false, (byte)0);
-  }
-
-  private Buffer randomBuffer(int length, boolean avoid, byte avoidByte) {
-    byte[] line = new byte[length];
-    for (int i = 0; i < length; i++) {
-      //Choose a random byte - if we're generating delimited lines then make sure we don't
-      //choose first byte of delim
-      byte rand;
-      do {
-        rand = (byte)((int)(Math.random() * 255) - 128);
-      } while (avoid && rand == avoidByte);
-
-      line[i] = rand;
-    }
-    return Buffer.newWrapped(line);
-  }
-
 }

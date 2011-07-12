@@ -7,19 +7,27 @@ import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.ChannelGroupFuture;
+import org.jboss.netty.channel.group.ChannelGroupFutureListener;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.nodex.core.DoneHandler;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,9 +35,12 @@ public class NetServer {
   private ServerBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
   private final NetConnectHandler connectCallback;
-  private ExceptionHandler exceptionHandler;
+  private Map<String, Object> connectionOptions = new HashMap<String, Object>();
+  private ChannelGroup serverChannelGroup;
 
-  private NetServer(NetConnectHandler connectCallback) {
+  private NetServer(NetConnectHandler connectHandler) {
+    serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
+
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
             Nodex.instance.getAcceptorPool(),
@@ -41,13 +52,53 @@ public class NetServer {
         return Channels.pipeline(new ServerHandler());
       }
     });
-    bootstrap.setOption("child.tcpNoDelay", true);
-    bootstrap.setOption("child.keepAlive", true);
-    this.connectCallback = connectCallback;
+
+    //Defaults
+    connectionOptions.put("child.tcpNoDelay", true);
+    connectionOptions.put("child.keepAlive", true);
+
+    this.connectCallback = connectHandler;
   }
+
+  // Public API ========================================================================================================
 
   public static NetServer createServer(NetConnectHandler connectCallback) {
     return new NetServer(connectCallback);
+  }
+
+  public NetServer setTcpNoDelay(boolean tcpNoDelay) {
+    connectionOptions.put("child.tcpNoDelay", tcpNoDelay);
+    return this;
+  }
+
+  public NetServer setSendBufferSize(int size) {
+    connectionOptions.put("child.sendBufferSize", size);
+    return this;
+  }
+
+  public NetServer setReceiveBufferSize(int size) {
+    connectionOptions.put("child.receiveBufferSize", size);
+    return this;
+  }
+
+  public NetServer setKeepAlive(boolean keepAlive) {
+    connectionOptions.put("child.keepAlive", keepAlive);
+    return this;
+  }
+
+  public NetServer setReuseAddress(boolean reuse) {
+    connectionOptions.put("child.reuseAddress", reuse);
+    return this;
+  }
+
+  public NetServer setSoLinger(boolean linger) {
+    connectionOptions.put("child.soLinger", linger);
+    return this;
+  }
+
+  public NetServer setTrafficClass(boolean trafficClass) {
+    connectionOptions.put("child.trafficClass", trafficClass);
+    return this;
   }
 
   public NetServer listen(int port) {
@@ -56,7 +107,9 @@ public class NetServer {
 
   public NetServer listen(int port, String host) {
     try {
-      bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+      bootstrap.setOptions(connectionOptions);
+      Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+      serverChannelGroup.add(serverChannel);
       System.out.println("Net server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
@@ -64,12 +117,24 @@ public class NetServer {
     return this;
   }
 
-  public void stop() {
+  public void close() {
+    close(null);
+  }
+
+  public void close(final DoneHandler done) {
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
-    bootstrap.releaseExternalResources();
+    if (done != null) {
+      serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
+        public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
+          done.onDone();
+        }
+      });
+    }
   }
+
+  // End of public API =================================================================================================
 
   private class ServerHandler extends SimpleChannelHandler {
 
@@ -82,9 +147,21 @@ public class NetServer {
     }
 
     @Override
+    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      Channel ch = e.getChannel();
+      NetSocket sock = socketMap.get(ch);
+      ChannelState state = e.getState();
+      if (state == ChannelState.INTEREST_OPS) {
+        sock.interestOpsChanged();
+      }
+    }
+
+    @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       Channel ch = e.getChannel();
+      NetSocket sock = socketMap.get(ch);
       socketMap.remove(ch);
+      sock.handleClosed();
     }
 
     @Override
@@ -97,13 +174,16 @@ public class NetServer {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       Channel ch = e.getChannel();
+      NetSocket sock = socketMap.get(ch);
       ch.close();
       Throwable t = e.getCause();
-      if (exceptionHandler != null && t instanceof Exception) {
-        exceptionHandler.onException((Exception) t);
+      if (sock != null && t instanceof Exception) {
+        sock.handleException((Exception) t);
       } else {
         t.printStackTrace();
       }
     }
+
+
   }
 }

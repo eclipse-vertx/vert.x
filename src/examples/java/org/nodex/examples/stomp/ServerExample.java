@@ -9,6 +9,6 @@ public class ServerExample {
 
     System.out.println("Any key to exit");
     System.in.read();
-    server.stop();
+    server.close();
   }
 }

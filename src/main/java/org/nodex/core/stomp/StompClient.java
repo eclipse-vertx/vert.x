@@ -16,7 +16,7 @@ public class StompClient {
 
   public static void connect(int port, String host, final String username, final String password,
                              final StompConnectHandler connectHandler) {
-    NetClient.connect(port, host, new NetConnectHandler() {
+    NetClient.createClient().connect(port, host, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         final StompConnection conn = new StompConnection(sock);
         conn.connect(username, password, new DoneHandler() {

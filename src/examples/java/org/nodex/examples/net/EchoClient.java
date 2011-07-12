@@ -9,7 +9,7 @@ import org.nodex.core.net.NetSocket;
 public class EchoClient {
   public static void main(String[] args) throws Exception {
 
-    NetClient.connect(8080, "localhost", new NetConnectHandler() {
+    NetClient.createClient().connect(8080, "localhost", new NetConnectHandler() {
       public void onConnect(NetSocket socket) {
         socket.data(new DataHandler() {
           public void onData(Buffer buffer) {
