@@ -93,7 +93,7 @@ public class NetClient {
     return this;
   }
 
-  public NetClient setTrafficClass(boolean trafficClass) {
+  public NetClient setTrafficClass(int trafficClass) {
     connectionOptions.put("child.trafficClass", trafficClass);
     return this;
   }
@@ -108,7 +108,11 @@ public class NetClient {
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      NetSocket sock = socketMap.get(ctx.getChannel());
       socketMap.remove(ctx.getChannel());
+      if (sock != null) {
+        sock.handleClosed();
+      }
     }
 
     @Override

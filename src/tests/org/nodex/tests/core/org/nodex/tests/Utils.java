@@ -40,18 +40,4 @@ public class Utils {
     return true;
   }
 
-  public static class AwaitDone extends DoneHandler {
-    private CountDownLatch latch = new CountDownLatch(1);
-    public void onDone() {
-      latch.countDown();
-    }
-
-    public boolean awaitDone(long timeout) {
-      try {
-        return latch.await(timeout, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        return false;
-      }
-    }
-  }
 }

@@ -62,8 +62,11 @@ public class NetSocket {
     this.drainHandler = drained;
   }
 
-  public void closed(DoneHandler closed) {
+  public synchronized void closed(DoneHandler closed) {
     this.closedHandler = closed;
+    if (!channel.isOpen()) {
+      closedHandler.onDone(); //Call it now if already closed
+    }
   }
 
   public void pause() {
@@ -99,7 +102,9 @@ public class NetSocket {
 
   void dataReceived(Buffer data) {
     try {
-      dataHandler.onData(data);
+      if (dataHandler != null) {
+        dataHandler.onData(data);
+      }
     } catch (Throwable t) {
       //We log errors otherwise they will get swallowed
       //TODO logging can be improved
@@ -118,7 +123,7 @@ public class NetSocket {
     }
   }
 
-  void handleClosed() {
+  synchronized void handleClosed() {
     if (closedHandler != null) {
       closedHandler.onDone();
     }

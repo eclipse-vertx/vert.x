@@ -96,7 +96,7 @@ public class NetServer {
     return this;
   }
 
-  public NetServer setTrafficClass(boolean trafficClass) {
+  public NetServer setTrafficClass(int trafficClass) {
     connectionOptions.put("child.trafficClass", trafficClass);
     return this;
   }
