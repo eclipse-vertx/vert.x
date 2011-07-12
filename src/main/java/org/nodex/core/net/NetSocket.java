@@ -80,8 +80,8 @@ public class NetSocket {
   //Default is 64kB
   public void setWriteQueueMaxSize(int size) {
     NioSocketChannelConfig conf =  (NioSocketChannelConfig)channel.getConfig();
-    conf.setWriteBufferHighWaterMark(size);
     conf.setWriteBufferLowWaterMark(size / 2);
+    conf.setWriteBufferHighWaterMark(size);
   }
 
   public void close() {
