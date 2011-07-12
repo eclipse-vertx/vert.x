@@ -7,7 +7,7 @@ num_messages = 1000000;
 count = 0
 start = nil
 
-Client.connect(8080, "localhost") { |conn|
+Client.connect(8181, "localhost") { |conn|
   conn.subscribe("test-topic") { |msg|
     count += 1
     if count == warmup + num_messages

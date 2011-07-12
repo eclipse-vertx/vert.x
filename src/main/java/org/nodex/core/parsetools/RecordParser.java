@@ -9,6 +9,13 @@ import java.io.UnsupportedEncodingException;
  * User: tim
  * Date: 27/06/11
  * Time: 17:49
+ *
+ * A RecordParser takes as input a fragmented sequence of Buffers and outputs a record, which is also a Buffer
+ * Records can be delimited by a sequence of bytes, or can be fixed size.
+ * The delimiters can be changed or the parser can be switched between fixed size mode or delimited mode
+ * any time after creation. This enables the parser to be used for spitting out records for protocols which may
+ * involve a combination of delimited and fixed size records or where the delimiter changes.
+ * The parser is not character encoding aware, and works with sequences of bytes not characters
  */
 public class RecordParser extends DataHandler {
 
@@ -27,8 +34,23 @@ public class RecordParser extends DataHandler {
     this.output = output;
   }
 
-  public static RecordParser newDelimited(final String delim, final String enc, final DataHandler output) {
-    return newDelimited(delimToByteArray(delim, enc), output);
+  /**
+   * Helper method to convert a latin-1 String to an array of bytes for use as a delimiter
+   * Please do not use this for non latin-1 characters
+   * @param str
+   * @return The byte[] form of the string
+   */
+  public static byte[] latin1StringToBytes(String str) {
+    byte[] bytes = new byte[str.length()];
+    for (int i = 0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      bytes[i] = (byte)(c & 0xFF);
+    }
+    return null;
+  }
+
+  public static RecordParser newDelimited(String delim, DataHandler output) {
+    return newDelimited(latin1StringToBytes(delim), output);
   }
 
   public static RecordParser newDelimited(byte[] delim, DataHandler output) {
@@ -43,16 +65,8 @@ public class RecordParser extends DataHandler {
     return ls;
   }
 
-  private static byte[] delimToByteArray(String delim, String enc) {
-    try {
-      return delim.getBytes(enc);
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException("Unsupported encoding " + enc);
-    }
-  }
-
-  public void delimitedMode(final String delim, final String enc) {
-    delimitedMode(delimToByteArray(delim, enc));
+  public void delimitedMode(String delim) {
+    delimitedMode(latin1StringToBytes(delim));
   }
 
   public void delimitedMode(byte[] delim) {

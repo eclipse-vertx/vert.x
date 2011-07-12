@@ -19,7 +19,7 @@ public class StompPerf {
 
   public static void main(String[] args) throws Exception {
 
-    StompClient.connect(8080, new StompConnectHandler() {
+    StompClient.connect(8181, new StompConnectHandler() {
       public void onConnect(final StompConnection conn) {
         final int warmup = 500000;
         final int numMessages = 1000000;
