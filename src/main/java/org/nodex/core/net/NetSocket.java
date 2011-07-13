@@ -97,21 +97,25 @@ public class NetSocket implements ReadStream, WriteStream {
 
   // End of public API =================================================================================================
 
-  private void callDrainHandler() {
-    if (channel.isWritable() && drainHandler != null) {
-      drainHandler.onDone();
-    }
-  }
-
-  void handleInterestedOpsChanged() {
-    callDrainHandler();
-  }
-
   // All the handle methods need to be synchronized on the same object to prevent them running concurrently
   // We make a guarantee that there's never more than one system thread calling into the same instance of a NetSocket
   // at any one time. This makes things easier for the developer.
 
   private final Object handleLock = new Object();
+
+  void handleInterestedOpsChanged() {
+    synchronized (handleLock) {
+      callDrainHandler();
+    }
+  }
+
+  private void callDrainHandler() {
+    if (drainHandler != null) {
+      if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
+        drainHandler.onDone();
+      }
+    }
+  }
 
   void handleDataReceived(Buffer data) {
     try {

@@ -184,6 +184,11 @@ public class NetTest {
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         sSock.set(sock);
+        sock.drain(new DoneHandler() {
+          public void onDone() {
+            assert false : "Drain should not be called on server";
+          }
+        });
         sock.data(new DataHandler() {
           int receivedData;
 
@@ -217,12 +222,6 @@ public class NetTest {
     NetClient.createClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         cSock.set(sock);
-        sock.drain(new DoneHandler() {
-          public void onDone() {
-            //assert false : "Server drain should not be called";
-          }
-        });
-
         connectedLatch.countDown();
       }
     });
@@ -245,8 +244,6 @@ public class NetTest {
 
     final CountDownLatch drainedLatch1 = new CountDownLatch(1);
     cSock.get().drain(new DoneHandler() {
-      boolean called;
-
       public void onDone() {
         drainedLatch1.countDown();
       }
