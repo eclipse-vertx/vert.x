@@ -165,12 +165,6 @@ public class NetTest {
     awaitClose(server);
   }
 
-  /*
-
-  12) Tetst pause, resume and drain
-  13) Test exception handler
-   */
-
   private enum ReceiveState {
     START, PAUSED, CONTINUING;
   }
