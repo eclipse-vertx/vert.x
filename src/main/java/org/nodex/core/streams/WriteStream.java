@@ -11,8 +11,6 @@ import org.nodex.core.buffer.DataHandler;
  */
 public interface WriteStream {
 
-  void data(DataHandler handler);
-
   void setWriteQueueMaxSize(int maxSize);
 
   boolean writeQueueFull();
