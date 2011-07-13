@@ -125,6 +125,16 @@ public class NetClient {
     }
 
     @Override
+    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      Channel ch = e.getChannel();
+      NetSocket sock = socketMap.get(ch);
+      ChannelState state = e.getState();
+      if (state == ChannelState.INTEREST_OPS) {
+        sock.interestOpsChanged();
+      }
+    }
+
+    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       NetSocket sock = socketMap.get(ctx.getChannel());
       e.getChannel().close();

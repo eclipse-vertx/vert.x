@@ -96,7 +96,9 @@ public class NetSocket {
 
   void interestOpsChanged() {
     if (channel.isWritable() && drainHandler != null) {
-      drainHandler.onDone();
+      DoneHandler h = drainHandler;
+      drainHandler = null; //It only fires once
+      h.onDone();
     }
   }
 

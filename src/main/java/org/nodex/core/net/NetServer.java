@@ -168,7 +168,9 @@ public class NetServer {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       NetSocket sock = socketMap.get(ch);
-      sock.dataReceived(new Buffer((ChannelBuffer) e.getMessage()));
+      ChannelBuffer buff = (ChannelBuffer)e.getMessage();
+      ChannelBuffer sliced = buff.slice();
+      sock.dataReceived(new Buffer(sliced));
     }
 
     @Override

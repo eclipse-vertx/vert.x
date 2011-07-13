@@ -46,7 +46,7 @@ public class RecordParser extends DataHandler {
       char c = str.charAt(i);
       bytes[i] = (byte)(c & 0xFF);
     }
-    return null;
+    return bytes;
   }
 
   public static RecordParser newDelimited(String delim, DataHandler output) {
