@@ -1,4 +1,4 @@
-package org.nodex.tests.core.org.nodex.tests;
+package org.nodex.tests;
 
 import org.nodex.core.DoneHandler;
 

@@ -6,7 +6,7 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
-import org.nodex.tests.core.org.nodex.tests.Utils;
+import org.nodex.tests.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
