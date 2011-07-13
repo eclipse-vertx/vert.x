@@ -192,6 +192,7 @@ public class NetTest {
         sSock.set(sock);
         sock.data(new DataHandler() {
           int receivedData;
+
           public void onData(Buffer data) {
             switch (receiveState.get()) {
               case START: {
@@ -215,7 +216,6 @@ public class NetTest {
       }
     }).listen(8181);
 
-    final CountDownLatch drainedLatch = new CountDownLatch(1);
     final Buffer sentBuff = Buffer.newDynamic(0);
     final AtomicReference<NetSocket> cSock = new AtomicReference<NetSocket>();
 
@@ -225,39 +225,79 @@ public class NetTest {
         cSock.set(sock);
         sock.drain(new DoneHandler() {
           public void onDone() {
-            assert false: "Server drain should not be called";
+            assert false : "Server drain should not be called";
           }
         });
-        //Send some data until the write queue is full
-        int count = 0;
-        while (!sock.writeQueueFull()) {
-          Buffer b = Utils.generateRandomBuffer(100);
-          sentBuff.append(b);
-          count += b.length();
-          sock.write(b);
-        }
-        sentData.set(count);
-        assert sock.writeQueueFull();
+
         connectedLatch.countDown();
       }
     });
 
     assert connectedLatch.await(5, TimeUnit.SECONDS);
 
+    //Send some data until the write queue is full
+    int count = 0;
+    while (!cSock.get().writeQueueFull()) {
+      Buffer b = Utils.generateRandomBuffer(100);
+      sentBuff.append(b);
+      count += b.length();
+      cSock.get().write(b);
+    }
+    assert cSock.get().writeQueueFull();
+
     assert pausedLatch.await(2, TimeUnit.SECONDS);
 
     assert receiveState.get() == ReceiveState.PAUSED;
 
+    final CountDownLatch drainedLatch1 = new CountDownLatch(1);
     cSock.get().drain(new DoneHandler() {
+      boolean called;
+
       public void onDone() {
-        drainedLatch.countDown();
+        if (!called) {
+          called = true;
+          drainedLatch1.countDown();
+        } else {
+          assert false : "drain handler should only be called once";
+        }
       }
     });
 
     receiveState.set(ReceiveState.CONTINUING);
     sSock.get().resume();
 
-    assert drainedLatch.await(5, TimeUnit.SECONDS);
+    assert drainedLatch1.await(5, TimeUnit.SECONDS);
+
+    receiveState.set(ReceiveState.START);
+
+    //Send more data until write queue is full again
+    while (!cSock.get().writeQueueFull()) {
+      Buffer b = Utils.generateRandomBuffer(100);
+      sentBuff.append(b);
+      count += b.length();
+      cSock.get().write(b);
+    }
+    sentData.set(count);
+    assert cSock.get().writeQueueFull();
+
+    final CountDownLatch drainedLatch2 = new CountDownLatch(1);
+    cSock.get().drain(new DoneHandler() {
+      boolean called;
+
+      public void onDone() {
+        if (!called) {
+          called = true;
+          drainedLatch2.countDown();
+        } else {
+          assert false : "drain handler should only be called once";
+        }
+      }
+    });
+
+    //And then drain it again
+    receiveState.set(ReceiveState.CONTINUING);
+    sSock.get().resume();
+
     assert endLatch.await(5, TimeUnit.SECONDS);
     assert Utils.buffersEqual(sentBuff, receivedBuff);
 

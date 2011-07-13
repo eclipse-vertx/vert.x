@@ -112,7 +112,7 @@ Wrap node.x API with Akka actors. Actors process events.
 Memcached??
 -----------
 
-SMTP????
+SMTP ????
 --------
 
 JDBC
@@ -149,6 +149,8 @@ Other things to look at
 =======================
 
 Consider wrapping libevent in Java API
+
+
 
 
 
