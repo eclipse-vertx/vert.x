@@ -8,12 +8,14 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.util.CharsetUtil;
 import org.nodex.core.DoneHandler;
 import org.nodex.core.ExceptionHandler;
+import org.nodex.core.streams.ReadStream;
+import org.nodex.core.streams.WriteStream;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 
 import java.nio.charset.Charset;
 
-public class NetSocket {
+public class NetSocket implements ReadStream, WriteStream {
   private final Channel channel;
   private volatile DataHandler dataHandler;
   private volatile ExceptionHandler exceptionHandler;
@@ -60,9 +62,10 @@ public class NetSocket {
 
   public void drain(DoneHandler drained) {
     this.drainHandler = drained;
+    callDrainHandler(); //If the channel is already drained, we want to call it immediately
   }
 
-  public synchronized void closed(DoneHandler closed) {
+  public void closed(DoneHandler closed) {
     this.closedHandler = closed;
     if (!channel.isOpen()) {
       closedHandler.onDone(); //Call it now if already closed
@@ -94,40 +97,56 @@ public class NetSocket {
 
   // End of public API =================================================================================================
 
-  void interestOpsChanged() {
+  private void callDrainHandler() {
     if (channel.isWritable() && drainHandler != null) {
-      DoneHandler h = drainHandler;
-      drainHandler = null; //It only fires once
-      h.onDone();
+      drainHandler.onDone();
     }
   }
 
-  void dataReceived(Buffer data) {
+  void handleInterestedOpsChanged() {
+    callDrainHandler();
+  }
+
+  // All the handle methods need to be synchronized on the same object to prevent them running concurrently
+  // We make a guarantee that there's never more than one system thread calling into the same instance of a NetSocket
+  // at any one time. This makes things easier for the developer.
+
+  private final Object handleLock = new Object();
+
+  void handleDataReceived(Buffer data) {
     try {
       if (dataHandler != null) {
-        dataHandler.onData(data);
+        synchronized (handleLock) {
+          dataHandler.onData(data);
+        }
       }
     } catch (Throwable t) {
-      //We log errors otherwise they will get swallowed
-      //TODO logging can be improved
-      t.printStackTrace();
-      if (t instanceof RuntimeException) {
-        throw (RuntimeException) t;
+      if (t instanceof Exception) {
+        handleException((Exception)t);
       } else if (t instanceof Error) {
         throw (Error) t;
+      } else if (t instanceof Throwable) {
+        t.printStackTrace(System.err);
       }
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onException(e);
+      synchronized (handleLock) {
+        exceptionHandler.onException(e);
+      }
+    } else {
+      System.err.println("Unhandled exception " + e.getMessage());
+      e.printStackTrace(System.err);
     }
   }
 
-  synchronized void handleClosed() {
+  void handleClosed() {
     if (closedHandler != null) {
-      closedHandler.onDone();
+      synchronized (handleLock) {
+        closedHandler.onDone();
+      }
     }
   }
 

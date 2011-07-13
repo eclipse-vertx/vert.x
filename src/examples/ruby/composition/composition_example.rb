@@ -103,8 +103,6 @@ end
 
 def do_amqp_worker(redis_conn, stomp_conn)
 
-  puts "in do_amqp_worker"
-
   # Create and start the AMQP worker
 
   AmqpClient.create_client.connect{ |conn|

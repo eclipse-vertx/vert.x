@@ -53,15 +53,19 @@ module Net
       end
     end
 
-    #Can take either a proc or a block
-    def Client.connect(port, host = "localhost", proc = nil, &connect_block)
-      connect_block = proc if proc
-      Client.new(port, host, connect_block)
+    def Client.create_client
+      Client.new
     end
 
-    def initialize(port, host, connect_block)
+    #Can take either a proc or a block
+    def connect(port, host = "localhost", proc = nil, &connect_block)
+      connect_block = proc if proc
+      @java_client.connect(port, host, ConnectCallback.new(connect_block))
+    end
+
+    def initialize
       super()
-      @java_client = org.nodex.core.net.NetClient.connect(port, host, ConnectCallback.new(connect_block))
+      @java_client = org.nodex.core.net.NetClient.createClient;
     end
 
     private :initialize

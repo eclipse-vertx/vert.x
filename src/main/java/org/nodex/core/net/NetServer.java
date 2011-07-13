@@ -19,13 +19,11 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.nodex.core.DoneHandler;
-import org.nodex.core.ExceptionHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
@@ -152,7 +150,7 @@ public class NetServer {
       NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        sock.interestOpsChanged();
+        sock.handleInterestedOpsChanged();
       }
     }
 
@@ -170,7 +168,7 @@ public class NetServer {
       NetSocket sock = socketMap.get(ch);
       ChannelBuffer buff = (ChannelBuffer)e.getMessage();
       ChannelBuffer sliced = buff.slice();
-      sock.dataReceived(new Buffer(sliced));
+      sock.handleDataReceived(new Buffer(sliced));
     }
 
     @Override

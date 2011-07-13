@@ -120,7 +120,7 @@ public class NetClient {
       NetSocket sock = socketMap.get(ctx.getChannel());
       if (sock != null) {
         ChannelBuffer cb = (ChannelBuffer) e.getMessage();
-        sock.dataReceived(new Buffer(cb));
+        sock.handleDataReceived(new Buffer(cb));
       }
     }
 
@@ -130,7 +130,7 @@ public class NetClient {
       NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        sock.interestOpsChanged();
+        sock.handleInterestedOpsChanged();
       }
     }
 
