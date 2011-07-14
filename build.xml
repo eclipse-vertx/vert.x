@@ -67,6 +67,8 @@
         <testng classpathref="test-classpath">
             <classfileset dir="${tests-target}" includes="**/*.class"/>
         </testng>
+        <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true">
+        </exec>
     </target>
 
 </project>

@@ -1,4 +1,4 @@
-package org.nodex.tests;
+package tests;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;

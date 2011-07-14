@@ -1,4 +1,4 @@
-package org.nodex.tests.core.streams;
+package tests.core.streams;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
@@ -6,7 +6,7 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
-import org.nodex.tests.Utils;
+import tests.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

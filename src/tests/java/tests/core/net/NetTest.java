@@ -1,4 +1,4 @@
-package org.nodex.tests.core.net;
+package tests.core.net;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
@@ -7,8 +7,8 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.nodex.tests.AwaitDone;
-import org.nodex.tests.Utils;
+import tests.AwaitDone;
+import tests.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
