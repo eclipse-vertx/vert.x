@@ -43,7 +43,7 @@ From root directory 'ant'
 
 ## Examples
 
-Ruby examples are here (https://github.com/purplefox/node.x/tree/master/src/examples/ruby "Ruby examples")
+Ruby examples are [here] (https://github.com/purplefox/node.x/tree/master/src/examples/ruby "Ruby examples")
 
 To run example, make sure core is built first, then cd to example directory, read the README (if it exists), then run the .sh file. (Sorry no Windows batch files as yet)
 
