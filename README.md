@@ -43,7 +43,7 @@ From root directory 'ant'
 
 ## Examples
 
-Ruby examples are in 'src/examples/ruby'
+Ruby examples are here (https://github.com/purplefox/node.x/tree/master/src/examples/ruby "Ruby examples")
 
 To run example, make sure core is built first, then cd to example directory, read the README (if it exists), then run the .sh file. (Sorry no Windows batch files as yet)
 
@@ -52,6 +52,8 @@ To run example, make sure core is built first, then cd to example directory, rea
 [node.x dev Google Group](http://groups.google.com/group/nodex-dev "Node.x dev")
 
 ## Join us!!
+
+There is lots to do! Ping me @timfox, or drop a mail on the nodex-dev google group.
 
 
 
