@@ -2,12 +2,15 @@ package org.nodex.core.buffer;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.util.CharsetUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 public class Buffer {
   private ChannelBuffer buffer;
+
+  // Public API ========================================================================================================
 
   public static Buffer newFixed(int size) {
     return new Buffer(ChannelBuffers.buffer(size));
@@ -37,20 +40,6 @@ public class Buffer {
     this.buffer = buffer;
   }
 
-  public void write(String str, int offset, String enc) {
-    try {
-      byte[] bytes = str.getBytes(enc);
-      buffer.writerIndex(offset);
-      buffer.writeBytes(bytes);
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e.getMessage());
-    }
-  }
-
-  public byte byteAt(int pos) {
-    return buffer.getByte(pos);
-  }
-
   public String toString() {
     return buffer.toString(Charset.forName("UTF-8"));
   }
@@ -58,6 +47,12 @@ public class Buffer {
   public String toString(String enc) {
     return buffer.toString(Charset.forName(enc));
   }
+
+  public byte byteAt(int pos) {
+    return buffer.getByte(pos);
+  }
+
+  //Append operations add to the end of the buffer
 
   public Buffer append(Buffer buff) {
     ChannelBuffer cb = buff._toChannelBuffer();
@@ -77,13 +72,52 @@ public class Buffer {
   }
 
   public Buffer append(String str, String enc) {
-    try {
-      byte[] bytes = str.getBytes(enc);
-      buffer.writeBytes(bytes);
-      return this;
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e.getMessage());
-    }
+    return append(str, Charset.forName(enc));
+  }
+
+  public Buffer append(String str) {
+    return append(str, CharsetUtil.UTF_8);
+  }
+
+  private Buffer append(String str, Charset charset) {
+    byte[] bytes = str.getBytes(charset);
+    buffer.writeBytes(bytes);
+    return this;
+  }
+
+  // set operations write into the buffer at position pos
+
+  public Buffer setByte(int pos, byte b) {
+    buffer.setByte(pos, b);
+    return this;
+  }
+
+  public Buffer setBytes(int pos, Buffer b) {
+    buffer.setBytes(pos, b._toChannelBuffer());
+    return this;
+  }
+
+  public Buffer setBytes(int pos, byte[] b) {
+    buffer.setBytes(pos, b);
+    return this;
+  }
+
+  public Buffer setBytes(int pos, String str) {
+    return setBytes(pos, str, CharsetUtil.UTF_8);
+  }
+
+  public Buffer setBytes(int pos, String str, String enc) {
+    return setBytes(pos, str, Charset.forName(enc));
+  }
+
+  private Buffer setBytes(int pos, String str, Charset charset) {
+    byte[] bytes = str.getBytes(charset);
+    buffer.setBytes(pos, bytes);
+    return this;
+  }
+
+  public int capacity() {
+    return buffer.capacity();
   }
 
   public int length() {
