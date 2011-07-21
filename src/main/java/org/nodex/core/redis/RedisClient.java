@@ -1,6 +1,7 @@
 package org.nodex.core.redis;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexImpl;
 import redis.clients.jedis.Jedis;
 
 /**

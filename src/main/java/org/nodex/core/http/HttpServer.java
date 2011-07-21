@@ -7,6 +7,8 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexImpl;
+import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
@@ -27,9 +29,8 @@ public class HttpServer {
   private HttpServer(HttpConnectHandler connectHandler) {
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
-            Nodex.instance.getAcceptorPool(),
-            Nodex.instance.getCorePool(),
-            Nodex.instance.getCoreThreadPoolSize());
+            NodexInternal.instance.getAcceptorPool(),
+            NodexInternal.instance.getWorkerPool());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {

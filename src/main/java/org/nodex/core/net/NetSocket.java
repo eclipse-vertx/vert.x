@@ -8,6 +8,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.util.CharsetUtil;
 import org.nodex.core.DoneHandler;
 import org.nodex.core.ExceptionHandler;
+import org.nodex.core.NodexInternal;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
 import org.nodex.core.buffer.Buffer;
@@ -17,13 +18,19 @@ import java.nio.charset.Charset;
 
 public class NetSocket implements ReadStream, WriteStream {
   private final Channel channel;
+  private final String contextID;
   private volatile DataHandler dataHandler;
   private volatile ExceptionHandler exceptionHandler;
   private DoneHandler drainHandler;
   private DoneHandler closedHandler;
 
-  NetSocket(Channel channel) {
+  //For sanity checks
+  private final Thread th;
+
+  NetSocket(Channel channel, String contextID, Thread th) {
     this.channel = channel;
+    this.contextID = contextID;
+    this.th = th;
   }
 
   // Public API ========================================================================================================
@@ -97,32 +104,16 @@ public class NetSocket implements ReadStream, WriteStream {
 
   // End of public API =================================================================================================
 
-  // All the handle methods need to be synchronized on the same object to prevent them running concurrently
-  // We make a guarantee that there's never more than one system thread calling into the same instance of a NetSocket
-  // at any one time. This makes things easier for the developer.
-
-  private final Object handleLock = new Object();
-
   void handleInterestedOpsChanged() {
-    synchronized (handleLock) {
-      callDrainHandler();
-    }
-  }
-
-  private void callDrainHandler() {
-    if (drainHandler != null) {
-      if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
-        drainHandler.onDone();
-      }
-    }
+    setContextID();
+    callDrainHandler();
   }
 
   void handleDataReceived(Buffer data) {
     try {
       if (dataHandler != null) {
-        synchronized (handleLock) {
-          dataHandler.onData(data);
-        }
+        setContextID();
+        dataHandler.onData(data);
       }
     } catch (Throwable t) {
       if (t instanceof Exception) {
@@ -137,9 +128,8 @@ public class NetSocket implements ReadStream, WriteStream {
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      synchronized (handleLock) {
-        exceptionHandler.onException(e);
-      }
+      setContextID();
+      exceptionHandler.onException(e);
     } else {
       System.err.println("Unhandled exception " + e.getMessage());
       e.printStackTrace(System.err);
@@ -148,10 +138,31 @@ public class NetSocket implements ReadStream, WriteStream {
 
   void handleClosed() {
     if (closedHandler != null) {
-      synchronized (handleLock) {
-        closedHandler.onDone();
+      setContextID();
+      closedHandler.onDone();
+    }
+  }
+
+  String getContextID() {
+    return contextID;
+  }
+
+  private void callDrainHandler() {
+    if (drainHandler != null) {
+      if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
+        drainHandler.onDone();
       }
     }
+  }
+
+  private void setContextID() {
+    // Sanity check
+    // All ops should always be invoked on same thread
+    if (Thread.currentThread() != th) {
+      throw new IllegalStateException("Invoked with wrong thread");
+    }
+
+    NodexInternal.instance.setContextID(contextID);
   }
 
   private void addFuture(final DoneHandler done, final ChannelFuture future) {

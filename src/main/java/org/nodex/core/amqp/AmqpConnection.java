@@ -2,6 +2,7 @@ package org.nodex.core.amqp;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexImpl;
 
 import java.io.IOException;
 

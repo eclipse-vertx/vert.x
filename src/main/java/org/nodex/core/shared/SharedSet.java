@@ -1,27 +1,33 @@
-package org.nodex.core.concurrent;
+package org.nodex.core.shared;
 
 import org.cliffc.high_scale_lib.NonBlockingHashSet;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * User: timfox
- * Date: 02/07/2011
- * Time: 18:22
+ * Date: 19/07/2011
+ * Time: 09:59
  */
-public class SafeSet<E> implements Set<E> {
+public class SharedSet<E> implements Set<E> {
+
+  private static Map<String, Set<?>> refs = new WeakHashMap<String, Set<?>>();
 
   private final Set<E> set;
 
-  public SafeSet() {
-    set = new NonBlockingHashSet<E>();
-  }
-
-  public SafeSet(Collection<? extends E> c) {
-    this();
-    set.addAll(c);
+  public SharedSet(String name) {
+    synchronized (refs) {
+      Set<E> s = (Set<E>)refs.get(name);
+      if (s == null) {
+        s = new NonBlockingHashSet<E>();
+        refs.put(name, s);
+      }
+      set = s;
+    }
   }
 
   public int size() {

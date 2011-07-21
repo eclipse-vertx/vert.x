@@ -4,7 +4,10 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexImpl;
+import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetSocketAddress;
@@ -17,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Date: 26/06/2011
  * Time: 08:41
  */
-public class NetClient {
+public class NetClient extends NetBase {
 
   private ClientBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
@@ -26,9 +29,8 @@ public class NetClient {
   private NetClient() {
     bootstrap = new ClientBootstrap(
         new NioClientSocketChannelFactory(
-            Nodex.instance.getAcceptorPool(),
-            Nodex.instance.getCorePool(),
-            Nodex.instance.getCoreThreadPoolSize()));
+            NodexInternal.instance.getAcceptorPool(),
+            NodexInternal.instance.getWorkerPool()));
 
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
@@ -49,10 +51,15 @@ public class NetClient {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
-          Channel ch = channelFuture.getChannel();
-          NetSocket sock = new NetSocket(ch);
-          socketMap.put(ch, sock);
-          connectHandler.onConnect(sock);
+          final NioSocketChannel ch = (NioSocketChannel)channelFuture.getChannel();
+          runOnCorrectThread(ch, new Runnable() {
+            public void run() {
+              String contextID = NodexInternal.instance.createContext(ch.getWorker());
+              NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
+              socketMap.put(ch, sock);
+              connectHandler.onConnect(sock);
+            }
+          });
         }
       }
     });
@@ -108,10 +115,16 @@ public class NetClient {
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      NetSocket sock = socketMap.get(ctx.getChannel());
-      socketMap.remove(ctx.getChannel());
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NetSocket sock = socketMap.get(ch);
+      socketMap.remove(ch);
       if (sock != null) {
-        sock.handleClosed();
+         runOnCorrectThread(ch, new Runnable() {
+            public void run() {
+               sock.handleClosed();
+               NodexInternal.instance.destroyContext(sock.getContextID());
+            }
+          });
       }
     }
 
@@ -126,21 +139,30 @@ public class NetClient {
 
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      Channel ch = e.getChannel();
-      NetSocket sock = socketMap.get(ch);
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        sock.handleInterestedOpsChanged();
+        runOnCorrectThread(ch, new Runnable() {
+            public void run() {
+               sock.handleInterestedOpsChanged();
+            }
+          });
       }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-      NetSocket sock = socketMap.get(ctx.getChannel());
-      e.getChannel().close();
-      Throwable t = e.getCause();
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NetSocket sock = socketMap.get(ch);
+      final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        sock.handleException((Exception) t);
+        runOnCorrectThread(ch, new Runnable() {
+            public void run() {
+              sock.handleException((Exception) t);
+              ch.close();
+            }
+          });
       } else {
         t.printStackTrace();
       }

@@ -1,30 +1,33 @@
-package org.nodex.core.concurrent;
+package org.nodex.core.shared;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * User: timfox
- * Date: 29/06/2011
- * Time: 21:20
- * <p/>
- * We wrap Cliff Click's super scalable concurrent map implementation
+ * Date: 19/07/2011
+ * Time: 09:59
  */
-public class SafeMap<K, V> implements ConcurrentMap<K, V> {
+public class SharedMap<K, V> implements ConcurrentMap<K, V> {
+
+  private static Map<String, ConcurrentMap<?, ?>> refs = new WeakHashMap<String, ConcurrentMap<?, ?>>();
 
   private final ConcurrentMap<K, V> map;
 
-  public SafeMap() {
-    map = new NonBlockingHashMap<K, V>();
-  }
-
-  public SafeMap(Map<? extends K, ? extends V> m) {
-    this();
-    map.putAll(m);
+  public SharedMap(String name) {
+    synchronized (refs) {
+      ConcurrentMap<K, V> m = (ConcurrentMap<K, V>)refs.get(name);
+      if (m == null) {
+        m = new NonBlockingHashMap<K, V>();
+        refs.put(name, m);
+      }
+      map = m;
+    }
   }
 
   public V putIfAbsent(K k, V v) {

@@ -18,8 +18,11 @@ import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexImpl;
+import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
@@ -27,9 +30,10 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetServer {
+public class NetServer extends NetBase {
   private ServerBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
   private final NetConnectHandler connectCallback;
@@ -41,9 +45,8 @@ public class NetServer {
 
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
-            Nodex.instance.getAcceptorPool(),
-            Nodex.instance.getCorePool(),
-            Nodex.instance.getCoreThreadPoolSize());
+            NodexInternal.instance.getAcceptorPool(),
+            NodexInternal.instance.getWorkerPool());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {
@@ -106,6 +109,7 @@ public class NetServer {
   public NetServer listen(int port, String host) {
     try {
       bootstrap.setOptions(connectionOptions);
+      //FIXME - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
       Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       serverChannelGroup.add(serverChannel);
       System.out.println("Net server listening on " + host + ":" + port);
@@ -138,28 +142,42 @@ public class NetServer {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      Channel ch = e.getChannel();
-      NetSocket sock = new NetSocket(ch);
-      socketMap.put(ch, sock);
-      connectCallback.onConnect(sock);
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      runOnCorrectThread(ch, new Runnable() {
+        public void run() {
+          String contextID = NodexInternal.instance.createContext(ch.getWorker());
+          NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
+          socketMap.put(ch, sock);
+          connectCallback.onConnect(sock);
+        }
+      });
     }
 
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      Channel ch = e.getChannel();
-      NetSocket sock = socketMap.get(ch);
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        sock.handleInterestedOpsChanged();
+        runOnCorrectThread(ch, new Runnable() {
+          public void run() {
+            sock.handleInterestedOpsChanged();
+          }
+        });
       }
     }
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      Channel ch = e.getChannel();
-      NetSocket sock = socketMap.get(ch);
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NetSocket sock = socketMap.get(ch);
       socketMap.remove(ch);
-      sock.handleClosed();
+      runOnCorrectThread(ch, new Runnable() {
+          public void run() {
+             sock.handleClosed();
+            NodexInternal.instance.destroyContext(sock.getContextID());
+          }
+        });
     }
 
     @Override
@@ -173,17 +191,19 @@ public class NetServer {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-      Channel ch = e.getChannel();
-      NetSocket sock = socketMap.get(ch);
+      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NetSocket sock = socketMap.get(ch);
       ch.close();
-      Throwable t = e.getCause();
+      final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        sock.handleException((Exception) t);
+        runOnCorrectThread(ch, new Runnable() {
+          public void run() {
+             sock.handleException((Exception) t);
+          }
+        });
       } else {
         t.printStackTrace();
       }
     }
-
-
   }
 }

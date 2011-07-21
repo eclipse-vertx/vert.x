@@ -2,6 +2,7 @@ package org.nodex.core.redis;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexImpl;
 import org.nodex.core.composition.Completion;
 import redis.clients.jedis.Jedis;
 

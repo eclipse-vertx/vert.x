@@ -125,6 +125,9 @@ Spawn??
 
 Spawn processes and pipe their output/input like any other stream
 
+REST
+----
+
 
 Runtime
 =======
@@ -148,7 +151,8 @@ Clojure
 Other things to look at
 =======================
 
-Consider wrapping libevent in Java API
+1) Consider wrapping libevent in Java API
+2) Use disruptor https://code.google.com/p/disruptor/ as alternative to concurrent queues
 
 
 

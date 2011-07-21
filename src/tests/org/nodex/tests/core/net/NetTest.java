@@ -7,8 +7,8 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.nodex.tests.AwaitDone;
 import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Date: 12/07/11
  * Time: 10:27
  */
-public class NetTest {
+public class NetTest extends TestBase {
 
   @BeforeClass
   public void setUp() {
@@ -390,11 +390,7 @@ public class NetTest {
     awaitClose(server);
   }
 
-  private void awaitClose(NetServer server) {
-    AwaitDone await = new AwaitDone();
-    server.close(await);
-    assert await.awaitDone(5);
-  }
+
 
 
 }
