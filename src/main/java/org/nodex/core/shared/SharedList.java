@@ -21,7 +21,7 @@ public class SharedList<E> implements List<E> {
 
   public SharedList(String name) {
     synchronized (refs) {
-      List<E> l = (List<E>)refs.get(name);
+      List<E> l = (List<E>) refs.get(name);
       if (l == null) {
         l = new CopyOnWriteArrayList<E>();
         refs.put(name, l);

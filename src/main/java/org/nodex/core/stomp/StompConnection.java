@@ -97,7 +97,7 @@ public class StompConnection {
 
   // Request-response pattern
 
-  public Completion request(String dest, Buffer body, final StompMsgCallback responseCallback){
+  public Completion request(String dest, Buffer body, final StompMsgCallback responseCallback) {
     return request(dest, new HashMap<String, String>(), body, responseCallback);
   }
 

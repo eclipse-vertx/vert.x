@@ -21,7 +21,7 @@ public class SharedSet<E> implements Set<E> {
 
   public SharedSet(String name) {
     synchronized (refs) {
-      Set<E> s = (Set<E>)refs.get(name);
+      Set<E> s = (Set<E>) refs.get(name);
       if (s == null) {
         s = new NonBlockingHashSet<E>();
         refs.put(name, s);

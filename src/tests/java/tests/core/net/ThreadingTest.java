@@ -1,4 +1,4 @@
-package org.nodex.tests.core.net;
+package tests.core.net;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
@@ -8,11 +8,11 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.nodex.tests.Utils;
-import org.nodex.tests.core.TestBase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import tests.Utils;
+import tests.core.TestBase;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit;
  * User: timfox
  * Date: 21/07/2011
  * Time: 13:24
- *
+ * <p/>
  * Test that the node.x threading model is obeyed
- *
+ * <p/>
  * TODO - maybe we should just do this in NetTest?
  */
 public class ThreadingTest extends TestBase {

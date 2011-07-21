@@ -1,4 +1,4 @@
-package org.nodex.tests.core;
+package tests.core;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
@@ -8,10 +8,10 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.nodex.tests.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import tests.Utils;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -40,15 +40,12 @@ public class TimerTest extends TestBase {
         final String contextID = Nodex.instance.getContextID();
         Nodex.instance.setTimeout(100, new DoneHandler() {
           public void onDone() {
-            System.out.println("Timedout1 fired");
             assert th == Thread.currentThread();
             assert contextID == Nodex.instance.getContextID();
             sock.data(new DataHandler() {
               public void onData(final Buffer data) {
-                System.out.println("Got data");
                 Nodex.instance.setTimeout(100, new DoneHandler() {
                   public void onDone() {
-                    System.out.println("Timedout2 fired");
                     assert th == Thread.currentThread();
                     assert contextID == Nodex.instance.getContextID();
                     endLatch.countDown();

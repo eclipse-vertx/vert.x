@@ -1,12 +1,12 @@
-package org.nodex.tests.core.parsetools;
+package tests.core.parsetools;
 
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.parsetools.RecordParser;
-import org.nodex.tests.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import tests.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,9 +33,9 @@ public class RecordParserTest {
   Test parsing with delimiters
    */
   public void delimited() {
-    delimited(new byte[] {(byte)'\n'});
-    delimited(new byte[] {(byte)'\r', (byte)'\n'});
-    delimited(new byte[] {0, 3, 2, 5, 6, 4, 6});
+    delimited(new byte[]{(byte) '\n'});
+    delimited(new byte[]{(byte) '\r', (byte) '\n'});
+    delimited(new byte[]{0, 3, 2, 5, 6, 4, 6});
   }
 
   @Test
@@ -47,7 +47,7 @@ public class RecordParserTest {
     Buffer[] expected = new Buffer[lines];
 
     //We create lines of length zero to <lines> and shuffle them
-    List<Buffer> lineList = generateLines(lines, false, (byte)0);
+    List<Buffer> lineList = generateLines(lines, false, (byte) 0);
 
     expected = lineList.toArray(expected);
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
@@ -58,7 +58,7 @@ public class RecordParserTest {
 
     //We then try every combination of chunk size up to twice the input string length
     for (int i = 1; i < inp.length() * 2; i++) {
-      doTestFixed(inp, new Integer[] {i}, expected);
+      doTestFixed(inp, new Integer[]{i}, expected);
     }
 
     //Then we try a sequence of random chunk sizes
@@ -67,7 +67,7 @@ public class RecordParserTest {
     //Repeat a few times
     for (int i = 0; i < 10; i++) {
       Collections.shuffle(chunkSizes);
-      doTestFixed(inp, chunkSizes.toArray(new Integer[] {}), expected);
+      doTestFixed(inp, chunkSizes.toArray(new Integer[]{}), expected);
     }
   }
 
@@ -84,20 +84,22 @@ public class RecordParserTest {
     class MyHandler extends DataHandler {
       RecordParser parser = RecordParser.newFixed(10, this);
       int pos;
+
       public void onData(Buffer buff) {
         results[pos++] = buff;
         if (pos < lines) {
           Object type = types.get(pos);
           if (type instanceof byte[]) {
-            byte[] bytes = (byte[])type;
+            byte[] bytes = (byte[]) type;
             parser.delimitedMode(bytes);
           } else {
-            int length = (Integer)type;
+            int length = (Integer) type;
             parser.fixedSizeMode(length);
           }
         }
       }
-    };
+    }
+    ;
 
     MyHandler out = new MyHandler();
     Buffer[] expected = new Buffer[lines];
@@ -108,7 +110,7 @@ public class RecordParserTest {
     expected[1] = Utils.generateRandomBuffer(100);
     input.append(expected[1]);
     types.add(expected[1].length());
-    byte[] delim = new byte[] { 23, -120, 100, 3};
+    byte[] delim = new byte[]{23, -120, 100, 3};
     expected[2] = Utils.generateRandomBuffer(50, true, delim[0]);
     input.append(expected[2]);
     types.add(delim);
@@ -120,12 +122,12 @@ public class RecordParserTest {
     input.append(expected[4]);
     types.add(delim);
     input.append(Buffer.newWrapped(delim));
-    delim = new byte[] { 17 };
+    delim = new byte[]{17};
     expected[5] = Utils.generateRandomBuffer(341, true, delim[0]);
     input.append(expected[5]);
     types.add(delim);
     input.append(Buffer.newWrapped(delim));
-    delim = new byte[] { 54, -32, 0};
+    delim = new byte[]{54, -32, 0};
     expected[6] = Utils.generateRandomBuffer(1234, true, delim[0]);
     input.append(expected[6]);
     types.add(delim);
@@ -134,7 +136,7 @@ public class RecordParserTest {
     input.append(expected[7]);
     types.add(expected[7].length());
 
-    feedChunks(input, out.parser, new Integer[] { 50, 10, 3});
+    feedChunks(input, out.parser, new Integer[]{50, 10, 3});
   }
 
   /*
@@ -158,7 +160,7 @@ public class RecordParserTest {
 
     //We then try every combination of chunk size up to twice the input string length
     for (int i = 1; i < inp.length() * 2; i++) {
-      doTestDelimited(inp, delim, new Integer[] {i}, expected);
+      doTestDelimited(inp, delim, new Integer[]{i}, expected);
     }
 
     //Then we try a sequence of random chunk sizes
@@ -167,7 +169,7 @@ public class RecordParserTest {
     //Repeat a few times
     for (int i = 0; i < 10; i++) {
       Collections.shuffle(chunkSizes);
-      doTestDelimited(inp, delim, chunkSizes.toArray(new Integer[] {}), expected);
+      doTestDelimited(inp, delim, chunkSizes.toArray(new Integer[]{}), expected);
     }
   }
 
@@ -175,6 +177,7 @@ public class RecordParserTest {
     final Buffer[] results = new Buffer[expected.length];
     DataHandler out = new DataHandler() {
       int pos;
+
       public void onData(Buffer buff) {
         results[pos++] = buff;
       }
@@ -192,6 +195,7 @@ public class RecordParserTest {
     class MyHandler extends DataHandler {
       int pos;
       RecordParser parser = RecordParser.newFixed(expected[0].length(), this);
+
       public void onData(Buffer buff) {
         results[pos++] = buff;
         if (pos < expected.length) {
@@ -221,11 +225,11 @@ public class RecordParserTest {
   }
 
   private void checkResults(Buffer[] expected, Buffer[] results) {
-     for (int i = 0; i < expected.length; i++) {
-       assert Utils.buffersEqual(expected[i], results[i]) : "Expected:" + expected[i] + " length:" + expected[i].length() +
-           " Actual:" + results[i] + " length:" + results[i].length();
-     }
-   }
+    for (int i = 0; i < expected.length; i++) {
+      assert Utils.buffersEqual(expected[i], results[i]) : "Expected:" + expected[i] + " length:" + expected[i].length() +
+          " Actual:" + results[i] + " length:" + results[i].length();
+    }
+  }
 
   private List<Buffer> generateLines(int lines, boolean delim, byte delimByte) {
     //We create lines of length zero to <lines> and shuffle them

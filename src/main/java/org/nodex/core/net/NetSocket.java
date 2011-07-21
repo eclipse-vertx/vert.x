@@ -89,7 +89,7 @@ public class NetSocket implements ReadStream, WriteStream {
 
   //Default is 64kB
   public void setWriteQueueMaxSize(int size) {
-    NioSocketChannelConfig conf =  (NioSocketChannelConfig)channel.getConfig();
+    NioSocketChannelConfig conf = (NioSocketChannelConfig) channel.getConfig();
     conf.setWriteBufferLowWaterMark(size / 2);
     conf.setWriteBufferHighWaterMark(size);
   }
@@ -117,7 +117,7 @@ public class NetSocket implements ReadStream, WriteStream {
       }
     } catch (Throwable t) {
       if (t instanceof Exception) {
-        handleException((Exception)t);
+        handleException((Exception) t);
       } else if (t instanceof Error) {
         throw (Error) t;
       } else if (t instanceof Throwable) {
@@ -174,7 +174,7 @@ public class NetSocket implements ReadStream, WriteStream {
           if (exceptionHandler != null) {
             Throwable err = channelFuture.getCause();
             if (err instanceof Exception) {
-              exceptionHandler.onException((Exception)err);
+              exceptionHandler.onException((Exception) err);
             } else {
               err.printStackTrace();
             }

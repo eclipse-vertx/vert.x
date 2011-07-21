@@ -11,7 +11,7 @@ AmqpClient.create_client.connect { |conn|
       chan.subscribe(queue, true) { |props, body|
         puts "Received message #{body}"
       }
-      (1..10).each {|i| chan.publish("", queue, "message #{i}") }
+      (1..10).each { |i| chan.publish("", queue, "message #{i}") }
     }
   }
 }

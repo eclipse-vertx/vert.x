@@ -29,7 +29,7 @@ public class Composer {
   }
 
   public Composer when(final Completion completion) {
-    return when(new Completion[] { completion });
+    return when(new Completion[]{completion});
   }
 
   public Composer when(final Completion... completions) {
@@ -43,7 +43,7 @@ public class Composer {
             }
           }
         };
-        for (Completion c: completions) {
+        for (Completion c : completions) {
           c.execute();
           c.onComplete(cb);
         }

@@ -43,8 +43,8 @@ STOMP_DESTINATION = "availability-request"
 
 def http_server
   channel_pool = ChannelPool.create_pool
-  HttpServer.create_server{ |conn|
-    conn.request{ |req, resp|
+  HttpServer.create_server { |conn|
+    conn.request { |req, resp|
       puts "Request uri is #{req.uri}"
       if req.uri == "/"
         puts "Serving index page"
@@ -56,11 +56,11 @@ def http_server
       elsif req.uri.start_with? "/submit"
         # Handle the request for the item
         item = req.get_param("item")
-        channel_pool.get_channel{ |chan|
+        channel_pool.get_channel { |chan|
           props = Props.new
           props.headers["item"] = item
           chan.request("", AMQP_QUEUE, props, nil) { |resp_props, body|
-            # We get a response back with the price and number of items in stock
+          # We get a response back with the price and number of items in stock
             price = resp_props.headers["price"]
             stock = resp_props.headers["stock"]
             content = "<html><body>Price is: #{price}<br>Stock is: #{stock}</body></html>"
@@ -80,7 +80,7 @@ def amqp_worker
   redis_conn = nil
   redis_connected = Completion.create
   RedisClient.create_client.connect(6379, "localhost") { |conn|
-    # We add a little reference data that we're going to need later
+  # We add a little reference data that we're going to need later
     conn.set("bicycle", "125") {
       conn.set("aardvark", "333") {
         redis_conn = conn
@@ -105,8 +105,8 @@ def do_amqp_worker(redis_conn, stomp_conn)
 
   # Create and start the AMQP worker
 
-  AmqpClient.create_client.connect{ |conn|
-    conn.create_channel{ |chan|
+  AmqpClient.create_client.connect { |conn|
+    conn.create_channel { |chan|
       chan.declare_queue(AMQP_QUEUE, false, true, true) {
         chan.subscribe(AMQP_QUEUE, true) { |props, body|
           item = props.headers["item"].to_s
@@ -124,10 +124,10 @@ def do_amqp_worker(redis_conn, stomp_conn)
             stock = headers["stock"]
           }
 
-          comp.when(redis_get, response_returned).      # Get price and stock information
-               when{  props.headers["price"] = price    # Format response message with info before sending
-                      props.headers["stock"] = stock
-                      chan.publish_with_props("", props.reply_to, props, nil)}.end
+          comp.when(redis_get, response_returned).# Get price and stock information
+              when { props.headers["price"] = price # Format response message with info before sending
+          props.headers["stock"] = stock
+          chan.publish_with_props("", props.reply_to, props, nil) }.end
         }
       }
     }

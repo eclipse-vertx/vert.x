@@ -18,7 +18,7 @@ public class SharedCounter implements Counter {
 
   public SharedCounter(String name) {
     synchronized (refs) {
-      ConcurrentAutoTable c = (ConcurrentAutoTable)refs.get(name);
+      ConcurrentAutoTable c = (ConcurrentAutoTable) refs.get(name);
       if (c == null) {
         c = new ConcurrentAutoTable();
         refs.put(name, c);

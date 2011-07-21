@@ -1,4 +1,4 @@
-package org.nodex.tests.core.buffer;
+package tests.core.buffer;
 
 import org.nodex.core.buffer.Buffer;
 import org.testng.annotations.AfterClass;

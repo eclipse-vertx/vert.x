@@ -142,7 +142,7 @@ public class NetServer extends NetBase {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       runOnCorrectThread(ch, new Runnable() {
         public void run() {
           String contextID = NodexInternal.instance.createContext(ch.getWorker());
@@ -155,7 +155,7 @@ public class NetServer extends NetBase {
 
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
@@ -169,36 +169,36 @@ public class NetServer extends NetBase {
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.get(ch);
       socketMap.remove(ch);
       runOnCorrectThread(ch, new Runnable() {
-          public void run() {
-             sock.handleClosed();
-            NodexInternal.instance.destroyContext(sock.getContextID());
-          }
-        });
+        public void run() {
+          sock.handleClosed();
+          NodexInternal.instance.destroyContext(sock.getContextID());
+        }
+      });
     }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       NetSocket sock = socketMap.get(ch);
-      ChannelBuffer buff = (ChannelBuffer)e.getMessage();
+      ChannelBuffer buff = (ChannelBuffer) e.getMessage();
       ChannelBuffer sliced = buff.slice();
       sock.handleDataReceived(new Buffer(sliced));
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.get(ch);
       ch.close();
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
         runOnCorrectThread(ch, new Runnable() {
           public void run() {
-             sock.handleException((Exception) t);
+            sock.handleException((Exception) t);
           }
         });
       } else {

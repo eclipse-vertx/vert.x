@@ -41,9 +41,11 @@ module Redis
         super()
         @complete_block = complete_block
       end
+
       def onDone()
         @complete_block.call
       end
+
       private :initialize
     end
 
@@ -52,9 +54,11 @@ module Redis
         super()
         @result_block = result_block
       end
+
       def onResult(value)
         @result_block.call(value)
       end
+
       private :initialize
     end
 

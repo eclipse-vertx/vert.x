@@ -21,7 +21,7 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
   public SharedMap(String name) {
     synchronized (refs) {
-      ConcurrentMap<K, V> m = (ConcurrentMap<K, V>)refs.get(name);
+      ConcurrentMap<K, V> m = (ConcurrentMap<K, V>) refs.get(name);
       if (m == null) {
         m = new NonBlockingHashMap<K, V>();
         refs.put(name, m);

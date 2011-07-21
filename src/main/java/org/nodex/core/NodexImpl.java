@@ -32,7 +32,7 @@ public final class NodexImpl implements NodexInternal {
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
   private Map<String, NioWorker> workerMap = new ConcurrentHashMap<String, NioWorker>();
-  private static final ThreadLocal<String> contextIDTL = new ThreadLocal <String> ();
+  private static final ThreadLocal<String> contextIDTL = new ThreadLocal<String>();
   private Map<String, Object> actors = new ConcurrentHashMap<String, Object>();
   private final HashedWheelTimer timer = new HashedWheelTimer(new NodeThreadFactory("node.x-timer-thread"), 100,
       TimeUnit.MILLISECONDS);
@@ -67,14 +67,14 @@ public final class NodexImpl implements NodexInternal {
     getBackgroundPool().execute(task);
   }
 
-  public long setTimeout(long delay, final DoneHandler handler){
+  public long setTimeout(long delay, final DoneHandler handler) {
     final String contextID = checkContextID();
 
     class CancellableTimerTask implements TimerTask {
       boolean executed;
+
       public void run(Timeout timeout) {
         if (!executed) {
-          System.out.println("Timeout fired");
           executeOnContext(contextID, handler);
           executed = true;
         }
@@ -83,21 +83,22 @@ public final class NodexImpl implements NodexInternal {
           cancelTimeout(id, false);
         }
       }
+
       volatile long id = -1;
-    };
+    }
     CancellableTimerTask task = new CancellableTimerTask();
     long id = scheduleTimeout(contextID, task, delay);
     task.id = id;
     return id;
   }
 
-  public long setPeriodic(long delay, final DoneHandler handler){
+  public long setPeriodic(long delay, final DoneHandler handler) {
     final String contextID = checkContextID();
     TimerTask task = new TimerTask() {
       public void run(Timeout timeout) {
-          executeOnContext(contextID, handler);
-        }
-      };
+        executeOnContext(contextID, handler);
+      }
+    };
     return scheduleTimeout(contextID, task, delay);
   }
 
@@ -117,7 +118,7 @@ public final class NodexImpl implements NodexInternal {
 
   public <T> T getActorRef(String actorID) {
     //TODO - return dynamic proxy
-    return (T)actors.get(actorID);
+    return (T) actors.get(actorID);
   }
 
   // Internal API -----------------------------------------------------------------------------------------
@@ -172,7 +173,6 @@ public final class NodexImpl implements NodexInternal {
   }
 
   public void executeOnContext(String contextID, Runnable runnable) {
-    System.out.println("Executing on context " + contextID);
     NioWorker worker = workerMap.get(contextID);
     if (worker != null) {
       worker.scheduleOtherTask(runnable);
@@ -224,7 +224,6 @@ public final class NodexImpl implements NodexInternal {
     Timeout timeout = timer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
     long id = timeoutCounter.getAndIncrement();
     timeouts.put(id, new TimeoutHolder(timeout, contextID));
-    System.out.println("Scheduled timeout");
     return id;
   }
 
@@ -232,6 +231,7 @@ public final class NodexImpl implements NodexInternal {
   private static class TimeoutHolder {
     final Timeout timeout;
     final String contextID;
+
     TimeoutHolder(Timeout timeout, String contextID) {
       this.timeout = timeout;
       this.contextID = contextID;

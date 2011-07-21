@@ -1,10 +1,6 @@
-package org.nodex.tests;
+package tests;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * User: tim
@@ -14,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class Utils {
 
   public static Buffer generateRandomBuffer(int length) {
-    return generateRandomBuffer(length, false, (byte)0);
+    return generateRandomBuffer(length, false, (byte) 0);
   }
 
   public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
@@ -24,7 +20,7 @@ public class Utils {
       //choose first byte of delim
       byte rand;
       do {
-        rand = (byte)((int)(Math.random() * 255) - 128);
+        rand = (byte) ((int) (Math.random() * 255) - 128);
       } while (avoid && rand == avoidByte);
 
       line[i] = rand;

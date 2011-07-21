@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
  * User: tim
  * Date: 27/06/11
  * Time: 17:49
- *
+ * <p/>
  * A RecordParser takes as input a fragmented sequence of Buffers and outputs a record, which is also a Buffer
  * Records can be delimited by a sequence of bytes, or can be fixed size.
  * The delimiters can be changed or the parser can be switched between fixed size mode or delimited mode
@@ -37,6 +37,7 @@ public class RecordParser extends DataHandler {
   /**
    * Helper method to convert a latin-1 String to an array of bytes for use as a delimiter
    * Please do not use this for non latin-1 characters
+   *
    * @param str
    * @return The byte[] form of the string
    */
@@ -44,7 +45,7 @@ public class RecordParser extends DataHandler {
     byte[] bytes = new byte[str.length()];
     for (int i = 0; i < str.length(); i++) {
       char c = str.charAt(i);
-      bytes[i] = (byte)(c & 0xFF);
+      bytes[i] = (byte) (c & 0xFF);
     }
     return bytes;
   }

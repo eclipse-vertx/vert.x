@@ -18,14 +18,14 @@ module Composition
         completions = [completion]
       end
       java_completions = []
-      completions.each {|c| java_completions << c._to_java_completion}
+      completions.each { |c| java_completions << c._to_java_completion }
       @java_composer.when(java_completions.to_java(COMPLETION_CLASS_SYM))
       self
     end
 
     def parallel(*completions)
       java_completions = []
-      completions.each {|c| java_completions << c._to_java_completion}
+      completions.each { |c| java_completions << c._to_java_completion }
       @java_composer.parallel(java_completions.to_java(COMPLETION_CLASS_SYM))
       self
     end
