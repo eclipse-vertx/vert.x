@@ -2,7 +2,7 @@
 
 ## What is Node.x?
 
-* A general purpose framework that uses an asynchronous event based style for building highly scalable network or file system aware applications
+* A general purpose framework that uses an asynchronous event based style for building highly scalable applications
 * Runs on the JVM.
 * Everything is asynchronous.
 * Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*. Plus some.
@@ -10,7 +10,10 @@
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True threading. Unlike node.js, Python Twisted or Ruby EventMachine, it has true multi-threaded scalability. No more spinning up 32 instances just to utilise the cores on your server.
-* Understands multiple protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, AMQP, STOMP, Redis etc
+* Incredibly simple concurrency model. Write your code as single threaded like node.js, watch it scale across multiple cores (unlike node.js)
+* Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets
+* Sendfile support for writing super scalable web servers
+* Plugins for talking AMQP, STOMP, Redis etc
 * Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
 
 ## Ok, cut the crap, show me some examples
@@ -21,7 +24,7 @@ Take a look at some of these working Ruby examples to see the kind of things you
 
 ## What is the status of Node.x?
 
-It's at the proof of concept stage. I have implemented enough to create a few working examples but the real work is yet to come!
+We have finished the proof of concept, and work is now in progress for the 1.0 alpha release in a few months time
 
 ## What is the architecture?
 
