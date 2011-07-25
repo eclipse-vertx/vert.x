@@ -128,17 +128,32 @@ public class HttpServerConnection extends ConnectionBase {
     }
   }
 
+  private boolean paused;
+
   void handleEnd() {
     try {
       setContextID();
       currentRequest.handleEnd();
       if (currentResponse != null) {
         pause();
+        paused = true;
       }
       currentRequest = null;
     } catch (Throwable t) {
       handleThrowable(t);
     }
+  }
+
+  /*
+  If the request end completes and the response has not been ended then we want to pause and resume when it is complete
+  to avoid responses for the same connection being written out of order
+   */
+  void responseComplete() {
+    if (paused) {
+      resume();
+      paused = false;
+    }
+    currentResponse = null;
   }
 
   void handleInterestedOpsChanged() {
@@ -155,14 +170,7 @@ public class HttpServerConnection extends ConnectionBase {
 
   // Called by request / response
 
-  // We need to ensure that pipelined requests have their responses written in the same order, or we can get in a mess
-  // We do this by pausing the delivery of the next request until the current response has been completed
-  void responseComplete() {
-    currentResponse = null;
-    if (currentRequest == null) {
-      resume();
-    }
-  }
+
 
   ChannelFuture write(Object obj) {
     return channel.write(obj);

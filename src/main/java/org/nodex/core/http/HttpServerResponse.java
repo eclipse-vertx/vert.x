@@ -155,12 +155,12 @@ public class HttpServerResponse implements WriteStream {
     RandomAccessFile raf;
     try {
       raf = new RandomAccessFile(filename, "r");
-    } catch (FileNotFoundException fnfe) {
-      throw new IllegalArgumentException("File not found " + filename);
+    } catch (FileNotFoundException e) {
+      conn.handleException(e);
+      return this;
     }
     try {
       File file = new File(filename);
-
       long fileLength = raf.length();
 
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
@@ -187,8 +187,7 @@ public class HttpServerResponse implements WriteStream {
         conn.write(region);
       }
     } catch (IOException e) {
-      //TODO improve exception handling
-      e.printStackTrace();
+      conn.handleException(e);
     }
 
     written = headWritten = true;

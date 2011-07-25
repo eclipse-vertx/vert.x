@@ -7,6 +7,7 @@ HTTP
 ----
 
 HTTPS
-context ids with HTTP
 Cookies
-Trailers
+Test multiple connections
+Test keep alive
+Pipelining currently doesn't work properly with timeouts (see testPipeLining)

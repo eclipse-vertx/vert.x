@@ -49,6 +49,12 @@ public class HttpClientConnection extends ConnectionBase {
     req.end();
   }
 
+  public void getNow(String uri, Map<String, ? extends Object> headers, HttpResponseHandler responseHandler) {
+    HttpClientRequest req = get(uri, responseHandler);
+    req.headers.putAll(headers);
+    req.end();
+  }
+
   public HttpClientRequest options(String uri, HttpResponseHandler responseHandler) {
     return request("OPTIONS", uri, responseHandler);
   }
