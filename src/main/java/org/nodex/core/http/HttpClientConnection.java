@@ -3,6 +3,7 @@ package org.nodex.core.http;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
+import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.nodex.core.ConnectionBase;
 import org.nodex.core.DoneHandler;
@@ -51,7 +52,7 @@ public class HttpClientConnection extends ConnectionBase {
 
   public void getNow(String uri, Map<String, ? extends Object> headers, HttpResponseHandler responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
-    req.headers.putAll(headers);
+    req.putAllHeaders(headers);
     req.end();
   }
 
@@ -126,8 +127,12 @@ public class HttpClientConnection extends ConnectionBase {
 
   // Called from request / response
 
-  void handleEnd(Map<String, String> trailers) {
-    currentResponse.handleEnd(trailers);
+  void handleEnd() {
+    currentResponse.handleEnd(null);
+  }
+
+  void handleEnd(HttpChunkTrailer trailer) {
+    currentResponse.handleEnd(trailer);
   }
 
   ChannelFuture write(Object obj, HttpClientRequest req) {

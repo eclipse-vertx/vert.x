@@ -18,6 +18,8 @@ import org.nodex.core.streams.WriteStream;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: timfox
@@ -28,12 +30,14 @@ public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(HttpClientConnection conn, final String method, final String uri,
                     final HttpResponseHandler respHandler) {
+    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.conn = conn;
     this.method = method;
     this.uri = uri;
     this.respHandler = respHandler;
   }
 
+  private final HttpRequest request;
   private final HttpClientConnection conn;
   private final String method;
   private final String uri;
@@ -47,7 +51,39 @@ public class HttpClientRequest implements WriteStream {
 
   // Public API ---------------------------------------------------------------------------------------------------
 
-  public final Map<String, Object> headers = new HashMap<String, Object>();
+  public HttpClientRequest putHeader(String key, Object value) {
+    request.setHeader(key, value);
+    return this;
+  }
+
+  public HttpClientRequest putHeader(String key, Iterable<String> values) {
+    request.setHeader(key, values);
+    return this;
+  }
+
+  public HttpClientRequest addHeader(String key, Object value) {
+    request.addHeader(key, value);
+    return this;
+  }
+
+  public HttpClientRequest putAllHeaders(Map<String,? extends Object> m)  {
+    for (Map.Entry<String, ? extends Object> entry: m.entrySet()) {
+      request.setHeader(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  public String getHeader(String key) {
+    return request.getHeader(key);
+  }
+
+  public List<String> getHeaders(String key) {
+    return request.getHeaders(key);
+  }
+
+  public Set<String> getHeaderNames() {
+    return request.getHeaderNames();
+  }
 
   public void writeBuffer(Buffer chunk) {
     write(chunk._toChannelBuffer(), null);
@@ -119,8 +155,6 @@ public class HttpClientRequest implements WriteStream {
 
   private void writeHead(boolean chunked) {
     conn.setCurrentRequest(this);
-    HttpMethod hmethod = HttpMethod.valueOf(method);
-    HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, hmethod, uri);
     if (chunked) {
       request.setChunked(true);
       request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
@@ -128,9 +162,6 @@ public class HttpClientRequest implements WriteStream {
     request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
     request.setHeader(HttpHeaders.Names.CONNECTION, conn.keepAlive ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values
         .CLOSE);
-    for (Map.Entry<String, Object> entry: headers.entrySet()) {
-      request.setHeader(entry.getKey(), entry.getValue().toString());
-    }
     if (cookies != null) {
       CookieEncoder httpCookieEncoder = new CookieEncoder(false);
       for (Map.Entry<String, String> cookie : cookies.entrySet()) {

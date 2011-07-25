@@ -125,11 +125,7 @@ public class HttpServer {
         if (HttpHeaders.is100ContinueExpected(request)) {
           ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
         }
-        Map<String, String> headers = new HashMap<String, String>();
-        for (Map.Entry<String, String> h : request.getHeaders()) {
-          headers.put(h.getKey(), h.getValue());
-        }
-        HttpServerRequest req = new HttpServerRequest(request.getMethod().toString(), request.getUri(), headers, conn);
+        HttpServerRequest req = new HttpServerRequest(conn, request);
         HttpServerResponse resp = new HttpServerResponse(HttpHeaders.isKeepAlive(request),
             request.getHeader(HttpHeaders.Names.COOKIE), conn);
         conn.handleRequest(req, resp);

@@ -156,17 +156,13 @@ public class HttpClient {
       HttpClientConnection conn = connectionMap.get(ch);
       if (e.getMessage() instanceof HttpResponse) {
         HttpResponse response = (HttpResponse) e.getMessage();
-        Map<String, String> headers = new HashMap<String, String>();
-        for (Map.Entry<String, String> h : response.getHeaders()) {
-          headers.put(h.getKey(), h.getValue());
-        }
-        conn.handleResponse(new HttpClientResponse(conn, response.getStatus().getCode(), headers));
+        conn.handleResponse(new HttpClientResponse(conn, response.getStatus().getCode(), response));
         ChannelBuffer content = response.getContent();
         if (content.readable()) {
           conn.handleChunk(Buffer.fromChannelBuffer(content));
         }
         if (!response.isChunked()) {
-          conn.handleEnd(null);
+          conn.handleEnd();
         }
       } else if (e.getMessage() instanceof HttpChunk) {
         HttpChunk chunk = (HttpChunk) e.getMessage();
@@ -175,13 +171,9 @@ public class HttpClient {
         if (chunk.isLast()) {
           if (chunk instanceof HttpChunkTrailer) {
             HttpChunkTrailer trailer = (HttpChunkTrailer)chunk;
-            Map<String, String> trailers = new HashMap<String, String>();
-            for (Map.Entry<String, String> h : trailer.getHeaders()) {
-              trailers.put(h.getKey(), h.getValue());
-            }
-            conn.handleEnd(trailers);
+            conn.handleEnd(trailer);
           } else {
-            conn.handleEnd(null);
+            conn.handleEnd();
           }
         }
       }

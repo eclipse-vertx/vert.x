@@ -123,7 +123,7 @@ public class HttpTest extends TestBase {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             assert method.equals(req.method);
             assert path.equals(req.path);
-            assert count == Integer.parseInt(req.headers.get("count"));
+            assert count == Integer.parseInt(req.getHeader("count"));
             final int theCount = count;
             count++;
             final Buffer buff = Buffer.newDynamic(0);
@@ -139,7 +139,7 @@ public class HttpTest extends TestBase {
                 //wrong order if we didn't implement pipelining correctly
                 Nodex.instance.setTimeout((long)(100 * Math.random()), new DoneHandler() {
                   public void onDone() {
-                    resp.headers.put("count", String.valueOf(theCount));
+                    resp.putHeader("count", String.valueOf(theCount));
                     resp.write(buff);
                     resp.end();
                   }
@@ -161,8 +161,7 @@ public class HttpTest extends TestBase {
             public void onResponse(final HttpClientResponse response) {
               //dumpHeaders(response.headers);
               assert response.statusCode == statusCode;
-              assert theCount == Integer.parseInt(response.headers.get("count")) : theCount + ":" + response.headers
-                  .get("count");
+              assert theCount == Integer.parseInt(response.getHeader("count")) : theCount + ":" + response.getHeader("count");
               final Buffer buff = Buffer.newDynamic(0);
               response.data(new DataHandler() {
                 public void onData(Buffer data) {
@@ -180,7 +179,7 @@ public class HttpTest extends TestBase {
               });
             }
           });
-          req.headers.put("count", String.valueOf(count));
+          req.putHeader("count", String.valueOf(count));
           req.write("This is content " + count);
           req.end();
         }
@@ -230,10 +229,10 @@ public class HttpTest extends TestBase {
       public void onConnect(HttpClientConnection conn) {
         conn.getNow(path, new HttpResponseHandler() {
           public void onResponse(final HttpClientResponse response) {
-            dumpHeaders(response.headers);
+            dumpHeaders(response);
             assert response.statusCode == 200;
-            assert file.length() == Long.valueOf(response.headers.get("Content-Length"));
-            assert "text/plain".equals(response.headers.get("Content-Type"));
+            assert file.length() == Long.valueOf(response.getHeader("Content-Length"));
+            assert "text/plain".equals(response.getHeader("Content-Type"));
             final Buffer buff = Buffer.newDynamic(0);
             response.data(new DataHandler() {
               public void onData(Buffer data) {
@@ -294,9 +293,9 @@ public class HttpTest extends TestBase {
               assert req.getParam(param.getKey()).equals(param.getValue());
             }
             //dumpHeaders(req.headers);
-            assertHeaders(requestHeaders, req.headers);
-            assert req.headers.get("Host").equals(host + ":" + port);
-            assert req.headers.get("Connection").equals(keepAlive ? "keep-alive" : "close");
+            assertHeaders(requestHeaders, req);
+            assert req.getHeader("Host").equals(host + ":" + port);
+            assert req.getHeader("Connection").equals(keepAlive ? "keep-alive" : "close");
 
             final Buffer buff = Buffer.newDynamic(0);
             req.data(new DataHandler() {
@@ -307,18 +306,14 @@ public class HttpTest extends TestBase {
             req.end(new DoneHandler() {
               public void onDone() {
                 assert Utils.buffersEqual(totRequestBody, buff);
-                for (Map.Entry<String, String> header : responseHeaders.entrySet()) {
-                  resp.headers.put(header.getKey(), header.getValue());
-                }
+                resp.putAllHeaders(responseHeaders);
                 resp.statusCode = statusCode;
                 if (responseBody != null) {
                   for (Buffer chunk: responseBody) {
                    resp.write(chunk);
                   }
                   if (trailers != null) {
-                    for (Map.Entry<String, String> trailer : trailers.entrySet()) {
-                      resp.trailers.put(trailer.getKey(), trailer.getValue());
-                    }
+                    resp.putAllTrailers(trailers);
                   }
                 }
                 resp.end();
@@ -338,7 +333,7 @@ public class HttpTest extends TestBase {
           public void onResponse(final HttpClientResponse response) {
             //dumpHeaders(response.headers);
             assert response.statusCode == statusCode;
-            assertHeaders(responseHeaders, response.headers);
+            assertHeaders(responseHeaders, response);
             final Buffer buff = Buffer.newDynamic(0);
             response.data(new DataHandler() {
               public void onData(Buffer data) {
@@ -351,7 +346,7 @@ public class HttpTest extends TestBase {
                 //System.out.println("actual:" + buff.toString());
                 assert Utils.buffersEqual(totResponseBody, buff);
                 if (trailers != null) {
-                  assertHeaders(trailers, response.trailers);
+                  assertTrailers(trailers, response);
                 }
                 latch.countDown();
               }
@@ -364,7 +359,7 @@ public class HttpTest extends TestBase {
           conn.getNow(path + paramsString, requestHeaders, responseHandler);
         } else {
           req = getRequest(specificMethod, method, path, paramsString, responseHandler, conn);
-          req.headers.putAll(requestHeaders);
+          req.putAllHeaders(requestHeaders);
           if (requestBody != null) {
             for (Buffer buff: requestBody) {
               req.write(buff);
@@ -440,18 +435,36 @@ public class HttpTest extends TestBase {
     return builder.toString();
   }
 
-  private void assertHeaders(Map<String, String> h1, Map<String, String> h2) {
+  private void assertHeaders(Map<String, String> h1, HttpServerRequest request) {
     assert h1 != null;
-    assert h2 != null;
+    assert request != null;
     //Check that all of h1 are in h2
     for (Map.Entry<String, String> entry: h1.entrySet()) {
-      assert entry.getValue().equals(h2.get(entry.getKey()));
+      assert entry.getValue().equals(request.getHeader(entry.getKey()));
     }
   }
 
-  private void dumpHeaders(Map<String, String> headers) {
-    for (Map.Entry<String, String> entry: headers.entrySet()) {
-      System.out.println(entry.getKey() + ":" + entry.getValue());
+  private void assertHeaders(Map<String, String> h1, HttpClientResponse response) {
+    assert h1 != null;
+    assert response != null;
+    //Check that all of h1 are in h2
+    for (Map.Entry<String, String> entry: h1.entrySet()) {
+      assert entry.getValue().equals(response.getHeader(entry.getKey()));
+    }
+  }
+
+  private void assertTrailers(Map<String, String> h1, HttpClientResponse response) {
+    assert h1 != null;
+    assert response != null;
+    //Check that all of h1 are in h2
+    for (Map.Entry<String, String> entry: h1.entrySet()) {
+      assert entry.getValue().equals(response.getTrailer(entry.getKey()));
+    }
+  }
+
+  private void dumpHeaders(HttpClientResponse response) {
+    for (String key: response.getHeaderNames()) {
+      System.out.println(key + ":" + response.getHeader(key));
     }
   }
 

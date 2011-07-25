@@ -53,12 +53,11 @@ public class HttpServerResponse implements WriteStream {
   private static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
   private static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
 
-  public final Map<String, String> headers = new HashMap<String, String>();
-  public final Map<String, String> trailers = new HashMap<String, String>();
-
   private final boolean keepAlive;
   private final String cookieString;
   private final HttpServerConnection conn;
+  private final HttpResponse response;
+  private HttpChunkTrailer trailer;
 
   private boolean headWritten;
   private ChannelFuture writeFuture;
@@ -69,11 +68,64 @@ public class HttpServerResponse implements WriteStream {
     this.keepAlive = keepAlive;
     this.cookieString = cookieString;
     this.conn = conn;
+    this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
   }
 
   // Public API -----------------------------------------------------------------------------------------------------
 
   public int statusCode = HttpResponseStatus.OK.getCode();
+
+  public HttpServerResponse putHeader(String key, Object value) {
+    response.setHeader(key, value);
+    return this;
+  }
+
+  public HttpServerResponse putHeaders(String key, Iterable<String> values) {
+    response.setHeader(key, values);
+    return this;
+  }
+
+  public HttpServerResponse addHeader(String key, Object value) {
+    response.addHeader(key, value);
+    return this;
+  }
+
+  public HttpServerResponse putAllHeaders(Map<String,? extends Object> m)  {
+    for (Map.Entry<String, ? extends Object> entry: m.entrySet()) {
+      response.setHeader(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  private void checkTrailer() {
+    if (trailer == null) trailer = new DefaultHttpChunkTrailer();
+  }
+
+  public HttpServerResponse putTrailer(String key, Object value) {
+    checkTrailer();
+    trailer.setHeader(key, value);
+    return this;
+  }
+
+  public HttpServerResponse putTrailers(String key, Iterable<String> values) {
+    checkTrailer();
+    trailer.setHeader(key, values);
+    return this;
+  }
+
+  public HttpServerResponse addTrailer(String key, Object value) {
+    checkTrailer();
+    trailer.addHeader(key, value);
+    return this;
+  }
+
+  public HttpServerResponse putAllTrailers(Map<String,? extends Object> m)  {
+    checkTrailer();
+    for (Map.Entry<String, ? extends Object> entry: m.entrySet()) {
+      trailer.setHeader(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
 
   public void setWriteQueueMaxSize(int size) {
     conn.setWriteQueueMaxSize(size);
@@ -119,20 +171,16 @@ public class HttpServerResponse implements WriteStream {
   public void end() {
     if (!headWritten) {
       //No body
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(statusCode));
+      response.setStatus(HttpResponseStatus.valueOf(statusCode));
       writeHeaders(response);
       response.setHeader(CONTENT_LENGTH, 0);
       writeFuture = conn.write(response);
     } else {
       //Body written - We use HTTP chunking so we need to write a zero length chunk to signify the end
       HttpChunk nettyChunk;
-      if (trailers.isEmpty()) {
+      if (trailer == null) {
         nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
       } else {
-        HttpChunkTrailer trailer = new DefaultHttpChunkTrailer();
-        for (Map.Entry<String, String> entry : trailers.entrySet()) {
-          trailer.setHeader(entry.getKey(), entry.getValue());
-        }
         nettyChunk = trailer;
       }
       writeFuture = conn.write(nettyChunk);
@@ -166,11 +214,11 @@ public class HttpServerResponse implements WriteStream {
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
 
       MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-      headers.put(Names.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
-      headers.put(Names.CONTENT_LENGTH, String.valueOf(fileLength));
+      response.setHeader(Names.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
+      response.setHeader(Names.CONTENT_LENGTH, String.valueOf(fileLength));
       SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
       dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
-      headers.put(Names.LAST_MODIFIED, dateFormatter.format(new Date(file.lastModified())));
+      response.setHeader(Names.LAST_MODIFIED, dateFormatter.format(new Date(file.lastModified())));
 
       writeHeaders(response);
       conn.write(response);
@@ -205,9 +253,6 @@ public class HttpServerResponse implements WriteStream {
   // Impl -----------------------------------------------------------------------------------------------------
 
   private void writeHeaders(HttpResponse response) {
-    for (Map.Entry<String, String> entry : headers.entrySet()) {
-      response.setHeader(entry.getKey(), entry.getValue());
-    }
     // Encode the cookie.
     if (cookieString != null) {
       CookieDecoder cookieDecoder = new CookieDecoder();
@@ -235,7 +280,7 @@ public class HttpServerResponse implements WriteStream {
     }
 
     if (!headWritten) {
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(statusCode));
+      response.setStatus(HttpResponseStatus.valueOf(statusCode));
       response.setChunked(true);
       response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
       writeHeaders(response);

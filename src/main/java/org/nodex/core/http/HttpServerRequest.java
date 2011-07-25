@@ -1,5 +1,6 @@
 package org.nodex.core.http;
 
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
@@ -10,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: timfox
@@ -22,19 +24,21 @@ public class HttpServerRequest implements ReadStream {
   private DataHandler dataHandler;
   private DoneHandler endHandler;
   private final HttpServerConnection conn;
+  private final HttpRequest request;
 
-  HttpServerRequest(String method, String uri, Map<String, String> headers, HttpServerConnection conn) {
-    this.method = method;
+  HttpServerRequest(HttpServerConnection conn,
+                    HttpRequest request) {
+    this.method = request.getMethod().toString();
     URI theURI;
     try {
-      theURI = new URI(uri);
+      theURI = new URI(request.getUri());
     } catch (URISyntaxException e) {
-      throw new IllegalArgumentException("Invalid uri " + uri); //Should never happen
+      throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
     }
     this.path = theURI.getPath();
-    this.uri = uri;
-    this.headers = headers;
+    this.uri = request.getUri();
     this.conn = conn;
+    this.request = request;
   }
 
   // Public API ----------------------------------------------------------------------------------------------
@@ -42,7 +46,18 @@ public class HttpServerRequest implements ReadStream {
   public final String method;
   public final String uri;
   public final String path;
-  public final Map<String, String> headers;
+
+  public String getHeader(String key) {
+    return request.getHeader(key);
+  }
+
+  public List<String> getHeaders(String key) {
+    return request.getHeaders(key);
+  }
+
+  public Set<String> getHeaderNames() {
+    return request.getHeaderNames();
+  }
 
   public void data(DataHandler dataHandler) {
     this.dataHandler = dataHandler;
