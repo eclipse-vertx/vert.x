@@ -1,18 +1,34 @@
 package org.nodex.examples.composition;
 
 import org.nodex.core.DoneHandler;
-import org.nodex.core.amqp.*;
+import org.nodex.core.amqp.AmqpClient;
+import org.nodex.core.amqp.AmqpConnectHandler;
+import org.nodex.core.amqp.AmqpConnection;
+import org.nodex.core.amqp.AmqpMsgCallback;
+import org.nodex.core.amqp.AmqpProps;
+import org.nodex.core.amqp.Channel;
+import org.nodex.core.amqp.ChannelHandler;
+import org.nodex.core.amqp.ChannelPool;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.composition.Completion;
 import org.nodex.core.composition.Composer;
 import org.nodex.core.file.FileSystem;
-import org.nodex.core.http.*;
+import org.nodex.core.http.HttpRequestHandler;
+import org.nodex.core.http.HttpServer;
+import org.nodex.core.http.HttpServerConnectHandler;
+import org.nodex.core.http.HttpServerConnection;
+import org.nodex.core.http.HttpServerRequest;
+import org.nodex.core.http.HttpServerResponse;
 import org.nodex.core.redis.RedisClient;
 import org.nodex.core.redis.RedisConnectHandler;
 import org.nodex.core.redis.RedisConnection;
 import org.nodex.core.redis.ResultHandler;
-import org.nodex.core.stomp.*;
+import org.nodex.core.stomp.StompClient;
+import org.nodex.core.stomp.StompConnectHandler;
+import org.nodex.core.stomp.StompConnection;
+import org.nodex.core.stomp.StompMsgCallback;
+import org.nodex.core.stomp.StompServer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,10 +91,10 @@ public class CompositionExample {
 
   private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
-    HttpServer.createServer(new HttpConnectHandler() {
-      public void onConnect(final HttpConnection conn) {
-        conn.request(new HttpCallback() {
-          public void onRequest(HttpRequest req, final HttpResponse resp) {
+    HttpServer.createServer(new HttpServerConnectHandler() {
+      public void onConnect(final HttpServerConnection conn) {
+        conn.request(new HttpRequestHandler() {
+          public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             System.out.println("Request uri is " + req.uri);
             if (req.uri.equals("/")) {
               System.out.println("Serving index page");

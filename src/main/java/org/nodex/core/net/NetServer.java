@@ -20,8 +20,7 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.nodex.core.DoneHandler;
-import org.nodex.core.Nodex;
-import org.nodex.core.NodexImpl;
+import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 
@@ -30,10 +29,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetServer extends NetBase {
+public class NetServer {
   private ServerBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
   private final NetConnectHandler connectCallback;
@@ -143,11 +141,12 @@ public class NetServer extends NetBase {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      runOnCorrectThread(ch, new Runnable() {
+      final String contextID = NodexInternal.instance.createContext(ch.getWorker());
+      ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          String contextID = NodexInternal.instance.createContext(ch.getWorker());
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
           socketMap.put(ch, sock);
+          NodexInternal.instance.setContextID(contextID);
           connectCallback.onConnect(sock);
         }
       });
@@ -159,7 +158,7 @@ public class NetServer extends NetBase {
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        runOnCorrectThread(ch, new Runnable() {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -170,14 +169,15 @@ public class NetServer extends NetBase {
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocket sock = socketMap.get(ch);
-      socketMap.remove(ch);
-      runOnCorrectThread(ch, new Runnable() {
-        public void run() {
-          sock.handleClosed();
-          NodexInternal.instance.destroyContext(sock.getContextID());
-        }
-      });
+      final NetSocket sock = socketMap.remove(ch);
+      if (sock != null) {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+          public void run() {
+            sock.handleClosed();
+            NodexInternal.instance.destroyContext(sock.getContextID());
+          }
+        });
+      }
     }
 
     @Override
@@ -185,8 +185,7 @@ public class NetServer extends NetBase {
       Channel ch = e.getChannel();
       NetSocket sock = socketMap.get(ch);
       ChannelBuffer buff = (ChannelBuffer) e.getMessage();
-      ChannelBuffer sliced = buff.slice();
-      sock.handleDataReceived(new Buffer(sliced));
+      sock.handleDataReceived(new Buffer(buff.slice()));
     }
 
     @Override
@@ -196,7 +195,7 @@ public class NetServer extends NetBase {
       ch.close();
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        runOnCorrectThread(ch, new Runnable() {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
           }

@@ -141,31 +141,8 @@ public class PumpTest {
       this.drainHandler = handler;
     }
 
-    public void write(Buffer data) {
+    public void writeBuffer(Buffer data) {
       received.append(data);
-    }
-
-    public void write(String str) {
-      received.append(Buffer.fromString(str));
-    }
-
-    public void write(String str, String enc) {
-      received.append(Buffer.fromString(str, enc));
-    }
-
-    public void write(Buffer data, DoneHandler done) {
-      received.append(data);
-      done.onDone();
-    }
-
-    public void write(String str, DoneHandler done) {
-      received.append(Buffer.fromString(str));
-      done.onDone();
-    }
-
-    public void write(String str, String enc, DoneHandler done) {
-      received.append(Buffer.fromString(str, enc));
-      done.onDone();
     }
   }
 }

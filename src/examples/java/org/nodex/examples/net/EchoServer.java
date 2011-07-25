@@ -10,6 +10,7 @@ public class EchoServer {
   public static void main(String[] args) throws Exception {
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket socket) {
+        System.out.println("Sever conttect");
         socket.data(new DataHandler() {
           public void onData(Buffer buffer) {
             socket.write(buffer);

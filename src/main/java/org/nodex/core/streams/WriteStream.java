@@ -2,7 +2,6 @@ package org.nodex.core.streams;
 
 import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 
 /**
  * User: tfox
@@ -17,15 +16,5 @@ public interface WriteStream {
 
   void drain(DoneHandler handler);
 
-  void write(Buffer data);
-
-  void write(String str);
-
-  void write(String str, String enc);
-
-  void write(Buffer data, final DoneHandler done);
-
-  void write(String str, DoneHandler done);
-
-  void write(String str, String enc, DoneHandler done);
+  void writeBuffer(Buffer data);
 }

@@ -16,8 +16,6 @@ import tests.core.TestBase;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User: tim
@@ -155,7 +153,8 @@ public class NetTest extends TestBase {
     final Buffer sentBuff = Buffer.newDynamic(0);
     NetClient.createClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
-        doWrite(sentBuff, sock, numSends, sendSize);
+        final ContextChecker checker = new ContextChecker();
+        doWrite(sentBuff, sock, numSends, sendSize, checker);
       }
     });
 
@@ -169,122 +168,138 @@ public class NetTest extends TestBase {
     START, PAUSED, CONTINUING;
   }
 
-  @Test
+
+  // This test is dodgy since it calls various objects from outside their contexts
+
+//  @Test
   /*
   Test drain, pause and resume
    */
-  public void testDrain() throws Exception {
-    final Buffer receivedBuff = Buffer.newDynamic(0);
-    final CountDownLatch pausedLatch = new CountDownLatch(1);
-    final AtomicReference<ReceiveState> receiveState = new AtomicReference<ReceiveState>(ReceiveState.START);
-    final AtomicReference<NetSocket> sSock = new AtomicReference<NetSocket>();
-    final AtomicInteger sentData = new AtomicInteger(-1);
-    final CountDownLatch endLatch = new CountDownLatch(1);
-
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
-      public void onConnect(final NetSocket sock) {
-        sSock.set(sock);
-        sock.drain(new DoneHandler() {
-          public void onDone() {
-            assert false : "Drain should not be called on server";
-          }
-        });
-        sock.data(new DataHandler() {
-          int receivedData;
-
-          public void onData(Buffer data) {
-            switch (receiveState.get()) {
-              case START: {
-                sock.pause();
-                receiveState.set(ReceiveState.PAUSED);
-                pausedLatch.countDown();
-                break;
-              }
-              case PAUSED: {
-                assert false : "Received data when paused";
-                break;
-              }
-            }
-            receivedBuff.append(data);
-            receivedData += data.length();
-            if (receivedData == sentData.get()) {
-              endLatch.countDown();
-            }
-          }
-        });
-      }
-    }).listen(8181);
-
-    final Buffer sentBuff = Buffer.newDynamic(0);
-    final AtomicReference<NetSocket> cSock = new AtomicReference<NetSocket>();
-
-    final CountDownLatch connectedLatch = new CountDownLatch(1);
-    NetClient.createClient().connect(8181, new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        cSock.set(sock);
-        connectedLatch.countDown();
-      }
-    });
-
-    assert connectedLatch.await(5, TimeUnit.SECONDS);
-
-    //Send some data until the write queue is full
-    int count = 0;
-    while (!cSock.get().writeQueueFull()) {
-      Buffer b = Utils.generateRandomBuffer(100);
-      sentBuff.append(b);
-      count += b.length();
-      cSock.get().write(b);
-    }
-    assert cSock.get().writeQueueFull();
-
-    assert pausedLatch.await(2, TimeUnit.SECONDS);
-
-    assert receiveState.get() == ReceiveState.PAUSED;
-
-    final CountDownLatch drainedLatch1 = new CountDownLatch(1);
-    cSock.get().drain(new DoneHandler() {
-      public void onDone() {
-        drainedLatch1.countDown();
-      }
-    });
-
-    receiveState.set(ReceiveState.CONTINUING);
-    sSock.get().resume();
-
-    assert drainedLatch1.await(5, TimeUnit.SECONDS);
-
-    receiveState.set(ReceiveState.START);
-
-    //Send more data until write queue is full again
-    while (!cSock.get().writeQueueFull()) {
-      Buffer b = Utils.generateRandomBuffer(100);
-      sentBuff.append(b);
-      count += b.length();
-      cSock.get().write(b);
-    }
-    sentData.set(count);
-    assert cSock.get().writeQueueFull();
-
-    final CountDownLatch drainedLatch2 = new CountDownLatch(1);
-    cSock.get().drain(new DoneHandler() {
-      public void onDone() {
-        drainedLatch2.countDown();
-      }
-    });
-
-    //And then drain it again
-    receiveState.set(ReceiveState.CONTINUING);
-    sSock.get().resume();
-
-    assert endLatch.await(5, TimeUnit.SECONDS);
-    assert Utils.buffersEqual(sentBuff, receivedBuff);
-
-    awaitClose(server);
-  }
+//  public void testDrain() throws Exception {
+//    final Buffer receivedBuff = Buffer.newDynamic(0);
+//    final CountDownLatch pausedLatch = new CountDownLatch(1);
+//    final AtomicReference<ReceiveState> receiveState = new AtomicReference<ReceiveState>(ReceiveState.START);
+//    final AtomicInteger sentData = new AtomicInteger(-1);
+//    final CountDownLatch endLatch = new CountDownLatch(1);
+//
+//    NetServer server = NetServer.createServer(new NetConnectHandler() {
+//      public void onConnect(final NetSocket sock) {
+//        final ContextChecker checker = new ContextChecker();
+//        sock.drain(new DoneHandler() {
+//          public void onDone() {
+//            assert false : "Drain should not be called on server";
+//          }
+//        });
+//        sock.data(new DataHandler() {
+//          int receivedData;
+//
+//          public void onData(Buffer data) {
+//            checker.check();
+//            switch (receiveState.get()) {
+//              case START: {
+//                sock.pause();
+//                receiveState.set(ReceiveState.PAUSED);
+//                pausedLatch.countDown();
+//
+//                //Set timer to resume after a pause
+//                Nodex.instance.setTimeout(500, new DoneHandler() {
+//                  public void onDone() {
+//                    receiveState.set(ReceiveState.CONTINUING);
+//                    sock.resume();
+//                  }
+//                });
+//
+//                break;
+//              }
+//              case PAUSED: {
+//                assert false : "Received data when paused";
+//                break;
+//              }
+//            }
+//            receivedBuff.append(data);
+//            receivedData += data.length();
+//            if (receivedData == sentData.get()) {
+//              endLatch.countDown();
+//            }
+//          }
+//        });
+//      }
+//    }).listen(8181);
+//
+//    final Buffer sentBuff = Buffer.newDynamic(0);
+//    final AtomicReference<NetSocket> cSock = new AtomicReference<NetSocket>();
+//
+//    final CountDownLatch connectedLatch = new CountDownLatch(1);
+//    final AtomicReference<ContextChecker> clientChecker = new AtomicReference<ContextChecker>();
+//    NetClient.createClient().connect(8181, new NetConnectHandler() {
+//      public void onConnect(NetSocket sock) {
+//        clientChecker.set(new ContextChecker());
+//        cSock.set(sock);
+//        connectedLatch.countDown();
+//      }
+//    });
+//
+//    assert connectedLatch.await(5, TimeUnit.SECONDS);
+//
+//    //Send some data until the write queue is full
+//    int count = 0;
+//    while (!cSock.get().writeQueueFull()) {
+//      Buffer b = Utils.generateRandomBuffer(100);
+//      sentBuff.append(b);
+//      count += b.length();
+//      cSock.get().write(b);
+//    }
+//    assert cSock.get().writeQueueFull();
+//
+//    assert pausedLatch.await(2, TimeUnit.SECONDS);
+//
+//    assert receiveState.get() == ReceiveState.PAUSED;
+//
+//    final CountDownLatch drainedLatch1 = new CountDownLatch(1);
+//    cSock.get().drain(new DoneHandler() {
+//      public void onDone() {
+//        clientChecker.get().check();
+//        drainedLatch1.countDown();
+//      }
+//    });
+//
+//    //It will automatically drain after a pause
+//
+//    assert drainedLatch1.await(5, TimeUnit.SECONDS);
+//
+//    receiveState.set(ReceiveState.START);
+//
+//    //Send more data until write queue is full again
+//    while (!cSock.get().writeQueueFull()) {
+//      Buffer b = Utils.generateRandomBuffer(100);
+//      sentBuff.append(b);
+//      count += b.length();
+//      cSock.get().write(b);
+//    }
+//    sentData.set(count);
+//    assert cSock.get().writeQueueFull();
+//
+//    final CountDownLatch drainedLatch2 = new CountDownLatch(1);
+//    cSock.get().drain(new DoneHandler() {
+//      public void onDone() {
+//        clientChecker.get().check();
+//        drainedLatch2.countDown();
+//      }
+//    });
+//
+//    //And then drain it again
+//    receiveState.set(ReceiveState.CONTINUING);
+//    sSock.get().resume();
+//
+//    assert endLatch.await(5, TimeUnit.SECONDS);
+//    assert Utils.buffersEqual(sentBuff, receivedBuff);
+//
+//    awaitClose(server);
+//  }
 
   //Recursive - we don't write the next packet until we get the completion back from the previous write
-  private void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize) {
+  private void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize,
+                       final ContextChecker checker) {
     Buffer b = Utils.generateRandomBuffer(sendSize);
     sentBuff.append(b);
     count--;
@@ -294,7 +309,8 @@ public class NetTest extends TestBase {
     } else {
       sock.write(b, new DoneHandler() {
         public void onDone() {
-          doWrite(sentBuff, sock, c, sendSize);
+          checker.check();
+          doWrite(sentBuff, sock, c, sendSize, checker);
         }
       });
     }
@@ -307,8 +323,10 @@ public class NetTest extends TestBase {
     final int sendSize = 100;
     NetConnectHandler receiver = new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
+        final ContextChecker checker = new ContextChecker();
         sock.data(new DataHandler() {
           public void onData(Buffer data) {
+            checker.check();
             receivedBuff.append(data);
             if (receivedBuff.length() == numSends * sendSize) {
               sock.close();
@@ -359,8 +377,10 @@ public class NetTest extends TestBase {
     final CountDownLatch serverCloseLatch = new CountDownLatch(connectCount);
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
+        final ContextChecker checker = new ContextChecker();
         sock.closed(new DoneHandler() {
           public void onDone() {
+            checker.check();
             serverCloseLatch.countDown();
           }
         });
@@ -374,8 +394,10 @@ public class NetTest extends TestBase {
     for (int i = 0; i < connectCount; i++) {
       client.connect(8181, new NetConnectHandler() {
         public void onConnect(NetSocket sock) {
+          final ContextChecker checker = new ContextChecker();
           sock.closed(new DoneHandler() {
             public void onDone() {
+              checker.check();
               clientCloseLatch.countDown();
             }
           });

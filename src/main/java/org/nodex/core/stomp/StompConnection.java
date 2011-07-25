@@ -67,7 +67,7 @@ public class StompConnection {
     write(frame);
   }
 
-  // HttpRequest-response pattern
+  // HttpServerRequest-response pattern
 
   private Map<String, StompMsgCallback> callbacks = new ConcurrentHashMap<String, StompMsgCallback>();
   private volatile String responseQueue;

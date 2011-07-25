@@ -34,7 +34,9 @@ public final class NodexImpl implements NodexInternal {
   private Map<String, NioWorker> workerMap = new ConcurrentHashMap<String, NioWorker>();
   private static final ThreadLocal<String> contextIDTL = new ThreadLocal<String>();
   private Map<String, Object> actors = new ConcurrentHashMap<String, Object>();
-  private final HashedWheelTimer timer = new HashedWheelTimer(new NodeThreadFactory("node.x-timer-thread"), 100,
+  //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
+  //it's own hashed wheel
+  private final HashedWheelTimer timer = new HashedWheelTimer(new NodeThreadFactory("node.x-timer-thread"), 20,
       TimeUnit.MILLISECONDS);
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<Long, TimeoutHolder>();
@@ -67,32 +69,12 @@ public final class NodexImpl implements NodexInternal {
     getBackgroundPool().execute(task);
   }
 
-  public long setTimeout(long delay, final DoneHandler handler) {
-    final String contextID = checkContextID();
-
-    class CancellableTimerTask implements TimerTask {
-      boolean executed;
-
-      public void run(Timeout timeout) {
-        if (!executed) {
-          executeOnContext(contextID, handler);
-          executed = true;
-        }
-        //And cancel immediately since it's a one off timer
-        if (id != -1) {
-          cancelTimeout(id, false);
-        }
-      }
-
-      volatile long id = -1;
-    }
-    CancellableTimerTask task = new CancellableTimerTask();
-    long id = scheduleTimeout(contextID, task, delay);
-    task.id = id;
-    return id;
+  public long setPeriodic(long delay, final DoneHandler handler) {
+    //TODO
+    return -1;
   }
 
-  public long setPeriodic(long delay, final DoneHandler handler) {
+  public long setTimeout(long delay, final DoneHandler handler) {
     final String contextID = checkContextID();
     TimerTask task = new TimerTask() {
       public void run(Timeout timeout) {
@@ -156,7 +138,6 @@ public final class NodexImpl implements NodexInternal {
   public String createContext(NioWorker worker) {
     String contextID = UUID.randomUUID().toString();
     workerMap.put(contextID, worker);
-    setContextID(contextID);
     return contextID;
   }
 
@@ -193,7 +174,6 @@ public final class NodexImpl implements NodexInternal {
     return contextID;
   }
 
-
   private void executeOnContext(String contextID, final DoneHandler handler) {
     //Must be executed on the context of the creator
     executeOnContext(contextID, new Runnable() {
@@ -226,7 +206,6 @@ public final class NodexImpl implements NodexInternal {
     timeouts.put(id, new TimeoutHolder(timeout, contextID));
     return id;
   }
-
 
   private static class TimeoutHolder {
     final Timeout timeout;

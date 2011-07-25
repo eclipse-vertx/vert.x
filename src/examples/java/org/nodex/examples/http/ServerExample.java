@@ -1,6 +1,11 @@
 package org.nodex.examples.http;
 
-import org.nodex.core.http.*;
+import org.nodex.core.http.HttpRequestHandler;
+import org.nodex.core.http.HttpServer;
+import org.nodex.core.http.HttpServerConnectHandler;
+import org.nodex.core.http.HttpServerConnection;
+import org.nodex.core.http.HttpServerRequest;
+import org.nodex.core.http.HttpServerResponse;
 
 import java.util.Map;
 
@@ -11,10 +16,10 @@ import java.util.Map;
  */
 public class ServerExample {
   public static void main(String[] args) throws Exception {
-    HttpServer server = HttpServer.createServer(new HttpConnectHandler() {
-      public void onConnect(final HttpConnection conn) {
-        conn.request(new HttpCallback() {
-          public void onRequest(HttpRequest req, HttpResponse resp) {
+    HttpServer server = HttpServer.createServer(new HttpServerConnectHandler() {
+      public void onConnect(final HttpServerConnection conn) {
+        conn.request(new HttpRequestHandler() {
+          public void onRequest(HttpServerRequest req, HttpServerResponse resp) {
             System.out.println("Got request " + req.uri);
             System.out.println("Headers are: ");
             for (Map.Entry<String, String> headers : req.headers.entrySet()) {
@@ -30,6 +35,6 @@ public class ServerExample {
     System.out.println("Any key to exit");
     System.in.read();
 
-    server.stop();
+    server.close();
   }
 }

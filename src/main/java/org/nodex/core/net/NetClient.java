@@ -2,11 +2,21 @@ package org.nodex.core.net;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelState;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.nodex.core.Nodex;
-import org.nodex.core.NodexImpl;
+import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 
@@ -20,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Date: 26/06/2011
  * Time: 08:41
  */
-public class NetClient extends NetBase {
+public class NetClient {
 
   private ClientBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
@@ -52,14 +62,18 @@ public class NetClient extends NetBase {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
           final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
-          runOnCorrectThread(ch, new Runnable() {
+          final String contextID = NodexInternal.instance.createContext(ch.getWorker());
+          ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
-              String contextID = NodexInternal.instance.createContext(ch.getWorker());
               NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
               socketMap.put(ch, sock);
+              NodexInternal.instance.setContextID(contextID);
               connectHandler.onConnect(sock);
             }
           });
+        } else {
+          //FIXME - better error handling
+          channelFuture.getCause().printStackTrace();
         }
       }
     });
@@ -119,7 +133,7 @@ public class NetClient extends NetBase {
       final NetSocket sock = socketMap.get(ch);
       socketMap.remove(ch);
       if (sock != null) {
-        runOnCorrectThread(ch, new Runnable() {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleClosed();
             NodexInternal.instance.destroyContext(sock.getContextID());
@@ -143,7 +157,7 @@ public class NetClient extends NetBase {
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        runOnCorrectThread(ch, new Runnable() {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -157,7 +171,7 @@ public class NetClient extends NetBase {
       final NetSocket sock = socketMap.get(ch);
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        runOnCorrectThread(ch, new Runnable() {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
             ch.close();

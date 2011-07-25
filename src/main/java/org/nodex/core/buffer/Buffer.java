@@ -4,7 +4,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.util.CharsetUtil;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 public class Buffer {

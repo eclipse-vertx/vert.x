@@ -14,6 +14,8 @@ import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -43,19 +45,16 @@ public class ThreadingTest extends TestBase {
     final CountDownLatch serverClosedLatch = new CountDownLatch(1);
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
-        final Thread th = Thread.currentThread();
-        final String contextID = Nodex.instance.getContextID();
+        final ContextChecker checker = new ContextChecker();
         sock.data(new DataHandler() {
           public void onData(Buffer data) {
-            assert th == Thread.currentThread();
-            assert contextID == Nodex.instance.getContextID();
+            checker.check();
             sock.write(data);    // Send it back to client
           }
         });
         sock.closed(new DoneHandler() {
           public void onDone() {
-            assert th == Thread.currentThread();
-            assert contextID == Nodex.instance.getContextID();
+            checker.check();
             serverClosedLatch.countDown();
           }
         });
@@ -67,13 +66,11 @@ public class ThreadingTest extends TestBase {
     final CountDownLatch clientClosedLatch = new CountDownLatch(1);
     client.connect(8181, new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
-        final Thread th = Thread.currentThread();
-        final String contextID = Nodex.instance.getContextID();
+        final ContextChecker checker = new ContextChecker();
         final Buffer buff = Buffer.newDynamic(0);
         sock.data(new DataHandler() {
           public void onData(Buffer data) {
-            assert th == Thread.currentThread();
-            assert contextID == Nodex.instance.getContextID();
+            checker.check();
             buff.append(data);
             if (buff.length() == dataLength) {
               sock.close();
@@ -82,8 +79,7 @@ public class ThreadingTest extends TestBase {
         });
         sock.closed(new DoneHandler() {
           public void onDone() {
-            assert th == Thread.currentThread();
-            assert contextID == Nodex.instance.getContextID();
+            checker.check();
             clientClosedLatch.countDown();
           }
         });
@@ -95,6 +91,39 @@ public class ThreadingTest extends TestBase {
 
     assert serverClosedLatch.await(5, TimeUnit.SECONDS);
     assert clientClosedLatch.await(5, TimeUnit.SECONDS);
+
+    awaitClose(server);
+  }
+
+  @Test
+  /* Test that event loops are shared across available connections */
+  public void testMultipleEventLoops() throws Exception {
+    int loops = Nodex.instance.getCoreThreadPoolSize();
+    int connections = 100;
+    final Map<Thread, Object> threads = new ConcurrentHashMap<Thread, Object>();
+    final CountDownLatch serverConnectLatch = new CountDownLatch(connections);
+    NetServer server = NetServer.createServer(new NetConnectHandler() {
+      public void onConnect(NetSocket sock) {
+        threads.put(Thread.currentThread(), "foo");
+        serverConnectLatch.countDown();
+      }
+    }).listen(8181);
+
+    final CountDownLatch clientConnectLatch = new CountDownLatch(loops);
+    NetClient client = NetClient.createClient();
+
+    for (int i = 0; i < connections; i++) {
+      client.connect(8181, new NetConnectHandler() {
+        public void onConnect(NetSocket sock) {
+          clientConnectLatch.countDown();
+          sock.close();
+        }
+      });
+    }
+
+    assert serverConnectLatch.await(5, TimeUnit.SECONDS);
+    assert clientConnectLatch.await(5, TimeUnit.SECONDS);
+    assert loops == threads.size();
 
     awaitClose(server);
   }

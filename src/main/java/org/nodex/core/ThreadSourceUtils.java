@@ -1,4 +1,4 @@
-package org.nodex.core.net;
+package org.nodex.core;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 
@@ -7,7 +7,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
  * Date: 21/07/2011
  * Time: 21:01
  */
-public class NetBase {
+public class ThreadSourceUtils {
 
   /*
   Currently Netty does not provide all events for a connection on the same thread - e.g. connection open
@@ -17,7 +17,7 @@ public class NetBase {
   thread if it's not the right one.
   This code will go away if Netty acts like a proper event loop.
    */
-  protected void runOnCorrectThread(NioSocketChannel nch, Runnable runnable) {
+  public static void runOnCorrectThread(NioSocketChannel nch, Runnable runnable) {
     if (Thread.currentThread() != nch.getWorker().getThread()) {
       nch.getWorker().scheduleOtherTask(runnable);
     } else {

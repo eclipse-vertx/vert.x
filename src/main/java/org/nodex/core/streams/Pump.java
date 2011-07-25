@@ -21,7 +21,7 @@ public class Pump {
 
   private final DataHandler dataHandler = new DataHandler() {
     public void onData(Buffer buffer) {
-      writeStream.write(buffer);
+      writeStream.writeBuffer(buffer);
       if (writeStream.writeQueueFull()) {
         readStream.pause();
       }

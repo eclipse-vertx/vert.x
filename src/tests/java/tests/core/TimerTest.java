@@ -15,6 +15,7 @@ import tests.Utils;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * User: timfox
@@ -31,45 +32,48 @@ public class TimerTest extends TestBase {
   }
 
   @Test
-  public void testOneOff() throws Exception {
-    final CountDownLatch setDataHandlerLatch = new CountDownLatch(1);
+  /*
+  Test that can't set a timer without a context
+   */
+  public void testNoContext() throws Exception {
+    final AtomicBoolean fired = new AtomicBoolean(false);
+    try {
+      Nodex.instance.setTimeout(1, new DoneHandler() {
+        public void onDone() {
+          fired.set(true);
+        }
+      });
+      assert false : "Should throw Exception";
+    } catch (IllegalStateException e) {
+      //OK
+    }
+    Thread.sleep(100);
+    assert !fired.get();
+  }
+
+  @Test
+  /*
+  Test that timers can be set from connect handler
+   */
+  public void testOneOffInConnect() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
         final String contextID = Nodex.instance.getContextID();
-        Nodex.instance.setTimeout(100, new DoneHandler() {
+        Nodex.instance.setTimeout(1, new DoneHandler() {
           public void onDone() {
             assert th == Thread.currentThread();
             assert contextID == Nodex.instance.getContextID();
-            sock.data(new DataHandler() {
-              public void onData(final Buffer data) {
-                Nodex.instance.setTimeout(100, new DoneHandler() {
-                  public void onDone() {
-                    assert th == Thread.currentThread();
-                    assert contextID == Nodex.instance.getContextID();
-                    endLatch.countDown();
-                  }
-                });
-              }
-            });
-            setDataHandlerLatch.countDown();
+            endLatch.countDown();
           }
         });
       }
     }).listen(8181);
 
     NetClient client = NetClient.createClient();
-
     client.connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
-        try {
-          assert setDataHandlerLatch.await(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-          assert false;
-        }
-        Buffer sendBuff = Utils.generateRandomBuffer(1000);
-        sock.write(sendBuff);
       }
     });
 
@@ -77,4 +81,79 @@ public class TimerTest extends TestBase {
 
     awaitClose(server);
   }
+
+  @Test
+  /*
+  Test that timers can be set from data handler
+   */
+  public void testOneOffInData() throws Exception {
+    final CountDownLatch endLatch = new CountDownLatch(1);
+    NetServer server = NetServer.createServer(new NetConnectHandler() {
+      public void onConnect(final NetSocket sock) {
+        final Thread th = Thread.currentThread();
+        final String contextID = Nodex.instance.getContextID();
+        sock.data(new DataHandler() {
+          public void onData(Buffer data) {
+            Nodex.instance.setTimeout(1, new DoneHandler() {
+              public void onDone() {
+                assert th == Thread.currentThread();
+                assert contextID == Nodex.instance.getContextID();
+                endLatch.countDown();
+              }
+            });
+          }
+        });
+
+      }
+    }).listen(8181);
+
+    NetClient client = NetClient.createClient();
+    client.connect(8181, new NetConnectHandler() {
+      public void onConnect(NetSocket sock) {
+        sock.write(Utils.generateRandomBuffer(100));
+      }
+    });
+
+    assert endLatch.await(5, TimeUnit.SECONDS);
+
+    awaitClose(server);
+  }
+
+  @Test
+  /*
+  Test the timers fire with approximately the correct delay
+   */
+  public void testTimings() throws Exception {
+    final CountDownLatch endLatch = new CountDownLatch(1);
+    NetServer server = NetServer.createServer(new NetConnectHandler() {
+      public void onConnect(final NetSocket sock) {
+        final Thread th = Thread.currentThread();
+        final String contextID = Nodex.instance.getContextID();
+        final long start = System.nanoTime();
+        final long delay = 100;
+        Nodex.instance.setTimeout(delay, new DoneHandler() {
+          public void onDone() {
+            System.out.println("that took " + (System.nanoTime() - start));
+            long dur = (System.nanoTime() - start) / 1000000;
+            assert dur >= delay;
+            assert dur < delay * 1.25; // 25% margin of error
+            assert th == Thread.currentThread();
+            assert contextID == Nodex.instance.getContextID();
+            endLatch.countDown();
+          }
+        });
+      }
+    }).listen(8181);
+
+    NetClient client = NetClient.createClient();
+    client.connect(8181, new NetConnectHandler() {
+      public void onConnect(NetSocket sock) {
+      }
+    });
+
+    assert endLatch.await(5, TimeUnit.SECONDS);
+
+    awaitClose(server);
+  }
+
 }

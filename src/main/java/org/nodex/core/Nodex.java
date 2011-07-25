@@ -1,11 +1,5 @@
 package org.nodex.core;
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
-import org.jboss.netty.channel.socket.nio.NioWorkerPool;
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 /**
  * User: timfox
  * Date: 20/07/2011

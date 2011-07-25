@@ -3,8 +3,6 @@ package org.nodex.core.parsetools;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 
-import java.io.UnsupportedEncodingException;
-
 /**
  * User: tim
  * Date: 27/06/11

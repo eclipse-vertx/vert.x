@@ -1,7 +1,12 @@
 package org.nodex.examples.amqp;
 
 import org.nodex.core.DoneHandler;
-import org.nodex.core.amqp.*;
+import org.nodex.core.amqp.AmqpConnectHandler;
+import org.nodex.core.amqp.AmqpConnection;
+import org.nodex.core.amqp.AmqpMsgCallback;
+import org.nodex.core.amqp.AmqpProps;
+import org.nodex.core.amqp.Channel;
+import org.nodex.core.amqp.ChannelHandler;
 
 import java.io.IOException;
 
