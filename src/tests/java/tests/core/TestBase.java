@@ -34,8 +34,8 @@ public class TestBase {
     }
 
     public void check() {
-      assert th == Thread.currentThread(): "Expected:" + th + " Actual:" + Thread.currentThread();
-      assert contextID == Nodex.instance.getContextID(): "Expected:" + contextID + " Actual:" + Nodex.instance
+      assert th == Thread.currentThread() : "Expected:" + th + " Actual:" + Thread.currentThread();
+      assert contextID == Nodex.instance.getContextID() : "Expected:" + contextID + " Actual:" + Nodex.instance
           .getContextID();
     }
   }

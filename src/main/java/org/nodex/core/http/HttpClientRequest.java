@@ -3,11 +3,9 @@ package org.nodex.core.http;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -16,9 +14,8 @@ import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,6 +28,9 @@ public class HttpClientRequest implements WriteStream {
   HttpClientRequest(HttpClientConnection conn, final String method, final String uri,
                     final HttpResponseHandler respHandler) {
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
+    request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
+    request.setHeader(HttpHeaders.Names.CONNECTION, conn.keepAlive ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values
+        .CLOSE);
     this.conn = conn;
     this.method = method;
     this.uri = uri;
@@ -66,8 +66,8 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
-  public HttpClientRequest putAllHeaders(Map<String,? extends Object> m)  {
-    for (Map.Entry<String, ? extends Object> entry: m.entrySet()) {
+  public HttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
+    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       request.setHeader(entry.getKey(), entry.getValue());
     }
     return this;
@@ -159,9 +159,6 @@ public class HttpClientRequest implements WriteStream {
       request.setChunked(true);
       request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
     }
-    request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
-    request.setHeader(HttpHeaders.Names.CONNECTION, conn.keepAlive ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values
-        .CLOSE);
     if (cookies != null) {
       CookieEncoder httpCookieEncoder = new CookieEncoder(false);
       for (Map.Entry<String, String> cookie : cookies.entrySet()) {

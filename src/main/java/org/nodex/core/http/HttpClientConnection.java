@@ -1,25 +1,30 @@
 package org.nodex.core.http;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.nodex.core.ConnectionBase;
 import org.nodex.core.DoneHandler;
-import org.nodex.core.ExceptionHandler;
-import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.buffer.DataHandler;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * User: timfox
  * Date: 22/07/2011
  * Time: 11:49
- *
  */
 public class HttpClientConnection extends ConnectionBase {
 
@@ -37,10 +42,80 @@ public class HttpClientConnection extends ConnectionBase {
   // Requests can be pipelined so we need a queue to keep track of handlers
   private Queue<HttpResponseHandler> respHandlers = new ConcurrentLinkedQueue<HttpResponseHandler>();
   private HttpClientResponse currentResponse;
+  private Websocket ws;
 
   // Public API ------------------------------------------------------------------------------------------------
 
+  public void upgradeToWebSocket(final String uri, final WebsocketConnectHandler wsConnect) {
+    upgradeToWebSocket(uri, null, wsConnect);
+  }
+
+  public void upgradeToWebSocket(final String uri, Map<String, ? extends Object> headers,
+                           final WebsocketConnectHandler wsConnect) {
+    if (headers == null) headers = new HashMap<String, String>();
+    String key1 = WebsocketHandshakeHelper.genWSkey();
+    String key2 = WebsocketHandshakeHelper.genWSkey();
+    long c = new Random().nextLong();
+
+    final Buffer out = Buffer.fromChannelBuffer(WebsocketHandshakeHelper.calcResponse(key1, key2, c));
+    ChannelBuffer buff = ChannelBuffers.buffer(8);
+    buff.writeLong(c);
+
+    //This handshake is from the draft-ietf-hybi-thewebsocketprotocol-00 version of the spec
+    //supported by Chrome etc
+    HttpClientRequest req = get(uri, new HttpResponseHandler() {
+      public void onResponse(HttpClientResponse resp) {
+        if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
+          handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode
+          + "msg:" + resp.statusMessage));
+        } else if (!resp.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE)) {
+          handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
+        } else {
+          final Buffer buff = Buffer.newDynamic(0);
+          resp.data(new DataHandler() {
+            public void onData(Buffer data) {
+              buff.append(data);
+            }
+          });
+          resp.end(new DoneHandler() {
+            public void onDone() {
+              boolean matched = true;
+              if (buff.length() == out.length()) {
+                for (int i = 0; i < buff.length(); i++) {
+                  if (out.byteAt(i) != buff.byteAt(i)) {
+                    matched = false;
+                    break;
+                  }
+                }
+                if (matched) {
+                  System.out.println("Upgraded to Websocket OK!");
+                  ChannelPipeline p = channel.getPipeline();
+                  p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
+                  p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
+                  ws = new Websocket(uri, HttpClientConnection.this);
+                  wsConnect.onConnect(ws);
+                  return;
+                }
+              }
+              handleException(new IllegalStateException("Invalid protocol handshake - wrong response"));
+            }
+          });
+        }
+      }
+    });
+    req.putHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET).
+        putHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE).
+        putHeader(HttpHeaders.Names.ORIGIN, "http://" + hostHeader). //TODO what about HTTPS?
+        putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, key1).
+        putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, key2).
+        write(Buffer.fromChannelBuffer(buff)).
+        end();
+  }
+
   public HttpClientRequest request(String method, String uri, HttpResponseHandler responseHandler) {
+    if (ws != null) {
+      throw new IllegalStateException("Cannot make requests on connection if upgraded to websocket");
+    }
     return new HttpClientRequest(this, method, uri, responseHandler);
   }
 
@@ -105,8 +180,7 @@ public class HttpClientConnection extends ConnectionBase {
         }
       }
     } catch (Throwable t) {
-      //TODO better exception handling
-      t.printStackTrace(System.err);
+      handleHandlerException(t);
     }
   }
 
@@ -117,22 +191,57 @@ public class HttpClientConnection extends ConnectionBase {
       throw new IllegalStateException("No response handler");
     }
     currentResponse = resp;
-    handler.onResponse(resp);
+    try {
+      handler.onResponse(resp);
+    } catch (Throwable t) {
+      handleHandlerException(t);
+    }
   }
 
   void handleChunk(Buffer buff) {
     setContextID();
-    currentResponse.handleChunk(buff);
+    try {
+      currentResponse.handleChunk(buff);
+    } catch (Throwable t) {
+      handleHandlerException(t);
+    }
   }
 
-  // Called from request / response
-
   void handleEnd() {
-    currentResponse.handleEnd(null);
+    handleEnd(null);
   }
 
   void handleEnd(HttpChunkTrailer trailer) {
-    currentResponse.handleEnd(trailer);
+    try {
+      currentResponse.handleEnd(trailer);
+    } catch (Throwable t) {
+      handleHandlerException(t);
+    }
+  }
+
+  void handleWsFrame(WebSocketFrame frame) {
+    if (ws != null) {
+      ws.handleFrame(frame);
+    }
+  }
+
+
+  // Internal ------------------------------------------------------------------------------------------------
+
+  protected void handleClosed() {
+    super.handleClosed();
+  }
+
+  protected String getContextID() {
+    return super.getContextID();
+  }
+
+  protected void handleException(Exception e) {
+    super.handleException(e);
+  }
+
+  protected void addFuture(DoneHandler done, ChannelFuture future) {
+    super.addFuture(done, future);
   }
 
   ChannelFuture write(Object obj, HttpClientRequest req) {

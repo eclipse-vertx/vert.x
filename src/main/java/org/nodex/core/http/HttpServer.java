@@ -24,7 +24,12 @@ import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.core.DoneHandler;
 import org.nodex.core.NodexInternal;
@@ -34,11 +39,19 @@ import org.nodex.core.buffer.Buffer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ORIGIN;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY1;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY2;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_LOCATION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_ORIGIN;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_PROTOCOL;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpServer {
@@ -116,34 +129,99 @@ public class HttpServer {
 
   public class HttpRequestHandler extends SimpleChannelUpstreamHandler {
 
+    private HttpRequest upgradeRequest;
+
+    private void calcAndWriteWSHandshakeResponse(Channel ch, HttpRequest request, long c) {
+      String key1 = request.getHeader(SEC_WEBSOCKET_KEY1);
+      String key2 = request.getHeader(SEC_WEBSOCKET_KEY2);
+      ChannelBuffer output = WebsocketHandshakeHelper.calcResponse(key1, key2, c);
+      HttpResponse res = new DefaultHttpResponse(HTTP_1_1, new HttpResponseStatus(101,
+          "Web Socket Protocol Handshake"));
+      res.setContent(output);
+      res.addHeader(HttpHeaders.Names.CONTENT_LENGTH, res.getContent().readableBytes());
+      res.addHeader(SEC_WEBSOCKET_ORIGIN, request.getHeader(ORIGIN));
+      res.addHeader(SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request, request.getUri()));
+      String protocol = request.getHeader(SEC_WEBSOCKET_PROTOCOL);
+      if (protocol != null) {
+        res.addHeader(SEC_WEBSOCKET_PROTOCOL, protocol);
+      }
+      res.addHeader(HttpHeaders.Names.UPGRADE, WEBSOCKET);
+      res.addHeader(CONNECTION, HttpHeaders.Values.UPGRADE);
+
+      ChannelPipeline p = ch.getPipeline();
+      p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
+      ch.write(res);
+      p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
+    }
+
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-      Channel ch = e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       HttpServerConnection conn = connectionMap.get(ch);
-      if (e.getMessage() instanceof HttpRequest) {
-        HttpRequest request = (HttpRequest) e.getMessage();
+      Object msg = e.getMessage();
+      if (msg instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) msg;
         if (HttpHeaders.is100ContinueExpected(request)) {
           ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
         }
-        HttpServerRequest req = new HttpServerRequest(conn, request);
-        HttpServerResponse resp = new HttpServerResponse(HttpHeaders.isKeepAlive(request),
-            request.getHeader(HttpHeaders.Names.COOKIE), conn);
-        conn.handleRequest(req, resp);
-        ChannelBuffer requestBody = request.getContent();
-        if (requestBody.readable()) {
-          conn.handleChunk(new Buffer(requestBody));
+        // Websocket handshake
+        if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
+            WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
+
+          Websocket ws = new Websocket(request.getUri(), conn);
+
+          boolean accepted = conn.handleWebsocketConnect(ws);
+          boolean containsKey1 = request.containsHeader(SEC_WEBSOCKET_KEY1);
+          boolean containsKey2 = request.containsHeader(SEC_WEBSOCKET_KEY2);
+
+          if (accepted && containsKey1 && containsKey2) {
+            if (!request.isChunked()) {
+              long c = request.getContent().readLong();
+
+              calcAndWriteWSHandshakeResponse(ch, request, c);
+            } else {
+              upgradeRequest = request;
+            }
+
+          } else {
+            ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
+          }
+        } else {
+          HttpServerRequest req = new HttpServerRequest(conn, request);
+          HttpServerResponse resp = new HttpServerResponse(HttpHeaders.isKeepAlive(request),
+              request.getHeader(HttpHeaders.Names.COOKIE), conn);
+          conn.handleRequest(req, resp);
+          ChannelBuffer requestBody = request.getContent();
+          if (requestBody.readable()) {
+            conn.handleChunk(new Buffer(requestBody));
+          }
+          if (!request.isChunked()) {
+            conn.handleEnd();
+          }
         }
-        if (!request.isChunked()) {
-          conn.handleEnd();
+      } else if (msg instanceof HttpChunk) {
+        HttpChunk chunk = (HttpChunk) msg;
+        if (upgradeRequest != null) {
+          if (chunk.isLast()) {
+              //Terminating chunk for an upgrade request - ignore it
+              upgradeRequest = null;
+          } else {
+            //This is the body for the websocket upgrade request
+            calcAndWriteWSHandshakeResponse(ch, upgradeRequest, chunk.getContent().readLong());
+          }
+        } else {
+
+          Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
+
+          conn.handleChunk(buff);
+          //TODO chunk trailers
+          if (chunk.isLast()) {
+            conn.handleEnd();
+          }
         }
-      } else if (e.getMessage() instanceof HttpChunk) {
-        HttpChunk chunk = (HttpChunk) e.getMessage();
-        Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
-        conn.handleChunk(buff);
-        //TODO chunk trailers
-        if (chunk.isLast()) {
-          conn.handleEnd();
-        }
+      } else if (msg instanceof WebSocketFrame) {
+        WebSocketFrame frame = (WebSocketFrame) msg;
+        conn.handleWsFrame(frame);
       } else {
         throw new IllegalStateException("Invalid object " + e.getMessage());
       }
@@ -183,7 +261,7 @@ public class HttpServer {
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final HttpServerConnection conn = connectionMap.remove(ch);
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
@@ -196,7 +274,7 @@ public class HttpServer {
 
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final HttpServerConnection conn = connectionMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
@@ -207,5 +285,11 @@ public class HttpServer {
         });
       }
     }
+
+    private String getWebSocketLocation(HttpRequest req, String path) {
+      return "ws://" + req.getHeader(HttpHeaders.Names.HOST) + path;
+    }
   }
+
+
 }

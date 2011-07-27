@@ -18,13 +18,17 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
+import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.nodex.core.ThreadSourceUtils;
+import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.nodex.core.NodexInternal;
+import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -51,7 +55,9 @@ public class HttpClient {
 //
 //              pipeline.addLast("ssl", new SslHandler(engine));
 //          }
-        pipeline.addLast("codec", new HttpClientCodec());
+       // pipeline.addLast("codec", new HttpClientCodec());
+        pipeline.addLast("encoder", new HttpRequestEncoder());
+        pipeline.addLast("decoder", new HttpResponseDecoder());
         pipeline.addLast("handler", new ClientHandler());
         return pipeline;
       }
@@ -81,7 +87,7 @@ public class HttpClient {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
-          final NioSocketChannel ch = (NioSocketChannel)channelFuture.getChannel();
+          final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
           final String contextID = NodexInternal.instance.createContext(ch.getWorker());
           ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
@@ -111,10 +117,10 @@ public class HttpClient {
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final HttpClientConnection conn = connectionMap.remove(ch);
       if (conn != null) {
-       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             conn.handleClosed();
             NodexInternal.instance.destroyContext(conn.getContextID());
@@ -125,7 +131,7 @@ public class HttpClient {
 
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final HttpClientConnection conn = connectionMap.get(ch);
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
@@ -136,7 +142,7 @@ public class HttpClient {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel)e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final HttpClientConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
@@ -154,28 +160,35 @@ public class HttpClient {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       Channel ch = e.getChannel();
       HttpClientConnection conn = connectionMap.get(ch);
-      if (e.getMessage() instanceof HttpResponse) {
-        HttpResponse response = (HttpResponse) e.getMessage();
-        conn.handleResponse(new HttpClientResponse(conn, response.getStatus().getCode(), response));
+      Object msg = e.getMessage();
+      if (msg instanceof HttpResponse) {
+        HttpResponse response = (HttpResponse) msg;
+        conn.handleResponse(new HttpClientResponse(conn, response));
         ChannelBuffer content = response.getContent();
+
         if (content.readable()) {
           conn.handleChunk(Buffer.fromChannelBuffer(content));
         }
         if (!response.isChunked()) {
           conn.handleEnd();
         }
-      } else if (e.getMessage() instanceof HttpChunk) {
-        HttpChunk chunk = (HttpChunk) e.getMessage();
+      } else if (msg instanceof HttpChunk) {
+        HttpChunk chunk = (HttpChunk) msg;
         Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
         conn.handleChunk(buff);
         if (chunk.isLast()) {
           if (chunk instanceof HttpChunkTrailer) {
-            HttpChunkTrailer trailer = (HttpChunkTrailer)chunk;
+            HttpChunkTrailer trailer = (HttpChunkTrailer) chunk;
             conn.handleEnd(trailer);
           } else {
             conn.handleEnd();
           }
         }
+      } else if (msg instanceof WebSocketFrame) {
+        WebSocketFrame frame = (WebSocketFrame) msg;
+        conn.handleWsFrame(frame);
+      } else {
+        throw new IllegalStateException("Invalid object " + e.getMessage());
       }
     }
   }

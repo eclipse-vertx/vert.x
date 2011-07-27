@@ -2,12 +2,10 @@ package org.nodex.core.http;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.nodex.core.ConnectionBase;
 import org.nodex.core.DoneHandler;
-import org.nodex.core.ExceptionHandler;
-import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 
 /**
@@ -27,9 +25,13 @@ public class HttpServerConnection extends ConnectionBase {
   private HttpRequestHandler traceHandler;
   private HttpRequestHandler connectHandler;
   private HttpRequestHandler patchHandler;
+  private WebsocketConnectHandler wsHandler;
 
   private HttpServerRequest currentRequest;
   private HttpServerResponse currentResponse;
+  private Websocket ws;
+
+  private boolean paused;
 
   HttpServerConnection(Channel channel, String contextID, Thread th) {
     super(channel, contextID, th);
@@ -77,6 +79,10 @@ public class HttpServerConnection extends ConnectionBase {
     this.patchHandler = handler;
   }
 
+  public void websocketConnect(WebsocketConnectHandler handler) {
+    this.wsHandler = handler;
+  }
+
   // Internal API --------------------------------------------------------------------------------------------------
 
   // Called by Netty
@@ -112,7 +118,7 @@ public class HttpServerConnection extends ConnectionBase {
         }
       }
     } catch (Throwable t) {
-      handleThrowable(t);
+      handleHandlerException(t);
     }
   }
 
@@ -124,11 +130,9 @@ public class HttpServerConnection extends ConnectionBase {
         currentRequest.handleData(chunk);
       }
     } catch (Throwable t) {
-      handleThrowable(t);
+      handleHandlerException(t);
     }
   }
-
-  private boolean paused;
 
   void handleEnd() {
     try {
@@ -140,9 +144,54 @@ public class HttpServerConnection extends ConnectionBase {
       }
       currentRequest = null;
     } catch (Throwable t) {
-      handleThrowable(t);
+      handleHandlerException(t);
     }
   }
+
+  void handleInterestedOpsChanged() {
+    try {
+      if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
+        setContextID();
+        if (currentResponse != null) {
+          currentResponse.writable();
+        } else if (ws != null) {
+          ws.writable();
+        }
+      }
+    } catch (Throwable t) {
+      handleHandlerException(t);
+    }
+  }
+
+
+  boolean handleWebsocketConnect(Websocket ws) {
+    try {
+      if (wsHandler != null) {
+        setContextID();
+        if (wsHandler.onConnect(ws)) {
+          this.ws = ws;
+          return true;
+        }
+      }
+      return false;
+    } catch (Throwable t) {
+      handleHandlerException(t);
+      return false;
+    }
+  }
+
+  void handleWsFrame(WebSocketFrame frame) {
+    try {
+      if (ws != null) {
+        setContextID();
+        ws.handleFrame(frame);
+      }
+    } catch (Throwable t) {
+      handleHandlerException(t);
+    }
+  }
+
+  // Called by response ------------------------------------------------------------------
 
   /*
   If the request end completes and the response has not been ended then we want to pause and resume when it is complete
@@ -156,38 +205,25 @@ public class HttpServerConnection extends ConnectionBase {
     currentResponse = null;
   }
 
-  void handleInterestedOpsChanged() {
-    try {
-      if (currentResponse != null) {
-        if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
-          currentResponse.handleInterestedOpsChanged();
-        }
-      }
-    } catch (Throwable t) {
-      handleThrowable(t);
-    }
+  // Internal ----------------------------------------------------------------------------
+
+  protected void handleClosed() {
+    super.handleClosed();
   }
 
-  // Called by request / response
+  protected String getContextID() {
+    return super.getContextID();
+  }
 
+  protected void handleException(Exception e) {
+    super.handleException(e);
+  }
 
-
-  ChannelFuture write(Object obj) {
-    return channel.write(obj);
+  protected void addFuture(DoneHandler done, ChannelFuture future) {
+    super.addFuture(done, future);
   }
 
   boolean isSSL() {
     return channel.getPipeline().get(SslHandler.class) != null;
-  }
-
-  private void handleThrowable(Throwable t) {
-    //We log errors otherwise they will get swallowed
-    //TODO logging can be improved
-    t.printStackTrace();
-    if (t instanceof RuntimeException) {
-      throw (RuntimeException) t;
-    } else if (t instanceof Error) {
-      throw (Error) t;
-    }
   }
 }

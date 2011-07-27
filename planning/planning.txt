@@ -128,6 +128,12 @@ Spawn processes and pipe their output/input like any other stream
 REST
 ----
 
+Twitter integration
+
+Facebook integration
+
+Google+ integration
+
 
 Runtime
 =======
@@ -144,9 +150,12 @@ Groovy
 Going ahead:
 
 Jython
-Rhino
+Rhino / Nashorn??
 Scala
 Clojure
+Kotlin?
+Ceylon?
+
 
 Other things to look at
 =======================

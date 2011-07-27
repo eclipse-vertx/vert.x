@@ -15,11 +15,9 @@ import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.stream.ChunkedFile;
-import org.jboss.netty.util.CharsetUtil;
 import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
@@ -31,7 +29,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +43,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * User: timfox
  * Date: 25/06/2011
  * Time: 19:20
- *
+ * <p/>
  * TODO common functionality with NetSocket can be put in common base class
  */
 public class HttpServerResponse implements WriteStream {
@@ -90,15 +87,11 @@ public class HttpServerResponse implements WriteStream {
     return this;
   }
 
-  public HttpServerResponse putAllHeaders(Map<String,? extends Object> m)  {
-    for (Map.Entry<String, ? extends Object> entry: m.entrySet()) {
+  public HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
+    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       response.setHeader(entry.getKey(), entry.getValue());
     }
     return this;
-  }
-
-  private void checkTrailer() {
-    if (trailer == null) trailer = new DefaultHttpChunkTrailer();
   }
 
   public HttpServerResponse putTrailer(String key, Object value) {
@@ -119,9 +112,9 @@ public class HttpServerResponse implements WriteStream {
     return this;
   }
 
-  public HttpServerResponse putAllTrailers(Map<String,? extends Object> m)  {
+  public HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
     checkTrailer();
-    for (Map.Entry<String, ? extends Object> entry: m.entrySet()) {
+    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       trailer.setHeader(entry.getKey(), entry.getValue());
     }
     return this;
@@ -172,7 +165,7 @@ public class HttpServerResponse implements WriteStream {
     if (!headWritten) {
       //No body
       response.setStatus(HttpResponseStatus.valueOf(statusCode));
-      writeHeaders(response);
+      writeCookieHeader(response);
       response.setHeader(CONTENT_LENGTH, 0);
       writeFuture = conn.write(response);
     } else {
@@ -220,7 +213,7 @@ public class HttpServerResponse implements WriteStream {
       dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
       response.setHeader(Names.LAST_MODIFIED, dateFormatter.format(new Date(file.lastModified())));
 
-      writeHeaders(response);
+      writeCookieHeader(response);
       conn.write(response);
 
       // Write the content.
@@ -244,7 +237,7 @@ public class HttpServerResponse implements WriteStream {
 
   // Internal API ---------------------------------------------------------------------------------------------
 
-  void handleInterestedOpsChanged() {
+  void writable() {
     if (drainHandler != null) {
       drainHandler.onDone();
     }
@@ -252,7 +245,11 @@ public class HttpServerResponse implements WriteStream {
 
   // Impl -----------------------------------------------------------------------------------------------------
 
-  private void writeHeaders(HttpResponse response) {
+  private void checkTrailer() {
+    if (trailer == null) trailer = new DefaultHttpChunkTrailer();
+  }
+
+  private void writeCookieHeader(HttpResponse response) {
     // Encode the cookie.
     if (cookieString != null) {
       CookieDecoder cookieDecoder = new CookieDecoder();
@@ -283,7 +280,7 @@ public class HttpServerResponse implements WriteStream {
       response.setStatus(HttpResponseStatus.valueOf(statusCode));
       response.setChunked(true);
       response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      writeHeaders(response);
+      writeCookieHeader(response);
       conn.write(response);
       headWritten = true;
     }

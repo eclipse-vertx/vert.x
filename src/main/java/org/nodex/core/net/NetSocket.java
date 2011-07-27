@@ -72,24 +72,30 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
 
   // End of public API =================================================================================================
 
+  protected void handleClosed() {
+    super.handleClosed();
+  }
+
+  protected String getContextID() {
+    return super.getContextID();
+  }
+
+  protected void handleException(Exception e) {
+    super.handleException(e);
+  }
+
   void handleInterestedOpsChanged() {
     setContextID();
     callDrainHandler();
   }
 
   void handleDataReceived(Buffer data) {
-    try {
-      if (dataHandler != null) {
-        setContextID();
+    if (dataHandler != null) {
+      setContextID();
+      try {
         dataHandler.onData(data);
-      }
-    } catch (Throwable t) {
-      if (t instanceof Exception) {
-        handleException((Exception) t);
-      } else if (t instanceof Error) {
-        throw (Error) t;
-      } else if (t instanceof Throwable) {
-        t.printStackTrace(System.err);
+      } catch (Throwable t) {
+        handleHandlerException(t);
       }
     }
   }
@@ -97,7 +103,11 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   private void callDrainHandler() {
     if (drainHandler != null) {
       if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
-        drainHandler.onDone();
+        try {
+          drainHandler.onDone();
+        } catch (Throwable t) {
+          handleHandlerException(t);
+        }
       }
     }
   }

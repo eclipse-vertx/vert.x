@@ -3,10 +3,7 @@ package org.nodex.core;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
-
-import java.util.Map;
 
 /**
  * User: timfox
@@ -29,33 +26,7 @@ public class ConnectionBase {
   protected ExceptionHandler exceptionHandler;
   protected DoneHandler closedHandler;
 
-  public String getContextID() {
-    return contextID;
-  }
-
-  public void exception(ExceptionHandler handler) {
-    this.exceptionHandler = handler;
-  }
-
-  public void closed(DoneHandler handler) {
-    this.closedHandler = handler;
-  }
-
-  public void handleException(Exception e) {
-    if (exceptionHandler != null) {
-      setContextID();
-      exceptionHandler.onException(e);
-    } else {
-      e.printStackTrace(System.err);
-    }
-  }
-
-  public void handleClosed() {
-    if (closedHandler != null) {
-      setContextID();
-      closedHandler.onDone();
-    }
-  }
+  // Public API -------------------------------------------------------------------------------
 
   public void pause() {
     channel.setReadable(false);
@@ -79,7 +50,51 @@ public class ConnectionBase {
     channel.close();
   }
 
-  public void addFuture(final DoneHandler done, final ChannelFuture future) {
+  // Handlers ---------------------------------------------------------------------
+
+  public void exception(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
+  }
+
+  public void closed(DoneHandler handler) {
+    this.closedHandler = handler;
+  }
+
+  // Impl ?? ----------------------------------------------------------------------------------------------
+
+  public ChannelFuture write(Object obj) {
+    return channel.write(obj);
+  }
+
+  protected String getContextID() {
+    return contextID;
+  }
+
+  protected void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      setContextID();
+      try {
+        exceptionHandler.onException(e);
+      } catch (Throwable t) {
+        handleHandlerException(t);
+      }
+    } else {
+      handleHandlerException(e);
+    }
+  }
+
+  protected void handleClosed() {
+    if (closedHandler != null) {
+      setContextID();
+      try {
+        closedHandler.onDone();
+      } catch (Throwable t) {
+        handleHandlerException(t);
+      }
+    }
+  }
+
+  protected void addFuture(final DoneHandler done, final ChannelFuture future) {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
         setContextID();
@@ -106,5 +121,9 @@ public class ConnectionBase {
     NodexInternal.instance.setContextID(contextID);
   }
 
-
+  protected void handleHandlerException(Throwable t) {
+    //We log errors otherwise they will get swallowed
+    //TODO logging
+    t.printStackTrace(System.err);
+  }
 }

@@ -8,7 +8,6 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,6 +26,7 @@ public class HttpClientResponse implements ReadStream {
   // Public API --------------------------------------------------------------------------------------------------
 
   public final int statusCode;
+  public final String statusMessage;
 
   public String getHeader(String key) {
     return response.getHeader(key);
@@ -70,9 +70,10 @@ public class HttpClientResponse implements ReadStream {
 
   // Internal ----------------------------------------------------------------------------------------------------
 
-  HttpClientResponse(HttpClientConnection conn, int statusCode, HttpResponse response) {
+  HttpClientResponse(HttpClientConnection conn, HttpResponse response) {
     this.conn = conn;
-    this.statusCode = statusCode;
+    this.statusCode = response.getStatus().getCode();
+    this.statusMessage = response.getStatus().getReasonPhrase();
     this.response = response;
   }
 

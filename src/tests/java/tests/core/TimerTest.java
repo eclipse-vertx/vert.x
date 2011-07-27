@@ -133,7 +133,6 @@ public class TimerTest extends TestBase {
         final long delay = 100;
         Nodex.instance.setTimeout(delay, new DoneHandler() {
           public void onDone() {
-            System.out.println("that took " + (System.nanoTime() - start));
             long dur = (System.nanoTime() - start) / 1000000;
             assert dur >= delay;
             assert dur < delay * 1.25; // 25% margin of error

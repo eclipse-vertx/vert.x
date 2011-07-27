@@ -120,6 +120,7 @@ public class HttpTest extends TestBase {
       public void onConnect(final HttpServerConnection conn) {
         conn.request(new HttpRequestHandler() {
           int count;
+
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             assert method.equals(req.method);
             assert path.equals(req.path);
@@ -134,10 +135,10 @@ public class HttpTest extends TestBase {
             });
             req.end(new DoneHandler() {
               public void onDone() {
-                assert ("This is content " + theCount).equals(buff.toString()): buff.toString();
+                assert ("This is content " + theCount).equals(buff.toString()) : buff.toString();
                 //We write the response back after a random time to increase the chances of responses written in the
                 //wrong order if we didn't implement pipelining correctly
-                Nodex.instance.setTimeout((long)(100 * Math.random()), new DoneHandler() {
+                Nodex.instance.setTimeout((long) (100 * Math.random()), new DoneHandler() {
                   public void onDone() {
                     resp.putHeader("count", String.valueOf(theCount));
                     resp.write(buff);
@@ -286,7 +287,7 @@ public class HttpTest extends TestBase {
       public void onConnect(final HttpServerConnection conn) {
         conn.request(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
-            assert (method.equals("GETNOW") ? "GET" : method).equals(req.method): method + ":" + req.method;
+            assert (method.equals("GETNOW") ? "GET" : method).equals(req.method) : method + ":" + req.method;
             assert path.equals(req.path);
             assert (path + paramsString).equals(req.uri);
             for (Map.Entry<String, String> param : params.entrySet()) {
@@ -309,8 +310,8 @@ public class HttpTest extends TestBase {
                 resp.putAllHeaders(responseHeaders);
                 resp.statusCode = statusCode;
                 if (responseBody != null) {
-                  for (Buffer chunk: responseBody) {
-                   resp.write(chunk);
+                  for (Buffer chunk : responseBody) {
+                    resp.write(chunk);
                   }
                   if (trailers != null) {
                     resp.putAllTrailers(trailers);
@@ -329,7 +330,7 @@ public class HttpTest extends TestBase {
     HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
       public void onConnect(HttpClientConnection conn) {
 
-        HttpResponseHandler responseHandler =  new HttpResponseHandler() {
+        HttpResponseHandler responseHandler = new HttpResponseHandler() {
           public void onResponse(final HttpClientResponse response) {
             //dumpHeaders(response.headers);
             assert response.statusCode == statusCode;
@@ -361,7 +362,7 @@ public class HttpTest extends TestBase {
           req = getRequest(specificMethod, method, path, paramsString, responseHandler, conn);
           req.putAllHeaders(requestHeaders);
           if (requestBody != null) {
-            for (Buffer buff: requestBody) {
+            for (Buffer buff : requestBody) {
               req.write(buff);
             }
           }
@@ -372,7 +373,7 @@ public class HttpTest extends TestBase {
 
     run(host, port, keepAlive, serverH, clientH, latch);
   }
-  
+
   private HttpClientRequest getRequest(boolean specificMethod, String method, String path, String paramsString,
                                        HttpResponseHandler responseHandler, HttpClientConnection conn) {
     HttpClientRequest req = null;
@@ -419,9 +420,9 @@ public class HttpTest extends TestBase {
     for (int i = 0; i < num; i++) {
       String key;
       do {
-        key = randomString(1 + (int)((19) * Math.random()));
+        key = randomString(1 + (int) ((19) * Math.random()));
       } while (map.containsKey(key));
-      map.put(key, randomString(1 + (int)((19) * Math.random())));
+      map.put(key, randomString(1 + (int) ((19) * Math.random())));
     }
     return map;
   }
@@ -439,7 +440,7 @@ public class HttpTest extends TestBase {
     assert h1 != null;
     assert request != null;
     //Check that all of h1 are in h2
-    for (Map.Entry<String, String> entry: h1.entrySet()) {
+    for (Map.Entry<String, String> entry : h1.entrySet()) {
       assert entry.getValue().equals(request.getHeader(entry.getKey()));
     }
   }
@@ -448,7 +449,7 @@ public class HttpTest extends TestBase {
     assert h1 != null;
     assert response != null;
     //Check that all of h1 are in h2
-    for (Map.Entry<String, String> entry: h1.entrySet()) {
+    for (Map.Entry<String, String> entry : h1.entrySet()) {
       assert entry.getValue().equals(response.getHeader(entry.getKey()));
     }
   }
@@ -457,13 +458,13 @@ public class HttpTest extends TestBase {
     assert h1 != null;
     assert response != null;
     //Check that all of h1 are in h2
-    for (Map.Entry<String, String> entry: h1.entrySet()) {
+    for (Map.Entry<String, String> entry : h1.entrySet()) {
       assert entry.getValue().equals(response.getTrailer(entry.getKey()));
     }
   }
 
   private void dumpHeaders(HttpClientResponse response) {
-    for (String key: response.getHeaderNames()) {
+    for (String key : response.getHeaderNames()) {
       System.out.println(key + ":" + response.getHeader(key));
     }
   }
@@ -472,7 +473,7 @@ public class HttpTest extends TestBase {
     StringBuilder builder = new StringBuilder();
     builder.append('?');
     boolean first = true;
-    for (Map.Entry<String, String> entry: headers.entrySet()) {
+    for (Map.Entry<String, String> entry : headers.entrySet()) {
       if (!first) builder.append('&');
       first = false;
       builder.append(entry.getKey()).append('=').append(entry.getValue());
