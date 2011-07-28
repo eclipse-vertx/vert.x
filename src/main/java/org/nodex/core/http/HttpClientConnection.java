@@ -88,7 +88,7 @@ public class HttpClientConnection extends ConnectionBase {
                   }
                 }
                 if (matched) {
-                  System.out.println("Upgraded to Websocket OK!");
+                  //We upgraded ok
                   ChannelPipeline p = channel.getPipeline();
                   p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
                   p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());

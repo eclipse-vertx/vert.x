@@ -54,10 +54,12 @@ public class NetTest extends TestBase {
       });
     }
 
-    assert serverConnectLatch.await(5, TimeUnit.SECONDS);
-    assert clientConnectLatch.await(5, TimeUnit.SECONDS);
+    azzert(serverConnectLatch.await(5, TimeUnit.SECONDS));
+    azzert(clientConnectLatch.await(5, TimeUnit.SECONDS));
 
     awaitClose(server);
+
+    throwAssertions();
   }
 
   @Test
@@ -158,10 +160,11 @@ public class NetTest extends TestBase {
       }
     });
 
-    assert latch.await(2, TimeUnit.SECONDS);
-    assert Utils.buffersEqual(sentBuff, receivedBuff);
+    azzert(latch.await(2, TimeUnit.SECONDS));
+    azzert(Utils.buffersEqual(sentBuff, receivedBuff));
 
     awaitClose(server);
+    throwAssertions();
   }
 
   private enum ReceiveState {
@@ -187,7 +190,7 @@ public class NetTest extends TestBase {
 //        final ContextChecker checker = new ContextChecker();
 //        sock.drain(new DoneHandler() {
 //          public void onDone() {
-//            assert false : "Drain should not be called on server";
+//            azzert(false : "Drain should not be called on server";
 //          }
 //        });
 //        sock.data(new DataHandler() {
@@ -212,7 +215,7 @@ public class NetTest extends TestBase {
 //                break;
 //              }
 //              case PAUSED: {
-//                assert false : "Received data when paused";
+//                azzert(false : "Received data when paused";
 //                break;
 //              }
 //            }
@@ -239,7 +242,7 @@ public class NetTest extends TestBase {
 //      }
 //    });
 //
-//    assert connectedLatch.await(5, TimeUnit.SECONDS);
+//    azzert(connectedLatch.await(5, TimeUnit.SECONDS));
 //
 //    //Send some data until the write queue is full
 //    int count = 0;
@@ -249,11 +252,11 @@ public class NetTest extends TestBase {
 //      count += b.length();
 //      cSock.get().write(b);
 //    }
-//    assert cSock.get().writeQueueFull();
+//    azzert(cSock.get().writeQueueFull());
 //
-//    assert pausedLatch.await(2, TimeUnit.SECONDS);
+//    azzert(pausedLatch.await(2, TimeUnit.SECONDS);
 //
-//    assert receiveState.get() == ReceiveState.PAUSED;
+//    azzert(receiveState.get() == ReceiveState.PAUSED;
 //
 //    final CountDownLatch drainedLatch1 = new CountDownLatch(1);
 //    cSock.get().drain(new DoneHandler() {
@@ -265,7 +268,7 @@ public class NetTest extends TestBase {
 //
 //    //It will automatically drain after a pause
 //
-//    assert drainedLatch1.await(5, TimeUnit.SECONDS);
+//    azzert(drainedLatch1.await(5, TimeUnit.SECONDS));
 //
 //    receiveState.set(ReceiveState.START);
 //
@@ -277,7 +280,7 @@ public class NetTest extends TestBase {
 //      cSock.get().write(b);
 //    }
 //    sentData.set(count);
-//    assert cSock.get().writeQueueFull();
+//    azzert(cSock.get().writeQueueFull());
 //
 //    final CountDownLatch drainedLatch2 = new CountDownLatch(1);
 //    cSock.get().drain(new DoneHandler() {
@@ -291,10 +294,11 @@ public class NetTest extends TestBase {
 //    receiveState.set(ReceiveState.CONTINUING);
 //    sSock.get().resume();
 //
-//    assert endLatch.await(5, TimeUnit.SECONDS);
-//    assert Utils.buffersEqual(sentBuff, receivedBuff);
+//    azzert(endLatch.await(5, TimeUnit.SECONDS));
+//    azzert(Utils.buffersEqual(sentBuff, receivedBuff));
 //
 //    awaitClose(server);
+//    throwAssertions();
 //  }
 
   //Recursive - we don't write the next packet until we get the completion back from the previous write
@@ -364,11 +368,12 @@ public class NetTest extends TestBase {
     NetServer server = NetServer.createServer(serverHandler).listen(8181);
     NetClient.createClient().connect(8181, clientHandler);
 
-    assert latch.await(2, TimeUnit.SECONDS);
+    azzert(latch.await(2, TimeUnit.SECONDS));
 
-    assert Utils.buffersEqual(sentBuff, receivedBuff);
+    azzert(Utils.buffersEqual(sentBuff, receivedBuff));
 
     awaitClose(server);
+    throwAssertions();
   }
 
 
@@ -406,8 +411,8 @@ public class NetTest extends TestBase {
       });
     }
 
-    assert serverCloseLatch.await(5, TimeUnit.SECONDS);
-    assert clientCloseLatch.await(5, TimeUnit.SECONDS);
+    azzert(serverCloseLatch.await(5, TimeUnit.SECONDS));
+    azzert(clientCloseLatch.await(5, TimeUnit.SECONDS));
 
     awaitClose(server);
   }

@@ -47,63 +47,61 @@ public class HttpTest extends TestBase {
   public void tearDown() {
   }
 
-  private void testMethod(String method, boolean specificMethod) throws Exception {
-    String path = "some/path/to/" + randomString(20);
-    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod);
-    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 0, true, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod);
-  }
-
   @Test
   public void testGetNow() throws Exception {
-    String path = "some/path/to/" + randomString(20);
+    String path = "some/path/to/" + Utils.randomAlphaString(20);
     testHTTP("GETNOW", path, 200, 3, 0, true, 8181, false);
     testHTTP("GETNOW", path, 404, 0, 0, false, 8181, false);
+    throwAssertions();
   }
 
   @Test
   public void testGET() throws Exception {
     testMethod("GET", true);
     testMethod("GET", false);
+    throwAssertions();
   }
 
   @Test
   public void testPOST() throws Exception {
     testMethod("POST", true);
     testMethod("POST", false);
+    throwAssertions();
   }
 
   @Test
   public void testPUT() throws Exception {
     testMethod("PUT", true);
     testMethod("PUT", false);
+    throwAssertions();
   }
 
   @Test
   public void testHEAD() throws Exception {
     testMethod("HEAD", true);
     testMethod("HEAD", false);
+    throwAssertions();
   }
 
   @Test
   public void testOPTIONS() throws Exception {
     testMethod("OPTIONS", true);
     testMethod("OPTIONS", false);
+    throwAssertions();
   }
 
   @Test
   public void testDELETE() throws Exception {
     testMethod("DELETE", true);
     testMethod("DELETE", false);
+    throwAssertions();
   }
 
   @Test
   public void testTRACE() throws Exception {
     testMethod("TRACE", true);
     testMethod("TRACE", false);
+    throwAssertions();
   }
 
   //@Test
@@ -122,9 +120,9 @@ public class HttpTest extends TestBase {
           int count;
 
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
-            assert method.equals(req.method);
-            assert path.equals(req.path);
-            assert count == Integer.parseInt(req.getHeader("count"));
+            azzert(method.equals(req.method));
+            azzert(path.equals(req.path));
+            azzert(count == Integer.parseInt(req.getHeader("count")));
             final int theCount = count;
             count++;
             final Buffer buff = Buffer.newDynamic(0);
@@ -135,7 +133,7 @@ public class HttpTest extends TestBase {
             });
             req.end(new DoneHandler() {
               public void onDone() {
-                assert ("This is content " + theCount).equals(buff.toString()) : buff.toString();
+                azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
                 //We write the response back after a random time to increase the chances of responses written in the
                 //wrong order if we didn't implement pipelining correctly
                 Nodex.instance.setTimeout((long) (100 * Math.random()), new DoneHandler() {
@@ -161,8 +159,9 @@ public class HttpTest extends TestBase {
           HttpClientRequest req = conn.request(method, path, new HttpResponseHandler() {
             public void onResponse(final HttpClientResponse response) {
               //dumpHeaders(response.headers);
-              assert response.statusCode == statusCode;
-              assert theCount == Integer.parseInt(response.getHeader("count")) : theCount + ":" + response.getHeader("count");
+              azzert(response.statusCode == statusCode);
+              azzert(theCount == Integer.parseInt(response.getHeader("count")), theCount + ":" + response.getHeader
+                  ("count"));
               final Buffer buff = Buffer.newDynamic(0);
               response.data(new DataHandler() {
                 public void onData(Buffer data) {
@@ -173,7 +172,7 @@ public class HttpTest extends TestBase {
                 public void onDone() {
                   //System.out.println("expected:" + totResponseBody.toString());
                   //System.out.println("actual:" + buff.toString());
-                  assert ("This is content " + theCount).equals(buff.toString());
+                  azzert(("This is content " + theCount).equals(buff.toString()));
                   latch.countDown();
                   System.out.println("Got " + theCount);
                 }
@@ -188,18 +187,7 @@ public class HttpTest extends TestBase {
     };
 
     run(host, port, keepAlive, serverH, clientH, latch);
-  }
-
-  private File setupFile(String fileName, String content) throws Exception {
-    fileName = "./" + fileName;
-    File file = new File(fileName);
-    if (file.exists()) {
-      file.delete();
-    }
-    BufferedWriter out = new BufferedWriter(new FileWriter(file));
-    out.write(content);
-    out.close();
-    return file;
+    throwAssertions();
   }
 
   @Test
@@ -209,14 +197,14 @@ public class HttpTest extends TestBase {
     final String path = "foo.txt";
     final int port = 8181;
 
-    final String content = randomString(10000);
+    final String content = Utils.randomAlphaString(10000);
     final File file = setupFile(path, content);
 
     HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
         conn.request(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
-            assert path.equals(req.path);
+            azzert(path.equals(req.path));
             //Clearly in a real web server you'd do some safety checks on the path
             String fileName = "./" + req.path;
             resp.sendFile(fileName);
@@ -231,9 +219,9 @@ public class HttpTest extends TestBase {
         conn.getNow(path, new HttpResponseHandler() {
           public void onResponse(final HttpClientResponse response) {
             dumpHeaders(response);
-            assert response.statusCode == 200;
-            assert file.length() == Long.valueOf(response.getHeader("Content-Length"));
-            assert "text/plain".equals(response.getHeader("Content-Type"));
+            azzert(response.statusCode == 200);
+            azzert(file.length() == Long.valueOf(response.getHeader("Content-Length")));
+            azzert("text/plain".equals(response.getHeader("Content-Type")));
             final Buffer buff = Buffer.newDynamic(0);
             response.data(new DataHandler() {
               public void onData(Buffer data) {
@@ -242,7 +230,7 @@ public class HttpTest extends TestBase {
             });
             response.end(new DoneHandler() {
               public void onDone() {
-                assert content.equals(buff.toString());
+                azzert(content.equals(buff.toString()));
                 latch.countDown();
               }
             });
@@ -253,7 +241,69 @@ public class HttpTest extends TestBase {
 
     run(host, port, keepAlive, serverH, clientH, latch);
     file.delete();
+    throwAssertions();
   }
+
+  @Test
+  public void testKeepAlive() throws Exception {
+    final String host = "localhost";
+    final String path = "foo.txt";
+    final int port = 8181;
+
+    HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
+      public void onConnect(final HttpServerConnection conn) {
+        conn.request(new HttpRequestHandler() {
+          public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
+            resp.end(); // Just send back a 200 OK
+          }
+        });
+      }
+    };
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
+      public void onConnect(HttpClientConnection conn) {
+        conn.getNow(path, new HttpResponseHandler() {
+          public void onResponse(final HttpClientResponse response) {
+            System.out.println("Got response");
+          }
+        });
+
+        conn.closed(new DoneHandler() {
+          public void onDone() {
+            //Keep-Alive is false so connection will be automatically closed
+            latch.countDown();
+          }
+        });
+      }
+    };
+
+    run(host, port, false, serverH, clientH, latch);
+    throwAssertions();
+  }
+
+  private void testMethod(String method, boolean specificMethod) throws Exception {
+    String path = "some/path/to/" + Utils.randomAlphaString(20);
+    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod);
+    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod);
+    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod);
+    testHTTP(method, path, 200, 3, 0, true, 8181, specificMethod);
+    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod);
+    testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod);
+  }
+
+  private File setupFile(String fileName, String content) throws Exception {
+    fileName = "./" + fileName;
+    File file = new File(fileName);
+    if (file.exists()) {
+      file.delete();
+    }
+    BufferedWriter out = new BufferedWriter(new FileWriter(file));
+    out.write(content);
+    out.close();
+    return file;
+  }
+
 
   private void testHTTP(final String method, final String path, final int statusCode, final int numResponseChunks,
                         final int numRequestChunks, final boolean setTrailers, final int port,
@@ -287,16 +337,16 @@ public class HttpTest extends TestBase {
       public void onConnect(final HttpServerConnection conn) {
         conn.request(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
-            assert (method.equals("GETNOW") ? "GET" : method).equals(req.method) : method + ":" + req.method;
-            assert path.equals(req.path);
-            assert (path + paramsString).equals(req.uri);
+            azzert((method.equals("GETNOW") ? "GET" : method).equals(req.method), method + ":" + req.method);
+            azzert(path.equals(req.path));
+            azzert((path + paramsString).equals(req.uri));
             for (Map.Entry<String, String> param : params.entrySet()) {
-              assert req.getParam(param.getKey()).equals(param.getValue());
+              azzert(req.getParam(param.getKey()).equals(param.getValue()));
             }
             //dumpHeaders(req.headers);
             assertHeaders(requestHeaders, req);
-            assert req.getHeader("Host").equals(host + ":" + port);
-            assert req.getHeader("Connection").equals(keepAlive ? "keep-alive" : "close");
+            azzert(req.getHeader("Host").equals(host + ":" + port));
+            azzert(req.getHeader("Connection").equals(keepAlive ? "keep-alive" : "close"));
 
             final Buffer buff = Buffer.newDynamic(0);
             req.data(new DataHandler() {
@@ -306,7 +356,7 @@ public class HttpTest extends TestBase {
             });
             req.end(new DoneHandler() {
               public void onDone() {
-                assert Utils.buffersEqual(totRequestBody, buff);
+                azzert(Utils.buffersEqual(totRequestBody, buff));
                 resp.putAllHeaders(responseHeaders);
                 resp.statusCode = statusCode;
                 if (responseBody != null) {
@@ -333,7 +383,7 @@ public class HttpTest extends TestBase {
         HttpResponseHandler responseHandler = new HttpResponseHandler() {
           public void onResponse(final HttpClientResponse response) {
             //dumpHeaders(response.headers);
-            assert response.statusCode == statusCode;
+            azzert(response.statusCode == statusCode);
             assertHeaders(responseHeaders, response);
             final Buffer buff = Buffer.newDynamic(0);
             response.data(new DataHandler() {
@@ -345,7 +395,7 @@ public class HttpTest extends TestBase {
               public void onDone() {
                 //System.out.println("expected:" + totResponseBody.toString());
                 //System.out.println("actual:" + buff.toString());
-                assert Utils.buffersEqual(totResponseBody, buff);
+                azzert(Utils.buffersEqual(totResponseBody, buff));
                 if (trailers != null) {
                   assertTrailers(trailers, response);
                 }
@@ -410,7 +460,7 @@ public class HttpTest extends TestBase {
 
     HttpClient client = HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientHandler);
 
-    assert endLatch.await(5, TimeUnit.SECONDS);
+    azzert(endLatch.await(5, TimeUnit.SECONDS));
 
     awaitClose(server);
   }
@@ -420,46 +470,37 @@ public class HttpTest extends TestBase {
     for (int i = 0; i < num; i++) {
       String key;
       do {
-        key = randomString(1 + (int) ((19) * Math.random()));
+        key = Utils.randomAlphaString(1 + (int) ((19) * Math.random()));
       } while (map.containsKey(key));
-      map.put(key, randomString(1 + (int) ((19) * Math.random())));
+      map.put(key, Utils.randomAlphaString(1 + (int) ((19) * Math.random())));
     }
     return map;
   }
 
-  private String randomString(int length) {
-    StringBuilder builder = new StringBuilder(length);
-    for (int i = 0; i < length; i++) {
-      char c = (char) (65 + 25 * Math.random());
-      builder.append(c);
-    }
-    return builder.toString();
-  }
-
   private void assertHeaders(Map<String, String> h1, HttpServerRequest request) {
-    assert h1 != null;
-    assert request != null;
+    azzert(h1 != null);
+    azzert(request != null);
     //Check that all of h1 are in h2
     for (Map.Entry<String, String> entry : h1.entrySet()) {
-      assert entry.getValue().equals(request.getHeader(entry.getKey()));
+      azzert(entry.getValue().equals(request.getHeader(entry.getKey())));
     }
   }
 
   private void assertHeaders(Map<String, String> h1, HttpClientResponse response) {
-    assert h1 != null;
-    assert response != null;
+    azzert(h1 != null);
+    azzert(response != null);
     //Check that all of h1 are in h2
     for (Map.Entry<String, String> entry : h1.entrySet()) {
-      assert entry.getValue().equals(response.getHeader(entry.getKey()));
+      azzert(entry.getValue().equals(response.getHeader(entry.getKey())));
     }
   }
 
   private void assertTrailers(Map<String, String> h1, HttpClientResponse response) {
-    assert h1 != null;
-    assert response != null;
+    azzert(h1 != null);
+    azzert(response != null);
     //Check that all of h1 are in h2
     for (Map.Entry<String, String> entry : h1.entrySet()) {
-      assert entry.getValue().equals(response.getTrailer(entry.getKey()));
+      azzert(entry.getValue().equals(response.getTrailer(entry.getKey())));
     }
   }
 

@@ -17,6 +17,7 @@ import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -32,10 +33,22 @@ public class WebsocketTest extends TestBase {
 
   @AfterClass
   public void tearDown() {
+
   }
 
   @Test
-  public void testWS() throws Exception {
+  public void testWSBinary() throws Exception {
+    testWS(true);
+    throwAssertions();
+  }
+
+  @Test
+  public void testWSString() throws Exception {
+    testWS(false);
+    throwAssertions();
+  }
+
+  private void testWS(final boolean binary) throws Exception {
     final String host = "localhost";
     final boolean keepAlive = true;
     final String path = "/some/path";
@@ -45,7 +58,7 @@ public class WebsocketTest extends TestBase {
       public void onConnect(final HttpServerConnection conn) {
         conn.websocketConnect(new WebsocketConnectHandler() {
           public boolean onConnect(final Websocket ws) {
-            assert path.equals(ws.uri);
+            azzert(path.equals(ws.uri));
             ws.data(new DataHandler() {
               public void onData(Buffer data) {
                 //Echo it back
@@ -75,9 +88,19 @@ public class WebsocketTest extends TestBase {
             });
             final Buffer sent = Buffer.newDynamic(0);
             for (int i = 0; i < 10; i++) {
-              Buffer buff = Utils.generateRandomBuffer(100);
-              sent.append(buff);
-              ws.writeBinaryFrame(buff);
+              String str = Utils.randomAlphaString(100);
+              try {
+                Buffer buff = Buffer.newWrapped(str.getBytes("UTF-8"));
+                sent.append(buff);
+                if (binary) {
+                  ws.writeBinaryFrame(buff);
+                } else {
+                  ws.writeTextFrame(str);
+                }
+              } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                azzert(false);
+              }
             }
             return true;
           }
@@ -94,8 +117,7 @@ public class WebsocketTest extends TestBase {
 
     HttpClient client = HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientH);
 
-    assert latch.await(5, TimeUnit.SECONDS);
-
+    azzert(latch.await(5, TimeUnit.SECONDS));
     awaitClose(server);
   }
 }

@@ -28,6 +28,15 @@ public class Utils {
     return Buffer.newWrapped(line);
   }
 
+  public static String randomAlphaString(int length) {
+    StringBuilder builder = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      char c = (char) (65 + 25 * Math.random());
+      builder.append(c);
+    }
+    return builder.toString();
+  }
+
   public static boolean buffersEqual(Buffer b1, Buffer b2) {
     if (b1.length() != b2.length()) return false;
     for (int i = 0; i < b1.length(); i++) {
