@@ -5,6 +5,6 @@ package org.nodex.core.file;
  * Date: 07/07/11
  * Time: 12:22
  */
-public abstract class OpenHandler {
-  public abstract void onOpen(int fd);
+public interface OpenHandler {
+  void onOpen(int fd);
 }

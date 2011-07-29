@@ -1,6 +1,5 @@
 package org.nodex.core.redis;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.composition.Completion;
 import redis.clients.jedis.Jedis;
@@ -17,12 +16,12 @@ public class RedisConnection {
     this.jedis = jedis;
   }
 
-  public Completion set(final String key, final String value, final DoneHandler onComplete) {
+  public Completion set(final String key, final String value, final Runnable onComplete) {
     final Completion df = new Completion();
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         jedis.set(key, value);
-        onComplete.onDone();
+        onComplete.run();
         df.complete();
       }
     });

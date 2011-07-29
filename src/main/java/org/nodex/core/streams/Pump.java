@@ -1,6 +1,5 @@
 package org.nodex.core.streams;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 
@@ -13,8 +12,8 @@ public class Pump {
   private final ReadStream readStream;
   private final WriteStream writeStream;
 
-  private final DoneHandler drainHandler = new DoneHandler() {
-    public void onDone() {
+  private final Runnable drainHandler = new Runnable() {
+    public void run() {
       readStream.resume();
     }
   };

@@ -10,8 +10,6 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
-import org.nodex.core.ConnectionBase;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 
@@ -26,7 +24,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Date: 22/07/2011
  * Time: 11:49
  */
-public class HttpClientConnection extends ConnectionBase {
+public class HttpClientConnection extends AbstractConnection {
 
   HttpClientConnection(Channel channel, boolean keepAlive, String hostHeader,
                        String contextID, Thread th) {
@@ -43,8 +41,6 @@ public class HttpClientConnection extends ConnectionBase {
   private Queue<HttpResponseHandler> respHandlers = new ConcurrentLinkedQueue<HttpResponseHandler>();
   private HttpClientResponse currentResponse;
   private Websocket ws;
-
-  // Public API ------------------------------------------------------------------------------------------------
 
   public void upgradeToWebSocket(final String uri, final WebsocketConnectHandler wsConnect) {
     upgradeToWebSocket(uri, null, wsConnect);
@@ -77,8 +73,8 @@ public class HttpClientConnection extends ConnectionBase {
               buff.append(data);
             }
           });
-          resp.end(new DoneHandler() {
-            public void onDone() {
+          resp.end(new Runnable() {
+            public void run() {
               boolean matched = true;
               if (buff.length() == out.length()) {
                 for (int i = 0; i < buff.length(); i++) {
@@ -167,9 +163,7 @@ public class HttpClientConnection extends ConnectionBase {
     return request("PATCH", uri, responseHandler);
   }
 
-  // Internal API ----------------------------------------------------------------------------------------
-
-  //FIXME - combine these with same in HttpServerConnection and NetSocket
+  //TODO - combine these with same in HttpServerConnection and NetSocket
 
   void handleInterestedOpsChanged() {
     try {
@@ -225,9 +219,6 @@ public class HttpClientConnection extends ConnectionBase {
     }
   }
 
-
-  // Internal ------------------------------------------------------------------------------------------------
-
   protected void handleClosed() {
     super.handleClosed();
   }
@@ -240,7 +231,7 @@ public class HttpClientConnection extends ConnectionBase {
     super.handleException(e);
   }
 
-  protected void addFuture(DoneHandler done, ChannelFuture future) {
+  protected void addFuture(Runnable done, ChannelFuture future) {
     super.addFuture(done, future);
   }
 

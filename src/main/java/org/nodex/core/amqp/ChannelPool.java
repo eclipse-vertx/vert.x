@@ -1,6 +1,5 @@
 package org.nodex.core.amqp;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.composition.Completion;
 
 /**
@@ -68,8 +67,8 @@ public class ChannelPool {
 
   public void getChannel(final ChannelHandler channelHandler) {
     if (connection == null) createConnection();
-    connected.onComplete(new DoneHandler() {
-      public void onDone() {
+    connected.onComplete(new Runnable() {
+      public void run() {
         //FIXME - for the demo we just get a new channel each time
         //Also this is broken since if more than one call to getChannel comes in before connection is created
         //previous request will be overwritten

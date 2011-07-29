@@ -1,7 +1,5 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.DoneHandler;
-
 /**
  * User: tim
  * Date: 05/07/11
@@ -9,15 +7,15 @@ import org.nodex.core.DoneHandler;
  */
 public class Deferred extends Completion {
 
-  private final DoneHandler cb;
+  private final Runnable cb;
 
-  public Deferred(DoneHandler cb) {
+  public Deferred(Runnable cb) {
     this.cb = cb;
   }
 
   @Override
   public void execute() {
-    cb.onDone();
+    cb.run();
     complete();
   }
 }

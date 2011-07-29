@@ -10,7 +10,6 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
@@ -43,13 +42,11 @@ public class HttpClientRequest implements WriteStream {
   private final String uri;
   private final HttpResponseHandler respHandler;
 
-  private DoneHandler drainHandler;
+  private Runnable drainHandler;
   private boolean headWritten;
   private boolean sent;
 
   private Map<String, String> cookies;
-
-  // Public API ---------------------------------------------------------------------------------------------------
 
   public HttpClientRequest putHeader(String key, Object value) {
     request.setHeader(key, value);
@@ -101,15 +98,15 @@ public class HttpClientRequest implements WriteStream {
     return write(Buffer.fromString(chunk, enc)._toChannelBuffer(), null);
   }
 
-  public HttpClientRequest write(Buffer chunk, DoneHandler done) {
+  public HttpClientRequest write(Buffer chunk, Runnable done) {
     return write(chunk._toChannelBuffer(), done);
   }
 
-  public HttpClientRequest write(String chunk, DoneHandler done) {
+  public HttpClientRequest write(String chunk, Runnable done) {
     return write(Buffer.fromString(chunk)._toChannelBuffer(), done);
   }
 
-  public HttpClientRequest write(String chunk, String enc, DoneHandler done) {
+  public HttpClientRequest write(String chunk, String enc, Runnable done) {
     return write(Buffer.fromString(chunk, enc)._toChannelBuffer(), done);
   }
 
@@ -134,24 +131,20 @@ public class HttpClientRequest implements WriteStream {
     return conn.writeQueueFull();
   }
 
-  public void drain(DoneHandler handler) {
+  public void drain(Runnable handler) {
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
   }
 
-  // Internal API -------------------------------------------------------------------------------------------
-
   void handleInterestedOpsChanged() {
     if (drainHandler != null) {
-      drainHandler.onDone();
+      drainHandler.run();
     }
   }
 
   HttpResponseHandler getResponseHandler() {
     return respHandler;
   }
-
-  // Impl ---------------------------------------------------------------------------------------------------
 
   private void writeHead(boolean chunked) {
     conn.setCurrentRequest(this);
@@ -170,7 +163,7 @@ public class HttpClientRequest implements WriteStream {
     conn.write(request, this);
   }
 
-  private HttpClientRequest write(ChannelBuffer buff, DoneHandler done) {
+  private HttpClientRequest write(ChannelBuffer buff, Runnable done) {
     if (sent) {
       throw new IllegalStateException("Response complete");
     }

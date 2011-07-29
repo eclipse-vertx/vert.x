@@ -1,6 +1,5 @@
 package org.nodex.examples.amqp;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.amqp.AmqpConnectHandler;
 import org.nodex.core.amqp.AmqpConnection;
 import org.nodex.core.amqp.AmqpMsgCallback;
@@ -24,8 +23,8 @@ public class ClientExample {
       public void onConnect(AmqpConnection conn) {
         conn.createChannel(new ChannelHandler() {
           public void onCreate(final Channel channel) {
-            channel.declareQueue(QUEUE_NAME, false, true, true, new DoneHandler() {
-              public void onDone() {
+            channel.declareQueue(QUEUE_NAME, false, true, true, new Runnable() {
+              public void run() {
                 System.out.println("declared ok");
                 channel.subscribe(QUEUE_NAME, true, new AmqpMsgCallback() {
                   public void onMessage(AmqpProps props, byte[] body) {

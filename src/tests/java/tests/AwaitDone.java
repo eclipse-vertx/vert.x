@@ -1,7 +1,5 @@
 package tests;
 
-import org.nodex.core.DoneHandler;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -10,10 +8,10 @@ import java.util.concurrent.TimeUnit;
  * Date: 12/07/11
  * Time: 15:40
  */
-public class AwaitDone extends DoneHandler {
+public class AwaitDone implements Runnable {
   private CountDownLatch latch = new CountDownLatch(1);
 
-  public void onDone() {
+  public void run() {
     latch.countDown();
   }
 

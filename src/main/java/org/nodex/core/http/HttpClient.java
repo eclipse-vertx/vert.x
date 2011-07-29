@@ -17,12 +17,9 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpClientCodec;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
@@ -110,8 +107,6 @@ public class HttpClient {
 
     return this;
   }
-
-  // Impl ----------------------------------------------------------------------------------------------------------
 
   private class ClientHandler extends SimpleChannelUpstreamHandler {
 

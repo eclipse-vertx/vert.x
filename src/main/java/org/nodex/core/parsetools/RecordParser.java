@@ -15,7 +15,7 @@ import org.nodex.core.buffer.DataHandler;
  * involve a combination of delimited and fixed size records or where the delimiter changes.
  * The parser is not character encoding aware, and works with sequences of bytes not characters
  */
-public class RecordParser extends DataHandler {
+public class RecordParser implements DataHandler {
 
   private Buffer buff;
   private int pos;            // Current position in buffer

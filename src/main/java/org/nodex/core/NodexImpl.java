@@ -69,12 +69,12 @@ public final class NodexImpl implements NodexInternal {
     getBackgroundPool().execute(task);
   }
 
-  public long setPeriodic(long delay, final DoneHandler handler) {
+  public long setPeriodic(long delay, final Runnable handler) {
     //TODO
     return -1;
   }
 
-  public long setTimeout(long delay, final DoneHandler handler) {
+  public long setTimeout(long delay, final Runnable handler) {
     final String contextID = checkContextID();
     TimerTask task = new TimerTask() {
       public void run(Timeout timeout) {
@@ -207,19 +207,6 @@ public final class NodexImpl implements NodexInternal {
     String contextID = getContextID();
     if (contextID == null) throw new IllegalStateException("No context id");
     return contextID;
-  }
-
-  private void executeOnContext(String contextID, final DoneHandler handler) {
-    //Must be executed on the context of the creator
-    executeOnContext(contextID, new Runnable() {
-      public void run() {
-        try {
-          handler.onDone();
-        } catch (Throwable t) {
-          t.printStackTrace(System.err);
-        }
-      }
-    });
   }
 
   private boolean cancelTimeout(long id, boolean check) {

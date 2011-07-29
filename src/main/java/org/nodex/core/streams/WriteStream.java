@@ -1,6 +1,5 @@
 package org.nodex.core.streams;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 
 /**
@@ -14,7 +13,7 @@ public interface WriteStream {
 
   boolean writeQueueFull();
 
-  void drain(DoneHandler handler);
+  void drain(Runnable handler);
 
   void writeBuffer(Buffer data);
 }

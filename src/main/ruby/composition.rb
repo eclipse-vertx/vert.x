@@ -86,13 +86,13 @@ module Composition
 
   end
 
-  class CompleteHandler < org.nodex.core.DoneHandler
+  class CompleteHandler < org.nodex.core.Runnable
     def initialize(callback)
       super()
       @callback = callback
     end
 
-    def onDone()
+    def run()
       @callback.call
     end
 

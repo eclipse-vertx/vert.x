@@ -5,6 +5,6 @@ package org.nodex.core.http;
  * Date: 07/07/11
  * Time: 11:25
  */
-public abstract class HttpServerConnectHandler {
-  public abstract void onConnect(HttpServerConnection connection);
+public interface HttpServerConnectHandler {
+  void onConnect(HttpServerConnection connection);
 }

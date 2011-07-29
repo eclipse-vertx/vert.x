@@ -2,7 +2,6 @@ package org.nodex.core.http;
 
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
@@ -22,7 +21,7 @@ public class HttpServerRequest implements ReadStream {
 
   private Map<String, List<String>> params;
   private DataHandler dataHandler;
-  private DoneHandler endHandler;
+  private Runnable endHandler;
   private final HttpServerConnection conn;
   private final HttpRequest request;
 
@@ -40,8 +39,6 @@ public class HttpServerRequest implements ReadStream {
     this.conn = conn;
     this.request = request;
   }
-
-  // Public API ----------------------------------------------------------------------------------------------
 
   public final String method;
   public final String uri;
@@ -71,7 +68,7 @@ public class HttpServerRequest implements ReadStream {
     conn.resume();
   }
 
-  public void end(DoneHandler handler) {
+  public void end(Runnable handler) {
     this.endHandler = handler;
   }
 
@@ -88,8 +85,6 @@ public class HttpServerRequest implements ReadStream {
     }
   }
 
-  // Internal API ---------------------------------------------------------------------------------------------
-
   void handleData(Buffer data) {
     if (dataHandler != null) {
       dataHandler.onData(data);
@@ -98,7 +93,7 @@ public class HttpServerRequest implements ReadStream {
 
   void handleEnd() {
     if (endHandler != null) {
-      endHandler.onDone();
+      endHandler.run();
     }
   }
 

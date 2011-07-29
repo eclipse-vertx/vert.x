@@ -6,6 +6,7 @@ package org.nodex.core;
  * Time: 18:28
  */
 public interface Nodex {
+
   static Nodex instance = NodexInternal.instance;
 
   void setCoreThreadPoolSize(int size);
@@ -18,9 +19,9 @@ public interface Nodex {
 
   void executeInBackground(Runnable task);
 
-  long setTimeout(long delay, DoneHandler handler);
+  long setTimeout(long delay, Runnable handler);
 
-  long setPeriodic(long delay, DoneHandler handler);
+  long setPeriodic(long delay, Runnable handler);
 
   boolean cancelTimeout(long id);
 

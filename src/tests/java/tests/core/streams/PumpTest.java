@@ -1,6 +1,5 @@
 package tests.core.streams;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.Pump;
@@ -119,13 +118,13 @@ public class PumpTest {
 
     int maxSize;
     Buffer received = Buffer.newDynamic(0);
-    DoneHandler drainHandler;
+    Runnable drainHandler;
 
     void clearReceived() {
       boolean callDrain = writeQueueFull();
       received = Buffer.newDynamic(0);
       if (callDrain && drainHandler != null) {
-        drainHandler.onDone();
+        drainHandler.run();
       }
     }
 
@@ -137,7 +136,7 @@ public class PumpTest {
       return received.length() >= maxSize;
     }
 
-    public void drain(DoneHandler handler) {
+    public void drain(Runnable handler) {
       this.drainHandler = handler;
     }
 

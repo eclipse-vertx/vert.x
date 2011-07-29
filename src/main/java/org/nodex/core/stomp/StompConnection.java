@@ -1,6 +1,5 @@
 package org.nodex.core.stomp;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.composition.Completion;
 import org.nodex.core.net.NetSocket;
@@ -22,10 +21,10 @@ public class StompConnection {
 
   private final NetSocket socket;
   private FrameHandler errorHandler;
-  private DoneHandler connectHandler;
+  private Runnable connectHandler;
   protected boolean connected;
   private Map<String, StompMsgCallback> subscriptions = new HashMap<String, StompMsgCallback>();
-  private Map<String, DoneHandler> waitingReceipts = new ConcurrentHashMap<String, DoneHandler>();
+  private Map<String, Runnable> waitingReceipts = new ConcurrentHashMap<String, Runnable>();
 
   protected StompConnection(NetSocket socket) {
     this.socket = socket;
@@ -55,12 +54,12 @@ public class StompConnection {
   }
 
   // Send with receipt
-  public void send(String dest, Buffer body, DoneHandler completeCallback) {
+  public void send(String dest, Buffer body, Runnable completeCallback) {
     send(dest, new HashMap<String, String>(4), body, completeCallback);
   }
 
   // Send with receipt
-  public void send(String dest, Map<String, String> headers, Buffer body, DoneHandler completeCallback) {
+  public void send(String dest, Map<String, String> headers, Buffer body, Runnable completeCallback) {
     Frame frame = new Frame("SEND", headers, body);
     frame.headers.put("destination", dest);
     addReceipt(frame, completeCallback);
@@ -124,7 +123,7 @@ public class StompConnection {
   }
 
   // Subscribe with receipt
-  public synchronized void subscribe(String dest, StompMsgCallback messageCallback, DoneHandler completeCallback) {
+  public synchronized void subscribe(String dest, StompMsgCallback messageCallback, Runnable completeCallback) {
     if (subscriptions.containsKey(dest)) {
       throw new IllegalArgumentException("Already subscribed to " + dest);
     }
@@ -140,7 +139,7 @@ public class StompConnection {
   }
 
   //Unsubscribe with receipt
-  public synchronized void unsubscribe(String dest, DoneHandler completeCallback) {
+  public synchronized void unsubscribe(String dest, Runnable completeCallback) {
     subscriptions.remove(dest);
     Frame frame = Frame.unsubscribeFrame(dest);
     addReceipt(frame, completeCallback);
@@ -153,7 +152,7 @@ public class StompConnection {
     socket.write(frame.toBuffer().duplicate());
   }
 
-  protected void connect(String username, String password, final DoneHandler connectHandler) {
+  protected void connect(String username, String password, final Runnable connectHandler) {
     this.connectHandler = connectHandler;
     write(Frame.connectFrame(username, password));
   }
@@ -164,7 +163,7 @@ public class StompConnection {
     sub.onMessage(msg.headers, msg.body);
   }
 
-  private void addReceipt(Frame frame, DoneHandler callback) {
+  private void addReceipt(Frame frame, Runnable callback) {
     if (callback != null) {
       String receipt = UUID.randomUUID().toString();
       frame.headers.put("receipt", receipt);
@@ -179,13 +178,13 @@ public class StompConnection {
         throw new IllegalStateException("Expected CONNECTED frame, got: " + frame.command);
       }
       connected = true;
-      connectHandler.onDone();
+      connectHandler.run();
     } else if ("MESSAGE".equals(frame.command)) {
       handleMessage(frame);
     } else if ("RECEIPT".equals(frame.command)) {
       String receipt = frame.headers.get("receipt-id");
-      DoneHandler callback = waitingReceipts.get(receipt);
-      callback.onDone();
+      Runnable callback = waitingReceipts.get(receipt);
+      callback.run();
     } else if ("ERROR".equals(frame.command)) {
       if (errorHandler != null) {
         errorHandler.onFrame(frame);

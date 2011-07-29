@@ -1,6 +1,5 @@
 package tests.core.net;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
@@ -188,8 +187,8 @@ public class NetTest extends TestBase {
 //    NetServer server = NetServer.createServer(new NetConnectHandler() {
 //      public void onConnect(final NetSocket sock) {
 //        final ContextChecker checker = new ContextChecker();
-//        sock.drain(new DoneHandler() {
-//          public void onDone() {
+//        sock.drain(new Runnable() {
+//          public void run() {
 //            azzert(false : "Drain should not be called on server";
 //          }
 //        });
@@ -205,8 +204,8 @@ public class NetTest extends TestBase {
 //                pausedLatch.countDown();
 //
 //                //Set timer to resume after a pause
-//                Nodex.instance.setTimeout(500, new DoneHandler() {
-//                  public void onDone() {
+//                Nodex.instance.setTimeout(500, new Runnable() {
+//                  public void run() {
 //                    receiveState.set(ReceiveState.CONTINUING);
 //                    sock.resume();
 //                  }
@@ -259,8 +258,8 @@ public class NetTest extends TestBase {
 //    azzert(receiveState.get() == ReceiveState.PAUSED;
 //
 //    final CountDownLatch drainedLatch1 = new CountDownLatch(1);
-//    cSock.get().drain(new DoneHandler() {
-//      public void onDone() {
+//    cSock.get().drain(new Runnable() {
+//      public void run() {
 //        clientChecker.get().check();
 //        drainedLatch1.countDown();
 //      }
@@ -283,8 +282,8 @@ public class NetTest extends TestBase {
 //    azzert(cSock.get().writeQueueFull());
 //
 //    final CountDownLatch drainedLatch2 = new CountDownLatch(1);
-//    cSock.get().drain(new DoneHandler() {
-//      public void onDone() {
+//    cSock.get().drain(new Runnable() {
+//      public void run() {
 //        clientChecker.get().check();
 //        drainedLatch2.countDown();
 //      }
@@ -311,8 +310,8 @@ public class NetTest extends TestBase {
     if (count == 0) {
       sock.write(b);
     } else {
-      sock.write(b, new DoneHandler() {
-        public void onDone() {
+      sock.write(b, new Runnable() {
+        public void run() {
           checker.check();
           doWrite(sentBuff, sock, c, sendSize, checker);
         }
@@ -383,8 +382,8 @@ public class NetTest extends TestBase {
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
-        sock.closed(new DoneHandler() {
-          public void onDone() {
+        sock.closed(new Runnable() {
+          public void run() {
             checker.check();
             serverCloseLatch.countDown();
           }
@@ -400,8 +399,8 @@ public class NetTest extends TestBase {
       client.connect(8181, new NetConnectHandler() {
         public void onConnect(NetSocket sock) {
           final ContextChecker checker = new ContextChecker();
-          sock.closed(new DoneHandler() {
-            public void onDone() {
+          sock.closed(new Runnable() {
+            public void run() {
               checker.check();
               clientCloseLatch.countDown();
             }

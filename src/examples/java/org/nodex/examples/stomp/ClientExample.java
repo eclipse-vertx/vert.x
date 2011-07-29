@@ -1,6 +1,5 @@
 package org.nodex.examples.stomp;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.stomp.StompConnectHandler;
 import org.nodex.core.stomp.StompConnection;
@@ -35,8 +34,8 @@ public class ClientExample {
         // Now send some more with receipts
         for (int i = 5; i < 10; i++) {
           final int count = i;
-          conn.send("test-topic", Buffer.fromString("message " + i), new DoneHandler() {
-            public void onDone() {
+          conn.send("test-topic", Buffer.fromString("message " + i), new Runnable() {
+            public void run() {
               System.out.println("Got receipt " + count);
             }
           });

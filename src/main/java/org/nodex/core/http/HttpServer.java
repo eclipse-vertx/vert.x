@@ -31,7 +31,6 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
@@ -114,14 +113,14 @@ public class HttpServer {
     close(null);
   }
 
-  public void close(final DoneHandler done) {
+  public void close(final Runnable done) {
     for (HttpServerConnection conn : connectionMap.values()) {
       conn.close();
     }
     if (done != null) {
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          done.onDone();
+          done.run();
         }
       });
     }
@@ -290,6 +289,4 @@ public class HttpServer {
       return "ws://" + req.getHeader(HttpHeaders.Names.HOST) + path;
     }
   }
-
-
 }

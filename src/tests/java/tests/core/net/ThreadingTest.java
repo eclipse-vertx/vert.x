@@ -1,6 +1,5 @@
 package tests.core.net;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
@@ -52,8 +51,8 @@ public class ThreadingTest extends TestBase {
             sock.write(data);    // Send it back to client
           }
         });
-        sock.closed(new DoneHandler() {
-          public void onDone() {
+        sock.closed(new Runnable() {
+          public void run() {
             checker.check();
             serverClosedLatch.countDown();
           }
@@ -77,8 +76,8 @@ public class ThreadingTest extends TestBase {
             }
           }
         });
-        sock.closed(new DoneHandler() {
-          public void onDone() {
+        sock.closed(new Runnable() {
+          public void run() {
             checker.check();
             clientClosedLatch.countDown();
           }

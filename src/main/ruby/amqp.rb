@@ -117,13 +117,13 @@ module Amqp
       private :initialize
     end
 
-    class CompleteCallback < org.nodex.core.DoneHandler
+    class CompleteCallback < org.nodex.core.Runnable
       def initialize(callback)
         super()
         @callback = callback
       end
 
-      def onDone()
+      def run()
         @callback.call
       end
 

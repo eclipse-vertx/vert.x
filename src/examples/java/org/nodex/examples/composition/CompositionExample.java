@@ -1,6 +1,5 @@
 package org.nodex.examples.composition;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.amqp.AmqpClient;
 import org.nodex.core.amqp.AmqpConnectHandler;
 import org.nodex.core.amqp.AmqpConnection;
@@ -141,10 +140,10 @@ public class CompositionExample {
     RedisClient.createClient().connect(6379, "localhost", new RedisConnectHandler() {
       public void onConnect(final RedisConnection conn) {
         //We need to add a little reference data for this prices
-        conn.set("bicycle", "125", new DoneHandler() {
-          public void onDone() {
-            conn.set("aardvark", "333", new DoneHandler() {
-              public void onDone() {
+        conn.set("bicycle", "125", new Runnable() {
+          public void run() {
+            conn.set("aardvark", "333", new Runnable() {
+              public void run() {
                 redisConn.set(conn);
                 redisConnected.complete();
               }
@@ -166,9 +165,9 @@ public class CompositionExample {
     });
 
     // Once the connections are setup (asynchronously) we can start the worker
-    Composer.compose().when(redisConnected, stompConnected).
-        when(new DoneHandler() {
-          public void onDone() {
+    new Composer().when(redisConnected, stompConnected).
+        when(new Runnable() {
+          public void run() {
             setupConnections(redisConn.get(), stompConn.get());
           }
         }).end();
@@ -182,12 +181,12 @@ public class CompositionExample {
         conn.createChannel(new ChannelHandler() {
           public void onCreate(final Channel ch) {
             //Declare the queue
-            ch.declareQueue(AMQP_QUEUE, false, true, true, new DoneHandler() {
-              public void onDone() {
+            ch.declareQueue(AMQP_QUEUE, false, true, true, new Runnable() {
+              public void run() {
                 ch.subscribe(AMQP_QUEUE, true, new AmqpMsgCallback() {
                   public void onMessage(final AmqpProps props, byte[] body) {
                     final String item = props.headers.get("item").toString();
-                    Composer comp = Composer.compose();
+                    Composer comp = new Composer();
 
                     // Get price from redis
                     final AtomicInteger price = new AtomicInteger(0);
@@ -210,8 +209,8 @@ public class CompositionExample {
                     });
 
                     comp.when(redisGet, responseReturned)         // Execute redis get and stomp request/response in parallel
-                        .when(new DoneHandler() {                 // Then send back a response with the price and stock
-                          public void onDone() {
+                        .when(new Runnable() {                 // Then send back a response with the price and stock
+                          public void run() {
                             props.headers.put("price", price.get());
                             props.headers.put("stock", stock.get());
                             ch.publish("", props.replyTo, props, (byte[]) null);

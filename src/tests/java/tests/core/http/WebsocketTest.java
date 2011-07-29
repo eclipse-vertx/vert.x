@@ -1,6 +1,5 @@
 package tests.core.http;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
@@ -105,8 +104,8 @@ public class WebsocketTest extends TestBase {
             return true;
           }
         });
-        conn.closed(new DoneHandler() {
-          public void onDone() {
+        conn.closed(new Runnable() {
+          public void run() {
             latch.countDown();
           }
         });

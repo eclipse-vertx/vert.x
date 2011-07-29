@@ -5,6 +5,6 @@ package org.nodex.core.net;
  * Date: 07/07/11
  * Time: 11:12
  */
-public abstract class NetConnectHandler {
-  public abstract void onConnect(NetSocket sock);
+public interface NetConnectHandler {
+  void onConnect(NetSocket sock);
 }

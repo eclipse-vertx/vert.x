@@ -3,7 +3,6 @@ package org.nodex.core.amqp;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.NodexImpl;
 import org.nodex.core.composition.Completion;
 
@@ -19,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Time: 07:25
  */
 public class Channel {
+
   private com.rabbitmq.client.Channel channel;
 
   Channel(com.rabbitmq.client.Channel channel) {
@@ -47,12 +47,12 @@ public class Channel {
   }
 
   public void declareQueue(final String queueName, final boolean durable, final boolean exclusive, final boolean autoDelete,
-                           final DoneHandler doneCallback) {
+                           final Runnable doneCallback) {
     NodexImpl.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.queueDeclare(queueName, durable, exclusive, autoDelete, null);
-          doneCallback.onDone();
+          doneCallback.run();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();
@@ -92,8 +92,8 @@ public class Channel {
   private synchronized void createResponseQueue() {
     if (responseQueue == null) {
       final String queueName = UUID.randomUUID().toString();
-      declareQueue(queueName, false, true, true, new DoneHandler() {
-        public void onDone() {
+      declareQueue(queueName, false, true, true, new Runnable() {
+        public void run() {
           responseQueue = queueName;
           responseQueueSetup.complete(); //Queue is now set up
           subscribe(queueName, true, new AmqpMsgCallback() {
@@ -134,8 +134,8 @@ public class Channel {
     //We make sure we don't actually send until the response queue has been setup, this is done by using a
     //Completion
     final Completion c = new Completion();
-    responseQueueSetup.onComplete(new DoneHandler() {
-      public void onDone() {
+    responseQueueSetup.onComplete(new Runnable() {
+      public void run() {
         AmqpMsgCallback cb = new AmqpMsgCallback() {
           public void onMessage(AmqpProps props, byte[] body) {
             responseCallback.onMessage(props, body);
@@ -153,12 +153,12 @@ public class Channel {
   }
 
 
-  public void close(final DoneHandler doneCallback) {
+  public void close(final Runnable doneCallback) {
     NodexImpl.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.close();
-          doneCallback.onDone();
+          doneCallback.run();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();

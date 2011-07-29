@@ -12,7 +12,7 @@ import java.util.Map;
  * Date: 25/06/2011
  * Time: 19:44
  */
-public class Parser extends DataHandler {
+public class Parser implements DataHandler {
 
   public Parser(FrameHandler output) {
     this.output = output;

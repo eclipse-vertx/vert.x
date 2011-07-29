@@ -4,8 +4,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
-import org.nodex.core.ConnectionBase;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 
 /**
@@ -13,7 +11,7 @@ import org.nodex.core.buffer.Buffer;
  * Date: 04/07/11
  * Time: 16:30
  */
-public class HttpServerConnection extends ConnectionBase {
+public class HttpServerConnection extends AbstractConnection {
 
   private HttpRequestHandler mainHandler;
   private HttpRequestHandler getHandler;
@@ -36,8 +34,6 @@ public class HttpServerConnection extends ConnectionBase {
   HttpServerConnection(Channel channel, String contextID, Thread th) {
     super(channel, contextID, th);
   }
-
-  // Public API ----------------------------------------------------------------------------------------------------
 
   public void request(HttpRequestHandler handler) {
     this.mainHandler = handler;
@@ -83,12 +79,6 @@ public class HttpServerConnection extends ConnectionBase {
     this.wsHandler = handler;
   }
 
-  // Internal API --------------------------------------------------------------------------------------------------
-
-  // Called by Netty
-
-  //FIXME - what if one request comes in, then another one comes in, but then we write the response back for
-  //the second one before the first one?
   void handleRequest(HttpServerRequest req, HttpServerResponse resp) {
     setContextID();
     try {
@@ -122,7 +112,6 @@ public class HttpServerConnection extends ConnectionBase {
     }
   }
 
-  //TODO tidy up exception handling on these
   void handleChunk(Buffer chunk) {
     try {
       if (currentRequest != null) {
@@ -163,7 +152,6 @@ public class HttpServerConnection extends ConnectionBase {
     }
   }
 
-
   boolean handleWebsocketConnect(Websocket ws) {
     try {
       if (wsHandler != null) {
@@ -191,8 +179,6 @@ public class HttpServerConnection extends ConnectionBase {
     }
   }
 
-  // Called by response ------------------------------------------------------------------
-
   /*
   If the request end completes and the response has not been ended then we want to pause and resume when it is complete
   to avoid responses for the same connection being written out of order
@@ -204,8 +190,6 @@ public class HttpServerConnection extends ConnectionBase {
     }
     currentResponse = null;
   }
-
-  // Internal ----------------------------------------------------------------------------
 
   protected void handleClosed() {
     super.handleClosed();
@@ -219,7 +203,7 @@ public class HttpServerConnection extends ConnectionBase {
     super.handleException(e);
   }
 
-  protected void addFuture(DoneHandler done, ChannelFuture future) {
+  protected void addFuture(Runnable done, ChannelFuture future) {
     super.addFuture(done, future);
   }
 

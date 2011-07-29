@@ -36,13 +36,13 @@ module Redis
 
   class Connection
 
-    class OnCompleteCallback < org.nodex.core.DoneHandler
+    class OnCompleteCallback < org.nodex.core.Runnable
       def initialize(complete_block)
         super()
         @complete_block = complete_block
       end
 
-      def onDone()
+      def run()
         @complete_block.call
       end
 

@@ -81,7 +81,7 @@ public class RecordParserTest {
 
     final Buffer[] results = new Buffer[lines];
 
-    class MyHandler extends DataHandler {
+    class MyHandler implements DataHandler {
       RecordParser parser = RecordParser.newFixed(10, this);
       int pos;
 
@@ -192,7 +192,7 @@ public class RecordParserTest {
   private void doTestFixed(final Buffer input, Integer[] chunkSizes, final Buffer... expected) {
     final Buffer[] results = new Buffer[expected.length];
 
-    class MyHandler extends DataHandler {
+    class MyHandler implements DataHandler {
       int pos;
       RecordParser parser = RecordParser.newFixed(expected[0].length(), this);
 

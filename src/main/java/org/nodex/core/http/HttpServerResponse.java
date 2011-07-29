@@ -18,7 +18,6 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.stream.ChunkedFile;
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
@@ -43,8 +42,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * User: timfox
  * Date: 25/06/2011
  * Time: 19:20
- * <p/>
- * TODO common functionality with NetSocket can be put in common base class
+ *
  */
 public class HttpServerResponse implements WriteStream {
   private static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
@@ -59,7 +57,7 @@ public class HttpServerResponse implements WriteStream {
   private boolean headWritten;
   private ChannelFuture writeFuture;
   private boolean written;
-  private DoneHandler drainHandler;
+  private Runnable drainHandler;
 
   HttpServerResponse(boolean keepAlive, String cookieString, HttpServerConnection conn) {
     this.keepAlive = keepAlive;
@@ -67,8 +65,6 @@ public class HttpServerResponse implements WriteStream {
     this.conn = conn;
     this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
   }
-
-  // Public API -----------------------------------------------------------------------------------------------------
 
   public int statusCode = HttpResponseStatus.OK.getCode();
 
@@ -128,7 +124,7 @@ public class HttpServerResponse implements WriteStream {
     return conn.writeQueueFull();
   }
 
-  public void drain(DoneHandler handler) {
+  public void drain(Runnable handler) {
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
   }
@@ -149,15 +145,15 @@ public class HttpServerResponse implements WriteStream {
     return write(Buffer.fromString(chunk)._toChannelBuffer(), null);
   }
 
-  public HttpServerResponse write(Buffer chunk, DoneHandler done) {
+  public HttpServerResponse write(Buffer chunk, Runnable done) {
     return write(chunk._toChannelBuffer(), done);
   }
 
-  public HttpServerResponse write(String chunk, String enc, DoneHandler done) {
+  public HttpServerResponse write(String chunk, String enc, Runnable done) {
     return write(Buffer.fromString(chunk, enc)._toChannelBuffer(), done);
   }
 
-  public HttpServerResponse write(String chunk, DoneHandler done) {
+  public HttpServerResponse write(String chunk, Runnable done) {
     return write(Buffer.fromString(chunk)._toChannelBuffer(), done);
   }
 
@@ -235,15 +231,11 @@ public class HttpServerResponse implements WriteStream {
     return this;
   }
 
-  // Internal API ---------------------------------------------------------------------------------------------
-
   void writable() {
     if (drainHandler != null) {
-      drainHandler.onDone();
+      drainHandler.run();
     }
   }
-
-  // Impl -----------------------------------------------------------------------------------------------------
 
   private void checkTrailer() {
     if (trailer == null) trailer = new DefaultHttpChunkTrailer();
@@ -271,7 +263,7 @@ public class HttpServerResponse implements WriteStream {
   Non chunked encoding does not work well with async writes since normally do not know Content-Length in advance
   and need to know this for non chunked encoding
    */
-  private HttpServerResponse write(ChannelBuffer chunk, final DoneHandler done) {
+  private HttpServerResponse write(ChannelBuffer chunk, final Runnable done) {
     if (written) {
       throw new IllegalStateException("Response complete");
     }

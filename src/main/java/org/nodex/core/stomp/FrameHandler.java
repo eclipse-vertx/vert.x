@@ -5,6 +5,6 @@ package org.nodex.core.stomp;
  * Date: 07/07/11
  * Time: 11:50
  */
-public abstract class FrameHandler {
-  public abstract void onFrame(Frame frame);
+public interface FrameHandler {
+  void onFrame(Frame frame);
 }

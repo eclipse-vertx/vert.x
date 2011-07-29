@@ -5,6 +5,6 @@ package org.nodex.core;
  * Date: 07/07/11
  * Time: 11:18
  */
-public abstract class ExceptionHandler {
-  public abstract void onException(Exception e);
+public interface ExceptionHandler {
+  void onException(Exception e);
 }

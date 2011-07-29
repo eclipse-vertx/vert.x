@@ -5,6 +5,6 @@ package org.nodex.core.stomp;
  * Date: 07/07/11
  * Time: 11:52
  */
-public abstract class StompConnectHandler {
-  public abstract void onConnect(StompConnection connection);
+public interface StompConnectHandler {
+  void onConnect(StompConnection connection);
 }

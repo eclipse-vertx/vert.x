@@ -1,6 +1,5 @@
 package org.nodex.core.amqp;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 
 import java.io.IOException;
@@ -31,13 +30,13 @@ public class AmqpConnection {
     });
   }
 
-  public void close(final DoneHandler doneCallback) {
+  public void close(final Runnable doneCallback) {
     Nodex.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           conn.close();
           //FIXME - again this is sync
-          doneCallback.onDone();
+          doneCallback.run();
         } catch (IOException e) {
           //TODO handle exception by passing them back on callback
           e.printStackTrace();

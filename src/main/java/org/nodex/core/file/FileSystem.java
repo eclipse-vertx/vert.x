@@ -1,6 +1,5 @@
 package org.nodex.core.file;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 
@@ -19,35 +18,35 @@ public class FileSystem {
 
   // File meta operations
 
-  public void rename(String from, String to, DoneHandler onCompletion) {
+  public void rename(String from, String to, Runnable onCompletion) {
 
   }
 
-  public void truncate(String path, int len, DoneHandler onCompletion) {
+  public void truncate(String path, int len, Runnable onCompletion) {
 
   }
 
-  public void chmod(String path, int mode, DoneHandler onCompletion) {
+  public void chmod(String path, int mode, Runnable onCompletion) {
 
   }
 
-  public void link(String src, String dest, DoneHandler onCompletion) {
+  public void link(String src, String dest, Runnable onCompletion) {
 
   }
 
-  public void symlink(String src, String dest, DoneHandler onCompletion) {
+  public void symlink(String src, String dest, Runnable onCompletion) {
 
   }
 
-  public void unlink(String path, DoneHandler onCompletion) {
+  public void unlink(String path, Runnable onCompletion) {
 
   }
 
-  public void mkdir(String path, int mode, DoneHandler onCompletion) {
+  public void mkdir(String path, int mode, Runnable onCompletion) {
 
   }
 
-  public void readDir(String path, DoneHandler onCompletion) {
+  public void readDir(String path, Runnable onCompletion) {
 
   }
 
@@ -65,7 +64,7 @@ public class FileSystem {
 
   // Close and open
 
-  public void close(int fd, DoneHandler onCompletion) {
+  public void close(int fd, Runnable onCompletion) {
 
   }
 
@@ -75,11 +74,11 @@ public class FileSystem {
 
   // Random access
 
-  public void write(int fd, Buffer buffer, int offset, int length, int position, DoneHandler onCompletion) {
+  public void write(int fd, Buffer buffer, int offset, int length, int position, Runnable onCompletion) {
 
   }
 
-  public void read(int fd, Buffer buffer, int offset, int length, int position, DoneHandler onCompletion) {
+  public void read(int fd, Buffer buffer, int offset, int length, int position, Runnable onCompletion) {
 
   }
 
@@ -104,11 +103,11 @@ public class FileSystem {
     }
   }
 
-  public void writeFile(String path, String data, String encoding, DoneHandler onCompletion) {
+  public void writeFile(String path, String data, String encoding, Runnable onCompletion) {
 
   }
 
-  public void writeFile(String path, Buffer data, DoneHandler onCompletion) {
+  public void writeFile(String path, Buffer data, Runnable onCompletion) {
 
   }
 

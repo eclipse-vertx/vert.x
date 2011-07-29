@@ -83,7 +83,7 @@ module Stomp
       end
     end
 
-    class ReceiptCallback < org.nodex.core.DoneHandler
+    class ReceiptCallback < org.nodex.core.Runnable
       def initialize(receipt_block)
         super()
         @receipt_block = receipt_block

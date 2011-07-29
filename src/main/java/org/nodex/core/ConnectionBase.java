@@ -24,7 +24,7 @@ public class ConnectionBase {
   protected final Thread th;
 
   protected ExceptionHandler exceptionHandler;
-  protected DoneHandler closedHandler;
+  protected Runnable closedHandler;
 
   // Public API -------------------------------------------------------------------------------
 
@@ -56,15 +56,11 @@ public class ConnectionBase {
     this.exceptionHandler = handler;
   }
 
-  public void closed(DoneHandler handler) {
+  public void closed(Runnable handler) {
     this.closedHandler = handler;
   }
 
   // Impl ?? ----------------------------------------------------------------------------------------------
-
-  public ChannelFuture write(Object obj) {
-    return channel.write(obj);
-  }
 
   protected String getContextID() {
     return contextID;
@@ -87,19 +83,19 @@ public class ConnectionBase {
     if (closedHandler != null) {
       setContextID();
       try {
-        closedHandler.onDone();
+        closedHandler.run();
       } catch (Throwable t) {
         handleHandlerException(t);
       }
     }
   }
 
-  protected void addFuture(final DoneHandler done, final ChannelFuture future) {
+  protected void addFuture(final Runnable done, final ChannelFuture future) {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
         setContextID();
         if (channelFuture.isSuccess()) {
-          done.onDone();
+          done.run();
         } else {
           Throwable err = channelFuture.getCause();
           if (exceptionHandler != null && err instanceof Exception) {

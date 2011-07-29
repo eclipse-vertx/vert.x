@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
  * Time: 18:57
  */
 public interface NodexInternal extends Nodex {
+
   static NodexInternal instance = new NodexImpl();
 
   NioWorkerPool getWorkerPool();

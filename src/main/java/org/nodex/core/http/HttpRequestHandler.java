@@ -5,6 +5,6 @@ package org.nodex.core.http;
  * Date: 25/06/2011
  * Time: 19:16
  */
-public abstract class HttpRequestHandler {
-  public abstract void onRequest(HttpServerRequest req, HttpServerResponse resp);
+public interface HttpRequestHandler {
+  void onRequest(HttpServerRequest req, HttpServerResponse resp);
 }

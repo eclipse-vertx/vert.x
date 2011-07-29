@@ -11,6 +11,7 @@ import java.io.IOException;
  * Time: 07:12
  */
 public class AmqpClient {
+
   public static AmqpClient createClient() {
     return new AmqpClient();
   }

@@ -1,7 +1,5 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.DoneHandler;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,17 +11,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Composer {
 
-  public static Composer compose() {
-    return new Composer();
-  }
-
   private List<Runnable> runList = new ArrayList<Runnable>();
   private int pos;
 
-  private Composer() {
-  }
-
-  public Composer when(final DoneHandler handler) {
+  public Composer when(final Runnable handler) {
     Deferred deff = new Deferred(handler);
     return when(deff);
   }
@@ -36,8 +27,8 @@ public class Composer {
     Runnable run = new Runnable() {
       public void run() {
         final AtomicInteger countDown = new AtomicInteger(completions.length);
-        DoneHandler cb = new DoneHandler() {
-          public void onDone() {
+        Runnable cb = new Runnable() {
+          public void run() {
             if (countDown.decrementAndGet() == 0) {
               next();
             }
@@ -57,6 +48,11 @@ public class Composer {
     return this;
   }
 
+  public void end() {
+    pos = 0;
+    runCurrent();
+  }
+
   private void next() {
     pos++;
     if (pos < runList.size()) {
@@ -67,11 +63,6 @@ public class Composer {
   private void runCurrent() {
     Runnable run = runList.get(pos);
     run.run();
-  }
-
-  public void end() {
-    pos = 0;
-    runCurrent();
   }
 
 }

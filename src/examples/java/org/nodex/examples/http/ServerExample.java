@@ -7,8 +7,6 @@ import org.nodex.core.http.HttpServerConnection;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.http.HttpServerResponse;
 
-import java.util.Map;
-
 /**
  * User: tfox
  * Date: 04/07/11

@@ -7,9 +7,8 @@ import org.jboss.netty.util.CharsetUtil;
 import java.nio.charset.Charset;
 
 public class Buffer {
-  private ChannelBuffer buffer;
 
-  // Public API ========================================================================================================
+  private ChannelBuffer buffer;
 
   public static Buffer newFixed(int size) {
     return new Buffer(ChannelBuffers.buffer(size));
@@ -78,12 +77,6 @@ public class Buffer {
     return append(str, CharsetUtil.UTF_8);
   }
 
-  private Buffer append(String str, Charset charset) {
-    byte[] bytes = str.getBytes(charset);
-    buffer.writeBytes(bytes);
-    return this;
-  }
-
   // set operations write into the buffer at position pos
 
   public Buffer setByte(int pos, byte b) {
@@ -109,12 +102,6 @@ public class Buffer {
     return setBytes(pos, str, Charset.forName(enc));
   }
 
-  private Buffer setBytes(int pos, String str, Charset charset) {
-    byte[] bytes = str.getBytes(charset);
-    buffer.setBytes(pos, bytes);
-    return this;
-  }
-
   public int capacity() {
     return buffer.capacity();
   }
@@ -138,4 +125,18 @@ public class Buffer {
   public ChannelBuffer _toChannelBuffer() {
     return buffer;
   }
+
+  private Buffer append(String str, Charset charset) {
+    byte[] bytes = str.getBytes(charset);
+    buffer.writeBytes(bytes);
+    return this;
+  }
+
+  private Buffer setBytes(int pos, String str, Charset charset) {
+    byte[] bytes = str.getBytes(charset);
+    buffer.setBytes(pos, bytes);
+    return this;
+  }
+
+
 }

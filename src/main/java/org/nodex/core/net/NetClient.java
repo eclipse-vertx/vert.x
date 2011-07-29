@@ -16,8 +16,8 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.NodexInternal;
+import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetSocketAddress;
@@ -48,8 +48,6 @@ public class NetClient {
       }
     });
   }
-
-  // Public API ========================================================================================================
 
   public static NetClient createClient() {
     return new NetClient();
@@ -118,8 +116,6 @@ public class NetClient {
     connectionOptions.put("child.trafficClass", trafficClass);
     return this;
   }
-
-  // End of public API =================================================================================================
 
   private class ClientHandler extends SimpleChannelUpstreamHandler {
 

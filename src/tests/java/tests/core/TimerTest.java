@@ -1,6 +1,5 @@
 package tests.core;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
@@ -38,8 +37,8 @@ public class TimerTest extends TestBase {
   public void testNoContext() throws Exception {
     final AtomicBoolean fired = new AtomicBoolean(false);
     try {
-      Nodex.instance.setTimeout(1, new DoneHandler() {
-        public void onDone() {
+      Nodex.instance.setTimeout(1, new Runnable() {
+        public void run() {
           fired.set(true);
         }
       });
@@ -61,8 +60,8 @@ public class TimerTest extends TestBase {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
         final String contextID = Nodex.instance.getContextID();
-        Nodex.instance.setTimeout(1, new DoneHandler() {
-          public void onDone() {
+        Nodex.instance.setTimeout(1, new Runnable() {
+          public void run() {
             assert th == Thread.currentThread();
             assert contextID == Nodex.instance.getContextID();
             endLatch.countDown();
@@ -94,8 +93,8 @@ public class TimerTest extends TestBase {
         final String contextID = Nodex.instance.getContextID();
         sock.data(new DataHandler() {
           public void onData(Buffer data) {
-            Nodex.instance.setTimeout(1, new DoneHandler() {
-              public void onDone() {
+            Nodex.instance.setTimeout(1, new Runnable() {
+              public void run() {
                 assert th == Thread.currentThread();
                 assert contextID == Nodex.instance.getContextID();
                 endLatch.countDown();
@@ -131,8 +130,8 @@ public class TimerTest extends TestBase {
         final String contextID = Nodex.instance.getContextID();
         final long start = System.nanoTime();
         final long delay = 100;
-        Nodex.instance.setTimeout(delay, new DoneHandler() {
-          public void onDone() {
+        Nodex.instance.setTimeout(delay, new Runnable() {
+          public void run() {
             long dur = (System.nanoTime() - start) / 1000000;
             assert dur >= delay;
             assert dur < delay * 1.25; // 25% margin of error

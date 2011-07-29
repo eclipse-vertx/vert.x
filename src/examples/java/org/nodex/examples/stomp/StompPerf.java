@@ -30,7 +30,7 @@ public class StompPerf {
             count++;
             if (count == warmup + numMessages) {
               double rate = 1000 * (double) numMessages / (System.currentTimeMillis() - start);
-              System.out.println("DoneHandler, rate " + rate);
+              System.out.println("Runnable, rate " + rate);
             }
           }
         });

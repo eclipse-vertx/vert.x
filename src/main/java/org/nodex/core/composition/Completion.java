@@ -1,7 +1,5 @@
 package org.nodex.core.composition;
 
-import org.nodex.core.DoneHandler;
-
 /**
  * User: timfox
  * Date: 03/07/2011
@@ -9,24 +7,23 @@ import org.nodex.core.DoneHandler;
  */
 public class Completion {
 
-  private DoneHandler onComplete;
+  private Runnable onComplete;
   private boolean complete;
 
-  public synchronized void onComplete(DoneHandler onComplete) {
+  public synchronized void onComplete(Runnable onComplete) {
     this.onComplete = onComplete;
     if (complete) {
-      onComplete.onDone();
+      onComplete.run();
     }
   }
 
   public synchronized void complete() {
     if (onComplete != null) {
-      onComplete.onDone();
+      onComplete.run();
     }
     complete = true;
   }
 
   public void execute() {
-
   }
 }

@@ -1,6 +1,5 @@
 package tests.core.http;
 
-import org.nodex.core.DoneHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
@@ -24,7 +23,6 @@ import tests.core.TestBase;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -131,13 +129,13 @@ public class HttpTest extends TestBase {
                 buff.append(data);
               }
             });
-            req.end(new DoneHandler() {
-              public void onDone() {
+            req.end(new Runnable() {
+              public void run() {
                 azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
                 //We write the response back after a random time to increase the chances of responses written in the
                 //wrong order if we didn't implement pipelining correctly
-                Nodex.instance.setTimeout((long) (100 * Math.random()), new DoneHandler() {
-                  public void onDone() {
+                Nodex.instance.setTimeout((long) (100 * Math.random()), new Runnable() {
+                  public void run() {
                     resp.putHeader("count", String.valueOf(theCount));
                     resp.write(buff);
                     resp.end();
@@ -168,8 +166,8 @@ public class HttpTest extends TestBase {
                   buff.append(data);
                 }
               });
-              response.end(new DoneHandler() {
-                public void onDone() {
+              response.end(new Runnable() {
+                public void run() {
                   //System.out.println("expected:" + totResponseBody.toString());
                   //System.out.println("actual:" + buff.toString());
                   azzert(("This is content " + theCount).equals(buff.toString()));
@@ -228,8 +226,8 @@ public class HttpTest extends TestBase {
                 buff.append(data);
               }
             });
-            response.end(new DoneHandler() {
-              public void onDone() {
+            response.end(new Runnable() {
+              public void run() {
                 azzert(content.equals(buff.toString()));
                 latch.countDown();
               }
@@ -269,8 +267,8 @@ public class HttpTest extends TestBase {
           }
         });
 
-        conn.closed(new DoneHandler() {
-          public void onDone() {
+        conn.closed(new Runnable() {
+          public void run() {
             //Keep-Alive is false so connection will be automatically closed
             latch.countDown();
           }
@@ -354,8 +352,8 @@ public class HttpTest extends TestBase {
                 buff.append(data);
               }
             });
-            req.end(new DoneHandler() {
-              public void onDone() {
+            req.end(new Runnable() {
+              public void run() {
                 azzert(Utils.buffersEqual(totRequestBody, buff));
                 resp.putAllHeaders(responseHeaders);
                 resp.statusCode = statusCode;
@@ -391,8 +389,8 @@ public class HttpTest extends TestBase {
                 buff.append(data);
               }
             });
-            response.end(new DoneHandler() {
-              public void onDone() {
+            response.end(new Runnable() {
+              public void run() {
                 //System.out.println("expected:" + totResponseBody.toString());
                 //System.out.println("actual:" + buff.toString());
                 azzert(Utils.buffersEqual(totResponseBody, buff));

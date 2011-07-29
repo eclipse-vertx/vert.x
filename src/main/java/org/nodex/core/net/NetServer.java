@@ -19,9 +19,8 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.nodex.core.DoneHandler;
-import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.NodexInternal;
+import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
 import java.net.InetAddress;
@@ -58,8 +57,6 @@ public class NetServer {
 
     this.connectCallback = connectHandler;
   }
-
-  // Public API ========================================================================================================
 
   public static NetServer createServer(NetConnectHandler connectCallback) {
     return new NetServer(connectCallback);
@@ -121,20 +118,18 @@ public class NetServer {
     close(null);
   }
 
-  public void close(final DoneHandler done) {
+  public void close(final Runnable done) {
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
     if (done != null) {
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          done.onDone();
+          done.run();
         }
       });
     }
   }
-
-  // End of public API =================================================================================================
 
   private class ServerHandler extends SimpleChannelHandler {
 
