@@ -5,6 +5,8 @@ Net
 
 SSL
 Sendfile for straight TCP
+Netty channel.setReadable() / setWritable doesn't pause immediately
+pause/resume test needs to be rewritten
 
 HTTP
 ----
@@ -12,13 +14,10 @@ HTTP
 HTTPS
 Cookies
 Test multiple connections
-Keep alive
 Pooling
-Test keep alive
 Pipelining currently doesn't work properly with timeouts (see testPipeLining)
 Send file example
 POST/PUT example - maybe could have example with all request types illustrated
-Websockets
 Websockets example
 Make API consistent with Net for creating server and clients
 Test request/response as write/read stream with pump both client and server side

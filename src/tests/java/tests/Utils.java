@@ -13,7 +13,7 @@ public class Utils {
     return generateRandomBuffer(length, false, (byte) 0);
   }
 
-  public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
+  public static byte[] generateRandomByteArray(int length, boolean avoid, byte avoidByte) {
     byte[] line = new byte[length];
     for (int i = 0; i < length; i++) {
       //Choose a random byte - if we're generating delimited lines then make sure we don't
@@ -25,6 +25,11 @@ public class Utils {
 
       line[i] = rand;
     }
+    return line;
+  }
+
+  public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
+    byte[] line = generateRandomByteArray(length, avoid, avoidByte);
     return Buffer.newWrapped(line);
   }
 

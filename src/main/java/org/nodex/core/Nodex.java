@@ -24,9 +24,11 @@ public interface Nodex {
 
   boolean cancelTimeout(long id);
 
-  <T> String registerActor(T t);
+  <T> String registerActor(Actor<T> actor);
 
-  <T> T getActorRef(String actorID);
+  boolean unregisterActor(String actorID);
+
+  <T> boolean sendMessage(String actorID, T message);
 
   String getContextID();
 }

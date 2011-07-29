@@ -33,7 +33,7 @@ public final class NodexImpl implements NodexInternal {
   private ExecutorService acceptorPool;
   private Map<String, NioWorker> workerMap = new ConcurrentHashMap<String, NioWorker>();
   private static final ThreadLocal<String> contextIDTL = new ThreadLocal<String>();
-  private Map<String, Object> actors = new ConcurrentHashMap<String, Object>();
+  private Map<String, ActorHolder> actors = new ConcurrentHashMap<String, ActorHolder>();
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new NodeThreadFactory("node.x-timer-thread"), 20,
@@ -88,25 +88,60 @@ public final class NodexImpl implements NodexInternal {
     return cancelTimeout(id, true);
   }
 
-  public <T> String registerActor(T t) {
+  public <T> String registerActor(Actor<T> actor) {
+    String contextID = getContextID();
+    if (contextID == null) {
+      throw new IllegalStateException("Cannot register actor with no context");
+    }
     String actorID = UUID.randomUUID().toString();
-    actors.put(actorID, t);
+    actors.put(actorID, new ActorHolder(actor, getContextID()));
     return actorID;
   }
 
-  public boolean unregisterActor(String actorID) {
-    return actors.remove(actorID) != null;
+  private static class ActorHolder {
+    ActorHolder(Actor<?> actor, String contextID) {
+      this.actor = actor;
+      this.contextID = contextID;
+    }
+    final Actor<?> actor;
+    final String contextID;
   }
 
-  public <T> T getActorRef(String actorID) {
-    //TODO - return dynamic proxy
-    return (T) actors.get(actorID);
+  public boolean unregisterActor(String actorID) {
+    String contextID = getContextID();
+    ActorHolder holder = actors.remove(actorID);
+    if (holder != null) {
+      if (!contextID.equals(holder.contextID)) {
+        actors.put(actorID, holder);
+        throw new IllegalStateException("Cannot unregister actor from different context");
+      }
+      else {
+        return true;
+      }
+    } else {
+      return false;
+    }
   }
+
+  public <T> boolean sendMessage(String actorID, final T message) {
+    ActorHolder holder = actors.remove(actorID);
+    if (holder != null) {
+      final Actor<T> actor = (Actor<T>)holder.actor; // FIXME - unchecked cast
+      executeOnContext(holder.contextID, new Runnable() {
+        public void run() {
+          actor.onMessage(message);
+        }
+      });
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 
   // Internal API -----------------------------------------------------------------------------------------
 
-  //The background pool is used for making blocking calls to legacy synchronous APIs, or for running long
-  //running tasks
+  //The background pool is used for making blocking calls to legacy synchronous APIs
   public synchronized Executor getBackgroundPool() {
     if (backgroundPool == null) {
       backgroundPool = Executors.newFixedThreadPool(backgroundPoolSize, new NodeThreadFactory("node.x-background-thread-"));
