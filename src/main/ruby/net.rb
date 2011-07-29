@@ -11,6 +11,8 @@
 
 include Java
 require "buffer"
+java_import org.nodex.core.net.NetServer
+java_import org.nodex.core.net.NetClient
 
 module Net
 
@@ -22,10 +24,7 @@ module Net
     end
 
     def initialize(connect_hdlr)
-      @j_server = org.nodex.core.net.NetServer.createServer { |j_socket|
-        sock = Socket.new(j_socket)
-        connect_hdlr.call(sock)
-      }
+      @j_server = NetServer.createServer { |j_socket| connect_hdlr.call(Socket.new(j_socket)) }
     end
 
     def listen(port, host = "0.0.0.0")
@@ -48,14 +47,11 @@ module Net
 
     def connect(port, host = "localhost", proc = nil, &connect_hdlr)
       connect_hdlr = proc if proc
-      @j_client.connect(port, host) { |j_socket|
-        sock = Socket.new(j_socket)
-        connect_hdlr.call(sock)
-      }
+      @j_client.connect(port, host) { |j_socket| connect_hdlr.call(Socket.new(j_socket)) }
     end
 
     def initialize
-      @j_client = org.nodex.core.net.NetClient.createClient;
+      @j_client = NetClient.createClient;
     end
 
     private :initialize
@@ -73,9 +69,7 @@ module Net
 
     def data(proc = nil, &data_hdlr)
       data_hdlr = proc if proc
-      @j_socket.data{ |j_buff|
-        buf = Buffer.new(j_buff)
-        data_hdlr.call(buf)
+      @j_socket.data{ |j_buff| data_hdlr.call(Buffer.new(j_buff))
       }
     end
   end
