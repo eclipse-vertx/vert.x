@@ -1,3 +1,16 @@
+/*
+ * Copyright 2002-2011 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+ * this file except in compliance with the License. You may obtain a copy of the
+ * License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package org.nodex.examples.composition;
 
 import org.nodex.core.amqp.AmqpClient;
@@ -34,35 +47,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * User: tim
- * Date: 05/07/11
- * Time: 15:58
- * <p/>
- * This somewhat elaborate example shows an interaction including HTTP, STOMP, AMQP and Redis
- * <p/>
- * Summary: We have a website which allows the user to check the price and stock count for inventory items.
- * <p/>
- * It contains the following components In real life these would probably be running on different nodes.
- * <p/>
- * 1) HTTP server. We create an HTTP server which serves the index.html page from disk, and responds to HTTP requests for an item.
- * when it receives a request it uses the request-response pattern to send that request in an AMQP message to a queue
- * and sets a handler for the response.
- * When the response returns it formats the price and stock count in the html page returned to the browser.
- * <p/>
- * 2) AMQP consumer. We create an AMQP consumer that consumes from the AMQP queue, and then does two things in parallel
- * a) Call redis to get the price for the item
- * b) Send a STOMP message, using the request-response pattern to a STOMP destination to request the stock count
- * When both a) and b) asynchronously complete, we return an AMQP message as the response to the HTTP server that made
- * the request
- * <p/>
- * 3) A redis server
- * <p/>
- * 4) A STOMP server
- * <p/>
- * 5) STOMP consumer. We create a STOMP consumer that subscribes to the STOMP destination, calculates a stock count and
- * sends that back in a response message
- */
 public class CompositionExample {
   public static void main(String[] args) throws Exception {
     new CompositionExample().run();
