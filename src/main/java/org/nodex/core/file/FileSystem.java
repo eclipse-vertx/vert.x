@@ -19,8 +19,11 @@ import org.nodex.core.buffer.DataHandler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
 
 public class FileSystem {
+
+  AsynchronousFileChannel ch;
 
   public static FileSystem instance = new FileSystem();
 

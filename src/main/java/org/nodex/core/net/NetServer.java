@@ -49,6 +49,7 @@ public class NetServer {
   private final NetConnectHandler connectCallback;
   private Map<String, Object> connectionOptions = new HashMap<String, Object>();
   private ChannelGroup serverChannelGroup;
+  private boolean listening;
 
   private NetServer(NetConnectHandler connectHandler) {
     serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
@@ -115,15 +116,19 @@ public class NetServer {
   }
 
   public NetServer listen(int port, String host) {
+    if (listening) {
+      throw new IllegalStateException("Server already listening");
+    }
     try {
       bootstrap.setOptions(connectionOptions);
-      //FIXME - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
+      //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
       Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       serverChannelGroup.add(serverChannel);
       System.out.println("Net server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }
+    listening = true;
     return this;
   }
 
@@ -138,6 +143,8 @@ public class NetServer {
     if (done != null) {
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
+          //TODO - this should run on event loop thread
+          listening = false;
           done.run();
         }
       });

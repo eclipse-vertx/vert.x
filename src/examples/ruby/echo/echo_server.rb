@@ -17,8 +17,8 @@ include Net
 
 server = Server.create_server { |socket| socket.data { |data| socket.write(data) } }.listen(8080)
 
-puts "hit enter to stop server"
+puts "hit enter to stop"
 STDIN.gets
-server.stop
+server.close
 
 

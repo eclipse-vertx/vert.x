@@ -25,4 +25,7 @@ Client.create_client.connect(8080, "localhost") { |socket|
   }
 }
 
+puts "hit enter to stop"
+STDIN.gets
+
 

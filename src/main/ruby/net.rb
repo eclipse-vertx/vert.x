@@ -13,103 +13,70 @@ include Java
 require "buffer"
 
 module Net
+
   class Server
-    class ConnectCallback < org.nodex.core.net.NetConnectHandler
 
-      def initialize(connect_block)
-        super()
-        @connect_block = connect_block
-      end
-
-      def onConnect(java_socket)
-        sock = Socket.new(java_socket)
-        @connect_block.call(sock)
-      end
+    def Server.create_server(proc = nil, &connect_hdlr)
+      connect_hdlr = proc if proc
+      Server.new(connect_hdlr)
     end
 
-    #Can take either a proc or a block
-    def Server.create_server(proc = nil, &connect_block)
-      connect_block = proc if proc
-      Server.new(connect_block)
-    end
-
-    def initialize(connect_block)
-      super()
-      @java_server = org.nodex.core.net.NetServer.createServer(ConnectCallback.new(connect_block))
+    def initialize(connect_hdlr)
+      @j_server = org.nodex.core.net.NetServer.createServer { |j_socket|
+        sock = Socket.new(j_socket)
+        connect_hdlr.call(sock)
+      }
     end
 
     def listen(port, host = "0.0.0.0")
-      @java_server.listen(port, host)
+      @j_server.listen(port, host)
       self
     end
 
-    def stop
-      @java_server.stop
+    def close
+      @j_server.close
     end
 
     private :initialize
   end
 
   class Client
-    class ConnectCallback < org.nodex.core.net.NetConnectHandler
-
-      def initialize(connect_block)
-        super()
-        @connect_block = connect_block
-      end
-
-      def onConnect(java_socket)
-        sock = Socket.new(java_socket)
-        @connect_block.call(sock)
-      end
-    end
 
     def Client.create_client
       Client.new
     end
 
-    #Can take either a proc or a block
-    def connect(port, host = "localhost", proc = nil, &connect_block)
-      connect_block = proc if proc
-      @java_client.connect(port, host, ConnectCallback.new(connect_block))
+    def connect(port, host = "localhost", proc = nil, &connect_hdlr)
+      connect_hdlr = proc if proc
+      @j_client.connect(port, host) { |j_socket|
+        sock = Socket.new(j_socket)
+        connect_hdlr.call(sock)
+      }
     end
 
     def initialize
-      super()
-      @java_client = org.nodex.core.net.NetClient.createClient;
+      @j_client = org.nodex.core.net.NetClient.createClient;
     end
 
     private :initialize
   end
 
   class Socket
-    @data_block = nil
 
-    class DataCallback < org.nodex.core.buffer.DataHandler
-      def initialize(data_block)
-        super()
-        @data_block = data_block
-      end
-
-      def onData(java_buffer)
-        buf = Buffer.new(java_buffer)
-        @data_block.call(buf)
-      end
-    end
-
-    def initialize(java_socket)
-      super()
-      @java_socket = java_socket
+    def initialize(j_socket)
+      @j_socket = j_socket
     end
 
     def write(data)
-      @java_socket.write(data._to_java_buffer)
+      @j_socket.write(data._to_java_buffer)
     end
 
-    #Can take either a proc or a block
-    def data(proc = nil, &data_block)
-      data_block = proc if proc
-      @java_socket.data(DataCallback.new(data_block))
+    def data(proc = nil, &data_hdlr)
+      data_hdlr = proc if proc
+      @j_socket.data{ |j_buff|
+        buf = Buffer.new(j_buff)
+        data_hdlr.call(buf)
+      }
     end
   end
 end
