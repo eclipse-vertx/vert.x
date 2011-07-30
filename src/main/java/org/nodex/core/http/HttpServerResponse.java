@@ -17,8 +17,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.DefaultFileRegion;
-import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.handler.codec.http.Cookie;
 import org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
@@ -30,21 +28,12 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.stream.ChunkedFile;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
@@ -199,13 +188,7 @@ public class HttpServerResponse implements WriteStream {
     File file = new File(filename);
 
     HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-
-    MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-    response.setHeader(Names.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
     response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
-    SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
-    dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
-    response.setHeader(Names.LAST_MODIFIED, dateFormatter.format(new Date(file.lastModified())));
 
     writeCookieHeader(response);
     conn.write(response);

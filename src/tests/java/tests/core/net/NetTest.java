@@ -314,7 +314,16 @@ public class NetTest extends TestBase {
 //  }
 
   @Test
-  public void testSendFile() throws Exception {
+  public void testSendFileClientToServer() throws Exception {
+    testSendFile(true);
+  }
+
+  @Test
+  public void testSendFileServerToClient() throws Exception {
+    testSendFile(false);
+  }
+
+  private void testSendFile(boolean clientToServer) throws Exception {
     final String host = "localhost";
     final boolean keepAlive = true;
     final String path = "foo.txt";
@@ -323,20 +332,16 @@ public class NetTest extends TestBase {
     final String content = Utils.randomAlphaString(10000);
     final File file = setupFile(path, content);
 
-    NetConnectHandler serverH = new NetConnectHandler() {
+    NetConnectHandler sender = new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
-        sock.data(new DataHandler() {
-          public void onData(Buffer buff) {
-            String fileName = "./" + path;
-            sock.sendFile(fileName);
-            System.out.println("Called sendfile on server");
-          }
-        });
+        String fileName = "./" + path;
+        sock.sendFile(fileName);
+        System.out.println("Called sendfile on server");
       }
     };
     final CountDownLatch latch = new CountDownLatch(1);
 
-    NetConnectHandler clientH = new NetConnectHandler() {
+    NetConnectHandler receiver = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         final Buffer buff = Buffer.newDynamic(0);
         sock.data(new DataHandler() {
@@ -348,18 +353,20 @@ public class NetTest extends TestBase {
             }
           }
         });
-        //Initiate by sending some data
-        sock.write("foo");
       }
     };
 
-    NetServer server = NetServer.createServer(serverH).listen(8181);
-    NetClient.createClient().connect(8181, clientH);
+    NetConnectHandler serverHandler = clientToServer ? receiver: sender;
+    NetConnectHandler clientHandler = clientToServer ? sender: receiver;
+
+    NetServer server = NetServer.createServer(serverHandler).listen(8181);
+    NetClient.createClient().connect(8181, clientHandler);
 
     assert latch.await(5, TimeUnit.SECONDS);
 
     throwAssertions();
     file.delete();
+    awaitClose(server);
   }
 
   //Recursive - we don't write the next packet until we get the completion back from the previous write

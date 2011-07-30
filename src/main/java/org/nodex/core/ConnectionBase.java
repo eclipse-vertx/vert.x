@@ -23,7 +23,6 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -148,7 +147,7 @@ public class ConnectionBase {
     RandomAccessFile raf;
     try {
       raf = new RandomAccessFile(file, "r");
-      long fileLength = raf.length();
+      long fileLength = file.length();
 
       // Write the content.
       ChannelFuture writeFuture;

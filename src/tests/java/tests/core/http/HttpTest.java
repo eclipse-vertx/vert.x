@@ -227,7 +227,6 @@ public class HttpTest extends TestBase {
             dumpHeaders(response);
             azzert(response.statusCode == 200);
             azzert(file.length() == Long.valueOf(response.getHeader("Content-Length")));
-            azzert("text/plain".equals(response.getHeader("Content-Type")));
             final Buffer buff = Buffer.newDynamic(0);
             response.data(new DataHandler() {
               public void onData(Buffer data) {

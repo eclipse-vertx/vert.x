@@ -16,7 +16,6 @@ package org.nodex.core.http;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.jboss.netty.handler.ssl.SslHandler;
 import org.nodex.core.buffer.Buffer;
 
 import java.io.File;

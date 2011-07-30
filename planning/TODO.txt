@@ -7,6 +7,7 @@ SSL
 Sendfile for straight TCP
 Netty channel.setReadable() / setWritable doesn't pause immediately
 pause/resume test needs to be rewritten
+Sendfile from client
 
 HTTP
 ----
