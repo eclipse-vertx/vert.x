@@ -24,7 +24,7 @@ module Net
     end
 
     def initialize(connect_hdlr)
-      @j_server = NetServer.createServer { |j_socket| connect_hdlr.call(Socket.new(j_socket)) }
+      @j_server = NetServer.createServer{|j_socket| connect_hdlr.call(Socket.new(j_socket)) }
     end
 
     def listen(port, host = "0.0.0.0")
@@ -69,8 +69,7 @@ module Net
 
     def data(proc = nil, &data_hdlr)
       data_hdlr = proc if proc
-      @j_socket.data{ |j_buff| data_hdlr.call(Buffer.new(j_buff))
-      }
+      @j_socket.data{ |j_buff| data_hdlr.call(Buffer.new(j_buff)) }
     end
   end
 end

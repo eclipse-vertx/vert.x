@@ -298,19 +298,6 @@ public class HttpTest extends TestBase {
     testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod);
   }
 
-  private File setupFile(String fileName, String content) throws Exception {
-    fileName = "./" + fileName;
-    File file = new File(fileName);
-    if (file.exists()) {
-      file.delete();
-    }
-    BufferedWriter out = new BufferedWriter(new FileWriter(file));
-    out.write(content);
-    out.close();
-    return file;
-  }
-
-
   private void testHTTP(final String method, final String path, final int statusCode, final int numResponseChunks,
                         final int numRequestChunks, final boolean setTrailers, final int port,
                         final boolean specificMethod) throws Exception {

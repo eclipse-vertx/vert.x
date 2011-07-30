@@ -32,6 +32,9 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
@@ -61,7 +64,16 @@ public class NetServer {
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {
-        return Channels.pipeline(new ServerHandler());
+         ChannelPipeline pipeline = Channels.pipeline();
+          //TODO
+//        if (ssl) {
+//          SSLEngine engine = SecureChatSslContextFactory.getServerContext().createSSLEngine();
+//          engine.setUseClientMode(false);
+//          pipeline.addLast("ssl", new SslHandler(engine));
+//        }
+        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
+        pipeline.addLast("handler", new ServerHandler());
+        return pipeline;
       }
     });
 

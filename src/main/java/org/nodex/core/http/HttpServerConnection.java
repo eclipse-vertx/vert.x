@@ -19,6 +19,8 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.nodex.core.buffer.Buffer;
 
+import java.io.File;
+
 public class HttpServerConnection extends AbstractConnection {
 
   private HttpRequestHandler mainHandler;
@@ -215,7 +217,11 @@ public class HttpServerConnection extends AbstractConnection {
     super.addFuture(done, future);
   }
 
-  boolean isSSL() {
-    return channel.getPipeline().get(SslHandler.class) != null;
+  protected boolean isSSL() {
+    return super.isSSL();
+  }
+
+  protected void sendFile(File file) {
+    super.sendFile(file);
   }
 }

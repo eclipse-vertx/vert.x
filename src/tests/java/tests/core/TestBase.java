@@ -18,6 +18,9 @@ import org.nodex.core.http.HttpServer;
 import org.nodex.core.net.NetServer;
 import tests.AwaitDone;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -77,4 +80,17 @@ public class TestBase {
           .getContextID());
     }
   }
+
+  protected File setupFile(String fileName, String content) throws Exception {
+    fileName = "./" + fileName;
+    File file = new File(fileName);
+    if (file.exists()) {
+      file.delete();
+    }
+    BufferedWriter out = new BufferedWriter(new FileWriter(file));
+    out.write(content);
+    out.close();
+    return file;
+  }
+
 }

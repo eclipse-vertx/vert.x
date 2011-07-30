@@ -16,7 +16,16 @@ package org.nodex.core;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.DefaultFileRegion;
+import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
+import org.jboss.netty.handler.ssl.SslHandler;
+import org.jboss.netty.handler.stream.ChunkedFile;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class ConnectionBase {
 
@@ -129,5 +138,31 @@ public class ConnectionBase {
     //We log errors otherwise they will get swallowed
     //TODO logging
     t.printStackTrace(System.err);
+  }
+
+  protected boolean isSSL() {
+    return channel.getPipeline().get(SslHandler.class) != null;
+  }
+
+  protected void sendFile(File file) {
+    RandomAccessFile raf;
+    try {
+      raf = new RandomAccessFile(file, "r");
+      long fileLength = raf.length();
+
+      // Write the content.
+      ChannelFuture writeFuture;
+      if (isSSL()) {
+        // Cannot use zero-copy with HTTPS.
+        writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
+      } else {
+        // No encryption - use zero-copy.
+        final FileRegion region =
+            new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+        channel.write(region);
+      }
+    } catch (IOException e) {
+      handleException(e);
+    }
   }
 }

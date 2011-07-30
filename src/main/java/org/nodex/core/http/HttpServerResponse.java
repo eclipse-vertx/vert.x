@@ -196,43 +196,21 @@ public class HttpServerResponse implements WriteStream {
       throw new IllegalStateException("Response complete");
     }
 
-    RandomAccessFile raf;
-    try {
-      raf = new RandomAccessFile(filename, "r");
-    } catch (FileNotFoundException e) {
-      conn.handleException(e);
-      return this;
-    }
-    try {
-      File file = new File(filename);
-      long fileLength = raf.length();
+    File file = new File(filename);
 
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+    HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
 
-      MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-      response.setHeader(Names.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
-      response.setHeader(Names.CONTENT_LENGTH, String.valueOf(fileLength));
-      SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
-      dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
-      response.setHeader(Names.LAST_MODIFIED, dateFormatter.format(new Date(file.lastModified())));
+    MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+    response.setHeader(Names.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
+    response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+    SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
+    dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
+    response.setHeader(Names.LAST_MODIFIED, dateFormatter.format(new Date(file.lastModified())));
 
-      writeCookieHeader(response);
-      conn.write(response);
+    writeCookieHeader(response);
+    conn.write(response);
 
-      // Write the content.
-      ChannelFuture writeFuture;
-      if (conn.isSSL()) {
-        // Cannot use zero-copy with HTTPS.
-        writeFuture = conn.write(new ChunkedFile(raf, 0, fileLength, 8192));
-      } else {
-        // No encryption - use zero-copy.
-        final FileRegion region =
-            new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        conn.write(region);
-      }
-    } catch (IOException e) {
-      conn.handleException(e);
-    }
+    conn.sendFile(file);
 
     written = headWritten = true;
     return this;

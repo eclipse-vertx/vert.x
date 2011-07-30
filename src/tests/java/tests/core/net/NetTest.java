@@ -15,6 +15,10 @@ package tests.core.net;
 
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
+import org.nodex.core.http.HttpClientConnectHandler;
+import org.nodex.core.http.HttpClientConnection;
+import org.nodex.core.http.HttpClientResponse;
+import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
@@ -25,6 +29,7 @@ import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -307,6 +312,55 @@ public class NetTest extends TestBase {
 //    awaitClose(server);
 //    throwAssertions();
 //  }
+
+  @Test
+  public void testSendFile() throws Exception {
+    final String host = "localhost";
+    final boolean keepAlive = true;
+    final String path = "foo.txt";
+    final int port = 8181;
+
+    final String content = Utils.randomAlphaString(10000);
+    final File file = setupFile(path, content);
+
+    NetConnectHandler serverH = new NetConnectHandler() {
+      public void onConnect(final NetSocket sock) {
+        sock.data(new DataHandler() {
+          public void onData(Buffer buff) {
+            String fileName = "./" + path;
+            sock.sendFile(fileName);
+            System.out.println("Called sendfile on server");
+          }
+        });
+      }
+    };
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    NetConnectHandler clientH = new NetConnectHandler() {
+      public void onConnect(NetSocket sock) {
+        final Buffer buff = Buffer.newDynamic(0);
+        sock.data(new DataHandler() {
+          public void onData(final Buffer data) {
+            buff.append(data);
+            if (buff.length() == file.length()) {
+              azzert(content.equals(buff.toString()));
+              latch.countDown();
+            }
+          }
+        });
+        //Initiate by sending some data
+        sock.write("foo");
+      }
+    };
+
+    NetServer server = NetServer.createServer(serverH).listen(8181);
+    NetClient.createClient().connect(8181, clientH);
+
+    assert latch.await(5, TimeUnit.SECONDS);
+
+    throwAssertions();
+    file.delete();
+  }
 
   //Recursive - we don't write the next packet until we get the completion back from the previous write
   private void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize,

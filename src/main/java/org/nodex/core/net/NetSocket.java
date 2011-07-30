@@ -15,6 +15,13 @@ package org.nodex.core.net;
 
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.DefaultFileRegion;
+import org.jboss.netty.channel.FileRegion;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.util.CharsetUtil;
 import org.nodex.core.ConnectionBase;
 import org.nodex.core.buffer.Buffer;
@@ -22,7 +29,19 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
 
+import javax.activation.MimetypesFileTypeMap;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 
@@ -74,6 +93,12 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   public void drain(Runnable drained) {
     this.drainHandler = drained;
     callDrainHandler(); //If the channel is already drained, we want to call it immediately
+  }
+
+  //TODO - really this should take a file handle from the file system API
+  public void sendFile(String filename) {
+    File f = new File(filename);
+    super.sendFile(f);
   }
 
   protected void handleClosed() {
