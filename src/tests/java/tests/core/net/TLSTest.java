@@ -38,6 +38,7 @@ import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -99,13 +100,13 @@ public class TLSTest extends TestBase {
     NetConnectHandler clientHandler = clientToServer ? sender : receiver;
 
     NetServer server = NetServer.createServer(serverHandler).setSSL(true).setTrustStorePath
-        ("/Users/timfox/keystore/server-truststore.jks")
+        ("./src/tests/resources/keystores/server-truststore.jks")
         .setTrustStorePassword("wibble").setKeyStorePath
-        ("/Users/timfox/keystore/server-keystore.jks")
+        ("./src/tests/resources/keystores/server-keystore.jks")
     .setKeyStorePassword("wibble").setClientAuthRequired(true).listen(4043);
 
-    NetClient.createClient().setSSL(true).setTrustStorePath("/Users/timfox/keystore/client-truststore.jks")
-        .setTrustStorePassword("wibble").setKeyStorePath("/Users/timfox/keystore/client-keystore.jks")
+    NetClient.createClient().setSSL(true).setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
+        .setTrustStorePassword("wibble").setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
         .setKeyStorePassword("wibble").connect
         (4043, clientHandler);
 
