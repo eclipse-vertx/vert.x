@@ -54,16 +54,35 @@ public class TLSTest extends TestBase {
   }
 
   @Test
-  public void test1() throws Exception {
-    testSendData(true);
+  public void testClientAuthAll() throws Exception {
+    testTLS(false, false, false, false, false, true, false);
+    testTLS(false, false, true, false, false, true, true);
   }
 
-  private void testSendData(boolean clientToServer) throws Exception {
+  @Test
+  public void testServerAuthOnly() throws Exception {
+    testTLS(false, true, true, false, false, false, true);
+    testTLS(false, false, true, false, false, false, false);
+  }
+
+  @Test
+  public void testClientAndServerAuth() throws Exception {
+    testTLS(true, true, true, true, true, false, true);
+    testTLS(true, true, true, true, false, false, true);
+    testTLS(false, true, true, true, true, false, false);
+    testTLS(true, true, true, false, true, false, false);
+    testTLS(false, true, true, false, true, false, false);
+  }
+
+  private void testTLS(boolean clientCert, boolean clientTrust,
+                            boolean serverCert, boolean serverTrust,
+                            boolean requireClientAuth, boolean clientTrustAll,
+                            boolean shouldPass) throws Exception {
     final Buffer receivedBuff = Buffer.newDynamic(0);
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
-    NetConnectHandler receiver = new NetConnectHandler() {
+    NetConnectHandler serverHandler = new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
         sock.data(new DataHandler() {
@@ -79,7 +98,8 @@ public class TLSTest extends TestBase {
       }
     };
     final Buffer sentBuff = Buffer.newDynamic(0);
-    NetConnectHandler sender = new NetConnectHandler() {
+    final CountDownLatch exceptionLatch = new CountDownLatch(1);
+    NetConnectHandler clientHandler = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
 
         sock.exception(new ExceptionHandler() {
@@ -87,6 +107,7 @@ public class TLSTest extends TestBase {
             System.err.println("*** Got exception in execption handler");
             //TODO need to assert this
             e.printStackTrace();
+            exceptionLatch.countDown();
           }
         });
         for (int i = 0; i < numSends; i++) {
@@ -96,23 +117,45 @@ public class TLSTest extends TestBase {
         }
       }
     };
-    NetConnectHandler serverHandler = clientToServer ? receiver : sender;
-    NetConnectHandler clientHandler = clientToServer ? sender : receiver;
 
-    NetServer server = NetServer.createServer(serverHandler).setSSL(true).setTrustStorePath
-        ("./src/tests/resources/keystores/server-truststore.jks")
-        .setTrustStorePassword("wibble").setKeyStorePath
-        ("./src/tests/resources/keystores/server-keystore.jks")
-    .setKeyStorePassword("wibble").setClientAuthRequired(true).listen(4043);
+    NetServer server = NetServer.createServer(serverHandler).setSSL(true);
 
-    NetClient.createClient().setSSL(true).setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
-        .setTrustStorePassword("wibble").setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
-        .setKeyStorePassword("wibble").connect
-        (4043, clientHandler);
+    if (serverTrust) {
+      server.setTrustStorePath("./src/tests/resources/keystores/server-truststore.jks").setTrustStorePassword
+          ("wibble");
+    }
+    if (serverCert) {
+      server.setKeyStorePath("./src/tests/resources/keystores/server-keystore.jks").setKeyStorePassword("wibble");
+    }
+    if (requireClientAuth) {
+      server.setClientAuthRequired(true);
+    }
 
-    azzert(latch.await(2, TimeUnit.SECONDS));
+    server.listen(4043);
 
-    azzert(Utils.buffersEqual(sentBuff, receivedBuff));
+    NetClient client = NetClient.createClient().setSSL(true);
+
+    if (clientTrustAll) {
+      client.setTrustAll(true);
+    }
+
+    if (clientTrust) {
+      client.setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
+        .setTrustStorePassword("wibble");
+    }
+    if (clientCert) {
+      client.setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
+        .setKeyStorePassword("wibble");
+    }
+
+    client.connect(4043, clientHandler);
+
+    if (shouldPass) {
+      azzert(latch.await(5, TimeUnit.SECONDS));
+      azzert(Utils.buffersEqual(sentBuff, receivedBuff));
+    } else {
+      azzert(exceptionLatch.await(5, TimeUnit.SECONDS));
+    }
 
     awaitClose(server);
     throwAssertions();
