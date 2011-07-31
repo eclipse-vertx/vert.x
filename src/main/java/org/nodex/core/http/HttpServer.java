@@ -91,12 +91,14 @@ public class HttpServer {
         pipeline.addLast("decoder", new HttpRequestDecoder());
         pipeline.addLast("encoder", new HttpResponseEncoder());
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-        pipeline.addLast("handler", new HttpRequestHandler());
+        pipeline.addLast("handler", new ServerHandler());
         return pipeline;
       }
     });
+    //TODO these should be configurable
     bootstrap.setOption("child.tcpNoDelay", true);
     bootstrap.setOption("child.keepAlive", true);
+    bootstrap.setOption("reuseAddress", true);
     this.connectHandler = connectHandler;
   }
 
@@ -139,7 +141,7 @@ public class HttpServer {
     }
   }
 
-  public class HttpRequestHandler extends SimpleChannelUpstreamHandler {
+  public class ServerHandler extends SimpleChannelUpstreamHandler {
 
     private HttpRequest upgradeRequest;
 

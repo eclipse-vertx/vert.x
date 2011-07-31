@@ -32,11 +32,14 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -44,7 +47,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetServer {
+public class NetServer extends NetBase {
   private ServerBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
   private final NetConnectHandler connectCallback;
@@ -52,38 +55,53 @@ public class NetServer {
   private ChannelGroup serverChannelGroup;
   private boolean listening;
 
-  private NetServer(NetConnectHandler connectHandler) {
-    serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
+  protected ClientAuth clientAuth = ClientAuth.NONE;
 
-    ChannelFactory factory =
-        new NioServerSocketChannelFactory(
-            NodexInternal.instance.getAcceptorPool(),
-            NodexInternal.instance.getWorkerPool());
-    bootstrap = new ServerBootstrap(factory);
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() {
-         ChannelPipeline pipeline = Channels.pipeline();
-          //TODO
-//        if (ssl) {
-//          SSLEngine engine = SecureChatSslContextFactory.getServerContext().createSSLEngine();
-//          engine.setUseClientMode(false);
-//          pipeline.addLast("ssl", new SslHandler(engine));
-//        }
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
-        pipeline.addLast("handler", new ServerHandler());
-        return pipeline;
-      }
-    });
+  protected enum ClientAuth {
+    NONE, REQUEST, REQUIRED;
+  }
+
+  private NetServer(NetConnectHandler connectHandler) {
+    this.connectCallback = connectHandler;
 
     //Defaults
     connectionOptions.put("child.tcpNoDelay", true);
     connectionOptions.put("child.keepAlive", true);
-
-    this.connectCallback = connectHandler;
+    //TODO reusAddress should be configurable
+    connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
   public static NetServer createServer(NetConnectHandler connectCallback) {
     return new NetServer(connectCallback);
+  }
+
+  public NetServer setSSL(boolean ssl) {
+    this.ssl = ssl;
+    return this;
+  }
+
+  public NetServer setKeyStorePath(String path) {
+    this.keyStorePath = path;
+    return this;
+  }
+
+  public NetServer setKeyStorePassword(String pwd) {
+    this.keyStorePassword = pwd;
+    return this;
+  }
+  public NetServer setTrustStorePath(String path) {
+    this.trustStorePath = path;
+    return this;
+  }
+
+  public NetServer setTrustStorePassword(String pwd) {
+    this.trustStorePassword = pwd;
+    return this;
+  }
+
+  public NetServer setClientAuthRequired(boolean required) {
+    clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    return this;
   }
 
   public NetServer setTcpNoDelay(boolean tcpNoDelay) {
@@ -126,6 +144,45 @@ public class NetServer {
   }
 
   public NetServer listen(int port, String host) {
+    if (bootstrap == null) {
+      serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
+
+      ChannelFactory factory =
+          new NioServerSocketChannelFactory(
+              NodexInternal.instance.getAcceptorPool(),
+              NodexInternal.instance.getWorkerPool());
+      bootstrap = new ServerBootstrap(factory);
+
+      checkSSL();
+
+      bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        public ChannelPipeline getPipeline() {
+          ChannelPipeline pipeline = Channels.pipeline();
+          if (ssl) {
+            SSLEngine engine = context.createSSLEngine();
+            engine.setUseClientMode(false);
+            System.out.println("client auth? " + clientAuth);
+            switch (clientAuth) {
+              case REQUEST: {
+                engine.setWantClientAuth(true);
+                break;
+              } case REQUIRED: {
+                engine.setNeedClientAuth(true);
+                break;
+              } case NONE: {
+                engine.setNeedClientAuth(false);
+                break;
+              }
+            }
+            pipeline.addLast("ssl", new SslHandler(engine));
+          }
+          pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
+          pipeline.addLast("handler", new ServerHandler());
+          return pipeline;
+        }
+      });
+    }
+
     if (listening) {
       throw new IllegalStateException("Server already listening");
     }

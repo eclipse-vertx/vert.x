@@ -29,49 +29,60 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetClient {
+public class NetClient extends NetBase {
 
   private ClientBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
   private Map<String, Object> connectionOptions = new HashMap<String, Object>();
 
   private NetClient() {
-    bootstrap = new ClientBootstrap(
-        new NioClientSocketChannelFactory(
-            NodexInternal.instance.getAcceptorPool(),
-            NodexInternal.instance.getWorkerPool()));
-
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = Channels.pipeline();
-          //TODO
-//        if (ssl) {
-//          SSLEngine engine = SecureChatSslContextFactory.getServerContext().createSSLEngine();
-//          engine.setUseClientMode(false);
-//          pipeline.addLast("ssl", new SslHandler(engine));
-//        }
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
-        pipeline.addLast("handler", new ClientHandler());
-        return pipeline;
-      }
-    });
+    connectionOptions.put("tcpNoDelay", true);
+    connectionOptions.put("keepAlive", true);
   }
 
   public static NetClient createClient() {
     return new NetClient();
   }
 
+
+
   public NetClient connect(int port, String host, final NetConnectHandler connectHandler) {
+    if (bootstrap == null) {
+      bootstrap = new ClientBootstrap(
+        new NioClientSocketChannelFactory(
+            NodexInternal.instance.getAcceptorPool(),
+            NodexInternal.instance.getWorkerPool()));
+
+      checkSSL();
+
+      bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        public ChannelPipeline getPipeline() throws Exception {
+          ChannelPipeline pipeline = Channels.pipeline();
+          if (ssl) {
+            SSLEngine engine = context.createSSLEngine();
+            engine.setUseClientMode(true); //We are on the client side of the connection
+            pipeline.addLast("ssl", new SslHandler(engine));
+          }
+          pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
+          pipeline.addLast("handler", new ClientHandler());
+          return pipeline;
+        }
+      });
+    }
+
     bootstrap.setOptions(connectionOptions);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -98,6 +109,35 @@ public class NetClient {
 
   public NetClient connect(int port, NetConnectHandler connectCallback) {
     return connect(port, "localhost", connectCallback);
+  }
+
+  public NetClient setSSL(boolean ssl) {
+    this.ssl = ssl;
+    return this;
+  }
+
+  public NetClient setKeyStorePath(String path) {
+    this.keyStorePath = path;
+    return this;
+  }
+
+  public NetClient setKeyStorePassword(String pwd) {
+    this.keyStorePassword = pwd;
+    return this;
+  }
+  public NetClient setTrustStorePath(String path) {
+    this.trustStorePath = path;
+    return this;
+  }
+
+  public NetClient setTrustStorePassword(String pwd) {
+    this.trustStorePassword = pwd;
+    return this;
+  }
+
+  public NetClient setTrustAll(boolean trustAll) {
+    this.trustAll = trustAll;
+    return this;
   }
 
   public NetClient setTcpNoDelay(boolean tcpNoDelay) {
