@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
-  private static Map<String, ConcurrentMap<?, ?>> refs = new WeakHashMap<String, ConcurrentMap<?, ?>>();
+  private static final Map<String, ConcurrentMap<?, ?>> refs = new WeakHashMap<>();
 
   private final ConcurrentMap<K, V> map;
 
@@ -31,7 +31,7 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
     synchronized (refs) {
       ConcurrentMap<K, V> m = (ConcurrentMap<K, V>) refs.get(name);
       if (m == null) {
-        m = new NonBlockingHashMap<K, V>();
+        m = new NonBlockingHashMap<>();
         refs.put(name, m);
       }
       map = m;

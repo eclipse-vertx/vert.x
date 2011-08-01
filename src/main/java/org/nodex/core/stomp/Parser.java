@@ -27,7 +27,7 @@ public class Parser implements DataHandler {
   }
 
   private final FrameHandler output;
-  private Map<String, String> headers = new HashMap<String, String>();
+  private Map<String, String> headers = new HashMap<>();
   private static final byte[] EOL_DELIM = new byte[]{(byte) '\n'};
   private static final byte[] EOM_DELIM = new byte[]{0};
   private final RecordParser frameParser = RecordParser.newDelimited(EOL_DELIM, new DataHandler() {
@@ -64,7 +64,7 @@ public class Parser implements DataHandler {
     } else {
       Frame frame = new Frame(command, headers, buffer);
       command = null;
-      headers = new HashMap<String, String>();
+      headers = new HashMap<>();
       inHeaders = true;
       frameParser.delimitedMode(EOL_DELIM);
       output.onFrame(frame);

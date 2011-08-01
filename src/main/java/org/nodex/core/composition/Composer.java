@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Composer {
 
-  private List<Runnable> runList = new ArrayList<Runnable>();
+  private List<Runnable> runList = new ArrayList();
   private int pos;
 
   public Composer when(final Runnable handler) {

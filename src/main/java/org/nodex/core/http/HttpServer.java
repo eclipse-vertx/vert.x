@@ -69,7 +69,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class HttpServer {
   private ServerBootstrap bootstrap;
   private HttpServerConnectHandler connectHandler;
-  private Map<Channel, HttpServerConnection> connectionMap = new ConcurrentHashMap<Channel, HttpServerConnection>();
+  private Map<Channel, HttpServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
 
   private HttpServer(HttpServerConnectHandler connectHandler, final boolean ssl) {
@@ -104,10 +104,6 @@ public class HttpServer {
 
   public static HttpServer createServer(HttpServerConnectHandler connectHandler) {
     return new HttpServer(connectHandler, false);
-  }
-
-  public static HttpServer createSSLServer(HttpServerConnectHandler connectHandler) {
-    return new HttpServer(connectHandler, true);
   }
 
   public HttpServer listen(int port) {

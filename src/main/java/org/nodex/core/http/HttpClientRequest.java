@@ -39,15 +39,11 @@ public class HttpClientRequest implements WriteStream {
     request.setHeader(HttpHeaders.Names.CONNECTION, conn.keepAlive ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values
         .CLOSE);
     this.conn = conn;
-    this.method = method;
-    this.uri = uri;
     this.respHandler = respHandler;
   }
 
   private final HttpRequest request;
   private final HttpClientConnection conn;
-  private final String method;
-  private final String uri;
   private final HttpResponseHandler respHandler;
 
   private Runnable drainHandler;

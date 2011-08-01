@@ -46,7 +46,7 @@ public class HttpClientConnection extends AbstractConnection {
 
   private HttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of handlers
-  private Queue<HttpResponseHandler> respHandlers = new ConcurrentLinkedQueue<HttpResponseHandler>();
+  private Queue<HttpResponseHandler> respHandlers = new ConcurrentLinkedQueue();
   private HttpClientResponse currentResponse;
   private Websocket ws;
 
@@ -56,7 +56,7 @@ public class HttpClientConnection extends AbstractConnection {
 
   public void upgradeToWebSocket(final String uri, Map<String, ? extends Object> headers,
                            final WebsocketConnectHandler wsConnect) {
-    if (headers == null) headers = new HashMap<String, String>();
+    if (headers == null) headers = new HashMap();
     String key1 = WebsocketHandshakeHelper.genWSkey();
     String key2 = WebsocketHandshakeHelper.genWSkey();
     long c = new Random().nextLong();

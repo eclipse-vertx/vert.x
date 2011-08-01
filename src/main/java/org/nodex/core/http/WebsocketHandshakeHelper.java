@@ -28,8 +28,7 @@ public class WebsocketHandshakeHelper {
     input.writeInt(b);
     input.writeLong(c);
     try {
-      ChannelBuffer output = ChannelBuffers.wrappedBuffer(MessageDigest.getInstance("MD5").digest(input.array()));
-      return output;
+      return ChannelBuffers.wrappedBuffer(MessageDigest.getInstance("MD5").digest(input.array()));
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("No such algorithm " + e.getMessage());
     }

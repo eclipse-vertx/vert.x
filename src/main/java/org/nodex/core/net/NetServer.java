@@ -49,16 +49,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NetServer extends NetBase {
   private ServerBootstrap bootstrap;
-  private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
+  private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
   private final NetConnectHandler connectCallback;
-  private Map<String, Object> connectionOptions = new HashMap<String, Object>();
+  private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
 
   protected ClientAuth clientAuth = ClientAuth.NONE;
 
   protected enum ClientAuth {
-    NONE, REQUEST, REQUIRED;
+    NONE, REQUEST, REQUIRED
   }
 
   private NetServer(NetConnectHandler connectHandler) {

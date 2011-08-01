@@ -93,7 +93,7 @@ public class Channel {
     });
   }
 
-  private Map<String, AmqpMsgCallback> callbacks = new ConcurrentHashMap<String, AmqpMsgCallback>();
+  private Map<String, AmqpMsgCallback> callbacks = new ConcurrentHashMap();
   private volatile String responseQueue;
   private Completion responseQueueSetup = new Completion();
 

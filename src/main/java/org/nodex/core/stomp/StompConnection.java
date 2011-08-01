@@ -31,8 +31,8 @@ public class StompConnection {
   private FrameHandler errorHandler;
   private Runnable connectHandler;
   protected boolean connected;
-  private Map<String, StompMsgCallback> subscriptions = new HashMap<String, StompMsgCallback>();
-  private Map<String, Runnable> waitingReceipts = new ConcurrentHashMap<String, Runnable>();
+  private Map<String, StompMsgCallback> subscriptions = new HashMap<>();
+  private Map<String, Runnable> waitingReceipts = new ConcurrentHashMap<>();
 
   protected StompConnection(NetSocket socket) {
     this.socket = socket;
@@ -76,7 +76,7 @@ public class StompConnection {
 
   // HttpServerRequest-response pattern
 
-  private Map<String, StompMsgCallback> callbacks = new ConcurrentHashMap<String, StompMsgCallback>();
+  private Map<String, StompMsgCallback> callbacks = new ConcurrentHashMap<>();
   private volatile String responseQueue;
 
   private synchronized void setupResponseHandler() {

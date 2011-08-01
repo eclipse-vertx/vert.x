@@ -28,7 +28,7 @@ public class AmqpProps {
   public String correlationId;
   public int deliveryMode = 1;
   public String expiration;
-  public Map<String, Object> headers = new HashMap<String, Object>();
+  public Map<String, Object> headers = new HashMap();
   public String messageId;
   public int priority = 4;
   public String replyTo;

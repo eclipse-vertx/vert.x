@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 public final class OrderedExecutor implements Executor {
 
   // @protectedby tasks
-  private final LinkedList<Runnable> tasks = new LinkedList<Runnable>();
+  private final LinkedList<Runnable> tasks = new LinkedList<>();
 
   // @protectedby tasks
   private boolean running;

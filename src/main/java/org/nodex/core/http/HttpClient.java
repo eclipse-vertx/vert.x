@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HttpClient {
 
   private final ClientBootstrap bootstrap;
-  private Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<Channel, HttpClientConnection>();
+  private Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap();
   private boolean keepAlive;
 
   private HttpClient() {

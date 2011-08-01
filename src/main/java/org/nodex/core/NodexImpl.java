@@ -39,15 +39,15 @@ public final class NodexImpl implements NodexInternal {
   private ExecutorService corePool;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
-  private Map<String, NioWorker> workerMap = new ConcurrentHashMap<String, NioWorker>();
-  private static final ThreadLocal<String> contextIDTL = new ThreadLocal<String>();
-  private Map<String, ActorHolder> actors = new ConcurrentHashMap<String, ActorHolder>();
+  private Map<String, NioWorker> workerMap = new ConcurrentHashMap<>();
+  private static final ThreadLocal<String> contextIDTL = new ThreadLocal<>();
+  private Map<String, ActorHolder> actors = new ConcurrentHashMap<>();
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new NodeThreadFactory("node.x-timer-thread"), 20,
       TimeUnit.MILLISECONDS);
   private final AtomicLong timeoutCounter = new AtomicLong(0);
-  private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<Long, TimeoutHolder>();
+  private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
   // Public API ------------------------------------------------
 

@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SharedList<E> implements List<E> {
 
-  private static Map<String, List<?>> refs = new WeakHashMap<String, List<?>>();
+  private static final Map<String, List<?>> refs = new WeakHashMap<>();
 
   private final List<E> list;
 
@@ -31,7 +31,7 @@ public class SharedList<E> implements List<E> {
     synchronized (refs) {
       List<E> l = (List<E>) refs.get(name);
       if (l == null) {
-        l = new CopyOnWriteArrayList<E>();
+        l = new CopyOnWriteArrayList<>();
         refs.put(name, l);
       }
       list = l;

@@ -20,13 +20,13 @@ import java.util.WeakHashMap;
 
 public class SharedCounter implements Counter {
 
-  private static Map<String, ConcurrentAutoTable> refs = new WeakHashMap<String, ConcurrentAutoTable>();
+  private static final Map<String, ConcurrentAutoTable> refs = new WeakHashMap<>();
 
   private final ConcurrentAutoTable counter;
 
   public SharedCounter(String name) {
     synchronized (refs) {
-      ConcurrentAutoTable c = (ConcurrentAutoTable) refs.get(name);
+      ConcurrentAutoTable c = refs.get(name);
       if (c == null) {
         c = new ConcurrentAutoTable();
         refs.put(name, c);

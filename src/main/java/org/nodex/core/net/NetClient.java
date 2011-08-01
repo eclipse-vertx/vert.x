@@ -45,8 +45,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NetClient extends NetBase {
 
   private ClientBootstrap bootstrap;
-  private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<Channel, NetSocket>();
-  private Map<String, Object> connectionOptions = new HashMap<String, Object>();
+  private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
+  private Map<String, Object> connectionOptions = new HashMap<>();
 
   private NetClient() {
     connectionOptions.put("tcpNoDelay", true);

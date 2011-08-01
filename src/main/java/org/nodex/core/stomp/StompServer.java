@@ -29,12 +29,12 @@ public class StompServer {
 
     return NetServer.createServer(new NetConnectHandler() {
 
-      private ConcurrentMap<String, List<StompConnection>> subscriptions = new ConcurrentHashMap<String, List<StompConnection>>();
+      private ConcurrentMap<String, List<StompConnection>> subscriptions = new ConcurrentHashMap<>();
 
       private synchronized void subscribe(String dest, StompConnection conn) {
         List<StompConnection> conns = subscriptions.get(dest);
         if (conns == null) {
-          conns = new CopyOnWriteArrayList<StompConnection>();
+          conns = new CopyOnWriteArrayList<>();
           subscriptions.put(dest, conns);
         }
         conns.add(conn);
@@ -66,21 +66,28 @@ public class StompServer {
               return;
             }
             //The following can have optional receipt
-            if ("SUBSCRIBE".equals(frame.command)) {
-              String dest = frame.headers.get("destination");
-              subscribe(dest, conn);
-            } else if ("UNSUBSCRIBE".equals(frame.command)) {
-              String dest = frame.headers.get("destination");
-              unsubscribe(dest, conn);
-            } else if ("SEND".equals(frame.command)) {
-              String dest = frame.headers.get("destination");
-              frame.command = "MESSAGE";
-              List<StompConnection> conns = subscriptions.get(dest);
-              if (conns != null) {
-                for (StompConnection conn : conns) {
-                  frame.headers.put("message-id", UUID.randomUUID().toString());
-                  conn.write(frame);
+            switch (frame.command) {
+              case "SUBSCRIBE": {
+                String dest = frame.headers.get("destination");
+                subscribe(dest, conn);
+                break;
+              }
+              case "UNSUBSCRIBE": {
+                String dest = frame.headers.get("destination");
+                unsubscribe(dest, conn);
+                break;
+              }
+              case "SEND": {
+                String dest = frame.headers.get("destination");
+                frame.command = "MESSAGE";
+                List<StompConnection> conns = subscriptions.get(dest);
+                if (conns != null) {
+                  for (StompConnection conn : conns) {
+                    frame.headers.put("message-id", UUID.randomUUID().toString());
+                    conn.write(frame);
+                  }
                 }
+                break;
               }
             }
             checkReceipt(frame, conn);

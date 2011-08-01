@@ -32,7 +32,7 @@ class Frame {
 
   public Frame(String command, Buffer body) {
     this.command = command;
-    this.headers = new HashMap<String, String>(4);
+    this.headers = new HashMap<>(4);
     this.body = body;
   }
 
