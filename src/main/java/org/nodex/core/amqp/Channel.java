@@ -17,7 +17,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import org.nodex.core.NodexImpl;
-import org.nodex.core.composition.Completion;
+import org.nodex.core.composition.Composable;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -95,7 +95,7 @@ public class Channel {
 
   private Map<String, AmqpMsgCallback> callbacks = new ConcurrentHashMap();
   private volatile String responseQueue;
-  private Completion responseQueueSetup = new Completion();
+  private Composable responseQueueSetup = new Composable();
 
   private synchronized void createResponseQueue() {
     if (responseQueue == null) {
@@ -127,7 +127,7 @@ public class Channel {
 
   // Request-response pattern
 
-  public Completion request(final String exchange, final String routingKey, final AmqpProps props, final String body, final AmqpMsgCallback responseCallback) {
+  public Composable request(final String exchange, final String routingKey, final AmqpProps props, final String body, final AmqpMsgCallback responseCallback) {
     try {
       return request(exchange, routingKey, props, body == null ? null : body.getBytes("UTF-8"), responseCallback);
     } catch (UnsupportedEncodingException e) {
@@ -136,12 +136,12 @@ public class Channel {
     }
   }
 
-  public Completion request(final String exchange, final String routingKey, final AmqpProps props, final byte[] body, final AmqpMsgCallback responseCallback) {
+  public Composable request(final String exchange, final String routingKey, final AmqpProps props, final byte[] body, final AmqpMsgCallback responseCallback) {
     final AmqpProps theProps = props == null ? new AmqpProps() : props;
     if (responseQueue == null) createResponseQueue();
     //We make sure we don't actually send until the response queue has been setup, this is done by using a
-    //Completion
-    final Completion c = new Completion();
+    //Composable
+    final Composable c = new Composable();
     responseQueueSetup.onComplete(new Runnable() {
       public void run() {
         AmqpMsgCallback cb = new AmqpMsgCallback() {

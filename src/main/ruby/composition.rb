@@ -21,7 +21,7 @@ module Composition
 
     # parallel and then can be combined
 
-    COMPLETION_CLASS_SYM = "org.nodex.core.composition.Completion".to_sym
+    COMPLETION_CLASS_SYM = "org.nodex.core.composition.Composable".to_sym
 
     def when(*completions, &block)
       if block
@@ -57,7 +57,7 @@ module Composition
   class Completion
 
     def Completion.create
-      Completion.new(org.nodex.core.composition.Completion.new)
+      Completion.new(org.nodex.core.composition.Composable.new)
     end
 
     def Completion.create_from_java_completion(java_completion)

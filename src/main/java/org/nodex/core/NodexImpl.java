@@ -73,10 +73,6 @@ public final class NodexImpl implements NodexInternal {
     return backgroundPoolSize;
   }
 
-  public void executeInBackground(Runnable task) {
-    getBackgroundPool().execute(task);
-  }
-
   public long setPeriodic(long delay, final Runnable handler) {
     //TODO
     return -1;
@@ -144,6 +140,10 @@ public final class NodexImpl implements NodexInternal {
     } else {
       return false;
     }
+  }
+
+  public void executeInBackground(Runnable runnable) {
+    getBackgroundPool().execute(runnable);
   }
 
 

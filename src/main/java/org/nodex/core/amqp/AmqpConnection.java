@@ -14,6 +14,7 @@
 package org.nodex.core.amqp;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexInternal;
 
 import java.io.IOException;
 
@@ -26,7 +27,7 @@ public class AmqpConnection {
   }
 
   public void createChannel(final ChannelHandler channelHandler) {
-    Nodex.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channelHandler.onCreate(new Channel(conn.createChannel()));
@@ -39,7 +40,7 @@ public class AmqpConnection {
   }
 
   public void close(final Runnable doneCallback) {
-    Nodex.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           conn.close();

@@ -27,14 +27,14 @@ public class Composer {
     return when(deff);
   }
 
-  public Composer when(final Completion completion) {
-    return when(new Completion[]{completion});
+  public Composer when(final Composable composable) {
+    return when(new Composable[]{composable});
   }
 
-  public Composer when(final Completion... completions) {
+  public Composer when(final Composable... composables) {
     Runnable run = new Runnable() {
       public void run() {
-        final AtomicInteger countDown = new AtomicInteger(completions.length);
+        final AtomicInteger countDown = new AtomicInteger(composables.length);
         Runnable cb = new Runnable() {
           public void run() {
             if (countDown.decrementAndGet() == 0) {
@@ -42,7 +42,7 @@ public class Composer {
             }
           }
         };
-        for (Completion c : completions) {
+        for (Composable c : composables) {
           c.execute();
           c.onComplete(cb);
         }
@@ -52,7 +52,7 @@ public class Composer {
     return this;
   }
 
-  public Composer afterDelay(long delay, final Completion completion) {
+  public Composer afterDelay(long delay, final Composable composable) {
     return this;
   }
 

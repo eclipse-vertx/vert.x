@@ -13,7 +13,7 @@
 
 package org.nodex.core.composition;
 
-public class Completion {
+public class Composable {
 
   private Runnable onComplete;
   private boolean complete;

@@ -23,7 +23,7 @@ import org.nodex.core.amqp.ChannelHandler;
 import org.nodex.core.amqp.ChannelPool;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.composition.Completion;
+import org.nodex.core.composition.Composable;
 import org.nodex.core.composition.Composer;
 import org.nodex.core.file.FileSystem;
 import org.nodex.core.http.HttpRequestHandler;
@@ -118,7 +118,7 @@ public class CompositionExample {
     //First we need to set up the redis and Stomp connections (and add some reference data)
 
     final AtomicReference<RedisConnection> redisConn = new AtomicReference<RedisConnection>();
-    final Completion redisConnected = new Completion();
+    final Composable redisConnected = new Composable();
 
     //Create redis connection
     RedisClient.createClient().connect(6379, "localhost", new RedisConnectHandler() {
@@ -138,7 +138,7 @@ public class CompositionExample {
     });
 
     final AtomicReference<StompConnection> stompConn = new AtomicReference<StompConnection>();
-    final Completion stompConnected = new Completion();
+    final Composable stompConnected = new Composable();
 
     //Create STOMP connection
     StompClient.connect(8181, new StompConnectHandler() {
@@ -174,7 +174,7 @@ public class CompositionExample {
 
                     // Get price from redis
                     final AtomicInteger price = new AtomicInteger(0);
-                    Completion redisGet = redisConn.get(item, new ResultHandler() {
+                    Composable redisGet = redisConn.get(item, new ResultHandler() {
                       public void onResult(String value) {
                         price.set(Integer.parseInt(value));
                       }
@@ -185,7 +185,7 @@ public class CompositionExample {
 
                     // Get stock from STOMP worker
                     final AtomicInteger stock = new AtomicInteger(0);
-                    Completion responseReturned = stompConn.request(STOMP_DESTINATION, headers, null, new StompMsgCallback() {
+                    Composable responseReturned = stompConn.request(STOMP_DESTINATION, headers, null, new StompMsgCallback() {
                       public void onMessage(Map<String, String> headers, Buffer body) {
                         int st = Integer.valueOf(headers.get("stock"));
                         stock.set(st);

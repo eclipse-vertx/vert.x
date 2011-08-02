@@ -14,7 +14,7 @@
 package org.nodex.core.stomp;
 
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.composition.Completion;
+import org.nodex.core.composition.Composable;
 import org.nodex.core.net.NetSocket;
 
 import java.util.HashMap;
@@ -104,12 +104,12 @@ public class StompConnection {
 
   // Request-response pattern
 
-  public Completion request(String dest, Buffer body, final StompMsgCallback responseCallback) {
+  public Composable request(String dest, Buffer body, final StompMsgCallback responseCallback) {
     return request(dest, new HashMap<String, String>(), body, responseCallback);
   }
 
-  public Completion request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
-    final Completion c = new Completion();
+  public Composable request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
+    final Composable c = new Composable();
     if (responseQueue == null) setupResponseHandler();
     String cid = UUID.randomUUID().toString();
     headers.put(CORRELATION_ID_HEADER, cid);

@@ -13,7 +13,7 @@
 
 package org.nodex.core.composition;
 
-public class Deferred extends Completion {
+public class Deferred extends Composable {
 
   private final Runnable cb;
 

@@ -33,4 +33,6 @@ public interface NodexInternal extends Nodex {
   boolean destroyContext(String contextID);
 
   void setContextID(String contextID);
+
+  void executeInBackground(Runnable runnable);
 }

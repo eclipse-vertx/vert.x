@@ -14,7 +14,8 @@
 package org.nodex.core.redis;
 
 import org.nodex.core.Nodex;
-import org.nodex.core.composition.Completion;
+import org.nodex.core.NodexInternal;
+import org.nodex.core.composition.Composable;
 import redis.clients.jedis.Jedis;
 
 public class RedisConnection {
@@ -24,9 +25,9 @@ public class RedisConnection {
     this.jedis = jedis;
   }
 
-  public Completion set(final String key, final String value, final Runnable onComplete) {
-    final Completion df = new Completion();
-    Nodex.instance.executeInBackground(new Runnable() {
+  public Composable set(final String key, final String value, final Runnable onComplete) {
+    final Composable df = new Composable();
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         jedis.set(key, value);
         onComplete.run();
@@ -37,9 +38,9 @@ public class RedisConnection {
     return df;
   }
 
-  public Completion get(final String key, final ResultHandler resultHandler) {
-    final Completion df = new Completion();
-    Nodex.instance.executeInBackground(new Runnable() {
+  public Composable get(final String key, final ResultHandler resultHandler) {
+    final Composable df = new Composable();
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         String val = jedis.get(key);
         resultHandler.onResult(val);
@@ -50,7 +51,7 @@ public class RedisConnection {
   }
 
   public void close() {
-    Nodex.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         jedis.disconnect();
       }

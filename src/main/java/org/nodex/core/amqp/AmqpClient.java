@@ -15,6 +15,7 @@ package org.nodex.core.amqp;
 
 import com.rabbitmq.client.ConnectionFactory;
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexInternal;
 
 import java.io.IOException;
 
@@ -56,7 +57,7 @@ public class AmqpClient {
   }
 
   public void connect(final AmqpConnectHandler connectHandler) {
-    Nodex.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           connectHandler.onConnect(new AmqpConnection(cf.newConnection()));

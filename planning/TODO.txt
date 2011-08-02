@@ -4,7 +4,7 @@ Net
 ---
 
 Netty channel.setReadable() / setWritable doesn't pause immediately (RU sure?)
-pause/resume test needs to be rewritten
+pause/resume test needs to be written
 SSL exceptions aren't very nice
 StartTLS
 

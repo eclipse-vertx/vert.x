@@ -14,6 +14,7 @@
 package org.nodex.core.redis;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexInternal;
 import redis.clients.jedis.Jedis;
 
 public class RedisClient {
@@ -26,7 +27,7 @@ public class RedisClient {
 
   public void connect(int port, String host, final RedisConnectHandler connectHandler) {
     final Jedis jedis = new Jedis(host, port);
-    Nodex.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         jedis.connect();
         connectHandler.onConnect(new RedisConnection(jedis));

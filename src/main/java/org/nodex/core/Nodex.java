@@ -25,8 +25,6 @@ public interface Nodex {
 
   int getBackgroundThreadPoolSize();
 
-  void executeInBackground(Runnable task);
-
   long setTimeout(long delay, Runnable handler);
 
   long setPeriodic(long delay, Runnable handler);

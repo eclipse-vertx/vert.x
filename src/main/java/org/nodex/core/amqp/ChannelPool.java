@@ -13,7 +13,7 @@
 
 package org.nodex.core.amqp;
 
-import org.nodex.core.composition.Completion;
+import org.nodex.core.composition.Composable;
 
 public class ChannelPool {
   public static ChannelPool createPool() {
@@ -60,7 +60,7 @@ public class ChannelPool {
 
   //FIXME - for demo we just have one connection
   private volatile AmqpConnection connection;
-  private Completion connected = new Completion();
+  private Composable connected = new Composable();
 
   private synchronized void createConnection() {
     if (connection == null) {
