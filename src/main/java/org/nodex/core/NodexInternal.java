@@ -17,6 +17,7 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 public interface NodexInternal extends Nodex {
 
@@ -35,4 +36,6 @@ public interface NodexInternal extends Nodex {
   void setContextID(String contextID);
 
   void executeInBackground(Runnable runnable);
+
+  ExecutorService getBackgroundPool();
 }

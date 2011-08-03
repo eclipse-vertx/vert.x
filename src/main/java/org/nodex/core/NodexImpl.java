@@ -150,7 +150,7 @@ public final class NodexImpl implements NodexInternal {
   // Internal API -----------------------------------------------------------------------------------------
 
   //The background pool is used for making blocking calls to legacy synchronous APIs
-  public synchronized Executor getBackgroundPool() {
+  public synchronized ExecutorService getBackgroundPool() {
     if (backgroundPool == null) {
       backgroundPool = Executors.newFixedThreadPool(backgroundPoolSize, new NodeThreadFactory("node.x-background-thread-"));
     }

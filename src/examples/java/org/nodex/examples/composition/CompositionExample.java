@@ -41,6 +41,7 @@ import org.nodex.core.stomp.StompConnectHandler;
 import org.nodex.core.stomp.StompConnection;
 import org.nodex.core.stomp.StompMsgCallback;
 import org.nodex.core.stomp.StompServer;
+import org.nodex.core.CompletionWithResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,10 +83,12 @@ public class CompositionExample {
             if (req.uri.equals("/")) {
               System.out.println("Serving index page");
               //Serve the main page
-              FileSystem.instance.readFile("index.html", new DataHandler() {
-                public void onData(Buffer data) {
+              FileSystem.instance.readFile("index.html", new CompletionWithResult<Buffer>() {
+                public void onCompletion(Buffer data) {
                   resp.write(data);
                   resp.end();
+                }
+                public void onException(Exception e) {
                 }
               });
             } else if (req.uri.startsWith("/submit")) {
