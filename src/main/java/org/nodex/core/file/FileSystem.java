@@ -48,6 +48,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -148,10 +149,13 @@ public class FileSystem {
     chmod(path, mode, false, completion);
   }
 
-  public void chmod(String path, String mode, final boolean recursive, Completion completion) {
+  /*
+  Permissions is a String of the form rwxr-x---
+  See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html fromString method
+   */
+  public void chmod(String path, String perms, final boolean recursive, Completion completion) {
     final Path target = Paths.get(path);
-    final Set<PosixFilePermission> permissions = new HashSet<PosixFilePermission>();
-    //TODO interpret mode and set permissions appropriately
+    final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         if (recursive) {
@@ -278,12 +282,12 @@ public class FileSystem {
     }.run();
   }
 
-  public void mkdir(String path, int mode, final boolean createParents, Completion completion) {
+  public void mkdir(String path, String perms, final boolean createParents, Completion completion) {
     final Path source = Paths.get(path);
+    final FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
-        //TODO attributes
-        FileAttribute<?> attrs = null;
+
         try {
           if (createParents) {
             Files.createDirectories(source, attrs);
@@ -337,32 +341,37 @@ public class FileSystem {
 
   // Close and open
 
-  public void open(final String path, int mode,
+  public void open(final String path,
                    CompletionWithResult<FileHandle> completion) {
-    open(path, mode, true, true, true, false, false, completion);
+    open(path, null, true, true, true, false, false, completion);
   }
 
-  public void open(final String path, int mode, final boolean createNew,
+  public void open(final String path, String perms,
                    CompletionWithResult<FileHandle> completion) {
-    open(path, mode, true, true, createNew, false, false, completion);
+    open(path, perms, true, true, true, false, false, completion);
   }
 
-  public void open(final String path, int mode, final boolean read, final boolean write, final boolean createNew,
+  public void open(final String path, String perms, final boolean createNew,
                    CompletionWithResult<FileHandle> completion) {
-    open(path, mode, read, write, createNew, false, false, completion);
+    open(path, perms, true, true, createNew, false, false, completion);
   }
 
-  public void open(final String path, final int mode, final boolean read, final boolean write, final boolean createNew,
+  public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+                   CompletionWithResult<FileHandle> completion) {
+    open(path, perms, read, write, createNew, false, false, completion);
+  }
+
+  public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean sync, final boolean syncMeta, CompletionWithResult<FileHandle> completion) {
     final String contextID = Nodex.instance.getContextID();
     new BackgroundTaskWithResult<FileHandle>(completion) {
       public FileHandle execute() throws Exception {
-        return doOpen(path, mode, read, write, createNew, sync, syncMeta, contextID);
+        return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID);
       }
     }.run();
   }
 
-  private FileHandle doOpen(final String path, int mode, final boolean read, final boolean write, final boolean createNew,
+  private FileHandle doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
@@ -374,8 +383,7 @@ public class FileSystem {
     if (createNew) options.add(StandardOpenOption.CREATE_NEW);
     if (sync) options.add(StandardOpenOption.DSYNC);
     if (syncMeta) options.add(StandardOpenOption.SYNC);
-    //TODO attributes
-    FileAttribute<?> attrs = null;
+    FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
 
     AsynchronousFileChannel chann = AsynchronousFileChannel.open(file, options, NodexInternal.instance.getBackgroundPool(), attrs);
     return new FileHandle(chann, contextID);
@@ -451,36 +459,44 @@ public class FileSystem {
     final String contextID = Nodex.instance.getContextID();
     new BackgroundTaskWithResult<ReadStream>(completion) {
       public ReadStream execute() throws Exception {
-        FileHandle fh = doOpen(path, 0, true, false, false, false, false, contextID);
+        FileHandle fh = doOpen(path, null, true, false, false, false, false, contextID);
         return fh.getReadStream();
       }
     }.run();
   }
 
-  public WriteStream createWriteStream() {
-    return null;
+  public void createWriteStream(final String path, final CompletionWithResult<WriteStream> completion) {
+    createWriteStream(path, false, completion);
+  }
+
+  public void createWriteStream(final String path, final boolean sync, final CompletionWithResult<WriteStream> completion) {
+    final String contextID = Nodex.instance.getContextID();
+    new BackgroundTaskWithResult<WriteStream>(completion) {
+      public WriteStream execute() throws Exception {
+
+        //doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+        //           final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
+
+        FileHandle fh = doOpen(path, null, false, true, true, sync, false, contextID);
+        return fh.getWriteStream();
+      }
+    }.run();
   }
 
   //Create an empty file
-  //TODO mode
-  public void createFile(final String path, Completion completion) {
-     new BackgroundTask(completion) {
+  public void createFile(final String path, final String perms, Completion completion) {
+    final FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    new BackgroundTask(completion) {
       public Object execute() throws Exception {
         try {
           Path target = Paths.get(path);
-          Files.createFile(target);
+          Files.createFile(target, attrs);
         } catch (FileAlreadyExistsException e) {
           throw new FileSystemException("Cannot create link, file already exists: " + path);
         }
         return null;
       }
     }.run();
-  }
-
-  //Will be deleted on process exit
-  //TODO mode
-  public void createTempFile(String dir, Completion completion) {
-    //TODO
   }
 
   public void exists(final String path, CompletionWithResult<Boolean> completion) {
