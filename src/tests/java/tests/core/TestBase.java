@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TestBase {
 
   /*
-  We need to gather assertions and throw them at the end, this is because testng lets a test pass if an assertion
+  We need to gather assertions and throw them at the endHandler, this is because testng lets a test pass if an assertion
   is thrown from a different thread to that which ran the test
    */
   private static Queue<AssertionError> errors = new ConcurrentLinkedQueue<AssertionError>();

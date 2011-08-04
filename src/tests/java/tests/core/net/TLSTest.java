@@ -16,18 +16,6 @@ package tests.core.net;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.http.HttpClient;
-import org.nodex.core.http.HttpClientConnectHandler;
-import org.nodex.core.http.HttpClientConnection;
-import org.nodex.core.http.HttpClientRequest;
-import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpRequestHandler;
-import org.nodex.core.http.HttpResponseHandler;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerConnectHandler;
-import org.nodex.core.http.HttpServerConnection;
-import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
 import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
@@ -38,8 +26,6 @@ import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
-import java.io.File;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -85,7 +71,7 @@ public class TLSTest extends TestBase {
     NetConnectHandler serverHandler = new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             checker.check();
             receivedBuff.append(data);
@@ -102,9 +88,9 @@ public class TLSTest extends TestBase {
     NetConnectHandler clientHandler = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
 
-        sock.exception(new ExceptionHandler() {
+        sock.exceptionHandler(new ExceptionHandler() {
           public void onException(Exception e) {
-            System.err.println("*** Got exception in execption handler");
+            System.err.println("*** Got exceptionHandler in execption handler");
             //TODO need to assert this
             e.printStackTrace();
             exceptionLatch.countDown();

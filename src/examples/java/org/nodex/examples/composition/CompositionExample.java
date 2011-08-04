@@ -118,7 +118,7 @@ public class CompositionExample {
 
   private void amqpWorker() {
 
-    //First we need to set up the redis and Stomp connections (and add some reference data)
+    //First we need to set up the redis and Stomp connections (and add some reference dataHandler)
 
     final AtomicReference<RedisConnection> redisConn = new AtomicReference<RedisConnection>();
     final Composable redisConnected = new Composable();
@@ -126,7 +126,7 @@ public class CompositionExample {
     //Create redis connection
     RedisClient.createClient().connect(6379, "localhost", new RedisConnectHandler() {
       public void onConnect(final RedisConnection conn) {
-        //We need to add a little reference data for this prices
+        //We need to add a little reference dataHandler for this prices
         conn.set("bicycle", "125", new Runnable() {
           public void run() {
             conn.set("aardvark", "333", new Runnable() {

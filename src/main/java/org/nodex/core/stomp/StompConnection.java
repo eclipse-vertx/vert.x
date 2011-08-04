@@ -36,7 +36,7 @@ public class StompConnection {
 
   protected StompConnection(NetSocket socket) {
     this.socket = socket;
-    socket.data(new Parser(new FrameHandler() {
+    socket.dataHandler(new Parser(new FrameHandler() {
       public void onFrame(Frame frame) {
         handleFrame(frame);
       }

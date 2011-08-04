@@ -34,9 +34,7 @@ import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -132,12 +130,12 @@ public class HttpTest extends TestBase {
             final int theCount = count;
             count++;
             final Buffer buff = Buffer.newDynamic(0);
-            req.data(new DataHandler() {
+            req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
               }
             });
-            req.end(new Runnable() {
+            req.endHandler(new Runnable() {
               public void run() {
                 azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
                 //We write the response back after a random time to increase the chances of responses written in the
@@ -169,12 +167,12 @@ public class HttpTest extends TestBase {
               azzert(theCount == Integer.parseInt(response.getHeader("count")), theCount + ":" + response.getHeader
                   ("count"));
               final Buffer buff = Buffer.newDynamic(0);
-              response.data(new DataHandler() {
+              response.dataHandler(new DataHandler() {
                 public void onData(Buffer data) {
                   buff.append(data);
                 }
               });
-              response.end(new Runnable() {
+              response.endHandler(new Runnable() {
                 public void run() {
                   //System.out.println("expected:" + totResponseBody.toString());
                   //System.out.println("actual:" + buff.toString());
@@ -228,12 +226,12 @@ public class HttpTest extends TestBase {
             azzert(response.statusCode == 200);
             azzert(file.length() == Long.valueOf(response.getHeader("Content-Length")));
             final Buffer buff = Buffer.newDynamic(0);
-            response.data(new DataHandler() {
+            response.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
               }
             });
-            response.end(new Runnable() {
+            response.endHandler(new Runnable() {
               public void run() {
                 azzert(content.equals(buff.toString()));
                 latch.countDown();
@@ -274,9 +272,9 @@ public class HttpTest extends TestBase {
           }
         });
 
-        conn.closed(new Runnable() {
+        conn.closedHandler(new Runnable() {
           public void run() {
-            //Keep-Alive is false so connection will be automatically closed
+            //Keep-Alive is false so connection will be automatically closedHandler
             latch.countDown();
           }
         });
@@ -341,12 +339,12 @@ public class HttpTest extends TestBase {
             azzert(req.getHeader("Connection").equals(keepAlive ? "keep-alive" : "close"));
 
             final Buffer buff = Buffer.newDynamic(0);
-            req.data(new DataHandler() {
+            req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
               }
             });
-            req.end(new Runnable() {
+            req.endHandler(new Runnable() {
               public void run() {
                 azzert(Utils.buffersEqual(totRequestBody, buff));
                 resp.putAllHeaders(responseHeaders);
@@ -378,12 +376,12 @@ public class HttpTest extends TestBase {
             azzert(response.statusCode == statusCode);
             assertHeaders(responseHeaders, response);
             final Buffer buff = Buffer.newDynamic(0);
-            response.data(new DataHandler() {
+            response.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
               }
             });
-            response.end(new Runnable() {
+            response.endHandler(new Runnable() {
               public void run() {
                 //System.out.println("expected:" + totResponseBody.toString());
                 //System.out.println("actual:" + buff.toString());

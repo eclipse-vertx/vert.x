@@ -189,7 +189,7 @@ public class HttpServerConnection extends AbstractConnection {
   }
 
   /*
-  If the request end completes and the response has not been ended then we want to pause and resume when it is complete
+  If the request endHandler completes and the response has not been ended then we want to pause and resume when it is complete
   to avoid responses for the same connection being written out of order
    */
   void responseComplete() {
@@ -210,6 +210,15 @@ public class HttpServerConnection extends AbstractConnection {
 
   protected void handleException(Exception e) {
     super.handleException(e);
+    if (currentRequest != null) {
+      currentRequest.handleException(e);
+    }
+    if (currentResponse != null) {
+      currentResponse.handleException(e);
+    }
+    if (ws != null) {
+      ws.handleException(e);
+    }
   }
 
   protected void addFuture(Runnable done, ChannelFuture future) {

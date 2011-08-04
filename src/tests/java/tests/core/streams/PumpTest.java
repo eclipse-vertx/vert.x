@@ -13,6 +13,7 @@
 
 package tests.core.streams;
 
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.Pump;
@@ -107,7 +108,7 @@ public class PumpTest {
       }
     }
 
-    public void data(DataHandler handler) {
+    public void dataHandler(DataHandler handler) {
       this.dataHandler = handler;
     }
 
@@ -119,6 +120,12 @@ public class PumpTest {
     public void resume() {
       paused = false;
       resumeCount++;
+    }
+
+    public void exceptionHandler(ExceptionHandler handler) {
+    }
+
+    public void endHandler(Runnable endHandler) {
     }
   }
 
@@ -144,12 +151,15 @@ public class PumpTest {
       return received.length() >= maxSize;
     }
 
-    public void drain(Runnable handler) {
+    public void drainHandler(Runnable handler) {
       this.drainHandler = handler;
     }
 
     public void writeBuffer(Buffer data) {
       received.append(data);
+    }
+
+    public void exceptionHandler(ExceptionHandler handler) {
     }
   }
 }

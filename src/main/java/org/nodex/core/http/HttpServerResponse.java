@@ -28,6 +28,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
@@ -54,6 +55,7 @@ public class HttpServerResponse implements WriteStream {
   private ChannelFuture writeFuture;
   private boolean written;
   private Runnable drainHandler;
+  private ExceptionHandler exceptionHandler;
 
   HttpServerResponse(boolean keepAlive, String cookieString, HttpServerConnection conn) {
     this.keepAlive = keepAlive;
@@ -120,9 +122,13 @@ public class HttpServerResponse implements WriteStream {
     return conn.writeQueueFull();
   }
 
-  public void drain(Runnable handler) {
+  public void drainHandler(Runnable handler) {
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
   }
 
   public void writeBuffer(Buffer chunk) {
@@ -161,7 +167,7 @@ public class HttpServerResponse implements WriteStream {
       response.setHeader(CONTENT_LENGTH, 0);
       writeFuture = conn.write(response);
     } else {
-      //Body written - We use HTTP chunking so we need to write a zero length chunk to signify the end
+      //Body written - We use HTTP chunking so we need to write a zero length chunk to signify the endHandler
       HttpChunk nettyChunk;
       if (trailer == null) {
         nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
@@ -202,6 +208,12 @@ public class HttpServerResponse implements WriteStream {
   void writable() {
     if (drainHandler != null) {
       drainHandler.run();
+    }
+  }
+
+  void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      exceptionHandler.onException(e);
     }
   }
 

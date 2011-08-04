@@ -91,7 +91,7 @@ public class TimerTest extends TestBase {
 
   @Test
   /*
-  Test that timers can be set from data handler
+  Test that timers can be set from dataHandler handler
    */
   public void testOneOffInData() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
@@ -99,7 +99,7 @@ public class TimerTest extends TestBase {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
         final String contextID = Nodex.instance.getContextID();
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             Nodex.instance.setTimeout(1, new Runnable() {
               public void run() {

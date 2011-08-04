@@ -12,7 +12,7 @@
 require "net"
 include Net
 
-# A simple echo server which just echos back any data it receives
+# A simple echo server which just echos back any dataHandler it receives
 # Uses this with telnet, or the echo client
 
 server = Server.create_server { |socket| socket.data { |data| socket.write(data) } }.listen(8080)

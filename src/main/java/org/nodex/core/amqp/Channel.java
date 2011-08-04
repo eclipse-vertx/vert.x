@@ -41,7 +41,7 @@ public class Channel {
       AMQP.BasicProperties aprops = props.toBasicProperties();
       channel.basicPublish(exchange, routingKey, aprops, body);
     } catch (IOException e) {
-      //TODO handle exception by passing them back on callback
+      //TODO handle exceptionHandler by passing them back on callback
       e.printStackTrace();
     }
   }
@@ -62,7 +62,7 @@ public class Channel {
           channel.queueDeclare(queueName, durable, exclusive, autoDelete, null);
           doneCallback.run();
         } catch (IOException e) {
-          //TODO handle exception by passing them back on callback
+          //TODO handle exceptionHandler by passing them back on callback
           e.printStackTrace();
         }
       }
@@ -86,7 +86,7 @@ public class Channel {
                 }
               });
         } catch (IOException e) {
-          //TODO handle exception by passing them back on callback
+          //TODO handle exceptionHandler by passing them back on callback
           e.printStackTrace();
         }
       }
@@ -168,7 +168,7 @@ public class Channel {
           channel.close();
           doneCallback.run();
         } catch (IOException e) {
-          //TODO handle exception by passing them back on callback
+          //TODO handle exceptionHandler by passing them back on callback
           e.printStackTrace();
         }
       }

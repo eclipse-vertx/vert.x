@@ -32,7 +32,7 @@ public class AmqpConnection {
         try {
           channelHandler.onCreate(new Channel(conn.createChannel()));
         } catch (IOException e) {
-          //TODO handle exception by passing them back on callback
+          //TODO handle exceptionHandler by passing them back on callback
           e.printStackTrace();
         }
       }
@@ -47,7 +47,7 @@ public class AmqpConnection {
           //FIXME - again this is sync
           doneCallback.run();
         } catch (IOException e) {
-          //TODO handle exception by passing them back on callback
+          //TODO handle exceptionHandler by passing them back on callback
           e.printStackTrace();
         }
       }

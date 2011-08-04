@@ -12,7 +12,7 @@
 require "net"
 include Net
 
-# This server fans out any data it receives to all connected clients
+# This server fans out any dataHandler it receives to all connected clients
 
 Server.create_server { |socket|
   (@sockets ||= []) << socket

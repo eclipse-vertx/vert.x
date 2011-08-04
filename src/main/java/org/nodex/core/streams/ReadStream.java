@@ -13,13 +13,18 @@
 
 package org.nodex.core.streams;
 
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.DataHandler;
 
 public interface ReadStream {
 
-  void data(DataHandler handler);
+  void dataHandler(DataHandler handler);
 
   void pause();
 
   void resume();
+
+  void exceptionHandler(ExceptionHandler handler);
+
+  void endHandler(Runnable endHandler);
 }

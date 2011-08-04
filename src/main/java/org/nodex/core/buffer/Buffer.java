@@ -63,7 +63,7 @@ public class Buffer {
     return buffer.getByte(pos);
   }
 
-  //Append operations add to the end of the buffer
+  //Append operations add to the endHandler of the buffer
 
   public Buffer append(Buffer buff) {
     ChannelBuffer cb = buff._toChannelBuffer();

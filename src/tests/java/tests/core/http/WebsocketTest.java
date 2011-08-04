@@ -66,7 +66,7 @@ public class WebsocketTest extends TestBase {
         conn.websocketConnect(new WebsocketConnectHandler() {
           public boolean onConnect(final Websocket ws) {
             azzert(path.equals(ws.uri));
-            ws.data(new DataHandler() {
+            ws.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 //Echo it back
                 ws.writeBuffer(data);
@@ -84,7 +84,7 @@ public class WebsocketTest extends TestBase {
         conn.upgradeToWebSocket(path, new WebsocketConnectHandler() {
           public boolean onConnect(Websocket ws) {
             final Buffer received = Buffer.newDynamic(0);
-            ws.data(new DataHandler() {
+            ws.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 received.append(data);
                 if (received.length() == 1000) {
@@ -112,7 +112,7 @@ public class WebsocketTest extends TestBase {
             return true;
           }
         });
-        conn.closed(new Runnable() {
+        conn.closedHandler(new Runnable() {
           public void run() {
             latch.countDown();
           }

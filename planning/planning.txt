@@ -42,7 +42,7 @@ Allow async actions to be composed together
 Concurrent
 ----------
 
-Provide set of scalable non blocking data structures. Wrap Cliff Click's classes.
+Provide set of scalable non blocking dataHandler structures. Wrap Cliff Click's classes.
 
 File
 ----
@@ -56,7 +56,7 @@ Native layer for AIO
 ParseTools
 ----------
 
-Utilities for parsing data, makes it easier to implement protocols.
+Utilities for parsing dataHandler, makes it easier to implement protocols.
 
 Http
 ----

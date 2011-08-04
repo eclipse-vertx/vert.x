@@ -57,8 +57,6 @@ public class NetClient extends NetBase {
     return new NetClient();
   }
 
-
-
   public NetClient connect(int port, String host, final NetConnectHandler connectHandler) {
     if (bootstrap == null) {
       bootstrap = new ClientBootstrap(

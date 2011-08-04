@@ -13,19 +13,12 @@
 
 package tests.core.net;
 
-import org.nodex.core.Actor;
-import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.http.HttpClientConnectHandler;
-import org.nodex.core.http.HttpClientConnection;
-import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.nodex.core.shared.SharedMap;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -36,8 +29,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class NetTest extends TestBase {
 
@@ -158,7 +149,7 @@ public class NetTest extends TestBase {
     final int sendSize = 100;
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             receivedBuff.append(data);
             if (receivedBuff.length() == numSends * sendSize) {
@@ -215,7 +206,7 @@ public class NetTest extends TestBase {
     NetConnectHandler receiver = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         final Buffer buff = Buffer.newDynamic(0);
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(final Buffer data) {
             buff.append(data);
             if (buff.length() == file.length()) {
@@ -267,7 +258,7 @@ public class NetTest extends TestBase {
     NetConnectHandler receiver = new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             checker.check();
             receivedBuff.append(data);
@@ -322,7 +313,7 @@ public class NetTest extends TestBase {
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
-        sock.closed(new Runnable() {
+        sock.closedHandler(new Runnable() {
           public void run() {
             checker.check();
             serverCloseLatch.countDown();
@@ -339,7 +330,7 @@ public class NetTest extends TestBase {
       client.connect(8181, new NetConnectHandler() {
         public void onConnect(NetSocket sock) {
           final ContextChecker checker = new ContextChecker();
-          sock.closed(new Runnable() {
+          sock.closedHandler(new Runnable() {
             public void run() {
               checker.check();
               clientCloseLatch.countDown();
