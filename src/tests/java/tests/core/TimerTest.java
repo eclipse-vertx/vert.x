@@ -123,7 +123,7 @@ public class TimerTest extends TestBase {
 
     assert endLatch.await(5, TimeUnit.SECONDS);
 
-    awaitClose(server);
+    awaitClose( server);
   }
 
   @Test

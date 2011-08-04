@@ -448,7 +448,7 @@ public class HttpTest extends TestBase {
                    CountDownLatch endLatch) throws Exception {
     HttpServer server = HttpServer.createServer(serverHandler).listen(port, host);
 
-    HttpClient client = HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientHandler);
+    HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientHandler);
 
     azzert(endLatch.await(5, TimeUnit.SECONDS));
 

@@ -96,8 +96,8 @@ public class FileSystem {
           } else {
             Files.copy(source, target);
           }
-        } catch (IOException e) {
-          throw new FileSystemException(e.getMessage());
+        } catch (FileAlreadyExistsException e) {
+          throw new FileSystemException("File already exists " + e.getMessage());
         }
         return null;
       }
@@ -105,16 +105,13 @@ public class FileSystem {
   }
 
   public void move(String from, String to, Completion completion) {
-    rename(from, to, completion);
-  }
-
-  public void rename(String from, String to, Completion completion) {
+    //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         try {
-          Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+          Files.move(source, target);
         } catch (FileAlreadyExistsException e) {
           throw new FileSystemException("Failed to move between " + source + " and " + target + ". Target already exists");
         } catch (AtomicMoveNotSupportedException e) {
@@ -125,18 +122,22 @@ public class FileSystem {
     }.run();
   }
 
-  public void truncate(final String path, final int len, Completion completion) {
+  public void truncate(final String path, final long len, Completion completion) {
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         if (len < 0) {
           throw new FileSystemException("Cannot truncate file to size < 0");
         }
+        if (!Files.exists(Paths.get(path))) {
+          throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
+        }
+
         RandomAccessFile raf = null;
         try {
           raf = new RandomAccessFile(path, "rw");
           raf.getChannel().truncate(len);
         } catch (FileNotFoundException e) {
-          throw new FileSystemException("Cannot open file " + path + ". Either it doesn't exist, is a directory or you don't have permission to change it");
+          throw new FileSystemException("Cannot open file " + path + ". Either it is a directory or you don't have permission to change it");
         } finally {
           if (raf != null) raf.close();
         }
@@ -145,32 +146,39 @@ public class FileSystem {
     }.run();
   }
 
-  public void chmod(String path, String mode, Completion completion) {
-    chmod(path, mode, false, completion);
+  public void chmod(String path, String perms, Completion completion) {
+    chmod(path, perms, null, completion);
   }
 
   /*
   Permissions is a String of the form rwxr-x---
   See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html fromString method
    */
-  public void chmod(String path, String perms, final boolean recursive, Completion completion) {
+  public void chmod(String path, String perms, String dirPerms, Completion completion) {
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
+    final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
-        if (recursive) {
-          Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
-           public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-             Files.setPosixFilePermissions(target, permissions);
-             return FileVisitResult.CONTINUE;
-           }
-         });
-        } else {
-          try {
+        try {
+          if (dirPermissions != null) {
+            Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
+             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+               //The directory entries typically have different permissions to the files, e.g. execute permission
+               //or can't cd into it
+               Files.setPosixFilePermissions(dir, dirPermissions);
+               return FileVisitResult.CONTINUE;
+             }
+             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+               Files.setPosixFilePermissions(file, permissions);
+               return FileVisitResult.CONTINUE;
+             }
+           });
+          } else {
             Files.setPosixFilePermissions(target, permissions);
-          } catch (SecurityException e) {
-            throw new FileSystemException("Accessed denied for chmod on " + target);
           }
+        } catch (SecurityException e) {
+          throw new FileSystemException("Accessed denied for chmod on " + target);
         }
         return null;
       }

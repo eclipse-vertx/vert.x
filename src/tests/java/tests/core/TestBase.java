@@ -14,7 +14,9 @@
 package tests.core;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.http.HttpClient;
 import org.nodex.core.http.HttpServer;
+import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetServer;
 import tests.AwaitDone;
 

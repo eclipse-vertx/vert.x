@@ -201,7 +201,7 @@ public final class NodexImpl implements NodexInternal {
     if (worker != null) {
       worker.scheduleOtherTask(runnable);
     } else {
-      throw new IllegalStateException("Worker is not registered for " + contextID);
+      throw new IllegalStateException("Context is not registered " + contextID + " has it been destroyed?");
     }
   }
 

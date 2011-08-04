@@ -161,7 +161,7 @@ public class NetTest extends TestBase {
     }).listen(8181);
 
     final Buffer sentBuff = Buffer.newDynamic(0);
-    NetClient.createClient().connect(8181, new NetConnectHandler() {
+    NetClient client = NetClient.createClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
         doWrite(sentBuff, sock, numSends, sendSize, checker);
