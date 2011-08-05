@@ -197,13 +197,17 @@ public class FileSystem {
     final Path target = Paths.get(path);
     new BackgroundTaskWithResult<FileStats>(completion) {
       public FileStats execute() throws Exception {
-        BasicFileAttributes attrs;
-        if (followLinks) {
-          attrs = Files.readAttributes(target, BasicFileAttributes.class);
-        } else {
-          attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        try {
+          BasicFileAttributes attrs;
+          if (followLinks) {
+            attrs = Files.readAttributes(target, BasicFileAttributes.class);
+          } else {
+            attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+          }
+          return new FileStats(attrs);
+        } catch (NoSuchFileException e) {
+          throw new FileSystemException("No such file: " + target);
         }
-        return new FileStats(attrs);
       }
     }.run();
   }
@@ -290,20 +294,44 @@ public class FileSystem {
     }.run();
   }
 
-  public void mkdir(String path, String perms, final boolean createParents, Completion completion) {
+  public void mkdir(String path, Completion completion) {
+    mkdir(path, null, false, completion);
+  }
+
+  public void mkdir(String path, boolean createParents, Completion completion) {
+    mkdir(path, null, createParents, completion);
+  }
+
+  public void mkdir(String path, String perms, Completion completion) {
+    mkdir(path, perms, false, completion);
+  }
+
+  public void mkdir(String path, final String perms, final boolean createParents, Completion completion) {
     final Path source = Paths.get(path);
-    final FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
-
         try {
           if (createParents) {
-            Files.createDirectories(source, attrs);
+            if (attrs != null) {
+              Files.createDirectories(source, attrs);
+            } else {
+              Files.createDirectories(source);
+            }
           } else {
-            Files.createDirectory(source, attrs);
+            if (attrs != null) {
+              System.out.println("creating with attrs " + perms);
+              Files.createDirectory(source, attrs);
+            } else {
+              System.out.println("Creatoing dir:" + source);
+              Files.createDirectory(source);
+              System.out.println("created ok");
+            }
           }
         } catch (FileAlreadyExistsException e) {
           throw new FileSystemException("Cannot create directory: " + source + ". It already exists");
+        } catch (NoSuchFileException e) {
+          throw new FileSystemException("Canot create directory: " + source + " it has parents");
         }
         return null;
       }
@@ -334,7 +362,15 @@ public class FileSystem {
           } else {
             fnFilter = null;
           }
-          File[] files = file.listFiles(fnFilter);
+          System.out.println("File is " + file);
+          System.out.println("Listing files with filter: " + fnFilter);
+          File[] files;
+          if (fnFilter == null) {
+            files = file.listFiles();
+          } else {
+            files = file.listFiles(fnFilter);
+          }
+          System.out.println("Got " + files.length + " files");
           String[] ret = new String[files.length];
           int i = 0;
           for (File f: files) {
