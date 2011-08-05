@@ -2,7 +2,8 @@ package tests.core.file;
 
 import org.nodex.core.Completion;
 import org.nodex.core.CompletionWithResult;
-import org.nodex.core.Nodex;
+import org.nodex.core.buffer.Buffer;
+import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileStats;
 import org.nodex.core.file.FileSystem;
 import org.nodex.core.file.FileSystemException;
@@ -17,17 +18,13 @@ import tests.Utils;
 import tests.core.TestBase;
 
 import java.io.File;
-import java.nio.file.FileStore;
+import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -944,6 +941,197 @@ public class FileSystemTest extends TestBase {
     }
   }
 
+  @Test
+  public void testReadFile() throws Exception {
+    byte[] content = Utils.generateRandomByteArray(1000);
+    final String fileName = "some-file.dat";
+    createFile(fileName, content);
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    final AtomicReference<Buffer> res = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      public void run() {
+        CompletionWithResult<Buffer> compl = new CompletionWithResult<Buffer>() {
+          public void onCompletion(Buffer buff) {
+            res.set(buff);
+            latch.countDown();
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            latch.countDown();
+          }
+        };
+        FileSystem.instance.readFile(TEST_DIR + pathSep + fileName, compl);
+      }
+    });
+
+    azzert(exception.get() == null);
+    azzert(Utils.buffersEqual(Buffer.newWrapped(content), res.get()));
+    throwAssertions();
+  }
+
+  @Test
+  public void testReadFileAsString() throws Exception {
+    final String content = Utils.randomAlphaString(1000);
+    final String fileName = "some-file.dat";
+    createFile(fileName, content.getBytes("UTF-8"));
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    final AtomicReference<String> res = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      public void run() {
+        CompletionWithResult<String> compl = new CompletionWithResult<String>() {
+          public void onCompletion(String str) {
+            res.set(str);
+            latch.countDown();
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            latch.countDown();
+          }
+        };
+        FileSystem.instance.readFileAsString(TEST_DIR + pathSep + fileName, "UTF-8", compl);
+      }
+    });
+
+    azzert(exception.get() == null);
+    azzert(content.equals(res.get()));
+    throwAssertions();
+  }
+
+  @Test
+  public void testWriteFile() throws Exception {
+    byte[] content = Utils.generateRandomByteArray(1000);
+    final Buffer buff = Buffer.newWrapped(content);
+    final String fileName = "some-file.dat";
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    //final AtomicReference<Buffer> res = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      public void run() {
+        Completion compl = new Completion() {
+          public void onCompletion() {
+            latch.countDown();
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            latch.countDown();
+          }
+        };
+        FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff, compl);
+      }
+    });
+
+    azzert(exception.get() == null);
+    azzert(fileExists(fileName));
+    azzert(fileLength(fileName) == content.length);
+    byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+    azzert(Utils.buffersEqual(buff, Buffer.newWrapped(readBytes)));
+    throwAssertions();
+  }
+
+  @Test
+  public void testWriteStringToFile() throws Exception {
+    final String content = Utils.randomAlphaString(10);
+    final String fileName = "some-file.dat";
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      public void run() {
+        Completion compl = new Completion() {
+          public void onCompletion() {
+            latch.countDown();
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            latch.countDown();
+          }
+        };
+        FileSystem.instance.writeStringToFile(TEST_DIR + pathSep + fileName, content, "UTF-8", compl);
+      }
+    });
+
+    azzert(exception.get() == null);
+    azzert(fileExists(fileName));
+    byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+    String readStr = new String(readBytes, Charset.forName("UTF-8"));
+    azzert(content.equals(readStr));
+    throwAssertions();
+  }
+
+  @Test
+  public void testWrite() throws Exception {
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+
+    byte[] content = Utils.generateRandomByteArray(chunkSize * chunks);
+    final Buffer buff = Buffer.newWrapped(content);
+
+    final CountDownLatch latch = new CountDownLatch(chunks);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      void countDownAll() {
+        for (int i = 0; i < chunks; i++) {
+          latch.countDown();
+        }
+      }
+
+      public void run() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionWithResult<AsyncFile>() {
+          public void onCompletion(AsyncFile fh) {
+
+            for (int i = 0; i < chunks; i++) {
+
+              Buffer chunk = buff.slice(i * chunkSize, (i + 1) * chunkSize);
+              azzert(chunk.length() == chunkSize);
+
+              fh.write(chunk, i * chunkSize, new Completion() {
+
+                public void onCompletion() {
+                  latch.countDown();
+                }
+
+                public void onException(Exception e) {
+                  e.printStackTrace();
+                  exception.set(e);
+                  countDownAll();
+                }
+              });
+            }
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            e.printStackTrace();
+            countDownAll();
+          }
+        });
+      }
+    });
+
+    System.out.println(exception.get());
+    azzert(exception.get() == null);
+    azzert(fileExists(fileName));
+    byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+    azzert(Utils.buffersEqual(buff, Buffer.newWrapped(readBytes)));
+    throwAssertions();
+
+  }
+
 
   // All file system operations need to be executed in a context so we use a net server for that
   private void run(CountDownLatch latch, final Runnable runner) throws Exception {
@@ -952,6 +1140,7 @@ public class FileSystemTest extends TestBase {
         try {
           runner.run();
         } catch (Exception e) {
+          e.printStackTrace();
           azzert(false);
         }
       }

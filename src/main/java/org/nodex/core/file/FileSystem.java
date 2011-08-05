@@ -18,17 +18,13 @@ import org.nodex.core.BackgroundTaskWithResult;
 import org.nodex.core.Completion;
 import org.nodex.core.CompletionWithResult;
 import org.nodex.core.Nodex;
-import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.streams.ReadStream;
-import org.nodex.core.streams.WriteStream;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
@@ -39,18 +35,14 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotLinkException;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -382,81 +374,20 @@ public class FileSystem {
     }.run();
   }
 
-
-  // Close and open
-
-  public void open(final String path,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, null, true, true, true, false, false, completion);
-  }
-
-  public void open(final String path, String perms,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, perms, true, true, true, false, false, completion);
-  }
-
-  public void open(final String path, String perms, final boolean createNew,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, perms, true, true, createNew, false, false, completion);
-  }
-
-  public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, perms, read, write, createNew, false, false, completion);
-  }
-
-  public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean sync, final boolean syncMeta, CompletionWithResult<FileHandle> completion) {
-    final String contextID = Nodex.instance.getContextID();
-    new BackgroundTaskWithResult<FileHandle>(completion) {
-      public FileHandle execute() throws Exception {
-        return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID);
-      }
-    }.run();
-  }
-
-  private FileHandle doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
-    if (!read && !write) {
-      throw new FileSystemException("Cannot open file for neither reading nor writing");
-    }
-    Path file = Paths.get(path);
-    HashSet<OpenOption> options = new HashSet<>();
-    if (read) options.add(StandardOpenOption.READ);
-    if (write) options.add(StandardOpenOption.WRITE);
-    if (createNew) options.add(StandardOpenOption.CREATE_NEW);
-    if (sync) options.add(StandardOpenOption.DSYNC);
-    if (syncMeta) options.add(StandardOpenOption.SYNC);
-    FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-
-    AsynchronousFileChannel chann = AsynchronousFileChannel.open(file, options, NodexInternal.instance.getBackgroundPool(), attrs);
-    return new FileHandle(chann, contextID);
-  }
-
-  public void close(final FileHandle fh, Completion completion) {
-    fh.checkContext();
-    new BackgroundTask(completion) {
-      public FileHandle execute() throws Exception {
-        fh.close();
-        return null;
-      }
-    }.run();
-  }
-
-
-  // Random access
-
-  public void write(FileHandle fh, Buffer buffer, int position, final Completion completion) {
-    fh.checkContext();
-    fh.write(buffer, position, completion);
-  }
-
-  public void read(FileHandle fh, Buffer buffer, int position, int bytesToRead, CompletionWithResult<Buffer> completion) {
-    fh.checkContext();
-    fh.read(position, bytesToRead, completion);
-  }
-
   // Read and write entire files in one go
+
+  public void readFileAsString(final String path, final String encoding, final CompletionWithResult<String> completion) {
+    readFile(path, new CompletionWithResult<Buffer>() {
+      public void onCompletion(Buffer result) {
+        String str = result.toString(encoding);
+        completion.onCompletion(str);
+      }
+
+      public void onException(Exception e) {
+        completion.onException(e);
+      }
+    });
+  }
 
   public void readFile(final String path, CompletionWithResult<Buffer> completion) {
     new BackgroundTaskWithResult<Buffer>(completion) {
@@ -469,15 +400,17 @@ public class FileSystem {
     }.run();
   }
 
-  public void writeFile(String path, String str, Completion completion) {
-    writeFile(path, Buffer.fromString(str), completion);
+  public void writeStringToFile(String path, String str, String enc, Completion completion) {
+    Buffer buff = Buffer.fromString(str, enc);
+    System.out.println("buff len is " + buff.length());
+    writeFile(path, buff, completion);
   }
 
   public void writeFile(final String path, final Buffer data, Completion completion) {
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         Path target = Paths.get(path);
-        Files.write(target, data._toChannelBuffer().array());
+        Files.write(target, data.getBytes());
         return null;
       }
     }.run();
@@ -499,32 +432,41 @@ public class FileSystem {
     //TODO
   }
 
-  public void createReadStream(final String path, final CompletionWithResult<ReadStream> completion) {
+  // Close and open
+
+  public void open(final String path,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, null, true, true, true, false, false, completion);
+  }
+
+  public void open(final String path, String perms,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, perms, true, true, true, false, false, completion);
+  }
+
+  public void open(final String path, String perms, final boolean createNew,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, perms, true, true, createNew, false, false, completion);
+  }
+
+  public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, perms, read, write, createNew, false, false, completion);
+  }
+
+  public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+                   final boolean sync, final boolean syncMeta, CompletionWithResult<AsyncFile> completion) {
     final String contextID = Nodex.instance.getContextID();
-    new BackgroundTaskWithResult<ReadStream>(completion) {
-      public ReadStream execute() throws Exception {
-        FileHandle fh = doOpen(path, null, true, false, false, false, false, contextID);
-        return fh.getReadStream();
+    new BackgroundTaskWithResult<AsyncFile>(completion) {
+      public AsyncFile execute() throws Exception {
+        return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID);
       }
     }.run();
   }
 
-  public void createWriteStream(final String path, final CompletionWithResult<WriteStream> completion) {
-    createWriteStream(path, false, completion);
-  }
-
-  public void createWriteStream(final String path, final boolean sync, final CompletionWithResult<WriteStream> completion) {
-    final String contextID = Nodex.instance.getContextID();
-    new BackgroundTaskWithResult<WriteStream>(completion) {
-      public WriteStream execute() throws Exception {
-
-        //doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-        //           final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
-
-        FileHandle fh = doOpen(path, null, false, true, true, sync, false, contextID);
-        return fh.getWriteStream();
-      }
-    }.run();
+  private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+                            final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
+    return new AsyncFile(path, perms, read, write, createNew, sync, syncMeta, contextID);
   }
 
   //Create an empty file
@@ -561,18 +503,5 @@ public class FileSystem {
       }
     }.run();
   }
-
-
-  public void sync(final FileHandle fh, final boolean metaData, Completion completion) {
-    fh.checkContext();
-    new BackgroundTask(completion) {
-      public Object execute() throws Exception {
-        fh.sync(metaData);
-        return null;
-      }
-    }.run();
-  }
-
-
 
 }

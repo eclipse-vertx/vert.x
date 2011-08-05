@@ -135,6 +135,12 @@ public class Buffer {
     return new Buffer(buffer.duplicate());
   }
 
+  public byte[] getBytes() {
+    byte[] arr = new byte[buffer.writerIndex()];
+    buffer.getBytes(0, arr);
+    return arr;
+  }
+
   public ChannelBuffer _toChannelBuffer() {
     return buffer;
   }
