@@ -38,7 +38,7 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 
 ## Building
 
-Pre-requisites: ant, jruby, java 7
+Pre-requisites: ant, JRuby, Java 7
 
 Node.x is java 7+ only. We use the new async file IO, and extended file system API in Java 7.
 
