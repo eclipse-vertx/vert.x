@@ -17,43 +17,34 @@ import org.nodex.core.BackgroundTask;
 import org.nodex.core.BackgroundTaskWithResult;
 import org.nodex.core.Completion;
 import org.nodex.core.CompletionWithResult;
-import org.nodex.core.NodexInternal;
+import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.streams.ReadStream;
-import org.nodex.core.streams.WriteStream;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.CompletionHandler;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileStore;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotLinkException;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class FileSystem {
 
@@ -97,8 +88,8 @@ public class FileSystem {
           } else {
             Files.copy(source, target);
           }
-        } catch (IOException e) {
-          throw new FileSystemException(e.getMessage());
+        } catch (FileAlreadyExistsException e) {
+          throw new FileSystemException("File already exists " + e.getMessage());
         }
         return null;
       }
@@ -106,16 +97,13 @@ public class FileSystem {
   }
 
   public void move(String from, String to, Completion completion) {
-    rename(from, to, completion);
-  }
-
-  public void rename(String from, String to, Completion completion) {
+    //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         try {
-          Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+          Files.move(source, target);
         } catch (FileAlreadyExistsException e) {
           throw new FileSystemException("Failed to move between " + source + " and " + target + ". Target already exists");
         } catch (AtomicMoveNotSupportedException e) {
@@ -126,18 +114,22 @@ public class FileSystem {
     }.run();
   }
 
-  public void truncate(final String path, final int len, Completion completion) {
+  public void truncate(final String path, final long len, Completion completion) {
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         if (len < 0) {
           throw new FileSystemException("Cannot truncate file to size < 0");
         }
+        if (!Files.exists(Paths.get(path))) {
+          throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
+        }
+
         RandomAccessFile raf = null;
         try {
           raf = new RandomAccessFile(path, "rw");
           raf.getChannel().truncate(len);
         } catch (FileNotFoundException e) {
-          throw new FileSystemException("Cannot open file " + path + ". Either it doesn't exist, is a directory or you don't have permission to change it");
+          throw new FileSystemException("Cannot open file " + path + ". Either it is a directory or you don't have permission to change it");
         } finally {
           if (raf != null) raf.close();
         }
@@ -146,29 +138,39 @@ public class FileSystem {
     }.run();
   }
 
-  public void chmod(String path, String mode, Completion completion) {
-    chmod(path, mode, false, completion);
+  public void chmod(String path, String perms, Completion completion) {
+    chmod(path, perms, null, completion);
   }
 
-  public void chmod(String path, String mode, final boolean recursive, Completion completion) {
+  /*
+  Permissions is a String of the form rwxr-x---
+  See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html fromString method
+   */
+  public void chmod(String path, String perms, String dirPerms, Completion completion) {
     final Path target = Paths.get(path);
-    final Set<PosixFilePermission> permissions = new HashSet<PosixFilePermission>();
-    //TODO interpret mode and set permissions appropriately
+    final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
+    final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
-        if (recursive) {
-          Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
-           public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-             Files.setPosixFilePermissions(target, permissions);
-             return FileVisitResult.CONTINUE;
-           }
-         });
-        } else {
-          try {
+        try {
+          if (dirPermissions != null) {
+            Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
+             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+               //The directory entries typically have different permissions to the files, e.g. execute permission
+               //or can't cd into it
+               Files.setPosixFilePermissions(dir, dirPermissions);
+               return FileVisitResult.CONTINUE;
+             }
+             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+               Files.setPosixFilePermissions(file, permissions);
+               return FileVisitResult.CONTINUE;
+             }
+           });
+          } else {
             Files.setPosixFilePermissions(target, permissions);
-          } catch (SecurityException e) {
-            throw new FileSystemException("Accessed denied for chmod on " + target);
           }
+        } catch (SecurityException e) {
+          throw new FileSystemException("Accessed denied for chmod on " + target);
         }
         return null;
       }
@@ -187,19 +189,19 @@ public class FileSystem {
     final Path target = Paths.get(path);
     new BackgroundTaskWithResult<FileStats>(completion) {
       public FileStats execute() throws Exception {
-        BasicFileAttributes attrs;
-        if (followLinks) {
-          attrs = Files.readAttributes(target, BasicFileAttributes.class);
-        } else {
-          attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        try {
+          BasicFileAttributes attrs;
+          if (followLinks) {
+            attrs = Files.readAttributes(target, BasicFileAttributes.class);
+          } else {
+            attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+          }
+          return new FileStats(attrs);
+        } catch (NoSuchFileException e) {
+          throw new FileSystemException("No such file: " + target);
         }
-        return new FileStats(attrs);
       }
     }.run();
-  }
-
-  public void fstat(int fd, StatsHandler handler) {
-    //TODO - need fd map
   }
 
   public void link(String link, String existing, Completion completion) {
@@ -284,20 +286,44 @@ public class FileSystem {
     }.run();
   }
 
-  public void mkdir(String path, int mode, final boolean createParents, Completion completion) {
+  public void mkdir(String path, Completion completion) {
+    mkdir(path, null, false, completion);
+  }
+
+  public void mkdir(String path, boolean createParents, Completion completion) {
+    mkdir(path, null, createParents, completion);
+  }
+
+  public void mkdir(String path, String perms, Completion completion) {
+    mkdir(path, perms, false, completion);
+  }
+
+  public void mkdir(String path, final String perms, final boolean createParents, Completion completion) {
     final Path source = Paths.get(path);
+    final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
-        //TODO attributes
-        FileAttribute<?> attrs = null;
         try {
           if (createParents) {
-            Files.createDirectories(source, attrs);
+            if (attrs != null) {
+              Files.createDirectories(source, attrs);
+            } else {
+              Files.createDirectories(source);
+            }
           } else {
-            Files.createDirectory(source, attrs);
+            if (attrs != null) {
+              System.out.println("creating with attrs " + perms);
+              Files.createDirectory(source, attrs);
+            } else {
+              System.out.println("Creatoing dir:" + source);
+              Files.createDirectory(source);
+              System.out.println("created ok");
+            }
           }
         } catch (FileAlreadyExistsException e) {
           throw new FileSystemException("Cannot create directory: " + source + ". It already exists");
+        } catch (NoSuchFileException e) {
+          throw new FileSystemException("Canot create directory: " + source + " it has parents");
         }
         return null;
       }
@@ -308,8 +334,7 @@ public class FileSystem {
     readDir(path, null, completion);
   }
 
-  public void readDir(final String path, String filter, CompletionWithResult<String[]> completion) {
-    //TODO regex patterns
+  public void readDir(final String path, final String filter, CompletionWithResult<String[]> completion) {
     new BackgroundTaskWithResult<String[]>(completion) {
       public String[] execute() throws Exception {
         File file = new File(path);
@@ -319,7 +344,25 @@ public class FileSystem {
         if (!file.isDirectory()) {
           throw new FileSystemException("Cannot read directory " + path + ". It's not a directory");
         } else {
-          File[] files = file.listFiles();
+          FilenameFilter fnFilter;
+          if (filter != null) {
+            fnFilter = new FilenameFilter() {
+              public boolean accept(File dir, String name) {
+                return Pattern.matches(filter, name);
+              }
+            };
+          } else {
+            fnFilter = null;
+          }
+          System.out.println("File is " + file);
+          System.out.println("Listing files with filter: " + fnFilter);
+          File[] files;
+          if (fnFilter == null) {
+            files = file.listFiles();
+          } else {
+            files = file.listFiles(fnFilter);
+          }
+          System.out.println("Got " + files.length + " files");
           String[] ret = new String[files.length];
           int i = 0;
           for (File f: files) {
@@ -331,73 +374,20 @@ public class FileSystem {
     }.run();
   }
 
-
-  // Close and open
-
-  public void open(final String path, int mode,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, mode, true, true, true, false, false, completion);
-  }
-
-  public void open(final String path, int mode, final boolean createNew,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, mode, true, true, createNew, false, false, completion);
-  }
-
-  public void open(final String path, int mode, final boolean read, final boolean write, final boolean createNew,
-                   CompletionWithResult<FileHandle> completion) {
-    open(path, mode, read, write, createNew, false, false, completion);
-  }
-
-  public void open(final String path, final int mode, final boolean read, final boolean write, final boolean createNew,
-                   final boolean sync, final boolean syncMeta, CompletionWithResult<FileHandle> completion) {
-    new BackgroundTaskWithResult<FileHandle>(completion) {
-      public FileHandle execute() throws Exception {
-        return doOpen(path, mode, read, write, createNew, sync, syncMeta);
-      }
-    }.run();
-  }
-
-  private FileHandle doOpen(final String path, int mode, final boolean read, final boolean write, final boolean createNew,
-                   final boolean sync, final boolean syncMeta) throws Exception {
-    if (!read && !write) {
-      throw new FileSystemException("Cannot open file for neither reading nor writing");
-    }
-    Path file = Paths.get(path);
-    HashSet<OpenOption> options = new HashSet<>();
-    if (read) options.add(StandardOpenOption.READ);
-    if (write) options.add(StandardOpenOption.WRITE);
-    if (createNew) options.add(StandardOpenOption.CREATE_NEW);
-    if (sync) options.add(StandardOpenOption.DSYNC);
-    if (syncMeta) options.add(StandardOpenOption.SYNC);
-    //TODO attributes
-    FileAttribute<?> attrs = null;
-
-    AsynchronousFileChannel chann = AsynchronousFileChannel.open(file, options, NodexInternal.instance.getBackgroundPool(), attrs);
-    return new FileHandle(chann);
-  }
-
-  public void close(final FileHandle fh, Completion completion) {
-    new BackgroundTask(completion) {
-      public FileHandle execute() throws Exception {
-        fh.close();
-        return null;
-      }
-    }.run();
-  }
-
-
-  // Random access
-
-  public void write(FileHandle fh, Buffer buffer, int position, final Completion completion) {
-    fh.write(buffer, position, completion);
-  }
-
-  public void read(FileHandle fh, Buffer buffer, int position, int bytesToRead, CompletionWithResult<Buffer> completion) {
-    fh.read(position, bytesToRead, completion);
-  }
-
   // Read and write entire files in one go
+
+  public void readFileAsString(final String path, final String encoding, final CompletionWithResult<String> completion) {
+    readFile(path, new CompletionWithResult<Buffer>() {
+      public void onCompletion(Buffer result) {
+        String str = result.toString(encoding);
+        completion.onCompletion(str);
+      }
+
+      public void onException(Exception e) {
+        completion.onException(e);
+      }
+    });
+  }
 
   public void readFile(final String path, CompletionWithResult<Buffer> completion) {
     new BackgroundTaskWithResult<Buffer>(completion) {
@@ -410,113 +400,89 @@ public class FileSystem {
     }.run();
   }
 
-  public void writeFile(String path, String str, Completion completion) {
-    writeFile(path, Buffer.fromString(str), completion);
+  public void writeStringToFile(String path, String str, String enc, Completion completion) {
+    Buffer buff = Buffer.fromString(str, enc);
+    System.out.println("buff len is " + buff.length());
+    writeFile(path, buff, completion);
   }
 
   public void writeFile(final String path, final Buffer data, Completion completion) {
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         Path target = Paths.get(path);
-        Files.write(target, data._toChannelBuffer().array());
+        Files.write(target, data.getBytes());
         return null;
       }
     }.run();
   }
 
   public void lock() {
+    //TODO
+  }
 
+  public void unlock() {
+    //TODO
   }
 
   public void watchFile() {
-
+    //TODO
   }
 
   public void unwatchFile() {
-
+    //TODO
   }
 
-  public ReadStream createReadStream(final String path) {
-    return new ReadStream() {
+  // Close and open
 
-      boolean paused;
-      DataHandler dataHandler;
-      FileHandle handle;
-      int pos;
-      boolean closed;
-
-      void close() {
-        try {
-          handle.close();
-        } catch (IOException e) {
-          //TODO what to do with exceptions?
-        }
-      }
-
-      void doRead() {
-        if (handle == null) {
-          int mode = 0;
-          try {
-            handle = doOpen(path, mode, true, false, false, false, false);
-          } catch (Exception e) {
-            //TODO What to do with exceptions?
-            e.printStackTrace(System.err);
-          }
-        }
-        handle.read(pos, 8192, new CompletionWithResult<Buffer>() {
-          public void onCompletion(Buffer buffer) {
-            if (buffer.length() == 0) {
-               // Empty buffer represents end of file
-              close();
-            } else {
-              if (dataHandler != null) {
-                dataHandler.onData(buffer);
-              }
-              //TODO how do we know we have reached the end? At that point we need to close the handle
-              if (buffer.length() < 8192 && !paused) {
-                doRead();
-              }
-            }
-          }
-
-          public void onException(Exception e) {
-            //TODO - what to do with exception?
-          }
-        });
-      }
-
-      public void data(DataHandler handler) {
-        this.dataHandler = handler;
-        if (dataHandler != null && !paused && !closed) {
-          doRead();
-        }
-      }
-
-      public void pause() {
-        paused = true;
-      }
-
-      public void resume() {
-        paused = false;
-        if (dataHandler != null && !closed) {
-          doRead();
-        }
-      }
-    };
+  public void open(final String path,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, null, true, true, true, false, false, completion);
   }
 
-  public WriteStream createWriteStream() {
-    return null;
+  public void open(final String path, String perms,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, perms, true, true, true, false, false, completion);
+  }
+
+  public void open(final String path, String perms, final boolean createNew,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, perms, true, true, createNew, false, false, completion);
+  }
+
+  public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+                   CompletionWithResult<AsyncFile> completion) {
+    open(path, perms, read, write, createNew, false, false, completion);
+  }
+
+  public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+                   final boolean sync, final boolean syncMeta, CompletionWithResult<AsyncFile> completion) {
+    final String contextID = Nodex.instance.getContextID();
+    new BackgroundTaskWithResult<AsyncFile>(completion) {
+      public AsyncFile execute() throws Exception {
+        return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID);
+      }
+    }.run();
+  }
+
+  private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+                            final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
+    return new AsyncFile(path, perms, read, write, createNew, sync, syncMeta, contextID);
   }
 
   //Create an empty file
-  public void createFile(String path) {
-
-  }
-
-  //Will be deleted on process exit
-  public void createTempFile(String path) {
-
+  public void createFile(final String path, final String perms, Completion completion) {
+    final FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    new BackgroundTask(completion) {
+      public Object execute() throws Exception {
+        try {
+          Path target = Paths.get(path);
+          Files.createFile(target, attrs);
+        } catch (FileAlreadyExistsException e) {
+          throw new FileSystemException("Cannot create link, file already exists: " + path);
+        }
+        return null;
+      }
+    }.run();
   }
 
   public void exists(final String path, CompletionWithResult<Boolean> completion) {
@@ -528,11 +494,14 @@ public class FileSystem {
     }.run();
   }
 
-  public FileSystemStats getFSStats() {
-    return null;
+  public void getFSStats(final String path, CompletionWithResult<FileSystemStats> completion) {
+    new BackgroundTaskWithResult<FileSystemStats>(completion) {
+      public FileSystemStats execute() throws Exception {
+        Path target = Paths.get(path);
+        FileStore fs = Files.getFileStore(target);
+        return new FileSystemStats(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
+      }
+    }.run();
   }
-
-
-
 
 }

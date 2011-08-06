@@ -24,7 +24,7 @@ public class EchoServer {
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket socket) {
         System.out.println("Sever conttect");
-        socket.data(new DataHandler() {
+        socket.dataHandler(new DataHandler() {
           public void onData(Buffer buffer) {
             socket.write(buffer);
           }

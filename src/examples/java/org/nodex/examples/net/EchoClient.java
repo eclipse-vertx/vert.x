@@ -29,7 +29,7 @@ public class EchoClient {
 
         System.out.println("Connecting");
 
-        socket.data(new DataHandler() {
+        socket.dataHandler(new DataHandler() {
           public void onData(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
           }
@@ -37,7 +37,7 @@ public class EchoClient {
 
         System.out.println("Sending");
 
-        //Now send some data
+        //Now send some dataHandler
         for (int i = 0; i < 10; i++) {
           String str = "hello" + i + "\n";
           System.out.print("Net client sending: " + str);

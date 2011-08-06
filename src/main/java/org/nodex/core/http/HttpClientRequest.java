@@ -23,6 +23,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
@@ -47,6 +48,7 @@ public class HttpClientRequest implements WriteStream {
   private final HttpResponseHandler respHandler;
 
   private Runnable drainHandler;
+  private ExceptionHandler exceptionHandler;
   private boolean headWritten;
   private boolean sent;
 
@@ -135,14 +137,24 @@ public class HttpClientRequest implements WriteStream {
     return conn.writeQueueFull();
   }
 
-  public void drain(Runnable handler) {
+  public void drainHandler(Runnable handler) {
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
   }
 
   void handleInterestedOpsChanged() {
     if (drainHandler != null) {
       drainHandler.run();
+    }
+  }
+
+  void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      exceptionHandler.onException(e);
     }
   }
 

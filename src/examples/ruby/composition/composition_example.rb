@@ -85,13 +85,13 @@ end
 
 def amqp_worker
 
-  #First we need to setup the connections and add some reference data
+  #First we need to setup the connections and add some reference dataHandler
 
   # First we need to create a connection to redis
   redis_conn = nil
   redis_connected = Completion.create
   RedisClient.create_client.connect(6379, "localhost") { |conn|
-  # We add a little reference data that we're going to need later
+  # We add a little reference dataHandler that we're going to need later
     conn.set("bicycle", "125") {
       conn.set("aardvark", "333") {
         redis_conn = conn

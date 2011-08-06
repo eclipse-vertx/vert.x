@@ -15,6 +15,7 @@ package org.nodex.core.http;
 
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
@@ -26,6 +27,8 @@ public class Websocket implements ReadStream, WriteStream {
 
   private DataHandler dataHandler;
   private Runnable drainHandler;
+  private ExceptionHandler exceptionHandler;
+  private Runnable endHandler;
 
   Websocket(String uri, AbstractConnection conn) {
     this.uri = uri;
@@ -44,8 +47,16 @@ public class Websocket implements ReadStream, WriteStream {
     conn.write(frame);
   }
 
-  public void data(DataHandler handler) {
+  public void dataHandler(DataHandler handler) {
     this.dataHandler = handler;
+  }
+
+  public void endHandler(Runnable handler) {
+    this.endHandler = handler;
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
   }
 
   public void pause() {
@@ -68,7 +79,7 @@ public class Websocket implements ReadStream, WriteStream {
     writeBinaryFrame(data);
   }
 
-  public void drain(Runnable handler) {
+  public void drainHandler(Runnable handler) {
     this.drainHandler = handler;
   }
 
@@ -81,6 +92,12 @@ public class Websocket implements ReadStream, WriteStream {
   void writable() {
     if (drainHandler != null) {
       drainHandler.run();
+    }
+  }
+
+  void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      exceptionHandler.onException(e);
     }
   }
 }

@@ -147,7 +147,7 @@ public class RecordParserTest {
   }
 
   /*
-  We create some input data which contains <lines> lines of lengths in randm order between 0 and lines
+  We create some input dataHandler which contains <lines> lines of lengths in randm order between 0 and lines
   And then passes them into the RecordParser in chunk sizes from 0 to twice the total input buffer size
    */
   private void delimited(byte[] delim) {

@@ -68,11 +68,11 @@ public class ConnectionBase {
 
   // Handlers ---------------------------------------------------------------------
 
-  public void exception(ExceptionHandler handler) {
+  public void exceptionHandler(ExceptionHandler handler) {
     this.exceptionHandler = handler;
   }
 
-  public void closed(Runnable handler) {
+  public void closedHandler(Runnable handler) {
     this.closedHandler = handler;
   }
 

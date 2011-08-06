@@ -18,10 +18,10 @@ public class Composable {
   private Runnable onComplete;
   private boolean complete;
 
-  public synchronized void onComplete(Runnable onComplete) {
-    this.onComplete = onComplete;
+  public synchronized void onComplete(Runnable completion) {
+    this.onComplete = completion;
     if (complete) {
-      onComplete.run();
+      completion.run();
     }
   }
 

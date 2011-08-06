@@ -37,6 +37,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
+import org.nodex.core.net.NetSocket;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -119,6 +120,12 @@ public class HttpClient {
     });
 
     return this;
+  }
+
+  public void close() {
+    for (HttpClientConnection conn : connectionMap.values()) {
+      conn.close();
+    }
   }
 
   private class ClientHandler extends SimpleChannelUpstreamHandler {

@@ -34,6 +34,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
@@ -208,11 +209,23 @@ public class NetServer extends NetBase {
       sock.close();
     }
     if (done != null) {
+      final String contextID = Nodex.instance.getContextID();
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          //TODO - this should run on event loop thread
-          listening = false;
-          done.run();
+
+          Runnable runner = new Runnable() {
+            public void run() {
+             listening = false;
+             done.run();
+            }
+          };
+
+          if (contextID == null) {
+            //Called from thread outside event loop, e.g. main thread
+            runner.run();
+          } else {
+            NodexInternal.instance.executeOnContext(contextID, runner);
+          }
         }
       });
     }

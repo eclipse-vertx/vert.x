@@ -49,13 +49,13 @@ public class ThreadingTest extends TestBase {
     NetServer server = NetServer.createServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             checker.check();
             sock.write(data);    // Send it back to client
           }
         });
-        sock.closed(new Runnable() {
+        sock.closedHandler(new Runnable() {
           public void run() {
             checker.check();
             serverClosedLatch.countDown();
@@ -71,7 +71,7 @@ public class ThreadingTest extends TestBase {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
         final Buffer buff = Buffer.newDynamic(0);
-        sock.data(new DataHandler() {
+        sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             checker.check();
             buff.append(data);
@@ -80,7 +80,7 @@ public class ThreadingTest extends TestBase {
             }
           }
         });
-        sock.closed(new Runnable() {
+        sock.closedHandler(new Runnable() {
           public void run() {
             checker.check();
             clientClosedLatch.countDown();

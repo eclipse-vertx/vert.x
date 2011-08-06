@@ -62,7 +62,7 @@ public class AmqpClient {
         try {
           connectHandler.onConnect(new AmqpConnection(cf.newConnection()));
         } catch (IOException e) {
-          //TODO handle exception by passing them back on callback
+          //TODO handle exceptionHandler by passing them back on callback
           e.printStackTrace();
         }
       }

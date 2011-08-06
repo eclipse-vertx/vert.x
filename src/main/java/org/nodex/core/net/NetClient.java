@@ -27,6 +27,8 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.group.ChannelGroupFuture;
+import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
@@ -56,8 +58,6 @@ public class NetClient extends NetBase {
   public static NetClient createClient() {
     return new NetClient();
   }
-
-
 
   public NetClient connect(int port, String host, final NetConnectHandler connectHandler) {
     if (bootstrap == null) {
@@ -109,6 +109,12 @@ public class NetClient extends NetBase {
 
   public NetClient connect(int port, NetConnectHandler connectCallback) {
     return connect(port, "localhost", connectCallback);
+  }
+
+  public void close() {
+    for (NetSocket sock : socketMap.values()) {
+      sock.close();
+    }
   }
 
   public NetClient setSSL(boolean ssl) {

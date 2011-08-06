@@ -46,13 +46,13 @@ public class Pump {
   }
 
   public void start() {
-    writeStream.drain(drainHandler);
-    readStream.data(dataHandler);
+    writeStream.drainHandler(drainHandler);
+    readStream.dataHandler(dataHandler);
   }
 
   public void stop() {
-    writeStream.drain(null);
-    readStream.data(null);
+    writeStream.drainHandler(null);
+    readStream.dataHandler(null);
   }
 
 }

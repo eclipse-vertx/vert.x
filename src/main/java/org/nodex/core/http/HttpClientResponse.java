@@ -15,6 +15,7 @@ package org.nodex.core.http;
 
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
@@ -27,6 +28,7 @@ public class HttpClientResponse implements ReadStream {
   private final HttpClientConnection conn;
   private DataHandler dataHandler;
   private Runnable endHandler;
+  private ExceptionHandler exceptionHandler;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
 
@@ -57,12 +59,16 @@ public class HttpClientResponse implements ReadStream {
     return trailer.getHeaderNames();
   }
 
-  public void data(DataHandler dataHandler) {
+  public void dataHandler(DataHandler dataHandler) {
     this.dataHandler = dataHandler;
   }
 
-  public void end(Runnable end) {
+  public void endHandler(Runnable end) {
     this.endHandler = end;
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
   }
 
   public void pause() {
@@ -90,6 +96,12 @@ public class HttpClientResponse implements ReadStream {
     this.trailer = trailer;
     if (endHandler != null) {
       endHandler.run();
+    }
+  }
+
+  void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      exceptionHandler.onException(e);
     }
   }
 }

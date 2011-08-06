@@ -21,6 +21,10 @@ public class Utils {
     return generateRandomBuffer(length, false, (byte) 0);
   }
 
+  public static byte[] generateRandomByteArray(int length) {
+    return generateRandomByteArray(length, false, (byte)0);
+  }
+
   public static byte[] generateRandomByteArray(int length, boolean avoid, byte avoidByte) {
     byte[] line = new byte[length];
     for (int i = 0; i < length; i++) {

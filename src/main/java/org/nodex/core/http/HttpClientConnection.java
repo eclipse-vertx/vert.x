@@ -76,12 +76,12 @@ public class HttpClientConnection extends AbstractConnection {
           handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
         } else {
           final Buffer buff = Buffer.newDynamic(0);
-          resp.data(new DataHandler() {
+          resp.dataHandler(new DataHandler() {
             public void onData(Buffer data) {
               buff.append(data);
             }
           });
-          resp.end(new Runnable() {
+          resp.endHandler(new Runnable() {
             public void run() {
               boolean matched = true;
               if (buff.length() == out.length()) {
@@ -123,7 +123,7 @@ public class HttpClientConnection extends AbstractConnection {
     return new HttpClientRequest(this, method, uri, responseHandler);
   }
 
-  // Quick get method when there's no body and it doesn't require an end
+  // Quick get method when there's no body and it doesn't require an endHandler
   public void getNow(String uri, HttpResponseHandler responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     req.end();
@@ -237,6 +237,13 @@ public class HttpClientConnection extends AbstractConnection {
 
   protected void handleException(Exception e) {
     super.handleException(e);
+
+    if (currentRequest != null) {
+      currentRequest.handleException(e);
+    }
+    if (currentResponse != null) {
+      currentResponse.handleException(e);
+    }
   }
 
   protected void addFuture(Runnable done, ChannelFuture future) {

@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 
   private DataHandler dataHandler;
+  private Runnable endHandler;
   private Runnable drainHandler;
 
   NetSocket(Channel channel, String contextID, Thread th) {
@@ -68,11 +69,15 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     return this;
   }
 
-  public void data(DataHandler dataHandler) {
+  public void dataHandler(DataHandler dataHandler) {
     this.dataHandler = dataHandler;
   }
 
-  public void drain(Runnable drained) {
+  public void endHandler(Runnable endHandler) {
+    this.endHandler = endHandler;
+  }
+
+  public void drainHandler(Runnable drained) {
     this.drainHandler = drained;
     callDrainHandler(); //If the channel is already drained, we want to call it immediately
   }

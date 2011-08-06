@@ -13,15 +13,18 @@
 
 package org.nodex.core.streams;
 
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
 
 public interface WriteStream {
+
+  void writeBuffer(Buffer data);
 
   void setWriteQueueMaxSize(int maxSize);
 
   boolean writeQueueFull();
 
-  void drain(Runnable handler);
+  void drainHandler(Runnable handler);
 
-  void writeBuffer(Buffer data);
+  void exceptionHandler(ExceptionHandler handler);
 }
