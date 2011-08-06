@@ -6,7 +6,7 @@
 * Runs on the JVM.
 * Everything is asynchronous.
 * Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*. Plus some.
-* Polyglot. The same (or similar) API will be available in multiple languages: Ruby, Java, Groovy, (Python, JS, Clojure, Scala)
+* Polyglot. The same (or similar) API will be available in multiple languages: Initially Ruby (JRuby) and Groovy, and going ahead... JavaScript (Rhino/Nashorn), Python (Jython), Clojure, Scala etc.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True threading. Unlike node.js, Python Twisted or Ruby EventMachine, it has true multi-threaded scalability. No more spinning up 32 instances just to utilise the cores on your server.
@@ -34,7 +34,7 @@ We do not expose the Java API directly in the other languages since we wish to r
 
 We don't leak Java stuff to other languages through the API.
 
-Node.x internally uses [Netty](http://www.jboss.org/netty "Netty") for much of the asynchronous IO.
+Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much of the asynchronous IO.
 
 ## Building
 
@@ -42,7 +42,7 @@ Pre-requisites: ant, jruby, java 7
 
 Node.x is java 7+ only. We use the new async file IO, and extended file system API in Java 7.
 
-Also JRuby runs better with Java 7 due to InvokeDynamic support
+Also, going ahead, dynamic languages will benefit from InvokeDynamic support in Java 7+
 
 ### To build core
 
