@@ -42,7 +42,7 @@ public class StompPerf {
             }
           }
         });
-        Buffer buff = Buffer.fromString("msg");
+        Buffer buff = Buffer.createBuffer("msg");
         for (int i = 0; i < warmup; i++) {
           conn.send("test-topic", buff);
         }

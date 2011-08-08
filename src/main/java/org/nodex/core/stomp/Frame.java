@@ -66,7 +66,7 @@ class Frame {
   }
 
   protected static Frame sendFrame(String destination, String body) {
-    Buffer buff = Buffer.fromString(body, "UTF-8");
+    Buffer buff = Buffer.createBuffer(body, "UTF-8");
     Frame frame = new Frame("SEND", buff);
     frame.headers.put("destination", destination);
     frame.headers.put("content-length", String.valueOf(buff.length()));
@@ -89,7 +89,7 @@ class Frame {
   public Buffer toBuffer() {
     try {
       byte[] bytes = headersString().toString().getBytes("UTF-8");
-      Buffer buff = Buffer.newFixed(bytes.length + (body == null ? 0 : body.length()) + 1);
+      Buffer buff = Buffer.createBuffer(bytes.length + (body == null ? 0 : body.length()) + 1);
       buff.append(bytes);
       if (body != null) buff.append(body);
       buff.append((byte) 0);

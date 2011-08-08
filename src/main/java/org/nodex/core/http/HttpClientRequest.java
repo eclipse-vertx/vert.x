@@ -89,31 +89,31 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public void writeBuffer(Buffer chunk) {
-    write(chunk._toChannelBuffer(), null);
+    write(chunk._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(Buffer chunk) {
-    return write(chunk._toChannelBuffer(), null);
+    return write(chunk._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(String chunk) {
-    return write(Buffer.fromString(chunk)._toChannelBuffer(), null);
+    return write(Buffer.createBuffer(chunk)._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(String chunk, String enc) {
-    return write(Buffer.fromString(chunk, enc)._toChannelBuffer(), null);
+    return write(Buffer.createBuffer(chunk, enc)._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(Buffer chunk, Runnable done) {
-    return write(chunk._toChannelBuffer(), done);
+    return write(chunk._getChannelBuffer(), done);
   }
 
   public HttpClientRequest write(String chunk, Runnable done) {
-    return write(Buffer.fromString(chunk)._toChannelBuffer(), done);
+    return write(Buffer.createBuffer(chunk)._getChannelBuffer(), done);
   }
 
   public HttpClientRequest write(String chunk, String enc, Runnable done) {
-    return write(Buffer.fromString(chunk, enc)._toChannelBuffer(), done);
+    return write(Buffer.createBuffer(chunk, enc)._getChannelBuffer(), done);
   }
 
   public void end() {

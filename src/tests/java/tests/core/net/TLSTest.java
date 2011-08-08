@@ -64,7 +64,7 @@ public class TLSTest extends TestBase {
                             boolean serverCert, boolean serverTrust,
                             boolean requireClientAuth, boolean clientTrustAll,
                             boolean shouldPass) throws Exception {
-    final Buffer receivedBuff = Buffer.newDynamic(0);
+    final Buffer receivedBuff = Buffer.createBuffer(0);
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
@@ -83,7 +83,7 @@ public class TLSTest extends TestBase {
         });
       }
     };
-    final Buffer sentBuff = Buffer.newDynamic(0);
+    final Buffer sentBuff = Buffer.createBuffer(numSends * sendSize);
     final CountDownLatch exceptionLatch = new CountDownLatch(1);
     NetConnectHandler clientHandler = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {

@@ -155,9 +155,7 @@ public class StompConnection {
   }
 
   public void write(Frame frame) {
-    //Need to duplicate the buffer since frame can be written to multiple connections concurrently
-    //which will change the internal Netty readerIndex
-    socket.write(frame.toBuffer().duplicate());
+    socket.write(frame.toBuffer());
   }
 
   protected void connect(String username, String password, final Runnable connectHandler) {

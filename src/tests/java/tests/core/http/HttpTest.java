@@ -129,7 +129,7 @@ public class HttpTest extends TestBase {
             azzert(count == Integer.parseInt(req.getHeader("count")));
             final int theCount = count;
             count++;
-            final Buffer buff = Buffer.newDynamic(0);
+            final Buffer buff = Buffer.createBuffer(0);
             req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
@@ -166,7 +166,7 @@ public class HttpTest extends TestBase {
               azzert(response.statusCode == statusCode);
               azzert(theCount == Integer.parseInt(response.getHeader("count")), theCount + ":" + response.getHeader
                   ("count"));
-              final Buffer buff = Buffer.newDynamic(0);
+              final Buffer buff = Buffer.createBuffer(0);
               response.dataHandler(new DataHandler() {
                 public void onData(Buffer data) {
                   buff.append(data);
@@ -225,7 +225,7 @@ public class HttpTest extends TestBase {
             dumpHeaders(response);
             azzert(response.statusCode == 200);
             azzert(file.length() == Long.valueOf(response.getHeader("Content-Length")));
-            final Buffer buff = Buffer.newDynamic(0);
+            final Buffer buff = Buffer.createBuffer(0);
             response.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
@@ -305,7 +305,7 @@ public class HttpTest extends TestBase {
     final String paramsString = toParamsString(params);
 
     final List<Buffer> responseBody = numResponseChunks == 0 ? null : new ArrayList<Buffer>();
-    final Buffer totResponseBody = Buffer.newDynamic(0);
+    final Buffer totResponseBody = Buffer.createBuffer(0);
     for (int i = 0; i < numResponseChunks; i++) {
       Buffer buff = Utils.generateRandomBuffer(100);
       responseBody.add(buff);
@@ -313,7 +313,7 @@ public class HttpTest extends TestBase {
     }
 
     final List<Buffer> requestBody = numRequestChunks == 0 ? null : new ArrayList<Buffer>();
-    final Buffer totRequestBody = Buffer.newDynamic(0);
+    final Buffer totRequestBody = Buffer.createBuffer(0);
     for (int i = 0; i < numRequestChunks; i++) {
       Buffer buff = Utils.generateRandomBuffer(100);
       requestBody.add(buff);
@@ -338,7 +338,7 @@ public class HttpTest extends TestBase {
             azzert(req.getHeader("Host").equals(host + ":" + port));
             azzert(req.getHeader("Connection").equals(keepAlive ? "keep-alive" : "close"));
 
-            final Buffer buff = Buffer.newDynamic(0);
+            final Buffer buff = Buffer.createBuffer(0);
             req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);
@@ -375,7 +375,7 @@ public class HttpTest extends TestBase {
             //dumpHeaders(response.headers);
             azzert(response.statusCode == statusCode);
             assertHeaders(responseHeaders, response);
-            final Buffer buff = Buffer.newDynamic(0);
+            final Buffer buff = Buffer.createBuffer(0);
             response.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 buff.append(data);

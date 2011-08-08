@@ -37,7 +37,6 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.net.NetSocket;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -182,14 +181,14 @@ public class HttpClient {
         ChannelBuffer content = response.getContent();
 
         if (content.readable()) {
-          conn.handleChunk(Buffer.fromChannelBuffer(content));
+          conn.handleChunk(new Buffer(content));
         }
         if (!response.isChunked()) {
           conn.handleEnd();
         }
       } else if (msg instanceof HttpChunk) {
         HttpChunk chunk = (HttpChunk) msg;
-        Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
+        Buffer buff = new Buffer(chunk.getContent());
         conn.handleChunk(buff);
         if (chunk.isLast()) {
           if (chunk instanceof HttpChunkTrailer) {

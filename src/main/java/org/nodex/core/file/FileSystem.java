@@ -144,7 +144,7 @@ public class FileSystem {
 
   /*
   Permissions is a String of the form rwxr-x---
-  See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html fromString method
+  See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html createBuffer method
    */
   public void chmod(String path, String perms, String dirPerms, Completion completion) {
     final Path target = Paths.get(path);
@@ -312,12 +312,9 @@ public class FileSystem {
             }
           } else {
             if (attrs != null) {
-              System.out.println("creating with attrs " + perms);
               Files.createDirectory(source, attrs);
             } else {
-              System.out.println("Creatoing dir:" + source);
               Files.createDirectory(source);
-              System.out.println("created ok");
             }
           }
         } catch (FileAlreadyExistsException e) {
@@ -354,15 +351,12 @@ public class FileSystem {
           } else {
             fnFilter = null;
           }
-          System.out.println("File is " + file);
-          System.out.println("Listing files with filter: " + fnFilter);
           File[] files;
           if (fnFilter == null) {
             files = file.listFiles();
           } else {
             files = file.listFiles(fnFilter);
           }
-          System.out.println("Got " + files.length + " files");
           String[] ret = new String[files.length];
           int i = 0;
           for (File f: files) {
@@ -394,15 +388,14 @@ public class FileSystem {
       public Buffer execute() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
-        Buffer buff = Buffer.newWrapped(bytes);
+        Buffer buff = Buffer.createBuffer(bytes);
         return buff;
       }
     }.run();
   }
 
   public void writeStringToFile(String path, String str, String enc, Completion completion) {
-    Buffer buff = Buffer.fromString(str, enc);
-    System.out.println("buff len is " + buff.length());
+    Buffer buff = Buffer.createBuffer(str, enc);
     writeFile(path, buff, completion);
   }
 
@@ -457,16 +450,17 @@ public class FileSystem {
   public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean sync, final boolean syncMeta, CompletionWithResult<AsyncFile> completion) {
     final String contextID = Nodex.instance.getContextID();
+    final Thread th = Thread.currentThread();
     new BackgroundTaskWithResult<AsyncFile>(completion) {
       public AsyncFile execute() throws Exception {
-        return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID);
+        return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID, th);
       }
     }.run();
   }
 
   private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                            final boolean sync, final boolean syncMeta, final String contextID) throws Exception {
-    return new AsyncFile(path, perms, read, write, createNew, sync, syncMeta, contextID);
+                            final boolean sync, final boolean syncMeta, final String contextID, final Thread th) throws Exception {
+    return new AsyncFile(path, perms, read, write, createNew, sync, syncMeta, contextID, th);
   }
 
   //Create an empty file

@@ -89,6 +89,9 @@ Pragmatic general multicast
 Other modules
 =============
 
+ZeroMQ
+------
+
 AMQP
 ----
 

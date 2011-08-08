@@ -61,7 +61,7 @@ public class HttpClientConnection extends AbstractConnection {
     String key2 = WebsocketHandshakeHelper.genWSkey();
     long c = new Random().nextLong();
 
-    final Buffer out = Buffer.fromChannelBuffer(WebsocketHandshakeHelper.calcResponse(key1, key2, c));
+    final Buffer out = new Buffer(WebsocketHandshakeHelper.calcResponse(key1, key2, c));
     ChannelBuffer buff = ChannelBuffers.buffer(8);
     buff.writeLong(c);
 
@@ -75,7 +75,7 @@ public class HttpClientConnection extends AbstractConnection {
         } else if (!resp.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE)) {
           handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
         } else {
-          final Buffer buff = Buffer.newDynamic(0);
+          final Buffer buff = Buffer.createBuffer(0);
           resp.dataHandler(new DataHandler() {
             public void onData(Buffer data) {
               buff.append(data);
@@ -86,7 +86,7 @@ public class HttpClientConnection extends AbstractConnection {
               boolean matched = true;
               if (buff.length() == out.length()) {
                 for (int i = 0; i < buff.length(); i++) {
-                  if (out.byteAt(i) != buff.byteAt(i)) {
+                  if (out.getByte(i) != buff.getByte(i)) {
                     matched = false;
                     break;
                   }
@@ -112,7 +112,7 @@ public class HttpClientConnection extends AbstractConnection {
         putHeader(HttpHeaders.Names.ORIGIN, "http://" + hostHeader). //TODO what about HTTPS?
         putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, key1).
         putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, key2).
-        write(Buffer.fromChannelBuffer(buff)).
+        write(new Buffer(buff)).
         end();
   }
 

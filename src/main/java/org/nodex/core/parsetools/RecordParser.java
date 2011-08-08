@@ -107,10 +107,10 @@ public class RecordParser implements DataHandler {
   private void parseDelimited() {
     int len = buff.length();
     for (; pos < len && !reset; pos++) {
-      if (buff.byteAt(pos) == delim[delimPos]) {
+      if (buff.getByte(pos) == delim[delimPos]) {
         delimPos++;
         if (delimPos == delim.length) {
-          Buffer ret = buff.slice(start, pos - delim.length + 1);
+          Buffer ret = buff.copy(start, pos - delim.length + 1);
           start = pos + 1;
           delimPos = 0;
           output.onData(ret);
@@ -123,7 +123,7 @@ public class RecordParser implements DataHandler {
     int len = buff.length();
     while (len - start >= recordSize && !reset) {
       int end = start + recordSize;
-      Buffer ret = buff.slice(start, end);
+      Buffer ret = buff.copy(start, end);
       start = end;
       output.onData(ret);
     }
@@ -131,7 +131,7 @@ public class RecordParser implements DataHandler {
 
   public void onData(Buffer buffer) {
     if (buff == null) {
-      buff = Buffer.newDynamic(buffer.length());
+      buff = Buffer.createBuffer(buffer.length());
     }
     buff.append(buffer);
     handleParsing();

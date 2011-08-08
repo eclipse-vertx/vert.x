@@ -38,7 +38,7 @@ public class Websocket implements ReadStream, WriteStream {
   public final String uri;
 
   public void writeBinaryFrame(Buffer data) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(0x80, data._toChannelBuffer());
+    WebSocketFrame frame = new DefaultWebSocketFrame(0x80, data._getChannelBuffer());
     conn.write(frame);
   }
 
@@ -85,7 +85,7 @@ public class Websocket implements ReadStream, WriteStream {
 
   void handleFrame(WebSocketFrame frame) {
     if (dataHandler != null) {
-      dataHandler.onData(Buffer.fromChannelBuffer(frame.getBinaryData()));
+      dataHandler.onData(new Buffer(frame.getBinaryData()));
     }
   }
 

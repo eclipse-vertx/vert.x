@@ -13,8 +13,10 @@
 
 package org.nodex.core.net;
 
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
 import org.nodex.core.ConnectionBase;
 import org.nodex.core.buffer.Buffer;
@@ -36,36 +38,36 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   public void writeBuffer(Buffer data) {
-    channel.write(data._toChannelBuffer());
+    doWrite(data._getChannelBuffer());
   }
 
   public NetSocket write(Buffer data) {
-    channel.write(data._toChannelBuffer());
+    doWrite(data._getChannelBuffer());
     return this;
   }
 
   public NetSocket write(String str) {
-    channel.write(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8));
+    doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
   public NetSocket write(String str, String enc) {
-    channel.write(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+    doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
     return this;
   }
 
   public NetSocket write(Buffer data, final Runnable done) {
-    addFuture(done, channel.write(data._toChannelBuffer()));
+    addFuture(done, doWrite(data._getChannelBuffer()));
     return this;
   }
 
   public NetSocket write(String str, Runnable done) {
-    addFuture(done, channel.write(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8)));
+    addFuture(done, doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8)));
     return this;
   }
 
   public NetSocket write(String str, String enc, Runnable done) {
-    addFuture(done, channel.write(ChannelBuffers.copiedBuffer(str, Charset.forName(enc))));
+    addFuture(done, doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc))));
     return this;
   }
 
@@ -114,6 +116,10 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
         handleHandlerException(t);
       }
     }
+  }
+
+  private ChannelFuture doWrite(ChannelBuffer buff) {
+    return channel.write(buff);
   }
 
   private void callDrainHandler() {

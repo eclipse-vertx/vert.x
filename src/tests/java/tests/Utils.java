@@ -42,7 +42,7 @@ public class Utils {
 
   public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
     byte[] line = generateRandomByteArray(length, avoid, avoidByte);
-    return Buffer.newWrapped(line);
+    return Buffer.createBuffer(line);
   }
 
   public static String randomAlphaString(int length) {
@@ -57,7 +57,15 @@ public class Utils {
   public static boolean buffersEqual(Buffer b1, Buffer b2) {
     if (b1.length() != b2.length()) return false;
     for (int i = 0; i < b1.length(); i++) {
-      if (b1.byteAt(i) != b2.byteAt(i)) return false;
+      if (b1.getByte(i) != b2.getByte(i)) return false;
+    }
+    return true;
+  }
+
+  public static boolean byteArraysEqual(byte[] b1, byte[] b2) {
+    if (b1.length != b2.length) return false;
+    for (int i = 0; i < b1.length; i++) {
+      if (b1[i] != b2[i]) return false;
     }
     return true;
   }

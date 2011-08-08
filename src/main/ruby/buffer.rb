@@ -20,11 +20,11 @@ class Buffer
   end
 
   def Buffer.new_dynamic(size)
-    Buffer.new(org.nodex.core.buffer.Buffer.newDynamic(size))
+    Buffer.new(org.nodex.core.buffer.Buffer.new(size))
   end
 
   def Buffer.from_str(str, enc = "UTF-8")
-    Buffer.new(org.nodex.core.buffer.Buffer.fromString(str, enc))
+    Buffer.new(org.nodex.core.buffer.Buffer.createBuffer(str, enc))
   end
 
   def write(str, offset = 0, enc = "UTF-8")

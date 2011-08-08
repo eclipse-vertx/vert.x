@@ -221,7 +221,7 @@ public class HttpServer {
           }
         } else {
 
-          Buffer buff = Buffer.fromChannelBuffer(chunk.getContent());
+          Buffer buff = new Buffer(chunk.getContent());
 
           conn.handleChunk(buff);
           //TODO chunk trailers

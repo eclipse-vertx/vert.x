@@ -70,7 +70,7 @@ public class ThreadingTest extends TestBase {
     client.connect(8181, new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
-        final Buffer buff = Buffer.newDynamic(0);
+        final Buffer buff = Buffer.createBuffer(0);
         sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             checker.check();

@@ -36,13 +36,13 @@ public class ClientExample {
 
         // Send some messages (without receipt)
         for (int i = 0; i < 5; i++) {
-          conn.send("test-topic", Buffer.fromString("message " + i));
+          conn.send("test-topic", Buffer.createBuffer("message " + i));
         }
 
         // Now send some more with receipts
         for (int i = 5; i < 10; i++) {
           final int count = i;
-          conn.send("test-topic", Buffer.fromString("message " + i), new Runnable() {
+          conn.send("test-topic", Buffer.createBuffer("message " + i), new Runnable() {
             public void run() {
               System.out.println("Got receipt " + count);
             }
