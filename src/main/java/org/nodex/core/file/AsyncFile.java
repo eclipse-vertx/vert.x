@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AsyncFile {
 
-  private static final int BUFFER_SIZE = 8192;
+  public static final int BUFFER_SIZE = 8192;
 
   private final AsynchronousFileChannel ch;
   private final Thread th;
@@ -41,6 +41,7 @@ public class AsyncFile {
   private ReadStream readStream;
   private WriteStream writeStream;
   private Completion closedCompletion;
+  private AtomicInteger writesOutstanding = new AtomicInteger(0);
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
             final boolean sync, final boolean syncMeta, final String contextID, final Thread th) throws Exception {
@@ -104,8 +105,6 @@ public class AsyncFile {
     doRead(buff, position, completion);
   }
 
-  private AtomicInteger writesOutstanding = new AtomicInteger(0);
-
   public WriteStream getWriteStream() {
     check();
     if (writeStream == null) {
@@ -120,7 +119,6 @@ public class AsyncFile {
         public void writeBuffer(Buffer buffer) {
           checkClosed();
           final int length = buffer.length();
-          //writesOutstanding.addAndGet(length);
           ByteBuffer bb = buffer._getChannelBuffer().toByteBuffer();
 
           doWrite(bb, pos, new Completion() {
@@ -187,12 +185,12 @@ public class AsyncFile {
         ExceptionHandler exceptionHandler;
         Runnable endHandler;
         int pos;
-        boolean closed;
 
         void doRead() {
           read(pos, BUFFER_SIZE, new CompletionWithResult<Buffer>() {
             public void onCompletion(Buffer buffer) {
               if (buffer.length() == 0) {
+
                 // Empty buffer represents end of file
                 close(new Completion() {
                   public void onCompletion() {
@@ -244,10 +242,11 @@ public class AsyncFile {
         }
 
         public void resume() {
-          checkClosed();
-          paused = false;
-          if (dataHandler != null && !closed) {
-            doRead();
+          if (paused && !closed) {
+            paused = false;
+            if (dataHandler != null) {
+              doRead();
+            }
           }
         }
 
@@ -356,7 +355,7 @@ public class AsyncFile {
           // partial read
           pos += bytesRead;
           // resubmit
-          doRead(buff, pos, completion);
+           doRead(buff, pos, completion);
         } else {
           // It's been fully written
           done();

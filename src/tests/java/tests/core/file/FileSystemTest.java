@@ -1321,10 +1321,11 @@ public class FileSystemTest extends TestBase {
   public void testPumpFileStreams() throws Exception {
     final String fileName1 = "some-file.dat";
     final String fileName2 = "some-other-file.dat";
-    final int chunkSize = 1000;
-    final int chunks = 10;
 
-    final byte[] content = Utils.generateRandomByteArray(chunkSize * chunks);
+    //Non integer multiple of buffer size
+    final int fileSize = (int)(AsyncFile.BUFFER_SIZE * 1000.3);
+
+    final byte[] content = Utils.generateRandomByteArray(fileSize);
 
     createFile(fileName1, content);
 
@@ -1394,6 +1395,90 @@ public class FileSystemTest extends TestBase {
     throwAssertions();
   }
 
+  @Test
+  public void testCreateFileNoPerms() throws Exception {
+    testCreateFile(null);
+  }
+
+  @Test
+  public void testCreateFileWithPerms() throws Exception {
+    testCreateFile("rwx------");
+  }
+
+  private void testCreateFile(final String perms) throws Exception {
+    final String fileName = "some-file.dat";
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      public void run() {
+        Completion compl = new Completion() {
+          public void onCompletion() {
+            latch.countDown();
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            latch.countDown();
+          }
+        };
+        if (perms != null) {
+          FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, perms, compl);
+        } else {
+          FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, compl);
+        }
+      }
+    });
+
+    System.out.println(exception.get());
+
+    azzert(exception.get() == null);
+    azzert(fileExists(fileName));
+    azzert(0 == fileLength(fileName));
+    if (perms != null) {
+      azzert(perms.equals(getPerms(fileName)));
+    }
+  }
+
+  @Test
+  public void testExists() throws Exception {
+    final String fileName = "some-file.dat";
+    createFileWithJunk(fileName, 100);
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    final AtomicReference<Boolean> ares = new AtomicReference<>();
+
+    run(latch, new Runnable() {
+      public void run() {
+        CompletionWithResult<Boolean> compl = new CompletionWithResult<Boolean>() {
+          public void onCompletion(Boolean res) {
+            ares.set(res);
+            latch.countDown();
+          }
+
+          public void onException(Exception e) {
+            exception.set(e);
+            latch.countDown();
+          }
+        };
+        FileSystem.instance.exists(TEST_DIR + pathSep + fileName, compl);
+      }
+    });
+
+    azzert(exception.get() == null);
+    azzert(ares.get());
+  }
+
+  public void testSync() throws Exception {
+    //TODO
+  }
+
+  public void testFSStats() throws Exception {
+    //TODO
+  }
+
 
   // All file system operations need to be executed in a context so we use a net server for that
   private void run(CountDownLatch latch, final Runnable runner) throws Exception {
@@ -1408,13 +1493,16 @@ public class FileSystemTest extends TestBase {
       }
     }).listen(8181);
 
-    NetClient.createClient().connect(8181, new NetConnectHandler() {
+    NetClient client = NetClient.createClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
       }
     });
 
+    client.close();
+
     if (latch != null) azzert(latch.await(5, TimeUnit.SECONDS));
     awaitClose(server);
+
   }
 
   private void deleteDir(String dir) {

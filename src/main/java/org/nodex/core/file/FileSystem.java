@@ -464,13 +464,22 @@ public class FileSystem {
   }
 
   //Create an empty file
+
+  public void createFile(final String path, Completion completion) {
+    createFile(path, null, completion);
+  }
+
   public void createFile(final String path, final String perms, Completion completion) {
-    final FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+    final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     new BackgroundTask(completion) {
       public Object execute() throws Exception {
         try {
           Path target = Paths.get(path);
-          Files.createFile(target, attrs);
+          if (attrs != null) {
+            Files.createFile(target, attrs);
+          } else {
+            Files.createFile(target);
+          }
         } catch (FileAlreadyExistsException e) {
           throw new FileSystemException("Cannot create link, file already exists: " + path);
         }
