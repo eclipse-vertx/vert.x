@@ -231,10 +231,10 @@ public class RecordParserTest {
   }
 
   private List<Buffer> generateLines(int lines, boolean delim, byte delimByte) {
-    //We create lines of length zero to <lines> and shuffle them
+    //We create lines of length one to <lines> and shuffle them
     List<Buffer> lineList = new ArrayList<Buffer>();
     for (int i = 0; i < lines; i++) {
-      lineList.add(Utils.generateRandomBuffer(i, delim, delimByte));
+      lineList.add(Utils.generateRandomBuffer(i + 1, delim, delimByte));
     }
     Collections.shuffle(lineList);
     return lineList;

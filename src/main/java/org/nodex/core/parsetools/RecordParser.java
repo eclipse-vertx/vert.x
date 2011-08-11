@@ -60,6 +60,7 @@ public class RecordParser implements DataHandler {
   }
 
   public static RecordParser newFixed(int size, DataHandler output) {
+    if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
     RecordParser ls = new RecordParser(output);
     ls.fixedSizeMode(size);
     return ls;
@@ -77,6 +78,7 @@ public class RecordParser implements DataHandler {
   }
 
   public void fixedSizeMode(int size) {
+    if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
     delimited = false;
     recordSize = size;
     reset = true;
