@@ -52,7 +52,7 @@ public class FileSystemTest extends TestBase {
   private String pathSep;
 
   @BeforeMethod
-  public void setUp() throws Exception {
+  public void before() throws Exception {
     testDir = new File(TEST_DIR);
     if (testDir.exists()) {
       deleteDir(testDir);
@@ -64,7 +64,7 @@ public class FileSystemTest extends TestBase {
   }
 
   @AfterMethod
-  public void tearDown() {
+  public void after() {
     deleteDir(testDir);
   }
 
@@ -1430,8 +1430,6 @@ public class FileSystemTest extends TestBase {
         }
       }
     });
-
-    System.out.println(exception.get());
 
     azzert(exception.get() == null);
     azzert(fileExists(fileName));

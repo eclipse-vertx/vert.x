@@ -26,14 +26,6 @@ import tests.Utils;
 
 public class PumpTest {
 
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   @Test
   public void testPumpBasic() throws Exception {
     FakeReadStream rs = new FakeReadStream();

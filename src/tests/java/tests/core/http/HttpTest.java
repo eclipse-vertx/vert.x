@@ -43,13 +43,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class HttpTest extends TestBase {
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
 
   @Test
   public void testGetNow() throws Exception {

@@ -31,14 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 public class TLSTest extends TestBase {
 
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   @Test
   public void testClientAuthAll() throws Exception {
     testTLS(false, false, false, false, false, true, false);

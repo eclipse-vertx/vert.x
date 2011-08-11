@@ -128,7 +128,7 @@ public class ConnectionBase {
     // Sanity check
     // All ops should always be invoked on same thread
     if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread");
+      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
     NodexInternal.instance.setContextID(contextID);
   }

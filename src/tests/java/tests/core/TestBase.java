@@ -18,6 +18,8 @@ import org.nodex.core.http.HttpClient;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetServer;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import tests.AwaitDone;
 
 import java.io.BufferedWriter;
@@ -28,6 +30,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class TestBase {
+
+  @BeforeClass
+  public void setUp() {
+    System.out.println("*** STARTING TEST " + this.getClass().getName());
+  }
+
+  @AfterClass
+  public void tearDown() {
+    System.out.println("*** STOPPING TEST " + this.getClass().getName());
+  }
+
 
   /*
   We need to gather assertions and throw them at the endHandler, this is because testng lets a test pass if an assertion

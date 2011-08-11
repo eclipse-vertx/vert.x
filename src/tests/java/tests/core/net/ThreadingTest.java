@@ -33,14 +33,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ThreadingTest extends TestBase {
 
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   @Test
   // Test that all handlers for a connection are executed with same context
   public void testNetHandlers() throws Exception {
@@ -88,7 +80,6 @@ public class ThreadingTest extends TestBase {
         });
         Buffer sendBuff = Utils.generateRandomBuffer(dataLength);
         sock.write(sendBuff);
-        sock.close();
       }
     });
 

@@ -16,13 +16,17 @@ package org.nodex.core.http;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelDownstreamHandler;
+import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.DownstreamMessageEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
@@ -40,6 +44,7 @@ import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
@@ -140,6 +145,7 @@ public class HttpServer {
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
     private HttpRequest upgradeRequest;
+    private long upgradeData;
 
     private void calcAndWriteWSHandshakeResponse(Channel ch, HttpRequest request, long c) {
       String key1 = request.getHeader(SEC_WEBSOCKET_KEY1);
@@ -166,9 +172,10 @@ public class HttpServer {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      HttpServerConnection conn = connectionMap.get(ch);
+      NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       Object msg = e.getMessage();
+      HttpServerConnection conn = connectionMap.get(ch);
+
       if (msg instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) msg;
         if (HttpHeaders.is100ContinueExpected(request)) {
@@ -187,12 +194,10 @@ public class HttpServer {
           if (accepted && containsKey1 && containsKey2) {
             if (!request.isChunked()) {
               long c = request.getContent().readLong();
-
               calcAndWriteWSHandshakeResponse(ch, request, c);
             } else {
               upgradeRequest = request;
             }
-
           } else {
             ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
           }
@@ -213,11 +218,12 @@ public class HttpServer {
         HttpChunk chunk = (HttpChunk) msg;
         if (upgradeRequest != null) {
           if (chunk.isLast()) {
-              //Terminating chunk for an upgrade request - ignore it
-              upgradeRequest = null;
+            //Terminating chunk for an upgrade request - process the upgrade
+            calcAndWriteWSHandshakeResponse(ch, upgradeRequest, upgradeData);
+            upgradeRequest = null;
           } else {
             //This is the body for the websocket upgrade request
-            calcAndWriteWSHandshakeResponse(ch, upgradeRequest, chunk.getContent().readLong());
+            upgradeData = chunk.getContent().readLong();
           }
         } else {
 
@@ -233,7 +239,7 @@ public class HttpServer {
         WebSocketFrame frame = (WebSocketFrame) msg;
         conn.handleWsFrame(frame);
       } else {
-        throw new IllegalStateException("Invalid object " + e.getMessage());
+        throw new IllegalStateException("Invalid object " + msg);
       }
     }
 

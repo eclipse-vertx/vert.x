@@ -27,14 +27,6 @@ import java.util.List;
 
 public class RecordParserTest {
 
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   @Test
   /*
   Test parsing with delimiters

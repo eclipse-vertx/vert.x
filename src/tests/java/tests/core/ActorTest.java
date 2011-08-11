@@ -19,14 +19,6 @@ import org.testng.annotations.Test;
 
 public class ActorTest extends TestBase {
 
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   @Test
   public void testActor() throws Exception {
 

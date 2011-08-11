@@ -25,17 +25,6 @@ import java.nio.charset.Charset;
 
 public class BufferTest extends TestBase {
 
-  Buffer b;
-
-  @BeforeClass
-  public void setUp() {
-    b = Buffer.createBuffer(1000);
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   /*
   We need to ensure netty buffer's reader index always stays at zero, and after the underlying buffer has been read, it's
   reset to zero

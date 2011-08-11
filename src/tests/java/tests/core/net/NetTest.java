@@ -32,14 +32,6 @@ import java.util.concurrent.TimeUnit;
 
 public class NetTest extends TestBase {
 
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-  }
-
   @Test
   public void testConnect() throws Exception {
     int connectCount = 10;

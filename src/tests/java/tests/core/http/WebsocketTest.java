@@ -13,6 +13,7 @@
 
 package tests.core.http;
 
+import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
@@ -34,14 +35,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class WebsocketTest extends TestBase {
-  @BeforeClass
-  public void setUp() {
-  }
-
-  @AfterClass
-  public void tearDown() {
-
-  }
 
   @Test
   public void testWSBinary() throws Exception {
@@ -79,6 +72,9 @@ public class WebsocketTest extends TestBase {
     };
     final CountDownLatch latch = new CountDownLatch(1);
 
+    final int bsize = 100;
+    final int sends = 10;
+
     HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
       public void onConnect(final HttpClientConnection conn) {
         conn.upgradeToWebSocket(path, new WebsocketConnectHandler() {
@@ -87,26 +83,22 @@ public class WebsocketTest extends TestBase {
             ws.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 received.append(data);
-                if (received.length() == 1000) {
+                if (received.length() == bsize * sends) {
                   latch.countDown();
                   conn.close();
                 }
               }
             });
             final Buffer sent = Buffer.createBuffer(0);
-            for (int i = 0; i < 10; i++) {
-              String str = Utils.randomAlphaString(100);
-              try {
-                Buffer buff = Buffer.createBuffer(str.getBytes("UTF-8"));
+            for (int i = 0; i < sends; i++) {
+              if (binary) {
+                Buffer buff = Buffer.createBuffer(Utils.generateRandomByteArray(bsize));
+                ws.writeBinaryFrame(buff);
                 sent.append(buff);
-                if (binary) {
-                  ws.writeBinaryFrame(buff);
-                } else {
-                  ws.writeTextFrame(str);
-                }
-              } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                azzert(false);
+              } else {
+                String str = Utils.randomAlphaString(100);
+                ws.writeTextFrame(str);
+                sent.append(Buffer.createBuffer(str, "UTF-8"));
               }
             }
             return true;
@@ -122,9 +114,10 @@ public class WebsocketTest extends TestBase {
 
     HttpServer server = HttpServer.createServer(serverH).listen(port, host);
 
-    HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientH);
+    HttpClient client = HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientH);
 
     azzert(latch.await(5, TimeUnit.SECONDS));
+    client.close();
     awaitClose(server);
   }
 }
