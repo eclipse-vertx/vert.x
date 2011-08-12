@@ -218,11 +218,11 @@ public class HttpServer {
         HttpChunk chunk = (HttpChunk) msg;
         if (upgradeRequest != null) {
           if (chunk.isLast()) {
-            //Terminating chunk for an upgrade request - process the upgrade
+            //Terminating chunk for an upgrade requestHandler - process the upgrade
             calcAndWriteWSHandshakeResponse(ch, upgradeRequest, upgradeData);
             upgradeRequest = null;
           } else {
-            //This is the body for the websocket upgrade request
+            //This is the body for the websocket upgrade requestHandler
             upgradeData = chunk.getContent().readLong();
           }
         } else {

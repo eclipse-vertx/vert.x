@@ -13,7 +13,6 @@
 
 package tests.core.http;
 
-import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
@@ -24,13 +23,10 @@ import org.nodex.core.http.HttpServerConnectHandler;
 import org.nodex.core.http.HttpServerConnection;
 import org.nodex.core.http.Websocket;
 import org.nodex.core.http.WebsocketConnectHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
 
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -56,7 +52,7 @@ public class WebsocketTest extends TestBase {
 
     HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.websocketConnect(new WebsocketConnectHandler() {
+        conn.wsConnectHandler(new WebsocketConnectHandler() {
           public boolean onConnect(final Websocket ws) {
             azzert(path.equals(ws.uri));
             ws.dataHandler(new DataHandler() {

@@ -79,7 +79,7 @@ public class ChannelPool {
       public void run() {
         //FIXME - for the demo we just get a new channel each time
         //Also this is broken since if more than one call to getChannel comes in before connection is created
-        //previous request will be overwritten
+        //previous requestHandler will be overwritten
         connection.createChannel(channelHandler);
       }
     });

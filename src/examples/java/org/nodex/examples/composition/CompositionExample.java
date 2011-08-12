@@ -22,7 +22,6 @@ import org.nodex.core.amqp.Channel;
 import org.nodex.core.amqp.ChannelHandler;
 import org.nodex.core.amqp.ChannelPool;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.composition.Composable;
 import org.nodex.core.composition.Composer;
 import org.nodex.core.file.FileSystem;
@@ -77,7 +76,7 @@ public class CompositionExample {
     final ChannelPool chPool = ChannelPool.createPool();
     HttpServer.createServer(new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.request(new HttpRequestHandler() {
+        conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             System.out.println("Request uri is " + req.uri);
             if (req.uri.equals("/")) {
@@ -88,11 +87,12 @@ public class CompositionExample {
                   resp.write(data);
                   resp.end();
                 }
+
                 public void onException(Exception e) {
                 }
               });
             } else if (req.uri.startsWith("/submit")) {
-              //We have received a request for price/stock information, so we send a message to Rabbit with the name of the item
+              //We have received a requestHandler for price/stock information, so we send a message to Rabbit with the name of the item
               final String item = req.getParam("item");
               chPool.getChannel(new ChannelHandler() {
                 public void onCreate(final Channel ch) {
@@ -195,7 +195,7 @@ public class CompositionExample {
                       }
                     });
 
-                    comp.when(redisGet, responseReturned)         // Execute redis get and stomp request/response in parallel
+                    comp.when(redisGet, responseReturned)         // Execute redis get and stomp requestHandler/response in parallel
                         .when(new Runnable() {                 // Then send back a response with the price and stock
                           public void run() {
                             props.headers.put("price", price.get());

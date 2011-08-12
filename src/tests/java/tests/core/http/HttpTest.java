@@ -28,8 +28,6 @@ import org.nodex.core.http.HttpServerConnectHandler;
 import org.nodex.core.http.HttpServerConnection;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.http.HttpServerResponse;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
@@ -113,7 +111,7 @@ public class HttpTest extends TestBase {
 
     HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.request(new HttpRequestHandler() {
+        conn.requestHandler(new HttpRequestHandler() {
           int count;
 
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
@@ -199,7 +197,7 @@ public class HttpTest extends TestBase {
 
     HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.request(new HttpRequestHandler() {
+        conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             azzert(path.equals(req.path));
             //Clearly in a real web server you'd do some safety checks on the path
@@ -248,7 +246,7 @@ public class HttpTest extends TestBase {
 
     HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.request(new HttpRequestHandler() {
+        conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             resp.end(); // Just send back a 200 OK
           }
@@ -318,7 +316,7 @@ public class HttpTest extends TestBase {
 
     HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.request(new HttpRequestHandler() {
+        conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             azzert((method.equals("GETNOW") ? "GET" : method).equals(req.method), method + ":" + req.method);
             azzert(path.equals(req.path));

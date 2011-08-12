@@ -44,8 +44,12 @@ public class HttpServerConnection extends AbstractConnection {
     super(channel, contextID, th);
   }
 
-  public void request(HttpRequestHandler handler) {
+  public void requestHandler(HttpRequestHandler handler) {
     this.mainHandler = handler;
+  }
+
+  public void wsConnectHandler(WebsocketConnectHandler handler) {
+    this.wsHandler = handler;
   }
 
   public void options(HttpRequestHandler handler) {
@@ -82,10 +86,6 @@ public class HttpServerConnection extends AbstractConnection {
 
   public void patch(HttpRequestHandler handler) {
     this.patchHandler = handler;
-  }
-
-  public void websocketConnect(WebsocketConnectHandler handler) {
-    this.wsHandler = handler;
   }
 
   void handleRequest(HttpServerRequest req, HttpServerResponse resp) {

@@ -24,9 +24,9 @@ public class ServerExample {
   public static void main(String[] args) throws Exception {
     HttpServer server = HttpServer.createServer(new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
-        conn.request(new HttpRequestHandler() {
+        conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, HttpServerResponse resp) {
-            System.out.println("Got request " + req.uri);
+            System.out.println("Got request: " + req.uri);
             System.out.println("Headers are: ");
             for (String key : req.getHeaderNames()) {
               System.out.println(key + ":" + req.getHeader(key));
