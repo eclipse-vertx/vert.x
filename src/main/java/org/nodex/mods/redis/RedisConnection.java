@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.redis;
+package org.nodex.mods.redis;
 
 import org.nodex.core.NodexInternal;
 import org.nodex.core.composition.Composable;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.amqp;
+package org.nodex.mods.amqp;
 
 import org.nodex.core.NodexInternal;
 

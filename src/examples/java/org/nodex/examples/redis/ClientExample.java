@@ -13,10 +13,10 @@
 
 package org.nodex.examples.redis;
 
-import org.nodex.core.redis.RedisClient;
-import org.nodex.core.redis.RedisConnectHandler;
-import org.nodex.core.redis.RedisConnection;
-import org.nodex.core.redis.ResultHandler;
+import org.nodex.mods.redis.RedisClient;
+import org.nodex.mods.redis.RedisConnectHandler;
+import org.nodex.mods.redis.RedisConnection;
+import org.nodex.mods.redis.ResultHandler;
 
 public class ClientExample {
   public static void main(String[] args) throws Exception {

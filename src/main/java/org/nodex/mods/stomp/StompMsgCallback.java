@@ -11,8 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.amqp;
+package org.nodex.mods.stomp;
 
-public abstract class AmqpConnectHandler {
-  public abstract void onConnect(AmqpConnection connection);
+import org.nodex.core.buffer.Buffer;
+
+import java.util.Map;
+
+public interface StompMsgCallback {
+  void onMessage(Map<String, String> headers, Buffer body);
 }

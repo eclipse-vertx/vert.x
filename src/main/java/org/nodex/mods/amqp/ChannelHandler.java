@@ -11,12 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.stomp;
+package org.nodex.mods.amqp;
 
-import org.nodex.core.buffer.Buffer;
-
-import java.util.Map;
-
-public interface StompMsgCallback {
-  void onMessage(Map<String, String> headers, Buffer body);
+public abstract class ChannelHandler {
+  public abstract void onCreate(Channel channel);
 }

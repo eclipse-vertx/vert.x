@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.stomp;
+package org.nodex.mods.stomp;
 
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;

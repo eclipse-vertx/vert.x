@@ -11,26 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.redis;
+package org.nodex.mods.amqp;
 
-import org.nodex.core.NodexInternal;
-import redis.clients.jedis.Jedis;
-
-public class RedisClient {
-  public static RedisClient createClient() {
-    return new RedisClient();
-  }
-
-  private RedisClient() {
-  }
-
-  public void connect(int port, String host, final RedisConnectHandler connectHandler) {
-    final Jedis jedis = new Jedis(host, port);
-    NodexInternal.instance.executeInBackground(new Runnable() {
-      public void run() {
-        jedis.connect();
-        connectHandler.onConnect(new RedisConnection(jedis));
-      }
-    });
-  }
+public abstract class AmqpMsgCallback {
+  public abstract void onMessage(AmqpProps props, byte[] body);
 }

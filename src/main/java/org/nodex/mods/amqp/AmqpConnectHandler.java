@@ -11,8 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.stomp;
+package org.nodex.mods.amqp;
 
-public interface FrameHandler {
-  void onFrame(Frame frame);
+public abstract class AmqpConnectHandler {
+  public abstract void onConnect(AmqpConnection connection);
 }

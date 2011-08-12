@@ -14,9 +14,9 @@
 package org.nodex.examples.stomp;
 
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.stomp.StompConnectHandler;
-import org.nodex.core.stomp.StompConnection;
-import org.nodex.core.stomp.StompMsgCallback;
+import org.nodex.mods.stomp.StompConnectHandler;
+import org.nodex.mods.stomp.StompConnection;
+import org.nodex.mods.stomp.StompMsgCallback;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public class ClientExample {
 
   public static void main(String[] args) throws Exception {
 
-    org.nodex.core.stomp.StompClient.connect(8181, new StompConnectHandler() {
+    org.nodex.mods.stomp.StompClient.connect(8181, new StompConnectHandler() {
       public void onConnect(final StompConnection conn) {
 
         // Subscribe to a topic

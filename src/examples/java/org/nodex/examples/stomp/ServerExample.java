@@ -14,7 +14,7 @@
 package org.nodex.examples.stomp;
 
 import org.nodex.core.net.NetServer;
-import org.nodex.core.stomp.StompServer;
+import org.nodex.mods.stomp.StompServer;
 
 public class ServerExample {
   public static void main(String[] args) throws Exception {

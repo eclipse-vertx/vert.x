@@ -14,10 +14,10 @@
 package org.nodex.examples.stomp;
 
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.stomp.StompClient;
-import org.nodex.core.stomp.StompConnectHandler;
-import org.nodex.core.stomp.StompConnection;
-import org.nodex.core.stomp.StompMsgCallback;
+import org.nodex.mods.stomp.StompClient;
+import org.nodex.mods.stomp.StompConnectHandler;
+import org.nodex.mods.stomp.StompConnection;
+import org.nodex.mods.stomp.StompMsgCallback;
 
 import java.util.Map;
 

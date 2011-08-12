@@ -11,8 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.amqp;
+package org.nodex.mods.stomp;
 
-public abstract class AmqpMsgCallback {
-  public abstract void onMessage(AmqpProps props, byte[] body);
+public interface FrameHandler {
+  void onFrame(Frame frame);
 }

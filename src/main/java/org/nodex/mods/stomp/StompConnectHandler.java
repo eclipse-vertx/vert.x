@@ -11,8 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.redis;
+package org.nodex.mods.stomp;
 
-public interface RedisConnectHandler {
-  void onConnect(RedisConnection connection);
+public interface StompConnectHandler {
+  void onConnect(StompConnection connection);
 }
