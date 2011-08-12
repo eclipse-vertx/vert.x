@@ -29,7 +29,9 @@ public interface NodexInternal extends Nodex {
 
   void executeOnContext(String contextID, Runnable runnable);
 
-  String createContext(NioWorker worker);
+  String createAndAssociateContext();
+
+  String associateContextWithWorker(NioWorker worker);
 
   boolean destroyContext(String contextID);
 

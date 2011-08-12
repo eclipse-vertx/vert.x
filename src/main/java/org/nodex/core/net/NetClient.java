@@ -85,7 +85,7 @@ public class NetClient extends SSLBase {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
           final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
-          final String contextID = NodexInternal.instance.createContext(ch.getWorker());
+          final String contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
           ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
               NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());

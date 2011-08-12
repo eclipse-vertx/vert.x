@@ -17,6 +17,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -169,6 +170,16 @@ public class HttpClientConnection extends AbstractConnection {
 
   public HttpClientRequest patch(String uri, HttpResponseHandler responseHandler) {
     return request("PATCH", uri, responseHandler);
+  }
+
+  public void close() {
+//    if (ws != null) {
+//      //Need to send 9 zeros to represent a close
+//      byte[] bytes = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0};  // Just to be explicit
+//      ChannelFuture future = channel.write(ChannelBuffers.copiedBuffer(bytes));
+//      future.addListener(ChannelFutureListener.CLOSE);  // Close after it's written
+//    }
+    super.close();
   }
 
   //TODO - combine these with same in HttpServerConnection and NetSocket

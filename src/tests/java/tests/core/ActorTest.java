@@ -13,12 +13,76 @@
 
 package tests.core;
 
+import org.nodex.core.Actor;
+import org.nodex.core.Nodex;
+import org.nodex.core.NodexInternal;
+import org.nodex.core.shared.SharedMap;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class ActorTest extends TestBase {
+
+  private NodexInternal nodex = NodexInternal.instance;
 
   @Test
   public void testActor() throws Exception {
 
+    final String message = "Hello actor";
+
+    final SharedMap<String, String> map = new SharedMap<>("test-map");
+
+    final CountDownLatch latch1 = new CountDownLatch(1);
+    final CountDownLatch latch2 = new CountDownLatch(1);
+    final String contextID1 = nodex.createAndAssociateContext();
+    nodex.executeOnContext(contextID1, new Runnable() {
+      public void run() {
+        nodex.setContextID(contextID1);
+        String actorID = nodex.registerActor(new Actor<String>() {
+          public void onMessage(String message) {
+            azzert(contextID1.equals(nodex.getContextID()));
+            System.out.println("Got message " + message);
+            latch2.countDown();
+          }
+        });
+        map.put("actorid", actorID);
+        latch1.countDown();
+      }
+    });
+
+    azzert(latch1.await(5, TimeUnit.SECONDS));
+
+    final String contextID2 = nodex.createAndAssociateContext();
+    nodex.executeOnContext(contextID2, new Runnable() {
+      public void run() {
+        nodex.setContextID(contextID2);
+        //Send msg to actor
+        String actorID = map.get("actorid");
+        nodex.<String>sendMessage(actorID, message);
+      }
+    });
+
+    azzert(latch2.await(5, TimeUnit.SECONDS));
+
+    throwAssertions();
   }
+
+
+  @Test
+  public void testActorNoContext() throws Exception {
+
+    try {
+      nodex.registerActor(new Actor<String>() {
+        public void onMessage(String message) {
+        }
+      });
+      azzert(false);
+    } catch (IllegalStateException e) {
+      //Expected
+    }
+
+    throwAssertions();
+  }
+
 }

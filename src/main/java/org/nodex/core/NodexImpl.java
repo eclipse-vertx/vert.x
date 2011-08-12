@@ -18,7 +18,6 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
-import org.nodex.core.util.OrderedExecutor;
 
 import java.util.Map;
 import java.util.UUID;
@@ -175,11 +174,12 @@ public final class NodexImpl implements NodexInternal {
     return acceptorPool;
   }
 
-  public Executor getOrderedBackgroundExecutor() {
-    return new OrderedExecutor(getBackgroundPool());
+  public String createAndAssociateContext() {
+    NioWorker worker = getWorkerPool().nextWorker();
+    return associateContextWithWorker(worker);
   }
 
-  public String createContext(NioWorker worker) {
+  public String associateContextWithWorker(NioWorker worker) {
     String contextID = UUID.randomUUID().toString();
     workerMap.put(contextID, worker);
     return contextID;

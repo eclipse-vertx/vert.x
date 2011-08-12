@@ -229,7 +229,7 @@ public class NetServer extends SSLBase {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final String contextID = NodexInternal.instance.createContext(ch.getWorker());
+      final String contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());

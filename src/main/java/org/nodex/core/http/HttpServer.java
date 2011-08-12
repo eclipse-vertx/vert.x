@@ -316,7 +316,7 @@ public class HttpServer extends SSLBase {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final String contextID = NodexInternal.instance.createContext(ch.getWorker());
+      final String contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
           final HttpServerConnection conn = new HttpServerConnection(ch, contextID, Thread.currentThread());

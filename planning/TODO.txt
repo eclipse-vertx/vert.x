@@ -21,7 +21,6 @@ Test request/response as write/read stream with pump both client and server side
 Test chaining methods
 endHandler handlers not currently being called
 Not all httpserverresponse methods being tested
-Exceptions when client connection attempts fail, are currently not handled properly
 
 File
 ----
