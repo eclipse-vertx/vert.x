@@ -34,6 +34,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.SSLBase;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
@@ -47,19 +48,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetServer extends NetBase {
-  private ServerBootstrap bootstrap;
+public class NetServer extends SSLBase {
+
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
   private final NetConnectHandler connectCallback;
   private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
 
-  protected ClientAuth clientAuth = ClientAuth.NONE;
-
-  protected enum ClientAuth {
-    NONE, REQUEST, REQUIRED
-  }
+  private ClientAuth clientAuth = ClientAuth.NONE;
 
   public NetServer(NetConnectHandler connectHandler) {
     this.connectCallback = connectHandler;
@@ -67,7 +64,7 @@ public class NetServer extends NetBase {
     //Defaults
     connectionOptions.put("child.tcpNoDelay", true);
     connectionOptions.put("child.keepAlive", true);
-    //TODO reusAddress should be configurable
+    //TODO reuseAddress should be configurable
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
@@ -140,50 +137,51 @@ public class NetServer extends NetBase {
   }
 
   public NetServer listen(int port, String host) {
-    if (bootstrap == null) {
-      serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
-
-      ChannelFactory factory =
-          new NioServerSocketChannelFactory(
-              NodexInternal.instance.getAcceptorPool(),
-              NodexInternal.instance.getWorkerPool());
-      bootstrap = new ServerBootstrap(factory);
-
-      checkSSL();
-
-      bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-        public ChannelPipeline getPipeline() {
-          ChannelPipeline pipeline = Channels.pipeline();
-          if (ssl) {
-            SSLEngine engine = context.createSSLEngine();
-            engine.setUseClientMode(false);
-            System.out.println("client auth? " + clientAuth);
-            switch (clientAuth) {
-              case REQUEST: {
-                engine.setWantClientAuth(true);
-                break;
-              } case REQUIRED: {
-                engine.setNeedClientAuth(true);
-                break;
-              } case NONE: {
-                engine.setNeedClientAuth(false);
-                break;
-              }
-            }
-            pipeline.addLast("ssl", new SslHandler(engine));
-          }
-          pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
-          pipeline.addLast("handler", new ServerHandler());
-          return pipeline;
-        }
-      });
-    }
-
     if (listening) {
-      throw new IllegalStateException("Server already listening");
+      throw new IllegalStateException("Listen already called");
     }
+    listening = true;
+
+    serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
+
+    ChannelFactory factory =
+        new NioServerSocketChannelFactory(
+            NodexInternal.instance.getAcceptorPool(),
+            NodexInternal.instance.getWorkerPool());
+    ServerBootstrap bootstrap = new ServerBootstrap(factory);
+
+    checkSSL();
+
+    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+      public ChannelPipeline getPipeline() {
+        ChannelPipeline pipeline = Channels.pipeline();
+        if (ssl) {
+          SSLEngine engine = context.createSSLEngine();
+          engine.setUseClientMode(false);
+          System.out.println("client auth? " + clientAuth);
+          switch (clientAuth) {
+            case REQUEST: {
+              engine.setWantClientAuth(true);
+              break;
+            } case REQUIRED: {
+              engine.setNeedClientAuth(true);
+              break;
+            } case NONE: {
+              engine.setNeedClientAuth(false);
+              break;
+            }
+          }
+          pipeline.addLast("ssl", new SslHandler(engine));
+        }
+        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
+        pipeline.addLast("handler", new ServerHandler());
+        return pipeline;
+      }
+    });
+
+    bootstrap.setOptions(connectionOptions);
+
     try {
-      bootstrap.setOptions(connectionOptions);
       //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
       Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       serverChannelGroup.add(serverChannel);
@@ -191,7 +189,7 @@ public class NetServer extends NetBase {
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }
-    listening = true;
+
     return this;
   }
 

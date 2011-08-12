@@ -11,11 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.core.net;
+package org.nodex.core;
+
+import org.nodex.core.net.TLSHelper;
 
 import javax.net.ssl.SSLContext;
 
-class NetBase {
+public class SSLBase {
 
   protected boolean ssl;
   protected String keyStorePath;
@@ -54,5 +56,9 @@ class NetBase {
     if (ssl) {
       context = TLSHelper.createContext(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
+  }
+
+  protected enum ClientAuth {
+    NONE, REQUEST, REQUIRED
   }
 }

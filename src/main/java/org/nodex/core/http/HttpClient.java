@@ -14,6 +14,7 @@
 package org.nodex.core.http;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -34,47 +35,57 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.jboss.netty.handler.ssl.SslHandler;
+import org.nodex.core.SSLBase;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
+import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HttpClient {
+public class HttpClient extends SSLBase {
 
-  private final ClientBootstrap bootstrap;
+  private ClientBootstrap bootstrap;
   private Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap();
   private boolean keepAlive;
 
   public HttpClient() {
-    bootstrap = new ClientBootstrap(
-        new NioClientSocketChannelFactory(
-            NodexInternal.instance.getAcceptorPool(),
-            NodexInternal.instance.getWorkerPool()));
-
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = Channels.pipeline();
-        // SSL TODO
-//          if (ssl) {
-//              SSLEngine engine =
-//                  SecureChatSslContextFactory.getClientContext().createSSLEngine();
-//              engine.setUseClientMode(true);
-//
-//              pipeline.addLast("ssl", new SslHandler(engine));
-//          }
-        pipeline.addLast("encoder", new HttpRequestEncoder());
-        pipeline.addLast("decoder", new HttpResponseDecoder());
-        pipeline.addLast("handler", new ClientHandler());
-        return pipeline;
-      }
-    });
   }
 
   public HttpClient setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
+    return this;
+  }
+
+   public HttpClient setSSL(boolean ssl) {
+    this.ssl = ssl;
+    return this;
+  }
+
+  public HttpClient setKeyStorePath(String path) {
+    this.keyStorePath = path;
+    return this;
+  }
+
+  public HttpClient setKeyStorePassword(String pwd) {
+    this.keyStorePassword = pwd;
+    return this;
+  }
+  public HttpClient setTrustStorePath(String path) {
+    this.trustStorePath = path;
+    return this;
+  }
+
+  public HttpClient setTrustStorePassword(String pwd) {
+    this.trustStorePassword = pwd;
+    return this;
+  }
+
+  public HttpClient setTrustAll(boolean trustAll) {
+    this.trustAll = trustAll;
     return this;
   }
 
@@ -87,6 +98,31 @@ public class HttpClient {
   }
 
   public HttpClient connect(final int port, final String host, final HttpClientConnectHandler connectHandler) {
+
+    if (bootstrap == null) {
+      bootstrap = new ClientBootstrap(
+          new NioClientSocketChannelFactory(
+              NodexInternal.instance.getAcceptorPool(),
+              NodexInternal.instance.getWorkerPool()));
+
+      checkSSL();
+
+      bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        public ChannelPipeline getPipeline() throws Exception {
+          ChannelPipeline pipeline = Channels.pipeline();
+          if (ssl) {
+            SSLEngine engine = context.createSSLEngine();
+            engine.setUseClientMode(true); //We are on the client side of the connection
+            pipeline.addLast("ssl", new SslHandler(engine));
+          }
+          pipeline.addLast("encoder", new HttpRequestEncoder());
+          pipeline.addLast("decoder", new HttpResponseDecoder());
+          pipeline.addLast("handler", new ClientHandler());
+          return pipeline;
+        }
+      });
+    }
+
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
 
     future.addListener(new ChannelFutureListener() {

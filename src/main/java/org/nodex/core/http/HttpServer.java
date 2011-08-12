@@ -43,14 +43,18 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.SSLBase;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
+import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,40 +70,22 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-public class HttpServer {
-  private ServerBootstrap bootstrap;
+public class HttpServer extends SSLBase {
+
   private HttpServerConnectHandler connectHandler;
   private Map<Channel, HttpServerConnection> connectionMap = new ConcurrentHashMap();
+  private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
+  private boolean listening;
+  private ClientAuth clientAuth = ClientAuth.NONE;
 
   public HttpServer(HttpServerConnectHandler connectHandler) {
-    serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
-    ChannelFactory factory =
-        new NioServerSocketChannelFactory(
-            NodexInternal.instance.getAcceptorPool(),
-            NodexInternal.instance.getWorkerPool());
-    bootstrap = new ServerBootstrap(factory);
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() {
-        ChannelPipeline pipeline = Channels.pipeline();
-//        if (ssl) {
-//          //TODO
-//          SSLEngine engine = SecureChatSslContextFactory.getServerContext().createSSLEngine();
-//          engine.setUseClientMode(false);
-//          pipeline.addLast("ssl", new SslHandler(engine));
-//        }
-        pipeline.addLast("decoder", new HttpRequestDecoder());
-        pipeline.addLast("encoder", new HttpResponseEncoder());
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-        pipeline.addLast("handler", new ServerHandler());
-        return pipeline;
-      }
-    });
-    //TODO these should be configurable
-    bootstrap.setOption("child.tcpNoDelay", true);
-    bootstrap.setOption("child.keepAlive", true);
-    bootstrap.setOption("reuseAddress", true);
     this.connectHandler = connectHandler;
+
+    //Defaults
+    connectionOptions.put("child.tcpNoDelay", true);
+    connectionOptions.put("child.keepAlive", true);
+    connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
   public HttpServer listen(int port) {
@@ -107,12 +93,88 @@ public class HttpServer {
   }
 
   public HttpServer listen(int port, String host) {
+     if (listening) {
+      throw new IllegalStateException("Listen already called");
+    }
+    listening = true;
+
+    serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
+    ChannelFactory factory =
+        new NioServerSocketChannelFactory(
+            NodexInternal.instance.getAcceptorPool(),
+            NodexInternal.instance.getWorkerPool());
+    ServerBootstrap bootstrap = new ServerBootstrap(factory);
+    bootstrap.setOptions(connectionOptions);
+
+    checkSSL();
+
+    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+      public ChannelPipeline getPipeline() {
+        ChannelPipeline pipeline = Channels.pipeline();
+
+        if (ssl) {
+          SSLEngine engine = context.createSSLEngine();
+          engine.setUseClientMode(false);
+          System.out.println("client auth? " + clientAuth);
+          switch (clientAuth) {
+            case REQUEST: {
+              engine.setWantClientAuth(true);
+              break;
+            } case REQUIRED: {
+              engine.setNeedClientAuth(true);
+              break;
+            } case NONE: {
+              engine.setNeedClientAuth(false);
+              break;
+            }
+          }
+          pipeline.addLast("ssl", new SslHandler(engine));
+        }
+
+        pipeline.addLast("decoder", new HttpRequestDecoder());
+        pipeline.addLast("encoder", new HttpResponseEncoder());
+
+        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+        pipeline.addLast("handler", new ServerHandler());
+        return pipeline;
+      }
+    });
+
     try {
       Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       serverChannelGroup.add(serverChannel);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }
+    return this;
+  }
+
+  public HttpServer setSSL(boolean ssl) {
+    this.ssl = ssl;
+    return this;
+  }
+
+  public HttpServer setKeyStorePath(String path) {
+    this.keyStorePath = path;
+    return this;
+  }
+
+  public HttpServer setKeyStorePassword(String pwd) {
+    this.keyStorePassword = pwd;
+    return this;
+  }
+  public HttpServer setTrustStorePath(String path) {
+    this.trustStorePath = path;
+    return this;
+  }
+
+  public HttpServer setTrustStorePassword(String pwd) {
+    this.trustStorePassword = pwd;
+    return this;
+  }
+
+  public HttpServer setClientAuthRequired(boolean required) {
+    clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
     return this;
   }
 

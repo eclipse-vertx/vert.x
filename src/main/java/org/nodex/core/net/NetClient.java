@@ -31,6 +31,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.SSLBase;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
@@ -41,7 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetClient extends NetBase {
+public class NetClient extends SSLBase {
 
   private ClientBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
