@@ -22,7 +22,7 @@ import org.nodex.core.http.HttpServerResponse;
 
 public class ServerExample {
   public static void main(String[] args) throws Exception {
-    HttpServer server = HttpServer.createServer(new HttpServerConnectHandler() {
+    HttpServer server = new HttpServer(new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
         conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, HttpServerResponse resp) {

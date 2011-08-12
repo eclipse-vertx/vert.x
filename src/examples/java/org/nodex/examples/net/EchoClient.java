@@ -24,7 +24,7 @@ public class EchoClient {
 
     System.out.println("Startinh");
 
-    NetClient.createClient().connect(8080, "localhost", new NetConnectHandler() {
+    new NetClient().connect(8080, "localhost", new NetConnectHandler() {
       public void onConnect(NetSocket socket) {
 
         System.out.println("Connecting");

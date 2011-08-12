@@ -21,7 +21,7 @@ import org.nodex.core.net.NetSocket;
 
 public class EchoServer {
   public static void main(String[] args) throws Exception {
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket socket) {
         System.out.println("Sever conttect");
         socket.dataHandler(new DataHandler() {

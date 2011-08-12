@@ -16,15 +16,12 @@ package org.nodex.core.http;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelDownstreamHandler;
-import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -37,8 +34,6 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
@@ -53,7 +48,7 @@ public class HttpClient {
   private Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap();
   private boolean keepAlive;
 
-  private HttpClient() {
+  public HttpClient() {
     bootstrap = new ClientBootstrap(
         new NioClientSocketChannelFactory(
             NodexInternal.instance.getAcceptorPool(),
@@ -76,10 +71,6 @@ public class HttpClient {
         return pipeline;
       }
     });
-  }
-
-  public static HttpClient createClient() {
-    return new HttpClient();
   }
 
   public HttpClient setKeepAlive(boolean keepAlive) {

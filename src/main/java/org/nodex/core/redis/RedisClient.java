@@ -13,7 +13,6 @@
 
 package org.nodex.core.redis;
 
-import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import redis.clients.jedis.Jedis;
 

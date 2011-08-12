@@ -13,15 +13,10 @@
 
 package tests.core.buffer;
 
-import org.jboss.netty.util.CharsetUtil;
 import org.nodex.core.buffer.Buffer;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
-
-import java.nio.charset.Charset;
 
 public class BufferTest extends TestBase {
 

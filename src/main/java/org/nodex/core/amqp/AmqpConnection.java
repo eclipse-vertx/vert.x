@@ -13,7 +13,6 @@
 
 package org.nodex.core.amqp;
 
-import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 
 import java.io.IOException;

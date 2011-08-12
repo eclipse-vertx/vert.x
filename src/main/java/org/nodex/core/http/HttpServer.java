@@ -16,17 +16,13 @@ package org.nodex.core.http;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelDownstreamHandler;
-import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.DownstreamMessageEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
@@ -44,7 +40,6 @@ import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
@@ -77,7 +72,7 @@ public class HttpServer {
   private Map<Channel, HttpServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
 
-  private HttpServer(HttpServerConnectHandler connectHandler, final boolean ssl) {
+  public HttpServer(HttpServerConnectHandler connectHandler) {
     serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
     ChannelFactory factory =
         new NioServerSocketChannelFactory(
@@ -87,12 +82,12 @@ public class HttpServer {
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {
         ChannelPipeline pipeline = Channels.pipeline();
-        if (ssl) {
-          //TODO
+//        if (ssl) {
+//          //TODO
 //          SSLEngine engine = SecureChatSslContextFactory.getServerContext().createSSLEngine();
 //          engine.setUseClientMode(false);
 //          pipeline.addLast("ssl", new SslHandler(engine));
-        }
+//        }
         pipeline.addLast("decoder", new HttpRequestDecoder());
         pipeline.addLast("encoder", new HttpResponseEncoder());
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
@@ -105,10 +100,6 @@ public class HttpServer {
     bootstrap.setOption("child.keepAlive", true);
     bootstrap.setOption("reuseAddress", true);
     this.connectHandler = connectHandler;
-  }
-
-  public static HttpServer createServer(HttpServerConnectHandler connectHandler) {
-    return new HttpServer(connectHandler, false);
   }
 
   public HttpServer listen(int port) {

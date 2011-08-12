@@ -27,7 +27,7 @@ public class StompServer {
 
   public static NetServer createServer() {
 
-    return NetServer.createServer(new NetConnectHandler() {
+    return new NetServer(new NetConnectHandler() {
 
       private ConcurrentMap<String, List<StompConnection>> subscriptions = new ConcurrentHashMap<>();
 

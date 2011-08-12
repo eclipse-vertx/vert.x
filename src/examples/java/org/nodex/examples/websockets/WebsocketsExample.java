@@ -18,7 +18,7 @@ import org.nodex.core.http.WebsocketConnectHandler;
  */
 public class WebsocketsExample {
   public static void main(String[] args) throws Exception {
-    HttpServer server = HttpServer.createServer(new HttpServerConnectHandler() {
+    HttpServer server = new HttpServer(new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
         conn.wsConnectHandler(new WebsocketConnectHandler() {
           public boolean onConnect(final Websocket ws) {

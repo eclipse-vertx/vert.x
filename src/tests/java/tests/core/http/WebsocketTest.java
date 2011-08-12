@@ -108,9 +108,9 @@ public class WebsocketTest extends TestBase {
       }
     };
 
-    HttpServer server = HttpServer.createServer(serverH).listen(port, host);
+    HttpServer server = new HttpServer(serverH).listen(port, host);
 
-    HttpClient client = HttpClient.createClient().setKeepAlive(keepAlive).connect(port, host, clientH);
+    HttpClient client = new HttpClient().setKeepAlive(keepAlive).connect(port, host, clientH);
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     client.close();

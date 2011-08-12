@@ -20,8 +20,6 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
@@ -96,7 +94,7 @@ public class TLSTest extends TestBase {
       }
     };
 
-    NetServer server = NetServer.createServer(serverHandler).setSSL(true);
+    NetServer server = new NetServer(serverHandler).setSSL(true);
 
     if (serverTrust) {
       server.setTrustStorePath("./src/tests/resources/keystores/server-truststore.jks").setTrustStorePassword
@@ -111,7 +109,7 @@ public class TLSTest extends TestBase {
 
     server.listen(4043);
 
-    NetClient client = NetClient.createClient().setSSL(true);
+    NetClient client = new NetClient().setSSL(true);
 
     if (clientTrustAll) {
       client.setTrustAll(true);

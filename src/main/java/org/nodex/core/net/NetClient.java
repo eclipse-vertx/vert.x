@@ -27,8 +27,6 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.group.ChannelGroupFuture;
-import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
@@ -37,7 +35,6 @@ import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -50,13 +47,9 @@ public class NetClient extends NetBase {
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
   private Map<String, Object> connectionOptions = new HashMap<>();
 
-  private NetClient() {
+  public NetClient() {
     connectionOptions.put("tcpNoDelay", true);
     connectionOptions.put("keepAlive", true);
-  }
-
-  public static NetClient createClient() {
-    return new NetClient();
   }
 
   public NetClient connect(int port, String host, final NetConnectHandler connectHandler) {

@@ -13,6 +13,7 @@
 
 package org.nodex.examples.composition;
 
+import org.nodex.core.CompletionWithResult;
 import org.nodex.core.amqp.AmqpClient;
 import org.nodex.core.amqp.AmqpConnectHandler;
 import org.nodex.core.amqp.AmqpConnection;
@@ -40,7 +41,6 @@ import org.nodex.core.stomp.StompConnectHandler;
 import org.nodex.core.stomp.StompConnection;
 import org.nodex.core.stomp.StompMsgCallback;
 import org.nodex.core.stomp.StompServer;
-import org.nodex.core.CompletionWithResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,7 +74,7 @@ public class CompositionExample {
 
   private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
-    HttpServer.createServer(new HttpServerConnectHandler() {
+    new HttpServer(new HttpServerConnectHandler() {
       public void onConnect(final HttpServerConnection conn) {
         conn.requestHandler(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {

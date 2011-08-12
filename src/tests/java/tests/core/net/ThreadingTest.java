@@ -20,8 +20,6 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
@@ -38,7 +36,7 @@ public class ThreadingTest extends TestBase {
   public void testNetHandlers() throws Exception {
     final int dataLength = 10000;
     final CountDownLatch serverClosedLatch = new CountDownLatch(1);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
         sock.dataHandler(new DataHandler() {
@@ -56,7 +54,7 @@ public class ThreadingTest extends TestBase {
       }
     }).listen(8181);
 
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
 
     final CountDownLatch clientClosedLatch = new CountDownLatch(1);
     client.connect(8181, new NetConnectHandler() {
@@ -96,7 +94,7 @@ public class ThreadingTest extends TestBase {
     int connections = 100;
     final Map<Thread, Object> threads = new ConcurrentHashMap<Thread, Object>();
     final CountDownLatch serverConnectLatch = new CountDownLatch(connections);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         threads.put(Thread.currentThread(), "foo");
         serverConnectLatch.countDown();
@@ -104,7 +102,7 @@ public class ThreadingTest extends TestBase {
     }).listen(8181);
 
     final CountDownLatch clientConnectLatch = new CountDownLatch(loops);
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
 
     for (int i = 0; i < connections; i++) {
       client.connect(8181, new NetConnectHandler() {

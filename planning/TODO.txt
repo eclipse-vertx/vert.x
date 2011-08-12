@@ -17,12 +17,16 @@ Cookies
 Test multiple connections
 Pooling
 Pipelining currently doesn't work properly with timeouts (see testPipeLining)
-Send file example
 POST/PUT example - maybe could have example with all request types illustrated
 Websocket close protocol
-Make API consistent with Net for creating server and clients
 Test request/response as write/read stream with pump both client and server side
 Test chaining methods
 endHandler handlers not currently being called
+Not all httpserverresponse methods being tested
+
+File
+----
+
+Synchronous versions of file ops
 
 

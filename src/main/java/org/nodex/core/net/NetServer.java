@@ -39,7 +39,6 @@ import org.nodex.core.NodexInternal;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -62,7 +61,7 @@ public class NetServer extends NetBase {
     NONE, REQUEST, REQUIRED
   }
 
-  private NetServer(NetConnectHandler connectHandler) {
+  public NetServer(NetConnectHandler connectHandler) {
     this.connectCallback = connectHandler;
 
     //Defaults
@@ -70,10 +69,6 @@ public class NetServer extends NetBase {
     connectionOptions.put("child.keepAlive", true);
     //TODO reusAddress should be configurable
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
-  }
-
-  public static NetServer createServer(NetConnectHandler connectCallback) {
-    return new NetServer(connectCallback);
   }
 
   public NetServer setSSL(boolean ssl) {

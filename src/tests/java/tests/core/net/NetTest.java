@@ -19,8 +19,6 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 import tests.core.TestBase;
@@ -36,14 +34,14 @@ public class NetTest extends TestBase {
   public void testConnect() throws Exception {
     int connectCount = 10;
     final CountDownLatch serverConnectLatch = new CountDownLatch(connectCount);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         serverConnectLatch.countDown();
       }
     }).listen(8181);
 
     final CountDownLatch clientConnectLatch = new CountDownLatch(connectCount);
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
 
     for (int i = 0; i < connectCount; i++) {
       client.connect(8181, new NetConnectHandler() {
@@ -68,7 +66,7 @@ public class NetTest extends TestBase {
   Actually quite hard to test this meaningfully
    */
   public void testServerParams() throws Exception {
-    NetServer.createServer(new NetConnectHandler() {
+    new NetServer(new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
 
       }
@@ -82,7 +80,7 @@ public class NetTest extends TestBase {
   Actually quite hard to test this meaningfully
    */
   public void testClientParams() throws Exception {
-    NetClient.createClient().setKeepAlive(true).setReceiveBufferSize(64 * 1024).setSendBufferSize(32 * 1024).setReuseAddress(true)
+    new NetClient().setKeepAlive(true).setReceiveBufferSize(64 * 1024).setSendBufferSize(32 * 1024).setReuseAddress(true)
         .setSoLinger(true).setTcpNoDelay(false).setTrafficClass(123);
   }
 
@@ -102,7 +100,7 @@ public class NetTest extends TestBase {
   public void testStartAndClose() throws Exception {
     int serverCount = 10;
     for (int i = 0; i < 10; i++) {
-      NetServer server = NetServer.createServer(new NetConnectHandler() {
+      NetServer server = new NetServer(new NetConnectHandler() {
         public void onConnect(NetSocket sock) {
         }
       }).listen(8181);
@@ -139,7 +137,7 @@ public class NetTest extends TestBase {
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
@@ -153,7 +151,7 @@ public class NetTest extends TestBase {
     }).listen(8181);
 
     final Buffer sentBuff = Buffer.createBuffer(0);
-    NetClient client = NetClient.createClient().connect(8181, new NetConnectHandler() {
+    NetClient client = new NetClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
         doWrite(sentBuff, sock, numSends, sendSize, checker);
@@ -213,8 +211,8 @@ public class NetTest extends TestBase {
     NetConnectHandler serverHandler = clientToServer ? receiver: sender;
     NetConnectHandler clientHandler = clientToServer ? sender: receiver;
 
-    NetServer server = NetServer.createServer(serverHandler).listen(8181);
-    NetClient.createClient().connect(8181, clientHandler);
+    NetServer server = new NetServer(serverHandler).listen(8181);
+    new NetClient().connect(8181, clientHandler);
 
     assert latch.await(5, TimeUnit.SECONDS);
 
@@ -287,8 +285,8 @@ public class NetTest extends TestBase {
     NetConnectHandler serverHandler = clientToServer ? receiver : sender;
     NetConnectHandler clientHandler = clientToServer ? sender : receiver;
 
-    NetServer server = NetServer.createServer(serverHandler).listen(8181);
-    NetClient.createClient().connect(8181, clientHandler);
+    NetServer server = new NetServer(serverHandler).listen(8181);
+    new NetClient().connect(8181, clientHandler);
 
     azzert(latch.await(2, TimeUnit.SECONDS));
 
@@ -302,7 +300,7 @@ public class NetTest extends TestBase {
   private void testCloseHandler(final boolean closeClient) throws Exception {
     int connectCount = 10;
     final CountDownLatch serverCloseLatch = new CountDownLatch(connectCount);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
         sock.closedHandler(new Runnable() {
@@ -316,7 +314,7 @@ public class NetTest extends TestBase {
     }).listen(8181);
 
     final CountDownLatch clientCloseLatch = new CountDownLatch(connectCount);
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
 
     for (int i = 0; i < connectCount; i++) {
       client.connect(8181, new NetConnectHandler() {

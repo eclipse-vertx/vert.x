@@ -20,8 +20,6 @@ import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import tests.Utils;
 
@@ -57,7 +55,7 @@ public class TimerTest extends TestBase {
    */
   public void testOneOffInConnect() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
         final String contextID = Nodex.instance.getContextID();
@@ -71,7 +69,7 @@ public class TimerTest extends TestBase {
       }
     }).listen(8181);
 
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
     client.connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
       }
@@ -88,7 +86,7 @@ public class TimerTest extends TestBase {
    */
   public void testOneOffInData() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
         final String contextID = Nodex.instance.getContextID();
@@ -107,7 +105,7 @@ public class TimerTest extends TestBase {
       }
     }).listen(8181);
 
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
     client.connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         sock.write(Utils.generateRandomBuffer(100));
@@ -125,7 +123,7 @@ public class TimerTest extends TestBase {
    */
   public void testTimings() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
         final String contextID = Nodex.instance.getContextID();
@@ -144,7 +142,7 @@ public class TimerTest extends TestBase {
       }
     }).listen(8181);
 
-    NetClient client = NetClient.createClient();
+    NetClient client = new NetClient();
     client.connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
       }

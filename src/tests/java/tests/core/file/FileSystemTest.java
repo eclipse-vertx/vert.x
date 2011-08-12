@@ -1480,7 +1480,7 @@ public class FileSystemTest extends TestBase {
 
   // All file system operations need to be executed in a context so we use a net server for that
   private void run(CountDownLatch latch, final Runnable runner) throws Exception {
-    NetServer server = NetServer.createServer(new NetConnectHandler() {
+    NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         try {
           runner.run();
@@ -1491,7 +1491,7 @@ public class FileSystemTest extends TestBase {
       }
     }).listen(8181);
 
-    NetClient client = NetClient.createClient().connect(8181, new NetConnectHandler() {
+    NetClient client = new NetClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
       }
     });
