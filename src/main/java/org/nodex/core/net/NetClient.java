@@ -31,6 +31,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
@@ -47,6 +48,7 @@ public class NetClient extends SSLBase {
   private ClientBootstrap bootstrap;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
   private Map<String, Object> connectionOptions = new HashMap<>();
+  private ExceptionHandler exceptionHandler;
 
   public NetClient() {
     connectionOptions.put("tcpNoDelay", true);
@@ -93,8 +95,12 @@ public class NetClient extends SSLBase {
             }
           });
         } else {
-          //FIXME - better error handling
-          channelFuture.getCause().printStackTrace();
+          Throwable t = channelFuture.getCause();
+          if (t instanceof Exception && exceptionHandler != null) {
+            exceptionHandler.onException((Exception)t);
+          } else {
+            t.printStackTrace(System.err);
+          }
         }
       }
     });
@@ -109,6 +115,10 @@ public class NetClient extends SSLBase {
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
   }
 
   public NetClient setSSL(boolean ssl) {

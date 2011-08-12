@@ -35,6 +35,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.nodex.core.ExceptionHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
@@ -50,8 +51,13 @@ public class HttpClient extends SSLBase {
   private ClientBootstrap bootstrap;
   private Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap();
   private boolean keepAlive;
+  private ExceptionHandler exceptionHandler;
 
   public HttpClient() {
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    this.exceptionHandler = handler;
   }
 
   public HttpClient setKeepAlive(boolean keepAlive) {
@@ -139,9 +145,10 @@ public class HttpClient extends SSLBase {
             }
           });
         } else {
-          //FIXME - better error handling
           Throwable t = channelFuture.getCause();
-          if (t != null) {
+          if (t instanceof Exception && exceptionHandler != null) {
+            exceptionHandler.onException((Exception)t);
+          } else {
             t.printStackTrace(System.err);
           }
         }

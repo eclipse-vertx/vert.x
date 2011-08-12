@@ -128,11 +128,12 @@ public final class NodexImpl implements NodexInternal {
   }
 
   public <T> boolean sendMessage(String actorID, final T message) {
-    ActorHolder holder = actors.remove(actorID);
+    final ActorHolder holder = actors.remove(actorID);
     if (holder != null) {
       final Actor<T> actor = (Actor<T>)holder.actor; // FIXME - unchecked cast
       executeOnContext(holder.contextID, new Runnable() {
         public void run() {
+          setContextID(holder.contextID);
           actor.onMessage(message);
         }
       });
