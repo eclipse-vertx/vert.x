@@ -33,6 +33,9 @@ import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 
@@ -185,7 +188,6 @@ public class HttpServerResponse implements WriteStream {
     conn.responseComplete();
   }
 
-  //TODO - really this should take a file handle from the file system API
   public HttpServerResponse sendFile(String filename) {
     if (headWritten) {
       throw new IllegalStateException("Response complete");
@@ -193,15 +195,32 @@ public class HttpServerResponse implements WriteStream {
 
     File file = new File(filename);
 
-    HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-    response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+    if (!file.exists()) {
+      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+      writeFuture = conn.write(response);
+    } else {
+      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+      response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+      try {
+        String contenttype = Files.probeContentType(Paths.get(filename));
+        response.setHeader(Names.CONTENT_TYPE, contenttype);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
 
-    writeCookieHeader(response);
-    conn.write(response);
+      writeCookieHeader(response);
+      conn.write(response);
 
-    conn.sendFile(file);
+      writeFuture = conn.sendFile(file);
+    }
 
-    written = headWritten = true;
+    // Close the non-keep-alive connection after the write operation is done.
+    if (!keepAlive) {
+      writeFuture.addListener(ChannelFutureListener.CLOSE);
+    }
+    headWritten = written = true;
+    conn.responseComplete();
+
     return this;
   }
 

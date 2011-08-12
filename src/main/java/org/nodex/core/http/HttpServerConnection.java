@@ -229,7 +229,7 @@ public class HttpServerConnection extends AbstractConnection {
     return super.isSSL();
   }
 
-  protected void sendFile(File file) {
-    super.sendFile(file);
+  protected ChannelFuture sendFile(File file) {
+    return super.sendFile(file);
   }
 }

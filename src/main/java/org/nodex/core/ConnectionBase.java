@@ -143,7 +143,7 @@ public class ConnectionBase {
     return channel.getPipeline().get(SslHandler.class) != null;
   }
 
-  protected void sendFile(File file) {
+  protected ChannelFuture sendFile(File file) {
     RandomAccessFile raf;
     try {
       raf = new RandomAccessFile(file, "r");
@@ -158,10 +158,12 @@ public class ConnectionBase {
         // No encryption - use zero-copy.
         final FileRegion region =
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        channel.write(region);
+         writeFuture = channel.write(region);
       }
+      return writeFuture;
     } catch (IOException e) {
       handleException(e);
+      return null;
     }
   }
 }
