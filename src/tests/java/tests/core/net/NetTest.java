@@ -133,7 +133,7 @@ public class NetTest extends TestBase {
   Test writing with a completion
    */
   public void testWriteWithCompletion() throws Exception {
-    final Buffer receivedBuff = Buffer.createBuffer(0);
+    final Buffer receivedBuff = Buffer.create(0);
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
@@ -150,7 +150,7 @@ public class NetTest extends TestBase {
       }
     }).listen(8181);
 
-    final Buffer sentBuff = Buffer.createBuffer(0);
+    final Buffer sentBuff = Buffer.create(0);
     NetClient client = new NetClient().connect(8181, new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         final ContextChecker checker = new ContextChecker();
@@ -195,7 +195,7 @@ public class NetTest extends TestBase {
 
     NetConnectHandler receiver = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
-        final Buffer buff = Buffer.createBuffer(0);
+        final Buffer buff = Buffer.create(0);
         sock.dataHandler(new DataHandler() {
           public void onData(final Buffer data) {
             buff.append(data);
@@ -241,7 +241,7 @@ public class NetTest extends TestBase {
   }
 
   private void testSendData(boolean clientToServer, final boolean string) throws Exception {
-    final Buffer receivedBuff = Buffer.createBuffer(0);
+    final Buffer receivedBuff = Buffer.create(0);
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
@@ -260,7 +260,7 @@ public class NetTest extends TestBase {
         });
       }
     };
-    final Buffer sentBuff = Buffer.createBuffer(0);
+    final Buffer sentBuff = Buffer.create(0);
     NetConnectHandler sender = new NetConnectHandler() {
       public void onConnect(NetSocket sock) {
         for (int i = 0; i < numSends; i++) {

@@ -137,11 +137,11 @@ public class HttpServerResponse implements WriteStream {
   }
 
   public HttpServerResponse write(String chunk, String enc) {
-    return write(Buffer.createBuffer(chunk, enc)._getChannelBuffer(), null);
+    return write(Buffer.create(chunk, enc)._getChannelBuffer(), null);
   }
 
   public HttpServerResponse write(String chunk) {
-    return write(Buffer.createBuffer(chunk)._getChannelBuffer(), null);
+    return write(Buffer.create(chunk)._getChannelBuffer(), null);
   }
 
   public HttpServerResponse write(Buffer chunk, Runnable done) {
@@ -149,11 +149,11 @@ public class HttpServerResponse implements WriteStream {
   }
 
   public HttpServerResponse write(String chunk, String enc, Runnable done) {
-    return write(Buffer.createBuffer(chunk, enc)._getChannelBuffer(), done);
+    return write(Buffer.create(chunk, enc)._getChannelBuffer(), done);
   }
 
   public HttpServerResponse write(String chunk, Runnable done) {
-    return write(Buffer.createBuffer(chunk)._getChannelBuffer(), done);
+    return write(Buffer.create(chunk)._getChannelBuffer(), done);
   }
 
   public void end() {

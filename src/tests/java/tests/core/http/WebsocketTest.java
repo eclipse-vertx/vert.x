@@ -75,7 +75,7 @@ public class WebsocketTest extends TestBase {
       public void onConnect(final HttpClientConnection conn) {
         conn.upgradeToWebSocket(path, new WebsocketConnectHandler() {
           public boolean onConnect(Websocket ws) {
-            final Buffer received = Buffer.createBuffer(0);
+            final Buffer received = Buffer.create(0);
             ws.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 received.append(data);
@@ -85,16 +85,16 @@ public class WebsocketTest extends TestBase {
                 }
               }
             });
-            final Buffer sent = Buffer.createBuffer(0);
+            final Buffer sent = Buffer.create(0);
             for (int i = 0; i < sends; i++) {
               if (binary) {
-                Buffer buff = Buffer.createBuffer(Utils.generateRandomByteArray(bsize));
+                Buffer buff = Buffer.create(Utils.generateRandomByteArray(bsize));
                 ws.writeBinaryFrame(buff);
                 sent.append(buff);
               } else {
                 String str = Utils.randomAlphaString(100);
                 ws.writeTextFrame(str);
-                sent.append(Buffer.createBuffer(str, "UTF-8"));
+                sent.append(Buffer.create(str, "UTF-8"));
               }
             }
             return true;

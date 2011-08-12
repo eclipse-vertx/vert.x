@@ -64,6 +64,8 @@ public class ActorTest extends TestBase {
     });
 
     azzert(latch2.await(5, TimeUnit.SECONDS));
+    nodex.destroyContext(contextID1);
+    nodex.destroyContext(contextID2);
 
     throwAssertions();
   }

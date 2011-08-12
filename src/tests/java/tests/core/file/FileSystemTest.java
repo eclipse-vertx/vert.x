@@ -3,16 +3,13 @@ package tests.core.file;
 import org.nodex.core.Completion;
 import org.nodex.core.CompletionWithResult;
 import org.nodex.core.ExceptionHandler;
+import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileStats;
 import org.nodex.core.file.FileSystem;
 import org.nodex.core.file.FileSystemException;
-import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetConnectHandler;
-import org.nodex.core.net.NetServer;
-import org.nodex.core.net.NetSocket;
 import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
@@ -971,7 +968,7 @@ public class FileSystemTest extends TestBase {
     });
 
     azzert(exception.get() == null);
-    azzert(Utils.buffersEqual(Buffer.createBuffer(content), res.get()));
+    azzert(Utils.buffersEqual(Buffer.create(content), res.get()));
     throwAssertions();
   }
 
@@ -1010,7 +1007,7 @@ public class FileSystemTest extends TestBase {
   @Test
   public void testWriteFile() throws Exception {
     byte[] content = Utils.generateRandomByteArray(1000);
-    final Buffer buff = Buffer.createBuffer(content);
+    final Buffer buff = Buffer.create(content);
     final String fileName = "some-file.dat";
 
     final CountDownLatch latch = new CountDownLatch(1);
@@ -1037,7 +1034,7 @@ public class FileSystemTest extends TestBase {
     azzert(fileExists(fileName));
     azzert(fileLength(fileName) == content.length);
     byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-    azzert(Utils.buffersEqual(buff, Buffer.createBuffer(readBytes)));
+    azzert(Utils.buffersEqual(buff, Buffer.create(readBytes)));
     throwAssertions();
   }
 
@@ -1080,7 +1077,7 @@ public class FileSystemTest extends TestBase {
     final int chunks = 10;
 
     byte[] content = Utils.generateRandomByteArray(chunkSize * chunks);
-    final Buffer buff = Buffer.createBuffer(content);
+    final Buffer buff = Buffer.create(content);
 
     final CountDownLatch latch = new CountDownLatch(chunks);
     final AtomicReference<Exception> exception = new AtomicReference<>();
@@ -1128,7 +1125,7 @@ public class FileSystemTest extends TestBase {
     azzert(exception.get() == null);
     azzert(fileExists(fileName));
     byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-    azzert(Utils.buffersEqual(buff, Buffer.createBuffer(readBytes)));
+    azzert(Utils.buffersEqual(buff, Buffer.create(readBytes)));
     throwAssertions();
 
   }
@@ -1184,12 +1181,12 @@ public class FileSystemTest extends TestBase {
 
     azzert(exception.get() == null);
 
-    Buffer buff = Buffer.createBuffer(0);
+    Buffer buff = Buffer.create(0);
     for (Map.Entry<Integer, Buffer> entry : reads.entrySet()) {
       buff.setBytes(entry.getKey(), entry.getValue());
     }
 
-    azzert(Utils.buffersEqual(buff, Buffer.createBuffer(content)));
+    azzert(Utils.buffersEqual(buff, Buffer.create(content)));
     throwAssertions();
   }
 
@@ -1201,7 +1198,7 @@ public class FileSystemTest extends TestBase {
     final int chunks = 10;
 
     byte[] content = Utils.generateRandomByteArray(chunkSize * chunks);
-    final Buffer buff = Buffer.createBuffer(content);
+    final Buffer buff = Buffer.create(content);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Exception> exception = new AtomicReference<>();
@@ -1253,7 +1250,7 @@ public class FileSystemTest extends TestBase {
     azzert(exception.get() == null);
     azzert(fileExists(fileName));
     byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-    azzert(Utils.buffersEqual(buff, Buffer.createBuffer(readBytes)));
+    azzert(Utils.buffersEqual(buff, Buffer.create(readBytes)));
     throwAssertions();
   }
 
@@ -1278,7 +1275,7 @@ public class FileSystemTest extends TestBase {
 
             ReadStream rs = fh.getReadStream();
 
-            final Buffer buff = Buffer.createBuffer(0);
+            final Buffer buff = Buffer.create(0);
 
             rs.dataHandler(new DataHandler() {
               int count;
@@ -1297,7 +1294,7 @@ public class FileSystemTest extends TestBase {
 
             rs.endHandler(new Runnable() {
               public void run() {
-                azzert(Utils.buffersEqual(buff, Buffer.createBuffer(content)));
+                azzert(Utils.buffersEqual(buff, Buffer.create(content)));
                 latch.countDown();
               }
             });
@@ -1391,7 +1388,7 @@ public class FileSystemTest extends TestBase {
     azzert(exception.get() == null);
     azzert(fileExists(fileName2));
     byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName2));
-    azzert(Utils.buffersEqual(Buffer.createBuffer(content), Buffer.createBuffer(readBytes)));
+    azzert(Utils.buffersEqual(Buffer.create(content), Buffer.create(readBytes)));
     throwAssertions();
   }
 
@@ -1478,29 +1475,21 @@ public class FileSystemTest extends TestBase {
   }
 
 
-  // All file system operations need to be executed in a context so we use a net server for that
+  // All file system operations need to be executed in a context
   private void run(CountDownLatch latch, final Runnable runner) throws Exception {
-    NetServer server = new NetServer(new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        try {
-          runner.run();
-        } catch (Exception e) {
-          e.printStackTrace();
-          azzert(false);
-        }
-      }
-    }).listen(8181);
 
-    NetClient client = new NetClient().connect(8181, new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
+    final String context = NodexInternal.instance.createAndAssociateContext();
+
+    NodexInternal.instance.executeOnContext(context, new Runnable() {
+      public void run() {
+        NodexInternal.instance.setContextID(context);
+        runner.run();
       }
     });
 
-    client.close();
-
     if (latch != null) azzert(latch.await(5, TimeUnit.SECONDS));
-    awaitClose(server);
 
+    NodexInternal.instance.destroyContext(context);
   }
 
   private void deleteDir(String dir) {

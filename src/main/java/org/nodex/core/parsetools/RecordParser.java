@@ -133,7 +133,7 @@ public class RecordParser implements DataHandler {
 
   public void onData(Buffer buffer) {
     if (buff == null) {
-      buff = Buffer.createBuffer(buffer.length());
+      buff = Buffer.create(buffer.length());
     }
     buff.append(buffer);
     handleParsing();

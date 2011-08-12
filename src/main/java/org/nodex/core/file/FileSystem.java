@@ -144,7 +144,7 @@ public class FileSystem {
 
   /*
   Permissions is a String of the form rwxr-x---
-  See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html createBuffer method
+  See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html create method
    */
   public void chmod(String path, String perms, String dirPerms, Completion completion) {
     final Path target = Paths.get(path);
@@ -388,14 +388,14 @@ public class FileSystem {
       public Buffer execute() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
-        Buffer buff = Buffer.createBuffer(bytes);
+        Buffer buff = Buffer.create(bytes);
         return buff;
       }
     }.run();
   }
 
   public void writeStringToFile(String path, String str, String enc, Completion completion) {
-    Buffer buff = Buffer.createBuffer(str, enc);
+    Buffer buff = Buffer.create(str, enc);
     writeFile(path, buff, completion);
   }
 

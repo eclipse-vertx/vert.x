@@ -17,7 +17,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -76,7 +75,7 @@ public class HttpClientConnection extends AbstractConnection {
         } else if (!resp.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE)) {
           handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
         } else {
-          final Buffer buff = Buffer.createBuffer(0);
+          final Buffer buff = Buffer.create(0);
           resp.dataHandler(new DataHandler() {
             public void onData(Buffer data) {
               buff.append(data);

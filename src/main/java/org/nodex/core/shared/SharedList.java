@@ -63,6 +63,7 @@ public class SharedList<E> implements List<E> {
   }
 
   public boolean add(E e) {
+    SharedUtils.checkObject(e);
     return list.add(e);
   }
 
@@ -75,10 +76,16 @@ public class SharedList<E> implements List<E> {
   }
 
   public boolean addAll(Collection<? extends E> es) {
+    for (E e: es) {
+      SharedUtils.checkObject(e);
+    }
     return list.addAll(es);
   }
 
   public boolean addAll(int i, Collection<? extends E> es) {
+    for (E e: es) {
+      SharedUtils.checkObject(e);
+    }
     return list.addAll(i, es);
   }
 

@@ -25,20 +25,20 @@ public class Buffer {
   //Node.x buffers are always dynamic
   private DynamicChannelBuffer buffer;
 
-  public static Buffer createBuffer(int initialSize) {
+  public static Buffer create(int initialSize) {
     return new Buffer(ChannelBuffers.dynamicBuffer(initialSize));
   }
 
-  public static Buffer createBuffer(byte[] bytes) {
+  public static Buffer create(byte[] bytes) {
     return new Buffer(ChannelBuffers.wrappedBuffer(bytes));
   }
 
-  public static Buffer createBuffer(String str, String enc) {
+  public static Buffer create(String str, String enc) {
     return new Buffer(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
   }
 
-  public static Buffer createBuffer(String str) {
-    return Buffer.createBuffer(str, "UTF-8");
+  public static Buffer create(String str) {
+    return Buffer.create(str, "UTF-8");
   }
 
   // For internal use only
@@ -113,6 +113,31 @@ public class Buffer {
 
   public Buffer append(byte b) {
     buffer.writeByte(b);
+    return this;
+  }
+
+  public Buffer append(int i) {
+    buffer.writeInt(i);
+    return this;
+  }
+
+  public Buffer append(long l) {
+    buffer.writeLong(l);
+    return this;
+  }
+
+  public Buffer append(short s) {
+    buffer.writeShort(s);
+    return this;
+  }
+
+  public Buffer append(float f) {
+    buffer.writeFloat(f);
+    return this;
+  }
+
+  public Buffer append(double d) {
+    buffer.writeDouble(d);
     return this;
   }
 

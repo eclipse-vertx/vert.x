@@ -42,7 +42,7 @@ public class Utils {
 
   public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
     byte[] line = generateRandomByteArray(length, avoid, avoidByte);
-    return Buffer.createBuffer(line);
+    return Buffer.create(line);
   }
 
   public static String randomAlphaString(int length) {

@@ -38,7 +38,13 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
     }
   }
 
+  private void check(K k, V v) {
+    SharedUtils.checkObject(k);
+    SharedUtils.checkObject(v);
+  }
+
   public V putIfAbsent(K k, V v) {
+    check(k, v);
     return map.putIfAbsent(k, v);
   }
 
@@ -47,10 +53,12 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public boolean replace(K k, V v, V v1) {
+    check(k, v1);
     return map.replace(k, v, v1);
   }
 
   public V replace(K k, V v) {
+    check(k, v);
     return map.replace(k, v);
   }
 
@@ -75,6 +83,7 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public V put(K k, V v) {
+    check(k, v);
     return map.put(k, v);
   }
 
@@ -83,7 +92,10 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public void putAll(Map<? extends K, ? extends V> map) {
-    this.map.putAll(map);
+    for (Map.Entry<? extends K, ? extends V> entry: map.entrySet()) {
+      check(entry.getKey(), entry.getValue());
+      this.map.put(entry.getKey(), entry.getValue());
+    }
   }
 
   public void clear() {
