@@ -45,8 +45,8 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.core.SSLBase;
 import org.nodex.core.NodexInternal;
+import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
@@ -256,8 +256,7 @@ public class HttpServer extends SSLBase {
           }
         } else {
           HttpServerRequest req = new HttpServerRequest(conn, request);
-          HttpServerResponse resp = new HttpServerResponse(HttpHeaders.isKeepAlive(request),
-              request.getHeader(HttpHeaders.Names.COOKIE), conn);
+          HttpServerResponse resp = new HttpServerResponse(HttpHeaders.isKeepAlive(request), conn);
           conn.handleRequest(req, resp);
           ChannelBuffer requestBody = request.getContent();
           if (requestBody.readable()) {

@@ -28,6 +28,9 @@ public class SSLBase {
 
   protected SSLContext context;
 
+  protected SSLBase() {
+  }
+
   public boolean isSsl() {
     return ssl;
   }

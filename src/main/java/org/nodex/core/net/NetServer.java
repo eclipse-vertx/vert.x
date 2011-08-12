@@ -34,9 +34,9 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.core.SSLBase;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
+import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 

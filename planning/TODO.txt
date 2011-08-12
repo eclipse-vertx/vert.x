@@ -12,8 +12,6 @@ endHandler handlers not currently being called
 HTTP
 ----
 
-HTTPS
-Cookies
 Test multiple connections
 Pooling
 Pipelining currently doesn't work properly with timeouts (see testPipeLining)

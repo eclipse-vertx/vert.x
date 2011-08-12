@@ -16,7 +16,6 @@ package org.nodex.core.http;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -51,8 +50,6 @@ public class HttpClientRequest implements WriteStream {
   private ExceptionHandler exceptionHandler;
   private boolean headWritten;
   private boolean sent;
-
-  private Map<String, String> cookies;
 
   public HttpClientRequest putHeader(String key, Object value) {
     request.setHeader(key, value);
@@ -168,14 +165,6 @@ public class HttpClientRequest implements WriteStream {
       request.setChunked(true);
       request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
     }
-    if (cookies != null) {
-      CookieEncoder httpCookieEncoder = new CookieEncoder(false);
-      for (Map.Entry<String, String> cookie : cookies.entrySet()) {
-        httpCookieEncoder.addCookie(cookie.getKey(), cookie.getValue());
-      }
-      request.setHeader(HttpHeaders.Names.COOKIE, httpCookieEncoder.encode());
-    }
-
     conn.write(request, this);
   }
 

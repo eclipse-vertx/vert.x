@@ -17,9 +17,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.handler.codec.http.Cookie;
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -37,7 +34,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Set;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
@@ -49,7 +45,6 @@ public class HttpServerResponse implements WriteStream {
   private static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
 
   private final boolean keepAlive;
-  private final String cookieString;
   private final HttpServerConnection conn;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
@@ -60,9 +55,8 @@ public class HttpServerResponse implements WriteStream {
   private Runnable drainHandler;
   private ExceptionHandler exceptionHandler;
 
-  HttpServerResponse(boolean keepAlive, String cookieString, HttpServerConnection conn) {
+  HttpServerResponse(boolean keepAlive, HttpServerConnection conn) {
     this.keepAlive = keepAlive;
-    this.cookieString = cookieString;
     this.conn = conn;
     this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
   }
@@ -166,7 +160,6 @@ public class HttpServerResponse implements WriteStream {
     if (!headWritten) {
       //No body
       response.setStatus(HttpResponseStatus.valueOf(statusCode));
-      writeCookieHeader(response);
       response.setHeader(CONTENT_LENGTH, 0);
       writeFuture = conn.write(response);
     } else {
@@ -208,7 +201,6 @@ public class HttpServerResponse implements WriteStream {
         e.printStackTrace();
       }
 
-      writeCookieHeader(response);
       conn.write(response);
 
       writeFuture = conn.sendFile(file);
@@ -240,22 +232,6 @@ public class HttpServerResponse implements WriteStream {
     if (trailer == null) trailer = new DefaultHttpChunkTrailer();
   }
 
-  private void writeCookieHeader(HttpResponse response) {
-    // Encode the cookie.
-    if (cookieString != null) {
-      CookieDecoder cookieDecoder = new CookieDecoder();
-      Set<Cookie> cookies = cookieDecoder.decode(cookieString);
-      if (!cookies.isEmpty()) {
-        // Reset the cookies if necessary.
-        CookieEncoder cookieEncoder = new CookieEncoder(true);
-        for (Cookie cookie : cookies) {
-          cookieEncoder.addCookie(cookie);
-        }
-        response.addHeader(HttpHeaders.Names.SET_COOKIE, cookieEncoder.encode());
-      }
-    }
-  }
-
   /*
   We use HTTP chunked encoding and each write has it's own chunk
   TODO non chunked encoding
@@ -271,7 +247,6 @@ public class HttpServerResponse implements WriteStream {
       response.setStatus(HttpResponseStatus.valueOf(statusCode));
       response.setChunked(true);
       response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      writeCookieHeader(response);
       conn.write(response);
       headWritten = true;
     }

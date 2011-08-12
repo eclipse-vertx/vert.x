@@ -14,7 +14,6 @@
 package org.nodex.core.http;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -36,8 +35,8 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
-import org.nodex.core.SSLBase;
 import org.nodex.core.NodexInternal;
+import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
 import org.nodex.core.buffer.Buffer;
 
