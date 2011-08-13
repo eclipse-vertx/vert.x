@@ -36,7 +36,7 @@ public class AsyncFile {
 
   private final AsynchronousFileChannel ch;
   private final Thread th;
-  private final String contextID;
+  private final long contextID;
   private boolean closed;
   private ReadStream readStream;
   private WriteStream writeStream;
@@ -44,7 +44,7 @@ public class AsyncFile {
   private AtomicInteger writesOutstanding = new AtomicInteger(0);
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean sync, final boolean syncMeta, final String contextID, final Thread th) throws Exception {
+            final boolean sync, final boolean syncMeta, final long contextID, final Thread th) throws Exception {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.examples.net;
+package org.nodex.examples.echo;
 
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
@@ -23,7 +23,6 @@ public class EchoServer {
   public static void main(String[] args) throws Exception {
     NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket socket) {
-        System.out.println("Sever conttect");
         socket.dataHandler(new DataHandler() {
           public void onData(Buffer buffer) {
             socket.write(buffer);

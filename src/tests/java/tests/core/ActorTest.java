@@ -31,17 +31,17 @@ public class ActorTest extends TestBase {
 
     final String message = "Hello actor";
 
-    final SharedMap<String, String> map = new SharedMap<>("test-map");
+    final SharedMap<String, Long> map = new SharedMap<>();
 
     final CountDownLatch latch1 = new CountDownLatch(1);
     final CountDownLatch latch2 = new CountDownLatch(1);
-    final String contextID1 = nodex.createAndAssociateContext();
+    final long contextID1 = nodex.createAndAssociateContext();
     nodex.executeOnContext(contextID1, new Runnable() {
       public void run() {
         nodex.setContextID(contextID1);
-        String actorID = nodex.registerActor(new Actor<String>() {
+        long actorID = nodex.registerActor(new Actor<String>() {
           public void onMessage(String message) {
-            azzert(contextID1.equals(nodex.getContextID()));
+            azzert(contextID1 == nodex.getContextID());
             System.out.println("Got message " + message);
             latch2.countDown();
           }
@@ -53,12 +53,12 @@ public class ActorTest extends TestBase {
 
     azzert(latch1.await(5, TimeUnit.SECONDS));
 
-    final String contextID2 = nodex.createAndAssociateContext();
+    final long contextID2 = nodex.createAndAssociateContext();
     nodex.executeOnContext(contextID2, new Runnable() {
       public void run() {
         nodex.setContextID(contextID2);
         //Send msg to actor
-        String actorID = map.get("actorid");
+        long actorID = map.get("actorid");
         nodex.<String>sendMessage(actorID, message);
       }
     });

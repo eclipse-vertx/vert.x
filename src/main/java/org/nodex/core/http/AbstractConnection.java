@@ -19,7 +19,7 @@ import org.nodex.core.ConnectionBase;
 
 public abstract class AbstractConnection extends ConnectionBase {
 
-  protected AbstractConnection(Channel channel, String contextID, Thread th) {
+  protected AbstractConnection(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
   }
 

@@ -134,7 +134,7 @@ public class HttpClient extends SSLBase {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
           final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
-          final String contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
+          final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
           ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
               HttpClientConnection conn = new HttpClientConnection(ch, keepAlive, host + ":" + port, contextID,

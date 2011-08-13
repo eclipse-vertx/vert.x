@@ -23,20 +23,7 @@ import java.util.WeakHashMap;
 
 public class SharedSet<E> implements Set<E> {
 
-  private static final Map<String, Set<?>> refs = new WeakHashMap<>();
-
-  private final Set<E> set;
-
-  public SharedSet(String name) {
-    synchronized (refs) {
-      Set<E> s = (Set<E>) refs.get(name);
-      if (s == null) {
-        s = new NonBlockingHashSet<>();
-        refs.put(name, s);
-      }
-      set = s;
-    }
-  }
+  private final Set<E> set = new NonBlockingHashSet<>();
 
   public int size() {
     return set.size();
@@ -63,7 +50,7 @@ public class SharedSet<E> implements Set<E> {
   }
 
   public boolean add(E e) {
-    SharedUtils.checkObject(e);
+    e = SharedUtils.checkObject(e);
     return set.add(e);
   }
 
@@ -77,7 +64,7 @@ public class SharedSet<E> implements Set<E> {
 
   public boolean addAll(Collection<? extends E> es) {
     for (E e: es) {
-      SharedUtils.checkObject(e);
+      e = SharedUtils.checkObject(e);
       set.add(e);
     }
     return true;

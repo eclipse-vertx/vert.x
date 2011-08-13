@@ -27,15 +27,15 @@ public interface NodexInternal extends Nodex {
 
   Executor getAcceptorPool();
 
-  void executeOnContext(String contextID, Runnable runnable);
+  void executeOnContext(long contextID, Runnable runnable);
 
-  String createAndAssociateContext();
+  long createAndAssociateContext();
 
-  String associateContextWithWorker(NioWorker worker);
+  long associateContextWithWorker(NioWorker worker);
 
-  boolean destroyContext(String contextID);
+  boolean destroyContext(long contextID);
 
-  void setContextID(String contextID);
+  void setContextID(long contextID);
 
   void executeInBackground(Runnable runnable);
 

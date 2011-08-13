@@ -1478,7 +1478,7 @@ public class FileSystemTest extends TestBase {
   // All file system operations need to be executed in a context
   private void run(CountDownLatch latch, final Runnable runner) throws Exception {
 
-    final String context = NodexInternal.instance.createAndAssociateContext();
+    final long context = NodexInternal.instance.createAndAssociateContext();
 
     NodexInternal.instance.executeOnContext(context, new Runnable() {
       public void run() {

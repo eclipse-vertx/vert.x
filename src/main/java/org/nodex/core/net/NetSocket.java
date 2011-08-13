@@ -18,7 +18,9 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
+import org.nodex.core.Actor;
 import org.nodex.core.ConnectionBase;
+import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
@@ -33,8 +35,16 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   private Runnable endHandler;
   private Runnable drainHandler;
 
-  NetSocket(Channel channel, String contextID, Thread th) {
+  public final long writeActorID;
+
+  NetSocket(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
+
+    writeActorID = Nodex.instance.registerActor(new Actor<Buffer>() {
+      public void onMessage(Buffer buff) {
+        writeBuffer(buff);
+      }
+    });
   }
 
   public void writeBuffer(Buffer data) {
@@ -84,7 +94,6 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     callDrainHandler(); //If the channel is already drained, we want to call it immediately
   }
 
-  //TODO - really this should take a file handle from the file system API
   public void sendFile(String filename) {
     File f = new File(filename);
     super.sendFile(f);
@@ -94,7 +103,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     super.handleClosed();
   }
 
-  protected String getContextID() {
+  protected long getContextID() {
     return super.getContextID();
   }
 

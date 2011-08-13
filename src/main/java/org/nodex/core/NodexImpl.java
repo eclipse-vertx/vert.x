@@ -18,6 +18,7 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
+import org.nodex.core.shared.SharedUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -38,9 +39,9 @@ public final class NodexImpl implements NodexInternal {
   private ExecutorService corePool;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
-  private Map<String, NioWorker> workerMap = new ConcurrentHashMap<>();
-  private static final ThreadLocal<String> contextIDTL = new ThreadLocal<>();
-  private Map<String, ActorHolder> actors = new ConcurrentHashMap<>();
+  private Map<Long, NioWorker> workerMap = new ConcurrentHashMap<>();
+  private static final ThreadLocal<Long> contextIDTL = new ThreadLocal<>();
+  private Map<Long, ActorHolder> actors = new ConcurrentHashMap<>();
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new NodeThreadFactory("node.x-timer-thread"), 20,
@@ -78,7 +79,7 @@ public final class NodexImpl implements NodexInternal {
   }
 
   public long setTimeout(long delay, final Runnable handler) {
-    final String contextID = checkContextID();
+    final long contextID = checkContextID();
     TimerTask task = new TimerTask() {
       public void run(Timeout timeout) {
         executeOnContext(contextID, handler);
@@ -91,30 +92,21 @@ public final class NodexImpl implements NodexInternal {
     return cancelTimeout(id, true);
   }
 
-  public <T> String registerActor(Actor<T> actor) {
-    String contextID = getContextID();
+  public <T> long registerActor(Actor<T> actor) {
+    Long contextID = getContextID();
     if (contextID == null) {
       throw new IllegalStateException("Cannot register actor with no context");
     }
-    String actorID = UUID.randomUUID().toString();
+    long actorID = actorSeq.getAndIncrement();
     actors.put(actorID, new ActorHolder(actor, getContextID()));
     return actorID;
   }
 
-  private static class ActorHolder {
-    ActorHolder(Actor<?> actor, String contextID) {
-      this.actor = actor;
-      this.contextID = contextID;
-    }
-    final Actor<?> actor;
-    final String contextID;
-  }
-
-  public boolean unregisterActor(String actorID) {
-    String contextID = getContextID();
+  public boolean unregisterActor(long actorID) {
+    long contextID = getContextID();
     ActorHolder holder = actors.remove(actorID);
     if (holder != null) {
-      if (!contextID.equals(holder.contextID)) {
+      if (contextID != holder.contextID) {
         actors.put(actorID, holder);
         throw new IllegalStateException("Cannot unregister actor from different context");
       }
@@ -126,14 +118,15 @@ public final class NodexImpl implements NodexInternal {
     }
   }
 
-  public <T> boolean sendMessage(String actorID, final T message) {
-    final ActorHolder holder = actors.remove(actorID);
+  public <T> boolean sendMessage(long actorID, T message) {
+    final T msg = SharedUtils.checkObject(message);
+    final ActorHolder holder = actors.get(actorID);
     if (holder != null) {
       final Actor<T> actor = (Actor<T>)holder.actor; // FIXME - unchecked cast
       executeOnContext(holder.contextID, new Runnable() {
         public void run() {
           setContextID(holder.contextID);
-          actor.onMessage(message);
+          actor.onMessage(msg);
         }
       });
       return true;
@@ -174,30 +167,33 @@ public final class NodexImpl implements NodexInternal {
     return acceptorPool;
   }
 
-  public String createAndAssociateContext() {
+  public long createAndAssociateContext() {
     NioWorker worker = getWorkerPool().nextWorker();
     return associateContextWithWorker(worker);
   }
 
-  public String associateContextWithWorker(NioWorker worker) {
-    String contextID = UUID.randomUUID().toString();
+  private AtomicLong contextIDSeq = new AtomicLong(0);
+  private AtomicLong actorSeq = new AtomicLong(0);
+
+  public long associateContextWithWorker(NioWorker worker) {
+    long contextID = contextIDSeq.getAndIncrement();
     workerMap.put(contextID, worker);
     return contextID;
   }
 
-  public boolean destroyContext(String contextID) {
+  public boolean destroyContext(long contextID) {
     return workerMap.remove(contextID) != null;
   }
 
-  public void setContextID(String contextID) {
+  public void setContextID(long contextID) {
     contextIDTL.set(contextID);
   }
 
-  public String getContextID() {
+  public Long getContextID() {
     return contextIDTL.get();
   }
 
-  public void executeOnContext(String contextID, Runnable runnable) {
+  public void executeOnContext(long contextID, Runnable runnable) {
     NioWorker worker = workerMap.get(contextID);
     if (worker != null) {
       worker.scheduleOtherTask(runnable);
@@ -212,8 +208,8 @@ public final class NodexImpl implements NodexInternal {
 
   // Private --------------------------------------------------------------------------------------------------
 
-  private String checkContextID() {
-    String contextID = getContextID();
+  private long checkContextID() {
+    Long contextID = getContextID();
     if (contextID == null) throw new IllegalStateException("No context id");
     return contextID;
   }
@@ -221,7 +217,7 @@ public final class NodexImpl implements NodexInternal {
   private boolean cancelTimeout(long id, boolean check) {
     TimeoutHolder holder = timeouts.remove(id);
     if (holder != null) {
-      if (check && !holder.contextID.equals(checkContextID())) {
+      if (check && holder.contextID != checkContextID()) {
         throw new IllegalStateException("Timer can only be cancelled in the context that set it");
       }
       holder.timeout.cancel();
@@ -231,7 +227,7 @@ public final class NodexImpl implements NodexInternal {
     }
   }
 
-  private long scheduleTimeout(String contextID, TimerTask task, long delay) {
+  private long scheduleTimeout(long contextID, TimerTask task, long delay) {
     Timeout timeout = timer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
     long id = timeoutCounter.getAndIncrement();
     timeouts.put(id, new TimeoutHolder(timeout, contextID));
@@ -240,9 +236,9 @@ public final class NodexImpl implements NodexInternal {
 
   private static class TimeoutHolder {
     final Timeout timeout;
-    final String contextID;
+    final long contextID;
 
-    TimeoutHolder(Timeout timeout, String contextID) {
+    TimeoutHolder(Timeout timeout, long contextID) {
       this.timeout = timeout;
       this.contextID = contextID;
     }
@@ -264,4 +260,14 @@ public final class NodexImpl implements NodexInternal {
       return t;
     }
   }
+
+  private static class ActorHolder {
+    ActorHolder(Actor<?> actor, long contextID) {
+      this.actor = actor;
+      this.contextID = contextID;
+    }
+    final Actor<?> actor;
+    final long contextID;
+  }
+
 }

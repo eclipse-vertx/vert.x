@@ -58,7 +58,7 @@ public class TimerTest extends TestBase {
     NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
-        final String contextID = Nodex.instance.getContextID();
+        final long contextID = Nodex.instance.getContextID();
         Nodex.instance.setTimeout(1, new Runnable() {
           public void run() {
             assert th == Thread.currentThread();
@@ -89,7 +89,7 @@ public class TimerTest extends TestBase {
     NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
-        final String contextID = Nodex.instance.getContextID();
+        final long contextID = Nodex.instance.getContextID();
         sock.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             Nodex.instance.setTimeout(1, new Runnable() {
@@ -126,7 +126,7 @@ public class TimerTest extends TestBase {
     NetServer server = new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket sock) {
         final Thread th = Thread.currentThread();
-        final String contextID = Nodex.instance.getContextID();
+        final long contextID = Nodex.instance.getContextID();
         final long start = System.nanoTime();
         final long delay = 100;
         Nodex.instance.setTimeout(delay, new Runnable() {

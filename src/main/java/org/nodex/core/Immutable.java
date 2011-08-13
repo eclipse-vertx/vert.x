@@ -13,5 +13,5 @@
 
 package org.nodex.core;
 
-public interface Threadsafe {
+public interface Immutable {
 }

@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class HttpClientConnection extends AbstractConnection {
 
   HttpClientConnection(Channel channel, boolean keepAlive, String hostHeader,
-                       String contextID, Thread th) {
+                       long contextID, Thread th) {
     super(channel, contextID, th);
     this.keepAlive = keepAlive;
     this.hostHeader = hostHeader;
@@ -241,7 +241,7 @@ public class HttpClientConnection extends AbstractConnection {
     super.handleClosed();
   }
 
-  protected String getContextID() {
+  protected long getContextID() {
     return super.getContextID();
   }
 

@@ -31,11 +31,11 @@ public interface Nodex {
 
   boolean cancelTimeout(long id);
 
-  <T> String registerActor(Actor<T> actor);
+  <T> long registerActor(Actor<T> actor);
 
-  boolean unregisterActor(String actorID);
+  boolean unregisterActor(long actorID);
 
-  <T> boolean sendMessage(String actorID, T message);
+  <T> boolean sendMessage(long actorID, T message);
 
-  String getContextID();
+  Long getContextID();
 }

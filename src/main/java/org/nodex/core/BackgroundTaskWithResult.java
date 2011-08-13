@@ -16,7 +16,7 @@ public abstract class BackgroundTaskWithResult<T> {
   public abstract T execute() throws Exception;
 
   public final void run() {
-    final String contextID = Nodex.instance.getContextID();
+    final long contextID = Nodex.instance.getContextID();
     Runnable runner = new Runnable() {
       public void run() {
         try {

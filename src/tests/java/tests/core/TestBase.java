@@ -80,7 +80,7 @@ public class TestBase {
 
   protected static class ContextChecker {
     final Thread th;
-    final String contextID;
+    final long contextID;
 
     public ContextChecker() {
       this.th = Thread.currentThread();

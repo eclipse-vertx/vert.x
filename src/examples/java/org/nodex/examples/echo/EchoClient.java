@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.examples.net;
+package org.nodex.examples.echo;
 
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
@@ -22,20 +22,14 @@ import org.nodex.core.net.NetSocket;
 public class EchoClient {
   public static void main(String[] args) throws Exception {
 
-    System.out.println("Startinh");
-
     new NetClient().connect(8080, "localhost", new NetConnectHandler() {
       public void onConnect(NetSocket socket) {
-
-        System.out.println("Connecting");
 
         socket.dataHandler(new DataHandler() {
           public void onData(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
           }
         });
-
-        System.out.println("Sending");
 
         //Now send some dataHandler
         for (int i = 0; i < 10; i++) {

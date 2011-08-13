@@ -33,10 +33,10 @@ public class TLSHelper {
   /*
   If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
   called jsssecacerts or cacerts in the JDK/JRE security directory.
-  You can override this by specifying the javax.net.ssl.trustStore system property
+  You can override this by specifying the javax.echo.ssl.trustStore system property
 
   If you don't specify a key store, and don't specify a system property no key store will be used
-  You can override this by specifying the javax.net.ssl.keyStore system property
+  You can override this by specifying the javax.echo.ssl.keyStore system property
    */
   public static SSLContext createContext(final String ksPath,
                                          final String ksPassword,
@@ -48,7 +48,6 @@ public class TLSHelper {
       KeyManager[] keyMgrs = ksPath == null ? null : TLSHelper.getKeyMgrs(ksPath, ksPassword);
       TrustManager[] trustMgrs;
       if (trustAll) {
-        System.out.println("Trusting all");
         trustMgrs = new TrustManager[] {createTrustAllTrustManager()};
       } else {
         trustMgrs = tsPath == null ? null : TLSHelper.getTrustMgrs(tsPath, tsPassword);
@@ -96,7 +95,6 @@ public class TLSHelper {
   }
 
   private static KeyStore loadStore(final String ksPath, final String ksPassword) throws Exception {
-    System.out.println("Loading store " + ksPath + ":" + ksPassword);
     KeyStore ks = KeyStore.getInstance("JKS");
     InputStream in = null;
     try {

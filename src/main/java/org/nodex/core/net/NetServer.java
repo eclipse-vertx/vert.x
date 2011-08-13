@@ -158,7 +158,6 @@ public class NetServer extends SSLBase {
         if (ssl) {
           SSLEngine engine = context.createSSLEngine();
           engine.setUseClientMode(false);
-          System.out.println("client auth? " + clientAuth);
           switch (clientAuth) {
             case REQUEST: {
               engine.setWantClientAuth(true);
@@ -202,7 +201,7 @@ public class NetServer extends SSLBase {
       sock.close();
     }
     if (done != null) {
-      final String contextID = Nodex.instance.getContextID();
+      final Long contextID = Nodex.instance.getContextID();
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
 
@@ -229,12 +228,12 @@ public class NetServer extends SSLBase {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final String contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
+      final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
+          NodexInternal.instance.setContextID(contextID);
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-          NodexInternal.instance.setContextID(contextID);
           connectCallback.onConnect(sock);
         }
       });

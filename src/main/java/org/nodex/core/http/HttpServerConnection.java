@@ -40,7 +40,7 @@ public class HttpServerConnection extends AbstractConnection {
 
   private boolean paused;
 
-  HttpServerConnection(Channel channel, String contextID, Thread th) {
+  HttpServerConnection(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
   }
 
@@ -204,7 +204,7 @@ public class HttpServerConnection extends AbstractConnection {
     super.handleClosed();
   }
 
-  protected String getContextID() {
+  protected long getContextID() {
     return super.getContextID();
   }
 

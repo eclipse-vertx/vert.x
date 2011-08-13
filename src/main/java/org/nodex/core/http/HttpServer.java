@@ -115,7 +115,6 @@ public class HttpServer extends SSLBase {
         if (ssl) {
           SSLEngine engine = context.createSSLEngine();
           engine.setUseClientMode(false);
-          System.out.println("client auth? " + clientAuth);
           switch (clientAuth) {
             case REQUEST: {
               engine.setWantClientAuth(true);
@@ -316,7 +315,7 @@ public class HttpServer extends SSLBase {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final String contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
+      final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
           final HttpServerConnection conn = new HttpServerConnection(ch, contextID, Thread.currentThread());

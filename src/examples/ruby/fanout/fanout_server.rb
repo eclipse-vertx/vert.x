@@ -9,7 +9,7 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "net"
+require "echo"
 include Net
 
 # This server fans out any dataHandler it receives to all connected clients

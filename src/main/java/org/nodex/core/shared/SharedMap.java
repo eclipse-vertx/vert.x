@@ -23,28 +23,11 @@ import java.util.concurrent.ConcurrentMap;
 
 public class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
-  private static final Map<String, ConcurrentMap<?, ?>> refs = new WeakHashMap<>();
-
-  private final ConcurrentMap<K, V> map;
-
-  public SharedMap(String name) {
-    synchronized (refs) {
-      ConcurrentMap<K, V> m = (ConcurrentMap<K, V>) refs.get(name);
-      if (m == null) {
-        m = new NonBlockingHashMap<>();
-        refs.put(name, m);
-      }
-      map = m;
-    }
-  }
-
-  private void check(K k, V v) {
-    SharedUtils.checkObject(k);
-    SharedUtils.checkObject(v);
-  }
+  private final ConcurrentMap<K, V> map = new NonBlockingHashMap<>();
 
   public V putIfAbsent(K k, V v) {
-    check(k, v);
+    k = SharedUtils.checkObject(k);
+    v = SharedUtils.checkObject(v);
     return map.putIfAbsent(k, v);
   }
 
@@ -53,12 +36,14 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public boolean replace(K k, V v, V v1) {
-    check(k, v1);
+    k = SharedUtils.checkObject(k);
+    v1 = SharedUtils.checkObject(v1);
     return map.replace(k, v, v1);
   }
 
   public V replace(K k, V v) {
-    check(k, v);
+    k = SharedUtils.checkObject(k);
+    v = SharedUtils.checkObject(v);
     return map.replace(k, v);
   }
 
@@ -83,7 +68,8 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public V put(K k, V v) {
-    check(k, v);
+    k = SharedUtils.checkObject(k);
+    v = SharedUtils.checkObject(v);
     return map.put(k, v);
   }
 
@@ -93,8 +79,9 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
   public void putAll(Map<? extends K, ? extends V> map) {
     for (Map.Entry<? extends K, ? extends V> entry: map.entrySet()) {
-      check(entry.getKey(), entry.getValue());
-      this.map.put(entry.getKey(), entry.getValue());
+      K k = SharedUtils.checkObject(entry.getKey());
+      V v = SharedUtils.checkObject(entry.getValue());
+      this.map.put(k, v);
     }
   }
 

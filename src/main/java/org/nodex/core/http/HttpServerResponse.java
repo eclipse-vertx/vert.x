@@ -196,7 +196,9 @@ public class HttpServerResponse implements WriteStream {
       response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       try {
         String contenttype = Files.probeContentType(Paths.get(filename));
-        response.setHeader(Names.CONTENT_TYPE, contenttype);
+        if (contenttype != null) {
+          response.setHeader(Names.CONTENT_TYPE, contenttype);
+        }
       } catch (IOException e) {
         e.printStackTrace();
       }

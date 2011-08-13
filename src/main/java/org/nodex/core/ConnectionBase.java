@@ -28,21 +28,19 @@ import java.io.RandomAccessFile;
 
 public class ConnectionBase {
 
-  protected ConnectionBase(Channel channel, String contextID, Thread th) {
+  protected ConnectionBase(Channel channel, long contextID, Thread th) {
     this.channel = channel;
     this.contextID = contextID;
     this.th = th;
   }
 
   protected final Channel channel;
-  protected final String contextID;
+  protected final long contextID;
   //For sanity checks
   protected final Thread th;
 
   protected ExceptionHandler exceptionHandler;
   protected Runnable closedHandler;
-
-  // Public API -------------------------------------------------------------------------------
 
   public void pause() {
     channel.setReadable(false);
@@ -66,8 +64,6 @@ public class ConnectionBase {
     channel.close();
   }
 
-  // Handlers ---------------------------------------------------------------------
-
   public void exceptionHandler(ExceptionHandler handler) {
     this.exceptionHandler = handler;
   }
@@ -76,9 +72,7 @@ public class ConnectionBase {
     this.closedHandler = handler;
   }
 
-  // Impl ?? ----------------------------------------------------------------------------------------------
-
-  protected String getContextID() {
+  protected long getContextID() {
     return contextID;
   }
 

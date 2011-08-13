@@ -449,7 +449,7 @@ public class FileSystem {
 
   public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean sync, final boolean syncMeta, CompletionWithResult<AsyncFile> completion) {
-    final String contextID = Nodex.instance.getContextID();
+    final long contextID = Nodex.instance.getContextID();
     final Thread th = Thread.currentThread();
     new BackgroundTaskWithResult<AsyncFile>(completion) {
       public AsyncFile execute() throws Exception {
@@ -459,7 +459,8 @@ public class FileSystem {
   }
 
   private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                            final boolean sync, final boolean syncMeta, final String contextID, final Thread th) throws Exception {
+                            final boolean sync, final boolean syncMeta, final long contextID,
+                            final Thread th) throws Exception {
     return new AsyncFile(path, perms, read, write, createNew, sync, syncMeta, contextID, th);
   }
 
