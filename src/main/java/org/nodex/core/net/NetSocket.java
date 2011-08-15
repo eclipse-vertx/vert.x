@@ -82,19 +82,23 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   public void dataHandler(DataHandler dataHandler) {
+    checkThread();
     this.dataHandler = dataHandler;
   }
 
   public void endHandler(Runnable endHandler) {
+    checkThread();
     this.endHandler = endHandler;
   }
 
   public void drainHandler(Runnable drained) {
+    checkThread();
     this.drainHandler = drained;
     callDrainHandler(); //If the channel is already drained, we want to call it immediately
   }
 
   public void sendFile(String filename) {
+    checkThread();
     File f = new File(filename);
     super.sendFile(f);
   }
@@ -128,6 +132,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   private ChannelFuture doWrite(ChannelBuffer buff) {
+    checkThread();
     return channel.write(buff);
   }
 

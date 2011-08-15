@@ -118,12 +118,15 @@ public class ConnectionBase {
     });
   }
 
-  protected void setContextID() {
-    // Sanity check
-    // All ops should always be invoked on same thread
+  protected void checkThread() {
+    // All ops must always be invoked on same thread
     if (Thread.currentThread() != th) {
       throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
+  }
+
+  protected void setContextID() {
+    checkThread();
     NodexInternal.instance.setContextID(contextID);
   }
 
