@@ -25,7 +25,8 @@ import java.util.Set;
 
 public class HttpClientResponse implements ReadStream {
 
-  private final HttpClientConnection conn;
+  private final ClientConnection conn;
+  private final Thread th;
   private DataHandler dataHandler;
   private Runnable endHandler;
   private ExceptionHandler exceptionHandler;
@@ -35,64 +36,78 @@ public class HttpClientResponse implements ReadStream {
   public final int statusCode;
   public final String statusMessage;
 
-  public String getHeader(String key) {
-    return response.getHeader(key);
-  }
-
-  public List<String> getHeaders(String key) {
-    return response.getHeaders(key);
-  }
-
-  public Set<String> getHeaderNames() {
-    return response.getHeaderNames();
-  }
-
-  public String getTrailer(String key) {
-    return trailer.getHeader(key);
-  }
-
-  public List<String> getTrailers(String key) {
-    return trailer.getHeaders(key);
-  }
-
-  public Set<String> getTrailerNames() {
-    return trailer.getHeaderNames();
-  }
-
-  public void dataHandler(DataHandler dataHandler) {
-    this.dataHandler = dataHandler;
-  }
-
-  public void endHandler(Runnable end) {
-    this.endHandler = end;
-  }
-
-  public void exceptionHandler(ExceptionHandler handler) {
-    this.exceptionHandler = handler;
-  }
-
-  public void pause() {
-    conn.pause();
-  }
-
-  public void resume() {
-    conn.resume();
-  }
-
-  HttpClientResponse(HttpClientConnection conn, HttpResponse response) {
+  HttpClientResponse(ClientConnection conn, HttpResponse response, Thread th) {
     this.conn = conn;
     this.statusCode = response.getStatus().getCode();
     this.statusMessage = response.getStatus().getReasonPhrase();
     this.response = response;
+    this.th = th;
+  }
+
+  public String getHeader(String key) {
+    checkThread();
+    return response.getHeader(key);
+  }
+
+  public List<String> getHeaders(String key) {
+    checkThread();
+    return response.getHeaders(key);
+  }
+
+  public Set<String> getHeaderNames() {
+    checkThread();
+    return response.getHeaderNames();
+  }
+
+  public String getTrailer(String key) {
+    checkThread();
+    return trailer.getHeader(key);
+  }
+
+  public List<String> getTrailers(String key) {
+    checkThread();
+    return trailer.getHeaders(key);
+  }
+
+  public Set<String> getTrailerNames() {
+    checkThread();
+    return trailer.getHeaderNames();
+  }
+
+  public void dataHandler(DataHandler dataHandler) {
+    checkThread();
+    this.dataHandler = dataHandler;
+  }
+
+  public void endHandler(Runnable end) {
+    checkThread();
+    this.endHandler = end;
+  }
+
+  public void exceptionHandler(ExceptionHandler handler) {
+    checkThread();
+    this.exceptionHandler = handler;
+  }
+
+  public void pause() {
+    checkThread();
+    conn.pause();
+  }
+
+  public void resume() {
+    checkThread();
+    conn.resume();
   }
 
   void handleChunk(Buffer data) {
+    checkThread();
     if (dataHandler != null) {
       dataHandler.onData(data);
     }
   }
 
   void handleEnd(HttpChunkTrailer trailer) {
+    checkThread();
     this.trailer = trailer;
     if (endHandler != null) {
       endHandler.run();
@@ -100,8 +115,16 @@ public class HttpClientResponse implements ReadStream {
   }
 
   void handleException(Exception e) {
+    checkThread();
     if (exceptionHandler != null) {
       exceptionHandler.onException(e);
+    }
+  }
+
+  private void checkThread() {
+    // All ops must always be invoked on same thread
+    if (Thread.currentThread() != th) {
+      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
   }
 }

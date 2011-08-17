@@ -51,15 +51,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NetServer extends SSLBase {
 
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
-  private final NetConnectHandler connectCallback;
+  private NetConnectHandler connectHandler;
   private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
+  private final Thread th;
 
   private ClientAuth clientAuth = ClientAuth.NONE;
 
+  public NetServer() {
+    this(null);
+  }
+
   public NetServer(NetConnectHandler connectHandler) {
-    this.connectCallback = connectHandler;
+    if (Nodex.instance.getContextID() == null) {
+      throw new IllegalStateException("Net Server can only be used from an event loop");
+    }
+    this.th = Thread.currentThread();
+    this.connectHandler = connectHandler;
 
     //Defaults
     connectionOptions.put("child.tcpNoDelay", true);
@@ -68,66 +77,86 @@ public class NetServer extends SSLBase {
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
+  public NetServer connectHandler(NetConnectHandler connectHandler) {
+    checkThread();
+    this.connectHandler = connectHandler;
+    return this;
+  }
+
   public NetServer setSSL(boolean ssl) {
+    checkThread();
     this.ssl = ssl;
     return this;
   }
 
   public NetServer setKeyStorePath(String path) {
+    checkThread();
     this.keyStorePath = path;
     return this;
   }
 
   public NetServer setKeyStorePassword(String pwd) {
+    checkThread();
     this.keyStorePassword = pwd;
     return this;
   }
+
   public NetServer setTrustStorePath(String path) {
+    checkThread();
     this.trustStorePath = path;
     return this;
   }
 
   public NetServer setTrustStorePassword(String pwd) {
+    checkThread();
     this.trustStorePassword = pwd;
     return this;
   }
 
   public NetServer setClientAuthRequired(boolean required) {
+    checkThread();
     clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
     return this;
   }
 
   public NetServer setTcpNoDelay(boolean tcpNoDelay) {
+    checkThread();
     connectionOptions.put("child.tcpNoDelay", tcpNoDelay);
     return this;
   }
 
   public NetServer setSendBufferSize(int size) {
+    checkThread();
     connectionOptions.put("child.sendBufferSize", size);
     return this;
   }
 
   public NetServer setReceiveBufferSize(int size) {
+    checkThread();
     connectionOptions.put("child.receiveBufferSize", size);
     return this;
   }
 
   public NetServer setKeepAlive(boolean keepAlive) {
+    checkThread();
     connectionOptions.put("child.keepAlive", keepAlive);
     return this;
   }
 
   public NetServer setReuseAddress(boolean reuse) {
+    checkThread();
     connectionOptions.put("child.reuseAddress", reuse);
     return this;
   }
 
   public NetServer setSoLinger(boolean linger) {
+    checkThread();
     connectionOptions.put("child.soLinger", linger);
     return this;
   }
 
   public NetServer setTrafficClass(int trafficClass) {
+    checkThread();
     connectionOptions.put("child.trafficClass", trafficClass);
     return this;
   }
@@ -137,6 +166,10 @@ public class NetServer extends SSLBase {
   }
 
   public NetServer listen(int port, String host) {
+    checkThread();
+    if (connectHandler == null) {
+      throw new IllegalStateException("Set request handler first");
+    }
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
@@ -197,8 +230,9 @@ public class NetServer extends SSLBase {
   }
 
   public void close(final Runnable done) {
+    checkThread();
     for (NetSocket sock : socketMap.values()) {
-      sock.close();
+      sock.internalClose();
     }
     if (done != null) {
       final Long contextID = Nodex.instance.getContextID();
@@ -223,6 +257,13 @@ public class NetServer extends SSLBase {
     }
   }
 
+  private void checkThread() {
+    // All ops must always be invoked on same thread
+    if (Thread.currentThread() != th) {
+      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
+    }
+  }
+
   private class ServerHandler extends SimpleChannelHandler {
 
     @Override
@@ -234,7 +275,7 @@ public class NetServer extends SSLBase {
           NodexInternal.instance.setContextID(contextID);
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-          connectCallback.onConnect(sock);
+          connectHandler.onConnect(sock);
         }
       });
     }

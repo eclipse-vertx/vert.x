@@ -21,7 +21,6 @@ import org.jboss.netty.util.TimerTask;
 import org.nodex.core.shared.SharedUtils;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -35,10 +34,10 @@ public final class NodexImpl implements NodexInternal {
 
   private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
-  private ExecutorService backgroundPool;
-  private ExecutorService corePool;
-  private NioWorkerPool workerPool;
-  private ExecutorService acceptorPool;
+  private volatile ExecutorService backgroundPool;
+  private volatile ExecutorService corePool;
+  private volatile NioWorkerPool workerPool;
+  private volatile ExecutorService acceptorPool;
   private Map<Long, NioWorker> workerMap = new ConcurrentHashMap<>();
   private static final ThreadLocal<Long> contextIDTL = new ThreadLocal<>();
   private Map<Long, ActorHolder> actors = new ConcurrentHashMap<>();
@@ -48,6 +47,9 @@ public final class NodexImpl implements NodexInternal {
       TimeUnit.MILLISECONDS);
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
+  private final AtomicLong contextIDSeq = new AtomicLong(0);
+  private final AtomicLong actorSeq = new AtomicLong(0);
+
 
   // Public API ------------------------------------------------
 
@@ -139,41 +141,58 @@ public final class NodexImpl implements NodexInternal {
     getBackgroundPool().execute(runnable);
   }
 
-
   // Internal API -----------------------------------------------------------------------------------------
 
   //The background pool is used for making blocking calls to legacy synchronous APIs
-  public synchronized ExecutorService getBackgroundPool() {
-    if (backgroundPool == null) {
-      backgroundPool = Executors.newFixedThreadPool(backgroundPoolSize, new NodeThreadFactory("node.x-background-thread-"));
+  public ExecutorService getBackgroundPool() {
+    //This is a correct implementation of double-checked locking idiom
+    ExecutorService result = backgroundPool;
+    if (result == null) {
+      synchronized (this) {
+        result = backgroundPool;
+        if (result == null) {
+          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new NodeThreadFactory("node.x-background-thread-"));
+        }
+      }
     }
-    return backgroundPool;
+    return result;
   }
 
-  public synchronized NioWorkerPool getWorkerPool() {
-    if (workerPool == null) {
-      corePool = Executors.newFixedThreadPool(corePoolSize, new NodeThreadFactory("node.x-core-thread-"));
-      workerPool = new NioWorkerPool(corePoolSize, corePool);
+  public NioWorkerPool getWorkerPool() {
+    //This is a correct implementation of double-checked locking idiom
+    NioWorkerPool result = workerPool;
+    if (result == null) {
+      synchronized (this) {
+        result = workerPool;
+        if (result == null) {
+          corePool = Executors.newFixedThreadPool(corePoolSize, new NodeThreadFactory("node.x-core-thread-"));
+          workerPool = result = new NioWorkerPool(corePoolSize, corePool);
+        }
+      }
     }
-    return workerPool;
+    return result;
   }
 
-  //We use a cache pool, but it will never get large since only used for acceptors.
+  //We use a cached pool, but it will never get large since only used for acceptors.
   //There will be one thread for each port listening on
-  public synchronized Executor getAcceptorPool() {
-    if (acceptorPool == null) {
-      acceptorPool = Executors.newCachedThreadPool(new NodeThreadFactory("node.x-acceptor-thread-"));
+  public Executor getAcceptorPool() {
+    //This is a correct implementation of double-checked locking idiom
+    ExecutorService result = acceptorPool;
+    if (result == null) {
+      synchronized (this) {
+        result = acceptorPool;
+        if (result == null) {
+          acceptorPool = result = Executors.newCachedThreadPool(new NodeThreadFactory("node.x-acceptor-thread-"));
+        }
+      }
     }
-    return acceptorPool;
+    return result;
   }
 
   public long createAndAssociateContext() {
     NioWorker worker = getWorkerPool().nextWorker();
     return associateContextWithWorker(worker);
   }
-
-  private AtomicLong contextIDSeq = new AtomicLong(0);
-  private AtomicLong actorSeq = new AtomicLong(0);
 
   public long associateContextWithWorker(NioWorker worker) {
     long contextID = contextIDSeq.getAndIncrement();
@@ -193,10 +212,22 @@ public final class NodexImpl implements NodexInternal {
     return contextIDTL.get();
   }
 
+  public NioWorker getWorkerForContextID(long contextID) {
+    NioWorker worker = workerMap.get(contextID);
+    if (worker == null) {
+      throw new IllegalStateException("Context is not registered " + contextID);
+    }
+    return worker;
+  }
+
   public void executeOnContext(long contextID, Runnable runnable) {
     NioWorker worker = workerMap.get(contextID);
     if (worker != null) {
-      worker.scheduleOtherTask(runnable);
+      if (worker.getThread() != Thread.currentThread()) {
+        worker.scheduleOtherTask(runnable);
+      } else {
+        runnable.run();
+      }
     } else {
       throw new IllegalStateException("Context is not registered " + contextID + " has it been destroyed?");
     }
@@ -244,6 +275,15 @@ public final class NodexImpl implements NodexInternal {
     }
   }
 
+  private static class ActorHolder {
+    final Actor<?> actor;
+    final long contextID;
+    ActorHolder(Actor<?> actor, long contextID) {
+      this.actor = actor;
+      this.contextID = contextID;
+    }
+  }
+
   private static class NodeThreadFactory implements ThreadFactory {
 
     private String prefix;
@@ -260,14 +300,4 @@ public final class NodexImpl implements NodexInternal {
       return t;
     }
   }
-
-  private static class ActorHolder {
-    ActorHolder(Actor<?> actor, long contextID) {
-      this.actor = actor;
-      this.contextID = contextID;
-    }
-    final Actor<?> actor;
-    final long contextID;
-  }
-
 }

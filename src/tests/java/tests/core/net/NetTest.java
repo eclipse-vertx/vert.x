@@ -13,6 +13,9 @@
 
 package tests.core.net;
 
+import org.nodex.core.Actor;
+import org.nodex.core.Nodex;
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
@@ -27,35 +30,58 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetTest extends TestBase {
 
   @Test
   public void testConnect() throws Exception {
-    int connectCount = 10;
-    final CountDownLatch serverConnectLatch = new CountDownLatch(connectCount);
-    NetServer server = new NetServer(new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        serverConnectLatch.countDown();
-      }
-    }).listen(8181);
 
-    final CountDownLatch clientConnectLatch = new CountDownLatch(connectCount);
-    NetClient client = new NetClient();
+    final int connectCount = 10;
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicInteger totalConnectCount = new AtomicInteger(0);
 
-    for (int i = 0; i < connectCount; i++) {
-      client.connect(8181, new NetConnectHandler() {
-        public void onConnect(NetSocket sock) {
-          clientConnectLatch.countDown();
-          sock.close();
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final NetServer server = new NetServer();
+
+        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
+          public void onMessage(String msg) {
+            server.close(new Runnable() {
+              public void run() {
+                latch.countDown();
+              }
+            });
+          }
+        });
+
+        server.connectHandler(new NetConnectHandler() {
+          public void onConnect(NetSocket sock) {
+            if (totalConnectCount.incrementAndGet() == 2 * connectCount) {
+              Nodex.instance.sendMessage(actorId, "foo");
+            }
+          }
+        }).listen(8181);
+
+
+        NetClient client = new NetClient();
+
+        for (int i = 0; i < connectCount; i++) {
+          client.connect(8181, new NetConnectHandler() {
+            public void onConnect(NetSocket sock) {
+              sock.close();
+              if (totalConnectCount.incrementAndGet() == 2 * connectCount) {
+                Nodex.instance.sendMessage(actorId, "foo");
+              }
+            }
+          });
         }
-      });
-    }
+      }
+    }.run();
 
-    azzert(serverConnectLatch.await(5, TimeUnit.SECONDS));
-    azzert(clientConnectLatch.await(5, TimeUnit.SECONDS));
-
-    awaitClose(server);
+    azzert(latch.await(5, TimeUnit.SECONDS));
 
     throwAssertions();
   }
@@ -66,12 +92,7 @@ public class NetTest extends TestBase {
   Actually quite hard to test this meaningfully
    */
   public void testServerParams() throws Exception {
-    new NetServer(new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-
-      }
-    }).setKeepAlive(true).setReceiveBufferSize(64 * 1024).setSendBufferSize(32 * 1024).setReuseAddress(true)
-        .setSoLinger(true).setTcpNoDelay(false).setTrafficClass(123);
+    //TODO
   }
 
   @Test
@@ -80,8 +101,7 @@ public class NetTest extends TestBase {
   Actually quite hard to test this meaningfully
    */
   public void testClientParams() throws Exception {
-    new NetClient().setKeepAlive(true).setReceiveBufferSize(64 * 1024).setSendBufferSize(32 * 1024).setReuseAddress(true)
-        .setSoLinger(true).setTcpNoDelay(false).setTrafficClass(123);
+    //TODO
   }
 
   @Test
@@ -92,20 +112,6 @@ public class NetTest extends TestBase {
   @Test
   public void testCloseHandlerCloseFromServer() throws Exception {
     testCloseHandler(false);
-  }
-
-  @Test
-  /* Start and stop some servers in a loop, awaiting close each time
-   */
-  public void testStartAndClose() throws Exception {
-    int serverCount = 10;
-    for (int i = 0; i < 10; i++) {
-      NetServer server = new NetServer(new NetConnectHandler() {
-        public void onConnect(NetSocket sock) {
-        }
-      }).listen(8181);
-      awaitClose(server); // If we didn't await we would get bind exceptions next time around the loop
-    }
   }
 
   @Test
@@ -133,35 +139,55 @@ public class NetTest extends TestBase {
   Test writing with a completion
    */
   public void testWriteWithCompletion() throws Exception {
-    final Buffer receivedBuff = Buffer.create(0);
+
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
-    NetServer server = new NetServer(new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        sock.dataHandler(new DataHandler() {
-          public void onData(Buffer data) {
-            receivedBuff.append(data);
-            if (receivedBuff.length() == numSends * sendSize) {
-              latch.countDown();
-            }
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final NetServer server = new NetServer();
+
+        final Buffer sentBuff = Buffer.create(0);
+        final Buffer receivedBuff = Buffer.create(0);
+
+        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
+          public void onMessage(String msg) {
+            azzert(Utils.buffersEqual(sentBuff, receivedBuff));
+            server.close(new Runnable() {
+              public void run() {
+                latch.countDown();
+              }
+            });
+          }
+        });
+
+        server.connectHandler(new NetConnectHandler() {
+          public void onConnect(NetSocket sock) {
+            sock.dataHandler(new DataHandler() {
+              public void onData(Buffer data) {
+                receivedBuff.append(data);
+                if (receivedBuff.length() == numSends * sendSize) {
+                  Nodex.instance.sendMessage(actorId, "foo");
+                }
+              }
+            });
+          }
+        }).listen(8181);
+
+        NetClient client = new NetClient().connect(8181, new NetConnectHandler() {
+          public void onConnect(NetSocket sock) {
+            final ContextChecker checker = new ContextChecker();
+            doWrite(sentBuff, sock, numSends, sendSize, checker);
           }
         });
       }
-    }).listen(8181);
+    }.run();
 
-    final Buffer sentBuff = Buffer.create(0);
-    NetClient client = new NetClient().connect(8181, new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        final ContextChecker checker = new ContextChecker();
-        doWrite(sentBuff, sock, numSends, sendSize, checker);
-      }
-    });
 
-    azzert(latch.await(2, TimeUnit.SECONDS));
-    azzert(Utils.buffersEqual(sentBuff, receivedBuff));
+    azzert(latch.await(5, TimeUnit.SECONDS));
 
-    awaitClose(server);
     throwAssertions();
   }
 
@@ -175,50 +201,60 @@ public class NetTest extends TestBase {
     testSendFile(false);
   }
 
-  private void testSendFile(boolean clientToServer) throws Exception {
-    final String host = "localhost";
-    final boolean keepAlive = true;
+  private void testSendFile(final boolean clientToServer) throws Exception {
     final String path = "foo.txt";
-    final int port = 8181;
 
     final String content = Utils.randomAlphaString(10000);
     final File file = setupFile(path, content);
-
-    NetConnectHandler sender = new NetConnectHandler() {
-      public void onConnect(final NetSocket sock) {
-        String fileName = "./" + path;
-        sock.sendFile(fileName);
-        System.out.println("Called sendfile on server");
-      }
-    };
     final CountDownLatch latch = new CountDownLatch(1);
 
-    NetConnectHandler receiver = new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        final Buffer buff = Buffer.create(0);
-        sock.dataHandler(new DataHandler() {
-          public void onData(final Buffer data) {
-            buff.append(data);
-            if (buff.length() == file.length()) {
-              azzert(content.equals(buff.toString()));
-              latch.countDown();
-            }
+    new NodexMain() {
+      public void go() throws Exception {
+        NetConnectHandler sender = new NetConnectHandler() {
+          public void onConnect(final NetSocket sock) {
+            String fileName = "./" + path;
+            sock.sendFile(fileName);
+          }
+        };
+
+        final NetServer server = new NetServer();
+
+        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
+          public void onMessage(String msg) {
+            server.close(new Runnable() {
+              public void run() {
+                latch.countDown();
+              }
+            });
           }
         });
+
+        NetConnectHandler receiver = new NetConnectHandler() {
+          public void onConnect(NetSocket sock) {
+            final Buffer buff = Buffer.create(0);
+            sock.dataHandler(new DataHandler() {
+              public void onData(final Buffer data) {
+                buff.append(data);
+                if (buff.length() == file.length()) {
+                  azzert(content.equals(buff.toString()));
+                  Nodex.instance.sendMessage(actorId, "foo");
+                }
+              }
+            });
+          }
+        };
+
+        NetConnectHandler serverHandler = clientToServer ? receiver: sender;
+        NetConnectHandler clientHandler = clientToServer ? sender: receiver;
+
+        server.connectHandler(serverHandler).listen(8181);
+        new NetClient().connect(8181, clientHandler);
       }
-    };
-
-    NetConnectHandler serverHandler = clientToServer ? receiver: sender;
-    NetConnectHandler clientHandler = clientToServer ? sender: receiver;
-
-    NetServer server = new NetServer(serverHandler).listen(8181);
-    new NetClient().connect(8181, clientHandler);
+    }.run();
 
     assert latch.await(5, TimeUnit.SECONDS);
-
     throwAssertions();
     file.delete();
-    awaitClose(server);
   }
 
   //Recursive - we don't write the next packet until we get the completion back from the previous write
@@ -240,102 +276,142 @@ public class NetTest extends TestBase {
     }
   }
 
-  private void testSendData(boolean clientToServer, final boolean string) throws Exception {
-    final Buffer receivedBuff = Buffer.create(0);
+  private void testSendData(final boolean clientToServer, final boolean string) throws Exception {
+
     final CountDownLatch latch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
-    NetConnectHandler receiver = new NetConnectHandler() {
-      public void onConnect(final NetSocket sock) {
-        final ContextChecker checker = new ContextChecker();
-        sock.dataHandler(new DataHandler() {
-          public void onData(Buffer data) {
-            checker.check();
-            receivedBuff.append(data);
-            if (receivedBuff.length() == numSends * sendSize) {
-              sock.close();
-              latch.countDown();
-            }
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final NetServer server = new NetServer();
+
+        final Buffer sentBuff = Buffer.create(0);
+        final Buffer receivedBuff = Buffer.create(0);
+
+        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
+          public void onMessage(String msg) {
+            azzert(Utils.buffersEqual(sentBuff, receivedBuff));
+            server.close(new Runnable() {
+              public void run() {
+                latch.countDown();
+              }
+            });
           }
         });
-      }
-    };
-    final Buffer sentBuff = Buffer.create(0);
-    NetConnectHandler sender = new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
-        for (int i = 0; i < numSends; i++) {
-          if (string) {
-            byte[] bytes = new byte[sendSize];
-            Arrays.fill(bytes, (byte) 'X');
-            try {
-              String s = new String(bytes, "UTF-8");
-              sentBuff.append(bytes);
-              sock.write(s);
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
-          } else {
-            Buffer b = Utils.generateRandomBuffer(sendSize);
-            sentBuff.append(b);
-            sock.write(b);
+
+        NetConnectHandler receiver = new NetConnectHandler() {
+          public void onConnect(final NetSocket sock) {
+            final ContextChecker checker = new ContextChecker();
+            sock.dataHandler(new DataHandler() {
+              public void onData(Buffer data) {
+                checker.check();
+                receivedBuff.append(data);
+                if (receivedBuff.length() == numSends * sendSize) {
+                  sock.close();
+                  Nodex.instance.sendMessage(actorId, "foo");
+                }
+              }
+            });
           }
-        }
+        };
+
+        NetConnectHandler sender = new NetConnectHandler() {
+          public void onConnect(NetSocket sock) {
+            for (int i = 0; i < numSends; i++) {
+              if (string) {
+                byte[] bytes = new byte[sendSize];
+                Arrays.fill(bytes, (byte) 'X');
+                try {
+                  String s = new String(bytes, "UTF-8");
+                  sentBuff.append(bytes);
+                  sock.write(s);
+                } catch (Exception e) {
+                  e.printStackTrace();
+                }
+              } else {
+                Buffer b = Utils.generateRandomBuffer(sendSize);
+                sentBuff.append(b);
+                sock.write(b);
+              }
+            }
+          }
+        };
+        NetConnectHandler serverHandler = clientToServer ? receiver : sender;
+        NetConnectHandler clientHandler = clientToServer ? sender : receiver;
+
+        server.connectHandler(serverHandler).listen(8181);
+        new NetClient().connect(8181, clientHandler);
       }
-    };
-    NetConnectHandler serverHandler = clientToServer ? receiver : sender;
-    NetConnectHandler clientHandler = clientToServer ? sender : receiver;
+    }.run();
 
-    NetServer server = new NetServer(serverHandler).listen(8181);
-    new NetClient().connect(8181, clientHandler);
-
-    azzert(latch.await(2, TimeUnit.SECONDS));
-
-    azzert(Utils.buffersEqual(sentBuff, receivedBuff));
-
-    awaitClose(server);
+    azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
   }
 
 
   private void testCloseHandler(final boolean closeClient) throws Exception {
-    int connectCount = 10;
-    final CountDownLatch serverCloseLatch = new CountDownLatch(connectCount);
-    NetServer server = new NetServer(new NetConnectHandler() {
-      public void onConnect(final NetSocket sock) {
-        final ContextChecker checker = new ContextChecker();
-        sock.closedHandler(new Runnable() {
-          public void run() {
-            checker.check();
-            serverCloseLatch.countDown();
+    final int connectCount = 10;
+
+    final AtomicInteger clientCloseCount = new AtomicInteger(0);
+    final AtomicInteger serverCloseCount = new AtomicInteger(0);
+    final CountDownLatch clientCloseLatch = new CountDownLatch(1);
+    final CountDownLatch serverCloseLatch = new CountDownLatch(1);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final NetServer server = new NetServer();
+
+        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
+          public void onMessage(String msg) {
+            server.close(new Runnable() {
+              public void run() {
+                serverCloseLatch.countDown();
+              }
+            });
           }
         });
-        if (!closeClient) sock.close();
-      }
-    }).listen(8181);
 
-    final CountDownLatch clientCloseLatch = new CountDownLatch(connectCount);
-    NetClient client = new NetClient();
+        server.connectHandler(new NetConnectHandler() {
+          public void onConnect(final NetSocket sock) {
+            final ContextChecker checker = new ContextChecker();
+            sock.closedHandler(new Runnable() {
+              public void run() {
+                checker.check();
+                if (serverCloseCount.incrementAndGet() == connectCount) {
+                  Nodex.instance.sendMessage(actorId, "foo");
+                }
+              }
+            });
+            if (!closeClient) sock.close();
+          }
+        }).listen(8181);
 
-    for (int i = 0; i < connectCount; i++) {
-      client.connect(8181, new NetConnectHandler() {
-        public void onConnect(NetSocket sock) {
-          final ContextChecker checker = new ContextChecker();
-          sock.closedHandler(new Runnable() {
-            public void run() {
-              checker.check();
-              clientCloseLatch.countDown();
+        NetClient client = new NetClient();
+
+        for (int i = 0; i < connectCount; i++) {
+          client.connect(8181, new NetConnectHandler() {
+            public void onConnect(NetSocket sock) {
+              final ContextChecker checker = new ContextChecker();
+              sock.closedHandler(new Runnable() {
+                public void run() {
+                  checker.check();
+                  if (clientCloseCount.incrementAndGet() == connectCount) {
+                    clientCloseLatch.countDown();
+                  }
+                }
+              });
+              if (closeClient) sock.close();
             }
           });
-          if (closeClient) sock.close();
         }
-      });
-    }
+      }
+    }.run();
 
     azzert(serverCloseLatch.await(5, TimeUnit.SECONDS));
     azzert(clientCloseLatch.await(5, TimeUnit.SECONDS));
-
-    awaitClose(server);
+    throwAssertions();
   }
-
-
 }

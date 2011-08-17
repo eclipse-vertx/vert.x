@@ -14,5 +14,5 @@
 package org.nodex.core.http;
 
 public interface HttpServerConnectHandler {
-  void onConnect(HttpServerConnection connection);
+  void onConnect(ServerConnection connection);
 }

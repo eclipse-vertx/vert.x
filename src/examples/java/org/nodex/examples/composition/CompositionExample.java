@@ -14,6 +14,14 @@
 package org.nodex.examples.composition;
 
 import org.nodex.core.CompletionWithResult;
+import org.nodex.core.buffer.Buffer;
+import org.nodex.core.composition.Composable;
+import org.nodex.core.composition.Composer;
+import org.nodex.core.file.FileSystem;
+import org.nodex.core.http.HttpRequestHandler;
+import org.nodex.core.http.HttpServer;
+import org.nodex.core.http.HttpServerRequest;
+import org.nodex.core.http.HttpServerResponse;
 import org.nodex.mods.amqp.AmqpClient;
 import org.nodex.mods.amqp.AmqpConnectHandler;
 import org.nodex.mods.amqp.AmqpConnection;
@@ -22,16 +30,6 @@ import org.nodex.mods.amqp.AmqpProps;
 import org.nodex.mods.amqp.Channel;
 import org.nodex.mods.amqp.ChannelHandler;
 import org.nodex.mods.amqp.ChannelPool;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.composition.Composable;
-import org.nodex.core.composition.Composer;
-import org.nodex.core.file.FileSystem;
-import org.nodex.core.http.HttpRequestHandler;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerConnectHandler;
-import org.nodex.core.http.HttpServerConnection;
-import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
 import org.nodex.mods.redis.RedisClient;
 import org.nodex.mods.redis.RedisConnectHandler;
 import org.nodex.mods.redis.RedisConnection;
@@ -74,44 +72,40 @@ public class CompositionExample {
 
   private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
-    new HttpServer(new HttpServerConnectHandler() {
-      public void onConnect(final HttpServerConnection conn) {
-        conn.requestHandler(new HttpRequestHandler() {
-          public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
-            System.out.println("Request uri is " + req.uri);
-            if (req.uri.equals("/")) {
-              System.out.println("Serving index page");
-              //Serve the main page
-              FileSystem.instance.readFile("index.html", new CompletionWithResult<Buffer>() {
-                public void onCompletion(Buffer data) {
-                  resp.write(data);
-                  resp.end();
-                }
+    new HttpServer(new HttpRequestHandler() {
+      public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
+        System.out.println("Request uri is " + req.uri);
+        if (req.uri.equals("/")) {
+          System.out.println("Serving index page");
+          //Serve the main page
+          FileSystem.instance.readFile("index.html", new CompletionWithResult<Buffer>() {
+            public void onCompletion(Buffer data) {
+              resp.write(data);
+              resp.end();
+            }
 
-                public void onException(Exception e) {
-                }
-              });
-            } else if (req.uri.startsWith("/submit")) {
-              //We have received a requestHandler for price/stock information, so we send a message to Rabbit with the name of the item
-              final String item = req.getParam("item");
-              chPool.getChannel(new ChannelHandler() {
-                public void onCreate(final Channel ch) {
-                  AmqpProps props = new AmqpProps();
-                  props.headers.put("item", item);
-                  ch.request("", AMQP_QUEUE, props, (String) null, new AmqpMsgCallback() {
-                    public void onMessage(AmqpProps respProps, byte[] bod) {
-                      //We get a response back with the price and number of items in stock
-                      int price = (Integer) respProps.headers.get("price");
-                      int stock = (Integer) respProps.headers.get("stock");
-                      String content = "<html><body>Price is: " + price + "<br>Stock is: " + stock + "</body></html>";
-                      resp.write(content, "UTF-8").end();
-                    }
-                  });
+            public void onException(Exception e) {
+            }
+          });
+        } else if (req.uri.startsWith("/submit")) {
+          //We have received a requestHandler for price/stock information, so we send a message to Rabbit with the name of the item
+          final String item = req.getParam("item");
+          chPool.getChannel(new ChannelHandler() {
+            public void onCreate(final Channel ch) {
+              AmqpProps props = new AmqpProps();
+              props.headers.put("item", item);
+              ch.request("", AMQP_QUEUE, props, (String) null, new AmqpMsgCallback() {
+                public void onMessage(AmqpProps respProps, byte[] bod) {
+                  //We get a response back with the price and number of items in stock
+                  int price = (Integer) respProps.headers.get("price");
+                  int stock = (Integer) respProps.headers.get("stock");
+                  String content = "<html><body>Price is: " + price + "<br>Stock is: " + stock + "</body></html>";
+                  resp.write(content, "UTF-8").end();
                 }
               });
             }
-          }
-        });
+          });
+        }
       }
     }).listen(8080);
   }

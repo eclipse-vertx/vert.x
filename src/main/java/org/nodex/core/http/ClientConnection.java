@@ -20,6 +20,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
@@ -32,42 +33,43 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class HttpClientConnection extends AbstractConnection {
+class ClientConnection extends AbstractConnection {
 
-  HttpClientConnection(Channel channel, boolean keepAlive, String hostHeader,
-                       long contextID, Thread th) {
+  ClientConnection(HttpClient client, Channel channel, boolean keepAlive, String hostHeader, boolean ssl,
+                   long contextID, Thread th) {
     super(channel, contextID, th);
+    this.client = client;
     this.keepAlive = keepAlive;
     this.hostHeader = hostHeader;
+    this.ssl = ssl;
   }
 
+  final HttpClient client;
   final boolean keepAlive;
   final String hostHeader;
+  private final boolean ssl;
 
-  private HttpClientRequest currentRequest;
-  // Requests can be pipelined so we need a queue to keep track of handlers
-  private Queue<HttpResponseHandler> respHandlers = new ConcurrentLinkedQueue();
-  private HttpClientResponse currentResponse;
+  private volatile HttpClientRequest currentRequest;
+  // Requests can be pipelined so we need a queue to keep track of requests
+  private final Queue<HttpClientRequest> requests = new ConcurrentLinkedQueue();
+  private volatile HttpClientResponse currentResponse;
   private Websocket ws;
 
-  public void upgradeToWebSocket(final String uri, final WebsocketConnectHandler wsConnect) {
-    upgradeToWebSocket(uri, null, wsConnect);
-  }
-
-  public void upgradeToWebSocket(final String uri, Map<String, ? extends Object> headers,
-                           final WebsocketConnectHandler wsConnect) {
+  void toWebSocket(final String uri, Map<String, ? extends Object> headers,
+                   final WebsocketConnectHandler wsConnect) {
+    if (ws != null) {
+      throw new IllegalStateException("Already websocket");
+    }
     if (headers == null) headers = new HashMap();
-    String key1 = WebsocketHandshakeHelper.genWSkey();
-    String key2 = WebsocketHandshakeHelper.genWSkey();
+    final String key1 = WebsocketHandshakeHelper.genWSkey();
+    final String key2 = WebsocketHandshakeHelper.genWSkey();
     long c = new Random().nextLong();
 
     final Buffer out = new Buffer(WebsocketHandshakeHelper.calcResponse(key1, key2, c));
-    ChannelBuffer buff = ChannelBuffers.buffer(8);
+    final ChannelBuffer buff = ChannelBuffers.buffer(8);
     buff.writeLong(c);
 
-    //This handshake is from the draft-ietf-hybi-thewebsocketprotocol-00 version of the spec
-    //supported by Chrome etc
-    HttpClientRequest req = get(uri, new HttpResponseHandler() {
+    HttpClientRequest req = new HttpClientRequest("GET", uri, new HttpResponseHandler() {
       public void onResponse(HttpClientResponse resp) {
         if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
           handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode
@@ -96,7 +98,7 @@ public class HttpClientConnection extends AbstractConnection {
                   ChannelPipeline p = channel.getPipeline();
                   p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
                   p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
-                  ws = new Websocket(uri, HttpClientConnection.this);
+                  ws = new Websocket(uri, ClientConnection.this);
                   wsConnect.onConnect(ws);
                   return;
                 }
@@ -106,71 +108,19 @@ public class HttpClientConnection extends AbstractConnection {
           });
         }
       }
-    });
+    }, Thread.currentThread());
+
+    setCurrentRequest(req);
+    req.connected(this);
     req.putHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET).
-        putHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE).
-        putHeader(HttpHeaders.Names.ORIGIN, "http://" + hostHeader). //TODO what about HTTPS?
-        putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, key1).
-        putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, key2).
-        write(new Buffer(buff)).
-        end();
+    putHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE).
+    putHeader(HttpHeaders.Names.ORIGIN, (ssl ? "http://" : "https://") + hostHeader).
+    putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, key1).
+    putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, key2);
+    req.sendDirect(new Buffer(buff));
   }
 
-  public HttpClientRequest request(String method, String uri, HttpResponseHandler responseHandler) {
-    if (ws != null) {
-      throw new IllegalStateException("Cannot make requests on connection if upgraded to websocket");
-    }
-    return new HttpClientRequest(this, method, uri, responseHandler);
-  }
-
-  // Quick get method when there's no body and it doesn't require an endHandler
-  public void getNow(String uri, HttpResponseHandler responseHandler) {
-    HttpClientRequest req = get(uri, responseHandler);
-    req.end();
-  }
-
-  public void getNow(String uri, Map<String, ? extends Object> headers, HttpResponseHandler responseHandler) {
-    HttpClientRequest req = get(uri, responseHandler);
-    req.putAllHeaders(headers);
-    req.end();
-  }
-
-  public HttpClientRequest options(String uri, HttpResponseHandler responseHandler) {
-    return request("OPTIONS", uri, responseHandler);
-  }
-
-  public HttpClientRequest get(String uri, HttpResponseHandler responseHandler) {
-    return request("GET", uri, responseHandler);
-  }
-
-  public HttpClientRequest head(String uri, HttpResponseHandler responseHandler) {
-    return request("HEAD", uri, responseHandler);
-  }
-
-  public HttpClientRequest post(String uri, HttpResponseHandler responseHandler) {
-    return request("POST", uri, responseHandler);
-  }
-
-  public HttpClientRequest put(String uri, HttpResponseHandler responseHandler) {
-    return request("PUT", uri, responseHandler);
-  }
-
-  public HttpClientRequest delete(String uri, HttpResponseHandler responseHandler) {
-    return request("DELETE", uri, responseHandler);
-  }
-
-  public HttpClientRequest trace(String uri, HttpResponseHandler responseHandler) {
-    return request("TRACE", uri, responseHandler);
-  }
-
-  public HttpClientRequest connect(String uri, HttpResponseHandler responseHandler) {
-    return request("CONNECT", uri, responseHandler);
-  }
-
-  public HttpClientRequest patch(String uri, HttpResponseHandler responseHandler) {
-    return request("PATCH", uri, responseHandler);
-  }
-
+  @Override
   public void close() {
 //    if (ws != null) {
 //      //Need to send 9 zeros to represent a close
@@ -178,10 +128,15 @@ public class HttpClientConnection extends AbstractConnection {
 //      ChannelFuture future = channel.write(ChannelBuffers.copiedBuffer(bytes));
 //      future.addListener(ChannelFutureListener.CLOSE);  // Close after it's written
 //    }
-    super.close();
+    client.returnConnection(this);
   }
 
-  //TODO - combine these with same in HttpServerConnection and NetSocket
+  void internalClose() {
+    //channel.write(ChannelBuffers.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+    channel.close();
+  }
+
+  //TODO - combine these with same in ServerConnection and NetSocket
 
   void handleInterestedOpsChanged() {
     try {
@@ -196,21 +151,24 @@ public class HttpClientConnection extends AbstractConnection {
     }
   }
 
-  void handleResponse(HttpClientResponse resp) {
-    setContextID();
-    HttpResponseHandler handler = respHandlers.poll();
-    if (handler == null) {
+  void handleResponse(HttpResponse resp) {
+    HttpClientRequest req = requests.poll();
+    if (req == null) {
       throw new IllegalStateException("No response handler");
     }
-    currentResponse = resp;
+
+    setContextID();
+    HttpClientResponse nResp = new HttpClientResponse(this, resp, req.th);
+    HttpResponseHandler handler = req.getResponseHandler();
+    currentResponse = nResp;
     try {
-      handler.onResponse(resp);
+      handler.onResponse(nResp);
     } catch (Throwable t) {
       handleHandlerException(t);
     }
   }
 
-  void handleChunk(Buffer buff) {
+  void handleResponseChunk(Buffer buff) {
     setContextID();
     try {
       currentResponse.handleChunk(buff);
@@ -219,15 +177,18 @@ public class HttpClientConnection extends AbstractConnection {
     }
   }
 
-  void handleEnd() {
-    handleEnd(null);
+  void handleResponseEnd() {
+    handleResponseEnd(null);
   }
 
-  void handleEnd(HttpChunkTrailer trailer) {
+  void handleResponseEnd(HttpChunkTrailer trailer) {
     try {
       currentResponse.handleEnd(trailer);
     } catch (Throwable t) {
       handleHandlerException(t);
+    }
+    if (!keepAlive) {
+      close();
     }
   }
 
@@ -260,11 +221,8 @@ public class HttpClientConnection extends AbstractConnection {
     super.addFuture(done, future);
   }
 
-  ChannelFuture write(Object obj, HttpClientRequest req) {
-    if (req != currentRequest) {
-      throw new IllegalStateException("Do not interleave request writes");
-    }
-    return channel.write(obj);
+  ChannelFuture write(Object obj) {
+     return channel.write(obj);
   }
 
   void setCurrentRequest(HttpClientRequest req) {
@@ -272,13 +230,20 @@ public class HttpClientConnection extends AbstractConnection {
       throw new IllegalStateException("Connection is already writing a request");
     }
     this.currentRequest = req;
-    this.respHandlers.add(req.getResponseHandler());
+    this.requests.add(req);
   }
 
-  void endRequest(HttpClientRequest req) {
+  void endRequest() {
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
+
+    if (keepAlive) {
+      //Close just returns connection to the pool
+      close();
+    } else {
+      //The connection gets closed after the response is received
+    }
   }
 }

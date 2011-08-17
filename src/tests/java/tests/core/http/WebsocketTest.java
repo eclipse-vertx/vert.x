@@ -13,14 +13,11 @@
 
 package tests.core.http;
 
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
-import org.nodex.core.http.HttpClientConnectHandler;
-import org.nodex.core.http.HttpClientConnection;
 import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerConnectHandler;
-import org.nodex.core.http.HttpServerConnection;
 import org.nodex.core.http.Websocket;
 import org.nodex.core.http.WebsocketConnectHandler;
 import org.testng.annotations.Test;
@@ -50,9 +47,13 @@ public class WebsocketTest extends TestBase {
     final String path = "/some/path";
     final int port = 8181;
 
-    HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
-      public void onConnect(final HttpServerConnection conn) {
-        conn.wsConnectHandler(new WebsocketConnectHandler() {
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
+
+    new NodexMain() {
+      public void go() throws Exception {
+        final HttpServer server = new HttpServer(new WebsocketConnectHandler() {
           public boolean onConnect(final Websocket ws) {
             azzert(path.equals(ws.uri));
             ws.dataHandler(new DataHandler() {
@@ -63,25 +64,25 @@ public class WebsocketTest extends TestBase {
             });
             return true;
           }
-        });
-      }
-    };
-    final CountDownLatch latch = new CountDownLatch(1);
+        }).listen(port, host);
 
-    final int bsize = 100;
-    final int sends = 10;
+        final int bsize = 100;
+        final int sends = 10;
 
-    HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
-      public void onConnect(final HttpClientConnection conn) {
-        conn.upgradeToWebSocket(path, new WebsocketConnectHandler() {
-          public boolean onConnect(Websocket ws) {
+        client.connectWebsocket(path, new WebsocketConnectHandler() {
+          public boolean onConnect(final Websocket ws) {
+
             final Buffer received = Buffer.create(0);
             ws.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 received.append(data);
                 if (received.length() == bsize * sends) {
-                  latch.countDown();
-                  conn.close();
+                  ws.close();
+                  server.close(new Runnable() {
+                    public void run() {
+                      latch.countDown();
+                    }
+                  });
                 }
               }
             });
@@ -100,20 +101,10 @@ public class WebsocketTest extends TestBase {
             return true;
           }
         });
-        conn.closedHandler(new Runnable() {
-          public void run() {
-            latch.countDown();
-          }
-        });
       }
-    };
-
-    HttpServer server = new HttpServer(serverH).listen(port, host);
-
-    HttpClient client = new HttpClient().setKeepAlive(keepAlive).connect(port, host, clientH);
+    }.run();
 
     azzert(latch.await(5, TimeUnit.SECONDS));
-    client.close();
-    awaitClose(server);
+    throwAssertions();
   }
 }

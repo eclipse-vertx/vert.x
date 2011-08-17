@@ -45,7 +45,7 @@ public class HttpServerResponse implements WriteStream {
   private static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
 
   private final boolean keepAlive;
-  private final HttpServerConnection conn;
+  private final ServerConnection conn;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
 
@@ -55,7 +55,7 @@ public class HttpServerResponse implements WriteStream {
   private Runnable drainHandler;
   private ExceptionHandler exceptionHandler;
 
-  HttpServerResponse(boolean keepAlive, HttpServerConnection conn) {
+  HttpServerResponse(boolean keepAlive, ServerConnection conn) {
     this.keepAlive = keepAlive;
     this.conn = conn;
     this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
@@ -175,7 +175,7 @@ public class HttpServerResponse implements WriteStream {
 
     // Close the non-keep-alive connection after the write operation is done.
     if (!keepAlive) {
-      writeFuture.addListener(ChannelFutureListener.CLOSE);
+      //writeFuture.addListener(ChannelFutureListener.CLOSE);
     }
     written = true;
     conn.responseComplete();

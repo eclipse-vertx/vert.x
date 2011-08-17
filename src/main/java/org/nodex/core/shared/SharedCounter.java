@@ -15,9 +15,6 @@ package org.nodex.core.shared;
 
 import org.cliffc.high_scale_lib.ConcurrentAutoTable;
 
-import java.util.Map;
-import java.util.WeakHashMap;
-
 public class SharedCounter implements Counter {
 
   private final ConcurrentAutoTable counter = new ConcurrentAutoTable();

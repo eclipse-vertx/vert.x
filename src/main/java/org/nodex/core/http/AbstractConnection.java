@@ -23,7 +23,7 @@ public abstract class AbstractConnection extends ConnectionBase {
     super(channel, contextID, th);
   }
 
-  public ChannelFuture write(Object obj) {
+  ChannelFuture write(Object obj) {
     return channel.write(obj);
   }
 

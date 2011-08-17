@@ -14,18 +14,15 @@
 package tests.core.http;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
-import org.nodex.core.http.HttpClientConnectHandler;
-import org.nodex.core.http.HttpClientConnection;
 import org.nodex.core.http.HttpClientRequest;
 import org.nodex.core.http.HttpClientResponse;
 import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerConnectHandler;
-import org.nodex.core.http.HttpServerConnection;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.http.HttpServerResponse;
 import org.testng.annotations.Test;
@@ -39,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class HttpTest extends TestBase {
 
@@ -109,9 +107,12 @@ public class HttpTest extends TestBase {
     final int port = 8181;
     final int requests = 100;
 
-    HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
-      public void onConnect(final HttpServerConnection conn) {
-        conn.requestHandler(new HttpRequestHandler() {
+    final CountDownLatch latch = new CountDownLatch(requests);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer(new HttpRequestHandler() {
           int count;
 
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
@@ -141,17 +142,12 @@ public class HttpTest extends TestBase {
               }
             });
           }
-        });
-      }
-    };
-    final CountDownLatch latch = new CountDownLatch(requests);
+        }).listen(port, host);
 
-    HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
-
-      public void onConnect(HttpClientConnection conn) {
         for (int count = 0; count < requests; count++) {
           final int theCount = count;
-          HttpClientRequest req = conn.request(method, path, new HttpResponseHandler() {
+          HttpClient client = new HttpClient().setKeepAlive(keepAlive).setPort(port).setHost(host);
+          HttpClientRequest req = client.request(method, path, new HttpResponseHandler() {
             public void onResponse(final HttpClientResponse response) {
               //dumpHeaders(response.headers);
               azzert(response.statusCode == statusCode);
@@ -165,11 +161,12 @@ public class HttpTest extends TestBase {
               });
               response.endHandler(new Runnable() {
                 public void run() {
-                  //System.out.println("expected:" + totResponseBody.toString());
-                  //System.out.println("actual:" + buff.toString());
                   azzert(("This is content " + theCount).equals(buff.toString()));
-                  latch.countDown();
-                  System.out.println("Got " + theCount);
+                  server.close(new Runnable() {
+                    public void run() {
+                      latch.countDown();
+                    }
+                  });
                 }
               });
             }
@@ -177,11 +174,12 @@ public class HttpTest extends TestBase {
           req.putHeader("count", String.valueOf(count));
           req.write("This is content " + count);
           req.end();
+          client.close();
         }
-      }
-    };
 
-    run(host, port, keepAlive, serverH, clientH, latch);
+      }
+    }.run();
+    azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
   }
 
@@ -195,23 +193,23 @@ public class HttpTest extends TestBase {
     final String content = Utils.randomAlphaString(10000);
     final File file = setupFile(path, content);
 
-    HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
-      public void onConnect(final HttpServerConnection conn) {
-        conn.requestHandler(new HttpRequestHandler() {
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             azzert(path.equals(req.path));
             //Clearly in a real web server you'd do some safety checks on the path
             String fileName = "./" + req.path;
             resp.sendFile(fileName);
           }
-        });
-      }
-    };
-    final CountDownLatch latch = new CountDownLatch(1);
+        }).listen(port, host);
 
-    HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
-      public void onConnect(HttpClientConnection conn) {
-        conn.getNow(path, new HttpResponseHandler() {
+        HttpClient client = new HttpClient().setKeepAlive(keepAlive).setPort(port).setHost(host);
+
+        client.getNow(path, new HttpResponseHandler() {
           public void onResponse(final HttpClientResponse response) {
             dumpHeaders(response);
             azzert(response.statusCode == 200);
@@ -225,54 +223,82 @@ public class HttpTest extends TestBase {
             response.endHandler(new Runnable() {
               public void run() {
                 azzert(content.equals(buff.toString()));
-                latch.countDown();
+                server.close(new Runnable() {
+                  public void run() {
+                    latch.countDown();
+                  }
+                });
               }
             });
           }
         });
-      }
-    };
 
-    run(host, port, keepAlive, serverH, clientH, latch);
-    file.delete();
+        client.close();
+      }
+    }.run();
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
   }
 
   @Test
-  public void testKeepAlive() throws Exception {
+  public void testPooling() throws Exception {
+    testPooling(true);
+    testPooling(false);
+  }
+
+  private void testPooling(boolean keepAlive) throws Exception {
+    testPooling(1, 1, 100, keepAlive);
+    testPooling(1000, 1, 100, keepAlive);
+    testPooling(10, 1, 100, keepAlive);
+    testPooling(10, 10, 100, keepAlive);
+  }
+
+  private void testPooling(final int maxPoolSize, final int numContexts, final int numGets, final boolean keepAlive) throws Exception {
     final String host = "localhost";
     final String path = "foo.txt";
     final int port = 8181;
 
-    HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
-      public void onConnect(final HttpServerConnection conn) {
-        conn.requestHandler(new HttpRequestHandler() {
-          public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
-            resp.end(); // Just send back a 200 OK
-          }
-        });
-      }
-    };
-    final CountDownLatch latch = new CountDownLatch(1);
+    final CountDownLatch latch = new CountDownLatch(numContexts);
 
-    HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
-      public void onConnect(HttpClientConnection conn) {
-        conn.getNow(path, new HttpResponseHandler() {
-          public void onResponse(final HttpClientResponse response) {
-            System.out.println("Got response");
-          }
-        });
+    for (int j = 0; j < numContexts; j++) {
+      final int thePort = port + j;
+      new NodexMain() {
+        public void go() throws Exception {
 
-        conn.closedHandler(new Runnable() {
-          public void run() {
-            //Keep-Alive is false so connection will be automatically closedHandler
-            latch.countDown();
-          }
-        });
-      }
-    };
+          final HttpServer server = new HttpServer(new HttpRequestHandler() {
+            public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
+              resp.putHeader("count", req.getHeader("count"));
+              resp.end();
+            }
+          }).listen(thePort, host);
 
-    run(host, port, false, serverH, clientH, latch);
+          final HttpClient client = new HttpClient().setKeepAlive(keepAlive).setPort(thePort).setHost(host).setMaxPoolSize(maxPoolSize);
+
+          for (int i = 0; i < numGets; i++) {
+            final int theCount = i;
+            HttpClientRequest req = client.get(path, new HttpResponseHandler() {
+              public void onResponse(final HttpClientResponse response) {
+                azzert(response.statusCode == 200);
+                azzert(theCount == Integer.parseInt(response.getHeader("count")));
+                if (theCount == numGets - 1) {
+                  server.close(new Runnable() {
+                    public void run() {
+                      latch.countDown();
+                    }
+                  });
+                  client.close();
+                }
+              }
+            });
+            req.putHeader("count", i);
+            req.end();
+          }
+        }
+      }.run();
+    }
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
   }
 
@@ -314,9 +340,14 @@ public class HttpTest extends TestBase {
     final String host = "localhost";
     final boolean keepAlive = true;
 
-    HttpServerConnectHandler serverH = new HttpServerConnectHandler() {
-      public void onConnect(final HttpServerConnection conn) {
-        conn.requestHandler(new HttpRequestHandler() {
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    final AtomicReference<HttpServer> server;
+    final AtomicReference<HttpClient> client;
+
+    new NodexMain() {
+      public void go() throws Exception {
+        final HttpServer server = new HttpServer(new HttpRequestHandler() {
           public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
             azzert((method.equals("GETNOW") ? "GET" : method).equals(req.method), method + ":" + req.method);
             azzert(path.equals(req.path));
@@ -352,14 +383,7 @@ public class HttpTest extends TestBase {
               }
             });
           }
-        });
-      }
-    };
-
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    HttpClientConnectHandler clientH = new HttpClientConnectHandler() {
-      public void onConnect(HttpClientConnection conn) {
+        }).listen(port, host);
 
         HttpResponseHandler responseHandler = new HttpResponseHandler() {
           public void onResponse(final HttpClientResponse response) {
@@ -374,23 +398,26 @@ public class HttpTest extends TestBase {
             });
             response.endHandler(new Runnable() {
               public void run() {
-                //System.out.println("expected:" + totResponseBody.toString());
-                //System.out.println("actual:" + buff.toString());
                 azzert(Utils.buffersEqual(totResponseBody, buff));
                 if (trailers != null) {
                   assertTrailers(trailers, response);
                 }
-                latch.countDown();
+                server.close(new Runnable() {
+                  public void run() {
+                    latch.countDown();
+                  }
+                });
               }
             });
           }
         };
 
         HttpClientRequest req;
+        HttpClient client = new HttpClient().setHost(host).setPort(port).setKeepAlive(keepAlive);
         if ("GETNOW".equals(method)) {
-          conn.getNow(path + paramsString, requestHeaders, responseHandler);
+           client.getNow(path + paramsString, requestHeaders, responseHandler);
         } else {
-          req = getRequest(specificMethod, method, path, paramsString, responseHandler, conn);
+          req = getRequest(specificMethod, method, path, paramsString, responseHandler, client);
           req.putAllHeaders(requestHeaders);
           if (requestBody != null) {
             for (Buffer buff : requestBody) {
@@ -399,51 +426,45 @@ public class HttpTest extends TestBase {
           }
           req.end();
         }
+        client.close();
       }
-    };
+    }.run();
 
-    run(host, port, keepAlive, serverH, clientH, latch);
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    ///awaitClose(server);
+    //client.close();
+
+    throwAssertions();
+
   }
 
   private HttpClientRequest getRequest(boolean specificMethod, String method, String path, String paramsString,
-                                       HttpResponseHandler responseHandler, HttpClientConnection conn) {
+                                       HttpResponseHandler responseHandler, HttpClient client) {
     HttpClientRequest req = null;
     if (specificMethod) {
       if ("GET".equals(method)) {
-        req = conn.get(path + paramsString, responseHandler);
+        req = client.get(path + paramsString, responseHandler);
       } else if ("POST".equals(method)) {
-        req = conn.post(path + paramsString, responseHandler);
+        req = client.post(path + paramsString, responseHandler);
       } else if ("PUT".equals(method)) {
-        req = conn.put(path + paramsString, responseHandler);
+        req = client.put(path + paramsString, responseHandler);
       } else if ("HEAD".equals(method)) {
-        req = conn.head(path + paramsString, responseHandler);
+        req = client.head(path + paramsString, responseHandler);
       } else if ("DELETE".equals(method)) {
-        req = conn.delete(path + paramsString, responseHandler);
+        req = client.delete(path + paramsString, responseHandler);
       } else if ("TRACE".equals(method)) {
-        req = conn.trace(path + paramsString, responseHandler);
+        req = client.trace(path + paramsString, responseHandler);
       } else if ("CONNECT".equals(method)) {
-        req = conn.connect(path + paramsString, responseHandler);
+        req = client.connect(path + paramsString, responseHandler);
       } else if ("OPTIONS".equals(method)) {
-        req = conn.options(path + paramsString, responseHandler);
+        req = client.options(path + paramsString, responseHandler);
       } else if ("PATCH".equals(method)) {
-        req = conn.patch(path + paramsString, responseHandler);
+        req = client.patch(path + paramsString, responseHandler);
       }
     } else {
-      req = conn.request(method, path + paramsString, responseHandler);
+      req = client.request(method, path + paramsString, responseHandler);
     }
     return req;
-  }
-
-  private void run(String host, int port, boolean keepAlive, HttpServerConnectHandler serverHandler,
-                   HttpClientConnectHandler clientHandler,
-                   CountDownLatch endLatch) throws Exception {
-    HttpServer server = new HttpServer(serverHandler).listen(port, host);
-
-    new HttpClient().setKeepAlive(keepAlive).connect(port, host, clientHandler);
-
-    azzert(endLatch.await(5, TimeUnit.SECONDS));
-
-    awaitClose(server);
   }
 
   private Map<String, String> genMap(int num) {

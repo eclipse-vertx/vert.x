@@ -17,9 +17,7 @@ import org.cliffc.high_scale_lib.NonBlockingHashSet;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 public class SharedSet<E> implements Set<E> {
 

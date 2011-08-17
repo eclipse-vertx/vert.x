@@ -131,6 +131,11 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     }
   }
 
+  //Close without checking thread - used when server is closed
+  void internalClose() {
+    channel.close();
+  }
+
   private ChannelFuture doWrite(ChannelBuffer buff) {
     checkThread();
     return channel.write(buff);

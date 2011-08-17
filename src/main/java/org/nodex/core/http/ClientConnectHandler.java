@@ -13,6 +13,6 @@
 
 package org.nodex.core.http;
 
-public interface HttpClientConnectHandler {
-  void onConnect(HttpClientConnection connection);
+interface ClientConnectHandler {
+  void onConnect(ClientConnection connection);
 }

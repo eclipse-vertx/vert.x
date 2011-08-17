@@ -13,7 +13,10 @@
 
 package tests.core.net;
 
+import org.nodex.core.Actor;
 import org.nodex.core.ExceptionHandler;
+import org.nodex.core.Nodex;
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
@@ -26,6 +29,7 @@ import tests.core.TestBase;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TLSTest extends TestBase {
 
@@ -50,90 +54,110 @@ public class TLSTest extends TestBase {
     testTLS(false, true, true, false, true, false, false);
   }
 
-  private void testTLS(boolean clientCert, boolean clientTrust,
-                            boolean serverCert, boolean serverTrust,
-                            boolean requireClientAuth, boolean clientTrustAll,
-                            boolean shouldPass) throws Exception {
-    final Buffer receivedBuff = Buffer.create(0);
+  private void testTLS(final boolean clientCert, final boolean clientTrust,
+                        final boolean serverCert, final boolean serverTrust,
+                        final boolean requireClientAuth, final boolean clientTrustAll,
+                        final boolean shouldPass) throws Exception {
+
     final CountDownLatch latch = new CountDownLatch(1);
+    final CountDownLatch exceptionLatch = new CountDownLatch(1);
     final int numSends = 10;
     final int sendSize = 100;
-    NetConnectHandler serverHandler = new NetConnectHandler() {
-      public void onConnect(final NetSocket sock) {
-        final ContextChecker checker = new ContextChecker();
-        sock.dataHandler(new DataHandler() {
-          public void onData(Buffer data) {
-            checker.check();
-            receivedBuff.append(data);
-            if (receivedBuff.length() == numSends * sendSize) {
-              sock.close();
-              latch.countDown();
+    final Buffer sentBuff = Buffer.create(numSends * sendSize);
+    final Buffer receivedBuff = Buffer.create(0);
+    final AtomicReference<Exception> excRef = new AtomicReference<Exception>();
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final NetServer server = new NetServer();
+
+        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
+         public void onMessage(String msg) {
+           server.close(new Runnable() {
+             public void run() {
+               latch.countDown();
+             }
+           });
+         }
+        });
+
+        NetConnectHandler serverHandler = new NetConnectHandler() {
+          public void onConnect(final NetSocket sock) {
+            final ContextChecker checker = new ContextChecker();
+            sock.dataHandler(new DataHandler() {
+              public void onData(Buffer data) {
+                checker.check();
+                receivedBuff.append(data);
+                if (receivedBuff.length() == numSends * sendSize) {
+                  sock.close();
+                  Nodex.instance.sendMessage(actorId, "foo");
+                }
+              }
+            });
+          }
+        };
+
+        NetConnectHandler clientHandler = new NetConnectHandler() {
+          public void onConnect(NetSocket sock) {
+
+            sock.exceptionHandler(new ExceptionHandler() {
+              public void onException(Exception e) {
+                e.printStackTrace();
+                excRef.set(e);
+                Nodex.instance.sendMessage(actorId, "foo");
+              }
+            });
+            for (int i = 0; i < numSends; i++) {
+              Buffer b = Utils.generateRandomBuffer(sendSize);
+              sentBuff.append(b);
+              sock.write(b);
             }
           }
-        });
-      }
-    };
-    final Buffer sentBuff = Buffer.create(numSends * sendSize);
-    final CountDownLatch exceptionLatch = new CountDownLatch(1);
-    NetConnectHandler clientHandler = new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
+        };
 
-        sock.exceptionHandler(new ExceptionHandler() {
-          public void onException(Exception e) {
-            System.err.println("*** Got exceptionHandler in execption handler");
-            //TODO need to assert this
-            e.printStackTrace();
-            exceptionLatch.countDown();
-          }
-        });
-        for (int i = 0; i < numSends; i++) {
-          Buffer b = Utils.generateRandomBuffer(sendSize);
-          sentBuff.append(b);
-          sock.write(b);
+        server.connectHandler(serverHandler).setSSL(true);
+
+        if (serverTrust) {
+          server.setTrustStorePath("./src/tests/resources/keystores/server-truststore.jks").setTrustStorePassword
+              ("wibble");
         }
+        if (serverCert) {
+          server.setKeyStorePath("./src/tests/resources/keystores/server-keystore.jks").setKeyStorePassword("wibble");
+        }
+        if (requireClientAuth) {
+          server.setClientAuthRequired(true);
+        }
+
+        server.listen(4043);
+
+        NetClient client = new NetClient().setSSL(true);
+
+        if (clientTrustAll) {
+          client.setTrustAll(true);
+        }
+
+        if (clientTrust) {
+          client.setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
+            .setTrustStorePassword("wibble");
+        }
+        if (clientCert) {
+          client.setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
+            .setKeyStorePassword("wibble");
+        }
+
+        client.connect(4043, clientHandler);
       }
-    };
-
-    NetServer server = new NetServer(serverHandler).setSSL(true);
-
-    if (serverTrust) {
-      server.setTrustStorePath("./src/tests/resources/keystores/server-truststore.jks").setTrustStorePassword
-          ("wibble");
-    }
-    if (serverCert) {
-      server.setKeyStorePath("./src/tests/resources/keystores/server-keystore.jks").setKeyStorePassword("wibble");
-    }
-    if (requireClientAuth) {
-      server.setClientAuthRequired(true);
-    }
-
-    server.listen(4043);
-
-    NetClient client = new NetClient().setSSL(true);
-
-    if (clientTrustAll) {
-      client.setTrustAll(true);
-    }
-
-    if (clientTrust) {
-      client.setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
-        .setTrustStorePassword("wibble");
-    }
-    if (clientCert) {
-      client.setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
-        .setKeyStorePassword("wibble");
-    }
-
-    client.connect(4043, clientHandler);
+    }.run();
 
     if (shouldPass) {
       azzert(latch.await(5, TimeUnit.SECONDS));
       azzert(Utils.buffersEqual(sentBuff, receivedBuff));
     } else {
-      azzert(exceptionLatch.await(5, TimeUnit.SECONDS));
+      azzert(latch.await(5, TimeUnit.SECONDS));
+      azzert(excRef.get() != null);
     }
 
-    awaitClose(server);
     throwAssertions();
   }
 }

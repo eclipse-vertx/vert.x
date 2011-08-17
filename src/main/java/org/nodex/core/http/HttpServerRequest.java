@@ -32,10 +32,10 @@ public class HttpServerRequest implements ReadStream {
   private DataHandler dataHandler;
   private Runnable endHandler;
   private ExceptionHandler exceptionHandler;
-  private final HttpServerConnection conn;
+  private final ServerConnection conn;
   private final HttpRequest request;
 
-  HttpServerRequest(HttpServerConnection conn,
+  HttpServerRequest(ServerConnection conn,
                     HttpRequest request) {
     this.method = request.getMethod().toString();
     URI theURI;

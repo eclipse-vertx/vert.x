@@ -40,4 +40,6 @@ public interface NodexInternal extends Nodex {
   void executeInBackground(Runnable runnable);
 
   ExecutorService getBackgroundPool();
+
+  NioWorker getWorkerForContextID(long contextID);
 }

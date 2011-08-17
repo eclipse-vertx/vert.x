@@ -14,7 +14,6 @@
 package tests.core;
 
 import org.nodex.core.Actor;
-import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.shared.SharedMap;
 import org.testng.annotations.Test;
@@ -42,7 +41,6 @@ public class ActorTest extends TestBase {
         long actorID = nodex.registerActor(new Actor<String>() {
           public void onMessage(String message) {
             azzert(contextID1 == nodex.getContextID());
-            System.out.println("Got message " + message);
             latch2.countDown();
           }
         });

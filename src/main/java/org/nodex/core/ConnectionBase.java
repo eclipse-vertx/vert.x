@@ -43,32 +43,39 @@ public class ConnectionBase {
   protected Runnable closedHandler;
 
   public void pause() {
+    checkThread();
     channel.setReadable(false);
   }
 
   public void resume() {
+    checkThread();
     channel.setReadable(true);
   }
 
   public void setWriteQueueMaxSize(int size) {
+    checkThread();
     NioSocketChannelConfig conf = (NioSocketChannelConfig) channel.getConfig();
     conf.setWriteBufferLowWaterMark(size / 2);
     conf.setWriteBufferHighWaterMark(size);
   }
 
   public boolean writeQueueFull() {
+    checkThread();
     return !channel.isWritable();
   }
 
   public void close() {
+    checkThread();
     channel.close();
   }
 
   public void exceptionHandler(ExceptionHandler handler) {
+    checkThread();
     this.exceptionHandler = handler;
   }
 
   public void closedHandler(Runnable handler) {
+    checkThread();
     this.closedHandler = handler;
   }
 

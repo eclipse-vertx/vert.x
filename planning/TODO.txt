@@ -21,6 +21,8 @@ Test request/response as write/read stream with pump both client and server side
 Test chaining methods
 endHandler handlers not currently being called
 Not all httpserverresponse methods being tested
+Exceptionhandler should be on request but how to we signal connection errors to it?
+
 
 File
 ----

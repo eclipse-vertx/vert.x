@@ -19,7 +19,6 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
-import org.nodex.core.shared.SharedData;
 import org.nodex.core.shared.SharedSet;
 
 public class FanoutServer {

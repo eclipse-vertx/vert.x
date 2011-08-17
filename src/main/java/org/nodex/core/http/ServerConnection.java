@@ -20,18 +20,9 @@ import org.nodex.core.buffer.Buffer;
 
 import java.io.File;
 
-public class HttpServerConnection extends AbstractConnection {
+class ServerConnection extends AbstractConnection {
 
   private HttpRequestHandler mainHandler;
-  private HttpRequestHandler getHandler;
-  private HttpRequestHandler optionsHandler;
-  private HttpRequestHandler headHandler;
-  private HttpRequestHandler postHandler;
-  private HttpRequestHandler putHandler;
-  private HttpRequestHandler deleteHandler;
-  private HttpRequestHandler traceHandler;
-  private HttpRequestHandler connectHandler;
-  private HttpRequestHandler patchHandler;
   private WebsocketConnectHandler wsHandler;
 
   private HttpServerRequest currentRequest;
@@ -40,52 +31,21 @@ public class HttpServerConnection extends AbstractConnection {
 
   private boolean paused;
 
-  HttpServerConnection(Channel channel, long contextID, Thread th) {
+  ServerConnection(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
   }
 
-  public void requestHandler(HttpRequestHandler handler) {
+  void requestHandler(HttpRequestHandler handler) {
     this.mainHandler = handler;
   }
 
-  public void wsConnectHandler(WebsocketConnectHandler handler) {
+  void wsHandler(WebsocketConnectHandler handler) {
     this.wsHandler = handler;
   }
 
-  public void options(HttpRequestHandler handler) {
-    this.optionsHandler = handler;
-  }
-
-  public void get(HttpRequestHandler handler) {
-    this.getHandler = handler;
-  }
-
-  public void head(HttpRequestHandler handler) {
-    this.headHandler = handler;
-  }
-
-  public void post(HttpRequestHandler handler) {
-    this.postHandler = handler;
-  }
-
-  public void put(HttpRequestHandler handler) {
-    this.putHandler = handler;
-  }
-
-  public void delete(HttpRequestHandler handler) {
-    this.deleteHandler = handler;
-  }
-
-  public void trace(HttpRequestHandler handler) {
-    this.traceHandler = handler;
-  }
-
-  public void connect(HttpRequestHandler handler) {
-    this.connectHandler = handler;
-  }
-
-  public void patch(HttpRequestHandler handler) {
-    this.patchHandler = handler;
+  //Close without checking thread - used when server is closed
+  void internalClose() {
+    channel.close();
   }
 
   void handleRequest(HttpServerRequest req, HttpServerResponse resp) {
@@ -95,26 +55,6 @@ public class HttpServerConnection extends AbstractConnection {
       this.currentResponse = resp;
       if (mainHandler != null) {
         mainHandler.onRequest(req, resp);
-      } else {
-        if (getHandler != null && "GET".equals(req.method)) {
-          getHandler.onRequest(req, resp);
-        } else if (postHandler != null && "POST".equals(req.method)) {
-          postHandler.onRequest(req, resp);
-        } else if (putHandler != null && "PUT".equals(req.method)) {
-          putHandler.onRequest(req, resp);
-        } else if (headHandler != null && "HEAD".equals(req.method)) {
-          headHandler.onRequest(req, resp);
-        } else if (deleteHandler != null && "DELETE".equals(req.method)) {
-          deleteHandler.onRequest(req, resp);
-        } else if (traceHandler != null && "TRACE".equals(req.method)) {
-          traceHandler.onRequest(req, resp);
-        } else if (connectHandler != null && "CONNECT".equals(req.method)) {
-          connectHandler.onRequest(req, resp);
-        } else if (optionsHandler != null && "OPTIONS".equals(req.method)) {
-          optionsHandler.onRequest(req, resp);
-        } else if (patchHandler != null && "PATCH".equals(req.method)) {
-          patchHandler.onRequest(req, resp);
-        }
       }
     } catch (Throwable t) {
       handleHandlerException(t);

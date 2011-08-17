@@ -45,6 +45,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
@@ -72,15 +73,23 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpServer extends SSLBase {
 
-  private HttpServerConnectHandler connectHandler;
-  private Map<Channel, HttpServerConnection> connectionMap = new ConcurrentHashMap();
+  private HttpRequestHandler requestHandler;
+  private WebsocketConnectHandler wsHandler;
+  private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private ClientAuth clientAuth = ClientAuth.NONE;
+  private final Thread th;
+  private final long contextID;
 
-  public HttpServer(HttpServerConnectHandler connectHandler) {
-    this.connectHandler = connectHandler;
+  public HttpServer() {
+    Long cid = Nodex.instance.getContextID();
+    if (cid == null) {
+      throw new IllegalStateException("HTTPServer can only be used from an event loop");
+    }
+    this.contextID = cid;
+    this.th = Thread.currentThread();
 
     //Defaults
     connectionOptions.put("child.tcpNoDelay", true);
@@ -88,14 +97,42 @@ public class HttpServer extends SSLBase {
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
+  public HttpServer(HttpRequestHandler requestHandler) {
+    this();
+    this.requestHandler = requestHandler;
+  }
+
+  public HttpServer(WebsocketConnectHandler wsHandler) {
+    this();
+    this.wsHandler = wsHandler;
+  }
+
+  public HttpServer requestHandler(HttpRequestHandler requestHandler) {
+    checkThread();
+    this.requestHandler = requestHandler;
+    return this;
+  }
+
+  public HttpServer websocketHandler(WebsocketConnectHandler wsHandler) {
+    checkThread();
+    this.wsHandler = wsHandler;
+    return this;
+  }
+
   public HttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
   public HttpServer listen(int port, String host) {
-     if (listening) {
+    checkThread();
+
+    if (requestHandler == null && wsHandler == null) {
+      throw new IllegalStateException("Set request or websocket handler first");
+    }
+    if (listening) {
       throw new IllegalStateException("Listen already called");
     }
+
     listening = true;
 
     serverChannelGroup = new DefaultChannelGroup("nodex-acceptor-channels");
@@ -149,48 +186,67 @@ public class HttpServer extends SSLBase {
   }
 
   public HttpServer setSSL(boolean ssl) {
+    checkThread();
     this.ssl = ssl;
     return this;
   }
 
   public HttpServer setKeyStorePath(String path) {
+    checkThread();
     this.keyStorePath = path;
     return this;
   }
 
   public HttpServer setKeyStorePassword(String pwd) {
+    checkThread();
     this.keyStorePassword = pwd;
     return this;
   }
   public HttpServer setTrustStorePath(String path) {
+    checkThread();
     this.trustStorePath = path;
     return this;
   }
 
   public HttpServer setTrustStorePassword(String pwd) {
+    checkThread();
     this.trustStorePassword = pwd;
     return this;
   }
 
   public HttpServer setClientAuthRequired(boolean required) {
+    checkThread();
     clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
     return this;
   }
 
   public void close() {
+    checkThread();
     close(null);
   }
 
   public void close(final Runnable done) {
-    for (HttpServerConnection conn : connectionMap.values()) {
-      conn.close();
+    checkThread();
+    for (ServerConnection conn : connectionMap.values()) {
+      conn.internalClose();
     }
     if (done != null) {
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          done.run();
+          NodexInternal.instance.executeOnContext(contextID, new Runnable() {
+            public void run() {
+              done.run();
+            }
+          });
         }
       });
+    }
+  }
+
+  protected void checkThread() {
+    // All ops must always be invoked on same thread
+    if (Thread.currentThread() != th) {
+      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
   }
 
@@ -226,7 +282,7 @@ public class HttpServer extends SSLBase {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       Object msg = e.getMessage();
-      HttpServerConnection conn = connectionMap.get(ch);
+      ServerConnection conn = connectionMap.get(ch);
 
       if (msg instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) msg;
@@ -298,7 +354,7 @@ public class HttpServer extends SSLBase {
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final HttpServerConnection conn = connectionMap.get(ch);
+      final ServerConnection conn = connectionMap.get(ch);
       ch.close();
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
@@ -318,10 +374,10 @@ public class HttpServer extends SSLBase {
       final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          final HttpServerConnection conn = new HttpServerConnection(ch, contextID, Thread.currentThread());
+          final ServerConnection conn = new ServerConnection(ch, contextID, Thread.currentThread());
+          conn.requestHandler(requestHandler);
+          conn.wsHandler(wsHandler);
           connectionMap.put(ch, conn);
-          NodexInternal.instance.setContextID(contextID);
-          connectHandler.onConnect(conn);
         }
       });
     }
@@ -329,7 +385,7 @@ public class HttpServer extends SSLBase {
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final HttpServerConnection conn = connectionMap.remove(ch);
+      final ServerConnection conn = connectionMap.remove(ch);
       ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
         public void run() {
           conn.handleClosed();
@@ -342,7 +398,7 @@ public class HttpServer extends SSLBase {
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final HttpServerConnection conn = connectionMap.get(ch);
+      final ServerConnection conn = connectionMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
         ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {

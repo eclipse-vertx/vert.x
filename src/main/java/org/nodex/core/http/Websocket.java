@@ -83,6 +83,10 @@ public class Websocket implements ReadStream, WriteStream {
     this.drainHandler = handler;
   }
 
+  public void close() {
+    conn.close();
+  }
+
   void handleFrame(WebSocketFrame frame) {
     if (dataHandler != null) {
       dataHandler.onData(new Buffer(frame.getBinaryData()));

@@ -32,6 +32,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.core.ExceptionHandler;
+import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
 import org.nodex.core.ThreadSourceUtils;
@@ -46,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NetClient extends SSLBase {
 
   private ClientBootstrap bootstrap;
+  private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
   private Map<String, Object> connectionOptions = new HashMap<>();
   private ExceptionHandler exceptionHandler;
@@ -56,11 +58,17 @@ public class NetClient extends SSLBase {
   }
 
   public NetClient connect(int port, String host, final NetConnectHandler connectHandler) {
+
+    final Long contextID = Nodex.instance.getContextID();
+    if (contextID == null) {
+      throw new IllegalStateException("Requests must be made from inside an event loop");
+    }
+
     if (bootstrap == null) {
-      bootstrap = new ClientBootstrap(
-        new NioClientSocketChannelFactory(
+      channelFactory = new NioClientSocketChannelFactory(
             NodexInternal.instance.getAcceptorPool(),
-            NodexInternal.instance.getWorkerPool()));
+            NodexInternal.instance.getWorkerPool());
+      bootstrap = new ClientBootstrap(channelFactory);
 
       checkSSL();
 
@@ -79,13 +87,16 @@ public class NetClient extends SSLBase {
       });
     }
 
+    //Client connections share context with caller
+    channelFactory.setWorker(NodexInternal.instance.getWorkerForContextID(contextID));
+
     bootstrap.setOptions(connectionOptions);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
           final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
-          final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
+
           ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
               NodexInternal.instance.setContextID(contextID);
@@ -135,6 +146,7 @@ public class NetClient extends SSLBase {
     this.keyStorePassword = pwd;
     return this;
   }
+
   public NetClient setTrustStorePath(String path) {
     this.trustStorePath = path;
     return this;
@@ -200,7 +212,6 @@ public class NetClient extends SSLBase {
         ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleClosed();
-            NodexInternal.instance.destroyContext(sock.getContextID());
           }
         });
       }

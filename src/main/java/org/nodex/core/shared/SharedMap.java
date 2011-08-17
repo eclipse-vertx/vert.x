@@ -18,7 +18,6 @@ import org.cliffc.high_scale_lib.NonBlockingHashMap;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class SharedMap<K, V> implements ConcurrentMap<K, V> {

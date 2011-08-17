@@ -21,8 +21,6 @@ import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.nodex.core.parsetools.RecordParser;
 import org.nodex.core.shared.SharedData;
-import org.nodex.core.shared.SharedMap;
-import org.nodex.core.shared.SharedSet;
 
 import java.util.Set;
 
