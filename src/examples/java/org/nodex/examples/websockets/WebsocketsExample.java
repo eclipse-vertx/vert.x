@@ -1,5 +1,6 @@
 package org.nodex.examples.websockets;
 
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpRequestHandler;
@@ -14,18 +15,22 @@ import org.nodex.core.http.WebsocketConnectHandler;
  * Date: 12/08/11
  * Time: 08:05
  */
-public class WebsocketsExample {
+public class WebsocketsExample extends NodexMain {
   public static void main(String[] args) throws Exception {
-    HttpServer server = new HttpServer();
+    new WebsocketsExample().run();
 
-    server.websocketHandler(new WebsocketConnectHandler() {
+    System.out.println("Hit enter to exit");
+    System.in.read();
+  }
+
+  public void go() throws Exception {
+    new HttpServer().websocketHandler(new WebsocketConnectHandler() {
       public boolean onConnect(final Websocket ws) {
         ws.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
             ws.writeTextFrame(data.toString()); // Echo it back
           }
         });
-        System.out.println("uri is " + ws.uri);
         return ws.uri.equals("/myapp"); // Only accept connections on path /myapp
       }
     }).requestHandler(new HttpRequestHandler() {
@@ -33,10 +38,5 @@ public class WebsocketsExample {
         if (req.path.equals("/")) resp.sendFile("ws.html"); // Serve the html
       }
     }).listen(8080);
-
-    System.out.println("Any key to exit");
-    System.in.read();
-
-    server.close();
   }
 }

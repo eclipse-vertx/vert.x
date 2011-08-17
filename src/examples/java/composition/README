@@ -5,3 +5,5 @@ To run this example:
 4) Run the example ./composition_example.sh
 5) In a browser go to http://localhost:8080
 6) Select an item and hit submit
+
+*** This example is currently disabled ***

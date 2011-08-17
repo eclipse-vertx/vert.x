@@ -25,14 +25,12 @@ public class EchoServer extends NodexMain {
   public static void main(String[] args) throws Exception {
     new EchoServer().run();
 
-    System.out.println("Any key to exit");
+    System.out.println("Hit enter to exit");
     System.in.read();
-
   }
 
   public void go() throws Exception {
-
-    NetServer server = new NetServer(new NetConnectHandler() {
+    new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket socket) {
         socket.dataHandler(new DataHandler() {
           public void onData(Buffer buffer) {
@@ -41,7 +39,5 @@ public class EchoServer extends NodexMain {
         });
       }
     }).listen(8080);
-
-    //
   }
 }

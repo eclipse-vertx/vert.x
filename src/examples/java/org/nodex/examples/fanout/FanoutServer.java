@@ -14,6 +14,7 @@
 package org.nodex.examples.fanout;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetConnectHandler;
@@ -21,9 +22,15 @@ import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.nodex.core.shared.SharedSet;
 
-public class FanoutServer {
+public class FanoutServer extends NodexMain {
   public static void main(String[] args) throws Exception {
+    new FanoutServer().run();
 
+    System.out.println("Hit enter to exit");
+    System.in.read();
+  }
+
+  public void go() throws Exception {
     final SharedSet<Long> connections = new SharedSet<>();
 
     NetServer server = new NetServer(new NetConnectHandler() {
@@ -43,10 +50,5 @@ public class FanoutServer {
         });
       }
     }).listen(8080);
-
-    System.out.println("Any key to exit");
-    System.in.read();
-
-    server.close();
   }
 }

@@ -13,14 +13,22 @@
 
 package org.nodex.examples.http;
 
+import org.nodex.core.NodexMain;
 import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.http.HttpServerResponse;
 
-public class ServerExample {
+public class ServerExample extends NodexMain {
   public static void main(String[] args) throws Exception {
-    HttpServer server = new HttpServer(new HttpRequestHandler() {
+    new ServerExample().run();
+
+    System.out.println("Hit enter to exit");
+    System.in.read();
+  }
+
+  public void go() throws Exception {
+    new HttpServer(new HttpRequestHandler() {
       public void onRequest(HttpServerRequest req, HttpServerResponse resp) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
@@ -31,10 +39,5 @@ public class ServerExample {
         resp.write("<html><body><h1>Hello from node.x!</h1></body></html>", "UTF-8").end();
       }
     }).listen(8080);
-
-    System.out.println("Any key to exit");
-    System.in.read();
-
-    server.close();
   }
 }

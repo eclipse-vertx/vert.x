@@ -14,6 +14,7 @@
 package org.nodex.examples.pubsub;
 
 import org.nodex.core.Nodex;
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetConnectHandler;
@@ -24,18 +25,21 @@ import org.nodex.core.shared.SharedData;
 
 import java.util.Set;
 
-public class PubSubServer {
+public class PubSubServer extends NodexMain {
 
   public static void main(String[] args) throws Exception {
+    new PubSubServer().run();
 
-    NetServer server = new NetServer(new NetConnectHandler() {
+    System.out.println("Hit enter to exit");
+    System.in.read();
+  }
 
+  public void go() throws Exception {
+    new NetServer(new NetConnectHandler() {
       public void onConnect(final NetSocket socket) {
-
         socket.dataHandler(RecordParser.newDelimited("\n", new DataHandler () {
           public void onData(Buffer frame) {
             String line = frame.toString().trim();
-            System.out.println("Got line: " + line);
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {
               Set<Long> set = SharedData.<Long>getSet(parts[1]);
@@ -52,10 +56,5 @@ public class PubSubServer {
         }));
       }
     }).listen(8080);
-
-    System.out.println("Any key to exit");
-    System.in.read();
-
-    server.close();
   }
 }

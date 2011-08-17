@@ -15,11 +15,13 @@ import org.nodex.core.http.HttpResponseHandler;
 public class ClientExample extends NodexMain {
   public static void main(String[] args) throws Exception {
     new ClientExample().run();
+
+    System.out.println("Hit enter to exit");
+    System.in.read();
   }
 
   public void go() throws Exception {
-    HttpClient client = new HttpClient().setPort(8080).setHost("localhost");
-    client.getNow("/", new HttpResponseHandler() {
+    new HttpClient().setPort(8080).setHost("localhost").getNow("/", new HttpResponseHandler() {
       public void onResponse(HttpClientResponse response) {
         response.dataHandler(new DataHandler() {
           public void onData(Buffer data) {
@@ -28,8 +30,5 @@ public class ClientExample extends NodexMain {
         });
       }
     });
-    System.out.println("Any key to exit");
-    System.in.read();
-
   }
 }

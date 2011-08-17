@@ -1,0 +1,8 @@
+HTTP server and client
+======================
+
+To run the server: ./http_server.sh
+
+Then point your browser at http://localhost:8080
+
+OR run the http client ./http_client.sh

@@ -1,5 +1,6 @@
 package org.nodex.examples.sendfile;
 
+import org.nodex.core.NodexMain;
 import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
@@ -10,9 +11,17 @@ import org.nodex.core.http.HttpServerResponse;
  * Date: 12/08/11
  * Time: 09:04
  */
-public class SendFileExample {
+public class SendFileExample extends NodexMain {
   public static void main(String[] args) throws Exception {
-    HttpServer server = new HttpServer(new HttpRequestHandler() {
+    new SendFileExample().run();
+
+    System.out.println("Hit enter to exit");
+    System.in.read();
+  }
+
+  public void go() throws Exception {
+    //Here is the web server!
+    new HttpServer(new HttpRequestHandler() {
       public void onRequest(HttpServerRequest req, HttpServerResponse resp) {
         if (req.path.equals("/")) {
           resp.sendFile("index.html");
@@ -23,9 +32,5 @@ public class SendFileExample {
       }
     }).listen(8080);
 
-    System.out.println("Any key to exit");
-    System.in.read();
-
-    server.close();
   }
 }

@@ -13,15 +13,23 @@
 
 package org.nodex.examples.echo;
 
+import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
 import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetSocket;
 
-public class EchoClient {
-  public static void main(String[] args) throws Exception {
+public class EchoClient extends NodexMain {
 
+  public static void main(String[] args) throws Exception {
+    new EchoClient().run();
+
+    System.out.println("Hit enter to exit");
+    System.in.read();
+  }
+
+  public void go() throws Exception {
     new NetClient().connect(8080, "localhost", new NetConnectHandler() {
       public void onConnect(NetSocket socket) {
 
@@ -39,9 +47,5 @@ public class EchoClient {
         }
       }
     });
-
-    System.out.println("Any key to exit");
-    System.in.read();
   }
-
 }

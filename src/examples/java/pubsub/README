@@ -1,0 +1,25 @@
+Simple publish-susbcribe server
+===============================
+
+To run the server: ./pubsub_server.sh
+
+Then from different consoles: telnet localhost 8080
+
+The pubsub server understands the following simple protocol. Each line is terminated by CR (hit enter on telnet)
+
+To subscribe to a topic:
+
+SUBSCRIBE,<topic_name>
+
+To unsubscribe from a topic:
+
+UNSUBSCRIBE,<topic_name>
+
+To publish a message to a topic:
+
+PUBLISH,<topic_name>,<message>
+
+Where:
+
+<topic_name> is the name of a topic
+<message is some string you want to publish
