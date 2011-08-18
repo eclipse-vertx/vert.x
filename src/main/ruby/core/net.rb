@@ -10,7 +10,7 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-require "buffer"
+require "core/buffer"
 java_import org.nodex.core.net.NetServer
 java_import org.nodex.core.net.NetClient
 

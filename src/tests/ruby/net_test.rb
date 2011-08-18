@@ -10,6 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
+require 'core/nodex'
+require 'core/net'
+include Net
 
 class NetTest < Test::Unit::TestCase
   def setup
@@ -18,7 +21,22 @@ class NetTest < Test::Unit::TestCase
   def teardown
   end
 
-  def test_fail
-    #assert(false, 'Assertion was false.')
+  def test_basic
+#    Nodex::go{
+#      server = Server.new { |socket| socket.data { |data| socket.write(data) } }.listen(8080)
+#
+#      sleep 1
+#
+#      client = Client.create_client.connect(8080, "localhost") { |socket|
+#        socket.data { |data| puts "Echo client received #{data.to_s}" }
+#        (1..10).each { |i|
+#          str = "hello #{i}\n"
+#          puts "Echo client sending #{str}"
+#          socket.write(Buffer.from_str(str))
+#        }
+#      }
+#
+#      sleep 5
+#    }
   end
 end
