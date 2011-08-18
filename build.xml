@@ -63,12 +63,17 @@
         <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on"/>
     </target>
 
-    <target name="tests" depends="compile-tests">
+    <target name="tests" depends="java-tests, ruby-tests">
+    </target>
+
+    <target name="java-tests" depends="compile-tests">
         <testng classpathref="test-classpath">
             <classfileset dir="${tests-target}" includes="**/*.class"/>
         </testng>
-        <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true">
-        </exec>
+    </target>
+
+    <target name="ruby-tests" depends="compile-tests">
+        <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true"/>
     </target>
 
 </project>

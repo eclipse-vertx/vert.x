@@ -135,7 +135,7 @@ public class RecordParser implements DataHandler {
     if (buff == null) {
       buff = Buffer.create(buffer.length());
     }
-    buff.append(buffer);
+    buff.appendBuffer(buffer);
     handleParsing();
   }
 }

@@ -99,53 +99,53 @@ public class Buffer {
 
   //Append operations add to the endHandler of the buffer
 
-  public Buffer append(Buffer buff) {
+  public Buffer appendBuffer(Buffer buff) {
     ChannelBuffer cb = buff._getChannelBuffer();
     buffer.writeBytes(buff._getChannelBuffer());
     cb.readerIndex(0); // Need to reset readerindex since Netty write modifies readerIndex of source!
     return this;
   }
 
-  public Buffer append(byte[] bytes) {
+  public Buffer appendBytes(byte[] bytes) {
     buffer.writeBytes(bytes);
     return this;
   }
 
-  public Buffer append(byte b) {
+  public Buffer appendByte(byte b) {
     buffer.writeByte(b);
     return this;
   }
 
-  public Buffer append(int i) {
+  public Buffer appendInt(int i) {
     buffer.writeInt(i);
     return this;
   }
 
-  public Buffer append(long l) {
+  public Buffer appendLong(long l) {
     buffer.writeLong(l);
     return this;
   }
 
-  public Buffer append(short s) {
+  public Buffer appendShort(short s) {
     buffer.writeShort(s);
     return this;
   }
 
-  public Buffer append(float f) {
+  public Buffer appendFloat(float f) {
     buffer.writeFloat(f);
     return this;
   }
 
-  public Buffer append(double d) {
+  public Buffer appendDouble(double d) {
     buffer.writeDouble(d);
     return this;
   }
 
-  public Buffer append(String str, String enc) {
+  public Buffer appendString(String str, String enc) {
     return append(str, Charset.forName(enc));
   }
 
-  public Buffer append(String str) {
+  public Buffer appendString(String str) {
     return append(str, CharsetUtil.UTF_8);
   }
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.http;
+package org.nodex.tests.core.http;
 
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
@@ -21,8 +21,8 @@ import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.Websocket;
 import org.nodex.core.http.WebsocketConnectHandler;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +75,7 @@ public class WebsocketTest extends TestBase {
             final Buffer received = Buffer.create(0);
             ws.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                received.append(data);
+                received.appendBuffer(data);
                 if (received.length() == bsize * sends) {
                   ws.close();
                   server.close(new Runnable() {
@@ -91,11 +91,11 @@ public class WebsocketTest extends TestBase {
               if (binary) {
                 Buffer buff = Buffer.create(Utils.generateRandomByteArray(bsize));
                 ws.writeBinaryFrame(buff);
-                sent.append(buff);
+                sent.appendBuffer(buff);
               } else {
                 String str = Utils.randomAlphaString(100);
                 ws.writeTextFrame(str);
-                sent.append(Buffer.create(str, "UTF-8"));
+                sent.appendBuffer(Buffer.create(str, "UTF-8"));
               }
             }
             return true;

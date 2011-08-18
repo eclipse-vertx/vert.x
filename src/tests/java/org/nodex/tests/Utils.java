@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests;
+package org.nodex.tests;
 
 import org.nodex.core.buffer.Buffer;
 

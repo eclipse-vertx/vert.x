@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core;
+package org.nodex.tests.core;
 
 import org.nodex.core.Actor;
 import org.nodex.core.Nodex;
@@ -23,7 +23,7 @@ import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.testng.annotations.Test;
-import tests.Utils;
+import org.nodex.tests.Utils;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

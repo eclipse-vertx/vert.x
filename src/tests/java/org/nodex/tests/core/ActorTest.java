@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core;
+package org.nodex.tests.core;
 
 import org.nodex.core.Actor;
 import org.nodex.core.NodexInternal;

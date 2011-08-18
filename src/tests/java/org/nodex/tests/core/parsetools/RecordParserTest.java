@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.parsetools;
+package org.nodex.tests.core.parsetools;
 
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.parsetools.RecordParser;
 import org.testng.annotations.Test;
-import tests.Utils;
+import org.nodex.tests.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,7 +50,7 @@ public class RecordParserTest {
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
     Buffer inp = Buffer.create(totLength);
     for (int i = 0; i < lines; i++) {
-      inp.append(expected[i]);
+      inp.appendBuffer(expected[i]);
     }
 
     //We then try every combination of chunk size up to twice the input string length
@@ -102,35 +102,35 @@ public class RecordParserTest {
     Buffer[] expected = new Buffer[lines];
     Buffer input = Buffer.create(100);
     expected[0] = Utils.generateRandomBuffer(10);
-    input.append(expected[0]);
+    input.appendBuffer(expected[0]);
     types.add(expected[0].length());
     expected[1] = Utils.generateRandomBuffer(100);
-    input.append(expected[1]);
+    input.appendBuffer(expected[1]);
     types.add(expected[1].length());
     byte[] delim = new byte[]{23, -120, 100, 3};
     expected[2] = Utils.generateRandomBuffer(50, true, delim[0]);
-    input.append(expected[2]);
+    input.appendBuffer(expected[2]);
     types.add(delim);
-    input.append(Buffer.create(delim));
+    input.appendBuffer(Buffer.create(delim));
     expected[3] = Utils.generateRandomBuffer(1000);
-    input.append(expected[3]);
+    input.appendBuffer(expected[3]);
     types.add(expected[3].length());
     expected[4] = Utils.generateRandomBuffer(230, true, delim[0]);
-    input.append(expected[4]);
+    input.appendBuffer(expected[4]);
     types.add(delim);
-    input.append(Buffer.create(delim));
+    input.appendBuffer(Buffer.create(delim));
     delim = new byte[]{17};
     expected[5] = Utils.generateRandomBuffer(341, true, delim[0]);
-    input.append(expected[5]);
+    input.appendBuffer(expected[5]);
     types.add(delim);
-    input.append(Buffer.create(delim));
+    input.appendBuffer(Buffer.create(delim));
     delim = new byte[]{54, -32, 0};
     expected[6] = Utils.generateRandomBuffer(1234, true, delim[0]);
-    input.append(expected[6]);
+    input.appendBuffer(expected[6]);
     types.add(delim);
-    input.append(Buffer.create(delim));
+    input.appendBuffer(Buffer.create(delim));
     expected[7] = Utils.generateRandomBuffer(100);
-    input.append(expected[7]);
+    input.appendBuffer(expected[7]);
     types.add(expected[7].length());
 
     feedChunks(input, out.parser, new Integer[]{50, 10, 3});
@@ -151,8 +151,8 @@ public class RecordParserTest {
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
     Buffer inp = Buffer.create(totLength + lines * delim.length);
     for (int i = 0; i < lines; i++) {
-      inp.append(expected[i]);
-      inp.append(Buffer.create(delim));
+      inp.appendBuffer(expected[i]);
+      inp.appendBuffer(Buffer.create(delim));
     }
 
     //We then try every combination of chunk size up to twice the input string length

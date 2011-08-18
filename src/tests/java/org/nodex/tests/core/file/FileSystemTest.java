@@ -1,4 +1,4 @@
-package tests.core.file;
+package org.nodex.tests.core.file;
 
 import org.nodex.core.Completion;
 import org.nodex.core.CompletionWithResult;
@@ -16,8 +16,8 @@ import org.nodex.core.streams.WriteStream;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -1281,7 +1281,7 @@ public class FileSystemTest extends TestBase {
               int count;
 
               public void onData(Buffer data) {
-                buff.append(data);
+                buff.appendBuffer(data);
               }
             });
 

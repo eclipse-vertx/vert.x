@@ -90,9 +90,9 @@ class Frame {
     try {
       byte[] bytes = headersString().toString().getBytes("UTF-8");
       Buffer buff = Buffer.create(bytes.length + (body == null ? 0 : body.length()) + 1);
-      buff.append(bytes);
-      if (body != null) buff.append(body);
-      buff.append((byte) 0);
+      buff.appendBytes(bytes);
+      if (body != null) buff.appendBuffer(body);
+      buff.appendByte((byte) 0);
       return buff;
     } catch (UnsupportedEncodingException thisWillNeverHappen) {
       return null;

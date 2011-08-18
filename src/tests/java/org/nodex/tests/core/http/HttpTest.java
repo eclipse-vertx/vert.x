@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.http;
+package org.nodex.tests.core.http;
 
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
@@ -26,8 +26,8 @@ import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.http.HttpServerResponse;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -124,7 +124,7 @@ public class HttpTest extends TestBase {
             final Buffer buff = Buffer.create(0);
             req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                buff.append(data);
+                buff.appendBuffer(data);
               }
             });
             req.endHandler(new Runnable() {
@@ -156,7 +156,7 @@ public class HttpTest extends TestBase {
               final Buffer buff = Buffer.create(0);
               response.dataHandler(new DataHandler() {
                 public void onData(Buffer data) {
-                  buff.append(data);
+                  buff.appendBuffer(data);
                 }
               });
               response.endHandler(new Runnable() {
@@ -217,7 +217,7 @@ public class HttpTest extends TestBase {
             final Buffer buff = Buffer.create(0);
             response.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                buff.append(data);
+                buff.appendBuffer(data);
               }
             });
             response.endHandler(new Runnable() {
@@ -326,7 +326,7 @@ public class HttpTest extends TestBase {
     for (int i = 0; i < numResponseChunks; i++) {
       Buffer buff = Utils.generateRandomBuffer(100);
       responseBody.add(buff);
-      totResponseBody.append(buff);
+      totResponseBody.appendBuffer(buff);
     }
 
     final List<Buffer> requestBody = numRequestChunks == 0 ? null : new ArrayList<Buffer>();
@@ -334,7 +334,7 @@ public class HttpTest extends TestBase {
     for (int i = 0; i < numRequestChunks; i++) {
       Buffer buff = Utils.generateRandomBuffer(100);
       requestBody.add(buff);
-      totRequestBody.append(buff);
+      totRequestBody.appendBuffer(buff);
     }
 
     final String host = "localhost";
@@ -363,7 +363,7 @@ public class HttpTest extends TestBase {
             final Buffer buff = Buffer.create(0);
             req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                buff.append(data);
+                buff.appendBuffer(data);
               }
             });
             req.endHandler(new Runnable() {
@@ -393,7 +393,7 @@ public class HttpTest extends TestBase {
             final Buffer buff = Buffer.create(0);
             response.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                buff.append(data);
+                buff.appendBuffer(data);
               }
             });
             response.endHandler(new Runnable() {

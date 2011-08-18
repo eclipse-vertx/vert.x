@@ -23,6 +23,10 @@ class Buffer
     Buffer.new(org.nodex.core.buffer.Buffer.create(str, enc))
   end
 
+  def to_s(enc = "UTF-8")
+    @buffer.toString(enc)
+  end
+
   def get_byte(pos)
     @buffer.getByte(pos)
   end
@@ -54,20 +58,79 @@ class Buffer
   end
 
   def append_buffer(buff)
-    @buffer.append(buff._to_java_buffer)
+    @buffer.appendBuffer(buff._to_java_buffer)
+  end
+
+  def append_fixnum(num, bytes)
+    case bytes
+      when 1
+        @buffer.appendByte(num)
+      when 2
+        @buffer.appendShort(num)
+      when 4
+        @buffer.appendInt(num)
+      when 8
+        @buffer.appendLong(num)
+      else
+        raise "bytes must be 1, 2, 4, or 8"
+    end
+  end
+
+  def append_float(num, bytes)
+    case bytes
+      when 4
+        @buffer.appendFloat(num)
+      when 8
+        @buffer.appendDouble(num)
+      else
+        raise "bytes must be 4 or 8"
+    end
   end
 
   def append_str(str, enc = "UTF-8")
-    @buffer.append(str, enc)
+    @buffer.appendString(str, enc)
   end
 
-  def append_byte(byte)
-    ??
+  def set_fixnum(pos, num, bytes)
+    case bytes
+      when 1
+        @buffer.setByte(pos, num)
+      when 2
+        @buffer.setShort(pos, num)
+      when 4
+        @buffer.setInt(pos, num)
+      when 8
+        @buffer.setLong(pos, num)
+      else
+        raise "bytes must be 1, 2, 4, or 8"
+    end
   end
 
+  def set_float(pos, num, bytes)
+    case bytes
+      when 4
+        @buffer.setFloat(pos, num)
+      when 8
+        @buffer.setDouble(pos, num)
+      else
+        raise "bytes must be 4 or 8"
+    end
+  end
 
-  def to_s(enc = "UTF-8")
-    @buffer.toString(enc)
+  def set_bytes(pos, buff)
+    @buffer.setBytes(pos, buff._to_java_buffer)
+  end
+
+  def length
+    @buffer.length
+  end
+
+  def copy_part(start_pos, end_pos)
+    Buffer.new(@buffer.copy(start_pos, end_pos))
+  end
+
+  def copy()
+    Buffer.new(@buffer.copy())
   end
 
   def _to_java_buffer

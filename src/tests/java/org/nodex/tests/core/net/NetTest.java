@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.net;
+package org.nodex.tests.core.net;
 
 import org.nodex.core.Actor;
 import org.nodex.core.Nodex;
@@ -23,8 +23,8 @@ import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 import java.io.File;
 import java.util.Arrays;
@@ -167,7 +167,7 @@ public class NetTest extends TestBase {
           public void onConnect(NetSocket sock) {
             sock.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                receivedBuff.append(data);
+                receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
                   Nodex.instance.sendMessage(actorId, "foo");
                 }
@@ -234,7 +234,7 @@ public class NetTest extends TestBase {
             final Buffer buff = Buffer.create(0);
             sock.dataHandler(new DataHandler() {
               public void onData(final Buffer data) {
-                buff.append(data);
+                buff.appendBuffer(data);
                 if (buff.length() == file.length()) {
                   azzert(content.equals(buff.toString()));
                   Nodex.instance.sendMessage(actorId, "foo");
@@ -261,7 +261,7 @@ public class NetTest extends TestBase {
   private void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize,
                        final ContextChecker checker) {
     Buffer b = Utils.generateRandomBuffer(sendSize);
-    sentBuff.append(b);
+    sentBuff.appendBuffer(b);
     count--;
     final int c = count;
     if (count == 0) {
@@ -307,7 +307,7 @@ public class NetTest extends TestBase {
             sock.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 checker.check();
-                receivedBuff.append(data);
+                receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
                   sock.close();
                   Nodex.instance.sendMessage(actorId, "foo");
@@ -325,14 +325,14 @@ public class NetTest extends TestBase {
                 Arrays.fill(bytes, (byte) 'X');
                 try {
                   String s = new String(bytes, "UTF-8");
-                  sentBuff.append(bytes);
+                  sentBuff.appendBytes(bytes);
                   sock.write(s);
                 } catch (Exception e) {
                   e.printStackTrace();
                 }
               } else {
                 Buffer b = Utils.generateRandomBuffer(sendSize);
-                sentBuff.append(b);
+                sentBuff.appendBuffer(b);
                 sock.write(b);
               }
             }

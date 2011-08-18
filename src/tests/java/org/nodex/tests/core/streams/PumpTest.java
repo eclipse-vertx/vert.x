@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.streams;
+package org.nodex.tests.core.streams;
 
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
@@ -20,7 +20,7 @@ import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
 import org.testng.annotations.Test;
-import tests.Utils;
+import org.nodex.tests.Utils;
 
 public class PumpTest {
 
@@ -36,7 +36,7 @@ public class PumpTest {
       Buffer inp = Buffer.create(0);
       for (int j = 0; j < 10; j++) {
         Buffer b = Utils.generateRandomBuffer(100);
-        inp.append(b);
+        inp.appendBuffer(b);
         rs.addData(b);
       }
       Utils.buffersEqual(inp, ws.received);
@@ -63,14 +63,14 @@ public class PumpTest {
       Buffer inp = Buffer.create(0);
       for (int j = 0; j < 4; j++) {
         Buffer b = Utils.generateRandomBuffer(100);
-        inp.append(b);
+        inp.appendBuffer(b);
         rs.addData(b);
         assert !rs.paused;
         assert rs.pauseCount == i;
         assert rs.resumeCount == i;
       }
       Buffer b = Utils.generateRandomBuffer(100);
-      inp.append(b);
+      inp.appendBuffer(b);
       rs.addData(b);
       assert rs.paused;
       assert rs.pauseCount == i + 1;
@@ -146,7 +146,7 @@ public class PumpTest {
     }
 
     public void writeBuffer(Buffer data) {
-      received.append(data);
+      received.appendBuffer(data);
     }
 
     public void exceptionHandler(ExceptionHandler handler) {

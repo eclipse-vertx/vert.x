@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.buffer;
+package org.nodex.tests.core.buffer;
 
 import org.nodex.core.buffer.Buffer;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 public class BufferTest extends TestBase {
 
@@ -24,7 +24,7 @@ public class BufferTest extends TestBase {
   We need to ensure netty buffer's reader index always stays at zero, and after the underlying buffer has been read, it's
   reset to zero
 
-  We will have append methods which change thw writerindex but not reader index
+  We will have appendBuffer methods which change thw writerindex but not reader index
   We will have set and get methods which do not change the reader or writer index
 
    */
@@ -37,11 +37,11 @@ public class BufferTest extends TestBase {
     Buffer toAppend = Buffer.create(bytes);
 
     Buffer b = Buffer.create(0);
-    b.append(toAppend);
+    b.appendBuffer(toAppend);
     azzert(b.length() == bytes.length);
 
     azzert(Utils.byteArraysEqual(bytes, b.getBytes()));
-    b.append(toAppend);
+    b.appendBuffer(toAppend);
     azzert(b.length() == 2 * bytes.length);
   }
 
@@ -52,11 +52,11 @@ public class BufferTest extends TestBase {
     byte[] bytes = Utils.generateRandomByteArray(bytesLen);
 
     Buffer b = Buffer.create(0);
-    b.append(bytes);
+    b.appendBytes(bytes);
     azzert(b.length() == bytes.length);
     azzert(Utils.byteArraysEqual(bytes, b.getBytes()));
 
-    b.append(bytes);
+    b.appendBytes(bytes);
     azzert(b.length() == 2 * bytes.length);
   }
 
@@ -67,13 +67,13 @@ public class BufferTest extends TestBase {
 
     Buffer b = Buffer.create(0);
     for (int i = 0; i < bytesLen; i++) {
-      b.append(bytes[i]);
+      b.appendByte(bytes[i]);
     }
     azzert(b.length() == bytes.length);
     azzert(Utils.byteArraysEqual(bytes, b.getBytes()));
 
     for (int i = 0; i < bytesLen; i++) {
-      b.append(bytes[i]);
+      b.appendByte(bytes[i]);
     }
     azzert(b.length() == 2 * bytes.length);
   }
@@ -93,7 +93,7 @@ public class BufferTest extends TestBase {
     byte[] sb = str.getBytes("UTF-8");
 
     Buffer b = Buffer.create(0);
-    b.append(str);
+    b.appendString(str);
     azzert(b.length() == sb.length);
     azzert(str.equals(b.toString("UTF-8")));
   }

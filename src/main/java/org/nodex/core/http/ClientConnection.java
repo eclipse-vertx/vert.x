@@ -80,7 +80,7 @@ class ClientConnection extends AbstractConnection {
           final Buffer buff = Buffer.create(0);
           resp.dataHandler(new DataHandler() {
             public void onData(Buffer data) {
-              buff.append(data);
+              buff.appendBuffer(data);
             }
           });
           resp.endHandler(new Runnable() {

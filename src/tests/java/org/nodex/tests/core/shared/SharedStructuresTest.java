@@ -1,8 +1,8 @@
-package tests.core.shared;
+package org.nodex.tests.core.shared;
 
 import org.nodex.core.NodexInternal;
 import org.testng.annotations.Test;
-import tests.core.TestBase;
+import org.nodex.tests.core.TestBase;
 
 /**
  * User: tim

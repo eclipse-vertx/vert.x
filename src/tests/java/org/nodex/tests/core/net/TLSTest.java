@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tests.core.net;
+package org.nodex.tests.core.net;
 
 import org.nodex.core.Actor;
 import org.nodex.core.ExceptionHandler;
@@ -24,8 +24,8 @@ import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -88,7 +88,7 @@ public class TLSTest extends TestBase {
             sock.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
                 checker.check();
-                receivedBuff.append(data);
+                receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
                   sock.close();
                   Nodex.instance.sendMessage(actorId, "foo");
@@ -110,7 +110,7 @@ public class TLSTest extends TestBase {
             });
             for (int i = 0; i < numSends; i++) {
               Buffer b = Utils.generateRandomBuffer(sendSize);
-              sentBuff.append(b);
+              sentBuff.appendBuffer(b);
               sock.write(b);
             }
           }

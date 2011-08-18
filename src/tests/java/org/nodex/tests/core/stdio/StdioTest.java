@@ -1,12 +1,12 @@
-package tests.core.stdio;
+package org.nodex.tests.core.stdio;
 
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.stdio.InStream;
 import org.testng.annotations.Test;
-import tests.Utils;
-import tests.core.TestBase;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class StdioTest extends TestBase {
 
-  //TODO need more tests!
+  //TODO need more org.nodex.tests!
 
   @Test
   public void testIn() throws Exception {
