@@ -1,0 +1,8 @@
+Simple echo server and client
+=============================
+
+To run the server: ./echo_server.sh
+
+Then either telnet localhost 8080 and notice how text entered via telnet is echoed back
+
+Alternatively run echo_client.sh as an alternative to telnet

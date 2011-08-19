@@ -28,6 +28,7 @@ import org.nodex.core.streams.WriteStream;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 
@@ -62,7 +63,11 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   public NetSocket write(String str, String enc) {
-    doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+    if (enc == null) {
+      write(str);
+    } else {
+      doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+    }
     return this;
   }
 
@@ -77,7 +82,11 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   public NetSocket write(String str, String enc, Runnable done) {
-    addFuture(done, doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc))));
+    if (enc == null) {
+      write(str, enc);
+    } else {
+      addFuture(done, doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc))));
+    }
     return this;
   }
 

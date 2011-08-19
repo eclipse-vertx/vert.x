@@ -31,30 +31,6 @@ public class SSLBase {
   protected SSLBase() {
   }
 
-  public boolean isSsl() {
-    return ssl;
-  }
-
-  public String getKeyStorePath() {
-    return keyStorePath;
-  }
-
-  public String getKeyStorePassword() {
-    return keyStorePassword;
-  }
-
-  public String getTrustStorePath() {
-    return trustStorePath;
-  }
-
-  public String getTrustStorePassword() {
-    return trustStorePassword;
-  }
-
-  public boolean isTrustAll() {
-    return trustAll;
-  }
-
   protected void checkSSL() {
     if (ssl) {
       context = TLSHelper.createContext(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);

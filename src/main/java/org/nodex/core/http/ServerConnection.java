@@ -48,13 +48,13 @@ class ServerConnection extends AbstractConnection {
     channel.close();
   }
 
-  void handleRequest(HttpServerRequest req, HttpServerResponse resp) {
+  void handleRequest(HttpServerRequest req) {
     setContextID();
     try {
       this.currentRequest = req;
-      this.currentResponse = resp;
+      this.currentResponse = req.response;
       if (mainHandler != null) {
-        mainHandler.onRequest(req, resp);
+        mainHandler.onRequest(req);
       }
     } catch (Throwable t) {
       handleHandlerException(t);

@@ -11,8 +11,8 @@
 
 class Buffer
 
-  def initialize(java_buffer)
-    @buffer = java_buffer
+  def initialize(j_buffer)
+    @buffer = j_buffer
   end
 
   def Buffer.create(size)

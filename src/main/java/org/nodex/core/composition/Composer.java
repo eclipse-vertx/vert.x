@@ -73,4 +73,19 @@ public class Composer {
     run.run();
   }
 
+  private static class Deferred extends Composable {
+
+    private final Runnable cb;
+
+    Deferred(Runnable cb) {
+      this.cb = cb;
+    }
+
+    @Override
+    public void execute() {
+      cb.run();
+      complete();
+    }
+  }
+
 }

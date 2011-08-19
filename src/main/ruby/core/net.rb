@@ -16,45 +16,105 @@ java_import org.nodex.core.net.NetClient
 
 module Net
 
-  class Server
+  class NetBase
 
-    def Server.create_server(proc = nil, &connect_hdlr)
-      connect_hdlr = proc if proc
-      Server.new(connect_hdlr)
+    def initialize(j_cliserv)
+      j_cliserv = j_cliserv
     end
 
-    def initialize(connect_hdlr)
-      @j_server = NetServer.createServer{|j_socket| connect_hdlr.call(Socket.new(j_socket)) }
+    def ssl=(val)
+      @j_cliserv.setSSL(val)
     end
 
-    def listen(port, host = "0.0.0.0")
-      @j_server.listen(port, host)
-      self
+    def key_store_path=(val)
+      @j_cliserv.setKeyStorePath(val)
     end
 
-    def close
-      @j_server.close
+    def key_store_password=(val)
+      @j_cliserv.setKeyStorePassword(val)
+    end
+
+    def trust_store_path=(val)
+      @j_cliserv.setTrustStorePath(val)
+    end
+
+    def trust_store_password=(val)
+      @j_cliserv.setTrustStorePassword(val)
+    end
+
+    def send_buffer_size=(val)
+      @j_cliserv.setSendBufferSize(val)
+    end
+
+    def receive_buffer_size=(val)
+      @j_cliserv.setReceiveBufferSize(val)
+    end
+
+    def keep_alive=(val)
+      @j_cliserv.setKeepAlive(val)
+    end
+
+    def reuse_address=(val)
+      @j_cliserv.setReuseAddress(val)
+    end
+
+    def so_linger=(val)
+      @j_cliserv.setSoLinger(val)
+    end
+
+    def traffic_class=(val)
+      @j_cliserv.setTrafficClass(val)
     end
 
     private :initialize
   end
 
-  class Client
+  class Server < NetBase
 
-    def Client.create_client
-      Client.new
+    def initialize(proc = nil, &hndlr)
+      @j_cliserv = NetServer.new
+      super(@j_cliserv)
+      hndlr = proc if proc
+      puts "in initialize hdlr is #{hndlr}"
+      connect_handler(hndlr) if hndlr
     end
 
-    def connect(port, host = "localhost", proc = nil, &connect_hdlr)
-      connect_hdlr = proc if proc
-      @j_client.connect(port, host) { |j_socket| connect_hdlr.call(Socket.new(j_socket)) }
+    def connect_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_cliserv.connectHandler{|j_socket| hndlr.call(Socket.new(j_socket)) }
     end
+
+    def listen(port, host = "0.0.0.0")
+      @j_cliserv.listen(port, host)
+      self
+    end
+
+    def close(&hndlr)
+      @j_cliserv.close(hndlr)
+    end
+
+  end
+
+  class Client < NetBase
 
     def initialize
-      @j_client = NetClient.createClient;
+      @j_cliserv = NetClient.new
+      super(@j_cliserv)
     end
 
-    private :initialize
+    def trust_all=(val)
+      @j_cliserv.setTrustAll(val)
+    end
+
+    def connect(port, host = "localhost", proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_cliserv.connect(port, host) { |j_socket| hndlr.call(Socket.new(j_socket)) }
+    end
+
+    def close
+      @j_cliserv.close
+    end
+
   end
 
   class Socket
@@ -63,14 +123,43 @@ module Net
       @j_socket = j_socket
     end
 
-    def write(data)
-      @j_socket.write(data._to_java_buffer)
+    def write_buffer(buff, &compl)
+      j_buff = buff._to_java_buffer
+      if compl == nil
+        @j_socket.write(j_buff)
+      else
+        @j_socket.write(j_buff, compl)
+      end
     end
 
-    def data(proc = nil, &data_hdlr)
-      data_hdlr = proc if proc
-      @j_socket.data{ |j_buff| data_hdlr.call(Buffer.new(j_buff)) }
+    def write_str(str, enc = nil, &compl)
+      if (compl == nil)
+        @j_socket.writeString(str, enc)
+      else
+        @j_socket.writeString(str, enc, compl)
+      end
     end
+
+    def data_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_socket.dataHandler{ |j_buff| hndlr.call(Buffer.new(j_buff)) }
+    end
+
+    def end_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_socket.endHandler(hndlr)
+    end
+
+    def drain_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_socket.drainHandler(hndlr)
+    end
+
+    def send_file(file_path)
+      @j_socket.sendFile(file_path)
+    end
+
+    private :initialize
   end
 end
 

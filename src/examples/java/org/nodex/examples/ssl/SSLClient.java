@@ -11,35 +11,41 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.examples.http;
+package org.nodex.examples.ssl;
 
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.http.HttpRequestHandler;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
+import org.nodex.core.net.NetClient;
+import org.nodex.core.net.NetConnectHandler;
+import org.nodex.core.net.NetSocket;
 
-public class ServerExample extends NodexMain {
+public class SSLClient extends NodexMain {
+
   public static void main(String[] args) throws Exception {
-    new ServerExample().run();
+    new SSLClient().run();
 
     System.out.println("Hit enter to exit");
     System.in.read();
   }
 
   public void go() throws Exception {
-    new HttpServer(new HttpRequestHandler() {
-      public void onRequest(HttpServerRequest req) {
-        System.out.println("Got request: " + req.uri);
-        System.out.println("Headers are: ");
-        for (String key : req.getHeaderNames()) {
-          System.out.println(key + ":" + req.getHeader(key));
+    new NetClient().setSSL(true).setTrustAll(true).connect(4443, "localhost", new NetConnectHandler() {
+      public void onConnect(NetSocket socket) {
+
+        socket.dataHandler(new DataHandler() {
+          public void onData(Buffer buffer) {
+            System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
+          }
+        });
+
+        //Now send some dataHandler
+        for (int i = 0; i < 10; i++) {
+          String str = "hello" + i + "\n";
+          System.out.print("Net client sending: " + str);
+          socket.write(Buffer.create(str));
         }
-        req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
-        req.response.write("<html><body><h1>Hello from node.x!</h1></body></html>", "UTF-8").end();
       }
-    }).listen(8080);
+    });
   }
 }

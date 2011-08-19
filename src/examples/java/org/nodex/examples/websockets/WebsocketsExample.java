@@ -34,8 +34,8 @@ public class WebsocketsExample extends NodexMain {
         return ws.uri.equals("/myapp"); // Only accept connections on path /myapp
       }
     }).requestHandler(new HttpRequestHandler() {
-      public void onRequest(HttpServerRequest req, HttpServerResponse resp) {
-        if (req.path.equals("/")) resp.sendFile("ws.html"); // Serve the html
+      public void onRequest(HttpServerRequest req) {
+        if (req.path.equals("/")) req.response.sendFile("ws.html"); // Serve the html
       }
     }).listen(8080);
   }

@@ -13,6 +13,7 @@
 
 package org.nodex.core.http;
 
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.nodex.core.ExceptionHandler;
@@ -48,11 +49,13 @@ public class HttpServerRequest implements ReadStream {
     this.uri = request.getUri();
     this.conn = conn;
     this.request = request;
+    this.response = new HttpServerResponse(HttpHeaders.isKeepAlive(request), conn);
   }
 
   public final String method;
   public final String uri;
   public final String path;
+  public final HttpServerResponse response;
 
   public String getHeader(String key) {
     return request.getHeader(key);

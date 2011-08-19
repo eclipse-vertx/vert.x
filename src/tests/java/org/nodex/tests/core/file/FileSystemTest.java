@@ -1,7 +1,7 @@
 package org.nodex.tests.core.file;
 
-import org.nodex.core.Completion;
-import org.nodex.core.CompletionWithResult;
+import org.nodex.core.CompletionHandler;
+import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
@@ -190,7 +190,7 @@ public class FileSystemTest extends TestBase {
     final AtomicReference<Exception> exception = new AtomicReference<>();
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -302,7 +302,7 @@ public class FileSystemTest extends TestBase {
     final AtomicReference<Exception> exception = new AtomicReference<>();
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -350,7 +350,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen, new Completion() {
+        FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen, new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -436,7 +436,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
 
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -536,7 +536,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionWithResult<FileStats> compl = new CompletionWithResult<FileStats>() {
+        CompletionHandlerWithResult<FileStats> compl = new CompletionHandlerWithResult<FileStats>() {
           public void onCompletion(FileStats st) {
             stats.set(st);
             latch.countDown();
@@ -588,7 +588,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -626,7 +626,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -660,7 +660,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionWithResult<String> compl = new CompletionWithResult<String>() {
+        CompletionHandlerWithResult<String> compl = new CompletionHandlerWithResult<String>() {
           public void onCompletion(String sname) {
             name.set(sname);
             latch.countDown();
@@ -747,7 +747,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -826,7 +826,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -914,7 +914,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionWithResult<String[]> compl = new CompletionWithResult<String[]>() {
+        CompletionHandlerWithResult<String[]> compl = new CompletionHandlerWithResult<String[]>() {
           public void onCompletion(String[] sname) {
             res.set(sname);
             latch.countDown();
@@ -952,7 +952,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionWithResult<Buffer> compl = new CompletionWithResult<Buffer>() {
+        CompletionHandlerWithResult<Buffer> compl = new CompletionHandlerWithResult<Buffer>() {
           public void onCompletion(Buffer buff) {
             res.set(buff);
             latch.countDown();
@@ -984,7 +984,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionWithResult<String> compl = new CompletionWithResult<String>() {
+        CompletionHandlerWithResult<String> compl = new CompletionHandlerWithResult<String>() {
           public void onCompletion(String str) {
             res.set(str);
             latch.countDown();
@@ -1016,7 +1016,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -1048,7 +1048,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -1090,7 +1090,7 @@ public class FileSystemTest extends TestBase {
       }
 
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionWithResult<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionHandlerWithResult<AsyncFile>() {
           public void onCompletion(AsyncFile fh) {
 
             for (int i = 0; i < chunks; i++) {
@@ -1098,7 +1098,7 @@ public class FileSystemTest extends TestBase {
               Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
               azzert(chunk.length() == chunkSize);
 
-              fh.write(chunk, i * chunkSize, new Completion() {
+              fh.write(chunk, i * chunkSize, new CompletionHandler() {
 
                 public void onCompletion() {
                   latch.countDown();
@@ -1147,11 +1147,11 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
 
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionWithResult<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionHandlerWithResult<AsyncFile>() {
           public void onCompletion(AsyncFile fh) {
             for (int i = 0; i < chunks + 1; i++) {
               final int pos = i;
-              fh.read(i * chunkSize, chunkSize, new CompletionWithResult<Buffer>() {
+              fh.read(i * chunkSize, chunkSize, new CompletionHandlerWithResult<Buffer>() {
                 public void onCompletion(Buffer buff) {
                   if (buff.length() != 0) {
                     reads.put(pos * chunkSize, buff);
@@ -1205,7 +1205,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionWithResult<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionHandlerWithResult<AsyncFile>() {
           public void onCompletion(AsyncFile fh) {
 
             WriteStream ws = fh.getWriteStream();
@@ -1225,7 +1225,7 @@ public class FileSystemTest extends TestBase {
               ws.writeBuffer(chunk);
             }
 
-            fh.close(new Completion() {
+            fh.close(new CompletionHandler() {
               public void onCompletion() {
                 latch.countDown();
               }
@@ -1270,7 +1270,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
 
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionWithResult<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionHandlerWithResult<AsyncFile>() {
           public void onCompletion(AsyncFile fh) {
 
             ReadStream rs = fh.getReadStream();
@@ -1333,13 +1333,13 @@ public class FileSystemTest extends TestBase {
 
       public void run() {
         // Open file for reading
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false, new CompletionWithResult<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false, new CompletionHandlerWithResult<AsyncFile>() {
           public void onCompletion(AsyncFile fh1) {
 
             final ReadStream rs = fh1.getReadStream();
 
             //Open file for writing
-            FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true, new CompletionWithResult<AsyncFile>() {
+            FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true, new CompletionHandlerWithResult<AsyncFile>() {
               public void onCompletion(final AsyncFile fh2) {
 
                 WriteStream ws = fh2.getWriteStream();
@@ -1350,7 +1350,7 @@ public class FileSystemTest extends TestBase {
 
                 rs.endHandler(new Runnable() {
                   public void run() {
-                    fh2.close(new Completion() {
+                    fh2.close(new CompletionHandler() {
 
                       public void onCompletion() {
                         latch.countDown();
@@ -1410,7 +1410,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        Completion compl = new Completion() {
+        CompletionHandler compl = new CompletionHandler() {
           public void onCompletion() {
             latch.countDown();
           }
@@ -1447,7 +1447,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionWithResult<Boolean> compl = new CompletionWithResult<Boolean>() {
+        CompletionHandlerWithResult<Boolean> compl = new CompletionHandlerWithResult<Boolean>() {
           public void onCompletion(Boolean res) {
             ares.set(res);
             latch.countDown();

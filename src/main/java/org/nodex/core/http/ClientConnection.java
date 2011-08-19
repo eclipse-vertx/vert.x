@@ -69,12 +69,13 @@ class ClientConnection extends AbstractConnection {
     final ChannelBuffer buff = ChannelBuffers.buffer(8);
     buff.writeLong(c);
 
-    HttpClientRequest req = new HttpClientRequest("GET", uri, new HttpResponseHandler() {
+    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new HttpResponseHandler() {
       public void onResponse(HttpClientResponse resp) {
         if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
           handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode
           + "msg:" + resp.statusMessage));
         } else if (!resp.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE)) {
+          //TODO - these exceptions need to be piped to the *Request* exception handler
           handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
         } else {
           final Buffer buff = Buffer.create(0);
@@ -108,16 +109,15 @@ class ClientConnection extends AbstractConnection {
           });
         }
       }
-    }, Thread.currentThread());
+    }, contextID, Thread.currentThread());
 
     setCurrentRequest(req);
-    req.connected(this);
     req.putHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET).
     putHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE).
     putHeader(HttpHeaders.Names.ORIGIN, (ssl ? "http://" : "https://") + hostHeader).
     putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, key1).
     putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, key2);
-    req.sendDirect(new Buffer(buff));
+    req.sendDirect(this, new Buffer(buff));
   }
 
   @Override

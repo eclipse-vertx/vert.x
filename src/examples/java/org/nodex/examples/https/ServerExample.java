@@ -16,14 +16,14 @@ public class ServerExample extends NodexMain {
 
   public void go() throws Exception {
     new HttpServer(new HttpRequestHandler() {
-      public void onRequest(HttpServerRequest req, HttpServerResponse resp) {
+      public void onRequest(HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
         for (String key : req.getHeaderNames()) {
           System.out.println(key + ":" + req.getHeader(key));
         }
-        resp.putHeader("Content-Type", "text/html; charset=UTF-8");
-        resp.write("<html><body><h1>Hello from node.x!</h1></body></html>", "UTF-8").end();
+        req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
+        req.response.write("<html><body><h1>Hello from node.x!</h1></body></html>", "UTF-8").end();
       }
     }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(4443);
   }

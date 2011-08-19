@@ -15,7 +15,11 @@ require "core/buffer"
 include Net
 
 Nodex::go{
-  Client.new.connect(8080, "localhost") { |socket|
+
+  client = Client.new
+  client.ssl = true
+  client.trust_all = true
+  client.connect(4443, "localhost") { |socket|
     socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
     (1..10).each { |i|
       str = "hello #{i}\n"

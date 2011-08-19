@@ -9,23 +9,31 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
-require "core/nodex"
-require "core/buffer"
-include Net
+require 'core/buffer'
 
-Nodex::go{
-  Client.new.connect(8080, "localhost") { |socket|
-    socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
-    (1..10).each { |i|
-      str = "hello #{i}\n"
-      puts "Echo client sending #{str}"
-      socket.write_buffer(Buffer.create_from_str(str))
-    }
-  }
-}
+include Java
 
-puts "hit enter to exit"
-STDIN.gets
+module Utils
+  class Latch
+    def initialize(cnt)
+      @j_latch = java.util.concurrent.CountDownLatch.new(cnt)
+    end
 
+    def await(secs)
+      @j_latch.await(secs, java.util.concurrent.TimeUnit::SECONDS)
+    end
 
+    def countdown
+      @j_latch.countDown
+    end
+  end
+
+  def Utils.gen_buffer(size)
+    j_buff = org.nodex.tests.Utils.generateRandomBuffer(size)
+    Buffer.new(j_buff)
+  end
+
+  def Utils.buffers_equal(buff1, buff2)
+    org.nodex.tests.Utils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
+  end
+end

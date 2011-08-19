@@ -5,12 +5,12 @@ package org.nodex.core;
  * Date: 02/08/11
  * Time: 11:20
  */
-public abstract class BackgroundTaskWithResult<T> {
+public abstract class BlockingTaskWithResult<T> {
 
-  private final CompletionWithResult<T> completion;
+  private final CompletionHandlerWithResult<T> completionHandler;
 
-  public BackgroundTaskWithResult(CompletionWithResult<T> completion) {
-    this.completion = completion;
+  public BlockingTaskWithResult(CompletionHandlerWithResult<T> completionHandler) {
+    this.completionHandler = completionHandler;
   }
 
   public abstract T execute() throws Exception;
@@ -23,13 +23,13 @@ public abstract class BackgroundTaskWithResult<T> {
           final T result = execute();
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completion.onCompletion(result);
+              completionHandler.onCompletion(result);
             }
           });
         } catch (final Exception e) {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completion.onException(e);
+              completionHandler.onException(e);
             }
           });
         } catch (Throwable t) {

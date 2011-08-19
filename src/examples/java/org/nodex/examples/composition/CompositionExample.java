@@ -13,7 +13,7 @@
 
 package org.nodex.examples.composition;
 
-import org.nodex.core.CompletionWithResult;
+import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.composition.Composable;
 import org.nodex.core.composition.Composer;
@@ -73,15 +73,15 @@ public class CompositionExample {
   private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
     new HttpServer(new HttpRequestHandler() {
-      public void onRequest(HttpServerRequest req, final HttpServerResponse resp) {
+      public void onRequest(final HttpServerRequest req) {
         System.out.println("Request uri is " + req.uri);
         if (req.uri.equals("/")) {
           System.out.println("Serving index page");
           //Serve the main page
-          FileSystem.instance.readFile("index.html", new CompletionWithResult<Buffer>() {
+          FileSystem.instance.readFile("index.html", new CompletionHandlerWithResult<Buffer>() {
             public void onCompletion(Buffer data) {
-              resp.write(data);
-              resp.end();
+              req.response.write(data);
+              req.response.end();
             }
 
             public void onException(Exception e) {
@@ -100,7 +100,7 @@ public class CompositionExample {
                   int price = (Integer) respProps.headers.get("price");
                   int stock = (Integer) respProps.headers.get("stock");
                   String content = "<html><body>Price is: " + price + "<br>Stock is: " + stock + "</body></html>";
-                  resp.write(content, "UTF-8").end();
+                   req.response.write(content, "UTF-8").end();
                 }
               });
             }

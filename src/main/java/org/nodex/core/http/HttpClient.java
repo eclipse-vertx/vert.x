@@ -198,14 +198,7 @@ public class HttpClient extends SSLBase {
     if (cid == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
     }
-    final HttpClientRequest req = new HttpClientRequest(method, uri, responseHandler, Thread.currentThread());
-    getConnection(new ClientConnectHandler() {
-      public void onConnect(ClientConnection conn) {
-        conn.setCurrentRequest(req);
-        req.connected(conn);
-      }
-    }, cid);
-    return req;
+    return new HttpClientRequest(this, method, uri, responseHandler, cid, Thread.currentThread());
   }
 
   public void close() {
@@ -223,7 +216,7 @@ public class HttpClient extends SSLBase {
   //This will be a contention point
   //Need to be improved
 
-  private synchronized void getConnection(ClientConnectHandler handler, long contextID) {
+  synchronized void getConnection(ClientConnectHandler handler, long contextID) {
     ClientConnection conn = available.poll();
     if (conn != null) {
       handler.onConnect(conn);

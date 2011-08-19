@@ -5,7 +5,7 @@ package org.nodex.core;
  * Date: 01/08/11
  * Time: 16:18
  */
-public interface Completion  {
+public interface CompletionHandler {
 
   void onCompletion();
 

@@ -11,21 +11,18 @@
 
 require "core/net"
 require "core/nodex"
-require "core/buffer"
 include Net
 
 Nodex::go{
-  Client.new.connect(8080, "localhost") { |socket|
-    socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
-    (1..10).each { |i|
-      str = "hello #{i}\n"
-      puts "Echo client sending #{str}"
-      socket.write_buffer(Buffer.create_from_str(str))
-    }
-  }
+  server = Server.new
+  server.ssl = true
+  server.key_store_path="server-keystore.jks"
+  server.key_store_password="wibble"
+  server.connect_handler{ |socket| socket.data_handler { |data| socket.write_buffer(data) } }
+  server.listen(4443)
 }
-
 puts "hit enter to exit"
 STDIN.gets
+
 
 

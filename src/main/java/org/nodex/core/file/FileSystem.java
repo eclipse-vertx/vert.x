@@ -13,10 +13,10 @@
 
 package org.nodex.core.file;
 
-import org.nodex.core.BackgroundTask;
-import org.nodex.core.BackgroundTaskWithResult;
-import org.nodex.core.Completion;
-import org.nodex.core.CompletionWithResult;
+import org.nodex.core.BlockingTask;
+import org.nodex.core.BlockingTaskWithResult;
+import org.nodex.core.CompletionHandler;
+import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
@@ -53,14 +53,14 @@ public class FileSystem {
   private FileSystem() {
   }
 
-  public void copy(String from, String to, Completion completion) {
-    copy(from, to, false, completion);
+  public void copy(String from, String to, CompletionHandler completionHandler) {
+    copy(from, to, false, completionHandler);
   }
 
-  public void copy(String from, String to, final boolean recursive, Completion completion) {
+  public void copy(String from, String to, final boolean recursive, CompletionHandler completionHandler) {
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         try {
           if (recursive) {
@@ -96,11 +96,11 @@ public class FileSystem {
     }.run();
   }
 
-  public void move(String from, String to, Completion completion) {
+  public void move(String from, String to, CompletionHandler completionHandler) {
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         try {
           Files.move(source, target);
@@ -114,8 +114,8 @@ public class FileSystem {
     }.run();
   }
 
-  public void truncate(final String path, final long len, Completion completion) {
-    new BackgroundTask(completion) {
+  public void truncate(final String path, final long len, CompletionHandler completionHandler) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         if (len < 0) {
           throw new FileSystemException("Cannot truncate file to size < 0");
@@ -138,19 +138,19 @@ public class FileSystem {
     }.run();
   }
 
-  public void chmod(String path, String perms, Completion completion) {
-    chmod(path, perms, null, completion);
+  public void chmod(String path, String perms, CompletionHandler completionHandler) {
+    chmod(path, perms, null, completionHandler);
   }
 
   /*
   Permissions is a String of the form rwxr-x---
   See http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html create method
    */
-  public void chmod(String path, String perms, String dirPerms, Completion completion) {
+  public void chmod(String path, String perms, String dirPerms, CompletionHandler completionHandler) {
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         try {
           if (dirPermissions != null) {
@@ -177,17 +177,17 @@ public class FileSystem {
     }.run();
   }
 
-  public void stat(String path,  CompletionWithResult<FileStats> completion) {
-    stat(path, true, completion);
+  public void stat(String path,  CompletionHandlerWithResult<FileStats> completionHandler) {
+    stat(path, true, completionHandler);
   }
 
-  public void lstat(String path, CompletionWithResult<FileStats> completion) {
-    stat(path, false, completion);
+  public void lstat(String path, CompletionHandlerWithResult<FileStats> completionHandler) {
+    stat(path, false, completionHandler);
   }
 
-  private void stat(String path, final boolean followLinks, CompletionWithResult<FileStats> completion) {
+  private void stat(String path, final boolean followLinks, CompletionHandlerWithResult<FileStats> completionHandler) {
     final Path target = Paths.get(path);
-    new BackgroundTaskWithResult<FileStats>(completion) {
+    new BlockingTaskWithResult<FileStats>(completionHandler) {
       public FileStats execute() throws Exception {
         try {
           BasicFileAttributes attrs;
@@ -204,18 +204,18 @@ public class FileSystem {
     }.run();
   }
 
-  public void link(String link, String existing, Completion completion) {
-    link(link, existing, false, completion);
+  public void link(String link, String existing, CompletionHandler completionHandler) {
+    link(link, existing, false, completionHandler);
   }
 
-  public void symlink(String link, String existing, Completion completion) {
-    link(link, existing, true, completion);
+  public void symlink(String link, String existing, CompletionHandler completionHandler) {
+    link(link, existing, true, completionHandler);
   }
 
-  private void link(String link, String existing, final boolean symbolic, Completion completion) {
+  private void link(String link, String existing, final boolean symbolic, CompletionHandler completionHandler) {
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         try {
           if (symbolic) {
@@ -231,13 +231,13 @@ public class FileSystem {
     }.run();
   }
 
-  public void unlink(String link, Completion completion) {
-    delete(link, completion);
+  public void unlink(String link, CompletionHandler completionHandler) {
+    delete(link, completionHandler);
   }
 
-  public void readSymlink(String link, CompletionWithResult<String> completion) {
+  public void readSymlink(String link, CompletionHandlerWithResult<String> completionHandler) {
     final Path source = Paths.get(link);
-    new BackgroundTaskWithResult<String>(completion) {
+    new BlockingTaskWithResult<String>(completionHandler) {
       public String execute() throws Exception {
         try {
           return Files.readSymbolicLink(source).toString();
@@ -248,13 +248,13 @@ public class FileSystem {
     }.run();
   }
 
-  public void delete(String path, Completion completion) {
-    delete(path, false, completion);
+  public void delete(String path, CompletionHandler completionHandler) {
+    delete(path, false, completionHandler);
   }
 
-  public void delete(String path, final boolean recursive, Completion completion) {
+  public void delete(String path, final boolean recursive, CompletionHandler completionHandler) {
     final Path source = Paths.get(path);
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         if (recursive) {
            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
@@ -286,22 +286,22 @@ public class FileSystem {
     }.run();
   }
 
-  public void mkdir(String path, Completion completion) {
-    mkdir(path, null, false, completion);
+  public void mkdir(String path, CompletionHandler completionHandler) {
+    mkdir(path, null, false, completionHandler);
   }
 
-  public void mkdir(String path, boolean createParents, Completion completion) {
-    mkdir(path, null, createParents, completion);
+  public void mkdir(String path, boolean createParents, CompletionHandler completionHandler) {
+    mkdir(path, null, createParents, completionHandler);
   }
 
-  public void mkdir(String path, String perms, Completion completion) {
-    mkdir(path, perms, false, completion);
+  public void mkdir(String path, String perms, CompletionHandler completionHandler) {
+    mkdir(path, perms, false, completionHandler);
   }
 
-  public void mkdir(String path, final String perms, final boolean createParents, Completion completion) {
+  public void mkdir(String path, final String perms, final boolean createParents, CompletionHandler completionHandler) {
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         try {
           if (createParents) {
@@ -327,12 +327,12 @@ public class FileSystem {
     }.run();
   }
 
-  public void readDir(final String path, CompletionWithResult<String[]> completion) {
-    readDir(path, null, completion);
+  public void readDir(final String path, CompletionHandlerWithResult<String[]> completionHandler) {
+    readDir(path, null, completionHandler);
   }
 
-  public void readDir(final String path, final String filter, CompletionWithResult<String[]> completion) {
-    new BackgroundTaskWithResult<String[]>(completion) {
+  public void readDir(final String path, final String filter, CompletionHandlerWithResult<String[]> completionHandler) {
+    new BlockingTaskWithResult<String[]>(completionHandler) {
       public String[] execute() throws Exception {
         File file = new File(path);
         if (!file.exists()) {
@@ -370,21 +370,21 @@ public class FileSystem {
 
   // Read and write entire files in one go
 
-  public void readFileAsString(final String path, final String encoding, final CompletionWithResult<String> completion) {
-    readFile(path, new CompletionWithResult<Buffer>() {
+  public void readFileAsString(final String path, final String encoding, final CompletionHandlerWithResult<String> completionHandler) {
+    readFile(path, new CompletionHandlerWithResult<Buffer>() {
       public void onCompletion(Buffer result) {
         String str = result.toString(encoding);
-        completion.onCompletion(str);
+        completionHandler.onCompletion(str);
       }
 
       public void onException(Exception e) {
-        completion.onException(e);
+        completionHandler.onException(e);
       }
     });
   }
 
-  public void readFile(final String path, CompletionWithResult<Buffer> completion) {
-    new BackgroundTaskWithResult<Buffer>(completion) {
+  public void readFile(final String path, CompletionHandlerWithResult<Buffer> completionHandler) {
+    new BlockingTaskWithResult<Buffer>(completionHandler) {
       public Buffer execute() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
@@ -394,13 +394,13 @@ public class FileSystem {
     }.run();
   }
 
-  public void writeStringToFile(String path, String str, String enc, Completion completion) {
+  public void writeStringToFile(String path, String str, String enc, CompletionHandler completionHandler) {
     Buffer buff = Buffer.create(str, enc);
-    writeFile(path, buff, completion);
+    writeFile(path, buff, completionHandler);
   }
 
-  public void writeFile(final String path, final Buffer data, Completion completion) {
-    new BackgroundTask(completion) {
+  public void writeFile(final String path, final Buffer data, CompletionHandler completionHandler) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         Path target = Paths.get(path);
         Files.write(target, data.getBytes());
@@ -428,30 +428,30 @@ public class FileSystem {
   // Close and open
 
   public void open(final String path,
-                   CompletionWithResult<AsyncFile> completion) {
-    open(path, null, true, true, true, false, false, completion);
+                   CompletionHandlerWithResult<AsyncFile> completionHandler) {
+    open(path, null, true, true, true, false, false, completionHandler);
   }
 
   public void open(final String path, String perms,
-                   CompletionWithResult<AsyncFile> completion) {
-    open(path, perms, true, true, true, false, false, completion);
+                   CompletionHandlerWithResult<AsyncFile> completionHandler) {
+    open(path, perms, true, true, true, false, false, completionHandler);
   }
 
   public void open(final String path, String perms, final boolean createNew,
-                   CompletionWithResult<AsyncFile> completion) {
-    open(path, perms, true, true, createNew, false, false, completion);
+                   CompletionHandlerWithResult<AsyncFile> completionHandler) {
+    open(path, perms, true, true, createNew, false, false, completionHandler);
   }
 
   public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                   CompletionWithResult<AsyncFile> completion) {
-    open(path, perms, read, write, createNew, false, false, completion);
+                   CompletionHandlerWithResult<AsyncFile> completionHandler) {
+    open(path, perms, read, write, createNew, false, false, completionHandler);
   }
 
   public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean sync, final boolean syncMeta, CompletionWithResult<AsyncFile> completion) {
+                   final boolean sync, final boolean syncMeta, CompletionHandlerWithResult<AsyncFile> completionHandler) {
     final long contextID = Nodex.instance.getContextID();
     final Thread th = Thread.currentThread();
-    new BackgroundTaskWithResult<AsyncFile>(completion) {
+    new BlockingTaskWithResult<AsyncFile>(completionHandler) {
       public AsyncFile execute() throws Exception {
         return doOpen(path, perms, read, write, createNew, sync, syncMeta, contextID, th);
       }
@@ -466,13 +466,13 @@ public class FileSystem {
 
   //Create an empty file
 
-  public void createFile(final String path, Completion completion) {
-    createFile(path, null, completion);
+  public void createFile(final String path, CompletionHandler completionHandler) {
+    createFile(path, null, completionHandler);
   }
 
-  public void createFile(final String path, final String perms, Completion completion) {
+  public void createFile(final String path, final String perms, CompletionHandler completionHandler) {
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         try {
           Path target = Paths.get(path);
@@ -489,8 +489,8 @@ public class FileSystem {
     }.run();
   }
 
-  public void exists(final String path, CompletionWithResult<Boolean> completion) {
-    new BackgroundTaskWithResult<Boolean>(completion) {
+  public void exists(final String path, CompletionHandlerWithResult<Boolean> completionHandler) {
+    new BlockingTaskWithResult<Boolean>(completionHandler) {
       public Boolean execute() throws Exception {
         File file = new File(path);
         return file.exists();
@@ -498,8 +498,8 @@ public class FileSystem {
     }.run();
   }
 
-  public void getFSStats(final String path, CompletionWithResult<FileSystemStats> completion) {
-    new BackgroundTaskWithResult<FileSystemStats>(completion) {
+  public void getFSStats(final String path, CompletionHandlerWithResult<FileSystemStats> completionHandler) {
+    new BlockingTaskWithResult<FileSystemStats>(completionHandler) {
       public FileSystemStats execute() throws Exception {
         Path target = Paths.get(path);
         FileStore fs = Files.getFileStore(target);

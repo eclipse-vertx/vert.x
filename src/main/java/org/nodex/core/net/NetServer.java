@@ -119,7 +119,7 @@ public class NetServer extends SSLBase {
     return this;
   }
 
-  public NetServer setTcpNoDelay(boolean tcpNoDelay) {
+   public NetServer setTcpNoDelay(boolean tcpNoDelay) {
     checkThread();
     connectionOptions.put("child.tcpNoDelay", tcpNoDelay);
     return this;
@@ -168,7 +168,7 @@ public class NetServer extends SSLBase {
   public NetServer listen(int port, String host) {
     checkThread();
     if (connectHandler == null) {
-      throw new IllegalStateException("Set request handler first");
+      throw new IllegalStateException("Set connect handler first");
     }
     if (listening) {
       throw new IllegalStateException("Listen already called");

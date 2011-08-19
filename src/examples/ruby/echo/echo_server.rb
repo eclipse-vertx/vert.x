@@ -9,16 +9,15 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "echo"
+require "core/net"
+require "core/nodex"
 include Net
 
-# A simple echo server which just echos back any dataHandler it receives
-# Uses this with telnet, or the echo client
-
-server = Server.create_server { |socket| socket.data { |data| socket.write(data) } }.listen(8080)
-
-puts "hit enter to stop"
+Nodex::go{
+  Server.new{ |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
+}
+puts "hit enter to exit"
 STDIN.gets
-server.close
+
 
 

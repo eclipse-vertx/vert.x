@@ -1,9 +1,9 @@
 package org.nodex.core.file;
 
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.nodex.core.BackgroundTask;
-import org.nodex.core.Completion;
-import org.nodex.core.CompletionWithResult;
+import org.nodex.core.BlockingTask;
+import org.nodex.core.CompletionHandler;
+import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
@@ -15,7 +15,6 @@ import org.nodex.core.streams.WriteStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,7 +39,7 @@ public class AsyncFile {
   private boolean closed;
   private ReadStream readStream;
   private WriteStream writeStream;
-  private Completion closedCompletion;
+  private CompletionHandler closedCompletionHandler;
   private AtomicInteger writesOutstanding = new AtomicInteger(0);
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
@@ -65,44 +64,44 @@ public class AsyncFile {
     this.th = th;
   }
 
-  public void close(final Completion completion) {
+  public void close(final CompletionHandler completionHandler) {
     check();
 
     closed = true;
 
-    Completion comp = new Completion() {
+    CompletionHandler comp = new CompletionHandler() {
       public void onCompletion() {
         try {
           ch.close();
-          completion.onCompletion();
+          completionHandler.onCompletion();
         } catch (IOException e) {
-          completion.onException(e);
+          completionHandler.onException(e);
         }
       }
 
       public void onException(Exception e) {
-        completion.onException(e);
+        completionHandler.onException(e);
       }
     };
 
     if (writesOutstanding.get() > 0) {
-      //Need to wait for all writes to complete before firing the completion
-      closedCompletion = comp;
+      //Need to wait for all writes to complete before firing the completionHandler
+      closedCompletionHandler = comp;
     } else {
       comp.onCompletion();
     }
   }
 
-  public void write(Buffer buffer, int position, final Completion completion) {
+  public void write(Buffer buffer, int position, final CompletionHandler completionHandler) {
     check();
     ByteBuffer bb = buffer._getChannelBuffer().toByteBuffer();
-    doWrite(bb, position, completion);
+    doWrite(bb, position, completionHandler);
   }
 
-  public void read(int position, int length, final CompletionWithResult<Buffer> completion) {
+  public void read(int position, int length, final CompletionHandlerWithResult<Buffer> completionHandler) {
     check();
     ByteBuffer buff = ByteBuffer.allocate(length);
-    doRead(buff, position, completion);
+    doRead(buff, position, completionHandler);
   }
 
   public WriteStream getWriteStream() {
@@ -121,7 +120,7 @@ public class AsyncFile {
           final int length = buffer.length();
           ByteBuffer bb = buffer._getChannelBuffer().toByteBuffer();
 
-          doWrite(bb, pos, new Completion() {
+          doWrite(bb, pos, new CompletionHandler() {
 
             public void onCompletion() {
               int size = writesOutstanding.get();
@@ -130,8 +129,8 @@ public class AsyncFile {
                 drainHandler.run();
               }
 
-              if (size == 0 && closedCompletion != null) {
-                closedCompletion.onCompletion();
+              if (size == 0 && closedCompletionHandler != null) {
+                closedCompletionHandler.onCompletion();
               }
             }
 
@@ -187,12 +186,12 @@ public class AsyncFile {
         int pos;
 
         void doRead() {
-          read(pos, BUFFER_SIZE, new CompletionWithResult<Buffer>() {
+          read(pos, BUFFER_SIZE, new CompletionHandlerWithResult<Buffer>() {
             public void onCompletion(Buffer buffer) {
               if (buffer.length() == 0) {
 
                 // Empty buffer represents end of file
-                close(new Completion() {
+                close(new CompletionHandler() {
                   public void onCompletion() {
                     handleEnd();
                   }
@@ -277,10 +276,10 @@ public class AsyncFile {
     return readStream;
   }
 
-  public void sync(final boolean metaData, Completion completion) {
+  public void sync(final boolean metaData, CompletionHandler completionHandler) {
     checkClosed();
     checkContext();
-    new BackgroundTask(completion) {
+    new BlockingTask(completionHandler) {
       public Object execute() throws Exception {
         ch.force(metaData);
         return null;
@@ -288,11 +287,11 @@ public class AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final Completion completion) {
+  private void doWrite(final ByteBuffer buff, final int position, final CompletionHandler completionHandler) {
 
     writesOutstanding.addAndGet(buff.limit());
 
-    ch.write(buff, position, null, new CompletionHandler<Integer, Object>() {
+    ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       public void completed(Integer bytesWritten, Object attachment) {
 
@@ -304,12 +303,12 @@ public class AsyncFile {
           // partial write
           pos += bytesWritten;
           // resubmit
-          doWrite(buff, pos, completion);
+          doWrite(buff, pos, completionHandler);
         } else {
           // It's been fully written
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completion.onCompletion();
+              completionHandler.onCompletion();
             }
           });
         }
@@ -320,7 +319,7 @@ public class AsyncFile {
           final Exception e = (Exception) exc;
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completion.onException(e);
+              completionHandler.onException(e);
             }
           });
         } else {
@@ -330,9 +329,9 @@ public class AsyncFile {
     });
   }
 
-  private void doRead(final ByteBuffer buff, final int position, final CompletionWithResult<Buffer> completion) {
+  private void doRead(final ByteBuffer buff, final int position, final CompletionHandlerWithResult<Buffer> completionHandler) {
 
-    ch.read(buff, position, null, new CompletionHandler<Integer, Object>() {
+    ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       int pos = position;
 
@@ -342,7 +341,7 @@ public class AsyncFile {
             setContextID();
             buff.flip();
             Buffer nbuff = new Buffer(ChannelBuffers.wrappedBuffer(buff));
-            completion.onCompletion(nbuff);
+            completionHandler.onCompletion(nbuff);
           }
         });
       }
@@ -355,7 +354,7 @@ public class AsyncFile {
           // partial read
           pos += bytesRead;
           // resubmit
-           doRead(buff, pos, completion);
+           doRead(buff, pos, completionHandler);
         } else {
           // It's been fully written
           done();
@@ -368,7 +367,7 @@ public class AsyncFile {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               setContextID();
-              completion.onException(e);
+              completionHandler.onException(e);
             }
           });
         } else {

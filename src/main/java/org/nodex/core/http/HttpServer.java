@@ -311,8 +311,7 @@ public class HttpServer extends SSLBase {
           }
         } else {
           HttpServerRequest req = new HttpServerRequest(conn, request);
-          HttpServerResponse resp = new HttpServerResponse(HttpHeaders.isKeepAlive(request), conn);
-          conn.handleRequest(req, resp);
+          conn.handleRequest(req);
           ChannelBuffer requestBody = request.getContent();
           if (requestBody.readable()) {
             conn.handleChunk(new Buffer(requestBody));

@@ -14,5 +14,5 @@
 package org.nodex.core.http;
 
 public interface HttpRequestHandler {
-  void onRequest(HttpServerRequest req, HttpServerResponse resp);
+  void onRequest(HttpServerRequest req);
 }

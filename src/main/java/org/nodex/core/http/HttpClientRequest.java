@@ -22,6 +22,7 @@ import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
@@ -34,16 +35,20 @@ import java.util.Set;
 
 public class HttpClientRequest implements WriteStream {
 
-  HttpClientRequest(final String method, final String uri,
+  HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final HttpResponseHandler respHandler,
-                    final Thread th) {
+                    final long contextID, final Thread th) {
+    this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.respHandler = respHandler;
+    this.contextID = contextID;
     this.th = th;
   }
 
+  private final HttpClient client;
   private final HttpRequest request;
   private final HttpResponseHandler respHandler;
+  private final long contextID;
   final Thread th;
 
   private ClientConnection conn;
@@ -53,6 +58,7 @@ public class HttpClientRequest implements WriteStream {
   private boolean completed;
   private LinkedList<PendingChunk> pendingChunks;
   private int pendingMaxSize = -1;
+  private boolean connecting;
 
   public HttpClientRequest putHeader(String key, Object value) {
     checkThread();
@@ -197,10 +203,27 @@ public class HttpClientRequest implements WriteStream {
     return respHandler;
   }
 
-  void connected(ClientConnection conn) {
+  private void connect() {
+    if (!connecting) {
+      //We defer actual connection until the first part of body is written or end is called
+      //This gives the user an opportunity to set an exception handler before connecting so
+      //they can capture any exceptions on connection
+      client.getConnection(new ClientConnectHandler() {
+        public void onConnect(ClientConnection conn) {
+         connected(conn);
+        }
+      }, contextID);
+
+      connecting = true;
+    }
+  }
+
+  private void connected(ClientConnection conn) {
     checkThread();
 
     this.conn = conn;
+
+    conn.setCurrentRequest(this);
 
     request.setHeader(HttpHeaders.Names.CONNECTION, conn.keepAlive ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values
         .CLOSE);
@@ -230,7 +253,8 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  void sendDirect(Buffer body) {
+  void sendDirect(ClientConnection conn, Buffer body) {
+    this.conn = conn;
     write(body);
     writeEndChunk();
     completed = true;
@@ -247,6 +271,7 @@ public class HttpClientRequest implements WriteStream {
 
   private HttpClientRequest write(ChannelBuffer buff, Runnable done) {
     if (conn == null) {
+      connect();
       if (pendingChunks == null) {
         pendingChunks = new LinkedList<>();
       }
@@ -273,6 +298,8 @@ public class HttpClientRequest implements WriteStream {
         writeEndChunk();
       }
       conn.endRequest();
+    } else {
+      connect();
     }
   }
 
