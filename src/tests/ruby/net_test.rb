@@ -68,7 +68,76 @@ class NetTest < Test::Unit::TestCase
           data = Utils::gen_buffer(size)
           sent.append_buffer(data)
           socket.write_buffer(data)
-          puts "sent data"
+        }
+      }
+    }
+
+    assert(latch.await(5))
+  end
+
+  def test_echo_ssl
+
+    latch = Utils::Latch.new 1
+
+    Nodex::go{
+
+      # Let's do full SSL with client auth
+
+      server = Server.new;
+      server.ssl = true
+      server.key_store_path = '../resources/keystores/server-keystore.jks'
+      server.key_store_password = 'wibble'
+      server.trust_store_path = '../resources/keystores/server-truststore.jks'
+      server.trust_store_password = 'wibble'
+      server.client_auth_required = true
+
+      server.connect_handler{ |socket|
+        socket.data_handler { |data|
+          socket.write_buffer(data)      # Just echo it back
+        }
+      }.listen(8080)
+
+      client = Client.new
+      client.ssl = true
+      client.key_store_path = '../resources/keystores/client-keystore.jks'
+      client.key_store_password = 'wibble'
+      client.trust_store_path = '../resources/keystores/client-truststore.jks'
+      client.trust_store_password = 'wibble'
+
+      client.connect(8080, "localhost") { |socket|
+
+        sends = 10
+        size = 100
+
+        sent = Buffer.create(0)
+        received = Buffer.create(0)
+
+        socket.data_handler { |data|
+
+          received.append_buffer(data)
+
+          if received.length == sends * size
+            assert(Utils::buffers_equal(sent, received))
+
+            server.close{
+              client.close
+              latch.countdown
+            }
+          end
+        }
+
+        socket.drain_handler{
+          puts "drained\n"
+        }
+
+        socket.end_handler{
+          puts "end\n"
+        }
+
+        (1..sends).each { |i|
+          data = Utils::gen_buffer(size)
+          sent.append_buffer(data)
+          socket.write_buffer(data)
         }
       }
     }

@@ -79,6 +79,10 @@ module Net
       connect_handler(hndlr) if hndlr
     end
 
+    def client_auth_required=(val)
+      @j_cliserv.setClientAuthRequired(val)
+    end
+
     def connect_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_cliserv.connectHandler{|j_socket| hndlr.call(Socket.new(j_socket)) }
