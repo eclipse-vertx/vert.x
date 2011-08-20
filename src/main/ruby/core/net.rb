@@ -154,6 +154,16 @@ module Net
       @j_socket.endHandler(hndlr)
     end
 
+    def closed_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_socket.closedHandler(hndlr)
+    end
+
+    def exception_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_socket.exceptionHandler(hndlr)
+    end
+
     def drain_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_socket.drainHandler(hndlr)
@@ -161,6 +171,26 @@ module Net
 
     def send_file(file_path)
       @j_socket.sendFile(file_path)
+    end
+
+    def pause
+      @j_socket.pause
+    end
+
+    def resume
+      @j_socket.resume
+    end
+
+    def write_queue_max_size=(val)
+      @j_socket.setWriteQueueMaxSize(val)
+    end
+
+    def write_queue_full
+      @j_socket.writeQueueFull()
+    end
+
+    def close
+      @j_socket.close
     end
 
     private :initialize

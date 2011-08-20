@@ -126,6 +126,8 @@ class NetTest < Test::Unit::TestCase
           end
         }
 
+        #Just call the methods. Real testing is done in java tests
+
         socket.drain_handler{
           puts "drained\n"
         }
@@ -133,6 +135,15 @@ class NetTest < Test::Unit::TestCase
         socket.end_handler{
           puts "end\n"
         }
+
+        socket.closed_handler{
+          puts "closed\n"
+        }
+
+        socket.pause
+        socket.resume
+        socket.write_queue_full
+        socket.write_queue_max_size=100000
 
         (1..sends).each { |i|
           data = Utils::gen_buffer(size)

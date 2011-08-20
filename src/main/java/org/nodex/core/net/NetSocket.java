@@ -112,13 +112,23 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     super.sendFile(f);
   }
 
-  protected void handleClosed() {
-    super.handleClosed();
-  }
-
   protected long getContextID() {
     return super.getContextID();
   }
+
+  protected void handleClosed() {
+    super.handleClosed();
+
+    if (endHandler != null) {
+      setContextID();
+      try {
+        endHandler.run();
+      } catch (Throwable t) {
+        handleHandlerException(t);
+      }
+    }
+  }
+
 
   protected void handleException(Exception e) {
     super.handleException(e);
@@ -139,6 +149,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
       }
     }
   }
+
 
   //Close without checking thread - used when server is closed
   void internalClose() {
