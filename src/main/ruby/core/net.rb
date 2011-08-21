@@ -193,6 +193,14 @@ module Net
       @j_socket.close
     end
 
+    def _to_read_stream
+      @j_socket
+    end
+
+    def _to_write_stream
+      @j_socket
+    end
+
     private :initialize
   end
 end

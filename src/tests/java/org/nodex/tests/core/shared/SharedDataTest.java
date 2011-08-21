@@ -9,7 +9,7 @@ import org.nodex.tests.core.TestBase;
  * Date: 12/08/11
  * Time: 15:45
  */
-public class SharedStructuresTest extends TestBase {
+public class SharedDataTest extends TestBase {
 
   private NodexInternal nodex = NodexInternal.instance;
 

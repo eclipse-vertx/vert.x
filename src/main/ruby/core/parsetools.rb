@@ -11,21 +11,11 @@
 
 include Java
 require "buffer"
+java_import org.nodex.core.parsetools.RecordParser
 
-module ParserTools
+module ParseTools
 
   class RecordParser
-
-    class OutputCallback < org.nodex.core.buffer.DataHandler
-      def initialize(output_block)
-        super()
-        @output_block = output_block
-      end
-
-      def onData(java_frame)
-        @output_block.call(java_frame);
-      end
-    end
 
     def initialize(java_parser)
       @java_parser = java_parser
@@ -41,28 +31,19 @@ module ParserTools
 
     def RecordParser.new_delimited(delim, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(org.nodex.core.parsetools.RecordParser.newDelimited(delim, OutputCallback.new(output_block)))
-    end
-
-    def RecordParser.new_bytes_delimited(bytes, proc = nil, &output_block)
-      output_block = proc if proc
-      RecordParser.new(org.nodex.core.parsetools.RecordParser.newDelimited(bytes, OutputCallback.new(output_block)))
+      RecordParser.new(RecordParser.newDelimited(delim, output_block))
     end
 
     def RecordParser.new_fixed(size, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(org.nodex.core.parsetools.RecordParser.newFixed(size, OutputCallback.new(output_block)))
+      RecordParser.new(RecordParser.newFixed(size, output_block))
     end
 
     def delimited_mode(delim)
       @java_parser.delimitedMode(delim)
     end
 
-    def bytes_delimited_mode(bytes)
-      @java_parser.delimitedMode(bytes)
-    end
-
-    def fixed_mode(size)
+    def fixed_size_mode(size)
       @java_parser.fixedSizeMode(size)
     end
 

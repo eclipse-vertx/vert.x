@@ -45,6 +45,10 @@ public class Pump {
     this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
   }
 
+  public void setWriteQueueMaxSize(int maxSize) {
+    this.writeStream.setWriteQueueMaxSize(maxSize);
+  }
+
   public void start() {
     writeStream.drainHandler(drainHandler);
     readStream.dataHandler(dataHandler);
