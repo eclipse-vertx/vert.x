@@ -16,8 +16,6 @@ import org.nodex.tests.core.TestBase;
  */
 public class SharedDataTest extends TestBase {
 
-  private NodexInternal nodex = NodexInternal.instance;
-
   @Test
   public void testMap() throws Exception {
 

@@ -13,17 +13,10 @@
 
 package org.nodex.tests.core;
 
-import org.nodex.core.Actor;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetConnectHandler;
-import org.nodex.core.net.NetServer;
-import org.nodex.core.net.NetSocket;
+import org.nodex.core.TimerHandler;
 import org.testng.annotations.Test;
-import org.nodex.tests.Utils;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -38,8 +31,8 @@ public class TimerTest extends TestBase {
   public void testNoContext() throws Exception {
     final AtomicBoolean fired = new AtomicBoolean(false);
     try {
-      Nodex.instance.setTimeout(1, new Runnable() {
-        public void run() {
+      Nodex.instance.setTimeout(1, new TimerHandler() {
+        public void onTimer(long timerID) {
           fired.set(true);
         }
       });
@@ -52,43 +45,20 @@ public class TimerTest extends TestBase {
   }
 
   @Test
-  /*
-  Test that timers can be set from connect handler
-   */
-  public void testOneOffInConnect() throws Exception {
+  public void testOneOff() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
 
     new NodexMain() {
       public void go() throws Exception {
-        final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
-          public void onMessage(String msg) {
-            server.close(new Runnable() {
-              public void run() {
-                endLatch.countDown();
-              }
-            });
-          }
-        });
+        final Thread th = Thread.currentThread();
+        final long contextID = Nodex.instance.getContextID();
 
-        server.connectHandler(new NetConnectHandler() {
-          public void onConnect(final NetSocket sock) {
-            final Thread th = Thread.currentThread();
-            final long contextID = Nodex.instance.getContextID();
-            Nodex.instance.setTimeout(1, new Runnable() {
-              public void run() {
-                azzert(th == Thread.currentThread());
-                azzert(contextID == Nodex.instance.getContextID());
-                Nodex.instance.sendMessage(actorId, "foo");
-              }
-            });
-          }
-        }).listen(8181);
-
-        NetClient client = new NetClient();
-        client.connect(8181, new NetConnectHandler() {
-          public void onConnect(NetSocket sock) {
+        Nodex.instance.setTimeout(1, new TimerHandler() {
+          public void onTimer(long timerID) {
+            azzert(th == Thread.currentThread());
+            azzert(contextID == Nodex.instance.getContextID());
+            endLatch.countDown();
           }
         });
       }
@@ -99,57 +69,45 @@ public class TimerTest extends TestBase {
   }
 
   @Test
-  /*
-  Test that timers can be set from dataHandler handler
-   */
-  public void testOneOffInData() throws Exception {
+  public void testPeriodic() throws Exception {
+    final int numFires = 10;
+
     final CountDownLatch endLatch = new CountDownLatch(1);
+
+    final long delay = 100;
 
     new NodexMain() {
       public void go() throws Exception {
-        final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
-          public void onMessage(String msg) {
-            server.close(new Runnable() {
-              public void run() {
-                endLatch.countDown();
-              }
-            });
-          }
-        });
+        final Thread th = Thread.currentThread();
+        final long contextID = Nodex.instance.getContextID();
 
-        server.connectHandler(new NetConnectHandler() {
-          public void onConnect(final NetSocket sock) {
-            final Thread th = Thread.currentThread();
-            final long contextID = Nodex.instance.getContextID();
-            sock.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
-                Nodex.instance.setTimeout(1, new Runnable() {
-                  public void run() {
-                    assert th == Thread.currentThread();
-                    assert contextID == Nodex.instance.getContextID();
-                    Nodex.instance.sendMessage(actorId, "foo");
-                  }
-                });
-              }
-            });
-
-          }
-        }).listen(8181);
-
-        NetClient client = new NetClient();
-        client.connect(8181, new NetConnectHandler() {
-          public void onConnect(NetSocket sock) {
-            sock.write(Utils.generateRandomBuffer(100));
+        long id = Nodex.instance.setPeriodic(delay, new TimerHandler() {
+          int count;
+          public void onTimer(long timerID) {
+            azzert(th == Thread.currentThread());
+            azzert(contextID == Nodex.instance.getContextID());
+            count++;
+            if (count == numFires) {
+              Nodex.instance.cancelTimeout(timerID);
+              endLatch.countDown();
+            }
+            if (count > numFires) {
+              azzert(false, "Fired too many times");
+            }
           }
         });
       }
     }.run();
 
     azzert(endLatch.await(5, TimeUnit.SECONDS));
+
+    //Wait a little bit longer in case it fires again
+    Thread.sleep(250);
+
     throwAssertions();
   }
+
 
   @Test
   /*
@@ -160,40 +118,19 @@ public class TimerTest extends TestBase {
 
     new NodexMain() {
       public void go() throws Exception {
-        final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
-          public void onMessage(String msg) {
-            server.close(new Runnable() {
-              public void run() {
-                endLatch.countDown();
-              }
-            });
-          }
-        });
-
-        server.connectHandler(new NetConnectHandler() {
-          public void onConnect(final NetSocket sock) {
-            final Thread th = Thread.currentThread();
-            final long contextID = Nodex.instance.getContextID();
-            final long start = System.nanoTime();
-            final long delay = 100;
-            Nodex.instance.setTimeout(delay, new Runnable() {
-              public void run() {
-                long dur = (System.nanoTime() - start) / 1000000;
-                azzert(dur >= delay);
-                azzert(dur < delay * 1.25); // 25% margin of error
-                azzert(th == Thread.currentThread());
-                azzert(contextID == Nodex.instance.getContextID());
-                Nodex.instance.sendMessage(actorId, "foo");
-              }
-            });
-          }
-        }).listen(8181);
-
-        NetClient client = new NetClient();
-        client.connect(8181, new NetConnectHandler() {
-          public void onConnect(NetSocket sock) {
+        final Thread th = Thread.currentThread();
+        final long contextID = Nodex.instance.getContextID();
+        final long start = System.nanoTime();
+        final long delay = 100;
+        Nodex.instance.setTimeout(delay, new TimerHandler() {
+          public void onTimer(long timerID) {
+            long dur = (System.nanoTime() - start) / 1000000;
+            azzert(dur >= delay);
+            azzert(dur < delay * 1.25); // 25% margin of error
+            azzert(th == Thread.currentThread());
+            azzert(contextID == Nodex.instance.getContextID());
+            endLatch.countDown();
           }
         });
       }

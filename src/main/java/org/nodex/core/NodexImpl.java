@@ -75,25 +75,6 @@ public final class NodexImpl implements NodexInternal {
     return backgroundPoolSize;
   }
 
-  public long setPeriodic(long delay, final Runnable handler) {
-    //TODO
-    return -1;
-  }
-
-  public long setTimeout(long delay, final Runnable handler) {
-    final long contextID = checkContextID();
-    TimerTask task = new TimerTask() {
-      public void run(Timeout timeout) {
-        executeOnContext(contextID, handler);
-      }
-    };
-    return scheduleTimeout(contextID, task, delay);
-  }
-
-  public boolean cancelTimeout(long id) {
-    return cancelTimeout(id, true);
-  }
-
   public <T> long registerActor(Actor<T> actor) {
     Long contextID = getContextID();
     if (contextID == null) {
@@ -233,6 +214,15 @@ public final class NodexImpl implements NodexInternal {
     }
   }
 
+  public long setPeriodic(long delay, final TimerHandler handler) {
+    return setTimeout(delay, true, handler);
+  }
+
+  public long setTimeout(long delay, final TimerHandler handler) {
+    return setTimeout(delay, false, handler);
+  }
+
+
   NodexImpl() {
     timer.start();
   }
@@ -243,6 +233,34 @@ public final class NodexImpl implements NodexInternal {
     Long contextID = getContextID();
     if (contextID == null) throw new IllegalStateException("No context id");
     return contextID;
+  }
+
+  private long setTimeout(final long delay, boolean periodic, final TimerHandler handler) {
+    final long contextID = checkContextID();
+
+    InternalTimerHandler myHandler;
+    if (periodic) {
+      myHandler = new InternalTimerHandler(contextID, handler) {
+        public void run() {
+          super.run();
+          scheduleTimeout(timerID, contextID, this, delay); // And reschedule
+        }
+      };
+    } else {
+      myHandler = new InternalTimerHandler(contextID, handler) {
+        public void run() {
+          super.run();
+          timeouts.remove(timerID);
+        }
+      };
+    }
+    long timerID = scheduleTimeout(-1, contextID, myHandler, delay);
+    myHandler.timerID = timerID;
+    return timerID;
+  }
+
+  public boolean cancelTimeout(long id) {
+    return cancelTimeout(id, true);
   }
 
   private boolean cancelTimeout(long id, boolean check) {
@@ -258,11 +276,36 @@ public final class NodexImpl implements NodexInternal {
     }
   }
 
-  private long scheduleTimeout(long contextID, TimerTask task, long delay) {
-    Timeout timeout = timer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
-    long id = timeoutCounter.getAndIncrement();
+  private long scheduleTimeout(long id, final long contextID, final Runnable task, long delay) {
+    TimerTask ttask = new TimerTask() {
+      public void run(Timeout timeout) throws Exception {
+        NodexInternal.instance.executeOnContext(contextID, task);
+      }
+    };
+    if (id != -1 && timeouts.get(id) == null) {
+      //Been cancelled
+      return -1;
+    }
+    Timeout timeout = timer.newTimeout(ttask, delay, TimeUnit.MILLISECONDS);
+    id = id != -1 ? id : timeoutCounter.getAndIncrement();
     timeouts.put(id, new TimeoutHolder(timeout, contextID));
     return id;
+  }
+
+  private static class InternalTimerHandler implements Runnable {
+    final long contextID;
+    final TimerHandler handler;
+    long timerID;
+
+    InternalTimerHandler(long contextID, TimerHandler runnable) {
+      this.contextID = contextID;
+      this.handler = runnable;
+    }
+
+    public void run() {
+      NodexInternal.instance.setContextID(contextID);
+      handler.onTimer(timerID);
+    }
   }
 
   private static class TimeoutHolder {

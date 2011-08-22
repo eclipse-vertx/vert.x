@@ -15,6 +15,7 @@ package org.nodex.tests.core.http;
 
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
+import org.nodex.core.TimerHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
@@ -24,7 +25,6 @@ import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
 import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
@@ -132,8 +132,8 @@ public class HttpTest extends TestBase {
                 azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
                 //We write the response back after a random time to increase the chances of responses written in the
                 //wrong order if we didn't implement pipelining correctly
-                Nodex.instance.setTimeout((long) (100 * Math.random()), new Runnable() {
-                  public void run() {
+                Nodex.instance.setTimeout((long) (100 * Math.random()), new TimerHandler() {
+                  public void onTimer(long timerID) {
                     req.response.putHeader("count", String.valueOf(theCount));
                     req.response.write(buff);
                     req.response.end();
