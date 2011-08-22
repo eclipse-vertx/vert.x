@@ -41,6 +41,29 @@ class SharedDataTest < Test::Unit::TestCase
     assert(map1[key] = true)
     assert(map2[key] = 1.2344)
 
+    map1[key] = ImmutableClass.new
+
+    succeeded = false
+    begin
+      map1[key] = SomeOtherClass.new
+      succeeded = true
+    rescue Exception => e
+      # OK
+    end
+    assert(!succeeded, 'Should throw exception')
+
+    # Make sure it deals with Ruby buffers ok, and copies them
+    buff1 = Buffer.create(0)
+    map1[key] = buff1
+    buff2 = map1[key]
+    assert(buff1 != buff2)
+    assert(Utils::buffers_equal(buff1, buff2))
+
+
+  end
+
+  class ImmutableClass
+    include SharedData::Immutable
   end
 
   class SomeOtherClass

@@ -9,19 +9,21 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
+require 'delegate'
+require 'core/buffer'
 include Java
 
 module SharedData
 
   module Immutable
-    def is_immutable
-      true
-    end
+    include org.nodex.core.Immutable
+
   end
 
-
   def SharedData.get_map(key)
-    org.nodex.core.shared.SharedData.getMap(key)
+    map = org.nodex.core.shared.SharedData.getMap(key)
+    puts " map is #{map.inspect}"
+    SharedMap.new(map)
   end
 
   def SharedData.get_set(key)
@@ -34,6 +36,31 @@ module SharedData
 
   def SharedData.remove_set(key)
     org.nodex.core.shared.SharedData.removeSet(key)
+  end
+
+  class SharedMap < DelegateClass(Hash)
+
+    def initialize(hash)
+      @hash = hash
+      # Pass the object to be delegated to the superclass.
+      super(@hash)
+    end
+
+    def []=(key, val)
+
+      # Store as Java buffers - they will get copied in Java land
+
+      key = key._to_java_buffer if key.is_a?(Buffer)
+      val = val._to_java_buffer if val.is_a?(Buffer)
+
+      @hash[key] = val
+    end
+
+    def [](key)
+      val = @hash[key]
+      val = Buffer.new(val) if val.is_a?(org.nodex.core.buffer.Buffer)
+    end
+
   end
 
 #  class SharedMap
