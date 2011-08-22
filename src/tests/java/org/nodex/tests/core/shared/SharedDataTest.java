@@ -33,7 +33,9 @@ public class SharedDataTest extends TestBase {
 
     assert(SharedData.removeMap("foo"));
 
-    assert(null == SharedData.getMap("foo"));
+    SharedMap<String, String> map4 = SharedData.getMap("foo");
+
+    assert(map4 != map3);
   }
 
   @Test
@@ -51,7 +53,9 @@ public class SharedDataTest extends TestBase {
 
     assert(SharedData.removeSet("foo"));
 
-    assert(null == SharedData.getSet("foo"));
+    SharedSet<String> set4 = SharedData.getSet("foo");
+
+    assert(set4 != set3);
   }
 
   @Test
@@ -69,7 +73,9 @@ public class SharedDataTest extends TestBase {
 
     assert(SharedData.removeCounter("foo"));
 
-    assert(null == SharedData.getCounter("foo"));
+    SharedCounter counter4 = SharedData.getCounter("foo");
+
+    assert(counter4 != counter3);
   }
 
   @Test
@@ -87,7 +93,9 @@ public class SharedDataTest extends TestBase {
 
     assert(SharedData.removeQueue("foo"));
 
-    assert(null == SharedData.getQueue("foo"));
+    SharedQueue<String> queue4 = SharedData.getQueue("foo");
+
+    assert(queue4 != queue3);
   }
 
 }
