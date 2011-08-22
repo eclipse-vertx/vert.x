@@ -15,12 +15,6 @@ require "core/buffer"
 
 class BufferTest < Test::Unit::TestCase
 
-  def setup
-  end
-
-  def teardown
-  end
-
   def test_append_buff
     buff_len = 100
     buff1 = create_buffer(buff_len)

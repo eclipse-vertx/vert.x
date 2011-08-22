@@ -9,46 +9,24 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-include Java
+require 'test/unit'
+require 'core/nodex'
+require 'utils'
 
-module SharedData
+class ActorTest < Test::Unit::TestCase
 
-  module Immutable
-    def is_immutable
-      true
-    end
+  def test_actor
+
+    latch = Utils::Latch.new(1)
+
+    key1 = "actor1"
+    key2 = "actor2"
+
+    Nodex::go{
+      id1 = Nodex::register_actor{
+
+      }
+
+    }
   end
-
-
-  def SharedData.get_map(key)
-    org.nodex.core.shared.SharedData.getMap(key)
-  end
-
-  def SharedData.get_set(key)
-    org.nodex.core.shared.SharedData.getSet(key)
-  end
-
-  def SharedData.remove_map(key)
-   org.nodex.core.shared.SharedData.removeMap(key)
-  end
-
-  def SharedData.remove_set(key)
-    org.nodex.core.shared.SharedData.removeSet(key)
-  end
-
-#  class SharedMap
-#
-#  end
-#
-#  class SharedSet
-#
-#  end
-#
-#  class SharedQueue
-#
-#  end
-#
-#  class SharedCounter
-#
-#  end
 end

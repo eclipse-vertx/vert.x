@@ -1,3 +1,5 @@
 require 'test/unit'
 require 'net_test'
 require 'buffer_test'
+require 'timer_test'
+require 'shared_data_test'

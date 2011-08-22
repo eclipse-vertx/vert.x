@@ -21,6 +21,7 @@ public class SharedUtils {
         obj instanceof Double ||
         obj instanceof Float ||
         obj instanceof Short ||
+        obj instanceof Byte ||
         obj instanceof Character ||
         obj instanceof BigDecimal) {
       return obj;

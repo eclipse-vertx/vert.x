@@ -16,6 +16,7 @@ package org.nodex.core.shared;
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -96,8 +97,12 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
     return map.values();
   }
 
-  public Set<Entry<K, V>> entrySet() {
-    return map.entrySet();
+  public Set<Map.Entry<K, V>> entrySet() {
+    Set<Map.Entry<K, V>> entries = new HashSet<>();
+    for (Map.Entry<K, V> entry: map.entrySet()) {
+      entries.add(new Entry<>(entry));
+    }
+    return entries;
   }
 
   @Override
@@ -108,5 +113,29 @@ public class SharedMap<K, V> implements ConcurrentMap<K, V> {
   @Override
   public int hashCode() {
     return map.hashCode();
+  }
+
+  private static class Entry<K, V> implements Map.Entry<K, V> {
+
+    final Map.Entry<K, V> internalEntry;
+
+    Entry(Map.Entry<K, V> internalEntry) {
+      this.internalEntry = internalEntry;
+    }
+
+    public K getKey() {
+      return internalEntry.getKey();
+    }
+
+    public V getValue() {
+      return internalEntry.getValue();
+    }
+
+    public V setValue(V value) {
+      V old = internalEntry.getValue();
+      value = SharedUtils.checkObject(value);
+      internalEntry.setValue(value);
+      return old;
+    }
   }
 }

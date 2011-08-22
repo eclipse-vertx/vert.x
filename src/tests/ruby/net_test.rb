@@ -17,12 +17,6 @@ include Net
 
 class NetTest < Test::Unit::TestCase
 
-  def setup
-  end
-
-  def teardown
-  end
-
   def test_echo
 
     latch = Utils::Latch.new 1

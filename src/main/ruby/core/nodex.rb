@@ -11,6 +11,7 @@
 
 include Java
 java_import org.nodex.core.NodexMain
+java_import org.nodex.core.Nodex
 
 module Nodex
 
@@ -30,5 +31,33 @@ module Nodex
   def Nodex.go(&block)
     TheMain.new(block).run
   end
+
+  def Nodex.set_timeout(delay, proc = nil, &hndlr)
+    hndlr = proc if proc
+    Nodex.instance.setTimeout(delay, hndlr)
+  end
+
+  def Nodex.set_periodic(delay, proc = nil, &hndlr)
+    hndlr = proc if proc
+    Nodex.instance.setPeriodic(delay, hndlr)
+  end
+
+  def Nodex.cancel_timeout(id)
+    Nodex.instance.cancelTimeout(id)
+  end
+
+  def Nodex.register_actor(proc = nil, &hndlr)
+    hndlr = proc if proc
+    Nodex.instance.registerActor(handlr)
+  end
+
+  def Nodex.unregister_actor(actor_id)
+    Nodex.instance.unregisterActor(actor_id)
+  end
+
+  def Nodex.send_message(actor_id, msg)
+    Nodex.instance.sendMessage(actor_id, msg)
+  end
+
 
 end
