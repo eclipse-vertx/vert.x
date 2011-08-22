@@ -21,6 +21,8 @@ public class SharedData {
 
   private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new NonBlockingHashMap<>();
   private static ConcurrentMap<Object, SharedSet<?>> sets = new NonBlockingHashMap<>();
+  private static ConcurrentMap<Object, SharedCounter> counters = new NonBlockingHashMap<>();
+  private static ConcurrentMap<Object, SharedQueue> queues = new NonBlockingHashMap<>();
 
   public static <K, V> SharedMap<K, V> getMap(Object name) {
     SharedMap<K, V> map = (SharedMap<K, V>)maps.get(name);
@@ -46,11 +48,43 @@ public class SharedData {
     return set;
   }
 
+  public static SharedCounter getCounter(Object name) {
+    SharedCounter counter = counters.get(name);
+    if (counter == null) {
+      counter = new SharedCounter();
+      SharedCounter prev = counters.putIfAbsent(name, counter);
+      if (prev != null) {
+        counter = prev;
+      }
+    }
+    return counter;
+  }
+
+  public static <E> SharedQueue<E> getQueue(Object name) {
+    SharedQueue<E> queue = (SharedQueue<E>)queues.get(name);
+    if (queue == null) {
+      queue = new SharedQueue<>();
+      SharedQueue prev = queues.putIfAbsent(name, queue);
+      if (prev != null) {
+        queue = prev;
+      }
+    }
+    return queue;
+  }
+
   public static boolean removeMap(Object name) {
     return maps.remove(name) != null;
   }
 
   public static boolean removeSet(Object name) {
     return sets.remove(name) != null;
+  }
+
+  public static boolean removeCounter(Object name) {
+    return counters.remove(name) != null;
+  }
+
+  public static boolean removeQueue(Object name) {
+    return queues.remove(name) != null;
   }
 }
