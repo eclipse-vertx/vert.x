@@ -188,7 +188,7 @@ module Net
       @j_socket.setWriteQueueMaxSize(val)
     end
 
-    def write_queue_full
+    def write_queue_full?
       @j_socket.writeQueueFull()
     end
 

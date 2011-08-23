@@ -194,6 +194,23 @@ public class HttpClientRequest implements WriteStream {
     this.exceptionHandler = handler;
   }
 
+  public void end() {
+    checkThread();
+    completed = true;
+    if (conn != null) {
+      if (!headWritten) {
+        // No body
+        writeHead(false);
+      } else {
+        //Body written - we use HTTP chunking so must send an empty buffer
+        writeEndChunk();
+      }
+      conn.endRequest();
+    } else {
+      connect();
+    }
+  }
+
   void handleInterestedOpsChanged() {
     checkThread();
     if (drainHandler != null) {
@@ -293,23 +310,6 @@ public class HttpClientRequest implements WriteStream {
       sendChunk(new DefaultHttpChunk(buff), done);
     }
     return this;
-  }
-
-  public void end() {
-    checkThread();
-    completed = true;
-    if (conn != null) {
-      if (!headWritten) {
-        // No body
-        writeHead(false);
-      } else {
-        //Body written - we use HTTP chunking so must send an empty buffer
-        writeEndChunk();
-      }
-      conn.endRequest();
-    } else {
-      connect();
-    }
   }
 
   private void sendChunk(HttpChunk chunk, Runnable completion) {

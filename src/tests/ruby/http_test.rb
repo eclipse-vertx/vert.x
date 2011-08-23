@@ -11,33 +11,37 @@
 
 require 'test/unit'
 require 'core/nodex'
-require 'core/parsetools'
+require 'core/http'
 require 'utils'
-include ParseTools
 
-class RecordParserTest < Test::Unit::TestCase
+class HttpTest < Test::Unit::TestCase
 
-  def test_delimited
+  def test_http
 
-    str = ""
-    iters = 100
-    for i in 0..iters - 1 do
-      str << "line #{i}"
-      str << "\n" if i != iters - 1
-    end
+    latch1 = Utils::Latch.new(1)
 
-    lines = []
-    parser = RecordParser::new_delimited("\n") { |line|
-      lines << line
+    Nodex::go{
+      server = Http::Server.new
+      server.request_handler { |req|
+        req.response.write_str("some response")
+        req.response.end
+      }
+      server.listen(8080)
+
+      client = Http::Client.new
+      client.port = 8080;
+
+      client.get_now("/someurl") { |resp|
+        puts "Got response #{resp.status_code}"
+
+        server.close{
+          client.close
+          latch1.countdown
+        }
+      }
     }
 
-    parser.input(Buffer.create_from_str(str))
+    assert(latch1.await(5))
 
-    count = 0
-    lines.each{ |line|
-      assert("line #{count}" == line.to_s)
-      count += 1
-    }
   end
-
 end

@@ -458,8 +458,6 @@ public class HttpTest extends TestBase {
         req = client.connect(path + paramsString, responseHandler);
       } else if ("OPTIONS".equals(method)) {
         req = client.options(path + paramsString, responseHandler);
-      } else if ("PATCH".equals(method)) {
-        req = client.patch(path + paramsString, responseHandler);
       }
     } else {
       req = client.request(method, path + paramsString, responseHandler);

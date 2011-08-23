@@ -60,7 +60,7 @@ public class HttpClient extends SSLBase {
   private int port = 80;
   private String host = "localhost";
   private final Queue<ClientConnection> available = new ConcurrentLinkedQueue<ClientConnection>();
-  private int maxConnections = 1;
+  private int maxPoolSize = 1;
   private final AtomicInteger connectionCount = new AtomicInteger(0);
   private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<Waiter>();
 
@@ -72,12 +72,12 @@ public class HttpClient extends SSLBase {
   }
 
   public HttpClient setMaxPoolSize(int maxConnections) {
-    this.maxConnections = maxConnections;
+    this.maxPoolSize = maxConnections;
     return this;
   }
 
-  public int getMaxConnections() {
-    return maxConnections;
+  public int getMaxPoolSize() {
+    return maxPoolSize;
   }
 
   public HttpClient setKeepAlive(boolean keepAlive) {
@@ -147,13 +147,14 @@ public class HttpClient extends SSLBase {
 
   // Quick get method when there's no body and it doesn't require an end
   public void getNow(String uri, HttpResponseHandler responseHandler) {
-    HttpClientRequest req = get(uri, responseHandler);
-    req.end();
+    getNow(uri, null, responseHandler);
   }
 
   public void getNow(String uri, Map<String, ? extends Object> headers, HttpResponseHandler responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
-    req.putAllHeaders(headers);
+    if (headers != null) {
+      req.putAllHeaders(headers);
+    }
     req.end();
   }
 
@@ -189,10 +190,6 @@ public class HttpClient extends SSLBase {
     return request("CONNECT", uri, responseHandler);
   }
 
-  public HttpClientRequest patch(String uri, HttpResponseHandler responseHandler) {
-    return request("PATCH", uri, responseHandler);
-  }
-
   public HttpClientRequest request(String method, String uri, HttpResponseHandler responseHandler) {
     final Long cid = Nodex.instance.getContextID();
     if (cid == null) {
@@ -221,8 +218,8 @@ public class HttpClient extends SSLBase {
     if (conn != null) {
       handler.onConnect(conn);
     } else {
-      if (connectionCount.get() < maxConnections) {
-        if (connectionCount.incrementAndGet() <= maxConnections) {
+      if (connectionCount.get() < maxPoolSize) {
+        if (connectionCount.incrementAndGet() <= maxPoolSize) {
           //Create new connection
           connect(handler, contextID);
           return;
@@ -239,7 +236,7 @@ public class HttpClient extends SSLBase {
     if (!conn.keepAlive) {
       //Just close it
       conn.internalClose();
-      if (connectionCount.decrementAndGet() < maxConnections) {
+      if (connectionCount.decrementAndGet() < maxPoolSize) {
         //Now the connection count has come down, maybe there is another waiter that can
         //create a new connection
         Waiter waiter = waiters.poll();

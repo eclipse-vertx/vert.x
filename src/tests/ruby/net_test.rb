@@ -136,7 +136,7 @@ class NetTest < Test::Unit::TestCase
 
         socket.pause
         socket.resume
-        socket.write_queue_full
+        socket.write_queue_full?
         socket.write_queue_max_size=100000
 
         (1..sends).each { |i|
