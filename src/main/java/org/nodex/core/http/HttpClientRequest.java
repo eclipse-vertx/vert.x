@@ -90,6 +90,15 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
+  public HttpClientRequest putAllHeaders(List<Map.Entry<String, String>> headers) {
+    checkThread();
+    checkComplete();
+    for (Map.Entry<String, String> entry: headers) {
+      addHeader(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
   public String getHeader(String key) {
     checkThread();
     checkComplete();

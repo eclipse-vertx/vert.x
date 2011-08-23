@@ -69,6 +69,10 @@ public class HttpServerRequest implements ReadStream {
     return request.getHeaderNames();
   }
 
+  public List<Map.Entry<String, String>> getHeaders() {
+    return request.getHeaders();
+  }
+
   public void dataHandler(DataHandler dataHandler) {
     this.dataHandler = dataHandler;
   }

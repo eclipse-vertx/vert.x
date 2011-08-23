@@ -393,8 +393,10 @@ public class HttpClient extends SSLBase {
         }
       } else if (msg instanceof HttpChunk) {
         HttpChunk chunk = (HttpChunk) msg;
-        Buffer buff = new Buffer(chunk.getContent());
-        conn.handleResponseChunk(buff);
+        if (chunk.getContent().readable()) {
+          Buffer buff = new Buffer(chunk.getContent());
+          conn.handleResponseChunk(buff);
+        }
         if (chunk.isLast()) {
           if (chunk instanceof HttpChunkTrailer) {
             HttpChunkTrailer trailer = (HttpChunkTrailer) chunk;

@@ -1,0 +1,17 @@
+Simple proxy server example
+===========================
+
+A very simple HTTP proxy which simply proxies requests/response from a client to a server
+
+We have:
+
+a) A simple http server which just takes the request and sends back a response in 10 chunks
+b) A simple http client which sends a http request with 10 chunks (via the proxy server)
+c) A proxy server which simply sits in the middle proxying requests and responses between client and server
+
+To run, open three consoles.
+
+In console 1, run the http server: ./http_server.sh
+In console 2, run the proxy server: ./proxy_server.sh
+In console 3, run the http client: ./http_client.sh
+

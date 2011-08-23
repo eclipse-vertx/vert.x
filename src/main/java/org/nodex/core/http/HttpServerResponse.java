@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -81,6 +82,13 @@ public class HttpServerResponse implements WriteStream {
   public HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       response.setHeader(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  public HttpServerResponse putAllHeaders(List<Map.Entry<String, String>> headers) {
+    for (Map.Entry<String, String> entry: headers) {
+      addHeader(entry.getKey(), entry.getValue());
     }
     return this;
   }

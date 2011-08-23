@@ -21,6 +21,7 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class HttpClientResponse implements ReadStream {
@@ -52,6 +53,10 @@ public class HttpClientResponse implements ReadStream {
   public List<String> getHeaders(String key) {
     checkThread();
     return response.getHeaders(key);
+  }
+
+  public List<Map.Entry<String, String>> getHeaders() {
+    return response.getHeaders();
   }
 
   public Set<String> getHeaderNames() {

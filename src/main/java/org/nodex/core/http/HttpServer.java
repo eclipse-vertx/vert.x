@@ -333,9 +333,10 @@ public class HttpServer extends SSLBase {
           }
         } else {
 
-          Buffer buff = new Buffer(chunk.getContent());
-
-          conn.handleChunk(buff);
+          if (chunk.getContent().readable()) {
+            Buffer buff = new Buffer(chunk.getContent());
+            conn.handleChunk(buff);
+          }
           //TODO chunk trailers
           if (chunk.isLast()) {
             conn.handleEnd();
