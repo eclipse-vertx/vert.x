@@ -10,8 +10,7 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-require "buffer"
-java_import org.nodex.core.parsetools.RecordParser
+require "core/buffer"
 
 module ParseTools
 
@@ -31,12 +30,12 @@ module ParseTools
 
     def RecordParser.new_delimited(delim, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(RecordParser.newDelimited(delim, output_block))
+      RecordParser.new(org.nodex.core.parsetools.RecordParser.newDelimited(delim, output_block))
     end
 
     def RecordParser.new_fixed(size, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(RecordParser.newFixed(size, output_block))
+      RecordParser.new(org.nodex.core.parsetools.RecordParser.newFixed(size, output_block))
     end
 
     def delimited_mode(delim)

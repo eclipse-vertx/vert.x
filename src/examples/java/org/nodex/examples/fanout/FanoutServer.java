@@ -45,7 +45,7 @@ public class FanoutServer extends NodexMain {
         });
         socket.closedHandler(new Runnable() {
           public void run() {
-            connections.remove(socket);
+            connections.remove(socket.writeActorID);
           }
         });
       }

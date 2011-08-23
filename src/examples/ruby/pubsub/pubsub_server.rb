@@ -9,43 +9,41 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "echo"
-require "parsetools"
+require "core/net"
+require "core/nodex"
+require "core/shared_data"
+require "core/parsetools"
+require "core/buffer"
+
 include Net
 
-# A trivial publish-subscribe server.
-# The server understands the following commands:
-# SUBSCRIBE,<topic name> - to subscribe to a named topic
-# UNSUBSCRIBE,<topic name> - to unsubscribe to the named topic
-# PUBLISH,<topic name>,<string to publish> - all subscribers to the named topic will get the published string
-#
-# To try this out open a few sessions using telnet localhost 8080 and type the protocol by hand
-
-Server.create_server { |socket|
-  parser = ParserTools::RecordParser.new_delimited("\n") { |line|
-    line = line.to_s.rstrip
-    if line.start_with?("subscribe,")
-      topic_name = line.split(",", 2)[1]
-      puts "subscribing to #{topic_name}"
-      @topics ||= {}
-      topic = @topics[topic_name]
-      if (topic.nil?)
-        topic = []
-        @topics[topic_name] = topic
+Nodex::go{
+  Server.new { |socket|
+    parser = ParseTools::RecordParser.new_delimited("\n") { |line|
+      line = line.to_s.rstrip
+      if line.start_with?("subscribe,")
+        topic_name = line.split(",", 2)[1]
+        puts "subscribing to #{topic_name}"
+        topic = SharedData::get_set(topic_name)
+        topic.add(socket.write_actor_id)
+      elsif line.start_with?("unsubscribe,")
+        topic_name = line.split(",", 2)[1]
+        puts "unsubscribing from #{topic_name}"
+        topic = SharedData::get_set(topic_name)
+        topic.delete(socket.write_actor_id)
+        SharedData::remove_set(topic_name) if topic.empty?
+      elsif line.start_with?("publish,")
+        sp = line.split(',', 3)
+        puts "publishing to #{sp[1]} with #{sp[2]}"
+        topic = SharedData::get_set(sp[1])
+        puts "topic is #{topic}"
+        topic.each { |actor_id| Nodex::send_message(actor_id, Buffer.create_from_str(sp[2])) }
       end
-      topic << socket
-    elsif line.start_with?("publish,")
-      sp = line.split(',', 3)
-      puts "publishing to #{sp[1]} with #{sp[2]}"
-      topic = @topics[sp[1]]
-      if (topic)
-        topic.each { |socket| socket.write(Buffer.from_str(sp[2])) }
-      end
-    end
-  }
-  socket.data(parser)
-}.listen(8080)
+    }
+    socket.data_handler(parser)
+  }.listen(8080)
+}
 
-puts "hit enter to stop server"
+puts "hit enter to exit"
 STDIN.gets
 server.stop

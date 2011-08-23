@@ -9,7 +9,14 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
+require 'core/shared_data'
+
 class Buffer
+
+  # We include this so we can put a buffer in a shared data structure.
+  # This class isn't actually immutable but it doesn't matter since it will get copied automatically
+  # as it is added to the map
+  include SharedData::Immutable
 
   def initialize(j_buffer)
     @buffer = j_buffer

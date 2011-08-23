@@ -12,40 +12,47 @@
 require 'test/unit'
 require 'core/shared_data'
 require 'utils'
+require 'set'
 
 class SharedDataTest < Test::Unit::TestCase
 
-  def test_map
+  def test_hash
 
-    map1 = SharedData::get_map("map1")
-    assert(map1 != nil)
+    hash1 = SharedData::get_hash("map1")
+    assert(hash1 != nil)
 
-    map2 = SharedData::get_map("map2")
-    assert(map2 != nil)
+    hash2 = SharedData::get_hash("map1")
+    assert(hash2 != nil)
+
+    assert(hash1 == hash2)
+
+    hash3 = SharedData::get_hash("map3")
+    assert(hash3 != nil)
+    assert(hash1 != hash3)
 
     key = 'wibble'
 
-    map1[key] = 'hello'
-    assert(map1[key] = 'hello')
-    assert(map2[key] = 'hello')
+    hash1[key] = 'hello'
+    assert(hash1[key] = 'hello')
+    assert(hash2[key] = 'hello')
 
-    map1[key] = 12
-    assert(map1[key] = 12)
-    assert(map2[key] = 12)
+    hash1[key] = 12
+    assert(hash1[key] = 12)
+    assert(hash2[key] = 12)
 
-    map1[key] = 1.2344
-    assert(map1[key] = 1.2344)
-    assert(map2[key] = 1.2344)
+    hash1[key] = 1.2344
+    assert(hash1[key] = 1.2344)
+    assert(hash2[key] = 1.2344)
 
-    map1[key] = true
-    assert(map1[key] = true)
-    assert(map2[key] = 1.2344)
+    hash1[key] = true
+    assert(hash1[key] = true)
+    assert(hash2[key] = 1.2344)
 
-    map1[key] = ImmutableClass.new
+    hash1[key] = ImmutableClass.new
 
     succeeded = false
     begin
-      map1[key] = SomeOtherClass.new
+      hash1[key] = SomeOtherClass.new
       succeeded = true
     rescue Exception => e
       # OK
@@ -54,11 +61,93 @@ class SharedDataTest < Test::Unit::TestCase
 
     # Make sure it deals with Ruby buffers ok, and copies them
     buff1 = Buffer.create(0)
-    map1[key] = buff1
-    buff2 = map1[key]
+    hash1[key] = buff1
+    buff2 = hash1[key]
     assert(buff1 != buff2)
     assert(Utils::buffers_equal(buff1, buff2))
 
+    assert(SharedData::remove_hash("map1"))
+    assert(!SharedData::remove_hash("map1"))
+    assert(SharedData::remove_hash("map3"))
+
+  end
+
+  def test_set
+    set1 = SharedData::get_set("set1")
+    assert(set1 != nil)
+
+    set2 = SharedData::get_set("set1")
+    assert(set2 != nil)
+
+    assert(set1 == set2)
+
+    set3 = SharedData::get_set("set3")
+    assert(set3 != nil)
+
+    assert(set1 != set3)
+
+    set1.add("foo")
+    set1.add("bar")
+    set1.add("quux")
+
+    assert(3 == set1.size)
+
+    assert(set1.include?("foo"))
+    assert(set1.include?("bar"))
+    assert(set1.include?("quux"))
+    assert(!set1.include?("wibble"))
+    assert(!set1.empty?)
+
+    set1.delete("foo")
+    assert(2 == set1.size)
+    assert(!set1.include?("foo"))
+    assert(set1.include?("bar"))
+    assert(set1.include?("quux"))
+    assert(!set1.empty?)
+
+    set1.clear
+    assert(0 == set1.size)
+    assert(set1.empty?)
+
+    set1.add("foo")
+    set1.add("bar")
+    set1.add("quux")
+
+    set2 = Set.new
+
+    set1.each{ |o|
+      set2.add(o)
+    }
+
+    assert(set2.include?("foo"))
+    assert(set2.include?("bar"))
+    assert(set2.include?("quux"))
+
+    assert(SharedData::remove_set("set1"))
+    assert(!SharedData::remove_set("set1"))
+    assert(SharedData::remove_set("set3"))
+
+  end
+
+  def test_counter
+    counter1 = SharedData::get_counter("c1")
+    assert(counter1 != nil)
+
+    counter2 = SharedData::get_counter("c1")
+    assert(counter2 != nil)
+
+    assert(counter1 == counter2)
+
+    counter3 = SharedData::get_counter("c3")
+    assert(counter3 != nil)
+
+    assert(counter1 != counter3)
+
+    assert(SharedData::remove_counter("c1"))
+    assert(!SharedData::remove_counter("c1"))
+    assert(SharedData::remove_counter("c3"))
+
+    # TODO complete test
 
   end
 

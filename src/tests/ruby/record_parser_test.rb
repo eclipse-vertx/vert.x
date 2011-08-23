@@ -9,24 +9,35 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
-require "core/nodex"
-require "core/shared_data"
+require 'test/unit'
+require 'core/nodex'
+require 'core/parsetools'
+require 'utils'
+include ParseTools
 
-include Net
+class RecordParserTest < Test::Unit::TestCase
 
-Nodex::go{
-  conns = SharedData::get_set("conns")
-  Server.new{ |socket|
-    conns.add(socket.write_actor_id)
-    socket.data_handler{ |data|
-      conns.each{ |actor_id| Nodex::send_message(actor_id, data) }
+  def test_delimited
+
+    str = ""
+    for i in 0..9 do
+      str << "line #{i}"
+      str << "\n" if i != 9
+    end
+
+    lines = []
+    parser = RecordParser::new_delimited("\n") { |line|
+      lines << line
     }
-    socket.closed_handler{ conns.delete(socket.write_actor_id) }
-  }.listen(8080)
-}
 
-puts "hit enter to exit"
-STDIN.gets
+    parser.input(Buffer.create_from_str(str))
 
+    count = 0
+    lines.each{ |line|
+      assert("line #{count}" == line.to_s)
+      count += 1
+    }
 
+  end
+
+end

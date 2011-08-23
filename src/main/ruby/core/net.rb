@@ -125,6 +125,9 @@ module Net
 
     def initialize(j_socket)
       @j_socket = j_socket
+      @write_actor_id = Nodex::register_actor{ |buffer|
+        write_buffer(buffer)
+      }
     end
 
     def write_buffer(buff, &compl)
@@ -199,6 +202,10 @@ module Net
 
     def _to_write_stream
       @j_socket
+    end
+
+    def write_actor_id
+      @write_actor_id
     end
 
     private :initialize

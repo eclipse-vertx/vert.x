@@ -1,0 +1,6 @@
+Simple, scalable, thread-safe fanout server
+===========================================
+
+To run the server: ./fanout_server.sh
+
+Then telnet localhost 8080 and notice how text entered via telnet is fanned out to all connections

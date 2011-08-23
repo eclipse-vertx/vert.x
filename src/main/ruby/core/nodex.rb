@@ -13,6 +13,8 @@ include Java
 java_import org.nodex.core.NodexMain
 java_import org.nodex.core.Nodex
 
+require 'core/buffer'
+
 module Nodex
 
   class TheMain < NodexMain
@@ -48,7 +50,7 @@ module Nodex
 
   def Nodex.register_actor(proc = nil, &hndlr)
     hndlr = proc if proc
-    Nodex.instance.registerActor(handlr)
+    Nodex.instance.registerActor(hndlr)
   end
 
   def Nodex.unregister_actor(actor_id)
@@ -56,6 +58,7 @@ module Nodex
   end
 
   def Nodex.send_message(actor_id, msg)
+    msg = msg.copy if msg.is_a?(Buffer)
     Nodex.instance.sendMessage(actor_id, msg)
   end
 
