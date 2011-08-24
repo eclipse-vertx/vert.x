@@ -36,10 +36,12 @@ import java.util.Set;
 public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
+                    final boolean chunked,
                     final HttpResponseHandler respHandler,
                     final long contextID, final Thread th) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
+    this.chunked = chunked;
     this.respHandler = respHandler;
     this.contextID = contextID;
     this.th = th;
@@ -47,7 +49,9 @@ public class HttpClientRequest implements WriteStream {
 
   private final HttpClient client;
   private final HttpRequest request;
+  private final boolean chunked;
   private final HttpResponseHandler respHandler;
+  private Runnable continueHandler;
   private final long contextID;
   final Thread th;
 
@@ -59,6 +63,8 @@ public class HttpClientRequest implements WriteStream {
   private LinkedList<PendingChunk> pendingChunks;
   private int pendingMaxSize = -1;
   private boolean connecting;
+  private boolean writeHead;
+
 
   public HttpClientRequest putHeader(String key, Object value) {
     checkThread();
@@ -194,13 +200,33 @@ public class HttpClientRequest implements WriteStream {
     this.exceptionHandler = handler;
   }
 
+  public void continueHandler(Runnable handler) {
+    checkThread();
+    checkComplete();
+    this.continueHandler = handler;
+  }
+
+  public HttpClientRequest sendHead() {
+    checkThread();
+    if (conn != null) {
+      if (!headWritten) {
+        writeHead();
+        headWritten = true;
+      }
+    } else {
+      connect();
+      writeHead = true;
+    }
+    return this;
+  }
+
   public void end() {
     checkThread();
     completed = true;
     if (conn != null) {
       if (!headWritten) {
         // No body
-        writeHead(false);
+        writeHead();
       } else {
         //Body written - we use HTTP chunking so must send an empty buffer
         writeEndChunk();
@@ -225,8 +251,22 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  HttpResponseHandler getResponseHandler() {
-    return respHandler;
+  void handleResponse(HttpClientResponse resp) {
+    try {
+      if (resp.statusCode == 100 ) {
+        if (continueHandler != null) {
+          continueHandler.run();
+        }
+      } else {
+        respHandler.onResponse(resp);
+      }
+    } catch (Throwable t) {
+      if (t instanceof Exception) {
+        handleException((Exception)t);
+      } else {
+        t.printStackTrace(System.err);
+      }
+    }
   }
 
   private void connect() {
@@ -261,19 +301,20 @@ public class HttpClientRequest implements WriteStream {
       conn.setWriteQueueMaxSize(pendingMaxSize);
     }
 
-    if (pendingChunks != null) {
-      writeHead(true);
+    if (pendingChunks != null || writeHead || completed) {
+      writeHead();
       headWritten = true;
-       for (PendingChunk chunk: pendingChunks) {
+    }
+
+    if (pendingChunks != null) {
+      for (PendingChunk chunk: pendingChunks) {
         sendChunk(chunk.chunk, chunk.completion);
       }
     }
 
     if (completed) {
-      if (pendingChunks != null) {
+      if (chunked) {
         writeEndChunk();
-      } else {
-        writeHead(false);
       }
       conn.endRequest();
     }
@@ -286,7 +327,7 @@ public class HttpClientRequest implements WriteStream {
     completed = true;
   }
 
-  private void writeHead(boolean chunked) {
+  private void writeHead() {
     request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
     if (chunked) {
       request.setChunked(true);
@@ -304,7 +345,7 @@ public class HttpClientRequest implements WriteStream {
       pendingChunks.add(new PendingChunk(new DefaultHttpChunk(buff), done));
     } else {
       if (!headWritten) {
-        writeHead(true);
+        writeHead();
         headWritten = true;
       }
       sendChunk(new DefaultHttpChunk(buff), done);

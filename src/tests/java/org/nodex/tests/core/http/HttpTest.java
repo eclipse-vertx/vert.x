@@ -25,6 +25,7 @@ import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
+import org.omg.CORBA.portable.ResponseHandler;
 import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
@@ -234,6 +235,69 @@ public class HttpTest extends TestBase {
         });
 
         client.close();
+      }
+    }.run();
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
+  }
+
+  @Test
+  public void test100Continue() throws Exception {
+    final String host = "localhost";
+    final int port = 8181;
+
+    final Buffer toSend = Utils.generateRandomBuffer(1000);
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer(new HttpRequestHandler() {
+          final Buffer received = Buffer.create(0);
+          public void onRequest(final HttpServerRequest req) {
+            req.dataHandler(new DataHandler() {
+              public void onData(Buffer data) {
+                received.appendBuffer(data);
+                if (received.length() == toSend.length()) {
+                  assert(Utils.buffersEqual(toSend, received));
+                  req.response.end();
+                }
+              }
+            });
+          }
+        }).listen(port, host);
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host);
+
+        final HttpClientRequest req = client.put("someurl", new HttpResponseHandler() {
+          public void onResponse(HttpClientResponse resp) {
+            assert(200 == resp.statusCode);
+
+            resp.endHandler(new Runnable() {
+               public void run() {
+                 server.close(new Runnable() {
+                   public void run() {
+                     client.close();
+                     latch.countDown();
+                   }
+                 });
+               }
+            });
+          }
+        });
+
+        req.putHeader("Expect", "100-continue");
+
+        req.continueHandler(new Runnable() {
+          public void run() {
+            req.write(toSend);
+            req.end();
+          }
+        });
+
+        req.sendHead();
       }
     }.run();
 

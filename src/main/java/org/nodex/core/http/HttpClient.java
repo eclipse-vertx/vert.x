@@ -55,7 +55,6 @@ public class HttpClient extends SSLBase {
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
-  private boolean keepAlive = true;
   private ExceptionHandler exceptionHandler;
   private int port = 80;
   private String host = "localhost";
@@ -63,6 +62,7 @@ public class HttpClient extends SSLBase {
   private int maxPoolSize = 1;
   private final AtomicInteger connectionCount = new AtomicInteger(0);
   private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<Waiter>();
+  private boolean keepAlive = true;
 
   public HttpClient() {
   }
@@ -122,14 +122,6 @@ public class HttpClient extends SSLBase {
   public HttpClient setHost(String host) {
     this.host = host;
     return this;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public String getHost() {
-    return host;
   }
 
   public void connectWebsocket(final String uri, final WebsocketConnectHandler wsConnect) {
@@ -195,7 +187,7 @@ public class HttpClient extends SSLBase {
     if (cid == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
     }
-    return new HttpClientRequest(this, method, uri, responseHandler, cid, Thread.currentThread());
+    return new HttpClientRequest(this, method, uri, true, responseHandler, cid, Thread.currentThread());
   }
 
   public void close() {
@@ -299,7 +291,8 @@ public class HttpClient extends SSLBase {
 
           ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
-              ClientConnection conn = new ClientConnection(HttpClient.this, ch, keepAlive, host + ":" + port, ssl, contextID,
+              ClientConnection conn = new ClientConnection(HttpClient.this, ch,
+                                                   host + ":" + port, ssl, keepAlive, contextID,
                   Thread.currentThread());
               connectionMap.put(ch, conn);
               NodexInternal.instance.setContextID(contextID);

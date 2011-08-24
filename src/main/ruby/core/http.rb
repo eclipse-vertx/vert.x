@@ -252,6 +252,10 @@ module Http
       @j_req.exceptionHandler(hndlr)
     end
 
+    def send_head
+      @j_req.sendHead
+    end
+
     def end
       @j_req.end
     end
@@ -319,6 +323,11 @@ module Http
     def exception_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_resp.exceptionHandler(hndlr)
+    end
+
+    def continue_handler
+      hndlr = proc if proc
+      @j_resp.continueHandler(hndlr)
     end
 
     def pause

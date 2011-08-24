@@ -21,6 +21,7 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
@@ -35,18 +36,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 class ClientConnection extends AbstractConnection {
 
-  ClientConnection(HttpClient client, Channel channel, boolean keepAlive, String hostHeader, boolean ssl,
+  ClientConnection(HttpClient client, Channel channel, String hostHeader, boolean ssl,
+                   boolean keepAlive,
                    long contextID, Thread th) {
     super(channel, contextID, th);
     this.client = client;
-    this.keepAlive = keepAlive;
     this.hostHeader = hostHeader;
     this.ssl = ssl;
+    this.keepAlive = keepAlive;
   }
 
   final HttpClient client;
-  final boolean keepAlive;
   final String hostHeader;
+  final boolean keepAlive;
   private final boolean ssl;
 
   private volatile HttpClientRequest currentRequest;
@@ -69,7 +71,7 @@ class ClientConnection extends AbstractConnection {
     final ChannelBuffer buff = ChannelBuffers.buffer(8);
     buff.writeLong(c);
 
-    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new HttpResponseHandler() {
+    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, false, new HttpResponseHandler() {
       public void onResponse(HttpClientResponse resp) {
         if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
           handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode
@@ -151,21 +153,23 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
+
   void handleResponse(HttpResponse resp) {
-    HttpClientRequest req = requests.poll();
+    HttpClientRequest req;
+    if (resp.getStatus().getCode() == 100) {
+      //If we get a 100 continue it will be followed by the real response later, so we don't remove it yet
+      req = requests.peek();
+    } else {
+      req = requests.poll();
+    }
+
     if (req == null) {
       throw new IllegalStateException("No response handler");
     }
-
     setContextID();
     HttpClientResponse nResp = new HttpClientResponse(this, resp, req.th);
-    HttpResponseHandler handler = req.getResponseHandler();
     currentResponse = nResp;
-    try {
-      handler.onResponse(nResp);
-    } catch (Throwable t) {
-      handleHandlerException(t);
-    }
+    req.handleResponse(nResp);
   }
 
   void handleResponseChunk(Buffer buff) {
