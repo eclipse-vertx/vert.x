@@ -225,7 +225,11 @@ module Http
     end
 
     def write_str(str, enc = nil, &hndlr)
-      @j_req.write(str, enc)
+      if enc == nil
+        @j_req.write(str)
+      else
+        @j_req.write(str, enc)
+      end
       self
     end
 

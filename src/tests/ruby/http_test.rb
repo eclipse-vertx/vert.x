@@ -16,29 +16,102 @@ require 'utils'
 
 class HttpTest < Test::Unit::TestCase
 
-  def test_http
+  def test_get
+    http_method(false, "GET", 0, 3)
+    http_method(true, "GET", 0, 3)
+  end
+
+  def test_put
+    http_method(false, "PUT", 3, 3)
+    http_method(true, "PUT", 3, 3)
+  end
+
+  def test_post
+    http_method(false, "POST", 3, 3)
+    http_method(true, "POST", 3, 3)
+  end
+
+  def test_head
+    http_method(false, "POST", 3, 3)
+    http_method(true, "POST", 3, 3)
+  end
+
+  def test_options
+    http_method(false, "OPTIONS", 0, 0)
+    http_method(true, "OPTIONS", 0, 0)
+  end
+
+  def test_delete
+    http_method(false, "DELETE", 3, 0)
+    http_method(true, "DELETE", 3, 0)
+  end
+
+  def test_trace
+    http_method(false, "TRACE", 0, 0)
+    http_method(true, "TRACE", 0, 0)
+  end
+
+  def http_method(ssl, method, client_chunks, server_chunks)
 
     latch1 = Utils::Latch.new(1)
 
     Nodex::go{
       server = Http::Server.new
+      if ssl
+        server.ssl = true
+        server.key_store_path = '../resources/keystores/server-keystore.jks'
+        server.key_store_password = 'wibble'
+        server.trust_store_path = '../resources/keystores/server-truststore.jks'
+        server.trust_store_password = 'wibble'
+        server.client_auth_required = true
+      end
       server.request_handler { |req|
-        req.response.write_str("some response")
-        req.response.end
+        chunk_count = 0
+        req.data_handler{ |data|
+          assert("client-chunk-#{chunk_count}" == data.to_s)
+          chunk_count += 1
+        }
+        req.end_handler{
+          for i in 0..server_chunks - 1 do
+            req.response.write_str("server-chunk-#{i}")
+          end
+          req.response.end
+        }
       }
       server.listen(8080)
 
       client = Http::Client.new
       client.port = 8080;
+      if ssl
+        client.ssl = true
+        client.key_store_path = '../resources/keystores/client-keystore.jks'
+        client.key_store_password = 'wibble'
+        client.trust_store_path = '../resources/keystores/client-truststore.jks'
+        client.trust_store_password = 'wibble'
+      end
 
-      client.get_now("/someurl") { |resp|
-        puts "Got response #{resp.status_code}"
+      request = client.request(method, "/someurl") { |resp|
+        assert(200 == resp.status_code)
+        chunk_count = 0
+        resp.data_handler{ |data|
+          assert("server-chunk-#{chunk_count}" == data.to_s)
+          chunk_count += 1
+        }
 
-        server.close{
-          client.close
-          latch1.countdown
+        resp.end_handler{
+          assert(chunk_count = server_chunks)
+          server.close{
+            client.close
+            latch1.countdown
+          }
         }
       }
+
+      for i in 0..client_chunks - 1 do
+        request.write_str("client-chunk-#{i}")
+      end
+
+      request.end
     }
 
     assert(latch1.await(5))
