@@ -286,6 +286,11 @@ public class HttpServer extends SSLBase {
 
       if (msg instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) msg;
+
+//        for (String header: request.getHeaderNames()) {
+//          System.out.println(header + ":" + request.getHeader(header));
+//        }
+
         if (HttpHeaders.is100ContinueExpected(request)) {
           ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
         }

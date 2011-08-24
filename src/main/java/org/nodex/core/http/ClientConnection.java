@@ -71,7 +71,7 @@ class ClientConnection extends AbstractConnection {
     final ChannelBuffer buff = ChannelBuffers.buffer(8);
     buff.writeLong(c);
 
-    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, false, new HttpResponseHandler() {
+    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new HttpResponseHandler() {
       public void onResponse(HttpClientResponse resp) {
         if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
           handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode

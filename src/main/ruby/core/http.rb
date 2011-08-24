@@ -260,6 +260,14 @@ module Http
       @j_req.end
     end
 
+    def chunked=(val)
+      @j_req.setChunked(val)
+    end
+
+    def content_length=(val)
+      @j_req.setContentLength(val)
+    end
+
   end
 
   class ClientResponse

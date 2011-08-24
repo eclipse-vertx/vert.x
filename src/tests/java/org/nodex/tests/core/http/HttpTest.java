@@ -25,10 +25,9 @@ import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
-import org.omg.CORBA.portable.ResponseHandler;
-import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,15 +36,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class HttpTest extends TestBase {
 
   @Test
   public void testGetNow() throws Exception {
     String path = "some/path/to/" + Utils.randomAlphaString(20);
-    testHTTP("GETNOW", path, 200, 3, 0, true, 8181, false);
-    testHTTP("GETNOW", path, 404, 0, 0, false, 8181, false);
+    testHTTP("GETNOW", path, 200, 3, 0, true, 8181, false, false);
+    testHTTP("GETNOW", path, 404, 0, 0, false, 8181, false, false);
     throwAssertions();
   }
 
@@ -98,7 +96,7 @@ public class HttpTest extends TestBase {
     throwAssertions();
   }
 
-  //@Test
+  // @Test
   public void testPipelining() throws Exception {
     final String host = "localhost";
     final boolean keepAlive = true;
@@ -145,9 +143,11 @@ public class HttpTest extends TestBase {
           }
         }).listen(port, host);
 
+        final HttpClient client = new HttpClient().setKeepAlive(keepAlive).setPort(port).setHost(host);
+
         for (int count = 0; count < requests; count++) {
           final int theCount = count;
-          HttpClient client = new HttpClient().setKeepAlive(keepAlive).setPort(port).setHost(host);
+
           HttpClientRequest req = client.request(method, path, new HttpResponseHandler() {
             public void onResponse(final HttpClientResponse response) {
               //dumpHeaders(response.headers);
@@ -163,19 +163,23 @@ public class HttpTest extends TestBase {
               response.endHandler(new Runnable() {
                 public void run() {
                   azzert(("This is content " + theCount).equals(buff.toString()));
-                  server.close(new Runnable() {
-                    public void run() {
-                      latch.countDown();
-                    }
-                  });
+                  System.out.println("Got response: " + theCount);
+                  if (theCount == requests -1 ) {
+                    server.close(new Runnable() {
+                      public void run() {
+                        client.close();
+                        latch.countDown();
+                      }
+                    });
+                  }
                 }
               });
             }
           });
+          req.setChunked(true);
           req.putHeader("count", String.valueOf(count));
           req.write("This is content " + count);
           req.end();
-          client.close();
         }
 
       }
@@ -289,6 +293,7 @@ public class HttpTest extends TestBase {
         });
 
         req.putHeader("Expect", "100-continue");
+        req.setChunked(true);
 
         req.continueHandler(new Runnable() {
           public void run() {
@@ -298,6 +303,73 @@ public class HttpTest extends TestBase {
         });
 
         req.sendHead();
+      }
+    }.run();
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
+  }
+
+  @Test
+  public void testSimple() throws Exception {
+    final String host = "localhost";
+    final int port = 8181;
+
+    int numChunks = 10;
+    final Buffer toSend = Buffer.create(0);
+    final List<Buffer> buffs = new ArrayList<>();
+    for (int i = 0; i < numChunks; i++) {
+      Buffer buff = Utils.generateRandomBuffer(100);
+      buffs.add(buff);
+      toSend.appendBuffer(buff);
+    }
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer(new HttpRequestHandler() {
+          final Buffer received = Buffer.create(0);
+          public void onRequest(final HttpServerRequest req) {
+            req.dataHandler(new DataHandler() {
+              public void onData(Buffer data) {
+                System.out.println("Got data on server");
+                received.appendBuffer(data);
+                if (received.length() == toSend.length()) {
+                  assert(Utils.buffersEqual(toSend, received));
+                  req.response.end();
+                }
+              }
+            });
+          }
+        }).listen(port, host);
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host);
+
+        final HttpClientRequest req = client.put("someurl", new HttpResponseHandler() {
+          public void onResponse(HttpClientResponse resp) {
+            assert(200 == resp.statusCode);
+
+            resp.endHandler(new Runnable() {
+               public void run() {
+                 server.close(new Runnable() {
+                   public void run() {
+                     client.close();
+                     latch.countDown();
+                   }
+                 });
+               }
+            });
+          }
+        });
+
+        req.setContentLength(toSend.length());
+        for (Buffer buff: buffs) {
+          req.write(buff);
+        }
+        req.end();
+
       }
     }.run();
 
@@ -368,17 +440,23 @@ public class HttpTest extends TestBase {
 
   private void testMethod(String method, boolean specificMethod) throws Exception {
     String path = "some/path/to/" + Utils.randomAlphaString(20);
-    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod);
-    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 0, true, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod);
-    testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod);
+    testMethodChunked(method, path, specificMethod, true);
+    testMethodChunked(method, path, specificMethod, false);
+  }
+
+  private void testMethodChunked(String method, String path, boolean specificMethod, boolean chunked) throws Exception {
+    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod, chunked);
+    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod, chunked);
+    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod, chunked);
+    testHTTP(method, path, 200, 3, 0, true, 8181, specificMethod, chunked);
+    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod, chunked);
+    testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod, chunked);
   }
 
   private void testHTTP(final String method, final String path, final int statusCode, final int numResponseChunks,
                         final int numRequestChunks, final boolean setTrailers, final int port,
-                        final boolean specificMethod) throws Exception {
+                        final boolean specificMethod,
+                        final boolean chunked) throws Exception {
     final Map<String, String> requestHeaders = genMap(10);
     final Map<String, String> responseHeaders = genMap(10);
     final Map<String, String> trailers = setTrailers ? genMap(10) : null;
@@ -405,9 +483,6 @@ public class HttpTest extends TestBase {
     final boolean keepAlive = true;
 
     final CountDownLatch latch = new CountDownLatch(1);
-
-    final AtomicReference<HttpServer> server;
-    final AtomicReference<HttpClient> client;
 
     new NodexMain() {
       public void go() throws Exception {
@@ -483,7 +558,11 @@ public class HttpTest extends TestBase {
         } else {
           req = getRequest(specificMethod, method, path, paramsString, responseHandler, client);
           req.putAllHeaders(requestHeaders);
+          req.setChunked(chunked);
           if (requestBody != null) {
+            if (!chunked) {
+              req.setContentLength(totRequestBody.length());
+            }
             for (Buffer buff : requestBody) {
               req.write(buff);
             }

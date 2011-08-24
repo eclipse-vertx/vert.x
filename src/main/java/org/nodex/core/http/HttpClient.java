@@ -187,7 +187,7 @@ public class HttpClient extends SSLBase {
     if (cid == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
     }
-    return new HttpClientRequest(this, method, uri, true, responseHandler, cid, Thread.currentThread());
+    return new HttpClientRequest(this, method, uri, responseHandler, cid, Thread.currentThread());
   }
 
   public void close() {

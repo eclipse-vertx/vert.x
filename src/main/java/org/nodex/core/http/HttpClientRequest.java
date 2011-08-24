@@ -36,12 +36,11 @@ import java.util.Set;
 public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
-                    final boolean chunked,
                     final HttpResponseHandler respHandler,
                     final long contextID, final Thread th) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
-    this.chunked = chunked;
+    this.chunked = false;
     this.respHandler = respHandler;
     this.contextID = contextID;
     this.th = th;
@@ -49,12 +48,12 @@ public class HttpClientRequest implements WriteStream {
 
   private final HttpClient client;
   private final HttpRequest request;
-  private final boolean chunked;
   private final HttpResponseHandler respHandler;
   private Runnable continueHandler;
   private final long contextID;
   final Thread th;
 
+  private boolean chunked;
   private ClientConnection conn;
   private Runnable drainHandler;
   private ExceptionHandler exceptionHandler;
@@ -64,7 +63,18 @@ public class HttpClientRequest implements WriteStream {
   private int pendingMaxSize = -1;
   private boolean connecting;
   private boolean writeHead;
+  private long written;
+  private long contentLength = -1;
 
+  public HttpClientRequest setChunked(boolean chunked) {
+    checkThread();
+    checkComplete();
+    if (written > 0) {
+      throw new IllegalStateException("Cannot set chunked after data has been written on connection");
+    }
+    this.chunked = chunked;
+    return this;
+  }
 
   public HttpClientRequest putHeader(String key, Object value) {
     checkThread();
@@ -206,6 +216,10 @@ public class HttpClientRequest implements WriteStream {
     this.continueHandler = handler;
   }
 
+  public void setContentLength(long length) {
+    this.contentLength = length;
+  }
+
   public HttpClientRequest sendHead() {
     checkThread();
     if (conn != null) {
@@ -248,6 +262,8 @@ public class HttpClientRequest implements WriteStream {
     checkThread();
     if (exceptionHandler != null) {
       exceptionHandler.onException(e);
+    } else {
+      e.printStackTrace(System.err);
     }
   }
 
@@ -322,6 +338,7 @@ public class HttpClientRequest implements WriteStream {
 
   void sendDirect(ClientConnection conn, Buffer body) {
     this.conn = conn;
+    this.contentLength = body.length();
     write(body);
     writeEndChunk();
     completed = true;
@@ -329,32 +346,44 @@ public class HttpClientRequest implements WriteStream {
 
   private void writeHead() {
     request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
+    request.setChunked(chunked);
     if (chunked) {
-      request.setChunked(true);
       request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+    } else if (contentLength != -1) {
+      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
     }
     conn.write(request);
   }
 
   private HttpClientRequest write(ChannelBuffer buff, Runnable done) {
+
+    written += buff.readableBytes();
+
+    if (!chunked && (written > contentLength)) {
+      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+                                    + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
+                                    + "Current written: " + written + " Current Content-Length: " + contentLength);
+    }
+
     if (conn == null) {
       connect();
       if (pendingChunks == null) {
         pendingChunks = new LinkedList<>();
       }
-      pendingChunks.add(new PendingChunk(new DefaultHttpChunk(buff), done));
+      pendingChunks.add(new PendingChunk(buff, done));
     } else {
       if (!headWritten) {
         writeHead();
         headWritten = true;
       }
-      sendChunk(new DefaultHttpChunk(buff), done);
+      sendChunk(buff, done);
     }
     return this;
   }
 
-  private void sendChunk(HttpChunk chunk, Runnable completion) {
-    ChannelFuture writeFuture = conn.write(chunk);
+  private void sendChunk(ChannelBuffer buff, Runnable completion) {
+    Object write = chunked ? new DefaultHttpChunk(buff) : buff;
+    ChannelFuture writeFuture = conn.write(write);
     if (completion != null) {
       conn.addFuture(completion, writeFuture);
     }
@@ -378,9 +407,9 @@ public class HttpClientRequest implements WriteStream {
   }
 
   private static class PendingChunk {
-    final HttpChunk chunk;
+    final ChannelBuffer chunk;
     final Runnable completion;
-    private PendingChunk(HttpChunk chunk, Runnable completion) {
+    private PendingChunk(ChannelBuffer chunk, Runnable completion) {
       this.chunk = chunk;
       this.completion = completion;
     }

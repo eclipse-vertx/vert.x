@@ -107,6 +107,8 @@ class HttpTest < Test::Unit::TestCase
         }
       }
 
+      request.chunked = true
+
       for i in 0..client_chunks - 1 do
         request.write_str("client-chunk-#{i}")
       end
