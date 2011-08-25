@@ -4,9 +4,9 @@ import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.stdio.InStream;
-import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
+import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

@@ -370,6 +370,7 @@ public class HttpClient extends SSLBase {
       ClientConnection conn = connectionMap.get(ch);
       Object msg = e.getMessage();
       if (msg instanceof HttpResponse) {
+
         HttpResponse response = (HttpResponse) msg;
 
         conn.handleResponse(response);

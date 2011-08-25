@@ -409,6 +409,14 @@ module Http
       @j_resp = j_resp
     end
 
+    def chunked=(val)
+      @j_resp.setChunked(val)
+    end
+
+    def content_length=(val)
+      @j_resp.setContentLength(val)
+    end
+
     def status_code=(val)
       @j_resp.statusCode = val
     end

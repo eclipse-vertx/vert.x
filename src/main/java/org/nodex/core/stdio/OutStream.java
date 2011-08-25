@@ -1,6 +1,5 @@
 package org.nodex.core.stdio;
 
-import java.io.InputStream;
 import java.io.PrintStream;
 
 /**

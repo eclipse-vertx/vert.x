@@ -18,11 +18,9 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.buffer.Buffer;
@@ -70,7 +68,7 @@ public class HttpClientRequest implements WriteStream {
     checkThread();
     checkComplete();
     if (written > 0) {
-      throw new IllegalStateException("Cannot set chunked after data has been written on connection");
+      throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
     this.chunked = chunked;
     return this;
@@ -359,7 +357,7 @@ public class HttpClientRequest implements WriteStream {
 
     written += buff.readableBytes();
 
-    if (!chunked && (written > contentLength)) {
+    if (!chunked && written > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
                                     + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
                                     + "Current written: " + written + " Current Content-Length: " + contentLength);

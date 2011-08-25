@@ -21,7 +21,6 @@ import org.nodex.core.file.FileSystem;
 import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
 import org.nodex.mods.amqp.AmqpClient;
 import org.nodex.mods.amqp.AmqpConnectHandler;
 import org.nodex.mods.amqp.AmqpConnection;

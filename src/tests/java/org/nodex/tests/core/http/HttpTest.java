@@ -42,7 +42,7 @@ public class HttpTest extends TestBase {
   @Test
   public void testGetNow() throws Exception {
     String path = "some/path/to/" + Utils.randomAlphaString(20);
-    testHTTP("GETNOW", path, 200, 3, 0, true, 8181, false, false);
+    testHTTP("GETNOW", path, 200, 3, 0, true, 8181, false, true);
     testHTTP("GETNOW", path, 404, 0, 0, false, 8181, false, false);
     throwAssertions();
   }
@@ -50,7 +50,7 @@ public class HttpTest extends TestBase {
   @Test
   public void testGET() throws Exception {
     testMethod("GET", true);
-   // testMethod("GET", false);
+    testMethod("GET", false);
     throwAssertions();
   }
 
@@ -440,17 +440,24 @@ public class HttpTest extends TestBase {
 
   private void testMethod(String method, boolean specificMethod) throws Exception {
     String path = "some/path/to/" + Utils.randomAlphaString(20);
-    testMethodChunked(method, path, specificMethod, true);
-    testMethodChunked(method, path, specificMethod, false);
+    testMethodChunked(method, path, specificMethod);
+    testMethodNonChunked(method, path, specificMethod);
   }
 
-  private void testMethodChunked(String method, String path, boolean specificMethod, boolean chunked) throws Exception {
-    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod, chunked);
-    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod, chunked);
-    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod, chunked);
-    testHTTP(method, path, 200, 3, 0, true, 8181, specificMethod, chunked);
-    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod, chunked);
-    testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod, chunked);
+  private void testMethodChunked(String method, String path, boolean specificMethod) throws Exception {
+    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod, true);
+    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod, true);
+    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod, true);
+    testHTTP(method, path, 200, 3, 0, true, 8181, specificMethod, true);
+    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod, true);
+    testHTTP(method, path, 200, 3, 3, true, 8181, specificMethod, true);
+  }
+
+  private void testMethodNonChunked(String method, String path, boolean specificMethod) throws Exception {
+    testHTTP(method, path, 404, 0, 0, false, 8181, specificMethod, false);
+    testHTTP(method, path, 404, 0, 3, false, 8181, specificMethod, false);
+    testHTTP(method, path, 200, 3, 0, false, 8181, specificMethod, false);
+    testHTTP(method, path, 200, 3, 3, false, 8181, specificMethod, false);
   }
 
   private void testHTTP(final String method, final String path, final int statusCode, final int numResponseChunks,
@@ -508,6 +515,11 @@ public class HttpTest extends TestBase {
             req.endHandler(new Runnable() {
               public void run() {
                 azzert(Utils.buffersEqual(totRequestBody, buff));
+                if (chunked) {
+                  req.response.setChunked(true);
+                } else {
+                  req.response.setContentLength(totResponseBody.length());
+                }
                 req.response.putAllHeaders(responseHeaders);
                 req.response.statusCode = statusCode;
                 if (responseBody != null) {

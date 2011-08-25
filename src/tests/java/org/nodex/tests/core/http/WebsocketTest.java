@@ -20,9 +20,9 @@ import org.nodex.core.http.HttpClient;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.Websocket;
 import org.nodex.core.http.WebsocketConnectHandler;
-import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -6,7 +6,6 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
 import org.nodex.core.http.Websocket;
 import org.nodex.core.http.WebsocketConnectHandler;
 

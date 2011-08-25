@@ -4,7 +4,6 @@ import org.nodex.core.NodexMain;
 import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
-import org.nodex.core.http.HttpServerResponse;
 
 public class ServerExample extends NodexMain {
   public static void main(String[] args) throws Exception {

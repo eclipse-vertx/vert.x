@@ -16,8 +16,8 @@ package org.nodex.tests.core.parsetools;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.parsetools.RecordParser;
-import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;

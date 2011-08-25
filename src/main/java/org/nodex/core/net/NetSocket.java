@@ -28,7 +28,6 @@ import org.nodex.core.streams.WriteStream;
 
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 
 public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 

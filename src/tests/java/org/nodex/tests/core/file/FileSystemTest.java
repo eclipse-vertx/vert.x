@@ -13,11 +13,11 @@ import org.nodex.core.file.FileSystemException;
 import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
+import org.nodex.tests.Utils;
+import org.nodex.tests.core.TestBase;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.nodex.tests.Utils;
-import org.nodex.tests.core.TestBase;
 
 import java.io.File;
 import java.nio.charset.Charset;

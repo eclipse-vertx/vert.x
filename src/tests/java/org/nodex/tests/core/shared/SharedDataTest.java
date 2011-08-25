@@ -2,7 +2,11 @@ package org.nodex.tests.core.shared;
 
 import org.nodex.core.Immutable;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.shared.*;
+import org.nodex.core.shared.SharedCounter;
+import org.nodex.core.shared.SharedData;
+import org.nodex.core.shared.SharedMap;
+import org.nodex.core.shared.SharedQueue;
+import org.nodex.core.shared.SharedSet;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;

@@ -51,6 +51,7 @@ class HttpTest < Test::Unit::TestCase
     http_method(true, "TRACE", 0, 0)
   end
 
+  # TODO non-chunked, this currently only tests chunked
   def http_method(ssl, method, client_chunks, server_chunks)
 
     latch1 = Utils::Latch.new(1)
@@ -71,6 +72,7 @@ class HttpTest < Test::Unit::TestCase
           assert("client-chunk-#{chunk_count}" == data.to_s)
           chunk_count += 1
         }
+        req.response.chunked = true
         req.end_handler{
           for i in 0..server_chunks - 1 do
             req.response.write_str("server-chunk-#{i}")

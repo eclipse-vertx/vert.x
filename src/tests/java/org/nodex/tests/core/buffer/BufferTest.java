@@ -14,9 +14,9 @@
 package org.nodex.tests.core.buffer;
 
 import org.nodex.core.buffer.Buffer;
-import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
+import org.testng.annotations.Test;
 
 public class BufferTest extends TestBase {
 

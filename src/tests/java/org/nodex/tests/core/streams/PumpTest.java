@@ -19,8 +19,8 @@ import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
-import org.testng.annotations.Test;
 import org.nodex.tests.Utils;
+import org.testng.annotations.Test;
 
 public class PumpTest {
 

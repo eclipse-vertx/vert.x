@@ -37,13 +37,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpServerResponse implements WriteStream {
-  private static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
-  private static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
 
   private final boolean keepAlive;
   private final ServerConnection conn;
@@ -55,6 +52,9 @@ public class HttpServerResponse implements WriteStream {
   private boolean written;
   private Runnable drainHandler;
   private ExceptionHandler exceptionHandler;
+  private long contentLength;
+  private long writtenBytes;
+  private boolean chunked;
 
   HttpServerResponse(boolean keepAlive, ServerConnection conn) {
     this.keepAlive = keepAlive;
@@ -64,22 +64,35 @@ public class HttpServerResponse implements WriteStream {
 
   public int statusCode = HttpResponseStatus.OK.getCode();
 
+  public HttpServerResponse setChunked(boolean chunked) {
+    checkWritten();
+    if (writtenBytes > 0) {
+      throw new IllegalStateException("Cannot set chunked after data has been written on response");
+    }
+    this.chunked = chunked;
+    return this;
+  }
+
   public HttpServerResponse putHeader(String key, Object value) {
+    checkWritten();
     response.setHeader(key, value);
     return this;
   }
 
   public HttpServerResponse putHeaders(String key, Iterable<String> values) {
+    checkWritten();
     response.setHeader(key, values);
     return this;
   }
 
   public HttpServerResponse addHeader(String key, Object value) {
+    checkWritten();
     response.addHeader(key, value);
     return this;
   }
 
   public HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
+    checkWritten();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       response.setHeader(entry.getKey(), entry.getValue());
     }
@@ -87,31 +100,42 @@ public class HttpServerResponse implements WriteStream {
   }
 
   public HttpServerResponse putAllHeaders(List<Map.Entry<String, String>> headers) {
+    checkWritten();
     for (Map.Entry<String, String> entry: headers) {
       addHeader(entry.getKey(), entry.getValue());
     }
     return this;
   }
 
+  public HttpServerResponse setContentLength(long contentLength) {
+    checkWritten();
+    this.contentLength = contentLength;
+    return this;
+  }
+
   public HttpServerResponse putTrailer(String key, Object value) {
+    checkWritten();
     checkTrailer();
     trailer.setHeader(key, value);
     return this;
   }
 
   public HttpServerResponse putTrailers(String key, Iterable<String> values) {
+    checkWritten();
     checkTrailer();
     trailer.setHeader(key, values);
     return this;
   }
 
   public HttpServerResponse addTrailer(String key, Object value) {
+    checkWritten();
     checkTrailer();
     trailer.addHeader(key, value);
     return this;
   }
 
   public HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
+    checkWritten();
     checkTrailer();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       trailer.setHeader(entry.getKey(), entry.getValue());
@@ -120,19 +144,23 @@ public class HttpServerResponse implements WriteStream {
   }
 
   public void setWriteQueueMaxSize(int size) {
+    checkWritten();
     conn.setWriteQueueMaxSize(size);
   }
 
   public boolean writeQueueFull() {
+    checkWritten();
     return conn.writeQueueFull();
   }
 
   public void drainHandler(Runnable handler) {
+    checkWritten();
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
   }
 
   public void exceptionHandler(ExceptionHandler handler) {
+    checkWritten();
     this.exceptionHandler = handler;
   }
 
@@ -165,13 +193,9 @@ public class HttpServerResponse implements WriteStream {
   }
 
   public void end() {
-    if (!headWritten) {
-      //No body
-      response.setStatus(HttpResponseStatus.valueOf(statusCode));
-      response.setHeader(CONTENT_LENGTH, 0);
-      writeFuture = conn.write(response);
-    } else {
-      //Body written - We use HTTP chunking so we need to write a zero length chunk to signify the endHandler
+    checkWritten();
+    writeHead();
+    if (chunked) {
       HttpChunk nettyChunk;
       if (trailer == null) {
         nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
@@ -180,10 +204,9 @@ public class HttpServerResponse implements WriteStream {
       }
       writeFuture = conn.write(nettyChunk);
     }
-
     // Close the non-keep-alive connection after the write operation is done.
     if (!keepAlive) {
-      //writeFuture.addListener(ChannelFutureListener.CLOSE);
+      writeFuture.addListener(ChannelFutureListener.CLOSE);
     }
     written = true;
     conn.responseComplete();
@@ -191,8 +214,9 @@ public class HttpServerResponse implements WriteStream {
 
   public HttpServerResponse sendFile(String filename) {
     if (headWritten) {
-      throw new IllegalStateException("Response complete");
+      throw new IllegalStateException("Head already written");
     }
+    checkWritten();
 
     File file = new File(filename);
 
@@ -242,31 +266,41 @@ public class HttpServerResponse implements WriteStream {
     if (trailer == null) trailer = new DefaultHttpChunkTrailer();
   }
 
-  /*
-  We use HTTP chunked encoding and each write has it's own chunk
-  TODO non chunked encoding
-  Non chunked encoding does not work well with async writes since normally do not know Content-Length in advance
-  and need to know this for non chunked encoding
-   */
-  private HttpServerResponse write(ChannelBuffer chunk, final Runnable done) {
+  private void checkWritten() {
     if (written) {
-      throw new IllegalStateException("Response complete");
+      throw new IllegalStateException("Response has already been written");
     }
+  }
 
+  private void writeHead() {
     if (!headWritten) {
       response.setStatus(HttpResponseStatus.valueOf(statusCode));
-      response.setChunked(true);
-      response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      conn.write(response);
+      response.setChunked(chunked);
+      if (chunked) {
+        response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+      } else {
+        response.setHeader(Names.CONTENT_LENGTH, String.valueOf(contentLength));
+      }
+      writeFuture = conn.write(response);
       headWritten = true;
     }
+  }
 
-    HttpChunk nettyChunk = new DefaultHttpChunk(chunk);
-    writeFuture = conn.write(nettyChunk);
+  private HttpServerResponse write(ChannelBuffer chunk, final Runnable done) {
+    checkWritten();
+    writtenBytes += chunk.readableBytes();
+    if (!chunked && writtenBytes > contentLength) {
+      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+                                    + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
+                                    + "Current written: " + written + " Current Content-Length: " + contentLength);
+    }
+
+    writeHead();
+    Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
+    writeFuture = conn.write(msg);
     if (done != null) {
       conn.addFuture(done, writeFuture);
     }
-
     return this;
   }
 }
