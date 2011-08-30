@@ -20,14 +20,6 @@ import org.testng.annotations.Test;
 
 public class BufferTest extends TestBase {
 
-  /*
-  We need to ensure netty buffer's reader index always stays at zero, and after the underlying buffer has been read, it's
-  reset to zero
-
-  We will have appendBuffer methods which change thw writerindex but not reader index
-  We will have set and get methods which do not change the reader or writer index
-
-   */
 
   @Test
   public void testAppendBuff() throws Exception {

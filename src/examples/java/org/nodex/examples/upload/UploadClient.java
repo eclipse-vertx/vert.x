@@ -1,5 +1,6 @@
 package org.nodex.examples.upload;
 
+import org.nodex.core.CompletionHandler;
 import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
@@ -14,6 +15,10 @@ import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.streams.Pump;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 /**
@@ -33,23 +38,36 @@ public class UploadClient extends NodexMain {
 
     final HttpClientRequest req = new org.nodex.core.http.HttpClient().setPort(8080).setHost("localhost").put("/some-url", new HttpResponseHandler() {
       public void onResponse(HttpClientResponse response) {
-        System.out.println("Got response " + response.statusCode);
+        System.out.println("File uploaded " + response.statusCode);
       }
     });
 
     String filename = "upload.txt";
 
-    req.setChunked(true);
+    // For a non-chunked upload you need to specify size of upload up-front
+    req.setContentLength(Files.size(Paths.get(filename)));
+
+    // For a chunked upload you don't need to specify size, just do:
+    // req.setChunked(true);
 
     FileSystem.instance.open(filename, new CompletionHandlerWithResult<AsyncFile>() {
-      public void onCompletion(AsyncFile file) {
+      public void onCompletion(final AsyncFile file) {
 
         Pump pump = new Pump(file.getReadStream(), req);
         pump.start();
 
         file.getReadStream().endHandler(new Runnable() {
           public void run() {
-            req.end();
+
+            file.close(new CompletionHandler() {
+              public void onCompletion() {
+                req.end();
+                System.out.println("Sent request");
+              }
+              public void onException(Exception e) {
+                e.printStackTrace(System.err);
+              }
+            });
           }
         });
       }
@@ -58,7 +76,5 @@ public class UploadClient extends NodexMain {
         e.printStackTrace();
       }
     });
-
-    //req.end();
   }
 }

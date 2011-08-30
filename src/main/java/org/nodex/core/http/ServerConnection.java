@@ -38,7 +38,7 @@ class ServerConnection extends AbstractConnection {
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
-  private final Queue<Object> msgs = new LinkedList<>();
+  private final Queue<Object> pending = new LinkedList<>();
 
   ServerConnection(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
@@ -62,12 +62,12 @@ class ServerConnection extends AbstractConnection {
   }
 
   void handleMessage(Object msg) {
-    if (paused || (msg instanceof HttpRequest && pendingResponse) || !msgs.isEmpty())
+    if (paused || (msg instanceof HttpRequest && pendingResponse) || !pending.isEmpty())
     {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      msgs.add(msg);
+      pending.add(msg);
 
-      if (msgs.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
         super.pause();
@@ -96,7 +96,7 @@ class ServerConnection extends AbstractConnection {
     channel.close();
   }
 
-  void handleRequest(HttpServerRequest req) {
+  private void handleRequest(HttpServerRequest req) {
     setContextID();
     try {
       this.currentRequest = req;
@@ -109,7 +109,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleChunk(Buffer chunk) {
+  private void handleChunk(Buffer chunk) {
     try {
       setContextID();
       currentRequest.handleData(chunk);
@@ -118,7 +118,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleEnd() {
+  private void handleEnd() {
     try {
       setContextID();
       currentRequest.handleEnd();
@@ -159,7 +159,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWsFrame(WebSocketFrame frame) {
+  private void handleWsFrame(WebSocketFrame frame) {
     try {
       if (ws != null) {
         setContextID();
@@ -233,18 +233,18 @@ class ServerConnection extends AbstractConnection {
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!sentCheck && !msgs.isEmpty() && !paused && (!pendingResponse || msgs.peek() instanceof HttpChunk))
+    if (!sentCheck && !pending.isEmpty() && !paused && (!pendingResponse || pending.peek() instanceof HttpChunk))
     {
       sentCheck = true;
       Nodex.instance.nextTick(new Runnable() {
         public void run() {
           sentCheck = false;
           if (!paused) {
-            Object msg = msgs.poll();
+            Object msg = pending.poll();
             if (msg != null) {
               processMessage(msg);
             }
-            if (channelPaused && msgs.isEmpty()) {
+            if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel
               ServerConnection.super.resume();
               channelPaused = false;

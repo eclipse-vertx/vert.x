@@ -40,7 +40,7 @@ public class AsyncFile {
   private ReadStream readStream;
   private WriteStream writeStream;
   private CompletionHandler closedCompletionHandler;
-  private AtomicInteger writesOutstanding = new AtomicInteger(0);
+  private long writesOutstanding;
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
             final boolean sync, final boolean syncMeta, final long contextID, final Thread th) throws Exception {
@@ -84,7 +84,7 @@ public class AsyncFile {
       }
     };
 
-    if (writesOutstanding.get() > 0) {
+    if (writesOutstanding > 0) {
       //Need to wait for all writes to complete before firing the completionHandler
       closedCompletionHandler = comp;
     } else {
@@ -95,7 +95,7 @@ public class AsyncFile {
   public void write(Buffer buffer, int position, final CompletionHandler completionHandler) {
     check();
     ByteBuffer bb = buffer._getChannelBuffer().toByteBuffer();
-    doWrite(bb, position, completionHandler);
+    doWrite(bb, position, completionHandler, true);
   }
 
   public void read(int position, int length, final CompletionHandlerWithResult<Buffer> completionHandler) {
@@ -116,20 +116,17 @@ public class AsyncFile {
         int lwm = maxWrites / 2;
 
         public void writeBuffer(Buffer buffer) {
-          checkClosed();
+          check();
           final int length = buffer.length();
           ByteBuffer bb = buffer._getChannelBuffer().toByteBuffer();
 
           doWrite(bb, pos, new CompletionHandler() {
 
             public void onCompletion() {
-              int size = writesOutstanding.get();
-              //Low water mark
-              if (drainHandler != null && size <= lwm) {
-                drainHandler.run();
-              }
+              checkContext();
 
-              if (size == 0 && closedCompletionHandler != null) {
+              checkDrained();
+              if (writesOutstanding == 0 && closedCompletionHandler != null) {
                 closedCompletionHandler.onCompletion();
               }
             }
@@ -137,28 +134,37 @@ public class AsyncFile {
             public void onException(Exception e) {
               handleException(e);
             }
-          });
+          }, true);
           pos += length;
         }
 
+        private void checkDrained() {
+          if (drainHandler != null && writesOutstanding <= lwm) {
+            Runnable handler = drainHandler;
+            drainHandler = null;
+            handler.run();
+          }
+        }
+
         public void setWriteQueueMaxSize(int maxSize) {
-          checkClosed();
+          check();
           this.maxWrites = maxSize;
           this.lwm = maxWrites / 2;
         }
 
         public boolean writeQueueFull() {
-          checkClosed();
-          return writesOutstanding.get() >= maxWrites;
+          check();
+          return writesOutstanding >= maxWrites;
         }
 
         public void drainHandler(Runnable handler) {
-          checkClosed();
+          check();
           this.drainHandler = handler;
+          checkDrained();
         }
 
         public void exceptionHandler(ExceptionHandler handler) {
-          checkClosed();
+          check();
           this.exceptionHandler = handler;
         }
 
@@ -184,41 +190,38 @@ public class AsyncFile {
         ExceptionHandler exceptionHandler;
         Runnable endHandler;
         int pos;
+        boolean readInProgress;
 
         void doRead() {
-          read(pos, BUFFER_SIZE, new CompletionHandlerWithResult<Buffer>() {
-            public void onCompletion(Buffer buffer) {
-              if (buffer.length() == 0) {
+          if (!readInProgress) {
+            readInProgress = true;
+            read(pos, BUFFER_SIZE, new CompletionHandlerWithResult<Buffer>() {
+              public void onCompletion(Buffer buffer) {
+                readInProgress = false;
 
-                // Empty buffer represents end of file
-                close(new CompletionHandler() {
-                  public void onCompletion() {
-                    handleEnd();
+                if (buffer.length() == 0) {
+                  // Empty buffer represents end of file
+                  handleEnd();
+                } else {
+                  pos += buffer.length();
+
+                  handleData(buffer);
+
+                  if (!paused) {
+                    doRead();
                   }
-
-                  public void onException(Exception e) {
-                    handleException(e);
-                  }
-                });
-              } else {
-                pos += buffer.length();
-
-                handleData(buffer);
-
-                if (!paused) {
-                  doRead();
                 }
               }
-            }
 
-            public void onException(Exception e) {
-              handleException(e);
-            }
-          });
+              public void onException(Exception e) {
+                handleException(e);
+              }
+            });
+          }
         }
 
         public void dataHandler(DataHandler handler) {
-          checkClosed();
+          check();
           this.dataHandler = handler;
           if (dataHandler != null && !paused && !closed) {
             doRead();
@@ -226,21 +229,22 @@ public class AsyncFile {
         }
 
         public void exceptionHandler(ExceptionHandler handler) {
-          checkClosed();
+          check();
           this.exceptionHandler = handler;
         }
 
         public void endHandler(Runnable handler) {
-          checkClosed();
+          check();
           this.endHandler = handler;
         }
 
         public void pause() {
-          checkClosed();
+          check();
           paused = true;
         }
 
         public void resume() {
+          check();
           if (paused && !closed) {
             paused = false;
             if (dataHandler != null) {
@@ -287,15 +291,16 @@ public class AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final CompletionHandler completionHandler) {
-
-    writesOutstanding.addAndGet(buff.limit());
+  private void doWrite(final ByteBuffer buff, final int position, final CompletionHandler completionHandler, final boolean add) {
+    if (add) {
+      writesOutstanding += buff.limit();
+    }
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       public void completed(Integer bytesWritten, Object attachment) {
 
-        writesOutstanding.addAndGet(-bytesWritten);
+        //writesOutstanding.addAndGet(-bytesWritten);
 
         int pos = position;
 
@@ -303,11 +308,12 @@ public class AsyncFile {
           // partial write
           pos += bytesWritten;
           // resubmit
-          doWrite(buff, pos, completionHandler);
+          doWrite(buff, pos, completionHandler, false);
         } else {
           // It's been fully written
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
+              writesOutstanding -= buff.limit();
               completionHandler.onCompletion();
             }
           });
@@ -354,7 +360,7 @@ public class AsyncFile {
           // partial read
           pos += bytesRead;
           // resubmit
-           doRead(buff, pos, completionHandler);
+          doRead(buff, pos, completionHandler);
         } else {
           // It's been fully written
           done();

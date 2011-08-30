@@ -27,10 +27,13 @@ public class Pump {
   };
 
   private final DataHandler dataHandler = new DataHandler() {
+    long count;
     public void onData(Buffer buffer) {
+      count += buffer.length();
       writeStream.writeBuffer(buffer);
       if (writeStream.writeQueueFull()) {
         readStream.pause();
+        writeStream.drainHandler(drainHandler);
       }
     }
   };
@@ -50,7 +53,6 @@ public class Pump {
   }
 
   public void start() {
-    writeStream.drainHandler(drainHandler);
     readStream.dataHandler(dataHandler);
   }
 
