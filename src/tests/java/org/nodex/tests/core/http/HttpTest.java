@@ -96,7 +96,7 @@ public class HttpTest extends TestBase {
     throwAssertions();
   }
 
-  // @Test
+  @Test
   public void testPipelining() throws Exception {
     final String host = "localhost";
     final boolean keepAlive = true;
@@ -106,7 +106,7 @@ public class HttpTest extends TestBase {
     final int port = 8181;
     final int requests = 100;
 
-    final CountDownLatch latch = new CountDownLatch(requests);
+    final CountDownLatch latch = new CountDownLatch(1);
 
     new NodexMain() {
       public void go() throws Exception {
@@ -126,12 +126,13 @@ public class HttpTest extends TestBase {
                 buff.appendBuffer(data);
               }
             });
+            req.response.setChunked(true);
             req.endHandler(new Runnable() {
               public void run() {
                 azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
                 //We write the response back after a random time to increase the chances of responses written in the
                 //wrong order if we didn't implement pipelining correctly
-                Nodex.instance.setTimeout((long) (100 * Math.random()), new TimerHandler() {
+                Nodex.instance.setTimeout((long) (10 * Math.random()), new TimerHandler() {
                   public void onTimer(long timerID) {
                     req.response.putHeader("count", String.valueOf(theCount));
                     req.response.write(buff);
@@ -163,7 +164,6 @@ public class HttpTest extends TestBase {
               response.endHandler(new Runnable() {
                 public void run() {
                   azzert(("This is content " + theCount).equals(buff.toString()));
-                  System.out.println("Got response: " + theCount);
                   if (theCount == requests -1 ) {
                     server.close(new Runnable() {
                       public void run() {
@@ -184,7 +184,7 @@ public class HttpTest extends TestBase {
 
       }
     }.run();
-    azzert(latch.await(5, TimeUnit.SECONDS));
+    azzert(latch.await(10, TimeUnit.SECONDS));
     throwAssertions();
   }
 
@@ -334,7 +334,6 @@ public class HttpTest extends TestBase {
           public void onRequest(final HttpServerRequest req) {
             req.dataHandler(new DataHandler() {
               public void onData(Buffer data) {
-                System.out.println("Got data on server");
                 received.appendBuffer(data);
                 if (received.length() == toSend.length()) {
                   assert(Utils.buffersEqual(toSend, received));
@@ -364,7 +363,8 @@ public class HttpTest extends TestBase {
           }
         });
 
-        req.setContentLength(toSend.length());
+        //req.setContentLength(toSend.length());
+        req.setChunked(true);
         for (Buffer buff: buffs) {
           req.write(buff);
         }

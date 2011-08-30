@@ -13,26 +13,74 @@
 
 package org.nodex.core.http;
 
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
 
 import java.io.File;
+import java.util.LinkedList;
+import java.util.Queue;
 
 class ServerConnection extends AbstractConnection {
 
+  private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
+
   private HttpRequestHandler mainHandler;
   private WebsocketConnectHandler wsHandler;
-
   private HttpServerRequest currentRequest;
-  private HttpServerResponse currentResponse;
+  private boolean pendingResponse;
   private Websocket ws;
-
+  private boolean channelPaused;
   private boolean paused;
+  private boolean sentCheck;
+  private final Queue<Object> msgs = new LinkedList<>();
 
   ServerConnection(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
+  }
+
+  @Override
+  public void pause() {
+    checkThread();
+    if (!paused) {
+      paused = true;
+    }
+  }
+
+  @Override
+  public void resume() {
+    checkThread();
+    if (paused) {
+      paused = false;
+      checkNextTick();
+    }
+  }
+
+  void handleMessage(Object msg) {
+    if (paused || (msg instanceof HttpRequest && pendingResponse) || !msgs.isEmpty())
+    {
+      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+      msgs.add(msg);
+
+      if (msgs.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+        //We pause the channel too, to prevent the queue growing too large, but we don't do this
+        //until the queue reaches a certain size, to avoid pausing it too often
+        super.pause();
+        channelPaused = true;
+      }
+    } else {
+      processMessage(msg);
+    }
+  }
+
+  void responseComplete() {
+    pendingResponse = false;
+    checkNextTick();
   }
 
   void requestHandler(HttpRequestHandler handler) {
@@ -52,7 +100,7 @@ class ServerConnection extends AbstractConnection {
     setContextID();
     try {
       this.currentRequest = req;
-      this.currentResponse = req.response;
+      pendingResponse = true;
       if (mainHandler != null) {
         mainHandler.onRequest(req);
       }
@@ -63,10 +111,8 @@ class ServerConnection extends AbstractConnection {
 
   void handleChunk(Buffer chunk) {
     try {
-      if (currentRequest != null) {
-        setContextID();
-        currentRequest.handleData(chunk);
-      }
+      setContextID();
+      currentRequest.handleData(chunk);
     } catch (Throwable t) {
       handleHandlerException(t);
     }
@@ -76,10 +122,6 @@ class ServerConnection extends AbstractConnection {
     try {
       setContextID();
       currentRequest.handleEnd();
-      if (currentResponse != null) {
-        pause();
-        paused = true;
-      }
       currentRequest = null;
     } catch (Throwable t) {
       handleHandlerException(t);
@@ -90,8 +132,8 @@ class ServerConnection extends AbstractConnection {
     try {
       if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
         setContextID();
-        if (currentResponse != null) {
-          currentResponse.writable();
+        if (currentRequest != null) {
+          currentRequest.response.writable();
         } else if (ws != null) {
           ws.writable();
         }
@@ -128,18 +170,6 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  /*
-  If the request endHandler completes and the response has not been ended then we want to pause and resume when it is complete
-  to avoid responses for the same connection being written out of order
-   */
-  void responseComplete() {
-    if (paused) {
-      resume();
-      paused = false;
-    }
-    currentResponse = null;
-  }
-
   protected void handleClosed() {
     super.handleClosed();
   }
@@ -152,9 +182,6 @@ class ServerConnection extends AbstractConnection {
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);
-    }
-    if (currentResponse != null) {
-      currentResponse.handleException(e);
     }
     if (ws != null) {
       ws.handleException(e);
@@ -171,5 +198,60 @@ class ServerConnection extends AbstractConnection {
 
   protected ChannelFuture sendFile(File file) {
     return super.sendFile(file);
+  }
+
+  private void processMessage(Object msg) {
+    if (msg instanceof HttpRequest) {
+      HttpRequest request = (HttpRequest) msg;
+      HttpServerRequest req = new HttpServerRequest(this, request);
+      handleRequest(req);
+      ChannelBuffer requestBody = request.getContent();
+
+      if (requestBody.readable()) {
+        handleChunk(new Buffer(requestBody));
+      }
+      if (!request.isChunked()) {
+        handleEnd();
+      }
+    } else if (msg instanceof HttpChunk) {
+      HttpChunk chunk = (HttpChunk)msg;
+      if (chunk.getContent().readable()) {
+        Buffer buff = new Buffer(chunk.getContent());
+        handleChunk(buff);
+      }
+      //TODO chunk trailers
+      if (chunk.isLast()) {
+        handleEnd();
+      }
+    } else if (msg instanceof WebSocketFrame) {
+      WebSocketFrame frame = (WebSocketFrame) msg;
+      handleWsFrame(frame);
+    }
+
+    checkNextTick();
+  }
+
+  private void checkNextTick() {
+    // Check if there are more pending messages in the queue that can be processed next time around
+    if (!sentCheck && !msgs.isEmpty() && !paused && (!pendingResponse || msgs.peek() instanceof HttpChunk))
+    {
+      sentCheck = true;
+      Nodex.instance.nextTick(new Runnable() {
+        public void run() {
+          sentCheck = false;
+          if (!paused) {
+            Object msg = msgs.poll();
+            if (msg != null) {
+              processMessage(msg);
+            }
+            if (channelPaused && msgs.isEmpty()) {
+              //Resume the actual channel
+              ServerConnection.super.resume();
+              channelPaused = false;
+            }
+          }
+        }
+      });
+    }
   }
 }

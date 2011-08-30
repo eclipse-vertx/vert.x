@@ -354,7 +354,6 @@ public class HttpClientRequest implements WriteStream {
   }
 
   private HttpClientRequest write(ChannelBuffer buff, Runnable done) {
-
     written += buff.readableBytes();
 
     if (!chunked && written > contentLength) {

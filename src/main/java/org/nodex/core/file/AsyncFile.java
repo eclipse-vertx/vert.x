@@ -51,7 +51,7 @@ public class AsyncFile {
     HashSet<OpenOption> options = new HashSet<>();
     if (read) options.add(StandardOpenOption.READ);
     if (write) options.add(StandardOpenOption.WRITE);
-    if (createNew) options.add(StandardOpenOption.CREATE_NEW);
+    if (createNew) options.add(StandardOpenOption.CREATE);
     if (sync) options.add(StandardOpenOption.DSYNC);
     if (syncMeta) options.add(StandardOpenOption.SYNC);
     if (perms != null) {

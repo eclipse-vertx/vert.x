@@ -202,12 +202,26 @@ public final class NodexImpl implements NodexInternal {
   }
 
   public void executeOnContext(long contextID, Runnable runnable) {
+    executeOnContext(contextID, runnable, true);
+  }
+
+  public void nextTick(Runnable runnable) {
+    Long contextID = getContextID();
+    if (contextID == null) {
+      throw new IllegalStateException("No context id");
+    }
+    executeOnContext(contextID, runnable, false);
+  }
+
+  private void executeOnContext(long contextID, Runnable runnable, boolean sameThreadOptimise) {
     NioWorker worker = workerMap.get(contextID);
     if (worker != null) {
-      if (worker.getThread() != Thread.currentThread()) {
-        worker.scheduleOtherTask(runnable);
-      } else {
+      if (sameThreadOptimise && (worker.getThread() == Thread.currentThread())) {
         runnable.run();
+      } else {
+        // TODO currently this will still run directly if current thread = desired thread
+        // Take a look at NioWorker.scheduleOtherTask
+        worker.scheduleOtherTask(runnable);
       }
     } else {
       throw new IllegalStateException("Context is not registered " + contextID + " has it been destroyed?");

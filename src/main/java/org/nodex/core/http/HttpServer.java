@@ -252,9 +252,6 @@ public class HttpServer extends SSLBase {
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
-    private HttpRequest upgradeRequest;
-    private long upgradeData;
-
     private void calcAndWriteWSHandshakeResponse(Channel ch, HttpRequest request, long c) {
       String key1 = request.getHeader(SEC_WEBSOCKET_KEY1);
       String key2 = request.getHeader(SEC_WEBSOCKET_KEY2);
@@ -284,74 +281,35 @@ public class HttpServer extends SSLBase {
       Object msg = e.getMessage();
       ServerConnection conn = connectionMap.get(ch);
 
-      if (msg instanceof HttpRequest) {
-        HttpRequest request = (HttpRequest) msg;
+      if (conn != null) {
+        if (msg instanceof HttpRequest) {
+          HttpRequest request = (HttpRequest) msg;
 
-//        for (String header: request.getHeaderNames()) {
-//          System.out.println(header + ":" + request.getHeader(header));
-//        }
+          if (HttpHeaders.is100ContinueExpected(request)) {
+            ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+          }
 
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
-        }
-        // Websocket handshake
-        if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
-            WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
+          if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
+              WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
+            // Websocket handshake
+            Websocket ws = new Websocket(request.getUri(), conn);
 
-          Websocket ws = new Websocket(request.getUri(), conn);
+            boolean accepted = conn.handleWebsocketConnect(ws);
+            boolean containsKey1 = request.containsHeader(SEC_WEBSOCKET_KEY1);
+            boolean containsKey2 = request.containsHeader(SEC_WEBSOCKET_KEY2);
 
-          boolean accepted = conn.handleWebsocketConnect(ws);
-          boolean containsKey1 = request.containsHeader(SEC_WEBSOCKET_KEY1);
-          boolean containsKey2 = request.containsHeader(SEC_WEBSOCKET_KEY2);
-
-          if (accepted && containsKey1 && containsKey2) {
-            if (!request.isChunked()) {
+            if (accepted && containsKey1 && containsKey2) {
               long c = request.getContent().readLong();
               calcAndWriteWSHandshakeResponse(ch, request, c);
             } else {
-              upgradeRequest = request;
+              ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
             }
           } else {
-            ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
+            conn.handleMessage(msg);
           }
         } else {
-          HttpServerRequest req = new HttpServerRequest(conn, request);
-          conn.handleRequest(req);
-          ChannelBuffer requestBody = request.getContent();
-          if (requestBody.readable()) {
-            conn.handleChunk(new Buffer(requestBody));
-          }
-          if (!request.isChunked()) {
-            conn.handleEnd();
-          }
+          conn.handleMessage(msg);
         }
-      } else if (msg instanceof HttpChunk) {
-        HttpChunk chunk = (HttpChunk) msg;
-        if (upgradeRequest != null) {
-          if (chunk.isLast()) {
-            //Terminating chunk for an upgrade requestHandler - process the upgrade
-            calcAndWriteWSHandshakeResponse(ch, upgradeRequest, upgradeData);
-            upgradeRequest = null;
-          } else {
-            //This is the body for the websocket upgrade requestHandler
-            upgradeData = chunk.getContent().readLong();
-          }
-        } else {
-
-          if (chunk.getContent().readable()) {
-            Buffer buff = new Buffer(chunk.getContent());
-            conn.handleChunk(buff);
-          }
-          //TODO chunk trailers
-          if (chunk.isLast()) {
-            conn.handleEnd();
-          }
-        }
-      } else if (msg instanceof WebSocketFrame) {
-        WebSocketFrame frame = (WebSocketFrame) msg;
-        conn.handleWsFrame(frame);
-      } else {
-        throw new IllegalStateException("Invalid object " + msg);
       }
     }
 

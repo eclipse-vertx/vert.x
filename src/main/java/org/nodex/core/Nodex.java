@@ -38,4 +38,6 @@ public interface Nodex {
   <T> boolean sendMessage(long actorID, T message);
 
   Long getContextID();
+
+  void nextTick(Runnable runnable);
 }
