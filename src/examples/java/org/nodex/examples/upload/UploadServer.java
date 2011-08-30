@@ -13,6 +13,7 @@
 
 package org.nodex.examples.upload;
 
+import org.nodex.core.CompletionHandler;
 import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
@@ -43,12 +44,29 @@ public class UploadServer extends NodexMain {
     new HttpServer(new HttpRequestHandler() {
       public void onRequest(final HttpServerRequest req) {
 
-        String filename = "file-" + UUID.randomUUID().toString() + ".upload";
+        // We first pause the request so we don't receive any data between now and when the file is opened
+        req.pause();
+
+        final String filename = "file-" + UUID.randomUUID().toString() + ".upload";
 
         FileSystem.instance.open(filename, new CompletionHandlerWithResult<AsyncFile>() {
-          public void onCompletion(AsyncFile file) {
+          public void onCompletion(final AsyncFile file) {
+            req.endHandler(new Runnable() {
+              public void run() {
+                file.close(new CompletionHandler() {
+                  public void onCompletion() {
+                    req.response.end();
+                    System.out.println("Uploaded data to " + filename);
+                  }
+                  public void onException(Exception e) {
+                    e.printStackTrace(System.err);
+                  }
+                });
+              }
+            });
             Pump pump = new Pump(req, file.getWriteStream());
             pump.start();
+            req.resume();
           }
 
           public void onException(Exception e) {

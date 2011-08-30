@@ -378,6 +378,84 @@ public class HttpTest extends TestBase {
   }
 
   @Test
+  public void testPauseResume() throws Exception {
+    final String host = "localhost";
+    final int port = 8181;
+
+    int numChunks = 20;
+    final Buffer toSend = Buffer.create(0);
+    final List<Buffer> buffs = new ArrayList<>();
+    for (int i = 0; i < numChunks; i++) {
+      Buffer buff = Utils.generateRandomBuffer(100);
+      buffs.add(buff);
+      toSend.appendBuffer(buff);
+    }
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer(new HttpRequestHandler() {
+          final Buffer received = Buffer.create(0);
+          public void onRequest(final HttpServerRequest req) {
+            req.dataHandler(new DataHandler() {
+              boolean paused;
+              public void onData(Buffer data) {
+                azzert(!paused, "Shouldn't receive data when paused");
+                received.appendBuffer(data);
+                if (received.length() == toSend.length()) {
+                  assert(Utils.buffersEqual(toSend, received));
+                  req.response.end();
+                } else {
+                  req.pause();
+                  paused = true;
+                  Nodex.instance.setTimeout(1, new TimerHandler() {
+                    public void onTimer(long id) {
+                      paused = false;
+                      req.resume();
+                    }
+                  });
+                }
+              }
+            });
+          }
+        }).listen(port, host);
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host);
+
+        final HttpClientRequest req = client.put("someurl", new HttpResponseHandler() {
+          public void onResponse(HttpClientResponse resp) {
+            assert(200 == resp.statusCode);
+
+            resp.endHandler(new Runnable() {
+               public void run() {
+                 server.close(new Runnable() {
+                   public void run() {
+                     client.close();
+                     latch.countDown();
+                   }
+                 });
+               }
+            });
+          }
+        });
+
+        //req.setContentLength(toSend.length());
+        req.setChunked(true);
+        for (Buffer buff: buffs) {
+          req.write(buff);
+        }
+        req.end();
+
+      }
+    }.run();
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
+  }
+
+  @Test
   public void testPooling() throws Exception {
     testPooling(true);
     testPooling(false);
