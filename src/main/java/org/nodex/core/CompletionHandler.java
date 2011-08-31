@@ -5,9 +5,9 @@ package org.nodex.core;
  * Date: 01/08/11
  * Time: 16:18
  */
-public interface CompletionHandler {
+public interface CompletionHandler<T> {
 
-  void onCompletion();
+  void onCompletion(T result);
 
   void onException(Exception e);
 }

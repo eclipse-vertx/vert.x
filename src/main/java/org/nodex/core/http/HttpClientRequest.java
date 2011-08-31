@@ -239,7 +239,7 @@ public class HttpClientRequest implements WriteStream {
       if (!headWritten) {
         // No body
         writeHead();
-      } else {
+      } else if (chunked) {
         //Body written - we use HTTP chunking so must send an empty buffer
         writeEndChunk();
       }

@@ -3,18 +3,42 @@ package org.nodex.core;
 /**
  * User: tim
  * Date: 02/08/11
- * Time: 12:23
+ * Time: 11:20
  */
-public abstract class BlockingTask extends BlockingTaskWithResult<Object> {
+public abstract class BlockingTask<T> {
 
-  public BlockingTask(final CompletionHandler completionHandler) {
-    super(new CompletionHandlerWithResult<Object>() {
-      public void onCompletion(Object result) {
-        completionHandler.onCompletion();
+  private final CompletionHandler<T> completionHandler;
+
+  public BlockingTask(CompletionHandler<T> completionHandler) {
+    this.completionHandler = completionHandler;
+  }
+
+  public abstract T execute() throws Exception;
+
+  public final void run() {
+    final long contextID = Nodex.instance.getContextID();
+    Runnable runner = new Runnable() {
+      public void run() {
+        try {
+          final T result = execute();
+          NodexInternal.instance.executeOnContext(contextID, new Runnable() {
+            public void run() {
+              completionHandler.onCompletion(result);
+            }
+          });
+        } catch (final Exception e) {
+          NodexInternal.instance.executeOnContext(contextID, new Runnable() {
+            public void run() {
+              completionHandler.onException(e);
+            }
+          });
+        } catch (Throwable t) {
+          //Not much we can do, just log it
+          t.printStackTrace(System.err);
+        }
       }
-      public void onException(Exception e) {
-        completionHandler.onException(e);
-      }
-    });
+    };
+
+    NodexInternal.instance.executeInBackground(runner);
   }
 }

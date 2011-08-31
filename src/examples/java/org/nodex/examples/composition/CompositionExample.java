@@ -13,7 +13,7 @@
 
 package org.nodex.examples.composition;
 
-import org.nodex.core.CompletionHandlerWithResult;
+import org.nodex.core.CompletionHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.composition.Composable;
 import org.nodex.core.composition.Composer;
@@ -77,7 +77,7 @@ public class CompositionExample {
         if (req.uri.equals("/")) {
           System.out.println("Serving index page");
           //Serve the main page
-          FileSystem.instance.readFile("index.html", new CompletionHandlerWithResult<Buffer>() {
+          FileSystem.instance.readFile("index.html", new CompletionHandler<Buffer>() {
             public void onCompletion(Buffer data) {
               req.response.write(data);
               req.response.end();

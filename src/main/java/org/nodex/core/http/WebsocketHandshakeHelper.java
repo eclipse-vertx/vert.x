@@ -36,10 +36,6 @@ public class WebsocketHandshakeHelper {
 
   private static String chrs = "!\"#$%&'()*+,-./:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
-  /*
-  Whoever dreamt up this insane handshake when they were writing the draft-ietf-hybi-thewebsocketprotocol-00 spec
-  was tripping on a LOT of acid that day
-   */
   public static String genWSkey() {
     int spaces = 1 + (int) (Math.random() * 12);
     long m = 1 + 2 * (long)Integer.MAX_VALUE;

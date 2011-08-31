@@ -14,17 +14,10 @@
 package org.nodex.examples.upload;
 
 import org.nodex.core.CompletionHandler;
-import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileSystem;
-import org.nodex.core.http.HttpClient;
-import org.nodex.core.http.HttpClientRequest;
-import org.nodex.core.http.HttpClientResponse;
 import org.nodex.core.http.HttpRequestHandler;
-import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.streams.Pump;
@@ -49,12 +42,12 @@ public class UploadServer extends NodexMain {
 
         final String filename = "file-" + UUID.randomUUID().toString() + ".upload";
 
-        FileSystem.instance.open(filename, new CompletionHandlerWithResult<AsyncFile>() {
+        FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
           public void onCompletion(final AsyncFile file) {
             req.endHandler(new Runnable() {
               public void run() {
-                file.close(new CompletionHandler() {
-                  public void onCompletion() {
+                file.close(new CompletionHandler<Void>() {
+                  public void onCompletion(Void v) {
                     req.response.end();
                     System.out.println("Uploaded data to " + filename);
                   }

@@ -3,7 +3,6 @@ package org.nodex.core.file;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.nodex.core.BlockingTask;
 import org.nodex.core.CompletionHandler;
-import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.ExceptionHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
@@ -22,7 +21,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: tim
@@ -64,16 +62,16 @@ public class AsyncFile {
     this.th = th;
   }
 
-  public void close(final CompletionHandler completionHandler) {
+  public void close(final CompletionHandler<Void> completionHandler) {
     check();
 
     closed = true;
 
-    CompletionHandler comp = new CompletionHandler() {
-      public void onCompletion() {
+    CompletionHandler comp = new CompletionHandler<Void>() {
+      public void onCompletion(Void v) {
         try {
           ch.close();
-          completionHandler.onCompletion();
+          completionHandler.onCompletion(null);
         } catch (IOException e) {
           completionHandler.onException(e);
         }
@@ -88,7 +86,7 @@ public class AsyncFile {
       //Need to wait for all writes to complete before firing the completionHandler
       closedCompletionHandler = comp;
     } else {
-      comp.onCompletion();
+      comp.onCompletion(null);
     }
   }
 
@@ -98,7 +96,7 @@ public class AsyncFile {
     doWrite(bb, position, completionHandler, true);
   }
 
-  public void read(int position, int length, final CompletionHandlerWithResult<Buffer> completionHandler) {
+  public void read(int position, int length, final CompletionHandler<Buffer> completionHandler) {
     check();
     ByteBuffer buff = ByteBuffer.allocate(length);
     doRead(buff, position, completionHandler);
@@ -120,14 +118,14 @@ public class AsyncFile {
           final int length = buffer.length();
           ByteBuffer bb = buffer._getChannelBuffer().toByteBuffer();
 
-          doWrite(bb, pos, new CompletionHandler() {
+          doWrite(bb, pos, new CompletionHandler<Void>() {
 
-            public void onCompletion() {
+            public void onCompletion(Void v) {
               checkContext();
 
               checkDrained();
               if (writesOutstanding == 0 && closedCompletionHandler != null) {
-                closedCompletionHandler.onCompletion();
+                closedCompletionHandler.onCompletion(null);
               }
             }
 
@@ -195,7 +193,7 @@ public class AsyncFile {
         void doRead() {
           if (!readInProgress) {
             readInProgress = true;
-            read(pos, BUFFER_SIZE, new CompletionHandlerWithResult<Buffer>() {
+            read(pos, BUFFER_SIZE, new CompletionHandler<Buffer>() {
               public void onCompletion(Buffer buffer) {
                 readInProgress = false;
 
@@ -291,7 +289,7 @@ public class AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final CompletionHandler completionHandler, final boolean add) {
+  private void doWrite(final ByteBuffer buff, final int position, final CompletionHandler<Void> completionHandler, final boolean add) {
     if (add) {
       writesOutstanding += buff.limit();
     }
@@ -314,7 +312,7 @@ public class AsyncFile {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              completionHandler.onCompletion();
+              completionHandler.onCompletion(null);
             }
           });
         }
@@ -335,7 +333,7 @@ public class AsyncFile {
     });
   }
 
-  private void doRead(final ByteBuffer buff, final int position, final CompletionHandlerWithResult<Buffer> completionHandler) {
+  private void doRead(final ByteBuffer buff, final int position, final CompletionHandler<Buffer> completionHandler) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 

@@ -1,25 +1,16 @@
 package org.nodex.examples.upload;
 
 import org.nodex.core.CompletionHandler;
-import org.nodex.core.CompletionHandlerWithResult;
 import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileSystem;
 import org.nodex.core.http.HttpClientRequest;
 import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpResponseHandler;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.streams.Pump;
 
-import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 /**
  * User: tim
@@ -50,7 +41,7 @@ public class UploadClient extends NodexMain {
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);
 
-    FileSystem.instance.open(filename, new CompletionHandlerWithResult<AsyncFile>() {
+    FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
       public void onCompletion(final AsyncFile file) {
 
         Pump pump = new Pump(file.getReadStream(), req);
@@ -59,8 +50,8 @@ public class UploadClient extends NodexMain {
         file.getReadStream().endHandler(new Runnable() {
           public void run() {
 
-            file.close(new CompletionHandler() {
-              public void onCompletion() {
+            file.close(new CompletionHandler<Void>() {
+              public void onCompletion(Void v) {
                 req.end();
                 System.out.println("Sent request");
               }
@@ -76,5 +67,6 @@ public class UploadClient extends NodexMain {
         e.printStackTrace();
       }
     });
+
   }
 }
