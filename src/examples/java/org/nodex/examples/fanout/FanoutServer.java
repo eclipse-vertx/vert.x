@@ -13,11 +13,11 @@
 
 package org.nodex.examples.fanout;
 
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.nodex.core.shared.SharedSet;
@@ -33,19 +33,19 @@ public class FanoutServer extends NodexMain {
   public void go() throws Exception {
     final SharedSet<Long> connections = new SharedSet<>();
 
-    NetServer server = new NetServer(new NetConnectHandler() {
-      public void onConnect(final NetSocket socket) {
-        connections.add(socket.writeActorID);
-        socket.dataHandler(new DataHandler() {
-          public void onData(Buffer buffer) {
+    new NetServer().connectHandler(new EventHandler<NetSocket>() {
+      public void onEvent(final NetSocket socket) {
+        connections.add(socket.writeHandlerID);
+        socket.dataHandler(new EventHandler<Buffer>() {
+          public void onEvent(Buffer buffer) {
             for (Long actorID: connections) {
-              Nodex.instance.sendMessage(actorID, buffer);
+              Nodex.instance.sendToHandler(actorID, buffer);
             }
           }
         });
-        socket.closedHandler(new Runnable() {
-          public void run() {
-            connections.remove(socket.writeActorID);
+        socket.closedHandler(new SimpleEventHandler() {
+          public void onEvent() {
+            connections.remove(socket.writeHandlerID);
           }
         });
       }

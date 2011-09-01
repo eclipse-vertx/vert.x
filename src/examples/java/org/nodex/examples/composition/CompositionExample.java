@@ -14,11 +14,11 @@
 package org.nodex.examples.composition;
 
 import org.nodex.core.CompletionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.composition.Composable;
 import org.nodex.core.composition.Composer;
 import org.nodex.core.file.FileSystem;
-import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.mods.amqp.AmqpClient;
@@ -71,8 +71,8 @@ public class CompositionExample {
 
   private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
-    new HttpServer(new HttpRequestHandler() {
-      public void onRequest(final HttpServerRequest req) {
+    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
+      public void onEvent(final HttpServerRequest req) {
         System.out.println("Request uri is " + req.uri);
         if (req.uri.equals("/")) {
           System.out.println("Serving index page");

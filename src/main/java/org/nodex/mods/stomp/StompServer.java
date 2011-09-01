@@ -13,7 +13,7 @@
 
 package org.nodex.mods.stomp;
 
-import org.nodex.core.net.NetConnectHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 
@@ -27,7 +27,7 @@ public class StompServer {
 
   public static NetServer createServer() {
 
-    return new NetServer(new NetConnectHandler() {
+    return new NetServer().connectHandler(new EventHandler<NetSocket>() {
 
       private ConcurrentMap<String, List<StompConnection>> subscriptions = new ConcurrentHashMap<>();
 
@@ -57,7 +57,7 @@ public class StompServer {
         }
       }
 
-      public void onConnect(final NetSocket sock) {
+      public void onEvent(final NetSocket sock) {
         final StompServerConnection conn = new StompServerConnection(sock);
         conn.frameHandler(new FrameHandler() {
           public void onFrame(Frame frame) {

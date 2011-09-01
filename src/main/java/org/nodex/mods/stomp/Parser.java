@@ -13,14 +13,14 @@
 
 package org.nodex.mods.stomp;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.parsetools.RecordParser;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class Parser implements DataHandler {
+public class Parser implements EventHandler<Buffer> {
 
   public Parser(FrameHandler output) {
     this.output = output;
@@ -30,16 +30,16 @@ public class Parser implements DataHandler {
   private Map<String, String> headers = new HashMap<>();
   private static final byte[] EOL_DELIM = new byte[]{(byte) '\n'};
   private static final byte[] EOM_DELIM = new byte[]{0};
-  private final RecordParser frameParser = RecordParser.newDelimited(EOL_DELIM, new DataHandler() {
-    public void onData(Buffer line) {
+  private final RecordParser frameParser = RecordParser.newDelimited(EOL_DELIM, new EventHandler<Buffer>() {
+    public void onEvent(Buffer line) {
       handleLine(line);
     }
   });
   private String command;
   private boolean inHeaders = true;
 
-  public void onData(Buffer buffer) {
-    frameParser.onData(buffer);
+  public void onEvent(Buffer buffer) {
+    frameParser.onEvent(buffer);
   }
 
   private void handleLine(Buffer buffer) {

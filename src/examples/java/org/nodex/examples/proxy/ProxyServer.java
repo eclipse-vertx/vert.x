@@ -13,14 +13,13 @@
 
 package org.nodex.examples.proxy;
 
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
 import org.nodex.core.http.HttpClientRequest;
 import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpRequestHandler;
-import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 
@@ -36,36 +35,36 @@ public class ProxyServer extends NodexMain {
 
     final HttpClient client = new HttpClient().setHost("localhost").setPort(8282);
 
-    new HttpServer(new HttpRequestHandler() {
-      public void onRequest(final HttpServerRequest req) {
+    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
+      public void onEvent(final HttpServerRequest req) {
         System.out.println("Proxying request: " + req.uri);
-        final HttpClientRequest cReq = client.request(req.method, req.uri, new HttpResponseHandler() {
-          public void onResponse(HttpClientResponse cRes) {
+        final HttpClientRequest cReq = client.request(req.method, req.uri, new EventHandler<HttpClientResponse>() {
+          public void onEvent(HttpClientResponse cRes) {
             System.out.println("Proxying response: " + cRes.statusCode);
             req.response.statusCode = cRes.statusCode;
             req.response.putAllHeaders(cRes.getHeaders());
-            cRes.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
+            cRes.dataHandler(new EventHandler<Buffer>() {
+              public void onEvent(Buffer data) {
                 System.out.println("Proxying response body:" + data);
                 req.response.write(data);
               }
             });
-            cRes.endHandler(new Runnable() {
-              public void run() {
+            cRes.endHandler(new SimpleEventHandler() {
+              public void onEvent() {
                 req.response.end();
               }
             });
           }
         });
         cReq.putAllHeaders(req.getHeaders());
-        req.dataHandler(new DataHandler() {
-          public void onData(Buffer data) {
+        req.dataHandler(new EventHandler<Buffer>() {
+          public void onEvent(Buffer data) {
             System.out.println("Proxying request body:" + data);
             cReq.write(data);
           }
         });
-        req.endHandler(new Runnable() {
-          public void run() {
+        req.endHandler(new SimpleEventHandler() {
+          public void onEvent() {
             cReq.end();
           }
         });

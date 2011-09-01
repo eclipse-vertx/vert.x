@@ -13,14 +13,12 @@
 
 package org.nodex.tests.core.net;
 
-import org.nodex.core.Actor;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.nodex.tests.Utils;
@@ -72,40 +70,40 @@ public class TLSTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
-         public void onMessage(String msg) {
-           server.close(new Runnable() {
-             public void run() {
+        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
+         public void onEvent(String msg) {
+           server.close(new SimpleEventHandler() {
+             public void onEvent() {
                latch.countDown();
              }
            });
          }
         });
 
-        NetConnectHandler serverHandler = new NetConnectHandler() {
-          public void onConnect(final NetSocket sock) {
+        EventHandler<NetSocket> serverHandler = new EventHandler<NetSocket>() {
+          public void onEvent(final NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
-            sock.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
+            sock.dataHandler(new EventHandler<Buffer>() {
+              public void onEvent(Buffer data) {
                 checker.check();
                 receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
                   sock.close();
-                  Nodex.instance.sendMessage(actorId, "foo");
+                  Nodex.instance.sendToHandler(actorId, "foo");
                 }
               }
             });
           }
         };
 
-        NetConnectHandler clientHandler = new NetConnectHandler() {
-          public void onConnect(NetSocket sock) {
+        EventHandler<NetSocket> clientHandler = new EventHandler<NetSocket>() {
+          public void onEvent(NetSocket sock) {
 
-            sock.exceptionHandler(new ExceptionHandler() {
-              public void onException(Exception e) {
+            sock.exceptionHandler(new EventHandler<Exception>() {
+              public void onEvent(Exception e) {
                 e.printStackTrace();
                 excRef.set(e);
-                Nodex.instance.sendMessage(actorId, "foo");
+                Nodex.instance.sendToHandler(actorId, "foo");
               }
             });
             for (int i = 0; i < numSends; i++) {

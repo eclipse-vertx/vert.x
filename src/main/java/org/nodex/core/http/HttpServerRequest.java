@@ -16,9 +16,8 @@ package org.nodex.core.http;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 
 import java.net.URI;
@@ -30,9 +29,9 @@ import java.util.Set;
 public class HttpServerRequest implements ReadStream {
 
   private Map<String, List<String>> params;
-  private DataHandler dataHandler;
-  private Runnable endHandler;
-  private ExceptionHandler exceptionHandler;
+  private EventHandler<Buffer> dataHandler;
+  private EventHandler<Void> endHandler;
+  private EventHandler<Exception> exceptionHandler;
   private final ServerConnection conn;
   private final HttpRequest request;
 
@@ -73,11 +72,11 @@ public class HttpServerRequest implements ReadStream {
     return request.getHeaders();
   }
 
-  public void dataHandler(DataHandler dataHandler) {
+  public void dataHandler(EventHandler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -89,7 +88,7 @@ public class HttpServerRequest implements ReadStream {
     conn.resume();
   }
 
-  public void endHandler(Runnable handler) {
+  public void endHandler(EventHandler<Void> handler) {
     this.endHandler = handler;
   }
 
@@ -108,19 +107,19 @@ public class HttpServerRequest implements ReadStream {
 
   void handleData(Buffer data) {
     if (dataHandler != null) {
-      dataHandler.onData(data);
+      dataHandler.onEvent(data);
     }
   }
 
   void handleEnd() {
     if (endHandler != null) {
-      endHandler.run();
+      endHandler.onEvent(null);
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onException(e);
+      exceptionHandler.onEvent(e);
     }
   }
 

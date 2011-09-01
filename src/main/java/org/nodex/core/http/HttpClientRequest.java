@@ -22,7 +22,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
@@ -34,7 +34,7 @@ import java.util.Set;
 public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
-                    final HttpResponseHandler respHandler,
+                    final EventHandler<HttpClientResponse> respHandler,
                     final long contextID, final Thread th) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
@@ -46,15 +46,15 @@ public class HttpClientRequest implements WriteStream {
 
   private final HttpClient client;
   private final HttpRequest request;
-  private final HttpResponseHandler respHandler;
-  private Runnable continueHandler;
+  private final EventHandler<HttpClientResponse> respHandler;
+  private EventHandler<Void> continueHandler;
   private final long contextID;
   final Thread th;
 
   private boolean chunked;
   private ClientConnection conn;
-  private Runnable drainHandler;
-  private ExceptionHandler exceptionHandler;
+  private EventHandler<Void> drainHandler;
+  private EventHandler<Exception> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
   private LinkedList<PendingChunk> pendingChunks;
@@ -155,22 +155,22 @@ public class HttpClientRequest implements WriteStream {
     return write(Buffer.create(chunk, enc)._getChannelBuffer(), null);
   }
 
-  public HttpClientRequest write(Buffer chunk, Runnable done) {
+  public HttpClientRequest write(Buffer chunk, EventHandler<Void> doneHandler) {
     checkThread();
     checkComplete();
-    return write(chunk._getChannelBuffer(), done);
+    return write(chunk._getChannelBuffer(), doneHandler);
   }
 
-  public HttpClientRequest write(String chunk, Runnable done) {
+  public HttpClientRequest write(String chunk, EventHandler<Void> doneHandler) {
     checkThread();
     checkComplete();
-    return write(Buffer.create(chunk)._getChannelBuffer(), done);
+    return write(Buffer.create(chunk)._getChannelBuffer(), doneHandler);
   }
 
-  public HttpClientRequest write(String chunk, String enc, Runnable done) {
+  public HttpClientRequest write(String chunk, String enc, EventHandler<Void> doneHandler) {
     checkThread();
     checkComplete();
-    return write(Buffer.create(chunk, enc)._getChannelBuffer(), done);
+    return write(Buffer.create(chunk, enc)._getChannelBuffer(), doneHandler);
   }
 
   public void setWriteQueueMaxSize(int maxSize) {
@@ -193,7 +193,7 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  public void drainHandler(Runnable handler) {
+  public void drainHandler(EventHandler<Void> handler) {
     checkThread();
     checkComplete();
     this.drainHandler = handler;
@@ -202,13 +202,13 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     checkThread();
     checkComplete();
     this.exceptionHandler = handler;
   }
 
-  public void continueHandler(Runnable handler) {
+  public void continueHandler(EventHandler<Void> handler) {
     checkThread();
     checkComplete();
     this.continueHandler = handler;
@@ -252,14 +252,14 @@ public class HttpClientRequest implements WriteStream {
   void handleInterestedOpsChanged() {
     checkThread();
     if (drainHandler != null) {
-      drainHandler.run();
+      drainHandler.onEvent(null);
     }
   }
 
   void handleException(Exception e) {
     checkThread();
     if (exceptionHandler != null) {
-      exceptionHandler.onException(e);
+      exceptionHandler.onEvent(e);
     } else {
       e.printStackTrace(System.err);
     }
@@ -269,10 +269,10 @@ public class HttpClientRequest implements WriteStream {
     try {
       if (resp.statusCode == 100 ) {
         if (continueHandler != null) {
-          continueHandler.run();
+          continueHandler.onEvent(null);
         }
       } else {
-        respHandler.onResponse(resp);
+        respHandler.onEvent(resp);
       }
     } catch (Throwable t) {
       if (t instanceof Exception) {
@@ -288,8 +288,8 @@ public class HttpClientRequest implements WriteStream {
       //We defer actual connection until the first part of body is written or end is called
       //This gives the user an opportunity to set an exception handler before connecting so
       //they can capture any exceptions on connection
-      client.getConnection(new ClientConnectHandler() {
-        public void onConnect(ClientConnection conn) {
+      client.getConnection(new EventHandler<ClientConnection>() {
+        public void onEvent(ClientConnection conn) {
          connected(conn);
         }
       }, contextID);
@@ -322,7 +322,7 @@ public class HttpClientRequest implements WriteStream {
 
     if (pendingChunks != null) {
       for (PendingChunk chunk: pendingChunks) {
-        sendChunk(chunk.chunk, chunk.completion);
+        sendChunk(chunk.chunk, chunk.doneHandler);
       }
     }
 
@@ -353,7 +353,7 @@ public class HttpClientRequest implements WriteStream {
     conn.write(request);
   }
 
-  private HttpClientRequest write(ChannelBuffer buff, Runnable done) {
+  private HttpClientRequest write(ChannelBuffer buff, EventHandler<Void> doneHandler) {
     written += buff.readableBytes();
 
     if (!chunked && written > contentLength) {
@@ -367,22 +367,22 @@ public class HttpClientRequest implements WriteStream {
       if (pendingChunks == null) {
         pendingChunks = new LinkedList<>();
       }
-      pendingChunks.add(new PendingChunk(buff, done));
+      pendingChunks.add(new PendingChunk(buff, doneHandler));
     } else {
       if (!headWritten) {
         writeHead();
         headWritten = true;
       }
-      sendChunk(buff, done);
+      sendChunk(buff, doneHandler);
     }
     return this;
   }
 
-  private void sendChunk(ChannelBuffer buff, Runnable completion) {
+  private void sendChunk(ChannelBuffer buff, EventHandler<Void> doneHandler) {
     Object write = chunked ? new DefaultHttpChunk(buff) : buff;
     ChannelFuture writeFuture = conn.write(write);
-    if (completion != null) {
-      conn.addFuture(completion, writeFuture);
+    if (doneHandler != null) {
+      conn.addFuture(doneHandler, writeFuture);
     }
   }
 
@@ -405,10 +405,10 @@ public class HttpClientRequest implements WriteStream {
 
   private static class PendingChunk {
     final ChannelBuffer chunk;
-    final Runnable completion;
-    private PendingChunk(ChannelBuffer chunk, Runnable completion) {
+    final EventHandler<Void> doneHandler;
+    private PendingChunk(ChannelBuffer chunk, EventHandler<Void> doneHandler) {
       this.chunk = chunk;
-      this.completion = completion;
+      this.doneHandler = doneHandler;
     }
   }
 

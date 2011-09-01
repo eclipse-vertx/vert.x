@@ -1,9 +1,9 @@
 package org.nodex.core.stdio;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +19,7 @@ public class InStream {
   }
   private final InputStream in;
 
-  public void read(int bytes, DataHandler handler) {
+  public void read(int bytes, EventHandler<Buffer> handler) {
     Long contextID = Nodex.instance.getContextID();
     if (contextID == null) {
       throw new IllegalStateException("Stdio can only be used inside an event loop");
@@ -28,7 +28,7 @@ public class InStream {
     doRead(read, 0, handler, contextID);
   }
 
-  private void doRead(final byte[] read, final int offset, final DataHandler handler, final long contextID) {
+  private void doRead(final byte[] read, final int offset, final EventHandler<Buffer> handler, final long contextID) {
     final NodexInternal nodex = NodexInternal.instance;
     nodex.executeInBackground(new Runnable() {
       public void run() {
@@ -40,7 +40,7 @@ public class InStream {
             nodex.executeOnContext(contextID, new Runnable() {
               public void run() {
                 nodex.setContextID(contextID);
-                handler.onData(Buffer.create(read));
+                handler.onEvent(Buffer.create(read));
               }
             });
           } else {

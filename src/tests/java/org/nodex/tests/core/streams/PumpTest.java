@@ -13,9 +13,8 @@
 
 package org.nodex.tests.core.streams;
 
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.Pump;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
@@ -87,18 +86,18 @@ public class PumpTest {
 
   private class FakeReadStream implements ReadStream {
 
-    private DataHandler dataHandler;
+    private EventHandler<Buffer> dataHandler;
     private boolean paused;
     int pauseCount;
     int resumeCount;
 
     void addData(Buffer data) {
       if (dataHandler != null) {
-        dataHandler.onData(data);
+        dataHandler.onEvent(data);
       }
     }
 
-    public void dataHandler(DataHandler handler) {
+    public void dataHandler(EventHandler<Buffer> handler) {
       this.dataHandler = handler;
     }
 
@@ -112,10 +111,10 @@ public class PumpTest {
       resumeCount++;
     }
 
-    public void exceptionHandler(ExceptionHandler handler) {
+    public void exceptionHandler(EventHandler<Exception> handler) {
     }
 
-    public void endHandler(Runnable endHandler) {
+    public void endHandler(EventHandler<Void> endHandler) {
     }
   }
 
@@ -123,13 +122,13 @@ public class PumpTest {
 
     int maxSize;
     Buffer received = Buffer.create(0);
-    Runnable drainHandler;
+    EventHandler<Void> drainHandler;
 
     void clearReceived() {
       boolean callDrain = writeQueueFull();
       received = Buffer.create(0);
       if (callDrain && drainHandler != null) {
-        drainHandler.run();
+        drainHandler.onEvent(null);
       }
     }
 
@@ -141,7 +140,7 @@ public class PumpTest {
       return received.length() >= maxSize;
     }
 
-    public void drainHandler(Runnable handler) {
+    public void drainHandler(EventHandler<Void> handler) {
       this.drainHandler = handler;
     }
 
@@ -149,7 +148,7 @@ public class PumpTest {
       received.appendBuffer(data);
     }
 
-    public void exceptionHandler(ExceptionHandler handler) {
+    public void exceptionHandler(EventHandler<Exception> handler) {
     }
   }
 }

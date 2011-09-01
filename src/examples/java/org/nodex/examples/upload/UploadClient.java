@@ -1,12 +1,13 @@
 package org.nodex.examples.upload;
 
 import org.nodex.core.CompletionHandler;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileSystem;
 import org.nodex.core.http.HttpClientRequest;
 import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpResponseHandler;
 import org.nodex.core.streams.Pump;
 
 import java.nio.file.Files;
@@ -27,8 +28,8 @@ public class UploadClient extends NodexMain {
 
   public void go() throws Exception {
 
-    final HttpClientRequest req = new org.nodex.core.http.HttpClient().setPort(8080).setHost("localhost").put("/some-url", new HttpResponseHandler() {
-      public void onResponse(HttpClientResponse response) {
+    final HttpClientRequest req = new org.nodex.core.http.HttpClient().setPort(8080).setHost("localhost").put("/some-url", new EventHandler<HttpClientResponse>() {
+      public void onEvent(HttpClientResponse response) {
         System.out.println("File uploaded " + response.statusCode);
       }
     });
@@ -47,8 +48,8 @@ public class UploadClient extends NodexMain {
         Pump pump = new Pump(file.getReadStream(), req);
         pump.start();
 
-        file.getReadStream().endHandler(new Runnable() {
-          public void run() {
+        file.getReadStream().endHandler(new SimpleEventHandler() {
+          public void onEvent() {
 
             file.close(new CompletionHandler<Void>() {
               public void onCompletion(Void v) {

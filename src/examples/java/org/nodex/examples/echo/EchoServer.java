@@ -13,10 +13,9 @@
 
 package org.nodex.examples.echo;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 
@@ -30,10 +29,10 @@ public class EchoServer extends NodexMain {
   }
 
   public void go() throws Exception {
-    new NetServer(new NetConnectHandler() {
-      public void onConnect(final NetSocket socket) {
-        socket.dataHandler(new DataHandler() {
-          public void onData(Buffer buffer) {
+    new NetServer().connectHandler(new EventHandler<NetSocket>() {
+      public void onEvent(final NetSocket socket) {
+        socket.dataHandler(new EventHandler<Buffer>() {
+          public void onEvent(Buffer buffer) {
             socket.write(buffer);
           }
         });

@@ -1,11 +1,10 @@
 package org.nodex.examples.proxy;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClientRequest;
 import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpResponseHandler;
 
 /**
  * User: tim
@@ -21,10 +20,10 @@ public class HttpClient extends NodexMain {
   }
 
   public void go() throws Exception {
-    HttpClientRequest req = new org.nodex.core.http.HttpClient().setPort(8080).setHost("localhost").put("/some-url", new HttpResponseHandler() {
-      public void onResponse(HttpClientResponse response) {
-        response.dataHandler(new DataHandler() {
-          public void onData(Buffer data) {
+    HttpClientRequest req = new org.nodex.core.http.HttpClient().setPort(8080).setHost("localhost").put("/some-url", new EventHandler<HttpClientResponse>() {
+      public void onEvent(HttpClientResponse response) {
+        response.dataHandler(new EventHandler<Buffer>() {
+          public void onEvent(Buffer data) {
             System.out.println("Got response data:" + data);
           }
         });

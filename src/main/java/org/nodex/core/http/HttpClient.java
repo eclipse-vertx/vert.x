@@ -35,7 +35,8 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
@@ -55,7 +56,7 @@ public class HttpClient extends SSLBase {
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
-  private ExceptionHandler exceptionHandler;
+  private EventHandler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
   private final Queue<ClientConnection> available = new ConcurrentLinkedQueue<ClientConnection>();
@@ -67,7 +68,7 @@ public class HttpClient extends SSLBase {
   public HttpClient() {
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -124,25 +125,25 @@ public class HttpClient extends SSLBase {
     return this;
   }
 
-  public void connectWebsocket(final String uri, final WebsocketConnectHandler wsConnect) {
+  public void connectWebsocket(final String uri, final EventHandler<Websocket> wsConnect) {
     connectWebsocket(uri, null, wsConnect);
   }
 
   public void connectWebsocket(final String uri, final Map<String, ? extends Object> headers,
-                               final WebsocketConnectHandler wsConnect) {
-    getConnection(new ClientConnectHandler() {
-      public void onConnect(final ClientConnection conn) {
+                               final EventHandler<Websocket> wsConnect) {
+    getConnection(new EventHandler<ClientConnection>() {
+      public void onEvent(final ClientConnection conn) {
         conn.toWebSocket(uri, headers, wsConnect);
       }
     }, Nodex.instance.getContextID());
   }
 
   // Quick get method when there's no body and it doesn't require an end
-  public void getNow(String uri, HttpResponseHandler responseHandler) {
+  public void getNow(String uri, EventHandler<HttpClientResponse> responseHandler) {
     getNow(uri, null, responseHandler);
   }
 
-  public void getNow(String uri, Map<String, ? extends Object> headers, HttpResponseHandler responseHandler) {
+  public void getNow(String uri, Map<String, ? extends Object> headers, EventHandler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
       req.putAllHeaders(headers);
@@ -150,39 +151,39 @@ public class HttpClient extends SSLBase {
     req.end();
   }
 
-  public HttpClientRequest options(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest options(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("OPTIONS", uri, responseHandler);
   }
 
-  public HttpClientRequest get(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest get(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("GET", uri, responseHandler);
   }
 
-  public HttpClientRequest head(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest head(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("HEAD", uri, responseHandler);
   }
 
-  public HttpClientRequest post(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest post(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("POST", uri, responseHandler);
   }
 
-  public HttpClientRequest put(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest put(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("PUT", uri, responseHandler);
   }
 
-  public HttpClientRequest delete(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest delete(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("DELETE", uri, responseHandler);
   }
 
-  public HttpClientRequest trace(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest trace(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("TRACE", uri, responseHandler);
   }
 
-  public HttpClientRequest connect(String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest connect(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("CONNECT", uri, responseHandler);
   }
 
-  public HttpClientRequest request(String method, String uri, HttpResponseHandler responseHandler) {
+  public HttpClientRequest request(String method, String uri, EventHandler<HttpClientResponse> responseHandler) {
     final Long cid = Nodex.instance.getContextID();
     if (cid == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
@@ -191,24 +192,24 @@ public class HttpClient extends SSLBase {
   }
 
   public void close() {
-    for (ClientConnection conn : connectionMap.values()) {
-      conn.internalClose();
-    }
     available.clear();
     if (!waiters.isEmpty()) {
       System.out.println("Warning: Closing HTTP client, but there are " + waiters.size() + " waiting for connections");
     }
     waiters.clear();
+    for (ClientConnection conn : connectionMap.values()) {
+      conn.internalClose();
+    }
   }
 
   //TODO FIXME - heavyweight synchronization for now FIXME
   //This will be a contention point
   //Need to be improved
 
-  synchronized void getConnection(ClientConnectHandler handler, long contextID) {
+  synchronized void getConnection(EventHandler<ClientConnection> handler, long contextID) {
     ClientConnection conn = available.poll();
     if (conn != null) {
-      handler.onConnect(conn);
+      handler.onEvent(conn);
     } else {
       if (connectionCount.get() < maxPoolSize) {
         if (connectionCount.incrementAndGet() <= maxPoolSize) {
@@ -228,14 +229,6 @@ public class HttpClient extends SSLBase {
     if (!conn.keepAlive) {
       //Just close it
       conn.internalClose();
-      if (connectionCount.decrementAndGet() < maxPoolSize) {
-        //Now the connection count has come down, maybe there is another waiter that can
-        //create a new connection
-        Waiter waiter = waiters.poll();
-        if (waiter != null) {
-          getConnection(waiter.handler, waiter.contextID);
-        }
-      }
     } else {
       //Return it to the pool
       final Waiter waiter = waiters.poll();
@@ -244,7 +237,7 @@ public class HttpClient extends SSLBase {
         NodexInternal.instance.executeOnContext(waiter.contextID, new Runnable() {
           public void run() {
             NodexInternal.instance.setContextID(waiter.contextID);
-            waiter.handler.onConnect(conn);
+            waiter.handler.onEvent(conn);
           }
         });
       } else {
@@ -253,7 +246,7 @@ public class HttpClient extends SSLBase {
     }
   }
 
-  private void connect(final ClientConnectHandler connectHandler, final long contextID) {
+  private void connect(final EventHandler<ClientConnection> connectHandler, final long contextID) {
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
@@ -291,18 +284,30 @@ public class HttpClient extends SSLBase {
 
           ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
             public void run() {
-              ClientConnection conn = new ClientConnection(HttpClient.this, ch,
+              final ClientConnection conn = new ClientConnection(HttpClient.this, ch,
                                                    host + ":" + port, ssl, keepAlive, contextID,
                   Thread.currentThread());
+              conn.closedHandler(new SimpleEventHandler() {
+                public void onEvent() {
+                  if (connectionCount.decrementAndGet() < maxPoolSize) {
+                    //Now the connection count has come down, maybe there is another waiter that can
+                    //create a new connection
+                    Waiter waiter = waiters.poll();
+                    if (waiter != null) {
+                      getConnection(waiter.handler, waiter.contextID);
+                    }
+                  }
+                }
+              });
               connectionMap.put(ch, conn);
               NodexInternal.instance.setContextID(contextID);
-              connectHandler.onConnect(conn);
+              connectHandler.onEvent(conn);
             }
           });
         } else {
           Throwable t = channelFuture.getCause();
           if (t instanceof Exception && exceptionHandler != null) {
-            exceptionHandler.onException((Exception)t);
+            exceptionHandler.onEvent((Exception) t);
           } else {
             t.printStackTrace(System.err);
           }
@@ -312,10 +317,10 @@ public class HttpClient extends SSLBase {
   }
 
   private static class Waiter {
-    final ClientConnectHandler handler;
+    final EventHandler<ClientConnection> handler;
     final long contextID;
 
-    private Waiter(ClientConnectHandler handler, long contextID) {
+    private Waiter(EventHandler<ClientConnection> handler, long contextID) {
       this.handler = handler;
       this.contextID = contextID;
     }

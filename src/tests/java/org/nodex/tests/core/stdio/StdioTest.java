@@ -1,8 +1,8 @@
 package org.nodex.tests.core.stdio;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.stdio.InStream;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
@@ -36,8 +36,8 @@ public class StdioTest extends TestBase {
 
         InStream in = new InStream(is);
 
-        in.read(1000, new DataHandler() {
-          public void onData(Buffer data) {
+        in.read(1000, new EventHandler<Buffer>() {
+          public void onEvent(Buffer data) {
             azzert(Utils.buffersEqual(buffin, data));
             latch.countDown();
           }

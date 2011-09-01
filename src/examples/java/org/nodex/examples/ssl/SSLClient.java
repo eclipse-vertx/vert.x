@@ -13,11 +13,10 @@
 
 package org.nodex.examples.ssl;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetSocket;
 
 public class SSLClient extends NodexMain {
@@ -30,11 +29,11 @@ public class SSLClient extends NodexMain {
   }
 
   public void go() throws Exception {
-    new NetClient().setSSL(true).setTrustAll(true).connect(4443, "localhost", new NetConnectHandler() {
-      public void onConnect(NetSocket socket) {
+    new NetClient().setSSL(true).setTrustAll(true).connect(4443, "localhost", new EventHandler<NetSocket>() {
+      public void onEvent(NetSocket socket) {
 
-        socket.dataHandler(new DataHandler() {
-          public void onData(Buffer buffer) {
+        socket.dataHandler(new EventHandler<Buffer>() {
+          public void onEvent(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
           }
         });

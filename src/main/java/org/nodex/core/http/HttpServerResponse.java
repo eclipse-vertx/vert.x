@@ -25,7 +25,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
@@ -50,8 +50,8 @@ public class HttpServerResponse implements WriteStream {
   private boolean headWritten;
   private ChannelFuture writeFuture;
   private boolean written;
-  private Runnable drainHandler;
-  private ExceptionHandler exceptionHandler;
+  private EventHandler<Void> drainHandler;
+  private EventHandler<Exception> exceptionHandler;
   private long contentLength;
   private long writtenBytes;
   private boolean chunked;
@@ -153,13 +153,13 @@ public class HttpServerResponse implements WriteStream {
     return conn.writeQueueFull();
   }
 
-  public void drainHandler(Runnable handler) {
+  public void drainHandler(EventHandler<Void> handler) {
     checkWritten();
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     checkWritten();
     this.exceptionHandler = handler;
   }
@@ -180,16 +180,16 @@ public class HttpServerResponse implements WriteStream {
     return write(Buffer.create(chunk)._getChannelBuffer(), null);
   }
 
-  public HttpServerResponse write(Buffer chunk, Runnable done) {
-    return write(chunk._getChannelBuffer(), done);
+  public HttpServerResponse write(Buffer chunk, EventHandler<Void> doneHandler) {
+    return write(chunk._getChannelBuffer(), doneHandler);
   }
 
-  public HttpServerResponse write(String chunk, String enc, Runnable done) {
-    return write(Buffer.create(chunk, enc)._getChannelBuffer(), done);
+  public HttpServerResponse write(String chunk, String enc, EventHandler<Void> doneHandler) {
+    return write(Buffer.create(chunk, enc)._getChannelBuffer(), doneHandler);
   }
 
-  public HttpServerResponse write(String chunk, Runnable done) {
-    return write(Buffer.create(chunk)._getChannelBuffer(), done);
+  public HttpServerResponse write(String chunk, EventHandler<Void> doneHandler) {
+    return write(Buffer.create(chunk)._getChannelBuffer(), doneHandler);
   }
 
   public void end() {
@@ -252,13 +252,13 @@ public class HttpServerResponse implements WriteStream {
 
   void writable() {
     if (drainHandler != null) {
-      drainHandler.run();
+      drainHandler.onEvent(null);
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onException(e);
+      exceptionHandler.onEvent(e);
     }
   }
 
@@ -286,7 +286,7 @@ public class HttpServerResponse implements WriteStream {
     }
   }
 
-  private HttpServerResponse write(ChannelBuffer chunk, final Runnable done) {
+  private HttpServerResponse write(ChannelBuffer chunk, final EventHandler<Void> doneHandler) {
     checkWritten();
     writtenBytes += chunk.readableBytes();
     if (!chunked && writtenBytes > contentLength) {
@@ -298,8 +298,8 @@ public class HttpServerResponse implements WriteStream {
     writeHead();
     Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
     writeFuture = conn.write(msg);
-    if (done != null) {
-      conn.addFuture(done, writeFuture);
+    if (doneHandler != null) {
+      conn.addFuture(doneHandler, writeFuture);
     }
     return this;
   }

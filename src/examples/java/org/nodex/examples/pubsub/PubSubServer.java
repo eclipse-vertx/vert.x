@@ -13,11 +13,10 @@
 
 package org.nodex.examples.pubsub;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.nodex.core.parsetools.RecordParser;
@@ -35,21 +34,21 @@ public class PubSubServer extends NodexMain {
   }
 
   public void go() throws Exception {
-    new NetServer(new NetConnectHandler() {
-      public void onConnect(final NetSocket socket) {
-        socket.dataHandler(RecordParser.newDelimited("\n", new DataHandler () {
-          public void onData(Buffer frame) {
+    new NetServer().connectHandler(new EventHandler<NetSocket>() {
+      public void onEvent(final NetSocket socket) {
+        socket.dataHandler(RecordParser.newDelimited("\n", new EventHandler<Buffer>() {
+          public void onEvent(Buffer frame) {
             String line = frame.toString().trim();
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {
               Set<Long> set = SharedData.<Long>getSet(parts[1]);
-              set.add(socket.writeActorID);
+              set.add(socket.writeHandlerID);
             } else if (line.startsWith("unsubscribe")) {
-              SharedData.<Long>getSet(parts[1]).remove(socket.writeActorID);
+              SharedData.<Long>getSet(parts[1]).remove(socket.writeHandlerID);
             } else if (line.startsWith("publish")) {
               Set<Long> actorIDs = SharedData.getSet(parts[1]);
               for (Long actorID: actorIDs) {
-                Nodex.instance.sendMessage(actorID, Buffer.create(parts[2]));
+                Nodex.instance.sendToHandler(actorID, Buffer.create(parts[2]));
               }
             }
           }

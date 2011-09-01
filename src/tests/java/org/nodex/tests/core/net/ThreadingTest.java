@@ -13,13 +13,12 @@
 
 package org.nodex.tests.core.net;
 
-import org.nodex.core.Actor;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetServer;
 import org.nodex.core.net.NetSocket;
 import org.nodex.tests.Utils;
@@ -46,29 +45,29 @@ public class ThreadingTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
-          public void onMessage(String msg) {
-            server.close(new Runnable() {
-              public void run() {
+        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
+          public void onEvent(String msg) {
+            server.close(new SimpleEventHandler() {
+              public void onEvent() {
                 serverCloseLatch.countDown();
               }
             });
           }
         });
 
-        server.connectHandler(new NetConnectHandler() {
-          public void onConnect(final NetSocket sock) {
+        server.connectHandler(new EventHandler<NetSocket>() {
+          public void onEvent(final NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
-            sock.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
+            sock.dataHandler(new EventHandler<Buffer>() {
+              public void onEvent(Buffer data) {
                 checker.check();
                 sock.write(data);    // Send it back to client
               }
             });
-            sock.closedHandler(new Runnable() {
-              public void run() {
+            sock.closedHandler(new SimpleEventHandler() {
+              public void onEvent() {
                 checker.check();
-                Nodex.instance.sendMessage(actorId, "foo");
+                Nodex.instance.sendToHandler(actorId, "foo");
               }
             });
           }
@@ -76,12 +75,12 @@ public class ThreadingTest extends TestBase {
 
         NetClient client = new NetClient();
 
-        client.connect(8181, new NetConnectHandler() {
-          public void onConnect(final NetSocket sock) {
+        client.connect(8181, new EventHandler<NetSocket>() {
+          public void onEvent(final NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
             final Buffer buff = Buffer.create(0);
-            sock.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
+            sock.dataHandler(new EventHandler<Buffer>() {
+              public void onEvent(Buffer data) {
                 checker.check();
                 buff.appendBuffer(data);
                 if (buff.length() == dataLength) {
@@ -89,8 +88,8 @@ public class ThreadingTest extends TestBase {
                 }
               }
             });
-            sock.closedHandler(new Runnable() {
-              public void run() {
+            sock.closedHandler(new SimpleEventHandler() {
+              public void onEvent() {
                 checker.check();
                 clientCloseLatch.countDown();
               }
@@ -123,21 +122,21 @@ public class ThreadingTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerActor(new Actor<String>() {
-          public void onMessage(String msg) {
-            server.close(new Runnable() {
-              public void run() {
+        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
+          public void onEvent(String msg) {
+            server.close(new SimpleEventHandler() {
+              public void onEvent() {
                 serverConnectLatch.countDown();
               }
             });
           }
         });
 
-        server.connectHandler(new NetConnectHandler() {
-          public void onConnect(NetSocket sock) {
+        server.connectHandler(new EventHandler<NetSocket>() {
+          public void onEvent(NetSocket sock) {
             threads.put(Thread.currentThread(), "foo");
             if (serverConnectCount.incrementAndGet() == connections) {
-              Nodex.instance.sendMessage(actorId, "foo");
+              Nodex.instance.sendToHandler(actorId, "foo");
             }
           }
         }).listen(8181);
@@ -146,8 +145,8 @@ public class ThreadingTest extends TestBase {
         NetClient client = new NetClient();
 
         for (int i = 0; i < connections; i++) {
-          client.connect(8181, new NetConnectHandler() {
-            public void onConnect(NetSocket sock) {
+          client.connect(8181, new EventHandler<NetSocket>() {
+            public void onEvent(NetSocket sock) {
               clientConnectLatch.countDown();
               sock.close();
             }

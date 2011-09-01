@@ -13,8 +13,8 @@
 
 package org.nodex.tests.core.parsetools;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.parsetools.RecordParser;
 import org.nodex.tests.Utils;
 import org.testng.annotations.Test;
@@ -78,11 +78,11 @@ public class RecordParserTest {
 
     final Buffer[] results = new Buffer[lines];
 
-    class MyHandler implements DataHandler {
+    class MyHandler implements EventHandler<Buffer> {
       RecordParser parser = RecordParser.newFixed(10, this);
       int pos;
 
-      public void onData(Buffer buff) {
+      public void onEvent(Buffer buff) {
         results[pos++] = buff;
         if (pos < lines) {
           Object type = types.get(pos);
@@ -172,10 +172,10 @@ public class RecordParserTest {
 
   private void doTestDelimited(final Buffer input, byte[] delim, Integer[] chunkSizes, final Buffer... expected) {
     final Buffer[] results = new Buffer[expected.length];
-    DataHandler out = new DataHandler() {
+    EventHandler<Buffer> out = new EventHandler<Buffer>() {
       int pos;
 
-      public void onData(Buffer buff) {
+      public void onEvent(Buffer buff) {
         results[pos++] = buff;
       }
     };
@@ -189,11 +189,11 @@ public class RecordParserTest {
   private void doTestFixed(final Buffer input, Integer[] chunkSizes, final Buffer... expected) {
     final Buffer[] results = new Buffer[expected.length];
 
-    class MyHandler implements DataHandler {
+    class MyHandler implements EventHandler<Buffer> {
       int pos;
       RecordParser parser = RecordParser.newFixed(expected[0].length(), this);
 
-      public void onData(Buffer buff) {
+      public void onEvent(Buffer buff) {
         results[pos++] = buff;
         if (pos < expected.length) {
           parser.fixedSizeMode(expected[pos].length());
@@ -216,7 +216,7 @@ public class RecordParserTest {
       int end = pos + chunkSize;
       end = end <= input.length() ? end : input.length();
       Buffer sub = input.copy(pos, end);
-      parser.onData(sub);
+      parser.onEvent(sub);
       pos += chunkSize;
     }
   }

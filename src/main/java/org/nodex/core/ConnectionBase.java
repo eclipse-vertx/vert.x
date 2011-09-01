@@ -39,8 +39,8 @@ public class ConnectionBase {
   //For sanity checks
   protected final Thread th;
 
-  protected ExceptionHandler exceptionHandler;
-  protected Runnable closedHandler;
+  protected EventHandler<Exception> exceptionHandler;
+  protected EventHandler<Void> closedHandler;
 
   public void pause() {
     checkThread();
@@ -69,12 +69,12 @@ public class ConnectionBase {
     channel.close();
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     checkThread();
     this.exceptionHandler = handler;
   }
 
-  public void closedHandler(Runnable handler) {
+  public void closedHandler(EventHandler<Void> handler) {
     checkThread();
     this.closedHandler = handler;
   }
@@ -87,7 +87,7 @@ public class ConnectionBase {
     if (exceptionHandler != null) {
       setContextID();
       try {
-        exceptionHandler.onException(e);
+        exceptionHandler.onEvent(e);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
@@ -100,23 +100,23 @@ public class ConnectionBase {
     if (closedHandler != null) {
       setContextID();
       try {
-        closedHandler.run();
+        closedHandler.onEvent(null);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
     }
   }
 
-  protected void addFuture(final Runnable done, final ChannelFuture future) {
+  protected void addFuture(final EventHandler<Void> doneHandler, final ChannelFuture future) {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
         setContextID();
         if (channelFuture.isSuccess()) {
-          done.run();
+          doneHandler.onEvent(null);
         } else {
           Throwable err = channelFuture.getCause();
           if (exceptionHandler != null && err instanceof Exception) {
-            exceptionHandler.onException((Exception) err);
+            exceptionHandler.onEvent((Exception) err);
           } else {
             err.printStackTrace();
           }

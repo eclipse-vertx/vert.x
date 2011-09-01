@@ -13,8 +13,8 @@
 
 package org.nodex.mods.stomp;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetConnectHandler;
 import org.nodex.core.net.NetSocket;
 
 public class StompClient {
@@ -28,8 +28,8 @@ public class StompClient {
 
   public static void connect(int port, String host, final String username, final String password,
                              final StompConnectHandler connectHandler) {
-    new NetClient().connect(port, host, new NetConnectHandler() {
-      public void onConnect(NetSocket sock) {
+    new NetClient().connect(port, host, new EventHandler<NetSocket>() {
+      public void onEvent(NetSocket sock) {
         final StompConnection conn = new StompConnection(sock);
         conn.connect(username, password, new Runnable() {
           public void run() {
