@@ -13,10 +13,10 @@
 
 package org.nodex.core.parsetools;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 
-public class RecordParser implements DataHandler {
+public class RecordParser implements EventHandler<Buffer> {
 
   private Buffer buff;
   private int pos;            // Current position in buffer
@@ -27,9 +27,9 @@ public class RecordParser implements DataHandler {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
-  private final DataHandler output;
+  private final EventHandler<Buffer> output;
 
-  private RecordParser(DataHandler output) {
+  private RecordParser(EventHandler<Buffer> output) {
     this.output = output;
   }
 
@@ -49,17 +49,17 @@ public class RecordParser implements DataHandler {
     return bytes;
   }
 
-  public static RecordParser newDelimited(String delim, DataHandler output) {
+  public static RecordParser newDelimited(String delim, EventHandler<Buffer> output) {
     return newDelimited(latin1StringToBytes(delim), output);
   }
 
-  public static RecordParser newDelimited(byte[] delim, DataHandler output) {
+  public static RecordParser newDelimited(byte[] delim, EventHandler<Buffer> output) {
     RecordParser ls = new RecordParser(output);
     ls.delimitedMode(delim);
     return ls;
   }
 
-  public static RecordParser newFixed(int size, DataHandler output) {
+  public static RecordParser newFixed(int size, EventHandler<Buffer> output) {
     if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
     RecordParser ls = new RecordParser(output);
     ls.fixedSizeMode(size);
@@ -115,7 +115,7 @@ public class RecordParser implements DataHandler {
           Buffer ret = buff.copy(start, pos - delim.length + 1);
           start = pos + 1;
           delimPos = 0;
-          output.onData(ret);
+          output.onEvent(ret);
         }
       }
     }
@@ -127,11 +127,11 @@ public class RecordParser implements DataHandler {
       int end = start + recordSize;
       Buffer ret = buff.copy(start, end);
       start = end;
-      output.onData(ret);
+      output.onEvent(ret);
     }
   }
 
-  public void onData(Buffer buffer) {
+  public void onEvent(Buffer buffer) {
     if (buff == null) {
       buff = Buffer.create(buffer.length());
     }

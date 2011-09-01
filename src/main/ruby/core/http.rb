@@ -13,8 +13,6 @@ include Java
 require "core/buffer"
 java_import org.nodex.core.http.HttpServer
 java_import org.nodex.core.http.HttpClient
-java_import org.nodex.core.http.HttpRequestHandler
-
 
 module Http
   class Server

@@ -25,7 +25,7 @@ module ParseTools
     end
 
     def input(data)
-      @java_parser.onData(data._to_java_buffer)
+      @java_parser.onEvent(data._to_java_buffer)
     end
 
     def RecordParser.new_delimited(delim, proc = nil, &output_block)

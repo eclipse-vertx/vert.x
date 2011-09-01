@@ -13,7 +13,7 @@
 
 package org.nodex.tests.core;
 
-import org.nodex.core.Actor;
+import org.nodex.core.EventHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.shared.SharedMap;
 import org.testng.annotations.Test;
@@ -38,9 +38,10 @@ public class ActorTest extends TestBase {
     nodex.executeOnContext(contextID1, new Runnable() {
       public void run() {
         nodex.setContextID(contextID1);
-        long actorID = nodex.registerActor(new Actor<String>() {
-          public void onMessage(String message) {
+        long actorID = nodex.registerHandler(new EventHandler<String>() {
+          public void onEvent(String message) {
             azzert(contextID1 == nodex.getContextID());
+            nodex.unregisterHandler(map.get("actorid"));
             latch2.countDown();
           }
         });
@@ -57,7 +58,7 @@ public class ActorTest extends TestBase {
         nodex.setContextID(contextID2);
         //Send msg to actor
         long actorID = map.get("actorid");
-        nodex.<String>sendMessage(actorID, message);
+        nodex.<String>sendToHandler(actorID, message);
       }
     });
 
@@ -73,8 +74,8 @@ public class ActorTest extends TestBase {
   public void testActorNoContext() throws Exception {
 
     try {
-      nodex.registerActor(new Actor<String>() {
-        public void onMessage(String message) {
+      nodex.registerHandler(new EventHandler<String>() {
+        public void onEvent(String message) {
         }
       });
       azzert(false);

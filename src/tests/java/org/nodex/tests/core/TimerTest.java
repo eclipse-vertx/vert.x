@@ -13,9 +13,9 @@
 
 package org.nodex.tests.core;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
-import org.nodex.core.TimerHandler;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -31,8 +31,8 @@ public class TimerTest extends TestBase {
   public void testNoContext() throws Exception {
     final AtomicBoolean fired = new AtomicBoolean(false);
     try {
-      Nodex.instance.setTimeout(1, new TimerHandler() {
-        public void onTimer(long timerID) {
+      Nodex.instance.setTimeout(1, new EventHandler<Long>() {
+        public void onEvent(Long timerID) {
           fired.set(true);
         }
       });
@@ -54,8 +54,8 @@ public class TimerTest extends TestBase {
         final Thread th = Thread.currentThread();
         final long contextID = Nodex.instance.getContextID();
 
-        Nodex.instance.setTimeout(1, new TimerHandler() {
-          public void onTimer(long timerID) {
+        Nodex.instance.setTimeout(1, new EventHandler<Long>() {
+          public void onEvent(Long timerID) {
             azzert(th == Thread.currentThread());
             azzert(contextID == Nodex.instance.getContextID());
             endLatch.countDown();
@@ -82,9 +82,9 @@ public class TimerTest extends TestBase {
         final Thread th = Thread.currentThread();
         final long contextID = Nodex.instance.getContextID();
 
-        long id = Nodex.instance.setPeriodic(delay, new TimerHandler() {
+        long id = Nodex.instance.setPeriodic(delay, new EventHandler<Long>() {
           int count;
-          public void onTimer(long timerID) {
+          public void onEvent(Long timerID) {
             azzert(th == Thread.currentThread());
             azzert(contextID == Nodex.instance.getContextID());
             count++;
@@ -123,8 +123,8 @@ public class TimerTest extends TestBase {
         final long contextID = Nodex.instance.getContextID();
         final long start = System.nanoTime();
         final long delay = 100;
-        Nodex.instance.setTimeout(delay, new TimerHandler() {
-          public void onTimer(long timerID) {
+        Nodex.instance.setTimeout(delay, new EventHandler<Long>() {
+          public void onEvent(Long timerID) {
             long dur = (System.nanoTime() - start) / 1000000;
             azzert(dur >= delay);
             azzert(dur < delay * 1.25); // 25% margin of error

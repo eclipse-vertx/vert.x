@@ -1,10 +1,10 @@
 package org.nodex.tests.core.file;
 
 import org.nodex.core.CompletionHandler;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileStats;
 import org.nodex.core.file.FileSystem;
@@ -1209,8 +1209,8 @@ public class FileSystemTest extends TestBase {
 
             WriteStream ws = fh.getWriteStream();
 
-            ws.exceptionHandler(new ExceptionHandler() {
-              public void onException(Exception e) {
+            ws.exceptionHandler(new EventHandler<Exception>() {
+              public void onEvent(Exception e) {
                 exception.set(e);
                 latch.countDown();
               }
@@ -1276,23 +1276,23 @@ public class FileSystemTest extends TestBase {
 
             final Buffer buff = Buffer.create(0);
 
-            rs.dataHandler(new DataHandler() {
+            rs.dataHandler(new EventHandler<Buffer>() {
               int count;
 
-              public void onData(Buffer data) {
+              public void onEvent(Buffer data) {
                 buff.appendBuffer(data);
               }
             });
 
-            rs.exceptionHandler(new ExceptionHandler() {
-              public void onException(Exception e) {
+            rs.exceptionHandler(new EventHandler<Exception>() {
+              public void onEvent(Exception e) {
                 exception.set(e);
                 latch.countDown();
               }
             });
 
-            rs.endHandler(new Runnable() {
-              public void run() {
+            rs.endHandler(new SimpleEventHandler() {
+              public void onEvent() {
                 azzert(Utils.buffersEqual(buff, Buffer.create(content)));
                 latch.countDown();
               }
@@ -1347,8 +1347,8 @@ public class FileSystemTest extends TestBase {
 
                 p.start();
 
-                rs.endHandler(new Runnable() {
-                  public void run() {
+                rs.endHandler(new SimpleEventHandler() {
+                  public void onEvent() {
                     fh2.close(new CompletionHandler<Void>() {
 
                       public void onCompletion(Void v) {

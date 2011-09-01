@@ -31,18 +31,19 @@ class ActorTest < Test::Unit::TestCase
     msg2 = "hello from actor1"
 
     Nodex::go{
-      id1 = Nodex::register_actor{ |msg|
+      id1 = Nodex::register_handler{ |msg|
         assert(msg1 == msg)
         id2 = shared_hash[key2]
-        Nodex::send_message(id2, msg2)
+        Nodex::send_to_handler(id2, msg2)
       }
       shared_hash[key1] = id1
       latch1.countdown
     }
 
     Nodex::go{
-      id2 = Nodex::register_actor{ |msg|
+      id2 = Nodex::register_handler{ |msg|
         assert(msg2 == msg)
+        Nodex::unregister_handler(id2)
         latch2.countdown
       }
       shared_hash[key2] = id2
@@ -53,7 +54,7 @@ class ActorTest < Test::Unit::TestCase
 
     Nodex::go{
       id1 = shared_hash[key1]
-      Nodex::send_message(id1, msg1)
+      Nodex::send_to_handler(id1, msg1)
     }
 
     assert(latch2.await(5))

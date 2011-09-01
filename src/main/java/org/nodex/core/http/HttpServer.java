@@ -43,6 +43,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
@@ -70,8 +71,8 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpServer extends SSLBase {
 
-  private HttpRequestHandler requestHandler;
-  private WebsocketConnectHandler wsHandler;
+  private EventHandler<HttpServerRequest> requestHandler;
+  private EventHandler<Websocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
@@ -94,23 +95,13 @@ public class HttpServer extends SSLBase {
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
-  public HttpServer(HttpRequestHandler requestHandler) {
-    this();
-    this.requestHandler = requestHandler;
-  }
-
-  public HttpServer(WebsocketConnectHandler wsHandler) {
-    this();
-    this.wsHandler = wsHandler;
-  }
-
-  public HttpServer requestHandler(HttpRequestHandler requestHandler) {
+  public HttpServer requestHandler(EventHandler<HttpServerRequest> requestHandler) {
     checkThread();
     this.requestHandler = requestHandler;
     return this;
   }
 
-  public HttpServer websocketHandler(WebsocketConnectHandler wsHandler) {
+  public HttpServer websocketHandler(EventHandler<Websocket> wsHandler) {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
@@ -222,17 +213,17 @@ public class HttpServer extends SSLBase {
     close(null);
   }
 
-  public void close(final Runnable done) {
+  public void close(final EventHandler<Void> doneHandler) {
     checkThread();
     for (ServerConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
-    if (done != null) {
+    if (doneHandler != null) {
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              done.run();
+              doneHandler.onEvent(null);
             }
           });
         }
@@ -291,13 +282,14 @@ public class HttpServer extends SSLBase {
             // Websocket handshake
             Websocket ws = new Websocket(request.getUri(), conn);
 
-            boolean accepted = conn.handleWebsocketConnect(ws);
             boolean containsKey1 = request.containsHeader(SEC_WEBSOCKET_KEY1);
             boolean containsKey2 = request.containsHeader(SEC_WEBSOCKET_KEY2);
 
-            if (accepted && containsKey1 && containsKey2) {
+            if (containsKey1 && containsKey2) {
               long c = request.getContent().readLong();
               calcAndWriteWSHandshakeResponse(ch, request, c);
+
+              conn.handleWebsocketConnect(ws);
             } else {
               ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
             }

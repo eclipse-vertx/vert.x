@@ -13,7 +13,7 @@
 
 package org.nodex.core.streams;
 
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 
 public interface WriteStream {
@@ -24,7 +24,7 @@ public interface WriteStream {
 
   boolean writeQueueFull();
 
-  void drainHandler(Runnable handler);
+  void drainHandler(EventHandler<Void> handler);
 
-  void exceptionHandler(ExceptionHandler handler);
+  void exceptionHandler(EventHandler<Exception> handler);
 }

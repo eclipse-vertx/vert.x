@@ -3,11 +3,10 @@ package org.nodex.core.file;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.nodex.core.BlockingTask;
 import org.nodex.core.CompletionHandler;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
 
@@ -106,8 +105,8 @@ public class AsyncFile {
     check();
     if (writeStream == null) {
       writeStream = new WriteStream() {
-        ExceptionHandler exceptionHandler;
-        Runnable drainHandler;
+        EventHandler<Exception> exceptionHandler;
+        EventHandler<Void> drainHandler;
 
         int pos;
         int maxWrites = 64 * 1024;    // TODO - we should tune this for best performance
@@ -138,9 +137,9 @@ public class AsyncFile {
 
         private void checkDrained() {
           if (drainHandler != null && writesOutstanding <= lwm) {
-            Runnable handler = drainHandler;
+            EventHandler<Void> handler = drainHandler;
             drainHandler = null;
-            handler.run();
+            handler.onEvent(null);
           }
         }
 
@@ -155,20 +154,20 @@ public class AsyncFile {
           return writesOutstanding >= maxWrites;
         }
 
-        public void drainHandler(Runnable handler) {
+        public void drainHandler(EventHandler<Void> handler) {
           check();
           this.drainHandler = handler;
           checkDrained();
         }
 
-        public void exceptionHandler(ExceptionHandler handler) {
+        public void exceptionHandler(EventHandler<Exception> handler) {
           check();
           this.exceptionHandler = handler;
         }
 
         void handleException(Exception e) {
           if (exceptionHandler != null) {
-            exceptionHandler.onException(e);
+            exceptionHandler.onEvent(e);
           } else {
             e.printStackTrace(System.err);
           }
@@ -184,9 +183,9 @@ public class AsyncFile {
       readStream = new ReadStream() {
 
         boolean paused;
-        DataHandler dataHandler;
-        ExceptionHandler exceptionHandler;
-        Runnable endHandler;
+        EventHandler<Buffer> dataHandler;
+        EventHandler<Exception> exceptionHandler;
+        EventHandler<Void> endHandler;
         int pos;
         boolean readInProgress;
 
@@ -218,7 +217,7 @@ public class AsyncFile {
           }
         }
 
-        public void dataHandler(DataHandler handler) {
+        public void dataHandler(EventHandler<Buffer> handler) {
           check();
           this.dataHandler = handler;
           if (dataHandler != null && !paused && !closed) {
@@ -226,12 +225,12 @@ public class AsyncFile {
           }
         }
 
-        public void exceptionHandler(ExceptionHandler handler) {
+        public void exceptionHandler(EventHandler<Exception> handler) {
           check();
           this.exceptionHandler = handler;
         }
 
-        public void endHandler(Runnable handler) {
+        public void endHandler(EventHandler<Void> handler) {
           check();
           this.endHandler = handler;
         }
@@ -254,7 +253,7 @@ public class AsyncFile {
         void handleException(Exception e) {
           if (exceptionHandler != null) {
             checkContext();
-            exceptionHandler.onException(e);
+            exceptionHandler.onEvent(e);
           } else {
             e.printStackTrace(System.err);
           }
@@ -263,14 +262,14 @@ public class AsyncFile {
         void handleData(Buffer buffer) {
           if (dataHandler != null) {
             checkContext();
-            dataHandler.onData(buffer);
+            dataHandler.onEvent(buffer);
           }
         }
 
         void handleEnd() {
           if (endHandler != null) {
             checkContext();
-            endHandler.run();
+            endHandler.onEvent(null);
           }
         }
       };

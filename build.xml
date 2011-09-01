@@ -68,7 +68,7 @@
 
     <target name="java-tests" depends="compile-tests">
         <testng classpathref="test-classpath">
-        <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.http.HttpTest.testPooling"> -->
+        <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.net.NetTest.*"> -->
             <classfileset dir="${tests-target}" includes="**/*.class"/>
         </testng>
     </target>

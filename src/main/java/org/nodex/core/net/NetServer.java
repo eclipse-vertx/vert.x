@@ -34,6 +34,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
@@ -51,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NetServer extends SSLBase {
 
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
-  private NetConnectHandler connectHandler;
+  private EventHandler<NetSocket> connectHandler;
   private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -60,15 +61,10 @@ public class NetServer extends SSLBase {
   private ClientAuth clientAuth = ClientAuth.NONE;
 
   public NetServer() {
-    this(null);
-  }
-
-  public NetServer(NetConnectHandler connectHandler) {
     if (Nodex.instance.getContextID() == null) {
       throw new IllegalStateException("Net Server can only be used from an event loop");
     }
     this.th = Thread.currentThread();
-    this.connectHandler = connectHandler;
 
     //Defaults
     connectionOptions.put("child.tcpNoDelay", true);
@@ -77,7 +73,7 @@ public class NetServer extends SSLBase {
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
-  public NetServer connectHandler(NetConnectHandler connectHandler) {
+  public NetServer connectHandler(EventHandler<NetSocket> connectHandler) {
     checkThread();
     this.connectHandler = connectHandler;
     return this;
@@ -229,11 +225,20 @@ public class NetServer extends SSLBase {
     close(null);
   }
 
-  public void close(final Runnable done) {
+  public void close(final EventHandler<Void> done) {
     checkThread();
+
+    long cid = Nodex.instance.getContextID();
+
     for (NetSocket sock : socketMap.values()) {
       sock.internalClose();
     }
+
+    // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
+    // which can cause context id for the thread to change!
+
+    NodexInternal.instance.setContextID(cid);
+
     if (done != null) {
       final Long contextID = Nodex.instance.getContextID();
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
@@ -242,16 +247,10 @@ public class NetServer extends SSLBase {
           Runnable runner = new Runnable() {
             public void run() {
              listening = false;
-             done.run();
+             done.onEvent(null);
             }
           };
-
-          if (contextID == null) {
-            //Called from thread outside event loop, e.g. main thread
-            runner.run();
-          } else {
-            NodexInternal.instance.executeOnContext(contextID, runner);
-          }
+          NodexInternal.instance.executeOnContext(contextID, runner);
         }
       });
     }
@@ -275,7 +274,7 @@ public class NetServer extends SSLBase {
           NodexInternal.instance.setContextID(contextID);
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-          connectHandler.onConnect(sock);
+          connectHandler.onEvent(sock);
         }
       });
     }
@@ -302,6 +301,7 @@ public class NetServer extends SSLBase {
         ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleClosed();
+            //System.out.println("Destroying context " + sock.getContextID());
             NodexInternal.instance.destroyContext(sock.getContextID());
           }
         });

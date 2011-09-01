@@ -48,18 +48,18 @@ module Nodex
     Nodex.instance.cancelTimeout(id)
   end
 
-  def Nodex.register_actor(proc = nil, &hndlr)
+  def Nodex.register_handler(proc = nil, &hndlr)
     hndlr = proc if proc
-    Nodex.instance.registerActor(hndlr)
+    Nodex.instance.registerHandler(hndlr)
   end
 
-  def Nodex.unregister_actor(actor_id)
-    Nodex.instance.unregisterActor(actor_id)
+  def Nodex.unregister_handler(actor_id)
+    Nodex.instance.unregisterHandler(actor_id)
   end
 
-  def Nodex.send_message(actor_id, msg)
+  def Nodex.send_to_handler(actor_id, msg)
     msg = msg.copy if msg.is_a?(Buffer)
-    Nodex.instance.sendMessage(actor_id, msg)
+    Nodex.instance.sendToHandler(actor_id, msg)
   end
 
 

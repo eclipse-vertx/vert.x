@@ -19,7 +19,9 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.buffer.Buffer;
 
 import java.io.File;
@@ -30,8 +32,8 @@ class ServerConnection extends AbstractConnection {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private HttpRequestHandler mainHandler;
-  private WebsocketConnectHandler wsHandler;
+  private EventHandler<HttpServerRequest> requestHandler;
+  private EventHandler<Websocket> wsHandler;
   private HttpServerRequest currentRequest;
   private boolean pendingResponse;
   private Websocket ws;
@@ -83,11 +85,11 @@ class ServerConnection extends AbstractConnection {
     checkNextTick();
   }
 
-  void requestHandler(HttpRequestHandler handler) {
-    this.mainHandler = handler;
+  void requestHandler(EventHandler<HttpServerRequest> handler) {
+    this.requestHandler = handler;
   }
 
-  void wsHandler(WebsocketConnectHandler handler) {
+  void wsHandler(EventHandler<Websocket> handler) {
     this.wsHandler = handler;
   }
 
@@ -101,8 +103,8 @@ class ServerConnection extends AbstractConnection {
     try {
       this.currentRequest = req;
       pendingResponse = true;
-      if (mainHandler != null) {
-        mainHandler.onRequest(req);
+      if (requestHandler != null) {
+        requestHandler.onEvent(req);
       }
     } catch (Throwable t) {
       handleHandlerException(t);
@@ -143,19 +145,15 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  boolean handleWebsocketConnect(Websocket ws) {
+  void handleWebsocketConnect(Websocket ws) {
     try {
       if (wsHandler != null) {
         setContextID();
-        if (wsHandler.onConnect(ws)) {
-          this.ws = ws;
-          return true;
-        }
+        wsHandler.onEvent(ws);
+        this.ws = ws;
       }
-      return false;
     } catch (Throwable t) {
       handleHandlerException(t);
-      return false;
     }
   }
 
@@ -188,8 +186,8 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(Runnable done, ChannelFuture future) {
-    super.addFuture(done, future);
+  protected void addFuture(EventHandler<Void> doneHandler, ChannelFuture future) {
+    super.addFuture(doneHandler, future);
   }
 
   protected boolean isSSL() {
@@ -236,8 +234,8 @@ class ServerConnection extends AbstractConnection {
     if (!sentCheck && !pending.isEmpty() && !paused && (!pendingResponse || pending.peek() instanceof HttpChunk))
     {
       sentCheck = true;
-      Nodex.instance.nextTick(new Runnable() {
-        public void run() {
+      Nodex.instance.nextTick(new SimpleEventHandler() {
+        public void onEvent() {
           sentCheck = false;
           if (!paused) {
             Object msg = pending.poll();

@@ -13,13 +13,13 @@
 
 package org.nodex.tests.core.http;
 
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.http.HttpClient;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.Websocket;
-import org.nodex.core.http.WebsocketConnectHandler;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -53,33 +53,32 @@ public class WebsocketTest extends TestBase {
 
     new NodexMain() {
       public void go() throws Exception {
-        final HttpServer server = new HttpServer(new WebsocketConnectHandler() {
-          public boolean onConnect(final Websocket ws) {
+        final HttpServer server = new HttpServer().websocketHandler(new EventHandler<Websocket>() {
+          public void onEvent(final Websocket ws) {
             azzert(path.equals(ws.uri));
-            ws.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
+            ws.dataHandler(new EventHandler<Buffer>() {
+              public void onEvent(Buffer data) {
                 //Echo it back
                 ws.writeBuffer(data);
               }
             });
-            return true;
           }
         }).listen(port, host);
 
         final int bsize = 100;
         final int sends = 10;
 
-        client.connectWebsocket(path, new WebsocketConnectHandler() {
-          public boolean onConnect(final Websocket ws) {
+        client.connectWebsocket(path, new EventHandler<Websocket>() {
+          public void onEvent(final Websocket ws) {
 
             final Buffer received = Buffer.create(0);
-            ws.dataHandler(new DataHandler() {
-              public void onData(Buffer data) {
+            ws.dataHandler(new EventHandler<Buffer>() {
+              public void onEvent(Buffer data) {
                 received.appendBuffer(data);
                 if (received.length() == bsize * sends) {
                   ws.close();
-                  server.close(new Runnable() {
-                    public void run() {
+                  server.close(new SimpleEventHandler() {
+                    public void onEvent() {
                       latch.countDown();
                     }
                   });
@@ -98,7 +97,6 @@ public class WebsocketTest extends TestBase {
                 sent.appendBuffer(Buffer.create(str, "UTF-8"));
               }
             }
-            return true;
           }
         });
       }

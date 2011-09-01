@@ -14,10 +14,11 @@
 package org.nodex.examples.upload;
 
 import org.nodex.core.CompletionHandler;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.NodexMain;
 import org.nodex.core.file.AsyncFile;
 import org.nodex.core.file.FileSystem;
-import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 import org.nodex.core.streams.Pump;
@@ -34,8 +35,8 @@ public class UploadServer extends NodexMain {
 
   public void go() throws Exception {
 
-    new HttpServer(new HttpRequestHandler() {
-      public void onRequest(final HttpServerRequest req) {
+    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
+      public void onEvent(final HttpServerRequest req) {
 
         // We first pause the request so we don't receive any data between now and when the file is opened
         req.pause();
@@ -44,8 +45,8 @@ public class UploadServer extends NodexMain {
 
         FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
           public void onCompletion(final AsyncFile file) {
-            req.endHandler(new Runnable() {
-              public void run() {
+            req.endHandler(new SimpleEventHandler() {
+              public void onEvent() {
                 file.close(new CompletionHandler<Void>() {
                   public void onCompletion(Void v) {
                     req.response.end();

@@ -25,19 +25,19 @@ public interface Nodex {
 
   int getBackgroundThreadPoolSize();
 
-  long setTimeout(long delay, TimerHandler handler);
+  long setTimeout(long delay, EventHandler<Long> handler);
 
-  long setPeriodic(long delay, TimerHandler handler);
+  long setPeriodic(long delay, EventHandler<Long> handler);
 
   boolean cancelTimeout(long id);
 
-  <T> long registerActor(Actor<T> actor);
+  <T> long registerHandler(EventHandler<T> handler);
 
-  boolean unregisterActor(long actorID);
+  boolean unregisterHandler(long handlerID);
 
-  <T> boolean sendMessage(long actorID, T message);
+  <T> boolean sendToHandler(long actorID, T message);
 
   Long getContextID();
 
-  void nextTick(Runnable runnable);
+  void nextTick(EventHandler<Void> handler);
 }

@@ -125,9 +125,13 @@ module Net
 
     def initialize(j_socket)
       @j_socket = j_socket
-      @write_actor_id = Nodex::register_actor{ |buffer|
+      @write_handler_id = Nodex::register_handler{ |buffer|
         write_buffer(buffer)
       }
+      @j_socket.closedHandler(Proc.new{
+        Nodex::unregister_handler(@write_handler_id)
+        @closed_handler.call if @closed_handler
+      })
     end
 
     def write_buffer(buff, &compl)
@@ -159,7 +163,7 @@ module Net
 
     def closed_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_socket.closedHandler(hndlr)
+      @closed_handler = hndlr;
     end
 
     def exception_handler(proc = nil, &hndlr)

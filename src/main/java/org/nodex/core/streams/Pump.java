@@ -13,22 +13,22 @@
 
 package org.nodex.core.streams;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 
 public class Pump {
   private final ReadStream readStream;
   private final WriteStream writeStream;
 
-  private final Runnable drainHandler = new Runnable() {
-    public void run() {
+  private final EventHandler<Void> drainHandler = new EventHandler<Void>() {
+    public void onEvent(Void v) {
       readStream.resume();
     }
   };
 
-  private final DataHandler dataHandler = new DataHandler() {
+  private final EventHandler<Buffer> dataHandler = new EventHandler<Buffer>() {
     long count;
-    public void onData(Buffer buffer) {
+    public void onEvent(Buffer buffer) {
       count += buffer.length();
       writeStream.writeBuffer(buffer);
       if (writeStream.writeQueueFull()) {

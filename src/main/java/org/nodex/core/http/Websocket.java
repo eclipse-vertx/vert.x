@@ -15,9 +15,8 @@ package org.nodex.core.http;
 
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 import org.nodex.core.streams.WriteStream;
 
@@ -25,10 +24,10 @@ public class Websocket implements ReadStream, WriteStream {
 
   private final AbstractConnection conn;
 
-  private DataHandler dataHandler;
-  private Runnable drainHandler;
-  private ExceptionHandler exceptionHandler;
-  private Runnable endHandler;
+  private EventHandler<Buffer> dataHandler;
+  private EventHandler<Void> drainHandler;
+  private EventHandler<Exception> exceptionHandler;
+  private EventHandler<Void> endHandler;
 
   Websocket(String uri, AbstractConnection conn) {
     this.uri = uri;
@@ -47,15 +46,15 @@ public class Websocket implements ReadStream, WriteStream {
     conn.write(frame);
   }
 
-  public void dataHandler(DataHandler handler) {
+  public void dataHandler(EventHandler<Buffer> handler) {
     this.dataHandler = handler;
   }
 
-  public void endHandler(Runnable handler) {
+  public void endHandler(EventHandler<Void> handler) {
     this.endHandler = handler;
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -79,7 +78,7 @@ public class Websocket implements ReadStream, WriteStream {
     writeBinaryFrame(data);
   }
 
-  public void drainHandler(Runnable handler) {
+  public void drainHandler(EventHandler<Void> handler) {
     this.drainHandler = handler;
   }
 
@@ -89,19 +88,19 @@ public class Websocket implements ReadStream, WriteStream {
 
   void handleFrame(WebSocketFrame frame) {
     if (dataHandler != null) {
-      dataHandler.onData(new Buffer(frame.getBinaryData()));
+      dataHandler.onEvent(new Buffer(frame.getBinaryData()));
     }
   }
 
   void writable() {
     if (drainHandler != null) {
-      drainHandler.run();
+      drainHandler.onEvent(null);
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onException(e);
+      exceptionHandler.onEvent(e);
     }
   }
 }

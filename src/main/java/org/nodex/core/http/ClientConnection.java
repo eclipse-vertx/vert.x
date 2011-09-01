@@ -24,8 +24,9 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
+import org.nodex.core.EventHandler;
+import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +58,7 @@ class ClientConnection extends AbstractConnection {
   private Websocket ws;
 
   void toWebSocket(final String uri, Map<String, ? extends Object> headers,
-                   final WebsocketConnectHandler wsConnect) {
+                   final EventHandler<Websocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
@@ -70,8 +71,8 @@ class ClientConnection extends AbstractConnection {
     final ChannelBuffer buff = ChannelBuffers.buffer(8);
     buff.writeLong(c);
 
-    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new HttpResponseHandler() {
-      public void onResponse(HttpClientResponse resp) {
+    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new EventHandler<HttpClientResponse>() {
+      public void onEvent(HttpClientResponse resp) {
         if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
           handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode
           + "msg:" + resp.statusMessage));
@@ -80,13 +81,13 @@ class ClientConnection extends AbstractConnection {
           handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
         } else {
           final Buffer buff = Buffer.create(0);
-          resp.dataHandler(new DataHandler() {
-            public void onData(Buffer data) {
+          resp.dataHandler(new EventHandler<Buffer>() {
+            public void onEvent(Buffer data) {
               buff.appendBuffer(data);
             }
           });
-          resp.endHandler(new Runnable() {
-            public void run() {
+          resp.endHandler(new SimpleEventHandler() {
+            public void onEvent() {
               boolean matched = true;
               if (buff.length() == out.length()) {
                 for (int i = 0; i < buff.length(); i++) {
@@ -101,7 +102,7 @@ class ClientConnection extends AbstractConnection {
                   p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
                   p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
                   ws = new Websocket(uri, ClientConnection.this);
-                  wsConnect.onConnect(ws);
+                  wsConnect.onEvent(ws);
                   return;
                 }
               }
@@ -222,8 +223,8 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(Runnable done, ChannelFuture future) {
-    super.addFuture(done, future);
+  protected void addFuture(EventHandler<Void> doneHandler, ChannelFuture future) {
+    super.addFuture(doneHandler, future);
   }
 
   ChannelFuture write(Object obj) {

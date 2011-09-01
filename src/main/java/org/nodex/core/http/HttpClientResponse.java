@@ -15,9 +15,8 @@ package org.nodex.core.http;
 
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
-import org.nodex.core.buffer.DataHandler;
 import org.nodex.core.streams.ReadStream;
 
 import java.util.List;
@@ -28,9 +27,9 @@ public class HttpClientResponse implements ReadStream {
 
   private final ClientConnection conn;
   private final Thread th;
-  private DataHandler dataHandler;
-  private Runnable endHandler;
-  private ExceptionHandler exceptionHandler;
+  private EventHandler<Buffer> dataHandler;
+  private EventHandler<Void> endHandler;
+  private EventHandler<Exception> exceptionHandler;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
 
@@ -79,17 +78,17 @@ public class HttpClientResponse implements ReadStream {
     return trailer.getHeaderNames();
   }
 
-  public void dataHandler(DataHandler dataHandler) {
+  public void dataHandler(EventHandler<Buffer> dataHandler) {
     checkThread();
     this.dataHandler = dataHandler;
   }
 
-  public void endHandler(Runnable end) {
+  public void endHandler(EventHandler<Void> endHandler) {
     checkThread();
-    this.endHandler = end;
+    this.endHandler = endHandler;
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     checkThread();
     this.exceptionHandler = handler;
   }
@@ -107,7 +106,7 @@ public class HttpClientResponse implements ReadStream {
   void handleChunk(Buffer data) {
     checkThread();
     if (dataHandler != null) {
-      dataHandler.onData(data);
+      dataHandler.onEvent(data);
     }
   }
 
@@ -115,14 +114,14 @@ public class HttpClientResponse implements ReadStream {
     checkThread();
     this.trailer = trailer;
     if (endHandler != null) {
-      endHandler.run();
+      endHandler.onEvent(null);
     }
   }
 
   void handleException(Exception e) {
     checkThread();
     if (exceptionHandler != null) {
-      exceptionHandler.onException(e);
+      exceptionHandler.onEvent(e);
     }
   }
 

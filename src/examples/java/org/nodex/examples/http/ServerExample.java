@@ -13,8 +13,8 @@
 
 package org.nodex.examples.http;
 
+import org.nodex.core.EventHandler;
 import org.nodex.core.NodexMain;
-import org.nodex.core.http.HttpRequestHandler;
 import org.nodex.core.http.HttpServer;
 import org.nodex.core.http.HttpServerRequest;
 
@@ -27,8 +27,8 @@ public class ServerExample extends NodexMain {
   }
 
   public void go() throws Exception {
-    new HttpServer(new HttpRequestHandler() {
-      public void onRequest(HttpServerRequest req) {
+    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
+      public void onEvent(HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
         for (String key : req.getHeaderNames()) {

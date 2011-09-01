@@ -31,7 +31,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.core.ExceptionHandler;
+import org.nodex.core.EventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexInternal;
 import org.nodex.core.SSLBase;
@@ -50,14 +50,14 @@ public class NetClient extends SSLBase {
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
   private Map<String, Object> connectionOptions = new HashMap<>();
-  private ExceptionHandler exceptionHandler;
+  private EventHandler<Exception> exceptionHandler;
 
   public NetClient() {
     connectionOptions.put("tcpNoDelay", true);
     connectionOptions.put("keepAlive", true);
   }
 
-  public NetClient connect(int port, String host, final NetConnectHandler connectHandler) {
+  public NetClient connect(int port, String host, final EventHandler<NetSocket> connectHandler) {
 
     final Long contextID = Nodex.instance.getContextID();
     if (contextID == null) {
@@ -102,13 +102,13 @@ public class NetClient extends SSLBase {
               NodexInternal.instance.setContextID(contextID);
               NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
               socketMap.put(ch, sock);
-              connectHandler.onConnect(sock);
+              connectHandler.onEvent(sock);
             }
           });
         } else {
           Throwable t = channelFuture.getCause();
           if (t instanceof Exception && exceptionHandler != null) {
-            exceptionHandler.onException((Exception)t);
+            exceptionHandler.onEvent((Exception)t);
           } else {
             t.printStackTrace(System.err);
           }
@@ -118,7 +118,7 @@ public class NetClient extends SSLBase {
     return this;
   }
 
-  public NetClient connect(int port, NetConnectHandler connectCallback) {
+  public NetClient connect(int port, EventHandler<NetSocket> connectCallback) {
     return connect(port, "localhost", connectCallback);
   }
 
@@ -128,7 +128,7 @@ public class NetClient extends SSLBase {
     }
   }
 
-  public void exceptionHandler(ExceptionHandler handler) {
+  public void exceptionHandler(EventHandler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
