@@ -18,6 +18,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.buffer.DynamicChannelBuffer;
 import org.jboss.netty.util.CharsetUtil;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class Buffer {
@@ -193,6 +194,12 @@ public class Buffer {
     return this;
   }
 
+  public Buffer setBytes(int pos, ByteBuffer b) {
+    ensureWritable(pos, b.limit());
+    buffer.setBytes(pos, b);
+    return this;
+  }
+
   public Buffer setBytes(int pos, byte[] b) {
     ensureWritable(pos, b.length);
     buffer.setBytes(pos, b);
@@ -240,8 +247,10 @@ public class Buffer {
   //like Netty that would be preferable
   private void ensureWritable(int pos, int len) {
     int ni = pos + len;
-    int over = ni - buffer.capacity();
+    int cap = buffer.capacity();
+    int over = ni - cap;
     if (over > 0) {
+      buffer.writerIndex(cap);
       buffer.ensureWritableBytes(over);
     }
     //We have to make sure that the writerindex is always positioned on the last bit of data set in the buffer

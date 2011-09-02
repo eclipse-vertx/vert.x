@@ -1,5 +1,6 @@
 package org.nodex.examples.upload;
 
+import org.nodex.core.Completion;
 import org.nodex.core.CompletionHandler;
 import org.nodex.core.EventHandler;
 import org.nodex.core.SimpleEventHandler;
@@ -43,8 +44,8 @@ public class UploadClient extends NodexMain {
     // req.setChunked(true);
 
     FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
-      public void onCompletion(final AsyncFile file) {
-
+      public void onEvent(Completion<AsyncFile> completion) {
+        final AsyncFile file = completion.result;
         Pump pump = new Pump(file.getReadStream(), req);
         pump.start();
 
@@ -52,12 +53,13 @@ public class UploadClient extends NodexMain {
           public void onEvent() {
 
             file.close(new CompletionHandler<Void>() {
-              public void onCompletion(Void v) {
-                req.end();
-                System.out.println("Sent request");
-              }
-              public void onException(Exception e) {
-                e.printStackTrace(System.err);
+              public void onEvent(Completion<Void> completion) {
+                if (completion.succeeded()) {
+                  req.end();
+                  System.out.println("Sent request");
+                } else {
+                  completion.exception.printStackTrace(System.err);
+                }
               }
             });
           }

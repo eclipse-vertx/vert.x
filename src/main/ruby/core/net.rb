@@ -71,12 +71,9 @@ module Net
 
   class Server < NetBase
 
-    def initialize(proc = nil, &hndlr)
+    def initialize
       @j_cliserv = NetServer.new
       super(@j_cliserv)
-      hndlr = proc if proc
-      puts "in initialize hdlr is #{hndlr}"
-      connect_handler(hndlr) if hndlr
     end
 
     def client_auth_required=(val)

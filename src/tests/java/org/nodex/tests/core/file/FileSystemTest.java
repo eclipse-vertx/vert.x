@@ -1,5 +1,6 @@
 package org.nodex.tests.core.file;
 
+import org.nodex.core.Completion;
 import org.nodex.core.CompletionHandler;
 import org.nodex.core.EventHandler;
 import org.nodex.core.SimpleEventHandler;
@@ -32,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -189,14 +191,11 @@ public class FileSystemTest extends TestBase {
     final AtomicReference<Exception> exception = new AtomicReference<>();
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          @Override
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -302,13 +301,10 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          @Override
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -350,12 +346,10 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen, new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<Void> completion) {
+            if (completion.failed()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         });
@@ -435,13 +429,11 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
 
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -536,13 +528,12 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<FileStats> compl = new CompletionHandler<FileStats>() {
-          public void onCompletion(FileStats st) {
-            stats.set(st);
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<FileStats> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            } else {
+              stats.set(completion.result);
+            }
             latch.countDown();
           }
         };
@@ -587,13 +578,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -625,18 +614,15 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
         FileSystem.instance.unlink(TEST_DIR + pathSep + linkName, compl);
-
       }
     });
 
@@ -660,13 +646,12 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String> compl = new CompletionHandler<String>() {
-          public void onCompletion(String sname) {
-            name.set(sname);
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<String> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            } else {
+              name.set(completion.result);
+            }
             latch.countDown();
           }
         };
@@ -746,13 +731,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+       CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -825,13 +808,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -914,13 +895,12 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String[]> compl = new CompletionHandler<String[]>() {
-          public void onCompletion(String[] sname) {
-            res.set(sname);
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<String[]> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            } else {
+              res.set(completion.result);
+            }
             latch.countDown();
           }
         };
@@ -952,13 +932,12 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Buffer> compl = new CompletionHandler<Buffer>() {
-          public void onCompletion(Buffer buff) {
-            res.set(buff);
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<Buffer> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            } else {
+              res.set(completion.result);
+            }
             latch.countDown();
           }
         };
@@ -984,13 +963,12 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String> compl = new CompletionHandler<String>() {
-          public void onCompletion(String str) {
-            res.set(str);
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<String> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            } else {
+              res.set(completion.result);
+            }
             latch.countDown();
           }
         };
@@ -1015,13 +993,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -1047,13 +1023,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+          public void onEvent(Completion<Void> completion) {
+            if (!completion.succeeded()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -1090,32 +1064,32 @@ public class FileSystemTest extends TestBase {
 
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionHandler<AsyncFile>() {
-          public void onCompletion(AsyncFile fh) {
 
-            for (int i = 0; i < chunks; i++) {
+          public void onEvent(Completion<AsyncFile> completion) {
+            if (completion.succeeded()) {
+              for (int i = 0; i < chunks; i++) {
 
-              Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
-              azzert(chunk.length() == chunkSize);
+                Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
+                azzert(chunk.length() == chunkSize);
 
-              fh.write(chunk, i * chunkSize, new CompletionHandler<Void>() {
+                completion.result.write(chunk, i * chunkSize, new CompletionHandler<Void>() {
 
-                public void onCompletion(Void v) {
-                  latch.countDown();
-                }
-
-                public void onException(Exception e) {
-                  e.printStackTrace();
-                  exception.set(e);
-                  countDownAll();
-                }
-              });
+                  public void onEvent(Completion<Void> completion) {
+                    if (completion.succeeded()) {
+                      latch.countDown();
+                    } else {
+                      completion.exception.printStackTrace();
+                      exception.set(completion.exception);
+                      countDownAll();
+                    }
+                  }
+                });
+              }
+            } else {
+              exception.set(completion.exception);
+              completion.exception.printStackTrace();
+              countDownAll();
             }
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
-            e.printStackTrace();
-            countDownAll();
           }
         });
       }
@@ -1136,56 +1110,49 @@ public class FileSystemTest extends TestBase {
     final int chunks = 10;
 
     byte[] content = Utils.generateRandomByteArray(chunkSize * chunks);
-
+    final Buffer expected = Buffer.create(content);
     createFile(fileName, content);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Exception> exception = new AtomicReference<>();
-    final Map<Integer, Buffer> reads = new ConcurrentHashMap<Integer, Buffer>();
 
     run(latch, new Runnable() {
 
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionHandler<AsyncFile>() {
-          public void onCompletion(AsyncFile fh) {
-            for (int i = 0; i < chunks + 1; i++) {
-              final int pos = i;
-              fh.read(i * chunkSize, chunkSize, new CompletionHandler<Buffer>() {
-                public void onCompletion(Buffer buff) {
-                  if (buff.length() != 0) {
-                    reads.put(pos * chunkSize, buff);
-                  } else {
-                    //Buff of length 0 denotes end of file
-                    latch.countDown();
+
+          public void onEvent(Completion<AsyncFile> completion) {
+            if (completion.succeeded()) {
+              final Buffer buff = Buffer.create(chunks * chunkSize);
+              final AtomicInteger reads = new AtomicInteger(0);
+              for (int i = 0; i < chunks; i++) {
+                completion.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new CompletionHandler<Buffer>() {
+                  public void onEvent(Completion<Buffer> completion) {
+                    if (completion.succeeded()) {
+                      if (reads.incrementAndGet() == chunks) {
+                        azzert(Utils.buffersEqual(expected, buff));
+                        azzert(buff == completion.result);
+                        latch.countDown();
+                      }
+                    } else {
+                      completion.exception.printStackTrace();
+                      exception.set(completion.exception);
+                      latch.countDown();
+                    }
                   }
-                }
-
-                public void onException(Exception e) {
-                  e.printStackTrace();
-                  exception.set(e);
-                  latch.countDown();
-                }
-              });
+                });
+              }
+            } else {
+              exception.set(completion.exception);
+              completion.exception.printStackTrace();
+              latch.countDown();
             }
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
-            e.printStackTrace();
-            latch.countDown();
           }
         });
       }
     });
 
     azzert(exception.get() == null);
-
-    Buffer buff = Buffer.create(0);
-    for (Map.Entry<Integer, Buffer> entry : reads.entrySet()) {
-      buff.setBytes(entry.getKey(), entry.getValue());
-    }
-
-    azzert(Utils.buffersEqual(buff, Buffer.create(content)));
     throwAssertions();
   }
 
@@ -1205,42 +1172,40 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionHandler<AsyncFile>() {
-          public void onCompletion(AsyncFile fh) {
 
-            WriteStream ws = fh.getWriteStream();
+          public void onEvent(Completion<AsyncFile> completion) {
+            if (completion.succeeded()) {
+              WriteStream ws = completion.result.getWriteStream();
 
-            ws.exceptionHandler(new EventHandler<Exception>() {
-              public void onEvent(Exception e) {
-                exception.set(e);
-                latch.countDown();
+              ws.exceptionHandler(new EventHandler<Exception>() {
+                public void onEvent(Exception e) {
+                  exception.set(e);
+                  latch.countDown();
+                }
+              });
+
+              for (int i = 0; i < chunks; i++) {
+
+                Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
+                azzert(chunk.length() == chunkSize);
+
+                ws.writeBuffer(chunk);
               }
-            });
 
-            for (int i = 0; i < chunks; i++) {
-
-              Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
-              azzert(chunk.length() == chunkSize);
-
-              ws.writeBuffer(chunk);
+              completion.result.close(new CompletionHandler<Void>() {
+                public void onEvent(Completion<Void> completion) {
+                  if (completion.failed()) {
+                    completion.exception.printStackTrace();
+                    exception.set(completion.exception);
+                  }
+                  latch.countDown();
+                }
+              });
+            } else {
+              exception.set(completion.exception);
+              completion.exception.printStackTrace();
+              latch.countDown();
             }
-
-            fh.close(new CompletionHandler<Void>() {
-              public void onCompletion(Void v) {
-                latch.countDown();
-              }
-
-              public void onException(Exception e) {
-                e.printStackTrace();
-                exception.set(e);
-                latch.countDown();
-              }
-            });
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
-            e.printStackTrace();
-            latch.countDown();
           }
         });
       }
@@ -1270,39 +1235,39 @@ public class FileSystemTest extends TestBase {
 
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionHandler<AsyncFile>() {
-          public void onCompletion(AsyncFile fh) {
 
-            ReadStream rs = fh.getReadStream();
+          public void onEvent(Completion<AsyncFile> completion) {
+            if (completion.succeeded()) {
+              ReadStream rs = completion.result.getReadStream();
 
-            final Buffer buff = Buffer.create(0);
+              final Buffer buff = Buffer.create(0);
 
-            rs.dataHandler(new EventHandler<Buffer>() {
-              int count;
+              rs.dataHandler(new EventHandler<Buffer>() {
+                int count;
 
-              public void onEvent(Buffer data) {
-                buff.appendBuffer(data);
-              }
-            });
+                public void onEvent(Buffer data) {
+                  buff.appendBuffer(data);
+                }
+              });
 
-            rs.exceptionHandler(new EventHandler<Exception>() {
-              public void onEvent(Exception e) {
-                exception.set(e);
-                latch.countDown();
-              }
-            });
+              rs.exceptionHandler(new EventHandler<Exception>() {
+                public void onEvent(Exception e) {
+                  exception.set(e);
+                  latch.countDown();
+                }
+              });
 
-            rs.endHandler(new SimpleEventHandler() {
-              public void onEvent() {
-                azzert(Utils.buffersEqual(buff, Buffer.create(content)));
-                latch.countDown();
-              }
-            });
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
-            e.printStackTrace();
-            latch.countDown();
+              rs.endHandler(new SimpleEventHandler() {
+                public void onEvent() {
+                  azzert(Utils.buffersEqual(buff, Buffer.create(content)));
+                  latch.countDown();
+                }
+              });
+            } else {
+              exception.set(completion.exception);
+              completion.exception.printStackTrace();
+              latch.countDown();
+            }
           }
         });
       }
@@ -1333,52 +1298,48 @@ public class FileSystemTest extends TestBase {
       public void run() {
         // Open file for reading
         FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false, new CompletionHandler<AsyncFile>() {
-          public void onCompletion(AsyncFile fh1) {
 
-            final ReadStream rs = fh1.getReadStream();
+          public void onEvent(Completion<AsyncFile> completion) {
+            if (completion.succeeded()) {
+              final ReadStream rs = completion.result.getReadStream();
 
-            //Open file for writing
-            FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true, new CompletionHandler<AsyncFile>() {
-              public void onCompletion(final AsyncFile fh2) {
+              //Open file for writing
+              FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true, new CompletionHandler<AsyncFile>() {
 
-                WriteStream ws = fh2.getWriteStream();
+                public void onEvent(final Completion<AsyncFile> completion) {
+                  if (completion.succeeded()) {
+                    WriteStream ws = completion.result.getWriteStream();
 
-                Pump p = new Pump(rs, ws);
+                    Pump p = new Pump(rs, ws);
 
-                p.start();
+                    p.start();
 
-                rs.endHandler(new SimpleEventHandler() {
-                  public void onEvent() {
-                    fh2.close(new CompletionHandler<Void>() {
+                    rs.endHandler(new SimpleEventHandler() {
+                      public void onEvent() {
+                        completion.result.close(new CompletionHandler<Void>() {
 
-                      public void onCompletion(Void v) {
-                        latch.countDown();
-                      }
-
-                      public void onException(Exception e) {
-                        exception.set(e);
-                        e.printStackTrace();
-                        latch.countDown();
+                          public void onEvent(Completion<Void> completion) {
+                            if (completion.failed()) {
+                              exception.set(completion.exception);
+                              completion.exception.printStackTrace();
+                            }
+                            latch.countDown();
+                          }
+                        });
                       }
                     });
+                  } else {
+                    exception.set(completion.exception);
+                    completion.exception.printStackTrace();
+                    latch.countDown();
                   }
-                });
-              }
-
-              public void onException(Exception e) {
-                exception.set(e);
-                e.printStackTrace();
-                latch.countDown();
-              }
-            });
-
-
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
-            e.printStackTrace();
-            latch.countDown();
+                }
+              });
+            } else {
+              exception.set(completion.exception);
+              completion.exception.printStackTrace();
+              latch.countDown();
+            }
           }
         });
       }
@@ -1410,12 +1371,10 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler compl = new CompletionHandler<Void>() {
-          public void onCompletion(Void v) {
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<Void> completion) {
+            if (completion.failed()) {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };
@@ -1447,13 +1406,12 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Boolean> compl = new CompletionHandler<Boolean>() {
-          public void onCompletion(Boolean res) {
-            ares.set(res);
-            latch.countDown();
-          }
-
-          public void onException(Exception e) {
-            exception.set(e);
+          public void onEvent(Completion<Boolean> completion) {
+            if (completion.succeeded()) {
+              ares.set(completion.result);
+            } else {
+              exception.set(completion.exception);
+            }
             latch.countDown();
           }
         };

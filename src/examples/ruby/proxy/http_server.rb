@@ -9,15 +9,35 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
+require "core/http"
 require "core/nodex"
-include Net
+require "set"
+include Http
 
 Nodex::go{
-  Server.new.connect_handler{ |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
+  Server.new.request_handler{ |req|
+    puts "Got request #{req.uri}"
+    req.header_names.each { |header_name|
+      puts "#{header_name} : #{req.header(header_name)}"
+    }
+
+    req.data_handler { |data|
+      puts "Got data #{data}"
+    }
+
+    req.end_handler {
+      # Now send back a response
+
+      req.response.chunked = true
+
+      for i in 0..9
+        req.response.write_str("server-data-chunk-#{i}")
+      end
+
+      req.response.end
+    }
+  }.listen(8282)
 }
+
 puts "hit enter to exit"
 STDIN.gets
-
-
-

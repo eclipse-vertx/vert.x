@@ -9,15 +9,21 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
+require "core/http"
 require "core/nodex"
-include Net
+include Http
 
 Nodex::go{
-  Server.new.connect_handler{ |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
+  server = Server.new
+  server.ssl = true
+  server.key_store_path = "server-keystore.jks"
+  server.key_store_password = "wibble"
+
+  server.request_handler{ |req|
+    req.response.chunked = true
+    req.response.write_str("<html><body><h1>Hello from Node.x over HTTPS!</h1></body></html>", "UTF-8").end
+  }.listen(4443)
 }
+
 puts "hit enter to exit"
 STDIN.gets
-
-
-

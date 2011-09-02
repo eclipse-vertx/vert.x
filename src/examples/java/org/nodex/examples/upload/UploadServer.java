@@ -13,6 +13,7 @@
 
 package org.nodex.examples.upload;
 
+import org.nodex.core.Completion;
 import org.nodex.core.CompletionHandler;
 import org.nodex.core.EventHandler;
 import org.nodex.core.SimpleEventHandler;
@@ -44,16 +45,18 @@ public class UploadServer extends NodexMain {
         final String filename = "file-" + UUID.randomUUID().toString() + ".upload";
 
         FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
-          public void onCompletion(final AsyncFile file) {
+          public void onEvent(Completion<AsyncFile> completion) {
+            final AsyncFile file = completion.result;
             req.endHandler(new SimpleEventHandler() {
               public void onEvent() {
                 file.close(new CompletionHandler<Void>() {
-                  public void onCompletion(Void v) {
-                    req.response.end();
-                    System.out.println("Uploaded data to " + filename);
-                  }
-                  public void onException(Exception e) {
-                    e.printStackTrace(System.err);
+                  public void onEvent(Completion<Void> completion) {
+                    if (completion.succeeded()) {
+                      req.response.end();
+                      System.out.println("Uploaded data to " + filename);
+                    } else {
+                      completion.exception.printStackTrace(System.err);
+                    }
                   }
                 });
               }
@@ -61,10 +64,6 @@ public class UploadServer extends NodexMain {
             Pump pump = new Pump(req, file.getWriteStream());
             pump.start();
             req.resume();
-          }
-
-          public void onException(Exception e) {
-            e.printStackTrace();
           }
         });
       }

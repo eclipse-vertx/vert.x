@@ -37,7 +37,7 @@ public class HttpServer extends NodexMain {
         }
         req.dataHandler(new EventHandler<Buffer>() {
           public void onEvent(Buffer data) {
-            System.out.println("Got request body: " + data);
+            System.out.println("Got data: " + data);
           }
         });
         req.endHandler(new SimpleEventHandler() {

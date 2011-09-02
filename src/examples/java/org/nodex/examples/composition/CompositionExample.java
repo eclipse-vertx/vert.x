@@ -13,6 +13,7 @@
 
 package org.nodex.examples.composition;
 
+import org.nodex.core.Completion;
 import org.nodex.core.CompletionHandler;
 import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
@@ -78,12 +79,9 @@ public class CompositionExample {
           System.out.println("Serving index page");
           //Serve the main page
           FileSystem.instance.readFile("index.html", new CompletionHandler<Buffer>() {
-            public void onCompletion(Buffer data) {
-              req.response.write(data);
+            public void onEvent(Completion<Buffer> completion) {
+              req.response.write(completion.result);
               req.response.end();
-            }
-
-            public void onException(Exception e) {
             }
           });
         } else if (req.uri.startsWith("/submit")) {

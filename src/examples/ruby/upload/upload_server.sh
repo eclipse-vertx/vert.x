@@ -1,4 +1,4 @@
 #!/bin/sh
 
 export CLASSPATH=../../../../target/node.x.jar:../../../main/resources/jars/netty.jar
-jruby -I../../../main/ruby http_server.rb
+jruby -I../../../main/ruby upload_server.rb
