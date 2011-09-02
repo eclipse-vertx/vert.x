@@ -205,8 +205,8 @@ module Net
       @j_socket
     end
 
-    def write_actor_id
-      @write_actor_id
+    def write_handler_id
+      @write_handler_id
     end
 
     private :initialize

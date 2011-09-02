@@ -42,6 +42,7 @@ public class HttpServer extends NodexMain {
         });
         req.endHandler(new SimpleEventHandler() {
           public void onEvent() {
+            req.response.setChunked(true);
             //Now we got everything, send back some data
             for (int i = 0; i < 10; i++) {
               req.response.write("server-data-chunk-" + i);

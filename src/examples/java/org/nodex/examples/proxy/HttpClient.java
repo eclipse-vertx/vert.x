@@ -30,6 +30,7 @@ public class HttpClient extends NodexMain {
       }
     });
     //Write a few chunks
+    req.setChunked(true);
     for (int i = 0; i < 10; i++) {
       req.write("client-data-chunk-" + i);
     }
