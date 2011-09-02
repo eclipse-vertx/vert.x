@@ -20,6 +20,8 @@ public class Pump {
   private final ReadStream readStream;
   private final WriteStream writeStream;
 
+  private int pumped;
+
   private final EventHandler<Void> drainHandler = new EventHandler<Void>() {
     public void onEvent(Void v) {
       readStream.resume();
@@ -27,10 +29,9 @@ public class Pump {
   };
 
   private final EventHandler<Buffer> dataHandler = new EventHandler<Buffer>() {
-    long count;
     public void onEvent(Buffer buffer) {
-      count += buffer.length();
       writeStream.writeBuffer(buffer);
+      pumped += buffer.length();
       if (writeStream.writeQueueFull()) {
         readStream.pause();
         writeStream.drainHandler(drainHandler);
@@ -59,6 +60,10 @@ public class Pump {
   public void stop() {
     writeStream.drainHandler(null);
     readStream.dataHandler(null);
+  }
+
+  public int getBytesPumped() {
+    return pumped;
   }
 
 }

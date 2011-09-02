@@ -55,7 +55,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_stats
     latch = Utils::Latch.new 1
     Nodex::go {
-      filename = "test-file.txt"
+      filename = FileDir + "/test-file.txt"
       FileSystem::create_file(filename) {
         FileSystem::stat(filename) { |compl|
           assert(compl.succeeded)
@@ -79,7 +79,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_async_file
     latch = Utils::Latch.new 1
     Nodex::go {
-      FileSystem::open("somefile.txt") { |compl|
+      FileSystem::open(FileDir + "/somefile.txt") { |compl|
         assert(compl.succeeded)
         file = compl.result
         num_chunks = 100;

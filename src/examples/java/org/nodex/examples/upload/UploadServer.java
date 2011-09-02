@@ -47,13 +47,16 @@ public class UploadServer extends NodexMain {
         FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
           public void onEvent(Completion<AsyncFile> completion) {
             final AsyncFile file = completion.result;
+            final Pump pump = new Pump(req, file.getWriteStream());
+            final long start = System.currentTimeMillis();
             req.endHandler(new SimpleEventHandler() {
               public void onEvent() {
                 file.close(new CompletionHandler<Void>() {
                   public void onEvent(Completion<Void> completion) {
                     if (completion.succeeded()) {
                       req.response.end();
-                      System.out.println("Uploaded data to " + filename);
+                      long end = System.currentTimeMillis();
+                      System.out.println("Uploaded " + pump.getBytesPumped() + " bytes to " + filename + " in " + (end - start) + " ms");
                     } else {
                       completion.exception.printStackTrace(System.err);
                     }
@@ -61,7 +64,6 @@ public class UploadServer extends NodexMain {
                 });
               }
             });
-            Pump pump = new Pump(req, file.getWriteStream());
             pump.start();
             req.resume();
           }

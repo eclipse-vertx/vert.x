@@ -269,6 +269,10 @@ module Http
       self
     end
 
+    def _to_write_stream
+      @j_req
+    end
+
   end
 
   class ClientResponse
@@ -347,6 +351,10 @@ module Http
       @j_resp.resume
     end
 
+    def _to_read_stream
+      @j_req
+    end
+
     private :initialize
   end
 
@@ -408,6 +416,10 @@ module Http
 
     def resume
       @j_req.resume
+    end
+
+    def _to_read_stream
+      @j_req
     end
 
     private :initialize
@@ -497,6 +509,10 @@ module Http
     def content_length=(val)
       @j_resp.setContentLength(val)
       self
+    end
+
+    def _to_write_stream
+      @j_req
     end
 
     private :initialize
