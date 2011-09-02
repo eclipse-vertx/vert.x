@@ -18,26 +18,26 @@ require "core/buffer"
 include Net
 
 Nodex::go{
-  Server.new { |socket|
+  Server.new.connect_handler { |socket|
     parser = ParseTools::RecordParser.new_delimited("\n") { |line|
       line = line.to_s.rstrip
       if line.start_with?("subscribe,")
         topic_name = line.split(",", 2)[1]
         puts "subscribing to #{topic_name}"
         topic = SharedData::get_set(topic_name)
-        topic.add(socket.write_actor_id)
+        topic.add(socket.write_handler_id)
       elsif line.start_with?("unsubscribe,")
         topic_name = line.split(",", 2)[1]
         puts "unsubscribing from #{topic_name}"
         topic = SharedData::get_set(topic_name)
-        topic.delete(socket.write_actor_id)
+        topic.delete(socket.write_handler_id)
         SharedData::remove_set(topic_name) if topic.empty?
       elsif line.start_with?("publish,")
         sp = line.split(',', 3)
         puts "publishing to #{sp[1]} with #{sp[2]}"
         topic = SharedData::get_set(sp[1])
         puts "topic is #{topic}"
-        topic.each { |actor_id| Nodex::send_message(actor_id, Buffer.create_from_str(sp[2])) }
+        topic.each { |actor_id| Nodex::send_to_handler(actor_id, Buffer.create_from_str(sp[2])) }
       end
     }
     socket.data_handler(parser)

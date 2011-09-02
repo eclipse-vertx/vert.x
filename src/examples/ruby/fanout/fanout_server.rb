@@ -17,12 +17,12 @@ include Net
 
 Nodex::go{
   conns = SharedData::get_set("conns")
-  Server.new{ |socket|
-    conns.add(socket.write_actor_id)
+  Server.new.connect_handler{ |socket|
+    conns.add(socket.write_handler_id)
     socket.data_handler{ |data|
-      conns.each{ |actor_id| Nodex::send_message(actor_id, data) }
+      conns.each{ |actor_id| Nodex::send_to_handler(actor_id, data) }
     }
-    socket.closed_handler{ conns.delete(socket.write_actor_id) }
+    socket.closed_handler{ conns.delete(socket.write_handler_id) }
   }.listen(8080)
 }
 

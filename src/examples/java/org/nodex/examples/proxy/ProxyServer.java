@@ -43,6 +43,7 @@ public class ProxyServer extends NodexMain {
             System.out.println("Proxying response: " + cRes.statusCode);
             req.response.statusCode = cRes.statusCode;
             req.response.putAllHeaders(cRes.getHeaders());
+            req.response.setChunked(true);
             cRes.dataHandler(new EventHandler<Buffer>() {
               public void onEvent(Buffer data) {
                 System.out.println("Proxying response body:" + data);
@@ -57,6 +58,7 @@ public class ProxyServer extends NodexMain {
           }
         });
         cReq.putAllHeaders(req.getHeaders());
+        cReq.setChunked(true);
         req.dataHandler(new EventHandler<Buffer>() {
           public void onEvent(Buffer data) {
             System.out.println("Proxying request body:" + data);
