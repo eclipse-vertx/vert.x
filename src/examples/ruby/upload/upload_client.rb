@@ -11,6 +11,8 @@
 
 require "core/http"
 require "core/nodex"
+require "core/file_system"
+require 'core/pump'
 include Http
 
 Nodex::go{
@@ -18,16 +20,22 @@ Nodex::go{
   client.port = 8080
   client.host = "localhost"
   req = client.put("/someurl") { |resp|
-    puts "Got response #{resp.status_code}"
-    resp.data_handler{ |buffer|
-      puts "Got data #{buffer}"
+    puts "Response #{resp.status_code}"
+  }
+
+  filename = "upload.txt"
+  FileSystem::stat(filename) { |compl|
+    size = compl.result.size
+    req.content_length = size
+    FileSystem::open(filename) { |compl|
+      rs = compl.result.read_stream
+      pump = Pump.new(rs, req)
+      rs.end_handler{
+        req.end
+      }
+      pump.start
     }
   }
-  req.chunked = true
-  for i in 0..9
-    req.write_str("client-data-chunk-#{i}")
-  end
-  req.end
 }
 
 puts "hit enter to exit"

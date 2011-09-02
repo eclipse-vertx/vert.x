@@ -11,11 +11,12 @@
 
 include Java
 require "core/buffer"
-java_import org.nodex.core.streams.Pump
 
 class Pump
   def initialize(read_stream, write_stream)
-    @j_pump = Pump.new(read_stream._to_read_stream, write_stream._to_write_stream)
+    j_rs = read_stream._to_read_stream
+    j_ws = write_stream._to_write_stream
+    @j_pump = org.nodex.core.streams.Pump.new(j_rs, j_ws)
   end
 
   def write_queue_max_size=(val)
@@ -28,5 +29,9 @@ class Pump
 
   def stop
     @j_pump.stop
+  end
+
+  def bytes_pumped
+    @j_pump.getBytesPumped
   end
 end

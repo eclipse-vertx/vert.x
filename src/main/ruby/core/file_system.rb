@@ -136,6 +136,10 @@ module FileSystem
         @j_ws.exceptionHandler(hndlr)
       end
 
+      def _to_write_stream
+        @j_ws
+      end
+
       private :initialize
     end
 
@@ -165,6 +169,10 @@ module FileSystem
 
       def end_handler(&hndlr)
         @j_rs.endHandler(hndlr)
+      end
+
+      def _to_read_stream
+        @j_rs
       end
 
       private :initialize
