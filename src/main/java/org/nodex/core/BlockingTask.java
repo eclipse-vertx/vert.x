@@ -23,13 +23,13 @@ public abstract class BlockingTask<T> {
           final T result = execute();
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completionHandler.onCompletion(result);
+              completionHandler.onEvent(new Completion(result));
             }
           });
         } catch (final Exception e) {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completionHandler.onException(e);
+              completionHandler.onEvent(new Completion(e));
             }
           });
         } catch (Throwable t) {

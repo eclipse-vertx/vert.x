@@ -17,10 +17,8 @@ java_import org.nodex.core.http.HttpClient
 module Http
   class Server
 
-    def initialize(proc = nil, &hndlr)
-      hndlr = proc if proc
+    def initialize
       @j_server = HttpServer.new
-      request_handler(hndlr)
     end
 
     def request_handler(proc = nil, &hndlr)
@@ -193,20 +191,20 @@ module Http
       self
     end
 
-    def put_all_headers(hash)
-      @j_req.putAllHeaders(hash)
+    def put_all_headers(headers)
+      @j_req.putAllHeaders(headers)
       self
     end
 
-    def get_header(key)
+    def header(key)
       @j_req.getHeader(key)
     end
 
-    def get_headers(key)
-      #TODO
-    end
+#    def get_headers(key)
+#      #TODO
+#    end
 
-    def get_header_names
+    def header_names
       names = @j_req.getHeaderNames
       iter = names.iterator
       rset = Set.new
@@ -243,15 +241,18 @@ module Http
     def drain_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_req.drainHandler(hndlr)
+      self
     end
 
     def exception_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_req.exceptionHandler(hndlr)
+      self
     end
 
     def send_head
       @j_req.sendHead
+      self
     end
 
     def end
@@ -260,10 +261,12 @@ module Http
 
     def chunked=(val)
       @j_req.setChunked(val)
+      self
     end
 
     def content_length=(val)
       @j_req.setContentLength(val)
+      self
     end
 
   end
@@ -278,15 +281,15 @@ module Http
       @status_code
     end
 
-    def get_header(key)
+    def header(key)
       @j_resp.getHeader(key)
     end
 
-    def get_headers(key)
-      # TODO
-    end
+#    def get_headers(key)
+#      # TODO
+#    end
 
-    def get_header_names
+    def header_names
       names = @j_resp.getHeaderNames
       iter = names.iterator
       rset = Set.new
@@ -297,15 +300,15 @@ module Http
       rset
     end
 
-    def get_trailer(key)
+    def trailer(key)
       @j_resp.getTrailer(key)
     end
 
-    def get_trailers(key)
-      # TODO
-    end
+#    def get_trailers(key)
+#      # TODO
+#    end
 
-    def get_trailer_names
+    def trailer_names
       names = @j_resp.getTrailerNames
       iter = names.iterator
       rset = Set.new
@@ -353,19 +356,27 @@ module Http
       @resp = ServerResponse.new(@j_req.response)
     end
 
+    def method
+      @j_req.method
+    end
+
+    def uri
+      @j_req.uri
+    end
+
     def response
       @resp
     end
 
-    def get_header(key)
+    def header(key)
       @j_req.getHeader(key)
     end
 
-    def get_headers(key)
-      # TODO
-    end
+#    def get_headers(key)
+#      # TODO
+#    end
 
-    def get_header_names
+    def header_names
       names = @j_req.getHeaderNames
       iter = names.iterator
       rset = Set.new
@@ -405,14 +416,6 @@ module Http
   class ServerResponse
     def initialize(j_resp)
       @j_resp = j_resp
-    end
-
-    def chunked=(val)
-      @j_resp.setChunked(val)
-    end
-
-    def content_length=(val)
-      @j_resp.setContentLength(val)
     end
 
     def status_code=(val)
@@ -484,6 +487,16 @@ module Http
 
     def send_file(path)
       @j_resp.sendFile(path)
+    end
+
+    def chunked=(val)
+      @j_resp.setChunked(val)
+      self
+    end
+
+    def content_length=(val)
+      @j_resp.setContentLength(val)
+      self
     end
 
     private :initialize

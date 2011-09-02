@@ -14,6 +14,7 @@
 package org.nodex.core.file;
 
 import org.nodex.core.BlockingTask;
+import org.nodex.core.Completion;
 import org.nodex.core.CompletionHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.buffer.Buffer;
@@ -370,13 +371,13 @@ public class FileSystem {
 
   public void readFileAsString(final String path, final String encoding, final CompletionHandler<String> completionHandler) {
     readFile(path, new CompletionHandler<Buffer>() {
-      public void onCompletion(Buffer result) {
-        String str = result.toString(encoding);
-        completionHandler.onCompletion(str);
-      }
-
-      public void onException(Exception e) {
-        completionHandler.onException(e);
+      @Override
+      public void onEvent(Completion<Buffer> completion) {
+        if (completion.succeeded()) {
+          completionHandler.onEvent(new Completion<>(completion.result.toString(encoding)));
+        } else {
+          completionHandler.onEvent(new Completion<String>(completion.exception));
+        }
       }
     });
   }

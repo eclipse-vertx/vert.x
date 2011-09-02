@@ -22,7 +22,7 @@ class NetTest < Test::Unit::TestCase
     latch = Utils::Latch.new 1
 
     Nodex::go{
-      server = Server.new { |socket|
+      server = Server.new.connect_handler { |socket|
         socket.data_handler { |data|
           socket.write_buffer(data)      # Just echo it back
         }

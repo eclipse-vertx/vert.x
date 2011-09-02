@@ -2,12 +2,8 @@ package org.nodex.core;
 
 /**
  * User: tim
- * Date: 01/08/11
- * Time: 16:18
+ * Date: 01/09/11
+ * Time: 17:29
  */
-public interface CompletionHandler<T> {
-
-  void onCompletion(T result);
-
-  void onException(Exception e);
+public interface CompletionHandler<T> extends EventHandler<Completion<T>> {
 }
