@@ -519,7 +519,12 @@ module Http
 
   end
 
-  def Websocket
+  class Websocket
+
+    def uri
+      @j_ws.uri
+    end
+
     def initialize(j_ws)
       @j_ws = j_ws
     end
