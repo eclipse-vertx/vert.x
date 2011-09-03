@@ -45,6 +45,7 @@ Supported Languages
 
 Java
 JRuby
+Clojure
 Groovy
 Groovy++
 JavaScript
@@ -55,7 +56,7 @@ Scala
 TODO
 ====
 1) Consider wrapping libevent in Java API
-2) Use disruptor https://code.google.com/p/disruptor/ as alternative to concurrent queues  
+2) Consider using disruptor https://code.google.com/p/disruptor/ as alternative to concurrent queues
 3) SSL exceptions aren't very nice
 4) StartTLS
 5) endHandler handlers not currently being called - check this
@@ -64,7 +65,10 @@ TODO
 8) Filesystem lock + watch
 9) Javadoc
 10) Ruby doc
-11) Methods to extract path from http uric
+11) Methods to extract path from http uri
+12) Netty needs to implement event loop
+13) HTTP server side 100-continue handling
+14) Allow to set HTTP response reason
 
 
 
