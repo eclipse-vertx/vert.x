@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.examples.stomp;
+package org.nodex.examples.old.stomp;
 
 import org.nodex.core.net.NetServer;
 import org.nodex.mods.stomp.StompServer;

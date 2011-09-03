@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.examples.redis;
+package org.nodex.examples.old.redis;
 
 import org.nodex.mods.redis.RedisClient;
 import org.nodex.mods.redis.RedisConnectHandler;
