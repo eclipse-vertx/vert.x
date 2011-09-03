@@ -1,0 +1,73 @@
+Node.x planning/ideas/TODO
+==========================
+
+Modules
+=========
+
+Core modules
+============
+
+Net
+UDP
+DNS
+STDIO
+Buffer
+Composition
+Shared data
+Nodex, Timers, Actors etc
+FileSystem
+ParseTools
+Http
+
+Add on modules
+==============
+SCTP
+PGM
+ZeroMQ
+AMQP
+Redis
+STOMP
+SMTP
+JDBC
+Memcached
+Spawn
+REST
+Twitter
+FB
+Google+
+Supervisors
+Remote Actors
+Socket-IO
+Web framework
+
+Supported Languages
+===================
+
+Java
+JRuby
+Groovy
+Groovy++
+JavaScript
+Jython
+Scala
+
+
+TODO
+====
+1) Consider wrapping libevent in Java API
+2) Use disruptor https://code.google.com/p/disruptor/ as alternative to concurrent queues  
+3) SSL exceptions aren't very nice
+4) StartTLS
+5) endHandler handlers not currently being called - check this
+6) Websocket close protocol
+7) Synchronous versions of filesystem ops
+8) Filesystem lock + watch
+9) Javadoc
+10) Ruby doc
+11) Methods to extract path from http uric
+
+
+
+
+
+
