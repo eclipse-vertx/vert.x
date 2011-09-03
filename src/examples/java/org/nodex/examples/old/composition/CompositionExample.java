@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.nodex.examples.composition;
+package org.nodex.examples.old.composition;
 
 import org.nodex.core.Completion;
 import org.nodex.core.CompletionHandler;
