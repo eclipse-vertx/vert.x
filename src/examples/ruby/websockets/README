@@ -1,0 +1,8 @@
+HTML5 Websockets example
+========================
+
+Run the server: ./websockets.sh
+
+Then point your browser at http://localhost:8080
+
+(This will only currently work with Chrome since Websocket support is disabled/absent in most other browsers)
