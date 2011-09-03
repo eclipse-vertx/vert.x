@@ -17,14 +17,6 @@ public interface Nodex {
 
   static Nodex instance = NodexInternal.instance;
 
-  void setCoreThreadPoolSize(int size);
-
-  int getCoreThreadPoolSize();
-
-  void setBackgroundThreadPoolSize(int size);
-
-  int getBackgroundThreadPoolSize();
-
   long setTimeout(long delay, EventHandler<Long> handler);
 
   long setPeriodic(long delay, EventHandler<Long> handler);

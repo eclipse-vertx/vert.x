@@ -42,4 +42,6 @@ public interface NodexInternal extends Nodex {
   ExecutorService getBackgroundPool();
 
   NioWorker getWorkerForContextID(long contextID);
+
+  int getCoreThreadPoolSize();
 }

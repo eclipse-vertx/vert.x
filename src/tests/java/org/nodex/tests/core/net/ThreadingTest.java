@@ -14,6 +14,7 @@
 package org.nodex.tests.core.net;
 
 import org.nodex.core.EventHandler;
+import org.nodex.core.NodexInternal;
 import org.nodex.core.SimpleEventHandler;
 import org.nodex.core.Nodex;
 import org.nodex.core.NodexMain;
@@ -110,9 +111,9 @@ public class ThreadingTest extends TestBase {
   @Test
   /* Test that event loops are shared across available connections */
   public void testMultipleEventLoops() throws Exception {
-    final int loops = Nodex.instance.getCoreThreadPoolSize();
+    final int loops = NodexInternal.instance.getCoreThreadPoolSize();
     final int connections = 100;
-    final Map<Thread, Object> threads = new ConcurrentHashMap<Thread, Object>();
+    final Map<Thread, Object> threads = new ConcurrentHashMap<>();
     final CountDownLatch clientConnectLatch = new CountDownLatch(loops);
     final AtomicInteger serverConnectCount = new AtomicInteger(0);
     final CountDownLatch serverConnectLatch = new CountDownLatch(1);
