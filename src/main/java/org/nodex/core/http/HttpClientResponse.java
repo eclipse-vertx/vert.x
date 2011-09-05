@@ -19,7 +19,7 @@ import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.ReadStream;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +32,10 @@ public class HttpClientResponse implements ReadStream {
   private EventHandler<Exception> exceptionHandler;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
+  // Cache these for performance
+  private Map<String, String> headers;
+  // Cache these for performance
+  private Map<String, String> trailers;
 
   public final int statusCode;
   public final String statusMessage;
@@ -49,15 +53,6 @@ public class HttpClientResponse implements ReadStream {
     return response.getHeader(key);
   }
 
-  public List<String> getHeaders(String key) {
-    checkThread();
-    return response.getHeaders(key);
-  }
-
-  public List<Map.Entry<String, String>> getHeaders() {
-    return response.getHeaders();
-  }
-
   public Set<String> getHeaderNames() {
     checkThread();
     return response.getHeaderNames();
@@ -68,9 +63,22 @@ public class HttpClientResponse implements ReadStream {
     return trailer.getHeader(key);
   }
 
-  public List<String> getTrailers(String key) {
-    checkThread();
-    return trailer.getHeaders(key);
+  public Map<String, String> getHeaders() {
+    if (headers == null) {
+      headers = HeaderUtils.simplifyHeaders(response.getHeaders());
+    }
+    return headers;
+  }
+
+  public Map<String, String> getTrailers() {
+    if (trailers == null) {
+      if (trailer == null) {
+        trailers = new HashMap<>();
+      } else {
+        trailers = HeaderUtils.simplifyHeaders(trailer.getHeaders());
+      }
+    }
+    return trailers;
   }
 
   public Set<String> getTrailerNames() {

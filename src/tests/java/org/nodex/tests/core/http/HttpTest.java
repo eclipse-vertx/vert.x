@@ -361,13 +361,11 @@ public class HttpTest extends TestBase {
           }
         });
 
-        //req.setContentLength(toSend.length());
         req.setChunked(true);
         for (Buffer buff: buffs) {
           req.write(buff);
         }
         req.end();
-
       }
     }.run();
 
@@ -594,7 +592,7 @@ public class HttpTest extends TestBase {
                 if (chunked) {
                   req.response.setChunked(true);
                 } else {
-                  req.response.setContentLength(totResponseBody.length());
+                  req.response.putHeader("Content-Length", totResponseBody.length());
                 }
                 req.response.putAllHeaders(responseHeaders);
                 req.response.statusCode = statusCode;
@@ -649,7 +647,7 @@ public class HttpTest extends TestBase {
           req.setChunked(chunked);
           if (requestBody != null) {
             if (!chunked) {
-              req.setContentLength(totRequestBody.length());
+              req.putHeader("Content-Length", totRequestBody.length());
             }
             for (Buffer buff : requestBody) {
               req.write(buff);

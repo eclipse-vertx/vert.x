@@ -34,6 +34,8 @@ public class HttpServerRequest implements ReadStream {
   private EventHandler<Exception> exceptionHandler;
   private final ServerConnection conn;
   private final HttpRequest request;
+  //Cache this for performance
+  private Map<String, String> headers;
 
   HttpServerRequest(ServerConnection conn,
                     HttpRequest request) {
@@ -60,16 +62,15 @@ public class HttpServerRequest implements ReadStream {
     return request.getHeader(key);
   }
 
-  public List<String> getHeaders(String key) {
-    return request.getHeaders(key);
-  }
-
   public Set<String> getHeaderNames() {
     return request.getHeaderNames();
   }
 
-  public List<Map.Entry<String, String>> getHeaders() {
-    return request.getHeaders();
+  public Map<String, String> getHeaders() {
+    if (headers == null) {
+      headers = HeaderUtils.simplifyHeaders(request.getHeaders());
+    }
+    return headers;
   }
 
   public void dataHandler(EventHandler<Buffer> dataHandler) {

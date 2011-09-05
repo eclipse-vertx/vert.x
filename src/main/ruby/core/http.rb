@@ -186,33 +186,11 @@ module Http
       self
     end
 
-    def add_header(key, value)
-      @j_req.addHeader(key, value)
-      self
-    end
-
     def put_all_headers(headers)
-      @j_req.putAllHeaders(headers)
-      self
-    end
-
-    def header(key)
-      @j_req.getHeader(key)
-    end
-
-#    def get_headers(key)
-#      #TODO
-#    end
-
-    def header_names
-      names = @j_req.getHeaderNames
-      iter = names.iterator
-      rset = Set.new
-      while iter.hasNext
-        name = iter.next
-        rset.add(name)
+      headers.each_pair do |k,v|
+        @j_req.putHeader(k, v)
       end
-      rset
+      self
     end
 
     def write_buffer(chunk, &hndlr)
@@ -264,11 +242,6 @@ module Http
       self
     end
 
-    def content_length=(val)
-      @j_req.setContentLength(val)
-      self
-    end
-
     def _to_write_stream
       @j_req
     end
@@ -289,38 +262,60 @@ module Http
       @j_resp.getHeader(key)
     end
 
-#    def get_headers(key)
-#      # TODO
-#    end
+    def headers
+      if @headers == nil
+        hdrs = @j_resp.getHeaders
+        iter = hdrs.entrySet.iterator
+        @headers = {}
+        while iter.hasNext
+          entry = iter.next
+          @headers[entry.getKey] = entry.getValue
+        end
+      end
+      @headers
+    end
 
     def header_names
-      names = @j_resp.getHeaderNames
-      iter = names.iterator
-      rset = Set.new
-      while iter.hasNext
-        name = iter.next
-        rset.add(name)
+      if @header_names == nil
+        names = @j_resp.getHeaderNames
+        iter = names.iterator
+        @header_names = Set.new
+        while iter.hasNext
+          name = iter.next
+          @header_names.add(name)
+        end
       end
-      rset
+      @header_names
     end
 
     def trailer(key)
       @j_resp.getTrailer(key)
     end
 
-#    def get_trailers(key)
-#      # TODO
-#    end
+    def trailers
+      if @trailers == nil
+        hdrs = @j_resp.getHeaders
+        iter = hdrs.iterator
+        @trailers = {}
+        while iter.hasNext
+          entry = iter.next
+          @trailers[entry.getkey] = entry.getValue
+        end
+      end
+      @trailers
+    end
 
     def trailer_names
-      names = @j_resp.getTrailerNames
-      iter = names.iterator
-      rset = Set.new
-      while iter.hasNext
-        name = iter.next
-        rset.add(name)
+      if @trailer_names == nil
+        names = @j_resp.getTrailerNames
+        iter = names.iterator
+        @trailer_names = Set.new
+        while iter.hasNext
+          name = iter.next
+          @trailer_names.add(name)
+        end
       end
-      rset
+      @trailer_names
     end
 
     def data_handler(proc = nil, &hndlr)
@@ -380,19 +375,30 @@ module Http
       @j_req.getHeader(key)
     end
 
-#    def get_headers(key)
-#      # TODO
-#    end
+    def headers
+      if (@headers == nil)
+        hdrs = @j_req.getHeaders
+        iter = hdrs.entrySet.iterator
+        @headers = {}
+        while iter.hasNext
+          entry = iter.next
+          @headers[entry.getKey] = entry.getValue
+        end
+      end
+      @headers
+    end
 
     def header_names
-      names = @j_req.getHeaderNames
-      iter = names.iterator
-      rset = Set.new
-      while iter.hasNext
-        name = iter.next
-        rset.add(name)
+      if (@header_names == nil)
+        names = @j_req.getHeaderNames
+        iter = names.iterator
+        @header_names = Set.new
+        while iter.hasNext
+          name = iter.next
+          @header_names.add(name)
+        end
       end
-      rset
+      @header_names
     end
 
     def data_handler(proc = nil, &hndlr)
@@ -439,13 +445,10 @@ module Http
       self
     end
 
-    def add_header(key, value)
-      @j_resp.addHeader(key, value)
-      self
-    end
-
-    def put_all_headers(hash)
-      @j_resp.putAllHeaders(hash)
+    def put_all_headers(headers)
+      headers.each_pair do |k,v|
+        @j_resp.putHeader(k, v)
+      end
       self
     end
 
@@ -454,13 +457,10 @@ module Http
       self
     end
 
-    def add_trailer(key, value)
-      @j_resp.addTrailer(key, value)
-      self
-    end
-
-    def put_all_trailers(hash)
-      @j_resp.putAllTrailers(hash)
+    def put_all_trailers(headers)
+      trailers.each_pair do |k,v|
+        @j_resp.putTrailer(k, v)
+      end
       self
     end
 
@@ -503,11 +503,6 @@ module Http
 
     def chunked=(val)
       @j_resp.setChunked(val)
-      self
-    end
-
-    def content_length=(val)
-      @j_resp.setContentLength(val)
       self
     end
 

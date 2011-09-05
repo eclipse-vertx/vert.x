@@ -38,7 +38,7 @@ public class UploadClient extends NodexMain {
     String filename = "upload.txt";
 
     // For a non-chunked upload you need to specify size of upload up-front
-    req.setContentLength(Files.size(Paths.get(filename)));
+    req.putHeader("Content-Length", Files.size(Paths.get(filename)));
 
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);
