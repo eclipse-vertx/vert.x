@@ -12,3 +12,12 @@ puts "java map is #{java_map}"
 puts "foo is #{java_map["foo"]}"
 
 
+Proc.new{ |b|
+  if b
+    #do something
+  end
+}
+
+
+
+

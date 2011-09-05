@@ -122,6 +122,20 @@ public final class NodexImpl implements NodexInternal {
     getBackgroundPool().execute(runnable);
   }
 
+  public void go(final Runnable runnable) {
+    final long contextID = NodexInternal.instance.createAndAssociateContext();
+    NodexInternal.instance.executeOnContext(contextID, new Runnable() {
+      public void run() {
+        NodexInternal.instance.setContextID(contextID);
+        try {
+          runnable.run();
+        } catch (Throwable t) {
+          t.printStackTrace(System.err);
+        }
+      }
+    });
+  }
+
   // Internal API -----------------------------------------------------------------------------------------
 
   //The background pool is used for making blocking calls to legacy synchronous APIs

@@ -32,4 +32,6 @@ public interface Nodex {
   Long getContextID();
 
   void nextTick(EventHandler<Void> handler);
+
+  void go(Runnable runnable);
 }
