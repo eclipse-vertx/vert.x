@@ -14,7 +14,7 @@ STDIO
 Buffer
 Composition
 Shared data
-Nodex, Timers, Actors etc
+Node (including Timers, registering handlers)
 FileSystem
 ParseTools
 Http
@@ -41,12 +41,13 @@ JMS
 SCTP
 PGM
 ZeroMQ
+Gemfire
 
 Supported Languages
 ===================
 
 Java
-JRuby
+JRuby                                                        7
 Clojure
 Groovy
 Groovy++
@@ -76,6 +77,8 @@ TODO
 17) Ruby HTTP header handling needs to be improved - can we just use a hash for headers? we can combine duplicate
 headers
 18) Scala delimited continuations for making async code appear synchronous
+19) Make Java nodex methods static
+
 
 
 

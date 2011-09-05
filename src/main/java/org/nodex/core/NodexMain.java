@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public abstract class NodexMain {
 
-  private final CountDownLatch endLatch = new CountDownLatch(1);
+  //private final CountDownLatch endLatch = new CountDownLatch(1);
 
   public void run() {
     final long contextID = NodexInternal.instance.createAndAssociateContext();
@@ -21,17 +21,17 @@ public abstract class NodexMain {
         } catch (Throwable t) {
           t.printStackTrace(System.err);
         }
-        endLatch.countDown();
+        //endLatch.countDown();
       }
     });
-    while (true) {
-      try {
-        endLatch.await();
-        break;
-      } catch (InterruptedException e) {
-        //Ignore
-      }
-    }
+//    while (true) {
+//      try {
+//        endLatch.await();
+//        break;
+//      } catch (InterruptedException e) {
+//        //Ignore
+//      }
+//    }
   }
 
   public abstract void go() throws Exception;
