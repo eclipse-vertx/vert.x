@@ -115,7 +115,6 @@ class ClientConnection extends AbstractConnection {
 
     setCurrentRequest(req);
     req.setChunked(false);
-    req.setContentLength(8);
     req.putHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET).
     putHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE).
     putHeader(HttpHeaders.Names.ORIGIN, (ssl ? "http://" : "https://") + hostHeader).

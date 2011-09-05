@@ -24,7 +24,7 @@ Nodex::go{
     c_req = client.request(req.method, req.uri) { |c_res|
       puts "Proxying response: #{c_res.status_code}"
       req.response.status_code = c_res.status_code
-      #req.response.put_all_headers(c_res.headers)
+      req.response.put_all_headers(c_res.headers)
       c_res.data_handler{ |data|
         puts "Proxying response body: #{data}"
         req.response.write_buffer(data);
@@ -32,9 +32,9 @@ Nodex::go{
       c_res.end_handler{ req.response.end }
     }
 
-    c_req.chunked = true
-    req.response.chunked = true
-    #c_req.put_all_headers(req.headers)
+    # c_req.chunked = true
+    #req.response.chunked = true
+    c_req.put_all_headers(req.headers)
     req.data_handler{ |data|
       puts "Proxying request body #{data}"
       c_req.write_buffer(data)

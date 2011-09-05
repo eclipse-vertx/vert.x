@@ -16,20 +16,13 @@ package org.nodex.core.http;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
-import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.*;
 import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class HttpClientRequest implements WriteStream {
 
@@ -62,11 +55,10 @@ public class HttpClientRequest implements WriteStream {
   private boolean connecting;
   private boolean writeHead;
   private long written;
-  private long contentLength = -1;
+  private long contentLength = 0;
 
   public HttpClientRequest setChunked(boolean chunked) {
-    checkThread();
-    checkComplete();
+    check();
     if (written > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
@@ -75,89 +67,43 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public HttpClientRequest putHeader(String key, Object value) {
-    checkThread();
-    checkComplete();
+    check();
     request.setHeader(key, value);
-    return this;
-  }
-
-  public HttpClientRequest putHeader(String key, Iterable<String> values) {
-    checkThread();
-    checkComplete();
-    request.setHeader(key, values);
-    return this;
-  }
-
-  public HttpClientRequest addHeader(String key, Object value) {
-    checkThread();
-    checkComplete();
-    request.addHeader(key, value);
+    checkContentLengthChunked(key, value);
     return this;
   }
 
   public HttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
-    checkThread();
-    checkComplete();
+    check();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      request.setHeader(entry.getKey(), entry.getValue());
+      request.setHeader(entry.getKey(), entry.getValue().toString());
+      checkContentLengthChunked(entry.getKey(), entry.getValue());
     }
     return this;
-  }
-
-  public HttpClientRequest putAllHeaders(List<Map.Entry<String, String>> headers) {
-    checkThread();
-    checkComplete();
-    for (Map.Entry<String, String> entry: headers) {
-      addHeader(entry.getKey(), entry.getValue());
-    }
-    return this;
-  }
-
-  public String getHeader(String key) {
-    checkThread();
-    checkComplete();
-    return request.getHeader(key);
-  }
-
-  public List<String> getHeaders(String key) {
-    checkThread();
-    checkComplete();
-    return request.getHeaders(key);
-  }
-
-  public Set<String> getHeaderNames() {
-    checkThread();
-    checkComplete();
-    return request.getHeaderNames();
   }
 
   public void writeBuffer(Buffer chunk) {
-    checkThread();
-    checkComplete();
+    check();
     write(chunk._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(Buffer chunk) {
-    checkThread();
-    checkComplete();
+    check();
     return write(chunk._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(String chunk) {
-    checkThread();
-    checkComplete();
+    check();
     return write(Buffer.create(chunk)._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(String chunk, String enc) {
-    checkThread();
-    checkComplete();
+    check();
     return write(Buffer.create(chunk, enc)._getChannelBuffer(), null);
   }
 
   public HttpClientRequest write(Buffer chunk, EventHandler<Void> doneHandler) {
-    checkThread();
-    checkComplete();
+    check();
     return write(chunk._getChannelBuffer(), doneHandler);
   }
 
@@ -168,14 +114,12 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public HttpClientRequest write(String chunk, String enc, EventHandler<Void> doneHandler) {
-    checkThread();
-    checkComplete();
+    check();
     return write(Buffer.create(chunk, enc)._getChannelBuffer(), doneHandler);
   }
 
   public void setWriteQueueMaxSize(int maxSize) {
-    checkThread();
-    checkComplete();
+    check();
     if (conn != null) {
       conn.setWriteQueueMaxSize(maxSize);
     } else {
@@ -184,8 +128,7 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public boolean writeQueueFull() {
-    checkThread();
-    checkComplete();
+    check();
     if (conn != null) {
       return conn.writeQueueFull();
     } else {
@@ -194,8 +137,7 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public void drainHandler(EventHandler<Void> handler) {
-    checkThread();
-    checkComplete();
+    check();
     this.drainHandler = handler;
     if (conn != null) {
       conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
@@ -203,23 +145,17 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public void exceptionHandler(EventHandler<Exception> handler) {
-    checkThread();
-    checkComplete();
+    check();
     this.exceptionHandler = handler;
   }
 
   public void continueHandler(EventHandler<Void> handler) {
-    checkThread();
-    checkComplete();
+    check();
     this.continueHandler = handler;
   }
 
-  public void setContentLength(long length) {
-    this.contentLength = length;
-  }
-
   public HttpClientRequest sendHead() {
-    checkThread();
+    check();
     if (conn != null) {
       if (!headWritten) {
         writeHead();
@@ -233,7 +169,7 @@ public class HttpClientRequest implements WriteStream {
   }
 
   public void end() {
-    checkThread();
+    check();
     completed = true;
     if (conn != null) {
       if (!headWritten) {
@@ -280,6 +216,14 @@ public class HttpClientRequest implements WriteStream {
       } else {
         t.printStackTrace(System.err);
       }
+    }
+  }
+
+  private void checkContentLengthChunked(String key, Object value) {
+    if (key.equals(HttpHeaders.Names.CONTENT_LENGTH)) {
+      contentLength = Integer.parseInt(value.toString());
+    } else if (key.equals(HttpHeaders.Names.TRANSFER_ENCODING) && value.equals(HttpHeaders.Values.CHUNKED)) {
+      chunked = true;
     }
   }
 
@@ -336,7 +280,8 @@ public class HttpClientRequest implements WriteStream {
 
   void sendDirect(ClientConnection conn, Buffer body) {
     this.conn = conn;
-    this.contentLength = body.length();
+    contentLength = body.length();
+    putHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength)) ;
     write(body);
     writeEndChunk();
     completed = true;
@@ -347,8 +292,8 @@ public class HttpClientRequest implements WriteStream {
     request.setChunked(chunked);
     if (chunked) {
       request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-    } else if (contentLength != -1) {
-      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
+    } else if (contentLength == 0) {
+      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
     }
     conn.write(request);
   }
@@ -388,6 +333,11 @@ public class HttpClientRequest implements WriteStream {
 
   private void writeEndChunk() {
     conn.write(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+  }
+
+  private void check() {
+    checkThread();
+    checkComplete();
   }
 
   private void checkComplete() {

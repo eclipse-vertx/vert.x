@@ -17,14 +17,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.*;
 import org.nodex.core.EventHandler;
 import org.nodex.core.buffer.Buffer;
 import org.nodex.core.streams.WriteStream;
@@ -33,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -76,40 +68,16 @@ public class HttpServerResponse implements WriteStream {
   public HttpServerResponse putHeader(String key, Object value) {
     checkWritten();
     response.setHeader(key, value);
-    return this;
-  }
-
-  public HttpServerResponse putHeaders(String key, Iterable<String> values) {
-    checkWritten();
-    response.setHeader(key, values);
-    return this;
-  }
-
-  public HttpServerResponse addHeader(String key, Object value) {
-    checkWritten();
-    response.addHeader(key, value);
+    checkContentLengthChunked(key, value);
     return this;
   }
 
   public HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
     checkWritten();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      response.setHeader(entry.getKey(), entry.getValue());
+      response.setHeader(entry.getKey(), entry.getValue().toString());
+      checkContentLengthChunked(entry.getKey(), entry.getValue());
     }
-    return this;
-  }
-
-  public HttpServerResponse putAllHeaders(List<Map.Entry<String, String>> headers) {
-    checkWritten();
-    for (Map.Entry<String, String> entry: headers) {
-      addHeader(entry.getKey(), entry.getValue());
-    }
-    return this;
-  }
-
-  public HttpServerResponse setContentLength(long contentLength) {
-    checkWritten();
-    this.contentLength = contentLength;
     return this;
   }
 
@@ -120,25 +88,11 @@ public class HttpServerResponse implements WriteStream {
     return this;
   }
 
-  public HttpServerResponse putTrailers(String key, Iterable<String> values) {
-    checkWritten();
-    checkTrailer();
-    trailer.setHeader(key, values);
-    return this;
-  }
-
-  public HttpServerResponse addTrailer(String key, Object value) {
-    checkWritten();
-    checkTrailer();
-    trailer.addHeader(key, value);
-    return this;
-  }
-
   public HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
     checkWritten();
     checkTrailer();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      trailer.setHeader(entry.getKey(), entry.getValue());
+      trailer.setHeader(entry.getKey(), entry.getValue().toString());
     }
     return this;
   }
@@ -272,14 +226,22 @@ public class HttpServerResponse implements WriteStream {
     }
   }
 
+  private void checkContentLengthChunked(String key, Object value) {
+    if (key.equals(HttpHeaders.Names.CONTENT_LENGTH)) {
+      contentLength = Integer.parseInt(value.toString());
+      chunked = false;
+    } else if (key.equals(HttpHeaders.Names.TRANSFER_ENCODING) && value.equals(HttpHeaders.Values.CHUNKED)) {
+      chunked = true;
+    }
+  }
+
   private void writeHead() {
     if (!headWritten) {
       response.setStatus(HttpResponseStatus.valueOf(statusCode));
-      response.setChunked(chunked);
       if (chunked) {
         response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      } else {
-        response.setHeader(Names.CONTENT_LENGTH, String.valueOf(contentLength));
+      } else if (contentLength == 0) {
+        response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
       writeFuture = conn.write(response);
       headWritten = true;
