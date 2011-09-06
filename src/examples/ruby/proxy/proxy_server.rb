@@ -9,16 +9,15 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
-include Http
+require "nodex"
+include Nodex
 
 Nodex::go {
-  client = Client.new
+  client = HttpClient.new
   client.port = 8282
   client.host = "localhost"
 
-  Server.new.request_handler { |req|
+  HttpServer.new.request_handler { |req|
     puts "Proxying request: #{req.uri}"
 
     c_req = client.request(req.method, req.uri) { |c_res|
@@ -32,8 +31,6 @@ Nodex::go {
       c_res.end_handler { req.response.end }
     }
 
-    # c_req.chunked = true
-    #req.response.chunked = true
     c_req.put_all_headers(req.headers)
     req.data_handler { |data|
       puts "Proxying request body #{data}"

@@ -10,10 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/nodex'
-require 'core/parsetools'
+require 'nodex'
 require 'utils'
-include ParseTools
+include Nodex
 
 class RecordParserTest < Test::Unit::TestCase
 

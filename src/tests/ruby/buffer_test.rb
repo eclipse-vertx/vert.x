@@ -11,7 +11,8 @@
 
 include Java
 require 'test/unit'
-require "core/buffer"
+require "nodex"
+include Nodex
 
 class BufferTest < Test::Unit::TestCase
 

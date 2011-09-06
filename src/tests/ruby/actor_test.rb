@@ -10,9 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/nodex'
-require 'core/shared_data'
+require 'nodex'
 require 'utils'
+include Nodex
 
 class ActorTest < Test::Unit::TestCase
 

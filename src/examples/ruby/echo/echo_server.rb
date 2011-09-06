@@ -9,12 +9,11 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
-require "core/nodex"
-include Net
+require "nodex"
+include Nodex
 
 Nodex::go {
-  Server.new.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
+  NetServer.new.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
 }
 puts "hit enter to exit"
 STDIN.gets

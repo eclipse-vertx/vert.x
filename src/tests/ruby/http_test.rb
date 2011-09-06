@@ -10,9 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/nodex'
-require 'core/http'
+require 'nodex'
 require 'utils'
+include Nodex
 
 class HttpTest < Test::Unit::TestCase
 
@@ -57,7 +57,7 @@ class HttpTest < Test::Unit::TestCase
     latch1 = Utils::Latch.new(1)
 
     Nodex::go {
-      server = Http::Server.new
+      server = HttpServer.new
       if ssl
         server.ssl = true
         server.key_store_path = '../resources/keystores/server-keystore.jks'
@@ -85,7 +85,7 @@ class HttpTest < Test::Unit::TestCase
       }
       server.listen(8080)
 
-      client = Http::Client.new
+      client = HttpClient.new
       client.port = 8080;
       if ssl
         client.ssl = true

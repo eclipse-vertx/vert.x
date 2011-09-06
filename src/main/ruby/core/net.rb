@@ -10,11 +10,8 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-require "core/buffer"
-java_import org.nodex.java.core.net.NetServer
-java_import org.nodex.java.core.net.NetClient
 
-module Net
+module Nodex
 
   class NetBase
 
@@ -69,11 +66,13 @@ module Net
     private :initialize
   end
 
-  class Server < NetBase
+  class NetServer < NetBase
 
     def initialize
-      @j_cliserv = NetServer.new
+      @j_cliserv = org.nodex.java.core.net.NetServer.new
       super(@j_cliserv)
+
+      puts "created net server"
     end
 
     def client_auth_required=(val)
@@ -82,10 +81,11 @@ module Net
 
     def connect_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_cliserv.connectHandler { |j_socket| hndlr.call(Socket.new(j_socket)) }
+      @j_cliserv.connectHandler { |j_socket| hndlr.call(NetSocket.new(j_socket)) }
     end
 
     def listen(port, host = "0.0.0.0")
+      puts "listening"
       @j_cliserv.listen(port, host)
       self
     end
@@ -96,10 +96,10 @@ module Net
 
   end
 
-  class Client < NetBase
+  class NetClient < NetBase
 
     def initialize
-      @j_cliserv = NetClient.new
+      @j_cliserv = org.nodex.java.core.net.NetClient.new
       super(@j_cliserv)
     end
 
@@ -109,7 +109,7 @@ module Net
 
     def connect(port, host = "localhost", proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_cliserv.connect(port, host) { |j_socket| hndlr.call(Socket.new(j_socket)) }
+      @j_cliserv.connect(port, host) { |j_socket| hndlr.call(NetSocket.new(j_socket)) }
     end
 
     def close
@@ -118,7 +118,7 @@ module Net
 
   end
 
-  class Socket
+  class NetSocket
 
     def initialize(j_socket)
       @j_socket = j_socket

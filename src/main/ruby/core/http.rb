@@ -10,20 +10,18 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-require "core/buffer"
-java_import org.nodex.java.core.http.HttpServer
-java_import org.nodex.java.core.http.HttpClient
 
-module Http
-  class Server
+module Nodex
+
+  class HttpServer
 
     def initialize
-      @j_server = HttpServer.new
+      @j_server = org.nodex.java.core.http.HttpServer.new
     end
 
     def request_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_server.requestHandler { |j_req| hndlr.call(ServerRequest.new(j_req)) }
+      @j_server.requestHandler { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def websocket_handler(proc = nil, &hndlr)
@@ -64,9 +62,9 @@ module Http
     end
   end
 
-  class Client
+  class HttpClient
     def initialize
-      @j_client = HttpClient.new
+      @j_client = org.nodex.java.core.http.HttpClient.new
     end
 
     def exception_handler(proc = nil, &hndlr)
@@ -127,39 +125,39 @@ module Http
     end
 
     def options(uri, &hndlr)
-      ClientRequest.new(@j_client.options(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.options(uri, resp_handler(hndlr)))
     end
 
     def get(uri, &hndlr)
-      ClientRequest.new(@j_client.get(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.get(uri, resp_handler(hndlr)))
     end
 
     def head(uri, &hndlr)
-      ClientRequest.new(@j_client.head(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.head(uri, resp_handler(hndlr)))
     end
 
     def post(uri, &hndlr)
-      ClientRequest.new(@j_client.post(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.post(uri, resp_handler(hndlr)))
     end
 
     def put(uri, &hndlr)
-      ClientRequest.new(@j_client.put(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.put(uri, resp_handler(hndlr)))
     end
 
     def delete(uri, &hndlr)
-      ClientRequest.new(@j_client.delete(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.delete(uri, resp_handler(hndlr)))
     end
 
     def trace(uri, &hndlr)
-      ClientRequest.new(@j_client.trace(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.trace(uri, resp_handler(hndlr)))
     end
 
     def connect(uri, &hndlr)
-      ClientRequest.new(@j_client.connect(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.connect(uri, resp_handler(hndlr)))
     end
 
     def request(method, uri, &hndlr)
-      ClientRequest.new(@j_client.request(method, uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_client.request(method, uri, resp_handler(hndlr)))
     end
 
     def close
@@ -167,14 +165,14 @@ module Http
     end
 
     def resp_handler(hndlr)
-      Proc.new { |j_resp| hndlr.call(ClientResponse.new(j_resp)) }
+      Proc.new { |j_resp| hndlr.call(HttpClientResponse.new(j_resp)) }
     end
 
     private :resp_handler
 
   end
 
-  class ClientRequest
+  class HttpClientRequest
     def initialize(j_req)
       @j_req = j_req
     end
@@ -248,7 +246,7 @@ module Http
 
   end
 
-  class ClientResponse
+  class HttpClientResponse
     def initialize(j_resp)
       @j_resp = j_resp
       @status_code = j_resp.statusCode
@@ -353,10 +351,10 @@ module Http
     private :initialize
   end
 
-  class ServerRequest
+  class HttpServerRequest
     def initialize(j_req)
       @j_req = j_req
-      @resp = ServerResponse.new(@j_req.response)
+      @resp = HttpServerResponse.new(@j_req.response)
     end
 
     def method
@@ -431,7 +429,7 @@ module Http
     private :initialize
   end
 
-  class ServerResponse
+  class HttpServerResponse
     def initialize(j_resp)
       @j_resp = j_resp
     end

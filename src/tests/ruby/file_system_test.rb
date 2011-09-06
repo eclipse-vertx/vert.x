@@ -10,9 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/nodex'
-require 'core/file_system'
+require 'nodex'
 require 'utils'
+include Nodex
 
 # TODO More thorough testing required
 class FileSystemTest < Test::Unit::TestCase

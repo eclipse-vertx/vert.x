@@ -10,8 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/nodex'
+require 'nodex'
 require 'utils'
+include Nodex
 
 class TimerTest < Test::Unit::TestCase
 

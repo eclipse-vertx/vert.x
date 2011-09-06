@@ -9,16 +9,12 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
-require "core/file_system"
-require "core/pump"
+require "nodex"
 require "set"
-include Http
+include Nodex
 
 Nodex::go {
-  Server.new.request_handler { |req|
-    puts "got request"
+  HttpServer.new.request_handler { |req|
     req.pause
     filename = (0...9).map { ('A'..'Z').to_a[rand(26)] }.join
     filename << ".uploaded"

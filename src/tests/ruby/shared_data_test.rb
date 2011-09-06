@@ -10,9 +10,10 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/shared_data'
+require 'nodex'
 require 'utils'
 require 'set'
+include Nodex
 
 class SharedDataTest < Test::Unit::TestCase
 
