@@ -13,9 +13,9 @@
 
 package org.nodex.tests.core.parsetools;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.parsetools.RecordParser;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.parsetools.RecordParser;
 import org.nodex.tests.Utils;
 import org.testng.annotations.Test;
 

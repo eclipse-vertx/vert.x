@@ -11,8 +11,8 @@
 
 include Java
 require "core/buffer"
-java_import org.nodex.core.net.NetServer
-java_import org.nodex.core.net.NetClient
+java_import org.nodex.java.core.net.NetServer
+java_import org.nodex.java.core.net.NetClient
 
 module Net
 
@@ -82,7 +82,7 @@ module Net
 
     def connect_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_cliserv.connectHandler{|j_socket| hndlr.call(Socket.new(j_socket)) }
+      @j_cliserv.connectHandler { |j_socket| hndlr.call(Socket.new(j_socket)) }
     end
 
     def listen(port, host = "0.0.0.0")
@@ -122,10 +122,10 @@ module Net
 
     def initialize(j_socket)
       @j_socket = j_socket
-      @write_handler_id = Nodex::register_handler{ |buffer|
+      @write_handler_id = Nodex::register_handler { |buffer|
         write_buffer(buffer)
       }
-      @j_socket.closedHandler(Proc.new{
+      @j_socket.closedHandler(Proc.new {
         Nodex::unregister_handler(@write_handler_id)
         @closed_handler.call if @closed_handler
       })
@@ -150,7 +150,7 @@ module Net
 
     def data_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_socket.dataHandler{ |j_buff| hndlr.call(Buffer.new(j_buff)) }
+      @j_socket.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
     end
 
     def end_handler(proc = nil, &hndlr)

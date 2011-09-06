@@ -14,8 +14,8 @@ require "core/nodex"
 require "set"
 include Http
 
-Nodex::go{
-  Server.new.request_handler{ |req|
+Nodex::go {
+  Server.new.request_handler { |req|
     puts "Got request #{req.uri}"
     req.header_names.each { |header_name|
       puts "#{header_name} : #{req.header(header_name)}"
@@ -26,7 +26,7 @@ Nodex::go{
     }
 
     req.end_handler {
-      # Now send back a response
+        # Now send back a response
 
       req.response.chunked = true
 

@@ -13,7 +13,7 @@
 
 package org.nodex.tests;
 
-import org.nodex.core.EventHandler;
+import org.nodex.java.core.EventHandler;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

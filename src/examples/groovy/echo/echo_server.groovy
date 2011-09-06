@@ -1,5 +1,5 @@
-import org.nodex.groovy.core.net.NetServer
 import org.nodex.groovy.core.Nodex
+import org.nodex.groovy.core.net.NetServer
 
 println("Hello world")
 

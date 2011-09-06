@@ -115,7 +115,7 @@ class SharedDataTest < Test::Unit::TestCase
 
     set2 = Set.new
 
-    set1.each{ |o|
+    set1.each { |o|
       set2.add(o)
     }
 

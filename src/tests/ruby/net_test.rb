@@ -21,10 +21,10 @@ class NetTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new 1
 
-    Nodex::go{
+    Nodex::go {
       server = Server.new.connect_handler { |socket|
         socket.data_handler { |data|
-          socket.write_buffer(data)      # Just echo it back
+          socket.write_buffer(data) # Just echo it back
         }
       }.listen(8080)
 
@@ -43,18 +43,18 @@ class NetTest < Test::Unit::TestCase
           if received.length == sends * size
             assert(Utils::buffers_equal(sent, received))
 
-            server.close{
+            server.close {
               client.close
               latch.countdown
             }
           end
         }
 
-        socket.drain_handler{
+        socket.drain_handler {
           puts "drained\n"
         }
 
-        socket.end_handler{
+        socket.end_handler {
           puts "end\n"
         }
 
@@ -73,9 +73,9 @@ class NetTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new 1
 
-    Nodex::go{
+    Nodex::go {
 
-      # Let's do full SSL with client auth
+        # Let's do full SSL with client auth
 
       server = Server.new;
       server.ssl = true
@@ -85,9 +85,9 @@ class NetTest < Test::Unit::TestCase
       server.trust_store_password = 'wibble'
       server.client_auth_required = true
 
-      server.connect_handler{ |socket|
+      server.connect_handler { |socket|
         socket.data_handler { |data|
-          socket.write_buffer(data)      # Just echo it back
+          socket.write_buffer(data) # Just echo it back
         }
       }.listen(8080)
 
@@ -113,7 +113,7 @@ class NetTest < Test::Unit::TestCase
           if received.length == sends * size
             assert(Utils::buffers_equal(sent, received))
 
-            server.close{
+            server.close {
               client.close
               latch.countdown
             }
@@ -122,15 +122,15 @@ class NetTest < Test::Unit::TestCase
 
         #Just call the methods. Real testing is done in java tests
 
-        socket.drain_handler{
+        socket.drain_handler {
           puts "drained\n"
         }
 
-        socket.end_handler{
+        socket.end_handler {
           puts "end\n"
         }
 
-        socket.closed_handler{
+        socket.closed_handler {
           puts "closed\n"
         }
 
@@ -154,7 +154,7 @@ class NetTest < Test::Unit::TestCase
   def test_methods
     latch = Utils::Latch.new 1
 
-    Nodex::go{
+    Nodex::go {
       server = Server.new
 
       server.ssl=true
@@ -169,7 +169,7 @@ class NetTest < Test::Unit::TestCase
       server.so_linger = true
       server.traffic_class=123
 
-      server.connect_handler{ |sock| }
+      server.connect_handler { |sock|}
 
       server.close
 

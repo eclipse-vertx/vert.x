@@ -56,7 +56,7 @@ class HttpTest < Test::Unit::TestCase
 
     latch1 = Utils::Latch.new(1)
 
-    Nodex::go{
+    Nodex::go {
       server = Http::Server.new
       if ssl
         server.ssl = true
@@ -71,12 +71,12 @@ class HttpTest < Test::Unit::TestCase
         assert(req.headers['foo'] == 'bar')
         req.response.put_header('wibble', 'quark')
         chunk_count = 0
-        req.data_handler{ |data|
+        req.data_handler { |data|
           assert("client-chunk-#{chunk_count}" == data.to_s)
           chunk_count += 1
         }
         req.response.chunked = true
-        req.end_handler{
+        req.end_handler {
           for i in 0..server_chunks - 1 do
             req.response.write_str("server-chunk-#{i}")
           end
@@ -99,14 +99,14 @@ class HttpTest < Test::Unit::TestCase
         assert(200 == resp.status_code)
         assert('quark' == resp.headers['wibble'])
         chunk_count = 0
-        resp.data_handler{ |data|
+        resp.data_handler { |data|
           assert("server-chunk-#{chunk_count}" == data.to_s)
           chunk_count += 1
         }
 
-        resp.end_handler{
+        resp.end_handler {
           assert(chunk_count = server_chunks)
-          server.close{
+          server.close {
             client.close
             latch1.countdown
           }

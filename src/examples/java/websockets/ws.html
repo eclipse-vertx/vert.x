@@ -20,31 +20,40 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
         "http://www.w3.org/TR/html4/loose.dtd">
- <html><head><title>Web Socket Test</title></head>
- <body>
-   <script type="text/javascript">
-     var socket;
-     if (window.WebSocket) {
-       socket = new WebSocket("ws://localhost:8080/myapp");
-       socket.onmessage = function(event) { alert("Received data from websocket: " + event.data); }
-       socket.onopen = function(event) { alert("Web Socket opened!"); };
-       socket.onclose = function(event) { alert("Web Socket closed."); };
-     } else {
-       alert("Your browser does not support Websockets. (Use Chrome)");
-     }
+<html>
+<head><title>Web Socket Test</title></head>
+<body>
+<script type="text/javascript">
+    var socket;
+    if (window.WebSocket) {
+        socket = new WebSocket("ws://localhost:8080/myapp");
+        socket.onmessage = function(event) {
+            alert("Received data from websocket: " + event.data);
+        }
+        socket.onopen = function(event) {
+            alert("Web Socket opened!");
+        };
+        socket.onclose = function(event) {
+            alert("Web Socket closed.");
+        };
+    } else {
+        alert("Your browser does not support Websockets. (Use Chrome)");
+    }
 
-     function send(message) {
-       if (!window.WebSocket) { return; }
-       if (socket.readyState == WebSocket.OPEN) {
-         socket.send(message);
-       } else {
-         alert("The socket is not open.");
-       }
-     }
-   </script>
-   <form onsubmit="return false;">
-     <input type="text" name="message" value="Hello, World!"/>
-     <input type="button" value="Send Web Socket Data" onclick="send(this.form.message.value)" />
-   </form>
- </body>
- </html>
+    function send(message) {
+        if (!window.WebSocket) {
+            return;
+        }
+        if (socket.readyState == WebSocket.OPEN) {
+            socket.send(message);
+        } else {
+            alert("The socket is not open.");
+        }
+    }
+</script>
+<form onsubmit="return false;">
+    <input type="text" name="message" value="Hello, World!"/>
+    <input type="button" value="Send Web Socket Data" onclick="send(this.form.message.value)"/>
+</form>
+</body>
+</html>

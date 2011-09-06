@@ -16,34 +16,33 @@ include Java
 module SharedData
 
   module Immutable
-    include org.nodex.core.Immutable
-
+    include org.nodex.java.core.Immutable
   end
 
   def SharedData.get_hash(key)
-    map = org.nodex.core.shared.SharedData.getMap(key)
+    map = org.nodex.java.core.shared.SharedData.getMap(key)
     SharedHash.new(map)
   end
 
   def SharedData.get_set(key)
-    set = org.nodex.core.shared.SharedData.getSet(key)
+    set = org.nodex.java.core.shared.SharedData.getSet(key)
     SharedSet.new(set)
   end
 
   def SharedData.get_counter(key)
-    org.nodex.core.shared.SharedData.getCounter(key)
+    org.nodex.java.core.shared.SharedData.getCounter(key)
   end
 
   def SharedData.remove_hash(key)
-   org.nodex.core.shared.SharedData.removeMap(key)
+    org.nodex.java.core.shared.SharedData.removeMap(key)
   end
 
   def SharedData.remove_set(key)
-    org.nodex.core.shared.SharedData.removeSet(key)
+    org.nodex.java.core.shared.SharedData.removeSet(key)
   end
 
   def SharedData.remove_counter(key)
-    org.nodex.core.shared.SharedData.removeCounter(key)
+    org.nodex.java.core.shared.SharedData.removeCounter(key)
   end
 
   # We need to copy certain objects because they're not immutable

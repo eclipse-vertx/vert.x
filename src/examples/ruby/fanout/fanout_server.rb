@@ -15,14 +15,14 @@ require "core/shared_data"
 
 include Net
 
-Nodex::go{
+Nodex::go {
   conns = SharedData::get_set("conns")
-  Server.new.connect_handler{ |socket|
+  Server.new.connect_handler { |socket|
     conns.add(socket.write_handler_id)
-    socket.data_handler{ |data|
-      conns.each{ |actor_id| Nodex::send_to_handler(actor_id, data) }
+    socket.data_handler { |data|
+      conns.each { |actor_id| Nodex::send_to_handler(actor_id, data) }
     }
-    socket.closed_handler{ conns.delete(socket.write_handler_id) }
+    socket.closed_handler { conns.delete(socket.write_handler_id) }
   }.listen(8080)
 }
 

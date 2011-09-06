@@ -94,7 +94,7 @@ module FileSystem
 
     def read(buffer, offset, position, length, &hndlr)
       @j_file.read(buffer._to_java_buffer, offset, position, length, Proc.new { |compl|
-        hndlr.call(org.nodex.core.Completion.new(Buffer.new(compl.result)))
+        hndlr.call(org.nodex.java.core.Completion.new(Buffer.new(compl.result)))
       })
     end
 
@@ -184,73 +184,73 @@ module FileSystem
   end
 
   def FileSystem.copy(from, to, &hndlr)
-    org.nodex.core.file.FileSystem.instance.copy(from, to, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.copy(from, to, hndlr)
   end
 
   def FileSystem.copy_recursive(from, to, &hndlr)
-    org.nodex.core.file.FileSystem.instance.copy(from, to, true, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.copy(from, to, true, hndlr)
   end
 
   def FileSystem.move(from, to, &hndlr)
-    org.nodex.core.file.FileSystem.instance.move(from, to, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.move(from, to, hndlr)
   end
 
   def FileSystem.truncate(path, len, &hndlr)
-    org.nodex.core.file.FileSystem.instance.truncate(path, len, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.truncate(path, len, hndlr)
   end
 
   def FileSystem.chmod(path, perms, dir_perms = nil, &hndlr)
-    org.nodex.core.file.FileSystem.instance.chmod(path, perms, dir_perms, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.chmod(path, perms, dir_perms, hndlr)
   end
 
   def FileSystem.stat(path, &hndlr)
-    org.nodex.core.file.FileSystem.instance.stat(path, Proc.new{ |compl|
-      hndlr.call(org.nodex.core.Completion.new(FileStats.new(compl.result)))
+    org.nodex.java.core.file.FileSystem.instance.stat(path, Proc.new { |compl|
+      hndlr.call(org.nodex.java.core.Completion.new(FileStats.new(compl.result)))
     })
   end
 
   def FileSystem.link(link, existing, &hndlr)
-    org.nodex.core.file.FileSystem.instance.link(link, existing, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.link(link, existing, hndlr)
   end
 
   def FileSystem.sym_link(link, existing, &hndlr)
-    org.nodex.core.file.FileSystem.instance.symLink(link, existing, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.symLink(link, existing, hndlr)
   end
 
   def FileSystem.unlink(link, &hndlr)
-    org.nodex.core.file.FileSystem.instance.unlink(link, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.unlink(link, hndlr)
   end
 
   def FileSystem.read_sym_link(link, &hndlr)
-    org.nodex.core.file.FileSystem.instance.readSymLink(link, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.readSymLink(link, hndlr)
   end
 
   def FileSystem.delete(path, &hndlr)
-    org.nodex.core.file.FileSystem.instance.delete(path, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.delete(path, hndlr)
   end
 
   def FileSystem.delete_recursive(path, &hndlr)
-    org.nodex.core.file.FileSystem.instance.delete(path, true, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.delete(path, true, hndlr)
   end
 
   def FileSystem.mkdir(path, perms = nil, &hndlr)
-    org.nodex.core.file.FileSystem.instance.mkdir(path, perms, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms, hndlr)
   end
 
   def FileSystem.mkdir_with_parents(path, perms = nil, &hndlr)
-    org.nodex.core.file.FileSystem.instance.mkdir(path, perms, true, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms, true, hndlr)
   end
 
   def FileSystem.read_dir(path, filter = nil, &hndlr)
-    org.nodex.core.file.FileSystem.instance.readDir(path, filter, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.readDir(path, filter, hndlr)
   end
 
   def FileSystem.read_file_as_string(path, encoding = "UTF-8", &hndlr)
-    org.nodex.core.file.FileSystem.instance.readFileAsString(path, encoding, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.readFileAsString(path, encoding, hndlr)
   end
 
   def FileSystem.write_string_to_file(path, str, encoding = "UTF-8", &hndlr)
-    org.nodex.core.file.FileSystem.instance.writeFileAsString(path, str, encoding, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.writeFileAsString(path, str, encoding, hndlr)
   end
 
   def FileSystem.lock
@@ -269,10 +269,10 @@ module FileSystem
     # TODO
   end
 
-  def FileSystem.open(path, perms = nil, read = true, write = true, create_new = true, sync = false, sync_meta = false, &hndlr)
-    org.nodex.core.file.FileSystem.instance.open(path, perms, read, write, create_new, sync, sync_meta, Proc.new { |compl|
+  def FileSystem.open(path, perms = nil, read = true, write = true, create_new = true, sync = false, &hndlr)
+    org.nodex.java.core.file.FileSystem.instance.open(path, perms, read, write, create_new, sync, Proc.new { |compl|
       if compl.succeeded
-        hndlr.call(org.nodex.core.Completion.new(AsyncFile.new(compl.result)))
+        hndlr.call(org.nodex.java.core.Completion.new(AsyncFile.new(compl.result)))
       else
         hndlr.call(compl)
       end
@@ -280,16 +280,16 @@ module FileSystem
   end
 
   def FileSystem.create_file(path, perms = nil, &hndlr)
-    org.nodex.core.file.FileSystem.instance.createFile(path, perms, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.createFile(path, perms, hndlr)
   end
 
   def FileSystem.exists(path, &hndlr)
-    org.nodex.core.file.FileSystem.instance.exists(path, hndlr)
+    org.nodex.java.core.file.FileSystem.instance.exists(path, hndlr)
   end
 
   def FileSystem.fs_stats(path, &hndlr)
-    org.nodex.core.file.FileSystem.instance.getFSStats(path, Proc.new { |j_stats|
-      hndlr.call(org.nodex.core.Completion.new(FSStats.new(j_stats)))
+    org.nodex.java.core.file.FileSystem.instance.getFSStats(path, Proc.new { |j_stats|
+      hndlr.call(org.nodex.java.core.Completion.new(FSStats.new(j_stats)))
     })
   end
 

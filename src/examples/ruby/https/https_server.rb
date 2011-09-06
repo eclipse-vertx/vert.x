@@ -13,13 +13,13 @@ require "core/http"
 require "core/nodex"
 include Http
 
-Nodex::go{
+Nodex::go {
   server = Server.new
   server.ssl = true
   server.key_store_path = "server-keystore.jks"
   server.key_store_password = "wibble"
 
-  server.request_handler{ |req|
+  server.request_handler { |req|
     req.response.chunked = true
     req.response.write_str("<html><body><h1>Hello from Node.x over HTTPS!</h1></body></html>", "UTF-8").end
   }.listen(4443)

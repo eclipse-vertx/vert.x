@@ -13,16 +13,16 @@
 
 package org.nodex.tests.core.http;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.SimpleEventHandler;
-import org.nodex.core.Nodex;
-import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.http.HttpClient;
-import org.nodex.core.http.HttpClientRequest;
-import org.nodex.core.http.HttpClientResponse;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.HttpServerRequest;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Nodex;
+import org.nodex.java.core.NodexMain;
+import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.http.HttpClient;
+import org.nodex.java.core.http.HttpClientRequest;
+import org.nodex.java.core.http.HttpClientResponse;
+import org.nodex.java.core.http.HttpServer;
+import org.nodex.java.core.http.HttpServerRequest;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -162,7 +162,7 @@ public class HttpTest extends TestBase {
               response.endHandler(new SimpleEventHandler() {
                 public void onEvent() {
                   azzert(("This is content " + theCount).equals(buff.toString()));
-                  if (theCount == requests -1 ) {
+                  if (theCount == requests - 1) {
                     server.close(new SimpleEventHandler() {
                       public void onEvent() {
                         client.close();
@@ -258,12 +258,13 @@ public class HttpTest extends TestBase {
 
         final HttpServer server = new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
+
           public void onEvent(final HttpServerRequest req) {
             req.dataHandler(new EventHandler<Buffer>() {
               public void onEvent(Buffer data) {
                 received.appendBuffer(data);
                 if (received.length() == toSend.length()) {
-                  assert(Utils.buffersEqual(toSend, received));
+                  assert (Utils.buffersEqual(toSend, received));
                   req.response.end();
                 }
               }
@@ -275,17 +276,17 @@ public class HttpTest extends TestBase {
 
         final HttpClientRequest req = client.put("someurl", new EventHandler<HttpClientResponse>() {
           public void onEvent(HttpClientResponse resp) {
-            assert(200 == resp.statusCode);
+            assert (200 == resp.statusCode);
 
             resp.endHandler(new SimpleEventHandler() {
-               public void onEvent() {
-                 server.close(new SimpleEventHandler() {
-                   public void onEvent() {
-                     client.close();
-                     latch.countDown();
-                   }
-                 });
-               }
+              public void onEvent() {
+                server.close(new SimpleEventHandler() {
+                  public void onEvent() {
+                    client.close();
+                    latch.countDown();
+                  }
+                });
+              }
             });
           }
         });
@@ -329,12 +330,13 @@ public class HttpTest extends TestBase {
 
         final HttpServer server = new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
+
           public void onEvent(final HttpServerRequest req) {
             req.dataHandler(new EventHandler<Buffer>() {
               public void onEvent(Buffer data) {
                 received.appendBuffer(data);
                 if (received.length() == toSend.length()) {
-                  assert(Utils.buffersEqual(toSend, received));
+                  assert (Utils.buffersEqual(toSend, received));
                   req.response.end();
                 }
               }
@@ -346,23 +348,23 @@ public class HttpTest extends TestBase {
 
         final HttpClientRequest req = client.put("someurl", new EventHandler<HttpClientResponse>() {
           public void onEvent(HttpClientResponse resp) {
-            assert(200 == resp.statusCode);
+            assert (200 == resp.statusCode);
 
             resp.endHandler(new SimpleEventHandler() {
-               public void onEvent() {
-                 server.close(new SimpleEventHandler() {
-                   public void onEvent() {
-                     client.close();
-                     latch.countDown();
-                   }
-                 });
-               }
+              public void onEvent() {
+                server.close(new SimpleEventHandler() {
+                  public void onEvent() {
+                    client.close();
+                    latch.countDown();
+                  }
+                });
+              }
             });
           }
         });
 
         req.setChunked(true);
-        for (Buffer buff: buffs) {
+        for (Buffer buff : buffs) {
           req.write(buff);
         }
         req.end();
@@ -394,14 +396,16 @@ public class HttpTest extends TestBase {
 
         final HttpServer server = new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
+
           public void onEvent(final HttpServerRequest req) {
             req.dataHandler(new EventHandler<Buffer>() {
               boolean paused;
+
               public void onEvent(Buffer data) {
                 azzert(!paused, "Shouldn't receive data when paused");
                 received.appendBuffer(data);
                 if (received.length() == toSend.length()) {
-                  assert(Utils.buffersEqual(toSend, received));
+                  assert (Utils.buffersEqual(toSend, received));
                   req.response.end();
                 } else {
                   req.pause();
@@ -422,24 +426,24 @@ public class HttpTest extends TestBase {
 
         final HttpClientRequest req = client.put("someurl", new EventHandler<HttpClientResponse>() {
           public void onEvent(HttpClientResponse resp) {
-            assert(200 == resp.statusCode);
+            assert (200 == resp.statusCode);
 
             resp.endHandler(new SimpleEventHandler() {
-               public void onEvent() {
-                 server.close(new SimpleEventHandler() {
-                   public void onEvent() {
-                     client.close();
-                     latch.countDown();
-                   }
-                 });
-               }
+              public void onEvent() {
+                server.close(new SimpleEventHandler() {
+                  public void onEvent() {
+                    client.close();
+                    latch.countDown();
+                  }
+                });
+              }
             });
           }
         });
 
         //req.setContentLength(toSend.length());
         req.setChunked(true);
-        for (Buffer buff: buffs) {
+        for (Buffer buff : buffs) {
           req.write(buff);
         }
         req.end();
@@ -640,7 +644,7 @@ public class HttpTest extends TestBase {
         HttpClientRequest req;
         HttpClient client = new HttpClient().setHost(host).setPort(port).setKeepAlive(keepAlive);
         if ("GETNOW".equals(method)) {
-           client.getNow(path + paramsString, requestHeaders, responseHandler);
+          client.getNow(path + paramsString, requestHeaders, responseHandler);
         } else {
           req = getRequest(specificMethod, method, path, paramsString, responseHandler, client);
           req.putAllHeaders(requestHeaders);

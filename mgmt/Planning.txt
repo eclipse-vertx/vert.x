@@ -74,8 +74,6 @@ TODO
 14) Allow to set HTTP response reason
 15) Netty should build timers into event loop
 16) More tests needed!
-17) Ruby HTTP header handling needs to be improved - can we just use a hash for headers? we can combine duplicate
-headers
 18) Scala delimited continuations for making async code appear synchronous
 19) Make Java nodex methods static
 

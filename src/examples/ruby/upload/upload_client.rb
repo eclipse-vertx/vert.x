@@ -15,7 +15,7 @@ require "core/file_system"
 require 'core/pump'
 include Http
 
-Nodex::go{
+Nodex::go {
   client = Client.new
   client.port = 8080
   client.host = "localhost"
@@ -30,7 +30,7 @@ Nodex::go{
     FileSystem::open(filename) { |compl|
       rs = compl.result.read_stream
       pump = Pump.new(rs, req)
-      rs.end_handler{
+      rs.end_handler {
         req.end
       }
       pump.start

@@ -13,7 +13,7 @@
 
 package org.nodex.tests.core.buffer;
 
-import org.nodex.core.buffer.Buffer;
+import org.nodex.java.core.buffer.Buffer;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -74,7 +74,7 @@ public class BufferTest extends TestBase {
   public void testAppendByte2() throws Exception {
     int bytesLen = 100;
     Buffer b = Buffer.create(Utils.generateRandomByteArray(bytesLen));
-    b.setByte(b.length(), (byte)9);
+    b.setByte(b.length(), (byte) 9);
 
   }
 
@@ -109,7 +109,7 @@ public class BufferTest extends TestBase {
     }
     try {
       b.getByte(bytesLen + 1);
-     azzert(false);
+      azzert(false);
     } catch (IndexOutOfBoundsException e) {
       //expected
     }
@@ -140,7 +140,7 @@ public class BufferTest extends TestBase {
     }
     try {
       b.getInt(bytesLen + 1);
-     azzert(false);
+      azzert(false);
     } catch (IndexOutOfBoundsException e) {
       //expected
     }
@@ -171,7 +171,7 @@ public class BufferTest extends TestBase {
     }
     try {
       b.getLong(bytesLen + 1);
-     azzert(false);
+      azzert(false);
     } catch (IndexOutOfBoundsException e) {
       //expected
     }
@@ -202,7 +202,7 @@ public class BufferTest extends TestBase {
     }
     try {
       b.getFloat(bytesLen + 1);
-     azzert(false);
+      azzert(false);
     } catch (IndexOutOfBoundsException e) {
       //expected
     }
@@ -461,7 +461,7 @@ public class BufferTest extends TestBase {
 
   private void testSetByte(Buffer buff) throws Exception {
     for (int i = 0; i < numSets; i++) {
-      buff.setByte(i, (byte)i);
+      buff.setByte(i, (byte) i);
     }
     for (int i = 0; i < numSets; i++) {
       azzert(i == buff.getByte(i));
@@ -480,7 +480,7 @@ public class BufferTest extends TestBase {
 
   private void testSetFloat(Buffer buff) throws Exception {
     for (int i = 0; i < numSets; i++) {
-      buff.setFloat(i * 4, (float)i);
+      buff.setFloat(i * 4, (float) i);
     }
     for (int i = 0; i < numSets; i++) {
       azzert(i == buff.getFloat(i * 4));
@@ -499,7 +499,7 @@ public class BufferTest extends TestBase {
 
   private void testSetDouble(Buffer buff) throws Exception {
     for (int i = 0; i < numSets; i++) {
-      buff.setDouble(i * 8, (double)i);
+      buff.setDouble(i * 8, (double) i);
     }
     for (int i = 0; i < numSets; i++) {
       azzert(i == buff.getDouble(i * 8));
@@ -519,7 +519,7 @@ public class BufferTest extends TestBase {
 
   private void testSetShort(Buffer buff) throws Exception {
     for (int i = 0; i < numSets; i++) {
-      buff.setShort(i * 2, (short)i);
+      buff.setShort(i * 2, (short) i);
     }
     for (int i = 0; i < numSets; i++) {
       azzert(i == buff.getShort(i * 2));
@@ -540,7 +540,7 @@ public class BufferTest extends TestBase {
   private void testSetBytesBuffer(Buffer buff) throws Exception {
 
     Buffer b = Utils.generateRandomBuffer(100);
-    buff.setBytes(50, b);
+    buff.setBuffer(50, b);
     byte[] b2 = buff.getBytes(50, 150);
     azzert(Utils.buffersEqual(b, Buffer.create(b2)));
 

@@ -13,7 +13,7 @@ require "core/http"
 require "core/nodex"
 include Http
 
-Nodex::go{
+Nodex::go {
   client = Client.new
   client.ssl = true
   client.port = 4443
@@ -21,7 +21,7 @@ Nodex::go{
   client.trust_all = true
   client.get_now("/") { |resp|
     puts "Got response #{resp.status_code}"
-    resp.data_handler{ |buffer|
+    resp.data_handler { |buffer|
       puts "Got data #{buffer}"
     }
   }

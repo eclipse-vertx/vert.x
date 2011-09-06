@@ -19,7 +19,7 @@ class TimerTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go{
+    Nodex::go {
       Nodex::set_timeout(10) { |timer_id|
         latch.countdown
       }
@@ -34,7 +34,7 @@ class TimerTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go{
+    Nodex::go {
       count = 0
       Nodex::set_periodic(10) { |timer_id|
         count += 1

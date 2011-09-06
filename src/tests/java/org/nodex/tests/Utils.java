@@ -13,7 +13,7 @@
 
 package org.nodex.tests;
 
-import org.nodex.core.buffer.Buffer;
+import org.nodex.java.core.buffer.Buffer;
 
 public class Utils {
 
@@ -22,7 +22,7 @@ public class Utils {
   }
 
   public static byte[] generateRandomByteArray(int length) {
-    return generateRandomByteArray(length, false, (byte)0);
+    return generateRandomByteArray(length, false, (byte) 0);
   }
 
   public static byte[] generateRandomByteArray(int length, boolean avoid, byte avoidByte) {

@@ -13,13 +13,13 @@ require "core/http"
 require "core/nodex"
 include Http
 
-Nodex::go{
+Nodex::go {
   client = Client.new
   client.port = 8080
   client.host = "localhost"
   client.get_now("/") { |resp|
     puts "Got response #{resp.status_code}"
-    resp.data_handler{ |buffer|
+    resp.data_handler { |buffer|
       puts "Got data #{buffer}"
     }
   }

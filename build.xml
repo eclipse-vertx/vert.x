@@ -16,6 +16,8 @@
     <property name="tests-target" location="target/tests/classes"/>
     <property name="tests-src" location="src/tests"/>
 
+    <property name="javadoc-dir" location="docs/java/api"/>
+
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
             <include name="*.jar"/>
@@ -56,6 +58,7 @@
 
     <target name="clean" description="clean up">
         <delete dir="${target}"/>
+        <delete dir="${javadoc-dir}"/>
     </target>
 
     <target name="compile-tests" depends="jar-core">
@@ -68,13 +71,24 @@
 
     <target name="java-tests" depends="compile-tests">
         <testng classpathref="test-classpath">
-        <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.net.NetTest.*"> -->
+            <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.net.NetTest.*"> -->
             <classfileset dir="${tests-target}" includes="**/*.class"/>
         </testng>
     </target>
 
     <target name="ruby-tests" depends="compile-tests">
         <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true"/>
+    </target>
+
+    <target name="javadoc" depends="compile-core">
+        <javadoc destdir="${javadoc-dir}" author="true" version="false" use="true" windowtitle="Node.x Java API"
+                classpathref="core-lib-classpath" Public="true">
+            <fileset dir="${core-src}" defaultexcludes="yes">
+                <include name="org/nodex/java/core/**"/>
+                <!-- <exclude name="org/nodex/java/core/buffer/InternalBufferFactory.java"/> -->
+            </fileset>
+            <doctitle><![CDATA[<h1>Node.x Java API</h1>]]></doctitle>
+        </javadoc>
     </target>
 
 </project>

@@ -13,7 +13,7 @@ require "core/http"
 require "core/nodex"
 include Http
 
-Nodex::go{
+Nodex::go {
   Server.new.request_handler { |req|
     filename = req.uri == "/" ? "index.html" : "." << req.uri
     req.response.send_file(filename)

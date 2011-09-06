@@ -1,4 +1,3 @@
-
 require 'test/unit'
 
 class ScratchTest < Test::Unit::TestCase
@@ -6,7 +5,8 @@ class ScratchTest < Test::Unit::TestCase
   class SomeClass
 
 
-    def headers=(key, val)[]
+    def headers=(key, val)
+      []
       puts "invoked headers= with #{key} #{val}"
     end
 

@@ -1,18 +1,18 @@
 package org.nodex.tests.core.file;
 
-import org.nodex.core.Completion;
-import org.nodex.core.CompletionHandler;
-import org.nodex.core.EventHandler;
-import org.nodex.core.SimpleEventHandler;
-import org.nodex.core.NodexInternal;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.file.AsyncFile;
-import org.nodex.core.file.FileStats;
-import org.nodex.core.file.FileSystem;
-import org.nodex.core.file.FileSystemException;
-import org.nodex.core.streams.Pump;
-import org.nodex.core.streams.ReadStream;
-import org.nodex.core.streams.WriteStream;
+import org.nodex.java.core.Completion;
+import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.file.AsyncFile;
+import org.nodex.java.core.file.FileStats;
+import org.nodex.java.core.file.FileSystem;
+import org.nodex.java.core.file.FileSystemException;
+import org.nodex.java.core.streams.Pump;
+import org.nodex.java.core.streams.ReadStream;
+import org.nodex.java.core.streams.WriteStream;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.AfterMethod;
@@ -28,9 +28,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -731,7 +729,7 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-       CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
           public void onEvent(Completion<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception);
@@ -1284,7 +1282,7 @@ public class FileSystemTest extends TestBase {
     final String fileName2 = "some-other-file.dat";
 
     //Non integer multiple of buffer size
-    final int fileSize = (int)(AsyncFile.BUFFER_SIZE * 1000.3);
+    final int fileSize = (int) (AsyncFile.BUFFER_SIZE * 1000.3);
 
     final byte[] content = Utils.generateRandomByteArray(fileSize);
 

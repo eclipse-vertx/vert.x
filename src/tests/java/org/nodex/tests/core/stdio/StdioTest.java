@@ -1,9 +1,9 @@
 package org.nodex.tests.core.stdio;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.stdio.InStream;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.NodexMain;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.stdio.InStream;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;

@@ -1,12 +1,12 @@
 package org.nodex.tests.core.shared;
 
-import org.nodex.core.Immutable;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.shared.SharedCounter;
-import org.nodex.core.shared.SharedData;
-import org.nodex.core.shared.SharedMap;
-import org.nodex.core.shared.SharedQueue;
-import org.nodex.core.shared.SharedSet;
+import org.nodex.java.core.Immutable;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.shared.SharedCounter;
+import org.nodex.java.core.shared.SharedData;
+import org.nodex.java.core.shared.SharedMap;
+import org.nodex.java.core.shared.SharedQueue;
+import org.nodex.java.core.shared.SharedSet;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -27,17 +27,17 @@ public class SharedDataTest extends TestBase {
 
     SharedMap<String, String> map2 = SharedData.getMap("foo");
 
-    assert(map == map2);
+    assert (map == map2);
 
     SharedMap<String, String> map3 = SharedData.getMap("bar");
 
-    assert(map3 != map2);
+    assert (map3 != map2);
 
-    assert(SharedData.removeMap("foo"));
+    assert (SharedData.removeMap("foo"));
 
     SharedMap<String, String> map4 = SharedData.getMap("foo");
 
-    assert(map4 != map3);
+    assert (map4 != map3);
   }
 
   @Test
@@ -55,12 +55,12 @@ public class SharedDataTest extends TestBase {
 
     map.put(key, 1.2d);
     map.put(key, 3.2f);
-    map.put(key, (byte)1);
-    map.put(key, (short)23);
+    map.put(key, (byte) 1);
+    map.put(key, (short) 23);
     map.put(key, 23);
     map.put(key, 123l);
     map.put(key, true);
-    map.put(key, (char)12);
+    map.put(key, (char) 12);
     map.put(key, new BigDecimal(32));
     map.put(key, new MyImmutable());
     Buffer buff = Buffer.create(0);
@@ -68,7 +68,7 @@ public class SharedDataTest extends TestBase {
     azzert(map.get(key) != buff); // Make sure it's copied
     byte[] bytes = Utils.generateRandomByteArray(100);
     map.put(key, bytes);
-    byte[] got = (byte[])map.get(key);
+    byte[] got = (byte[]) map.get(key);
     azzert(got != bytes);
     azzert(Utils.byteArraysEqual(bytes, got));
     try {
@@ -78,7 +78,7 @@ public class SharedDataTest extends TestBase {
       //OK
     }
   }
-  
+
 
   @Test
   public void testSet() throws Exception {
@@ -87,17 +87,17 @@ public class SharedDataTest extends TestBase {
 
     SharedSet<String> set2 = SharedData.getSet("foo");
 
-    assert(set == set2);
+    assert (set == set2);
 
     SharedSet<String> set3 = SharedData.getSet("bar");
 
-    assert(set3 != set2);
+    assert (set3 != set2);
 
-    assert(SharedData.removeSet("foo"));
+    assert (SharedData.removeSet("foo"));
 
     SharedSet<String> set4 = SharedData.getSet("foo");
 
-    assert(set4 != set3);
+    assert (set4 != set3);
   }
 
   @Test
@@ -107,17 +107,17 @@ public class SharedDataTest extends TestBase {
 
     SharedCounter counter2 = SharedData.getCounter("foo");
 
-    assert(counter == counter2);
+    assert (counter == counter2);
 
     SharedCounter counter3 = SharedData.getCounter("bar");
 
-    assert(counter3 != counter2);
+    assert (counter3 != counter2);
 
-    assert(SharedData.removeCounter("foo"));
+    assert (SharedData.removeCounter("foo"));
 
     SharedCounter counter4 = SharedData.getCounter("foo");
 
-    assert(counter4 != counter3);
+    assert (counter4 != counter3);
   }
 
   @Test
@@ -127,17 +127,17 @@ public class SharedDataTest extends TestBase {
 
     SharedQueue<String> queue2 = SharedData.getQueue("foo");
 
-    assert(queue == queue2);
+    assert (queue == queue2);
 
     SharedQueue<String> queue3 = SharedData.getQueue("bar");
 
-    assert(queue3 != queue2);
+    assert (queue3 != queue2);
 
-    assert(SharedData.removeQueue("foo"));
+    assert (SharedData.removeQueue("foo"));
 
     SharedQueue<String> queue4 = SharedData.getQueue("foo");
 
-    assert(queue4 != queue3);
+    assert (queue4 != queue3);
   }
 
 }

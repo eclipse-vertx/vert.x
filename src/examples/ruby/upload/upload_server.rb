@@ -16,17 +16,17 @@ require "core/pump"
 require "set"
 include Http
 
-Nodex::go{
-  Server.new.request_handler{ |req|
+Nodex::go {
+  Server.new.request_handler { |req|
     puts "got request"
     req.pause
-    filename = (0...9).map{('A'..'Z').to_a[rand(26)]}.join
+    filename = (0...9).map { ('A'..'Z').to_a[rand(26)] }.join
     filename << ".uploaded"
     FileSystem::open(filename) { |compl|
       pump = Pump.new(req, compl.result.write_stream)
       start_time = Time.now
-      req.end_handler{
-        compl.result.close{
+      req.end_handler {
+        compl.result.close {
           end_time = Time.now
           puts "Uploaded #{pump.bytes_pumped} bytes to #{filename} in #{1000 * (end_time - start_time)} ms"
           req.response.end

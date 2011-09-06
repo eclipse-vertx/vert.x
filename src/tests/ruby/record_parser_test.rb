@@ -34,7 +34,7 @@ class RecordParserTest < Test::Unit::TestCase
     parser.input(Buffer.create_from_str(str))
 
     count = 0
-    lines.each{ |line|
+    lines.each { |line|
       assert("line #{count}" == line.to_s)
       count += 1
     }
