@@ -13,9 +13,9 @@
 
 package org.nodex.tests.core;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.Nodex;
-import org.nodex.core.NodexMain;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Nodex;
+import org.nodex.java.core.NodexMain;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -84,6 +84,7 @@ public class TimerTest extends TestBase {
 
         long id = Nodex.instance.setPeriodic(delay, new EventHandler<Long>() {
           int count;
+
           public void onEvent(Long timerID) {
             azzert(th == Thread.currentThread());
             azzert(contextID == Nodex.instance.getContextID());

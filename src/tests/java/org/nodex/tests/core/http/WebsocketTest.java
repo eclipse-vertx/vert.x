@@ -13,13 +13,13 @@
 
 package org.nodex.tests.core.http;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.SimpleEventHandler;
-import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.http.HttpClient;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.http.Websocket;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.NodexMain;
+import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.http.HttpClient;
+import org.nodex.java.core.http.HttpServer;
+import org.nodex.java.core.http.Websocket;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;

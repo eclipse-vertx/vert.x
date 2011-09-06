@@ -16,12 +16,12 @@ module Composition
     end
 
     def initialize
-      @java_composer = org.nodex.core.composition.Composer.compose
+      @java_composer = org.nodex.java.core.composition.Composer.compose
     end
 
     # parallel and then can be combined
 
-    COMPLETION_CLASS_SYM = "org.nodex.core.composition.Composable".to_sym
+    COMPLETION_CLASS_SYM = "org.nodex.java.core.composition.Composable".to_sym
 
     def when(*completions, &block)
       if block
@@ -57,7 +57,7 @@ module Composition
   class Completion
 
     def Completion.create
-      Completion.new(org.nodex.core.composition.Composable.new)
+      Completion.new(org.nodex.java.core.composition.Composable.new)
     end
 
     def Completion.create_from_java_completion(java_completion)
@@ -88,7 +88,7 @@ module Composition
   class Deferred
     def initialize(proc = nil, &block)
       block = proc if proc
-      @java_deffered = org.nodex.core.composition.Deferred.new(CompleteHandler.new(block))
+      @java_deffered = org.nodex.java.core.composition.Deferred.new(CompleteHandler.new(block))
     end
 
     def _to_java_completion
@@ -97,7 +97,7 @@ module Composition
 
   end
 
-  class CompleteHandler < org.nodex.core.Runnable
+  class CompleteHandler < org.nodex.java.core.Runnable
     def initialize(callback)
       super()
       @callback = callback

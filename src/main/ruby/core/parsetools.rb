@@ -30,12 +30,12 @@ module ParseTools
 
     def RecordParser.new_delimited(delim, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(org.nodex.core.parsetools.RecordParser.newDelimited(delim, output_block))
+      RecordParser.new(org.nodex.java.core.parsetools.RecordParser.newDelimited(delim, output_block))
     end
 
     def RecordParser.new_fixed(size, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(org.nodex.core.parsetools.RecordParser.newFixed(size, output_block))
+      RecordParser.new(org.nodex.java.core.parsetools.RecordParser.newFixed(size, output_block))
     end
 
     def delimited_mode(delim)

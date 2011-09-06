@@ -13,7 +13,7 @@ require "core/http"
 require "core/nodex"
 include Http
 
-Nodex::go{
+Nodex::go {
   Server.new.websocket_handler { |ws|
     ws.close if ws.uri != "/myapp"
     ws.data_handler { |buffer|

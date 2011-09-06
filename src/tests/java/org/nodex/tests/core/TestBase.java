@@ -13,9 +13,9 @@
 
 package org.nodex.tests.core;
 
-import org.nodex.core.Nodex;
-import org.nodex.core.http.HttpServer;
-import org.nodex.core.net.NetServer;
+import org.nodex.java.core.Nodex;
+import org.nodex.java.core.http.HttpServer;
+import org.nodex.java.core.net.NetServer;
 import org.nodex.tests.AwaitDone;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

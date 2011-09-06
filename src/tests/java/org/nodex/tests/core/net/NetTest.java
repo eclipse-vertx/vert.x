@@ -13,14 +13,14 @@
 
 package org.nodex.tests.core.net;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.SimpleEventHandler;
-import org.nodex.core.Nodex;
-import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetServer;
-import org.nodex.core.net.NetSocket;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Nodex;
+import org.nodex.java.core.NodexMain;
+import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.net.NetClient;
+import org.nodex.java.core.net.NetServer;
+import org.nodex.java.core.net.NetSocket;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -244,8 +244,8 @@ public class NetTest extends TestBase {
           }
         };
 
-        EventHandler<NetSocket> serverHandler = clientToServer ? receiver: sender;
-        EventHandler<NetSocket> clientHandler = clientToServer ? sender: receiver;
+        EventHandler<NetSocket> serverHandler = clientToServer ? receiver : sender;
+        EventHandler<NetSocket> clientHandler = clientToServer ? sender : receiver;
 
         server.connectHandler(serverHandler).listen(8181);
         new NetClient().connect(8181, clientHandler);

@@ -10,8 +10,8 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-java_import org.nodex.core.NodexMain
-java_import org.nodex.core.Nodex
+java_import org.nodex.java.core.NodexMain
+java_import org.nodex.java.core.Nodex
 
 require 'core/buffer'
 

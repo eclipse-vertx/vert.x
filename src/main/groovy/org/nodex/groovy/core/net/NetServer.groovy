@@ -1,7 +1,5 @@
 package org.nodex.groovy.core.net
 
-import org.nodex.core.EventHandler
-
 /*
 * Copyright 2002-2011 the original author or authors.
 *
@@ -20,12 +18,12 @@ public class NetServer {
   def jServer
 
   NetServer() {
-    jServer = new org.nodex.core.net.NetServer()
+    jServer = new org.nodex.java.core.net.NetServer()
   }
 
   def connectHandler(hndlr) {
     // Wrap the Groovy closure in a an anonymous class so the java core can call it
-    def gHandler = new org.nodex.core.EventHandler() {
+    def gHandler = new org.nodex.java.core.EventHandler() {
       void onEvent(jSocket) {
         hndlr.call(new NetSocket(jSocket))
       }
@@ -47,7 +45,7 @@ public class NetServer {
 
     def dataHandler(hndlr) {
       // Wrap the Groovy closure in a an anonymous class so the java core can call it
-      def gHandler = new org.nodex.core.EventHandler() {
+      def gHandler = new org.nodex.java.core.EventHandler() {
         void onEvent(jBuffer) {
           hndlr.call(jBuffer)
         }

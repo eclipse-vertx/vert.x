@@ -13,9 +13,9 @@
 
 package org.nodex.tests.core;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.NodexInternal;
-import org.nodex.core.shared.SharedMap;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.shared.SharedMap;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;

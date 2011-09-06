@@ -11,8 +11,8 @@
 
 include Java
 require "core/buffer"
-java_import org.nodex.core.http.HttpServer
-java_import org.nodex.core.http.HttpClient
+java_import org.nodex.java.core.http.HttpServer
+java_import org.nodex.java.core.http.HttpClient
 
 module Http
   class Server
@@ -23,12 +23,12 @@ module Http
 
     def request_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_server.requestHandler{ |j_req| hndlr.call(ServerRequest.new(j_req)) }
+      @j_server.requestHandler { |j_req| hndlr.call(ServerRequest.new(j_req)) }
     end
 
     def websocket_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_server.websocketHandler{ |ws| hndlr.call(Websocket.new(ws)) }
+      @j_server.websocketHandler { |ws| hndlr.call(Websocket.new(ws)) }
     end
 
     def listen(port, host = "0.0.0.0")
@@ -167,7 +167,7 @@ module Http
     end
 
     def resp_handler(hndlr)
-      Proc.new{ |j_resp| hndlr.call(ClientResponse.new(j_resp)) }
+      Proc.new { |j_resp| hndlr.call(ClientResponse.new(j_resp)) }
     end
 
     private :resp_handler
@@ -187,7 +187,7 @@ module Http
     end
 
     def put_all_headers(headers)
-      headers.each_pair do |k,v|
+      headers.each_pair do |k, v|
         @j_req.putHeader(k, v)
       end
       self
@@ -320,7 +320,7 @@ module Http
 
     def data_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_resp.dataHandler{ |j_buff| hndlr.call(Buffer.new(j_buff)) }
+      @j_resp.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
     end
 
     def end_handler(proc = nil, &hndlr)
@@ -403,7 +403,7 @@ module Http
 
     def data_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_req.dataHandler{ |j_buff| hndlr.call(Buffer.new(j_buff)) }
+      @j_req.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
     end
 
     def end_handler(proc = nil, &hndlr)
@@ -446,7 +446,7 @@ module Http
     end
 
     def put_all_headers(headers)
-      headers.each_pair do |k,v|
+      headers.each_pair do |k, v|
         @j_resp.putHeader(k, v)
       end
       self
@@ -458,7 +458,7 @@ module Http
     end
 
     def put_all_trailers(headers)
-      trailers.each_pair do |k,v|
+      trailers.each_pair do |k, v|
         @j_resp.putTrailer(k, v)
       end
       self
@@ -534,7 +534,7 @@ module Http
 
     def data_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_ws.dataHandler{ |j_buff| hndlr.call(Buffer.new(j_buff)) }
+      @j_ws.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
     end
 
     def exception_handler(proc = nil, &hndlr)

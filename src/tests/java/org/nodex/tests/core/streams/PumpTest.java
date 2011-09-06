@@ -13,11 +13,11 @@
 
 package org.nodex.tests.core.streams;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.streams.Pump;
-import org.nodex.core.streams.ReadStream;
-import org.nodex.core.streams.WriteStream;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.streams.Pump;
+import org.nodex.java.core.streams.ReadStream;
+import org.nodex.java.core.streams.WriteStream;
 import org.nodex.tests.Utils;
 import org.testng.annotations.Test;
 

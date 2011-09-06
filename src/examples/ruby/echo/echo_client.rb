@@ -14,7 +14,7 @@ require "core/nodex"
 require "core/buffer"
 include Net
 
-Nodex::go{
+Nodex::go {
   Client.new.connect(8080, "localhost") { |socket|
     socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
     (1..10).each { |i|

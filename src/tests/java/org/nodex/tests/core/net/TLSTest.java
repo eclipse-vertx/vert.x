@@ -13,14 +13,14 @@
 
 package org.nodex.tests.core.net;
 
-import org.nodex.core.EventHandler;
-import org.nodex.core.SimpleEventHandler;
-import org.nodex.core.Nodex;
-import org.nodex.core.NodexMain;
-import org.nodex.core.buffer.Buffer;
-import org.nodex.core.net.NetClient;
-import org.nodex.core.net.NetServer;
-import org.nodex.core.net.NetSocket;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Nodex;
+import org.nodex.java.core.NodexMain;
+import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.net.NetClient;
+import org.nodex.java.core.net.NetServer;
+import org.nodex.java.core.net.NetSocket;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -53,9 +53,9 @@ public class TLSTest extends TestBase {
   }
 
   private void testTLS(final boolean clientCert, final boolean clientTrust,
-                        final boolean serverCert, final boolean serverTrust,
-                        final boolean requireClientAuth, final boolean clientTrustAll,
-                        final boolean shouldPass) throws Exception {
+                       final boolean serverCert, final boolean serverTrust,
+                       final boolean requireClientAuth, final boolean clientTrustAll,
+                       final boolean shouldPass) throws Exception {
 
     final CountDownLatch latch = new CountDownLatch(1);
     final CountDownLatch exceptionLatch = new CountDownLatch(1);
@@ -71,13 +71,13 @@ public class TLSTest extends TestBase {
         final NetServer server = new NetServer();
 
         final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-         public void onEvent(String msg) {
-           server.close(new SimpleEventHandler() {
-             public void onEvent() {
-               latch.countDown();
-             }
-           });
-         }
+          public void onEvent(String msg) {
+            server.close(new SimpleEventHandler() {
+              public void onEvent() {
+                latch.countDown();
+              }
+            });
+          }
         });
 
         EventHandler<NetSocket> serverHandler = new EventHandler<NetSocket>() {
@@ -137,11 +137,11 @@ public class TLSTest extends TestBase {
 
         if (clientTrust) {
           client.setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
-            .setTrustStorePassword("wibble");
+              .setTrustStorePassword("wibble");
         }
         if (clientCert) {
           client.setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
-            .setKeyStorePassword("wibble");
+              .setKeyStorePassword("wibble");
         }
 
         client.connect(4043, clientHandler);

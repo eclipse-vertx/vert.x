@@ -17,7 +17,7 @@ require "core/buffer"
 
 include Net
 
-Nodex::go{
+Nodex::go {
   Server.new.connect_handler { |socket|
     parser = ParseTools::RecordParser.new_delimited("\n") { |line|
       line = line.to_s.rstrip

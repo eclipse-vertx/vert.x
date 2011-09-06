@@ -14,7 +14,7 @@ require "core/nodex"
 require "core/buffer"
 include Net
 
-Nodex::go{
+Nodex::go {
 
   client = Client.new
   client.ssl = true

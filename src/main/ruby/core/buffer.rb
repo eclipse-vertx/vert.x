@@ -23,11 +23,11 @@ class Buffer
   end
 
   def Buffer.create(size)
-    Buffer.new(org.nodex.core.buffer.Buffer.create(size))
+    Buffer.new(org.nodex.java.core.buffer.Buffer.create(size))
   end
 
   def Buffer.create_from_str(str, enc = "UTF-8")
-    Buffer.new(org.nodex.core.buffer.Buffer.create(str, enc))
+    Buffer.new(org.nodex.java.core.buffer.Buffer.create(str, enc))
   end
 
   def to_s(enc = "UTF-8")
