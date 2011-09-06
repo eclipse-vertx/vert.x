@@ -9,17 +9,12 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
-require "core/nodex"
-require "core/shared_data"
-require "core/parsetools"
-require "core/buffer"
-
-include Net
+require "nodex"
+include Nodex
 
 Nodex::go {
-  Server.new.connect_handler { |socket|
-    parser = ParseTools::RecordParser.new_delimited("\n") { |line|
+  NetServer.new.connect_handler { |socket|
+    parser = RecordParser.new_delimited("\n") { |line|
       line = line.to_s.rstrip
       if line.start_with?("subscribe,")
         topic_name = line.split(",", 2)[1]

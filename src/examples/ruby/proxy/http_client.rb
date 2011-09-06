@@ -9,12 +9,11 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
-include Http
+require "nodex"
+include Nodex
 
 Nodex::go {
-  client = Client.new
+  client = HttpClient.new
   client.port = 8080
   client.host = "localhost"
   req = client.put("/someurl") { |resp|

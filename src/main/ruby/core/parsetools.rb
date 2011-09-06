@@ -10,9 +10,8 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-require "core/buffer"
 
-module ParseTools
+module Nodex
 
   class RecordParser
 

@@ -10,14 +10,18 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-java_import org.nodex.java.core.NodexMain
-java_import org.nodex.java.core.Nodex
 
 require 'core/buffer'
+require 'core/file_system'
+require 'core/http'
+require 'core/net'
+require 'core/parsetools'
+require 'core/pump'
+require 'core/shared_data'
 
 module Nodex
 
-  class TheMain < NodexMain
+  class TheMain < org.nodex.java.core.NodexMain
 
     def initialize(block)
       super()
@@ -36,30 +40,30 @@ module Nodex
 
   def Nodex.set_timeout(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    Nodex.instance.setTimeout(delay, hndlr)
+    org.nodex.java.core.Nodex.instance.setTimeout(delay, hndlr)
   end
 
   def Nodex.set_periodic(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    Nodex.instance.setPeriodic(delay, hndlr)
+    org.nodex.java.core.Nodex.instance.setPeriodic(delay, hndlr)
   end
 
   def Nodex.cancel_timeout(id)
-    Nodex.instance.cancelTimeout(id)
+    org.nodex.java.core.Nodex.instance.cancelTimeout(id)
   end
 
   def Nodex.register_handler(proc = nil, &hndlr)
     hndlr = proc if proc
-    Nodex.instance.registerHandler(hndlr)
+    org.nodex.java.core.Nodex.instance.registerHandler(hndlr)
   end
 
   def Nodex.unregister_handler(actor_id)
-    Nodex.instance.unregisterHandler(actor_id)
+    org.nodex.java.core.Nodex.instance.unregisterHandler(actor_id)
   end
 
   def Nodex.send_to_handler(actor_id, msg)
     msg = msg.copy if msg.is_a?(Buffer)
-    Nodex.instance.sendToHandler(actor_id, msg)
+    org.nodex.java.core.Nodex.instance.sendToHandler(actor_id, msg)
   end
 
 

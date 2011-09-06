@@ -9,15 +9,12 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
-require "core/nodex"
-require "core/shared_data"
-
-include Net
+require "nodex"
+include Nodex
 
 Nodex::go {
   conns = SharedData::get_set("conns")
-  Server.new.connect_handler { |socket|
+  NetServer.new.connect_handler { |socket|
     conns.add(socket.write_handler_id)
     socket.data_handler { |data|
       conns.each { |actor_id| Nodex::send_to_handler(actor_id, data) }

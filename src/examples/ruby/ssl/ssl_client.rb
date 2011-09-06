@@ -9,14 +9,12 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/net"
-require "core/nodex"
-require "core/buffer"
-include Net
+require "nodex"
+include Nodex
 
 Nodex::go {
 
-  client = Client.new
+  client = NetClient.new
   client.ssl = true
   client.trust_all = true
   client.connect(4443, "localhost") { |socket|

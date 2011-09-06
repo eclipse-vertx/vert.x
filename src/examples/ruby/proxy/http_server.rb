@@ -9,13 +9,12 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
+require "nodex"
 require "set"
-include Http
+include Nodex
 
 Nodex::go {
-  Server.new.request_handler { |req|
+  HttpServer.new.request_handler { |req|
     puts "Got request #{req.uri}"
     req.header_names.each { |header_name|
       puts "#{header_name} : #{req.header(header_name)}"

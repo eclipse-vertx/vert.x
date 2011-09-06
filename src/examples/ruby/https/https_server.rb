@@ -9,12 +9,11 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
-include Http
+require "nodex"
+include Nodex
 
 Nodex::go {
-  server = Server.new
+  server = HttpServer.new
   server.ssl = true
   server.key_store_path = "server-keystore.jks"
   server.key_store_password = "wibble"

@@ -9,12 +9,11 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
-include Http
+require "nodex"
+include Nodex
 
 Nodex::go {
-  Server.new.websocket_handler { |ws|
+  HttpServer.new.websocket_handler { |ws|
     ws.close if ws.uri != "/myapp"
     ws.data_handler { |buffer|
       ws.write_text_frame(buffer.to_s)

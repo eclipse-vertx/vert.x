@@ -10,10 +10,9 @@
 # specific language governing permissions and limitations under the License.
 
 require 'test/unit'
-require 'core/nodex'
-require 'core/net'
+require 'nodex'
 require 'utils'
-include Net
+include Nodex
 
 class NetTest < Test::Unit::TestCase
 
@@ -22,13 +21,13 @@ class NetTest < Test::Unit::TestCase
     latch = Utils::Latch.new 1
 
     Nodex::go {
-      server = Server.new.connect_handler { |socket|
+      server = NetServer.new.connect_handler { |socket|
         socket.data_handler { |data|
           socket.write_buffer(data) # Just echo it back
         }
       }.listen(8080)
 
-      client = Client.new.connect(8080, "localhost") { |socket|
+      client = NetClient.new.connect(8080, "localhost") { |socket|
 
         sends = 10
         size = 100
@@ -77,7 +76,7 @@ class NetTest < Test::Unit::TestCase
 
         # Let's do full SSL with client auth
 
-      server = Server.new;
+      server = NetServer.new;
       server.ssl = true
       server.key_store_path = '../resources/keystores/server-keystore.jks'
       server.key_store_password = 'wibble'
@@ -91,7 +90,7 @@ class NetTest < Test::Unit::TestCase
         }
       }.listen(8080)
 
-      client = Client.new
+      client = NetClient.new
       client.ssl = true
       client.key_store_path = '../resources/keystores/client-keystore.jks'
       client.key_store_password = 'wibble'
@@ -155,7 +154,7 @@ class NetTest < Test::Unit::TestCase
     latch = Utils::Latch.new 1
 
     Nodex::go {
-      server = Server.new
+      server = NetServer.new
 
       server.ssl=true
       server.key_store_path="foo.jks"
@@ -173,7 +172,7 @@ class NetTest < Test::Unit::TestCase
 
       server.close
 
-      client = Client.new
+      client = NetClient.new
 
       client.ssl=true
       client.key_store_path="foo.jks"

@@ -9,14 +9,11 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-require "core/http"
-require "core/nodex"
-require "core/file_system"
-require 'core/pump'
-include Http
+require "nodex"
+include Nodex
 
 Nodex::go {
-  client = Client.new
+  client = HttpClient.new
   client.port = 8080
   client.host = "localhost"
   req = client.put("/someurl") { |resp|
@@ -26,7 +23,7 @@ Nodex::go {
   filename = "upload.txt"
   FileSystem::stat(filename) { |compl|
     size = compl.result.size
-    req.content_length = size
+    req.put_header("Content-Length", size)
     FileSystem::open(filename) { |compl|
       rs = compl.result.read_stream
       pump = Pump.new(rs, req)

@@ -10,28 +10,30 @@
 # specific language governing permissions and limitations under the License.
 
 include Java
-require "core/buffer"
 
-class Pump
-  def initialize(read_stream, write_stream)
-    j_rs = read_stream._to_read_stream
-    j_ws = write_stream._to_write_stream
-    @j_pump = org.nodex.java.core.streams.Pump.new(j_rs, j_ws)
-  end
+module Nodex
 
-  def write_queue_max_size=(val)
-    @j_pump.setWriteQueueMaxSize(val)
-  end
+  class Pump
+    def initialize(read_stream, write_stream)
+      j_rs = read_stream._to_read_stream
+      j_ws = write_stream._to_write_stream
+      @j_pump = org.nodex.java.core.streams.Pump.new(j_rs, j_ws)
+    end
 
-  def start
-    @j_pump.start
-  end
+    def write_queue_max_size=(val)
+      @j_pump.setWriteQueueMaxSize(val)
+    end
 
-  def stop
-    @j_pump.stop
-  end
+    def start
+      @j_pump.start
+    end
 
-  def bytes_pumped
-    @j_pump.getBytesPumped
+    def stop
+      @j_pump.stop
+    end
+
+    def bytes_pumped
+      @j_pump.getBytesPumped
+    end
   end
 end
