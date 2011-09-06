@@ -66,7 +66,10 @@ class HttpTest < Test::Unit::TestCase
         server.trust_store_password = 'wibble'
         server.client_auth_required = true
       end
+
       server.request_handler { |req|
+        assert(req.headers['foo'] == 'bar')
+        req.response.put_header('wibble', 'quark')
         chunk_count = 0
         req.data_handler{ |data|
           assert("client-chunk-#{chunk_count}" == data.to_s)
@@ -94,6 +97,7 @@ class HttpTest < Test::Unit::TestCase
 
       request = client.request(method, "/someurl") { |resp|
         assert(200 == resp.status_code)
+        assert('quark' == resp.headers['wibble'])
         chunk_count = 0
         resp.data_handler{ |data|
           assert("server-chunk-#{chunk_count}" == data.to_s)
@@ -110,6 +114,7 @@ class HttpTest < Test::Unit::TestCase
       }
 
       request.chunked = true
+      request.put_header('foo', 'bar')
 
       for i in 0..client_chunks - 1 do
         request.write_str("client-chunk-#{i}")
