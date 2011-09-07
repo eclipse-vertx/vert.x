@@ -69,6 +69,17 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+/**
+ * <p>An HTTP server.</p>
+ *
+ * <p>The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.</p>
+ *
+ * <p>An {@code HttpServer} instance can only be used from the event loop that created it.</p>
+ *
+ * <p>Instances of this class can only be used from the event loop thread which created the corresponding {@link HttpClientRequest}</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class HttpServer extends SSLBase {
 
   private EventHandler<HttpServerRequest> requestHandler;
@@ -81,6 +92,9 @@ public class HttpServer extends SSLBase {
   private final Thread th;
   private final long contextID;
 
+  /**
+   * Create an {@code HttpServer}
+   */
   public HttpServer() {
     Long cid = Nodex.instance.getContextID();
     if (cid == null) {
@@ -95,22 +109,40 @@ public class HttpServer extends SSLBase {
     connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 
+  /**
+   * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
+   * instances of {@link HttpServerRequest} will be created and passed to this handler.
+   * @return a reference to this, so methods can be chained.
+   */
   public HttpServer requestHandler(EventHandler<HttpServerRequest> requestHandler) {
     checkThread();
     this.requestHandler = requestHandler;
     return this;
   }
 
+  /**
+   * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
+   * new {@link Websocket} instance will be created and passed to the handler.
+   * @return a reference to this, so methods can be chained.
+   */
   public HttpServer websocketHandler(EventHandler<Websocket> wsHandler) {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
   }
 
+  /**
+   * Tell the server to start listening on all interfaces and port {@code port}
+   * @return a reference to this, so methods can be chained.
+   */
   public HttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
+  /**
+   * Tell the server to start listening on port {@code port} and host / ip address given by {@code host}.
+   * @return a reference to this, so methods can be chained.
+   */
   public HttpServer listen(int port, String host) {
     checkThread();
 
@@ -175,47 +207,88 @@ public class HttpServer extends SSLBase {
     return this;
   }
 
+  /**
+   * If {@code ssl} is {@code true}, this signifies the server will handle SSL connections
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpServer setSSL(boolean ssl) {
     checkThread();
     this.ssl = ssl;
     return this;
   }
 
+  /**
+   * Set the path to the SSL server key store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * The SSL server key store is a standard Java Key Store, and should contain the server certificate. A key store
+   * must be provided for SSL to be operational.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpServer setKeyStorePath(String path) {
     checkThread();
     this.keyStorePath = path;
     return this;
   }
 
+  /**
+   * Set the password for the SSL server key store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpServer setKeyStorePassword(String pwd) {
     checkThread();
     this.keyStorePassword = pwd;
     return this;
   }
 
+  /**
+   * Set the path to the SSL server trust store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * The SSL server trust store is a standard Java Key Store, and should contain the certificate(s) of the clients that the server trusts. The SSL
+   * handshake will fail if the server requires client authentication and provides a certificate that the server does not trust.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpServer setTrustStorePath(String path) {
     checkThread();
     this.trustStorePath = path;
     return this;
   }
 
+  /**
+   * Set the password for the SSL server trust store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpServer setTrustStorePassword(String pwd) {
     checkThread();
     this.trustStorePassword = pwd;
     return this;
   }
 
+  /**
+   * Set {@code required} to true if you want the server to request client authentication from any connecting clients. This
+   * is an extra level of security in SSL, and requires clients to provide client certificates. Those certificates must be added
+   * to the server trust store.
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpServer setClientAuthRequired(boolean required) {
     checkThread();
     clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
     return this;
   }
 
+  /**
+   * Close the server. Any open HTTP connections will be closed.
+   */
   public void close() {
     checkThread();
     close(null);
   }
 
+  /**
+   * Close the server. Any open HTTP connections will be closed. {@code doneHandler} will be called when the close
+   * is complete.
+   */
   public void close(final EventHandler<Void> doneHandler) {
     checkThread();
     for (ServerConnection conn : connectionMap.values()) {
