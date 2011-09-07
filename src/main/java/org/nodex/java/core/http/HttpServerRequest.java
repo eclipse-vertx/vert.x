@@ -26,6 +26,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * <p>Encapsulates a server-side HTTP request.</p>
+ *
+ * <p>An instance of this class is created for each request that is handled by the server and is passed to the user via the
+ * {@link EventHandler} instance registered with the {@link HttpServer} using the method
+ * {@link HttpServer#requestHandler(org.nodex.java.core.EventHandler)}.<p>
+ *
+ * <p>On creation a new execution context is assigned to each instance and an event loop is allocated to it from one
+ * of the available ones. The instance must only be called from that event loop.</p>
+ *
+ * <p>Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via the
+ * {@code response} field.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class HttpServerRequest implements ReadStream {
 
   private Map<String, List<String>> params;
@@ -46,26 +61,59 @@ public class HttpServerRequest implements ReadStream {
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
     }
-    this.path = theURI.getPath();
     this.uri = request.getUri();
+    this.path = theURI.getPath();
+    this.query = theURI.getQuery();
     this.conn = conn;
     this.request = request;
     this.response = new HttpServerResponse(HttpHeaders.isKeepAlive(request), conn);
   }
 
+  /**
+   * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS, HEAD
+   */
   public final String method;
+
+  /**
+   * The uri of the request. For example http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&someotherparam=x
+   */
   public final String uri;
+
+  /**
+   * The path part of the uri. For example /somepath/somemorepath/somresource.foo
+   */
   public final String path;
+
+  /**
+   * The query part of the uri. For example someparam=32&someotherparam=x
+   */
+  public final String query;
+
+  /**
+   * The response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
+   * to send the response back to the client.
+   */
   public final HttpServerResponse response;
 
+  /**
+   * Return the HTTP request header with the name {@code key} from this request, or null if there is no such header.
+   */
   public String getHeader(String key) {
     return request.getHeader(key);
   }
 
+  /**
+   * Return a set of all the HTTP header names in this request
+   */
   public Set<String> getHeaderNames() {
     return request.getHeaderNames();
   }
 
+  /**
+   * Returns a map of all headers in the request, If the request contains multiple headers with the same key, the values
+   * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
+   * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
+   */
   public Map<String, String> getHeaders() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(request.getHeaders());
@@ -73,26 +121,10 @@ public class HttpServerRequest implements ReadStream {
     return headers;
   }
 
-  public void dataHandler(EventHandler<Buffer> dataHandler) {
-    this.dataHandler = dataHandler;
-  }
-
-  public void exceptionHandler(EventHandler<Exception> handler) {
-    this.exceptionHandler = handler;
-  }
-
-  public void pause() {
-    conn.pause();
-  }
-
-  public void resume() {
-    conn.resume();
-  }
-
-  public void endHandler(EventHandler<Void> handler) {
-    this.endHandler = handler;
-  }
-
+  /**
+   * Return a specific parameter value from the query part of the URI given the parameter name {@code param}, or null
+   * if there is no such parameter.
+   */
   public String getParam(String param) {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
@@ -104,6 +136,49 @@ public class HttpServerRequest implements ReadStream {
     } else {
       return null;
     }
+  }
+
+  /**
+   * Specify a data handler for the request. If the request has a body, the {@code dataHandler} will get called when some of the request body has
+   * been read from the wire. If the request is chunked, then it will be called once for each HTTP chunk, otherwise it
+   * will be called one or more times until the full request body has been received.<p>
+   * If the request has no body it will not be called at all.
+   * @param dataHandler
+   */
+  public void dataHandler(EventHandler<Buffer> dataHandler) {
+    this.dataHandler = dataHandler;
+  }
+
+  /**
+   * Specify an exception handler for the request. The {@code exceptionHandler} is called if an exception occurs
+   * when handling the request.
+   */
+  public void exceptionHandler(EventHandler<Exception> handler) {
+    this.exceptionHandler = handler;
+  }
+
+  /**
+   * Pause the request. Once the request has been paused, the system will stop reading any more chunks of the request
+   * from the wire until it is resumed.<p>
+   * Pause is often used in conjunction with a {@link org.nodex.java.core.streams.Pump} to pump data between streams and implement flow control.
+   */
+  public void pause() {
+    conn.pause();
+  }
+
+  /**
+   * Resume a paused request. The request will resume receiving chunks of the request body from the wire.<p>
+   * Resume is often used in conjunction with a {@link org.nodex.java.core.streams.Pump} to pump data between streams and implement flow control.
+   */
+  public void resume() {
+    conn.resume();
+  }
+
+  /**
+   * Specify an end handler for the request. The {@code endHandler} is called once the entire request has been read.
+   */
+  public void endHandler(EventHandler<Void> handler) {
+    this.endHandler = handler;
   }
 
   void handleData(Buffer data) {

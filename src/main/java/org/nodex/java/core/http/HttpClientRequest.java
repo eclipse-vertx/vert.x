@@ -103,10 +103,9 @@ public class HttpClientRequest implements WriteStream {
   private long written;
   private long contentLength = 0;
 
-
   /**
    * If {@code chunked} is {@code true}, this request will use HTTP chunked encoding, and each call to write to the body
-   * which correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
+   * will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
    * {@code Transfer-Encoding} with a value of {@code Chunked} will be automatically inserted in the request.<p>
    * If {@code chunked} is {@code false}, this request will not use HTTP chunked encoding, and therefore if any data is written the
    * body of the request, the total size of that data must be set in the {@code Content-Length} header <b>before</b> any
@@ -248,7 +247,7 @@ public class HttpClientRequest implements WriteStream {
   /**
    * This method sets a drain handler {@code handler} on the request. The drain handler will be called when write queue is no longer
    * full and it is safe to write to it again.<p>
-   * The drain handler is not actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
+   * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
    * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.nodex.java.core.streams.Pump} class to pump data
    * between different streams.
    * @param handler
