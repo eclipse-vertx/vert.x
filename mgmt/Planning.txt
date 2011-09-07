@@ -77,6 +77,7 @@ TODO
 16) More tests needed!
 18) Scala delimited continuations for making async code appear synchronous
 19) Make Java nodex methods static
+20) Package manager and deployment
 
 
 
