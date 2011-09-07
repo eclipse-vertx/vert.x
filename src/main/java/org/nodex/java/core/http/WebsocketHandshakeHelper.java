@@ -19,7 +19,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class WebsocketHandshakeHelper {
+class WebsocketHandshakeHelper {
   public static ChannelBuffer calcResponse(String key1, String key2, long c) {
     int a = (int) (Long.parseLong(key1.replaceAll("[^0-9]", "")) / key1.replaceAll("[^ ]", "").length());
     int b = (int) (Long.parseLong(key2.replaceAll("[^0-9]", "")) / key2.replaceAll("[^ ]", "").length());
