@@ -57,12 +57,12 @@ class ClientConnection extends AbstractConnection {
   private volatile HttpClientResponse currentResponse;
   private Websocket ws;
 
-  void toWebSocket(final String uri, Map<String, ? extends Object> headers,
+  void toWebSocket(final String uri,
                    final EventHandler<Websocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
-    if (headers == null) headers = new HashMap();
+
     final String key1 = WebsocketHandshakeHelper.genWSkey();
     final String key2 = WebsocketHandshakeHelper.genWSkey();
     long c = new Random().nextLong();

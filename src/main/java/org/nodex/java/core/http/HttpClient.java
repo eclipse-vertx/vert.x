@@ -51,6 +51,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * <p>An asynchronous, pooling, HTTP 1.1 client</p>
+ *
+ * <p>An {@code HttpClient} maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
+ * as pipelines for HTTP requests.</p>
+ * <p>It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
+ * used as a factory for HTML5 {@link Websocket websockets}.</p>
+ * <p>The client is thread-safe and can be safely shared my different event loops.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class HttpClient extends SSLBase {
 
   private ClientBootstrap bootstrap;
@@ -65,85 +76,160 @@ public class HttpClient extends SSLBase {
   private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<Waiter>();
   private boolean keepAlive = true;
 
+  /**
+   * Create an {@code HttpClient} instance
+   */
   public HttpClient() {
   }
 
+  /**
+   * Set the exception handler for the {@code HttpClient}
+   */
   public void exceptionHandler(EventHandler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
+  /**
+   * Set the maximum pool size to the value specified by {@code maxConnections}<p>
+   * The client will maintain up to {@code maxConnections} HTTP connections in an internal pool<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setMaxPoolSize(int maxConnections) {
     this.maxPoolSize = maxConnections;
     return this;
   }
 
+  /**
+   * Returns the maximum number of connections in the pool
+   */
   public int getMaxPoolSize() {
     return maxPoolSize;
   }
 
+  /**
+   * If {@code keepAlive} is {@code true} then, after the request has ended the connection will be returned to the pool
+   * where it can be used by another request. In this manner, many HTTP requests can be pipe-lined over an HTTP connection.
+   * Keep alive connections will not be closed until the {@link #close() close()} method is invoked.<p>
+   * If {@code keepAlive} is {@code false} then a new connection will be created for each request and it won't ever go in the pool,
+   * the connection will closed after the response has been received. Even with no keep alive, the client will not allow more
+   * than {@link #getMaxPoolSize() getMaxPoolSize()} connections to be created at any one time. <p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
     return this;
   }
 
+  /**
+   * If {@code ssl} is {@code true}, this signifies the client will create SSL connections
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setSSL(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
+  /**
+   * Set the path to the SSL client key store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * The SSL client key store is a standard Java Key Store, and should contain the client certificate. It's only necessary to supply
+   * a client key store if the server requires client authentication via client certificates.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setKeyStorePath(String path) {
     this.keyStorePath = path;
     return this;
   }
 
+  /**
+   * Set the password for the SSL client key store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setKeyStorePassword(String pwd) {
     this.keyStorePassword = pwd;
     return this;
   }
 
+  /**
+   * Set the path to the SSL client trust store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * The SSL client trust store is a standard Java Key Store, and should contain the certificate(s) of the servers that the client trusts. The SSL
+   * handshake will fail if the server provides a certificate that the client does not trust.<p>
+   * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setTrustStorePath(String path) {
     this.trustStorePath = path;
     return this;
   }
 
+  /**
+   * Set the password for the SSL client trust store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setTrustStorePassword(String pwd) {
     this.trustStorePassword = pwd;
     return this;
   }
 
+  /**
+   * If {@code trustAll} is set to {@code true} then the client will trust ALL server certifactes and will not attempt to authenticate them
+   * against it's local client trust store.<p>
+   * Use this method with caution!
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }
 
+  /**
+   * Set the port that the client will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setPort(int port) {
     this.port = port;
     return this;
   }
 
+  /**
+   * Set the host that the client will attempt to connect to, to {@code host}. The default value is {@code localhost}<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
   public HttpClient setHost(String host) {
     this.host = host;
     return this;
   }
 
+  /**
+   * Attempt to connect an HTML5 websocket to the specified URI<p>
+   * The connect is done asynchronously and {@code wsConnect} is called back with the result
+   */
   public void connectWebsocket(final String uri, final EventHandler<Websocket> wsConnect) {
-    connectWebsocket(uri, null, wsConnect);
-  }
-
-  public void connectWebsocket(final String uri, final Map<String, ? extends Object> headers,
-                               final EventHandler<Websocket> wsConnect) {
     getConnection(new EventHandler<ClientConnection>() {
       public void onEvent(final ClientConnection conn) {
-        conn.toWebSocket(uri, headers, wsConnect);
+        conn.toWebSocket(uri, wsConnect);
       }
     }, Nodex.instance.getContextID());
   }
 
-  // Quick get method when there's no body and it doesn't require an end
+  /**
+   * This is a quick version of the {@link #get(String, EventHandler) get()} method where you do not want to do anything with the request
+   * before sending.<p>
+   * Normally with any of the HTTP methods you create the request then when you are ready to send it you call
+   * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public void getNow(String uri, EventHandler<HttpClientResponse> responseHandler) {
     getNow(uri, null, responseHandler);
   }
 
+  /**
+   * This method works in the same manner as {@link #getNow(String, EventHandler)},
+   * except that it allows you specify a set of {@code headers} that will be sent with the request.
+   */
   public void getNow(String uri, Map<String, ? extends Object> headers, EventHandler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
@@ -152,38 +238,75 @@ public class HttpClient extends SSLBase {
     req.end();
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP OPTIONS request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest options(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("OPTIONS", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP GET request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest get(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("GET", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP HEAD request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest head(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("HEAD", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP POST request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest post(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("POST", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP PUT request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest put(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("PUT", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP DELETE request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest delete(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("DELETE", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP TRACE request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest trace(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("TRACE", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP CONNECT request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest connect(String uri, EventHandler<HttpClientResponse> responseHandler) {
     return request("CONNECT", uri, responseHandler);
   }
 
+  /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP request with the specified {@code uri}. The specific HTTP method
+   * (e.g. GET, POST, PUT etc) is specified using the parameter {@code method}<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
   public HttpClientRequest request(String method, String uri, EventHandler<HttpClientResponse> responseHandler) {
     final Long cid = Nodex.instance.getContextID();
     if (cid == null) {
@@ -192,6 +315,9 @@ public class HttpClient extends SSLBase {
     return new HttpClientRequest(this, method, uri, responseHandler, cid, Thread.currentThread());
   }
 
+  /**
+   * Close the HTTP client. This will cause any pooled HTTP connections to be closed.
+   */
   public void close() {
     available.clear();
     if (!waiters.isEmpty()) {

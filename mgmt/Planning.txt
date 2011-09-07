@@ -26,6 +26,7 @@ Redis
 STOMP
 SMTP
 JDBC
+MongoDB
 Memcached
 Spawn
 REST

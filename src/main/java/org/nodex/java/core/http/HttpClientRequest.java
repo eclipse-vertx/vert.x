@@ -29,6 +29,47 @@ import org.nodex.java.core.streams.WriteStream;
 import java.util.LinkedList;
 import java.util.Map;
 
+/**
+ * <p>Encapsulates a client-side HTTP request.</p>
+ *
+ * <p>Instances of this class are created by an {@link HttpClient} instance, via one of the methods corresponding to the
+ * specific HTTP methods, or the generic {@link HttpClient#request} method</p>
+ *
+ * <p>Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
+ * if required. Once you are ready to send the request, the {@link #end()} method must called.</p>
+ *
+ * <p>Nothing is sent until the request has been internally assigned an HTTP connection. The {@link HttpClient} instance
+ * will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
+ * sent before a connection is assigned will be queued internally and actually sent when an HTTP connection becomes
+ * available from the pool.</p>
+ *
+ * <p>The headers of the request are actually sent either when the {@link #end()} method is called, or, when the first
+ * part of the body is written, whichever occurs first.</p>
+ *
+ * <p>This class supports both chunked and non-chunked HTTP.</p>
+ *
+ * <p>This class can only be used from the event loop that created it.</p>
+ *
+ * <p>An example of using this class is as follows:</p>
+ *
+ * <pre>
+ *
+ * HttpClientRequest req = httpClient.post("/some-url", new EventHandler<HttpClientResponse>() {
+ *   public void onEvent(HttpClientResponse response) {
+ *     System.out.println("Got response: " + response.statusCode);
+ *   }
+ * });
+ *
+ * req.putHeader("some-header", "hello");
+ * req.putHeader("Content-Length", 5);
+ * req.write(Buffer.create(new byte[]{1, 2, 3, 4, 5}));
+ * req.write(Buffer.create(new byte[]{6, 7, 8, 9, 10}));
+ * req.end();
+ *
+ * </pre>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
@@ -62,6 +103,17 @@ public class HttpClientRequest implements WriteStream {
   private long written;
   private long contentLength = 0;
 
+
+  /**
+   * If {@code chunked} is {@code true}, this request will use HTTP chunked encoding, and each call to write to the body
+   * which correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
+   * {@code Transfer-Encoding} with a value of {@code Chunked} will be automatically inserted in the request.<p>
+   * If {@code chunked} is {@code false}, this request will not use HTTP chunked encoding, and therefore if any data is written the
+   * body of the request, the total size of that data must be set in the {@code Content-Length} header <b>before</b> any
+   * data is written to the request body. If no data is written, then a {@code Content-Length} header with a value of {@code 0}
+   * will be automatically inserted when the request is sent.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest setChunked(boolean chunked) {
     check();
     if (written > 0) {
@@ -71,6 +123,11 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
+  /**
+   * Inserts a header into the request. The {@link Object#toString()} method will be called on {@code value} to determine
+   * the String value to actually use for the header value.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest putHeader(String key, Object value) {
     check();
     request.setHeader(key, value);
@@ -78,6 +135,11 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
+  /**
+   * Inserts all the specified headers into the request. The {@link Object#toString()} method will be called on the header values {@code value} to determine
+   * the String value to actually use for the header value.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
     check();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
@@ -87,42 +149,75 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
+  /**
+   * Write a {@link Buffer} to the request body.
+   */
   public void writeBuffer(Buffer chunk) {
     check();
     write(chunk.getChannelBuffer(), null);
   }
 
+  /**
+   * Write a {@link Buffer} to the request body.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest write(Buffer chunk) {
     check();
     return write(chunk.getChannelBuffer(), null);
   }
 
+  /**
+   * Write a {@link String} to the request body, encoded in UTF-8.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest write(String chunk) {
     check();
     return write(Buffer.create(chunk).getChannelBuffer(), null);
   }
 
+  /**
+   * Write a {@link String} to the request body, encoded using the encoding {@code enc}.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest write(String chunk, String enc) {
     check();
     return write(Buffer.create(chunk, enc).getChannelBuffer(), null);
   }
 
+  /**
+   * Write a {@link Buffer} to the request body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest write(Buffer chunk, EventHandler<Void> doneHandler) {
     check();
     return write(chunk.getChannelBuffer(), doneHandler);
   }
 
+  /**
+   * Write a {@link String} to the request body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest write(String chunk, EventHandler<Void> doneHandler) {
     checkThread();
     checkComplete();
     return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
   }
 
+  /**
+   * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest write(String chunk, String enc, EventHandler<Void> doneHandler) {
     check();
     return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
   }
 
+  /**
+   * Data is queued until it is actually sent. To set the point at which the queue is considered "full" call this method
+   * specifying the {@code maxSize} in bytes.<p>
+   * This method is used by the {@link org.nodex.java.core.streams.Pump} class to pump data
+   * between different streams and perform flow control.
+   */
   public void setWriteQueueMaxSize(int maxSize) {
     check();
     if (conn != null) {
@@ -132,6 +227,15 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
+  /**
+   * If the amount of data that is currently queued is greater than the write queue max size see {@link #setWriteQueueMaxSize(int)}
+   * then the request queue is considered full.<p>
+   * Data can still be written to the request even if the write queue is deemed full, however it should be used as indicator
+   * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
+   * This method is used by the {@link org.nodex.java.core.streams.Pump} class to pump data
+   * between different streams and perform flow control.
+   * @return {@code true} if the write queue is full, {@code false} otherwise
+   */
   public boolean writeQueueFull() {
     check();
     if (conn != null) {
@@ -141,6 +245,14 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
+  /**
+   * This method sets a drain handler {@code handler} on the request. The drain handler will be called when write queue is no longer
+   * full and it is safe to write to it again.<p>
+   * The drain handler is not actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
+   * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.nodex.java.core.streams.Pump} class to pump data
+   * between different streams.
+   * @param handler
+   */
   public void drainHandler(EventHandler<Void> handler) {
     check();
     this.drainHandler = handler;
@@ -149,16 +261,33 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
+  /**
+   * Set {@code handler} as an exception handler on the request. Any exceptions that occur, either at connection setup time or later
+   * will be notified by calling the handler. If the request has no handler than any exceptions occurring will be
+   * output to {@link System#err}
+   */
   public void exceptionHandler(EventHandler<Exception> handler) {
     check();
     this.exceptionHandler = handler;
   }
 
+  /**
+   * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
+   * and the server responds with an interim HTTP response with a status code of {@code 100} and a continue handler
+   * has been set using this method, then the {@code handler} will be called.<p>
+   * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
+   * the {@link #sendHead()} method to force the request header to be written before the request has ended.
+   */
   public void continueHandler(EventHandler<Void> handler) {
     check();
     this.continueHandler = handler;
   }
 
+  /**
+   * Forces the head of the request to be written before {@link #end()} is called on the request. This is normally used
+   * to implement HTTP 100-continue handling, see {@link #continueHandler(EventHandler)} for more information.
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   public HttpClientRequest sendHead() {
     check();
     if (conn != null) {
@@ -173,6 +302,12 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
+  /**
+   * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
+   * the actual request won't get written until this method gets called.<p>
+   * Once the request has ended, it cannot be used any more, and if keep alive is true the underlying connection will
+   * be returned to the {@link HttpClient} pool so it can be assigned to another request.
+   */
   public void end() {
     check();
     completed = true;

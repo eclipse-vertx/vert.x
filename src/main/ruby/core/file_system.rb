@@ -204,7 +204,7 @@ module Nodex
     end
 
     def FileSystem.stat(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.stat(path, Proc.new { |compl|
+      org.nodex.java.core.file.FileSystem.instance.props(path, Proc.new { |compl|
         hndlr.call(org.nodex.java.core.Completion.new(FileStats.new(compl.result)))
       })
     end
@@ -288,7 +288,7 @@ module Nodex
     end
 
     def FileSystem.fs_stats(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.getFSStats(path, Proc.new { |j_stats|
+      org.nodex.java.core.file.FileSystem.instance.getFSProps(path, Proc.new { |j_stats|
         hndlr.call(org.nodex.java.core.Completion.new(FSStats.new(j_stats)))
       })
     end
