@@ -7,7 +7,7 @@ import org.nodex.java.core.NodexInternal;
 import org.nodex.java.core.SimpleEventHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.file.AsyncFile;
-import org.nodex.java.core.file.FileStats;
+import org.nodex.java.core.file.FileProps;
 import org.nodex.java.core.file.FileSystem;
 import org.nodex.java.core.file.FileSystemException;
 import org.nodex.java.core.streams.Pump;
@@ -458,7 +458,7 @@ public class FileSystemTest extends TestBase {
     Object res = testStat(fileName, false);
 
     azzert(res instanceof Exception == false);
-    FileStats st = (FileStats) res;
+    FileProps st = (FileProps) res;
     azzert(st != null);
     azzert(fileSize == st.size);
     azzert(st.creationTime.getTime() >= start);
@@ -497,7 +497,7 @@ public class FileSystemTest extends TestBase {
     Object res = testStat(linkName, false);
 
     azzert(res instanceof Exception == false);
-    FileStats st = (FileStats) res;
+    FileProps st = (FileProps) res;
     azzert(st != null);
     azzert(fileSize == st.size);
     azzert(st.creationTime.getTime() >= start);
@@ -512,7 +512,7 @@ public class FileSystemTest extends TestBase {
     azzert(!st.isSymbolicLink);
 
     res = testStat(linkName, true);
-    st = (FileStats) res;
+    st = (FileProps) res;
     azzert(st != null);
     azzert(st.isSymbolicLink);
     throwAssertions();
@@ -521,12 +521,12 @@ public class FileSystemTest extends TestBase {
   private Object testStat(final String fileName, final boolean link) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Exception> exception = new AtomicReference<>();
-    final AtomicReference<FileStats> stats = new AtomicReference<>();
+    final AtomicReference<FileProps> stats = new AtomicReference<>();
 
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler<FileStats> compl = new CompletionHandler<FileStats>() {
-          public void onEvent(Completion<FileStats> completion) {
+        CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
+          public void onEvent(Completion<FileProps> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception);
             } else {
@@ -537,9 +537,9 @@ public class FileSystemTest extends TestBase {
         };
 
         if (link) {
-          FileSystem.instance.lstat(TEST_DIR + pathSep + fileName, compl);
+          FileSystem.instance.lprops(TEST_DIR + pathSep + fileName, compl);
         } else {
-          FileSystem.instance.stat(TEST_DIR + pathSep + fileName, compl);
+          FileSystem.instance.props(TEST_DIR + pathSep + fileName, compl);
         }
       }
     });

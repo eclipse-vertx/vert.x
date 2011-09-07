@@ -23,6 +23,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ *
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class HttpClientResponse implements ReadStream {
 
   private final ClientConnection conn;

@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 
 /**
  * <p>Represents the file-system and contains a broad set of operations for manipulating files.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystem {
@@ -170,7 +171,7 @@ public class FileSystem {
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in {@link http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}.<p>
+   * The permission String takes the form rwxr-x--- as specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The actual chmod will happen asynchronously, and the specified {@code completionHandler} will be called
    * when the operation is complete, or, if the operation fails.
    */
@@ -180,7 +181,7 @@ public class FileSystem {
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in {@link http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}.<p>
+   * The permission String takes the form rwxr-x--- as specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
    * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
    * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
    * The actual chmod will happen asynchronously, and the specified {@code completionHandler} will be called
@@ -219,27 +220,27 @@ public class FileSystem {
   }
 
   /**
-   * Obtain statistics for the file represented by {@code path}. If the file is a link, the link will be followed.<p>
-   * The actual statistics will be obtained asynchronously
+   * Obtain properties for the file represented by {@code path}. If the file is a link, the link will be followed.<p>
+   * The actual properties will be obtained asynchronously
    * and the specified {@code completionHandler} will be called with the results, or, if the operation fails.
    */
-  public void stat(String path, CompletionHandler<FileStats> completionHandler) {
-    stat(path, true, completionHandler);
+  public void props(String path, CompletionHandler<FileProps> completionHandler) {
+    props(path, true, completionHandler);
   }
 
   /**
-   * Obtain statistics for the link represented by {@code path}. The link will not be followed.<p>
-   * The actual statistics will be obtained asynchronously
+   * Obtain properties for the link represented by {@code path}. The link will not be followed.<p>
+   * The actual properties will be obtained asynchronously
    * and the specified {@code completionHandler} will be called with the results, or, if the operation fails.
    */
-  public void lstat(String path, CompletionHandler<FileStats> completionHandler) {
-    stat(path, false, completionHandler);
+  public void lprops(String path, CompletionHandler<FileProps> completionHandler) {
+    props(path, false, completionHandler);
   }
 
-  private void stat(String path, final boolean followLinks, CompletionHandler<FileStats> completionHandler) {
+  private void props(String path, final boolean followLinks, CompletionHandler<FileProps> completionHandler) {
     final Path target = Paths.get(path);
-    new BlockingTask<FileStats>(completionHandler) {
-      public FileStats execute() throws Exception {
+    new BlockingTask<FileProps>(completionHandler) {
+      public FileProps execute() throws Exception {
         try {
           BasicFileAttributes attrs;
           if (followLinks) {
@@ -247,7 +248,7 @@ public class FileSystem {
           } else {
             attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
           }
-          return new FileStats(attrs);
+          return new FileProps(attrs);
         } catch (NoSuchFileException e) {
           throw new FileSystemException("No such file: " + target);
         }
@@ -293,7 +294,7 @@ public class FileSystem {
   }
 
   /**
-   * Unlinks the link on the file system represented by the path {@link}.<p>
+   * Unlinks the link on the file system represented by the path {@code link}.<p>
    * The actual unlink will be done asynchronously and the specified {@code completionHandler} will be called
    * on completion, or, if the operation fails.
    */
@@ -393,7 +394,7 @@ public class FileSystem {
   /**
    * Create the directory represented by {@code path}.<p>
    * The new directory will be created with permissions as specified by {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in {@link http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}.<p>
+   * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The operation will fail if the directory already exists.<p>
    * The actual create will be done asynchronously and the specified {@code completionHandler} will be called
    * on completion, or, if the operation fails.
@@ -405,7 +406,7 @@ public class FileSystem {
   /**
    * Create the directory represented by {@code path}.<p>
    * The new directory will be created with permissions as specified by {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in {@link http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}.<p>
+   * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
@@ -582,7 +583,7 @@ public class FileSystem {
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
    * Write operation will not automatically flush to storage.<p>
    * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the [@link AsyncFile} on completion, or, if the operation fails
+   * with the {@link AsyncFile} on completion, or, if the operation fails
    */
   public void open(final String path,
                    CompletionHandler<AsyncFile> completionHandler) {
@@ -595,7 +596,7 @@ public class FileSystem {
    * permissions as specified by {@code perms}.
    * Write operation will not automatically flush to storage.<p>
    * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the [@link AsyncFile} on completion, or, if the operation fails
+   * with the {@link AsyncFile} on completion, or, if the operation fails
    */
   public void open(final String path, String perms,
                    CompletionHandler<AsyncFile> completionHandler) {
@@ -609,7 +610,7 @@ public class FileSystem {
    * the operation will fail.
    * Write operations will not automatically flush to storage.<p>
    * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the [@link AsyncFile} on completion, or, if the operation fails
+   * with the {@link AsyncFile} on completion, or, if the operation fails
    */
   public void open(final String path, String perms, final boolean createNew,
                    CompletionHandler<AsyncFile> completionHandler) {
@@ -625,7 +626,7 @@ public class FileSystem {
    * the operation will fail.<p>
    * Write operations will not automatically flush to storage.<p>
    * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the [@link AsyncFile} on completion, or, if the operation fails
+   * with the {@link AsyncFile} on completion, or, if the operation fails
    */
   public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
                    CompletionHandler<AsyncFile> completionHandler) {
@@ -643,7 +644,7 @@ public class FileSystem {
    * storage on each write.<p>
    * Write operations will not automatically flush to storage.<p>
    * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the [@link AsyncFile} on completion, or, if the operation fails
+   * with the {@link AsyncFile} on completion, or, if the operation fails
    */
   public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush, CompletionHandler<AsyncFile> completionHandler) {
@@ -710,16 +711,16 @@ public class FileSystem {
   }
 
   /**
-   * Returns statistics on the file-system being used by the specified {@code path}
-   * The actual statistics are obtained asynchronously and the specified {@code completionHandler} will be called
+   * Returns properties of the file-system being used by the specified {@code path}<p>
+   * The actual properties are obtained asynchronously and the specified {@code completionHandler} will be called
    * on completion with the result, or, if the operation fails
    */
-  public void getFSStats(final String path, CompletionHandler<FileSystemStats> completionHandler) {
-    new BlockingTask<FileSystemStats>(completionHandler) {
-      public FileSystemStats execute() throws Exception {
+  public void getFSProps(final String path, CompletionHandler<FileSystemProps> completionHandler) {
+    new BlockingTask<FileSystemProps>(completionHandler) {
+      public FileSystemProps execute() throws Exception {
         Path target = Paths.get(path);
         FileStore fs = Files.getFileStore(target);
-        return new FileSystemStats(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
+        return new FileSystemProps(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
       }
     }.run();
   }
