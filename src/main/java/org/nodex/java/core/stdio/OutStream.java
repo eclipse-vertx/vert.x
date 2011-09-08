@@ -3,9 +3,8 @@ package org.nodex.java.core.stdio;
 import java.io.PrintStream;
 
 /**
- * User: tim
- * Date: 17/08/11
- * Time: 15:09
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class OutStream {
   OutStream(PrintStream out) {

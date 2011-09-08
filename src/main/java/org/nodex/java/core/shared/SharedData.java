@@ -15,8 +15,20 @@ package org.nodex.java.core.shared;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * <p>Allows shared data structures to be looked up so they can be accessed from different event loops.</p>
+ * <p>Sometimes it is desirable to share immutable data between different event loops, for example to implement a
+ * cache of data that can be accessed from different event loops.</p>
+ * <p>This class allows instances of shared data structures to be looked up and used.</p>
+ * <p>The data structures themselves will only allow immutable data to be inserted into them. This shields the user
+ * from worrying about any thread safety issues might occur if non thread safe objects were shared between event loops.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class SharedData {
 
   private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new NonBlockingHashMap<>();
@@ -24,7 +36,12 @@ public class SharedData {
   private static ConcurrentMap<Object, SharedCounter> counters = new NonBlockingHashMap<>();
   private static ConcurrentMap<Object, SharedQueue> queues = new NonBlockingHashMap<>();
 
-  public static <K, V> SharedMap<K, V> getMap(Object name) {
+  /**
+   * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
+   * are guaranteed to return the same {@code Map} instance. <p>
+   * The Map instance returned is a lock free Map which supports a very high degree of concurrency.
+   */
+  public static <K, V> Map<K, V> getMap(Object name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
     if (map == null) {
       map = new SharedMap<>();
@@ -36,7 +53,12 @@ public class SharedData {
     return map;
   }
 
-  public static <E> SharedSet<E> getSet(Object name) {
+  /**
+   * Return a {@code Set} with the specific {@code name}. All invocations of this method with the same value of {@code name}
+   * are guaranteed to return the same {@code Set} instance. <p>
+   * The Set instance returned is a lock free Map which supports a very high degree of concurrency.
+   */
+  public static <E> Set<E> getSet(Object name) {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
     if (set == null) {
       set = new SharedSet<>();
@@ -48,43 +70,49 @@ public class SharedData {
     return set;
   }
 
-  public static SharedCounter getCounter(Object name) {
-    SharedCounter counter = counters.get(name);
-    if (counter == null) {
-      counter = new SharedCounter();
-      SharedCounter prev = counters.putIfAbsent(name, counter);
-      if (prev != null) {
-        counter = prev;
-      }
-    }
-    return counter;
-  }
+//  public static SharedCounter getCounter(Object name) {
+//    SharedCounter counter = counters.get(name);
+//    if (counter == null) {
+//      counter = new SharedCounter();
+//      SharedCounter prev = counters.putIfAbsent(name, counter);
+//      if (prev != null) {
+//        counter = prev;
+//      }
+//    }
+//    return counter;
+//  }
 
-  public static <E> SharedQueue<E> getQueue(Object name) {
-    SharedQueue<E> queue = (SharedQueue<E>) queues.get(name);
-    if (queue == null) {
-      queue = new SharedQueue<>();
-      SharedQueue prev = queues.putIfAbsent(name, queue);
-      if (prev != null) {
-        queue = prev;
-      }
-    }
-    return queue;
-  }
+//  public static <E> SharedQueue<E> getQueue(Object name) {
+//    SharedQueue<E> queue = (SharedQueue<E>) queues.get(name);
+//    if (queue == null) {
+//      queue = new SharedQueue<>();
+//      SharedQueue prev = queues.putIfAbsent(name, queue);
+//      if (prev != null) {
+//        queue = prev;
+//      }
+//    }
+//    return queue;
+//  }
 
+  /**
+   * Remove the {@code Map} with the specifiec {@code name}.
+   */
   public static boolean removeMap(Object name) {
     return maps.remove(name) != null;
   }
 
+  /**
+   * Remove the {@code Set} with the specifiec {@code name}.
+   */
   public static boolean removeSet(Object name) {
     return sets.remove(name) != null;
   }
 
-  public static boolean removeCounter(Object name) {
-    return counters.remove(name) != null;
-  }
-
-  public static boolean removeQueue(Object name) {
-    return queues.remove(name) != null;
-  }
+//  public static boolean removeCounter(Object name) {
+//    return counters.remove(name) != null;
+//  }
+//
+//  public static boolean removeQueue(Object name) {
+//    return queues.remove(name) != null;
+//  }
 }

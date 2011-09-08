@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-public class SharedMap<K, V> implements ConcurrentMap<K, V> {
+class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
   private final ConcurrentMap<K, V> map = new NonBlockingHashMap<>();
 

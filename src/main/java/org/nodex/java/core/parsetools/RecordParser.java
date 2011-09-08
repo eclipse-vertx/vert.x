@@ -16,6 +16,32 @@ package org.nodex.java.core.parsetools;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.buffer.Buffer;
 
+/**
+ * <p>A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
+ * size records.</p>
+ * <p>Instances of this class take as input {@link Buffer} instances containing raw bytes, and output records.</p>
+ * <p>For example, if I had a simple ASCII text protocol delimited by '\n' and the input was the following:</p>
+ * <pre>
+ * buffer1:HELLO\nHOW ARE Y
+ * buffer2:OU?\nI AM
+ * buffer3: DOING OK
+ * buffer4:\n
+ * </pre>
+ * <p>Then the output would be:</p>
+ * <pre>
+ * buffer1:HELLO
+ * buffer2:HOW ARE YOU?
+ * buffer3:I AM DOING OK
+ * </pre>
+ * <p>Instances of this class can be changed between delimited mode and fixed size record mode on the fly as
+ * individual records are read, this allows you to parse protocols where, for example, the first 5 records might
+ * all be fixed size (of potentially different sizes), followed by some delimited records, followed by more fixed
+ * size records</p>
+ * <p>Instances of this class can't currently be used for protocols where the text is encoded with something other than
+ * a 1-1 byte-char mapping. TODO extend this class to cope with arbitrary character encodings</p>
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ */
 public class RecordParser implements EventHandler<Buffer> {
 
   private Buffer buff;
@@ -49,16 +75,31 @@ public class RecordParser implements EventHandler<Buffer> {
     return bytes;
   }
 
+  /**
+   * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
+   * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
+   * {@code output} Will receive whole records which have been parsed.
+   */
   public static RecordParser newDelimited(String delim, EventHandler<Buffer> output) {
     return newDelimited(latin1StringToBytes(delim), output);
   }
 
+  /**
+   * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
+   * by the {@code byte[]} delim.<p>
+   * {@code output} Will receive whole records which have been parsed.
+   */
   public static RecordParser newDelimited(byte[] delim, EventHandler<Buffer> output) {
     RecordParser ls = new RecordParser(output);
     ls.delimitedMode(delim);
     return ls;
   }
 
+  /**
+   * Create a new {@code RecordParser} instance, initially in fixed size mode, and where the record size is specified
+   * by the {@code size} parameter.<p>
+   * {@code output} Will receive whole records which have been parsed.
+   */
   public static RecordParser newFixed(int size, EventHandler<Buffer> output) {
     if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
     RecordParser ls = new RecordParser(output);
@@ -66,10 +107,20 @@ public class RecordParser implements EventHandler<Buffer> {
     return ls;
   }
 
+  /**
+   * Flip the parser into delimited mode, and where the delimiter can be represented
+   * by the String {@code delim} endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
+   * This method can be called multiple times with different values of delim while data is being parsed.
+   */
   public void delimitedMode(String delim) {
     delimitedMode(latin1StringToBytes(delim));
   }
 
+  /**
+   * Flip the parser into delimited mode, and where the delimiter can be represented
+   * by the delimiter {@code delim}.<p>
+   * This method can be called multiple times with different values of delim while data is being parsed.
+   */
   public void delimitedMode(byte[] delim) {
     delimited = true;
     this.delim = delim;
@@ -77,6 +128,10 @@ public class RecordParser implements EventHandler<Buffer> {
     reset = true;
   }
 
+  /**
+   * Flip the parser into fixed size mode, where the record size is specified by {@code size} in bytes.<p>
+   * This method can be called multiple times with different values of size while data is being parsed.
+   */
   public void fixedSizeMode(int size) {
     if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
     delimited = false;
@@ -131,6 +186,10 @@ public class RecordParser implements EventHandler<Buffer> {
     }
   }
 
+  /**
+   * This method is called to provide the parser with data.
+   * @param buffer
+   */
   public void onEvent(Buffer buffer) {
     if (buff == null) {
       buff = Buffer.create(buffer.length());

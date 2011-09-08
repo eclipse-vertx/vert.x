@@ -1,9 +1,8 @@
 package org.nodex.java.core.stdio;
 
 /**
- * User: tim
- * Date: 17/08/11
- * Time: 08:42
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Stdio {
 
