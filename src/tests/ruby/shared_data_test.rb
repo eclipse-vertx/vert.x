@@ -130,27 +130,27 @@ class SharedDataTest < Test::Unit::TestCase
 
   end
 
-  def test_counter
-    counter1 = SharedData::get_counter("c1")
-    assert(counter1 != nil)
-
-    counter2 = SharedData::get_counter("c1")
-    assert(counter2 != nil)
-
-    assert(counter1 == counter2)
-
-    counter3 = SharedData::get_counter("c3")
-    assert(counter3 != nil)
-
-    assert(counter1 != counter3)
-
-    assert(SharedData::remove_counter("c1"))
-    assert(!SharedData::remove_counter("c1"))
-    assert(SharedData::remove_counter("c3"))
-
-    # TODO complete test
-
-  end
+#  def test_counter
+#    counter1 = SharedData::get_counter("c1")
+#    assert(counter1 != nil)
+#
+#    counter2 = SharedData::get_counter("c1")
+#    assert(counter2 != nil)
+#
+#    assert(counter1 == counter2)
+#
+#    counter3 = SharedData::get_counter("c3")
+#    assert(counter3 != nil)
+#
+#    assert(counter1 != counter3)
+#
+#    assert(SharedData::remove_counter("c1"))
+#    assert(!SharedData::remove_counter("c1"))
+#    assert(SharedData::remove_counter("c3"))
+#
+#    # TODO complete test
+#
+#  end
 
   class ImmutableClass
     include SharedData::Immutable
