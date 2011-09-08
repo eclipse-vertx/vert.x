@@ -15,7 +15,7 @@ package org.nodex.java.core.shared;
 
 import org.cliffc.high_scale_lib.ConcurrentAutoTable;
 
-public class SharedCounter implements Counter {
+public class SharedCounter {
 
   private final ConcurrentAutoTable counter = new ConcurrentAutoTable();
 

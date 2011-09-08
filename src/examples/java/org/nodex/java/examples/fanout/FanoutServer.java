@@ -20,7 +20,9 @@ import org.nodex.java.core.SimpleEventHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetServer;
 import org.nodex.java.core.net.NetSocket;
-import org.nodex.java.core.shared.SharedSet;
+import org.nodex.java.core.shared.SharedData;
+
+import java.util.Set;
 
 public class FanoutServer extends NodexMain {
   public static void main(String[] args) throws Exception {
@@ -31,7 +33,7 @@ public class FanoutServer extends NodexMain {
   }
 
   public void go() throws Exception {
-    final SharedSet<Long> connections = new SharedSet<>();
+    final Set<Long> connections = SharedData.getSet("conns");
 
     new NetServer().connectHandler(new EventHandler<NetSocket>() {
       public void onEvent(final NetSocket socket) {

@@ -58,9 +58,13 @@ To run example, make sure core is built first, then cd to example directory, rea
 
 [node.x dev Google Group](http://groups.google.com/group/nodex-dev "Node.x dev")
 
+## IRC
+
+There's an IRC channel at irc.freenode.net#nodex if you want to drop in to chat about any user or development topics
+
 ## Join us!!
 
-There is lots to do! Ping me @timfox, or drop a mail on the nodex-dev google group.
+There is lots to do! Ping me twitter:@timfox, or drop a mail on the nodex-dev google group.
 
 
 

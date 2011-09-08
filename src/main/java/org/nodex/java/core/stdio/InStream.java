@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * User: tim
- * Date: 17/08/11
- * Time: 08:44
+ *
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class InStream {
   public InStream(InputStream in) {

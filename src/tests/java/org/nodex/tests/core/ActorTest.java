@@ -15,9 +15,10 @@ package org.nodex.tests.core;
 
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.NodexInternal;
-import org.nodex.java.core.shared.SharedMap;
+import org.nodex.java.core.shared.SharedData;
 import org.testng.annotations.Test;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +31,7 @@ public class ActorTest extends TestBase {
 
     final String message = "Hello actor";
 
-    final SharedMap<String, Long> map = new SharedMap<>();
+    final Map<String, Long> map = SharedData.getMap("foo");
 
     final CountDownLatch latch1 = new CountDownLatch(1);
     final CountDownLatch latch2 = new CountDownLatch(1);

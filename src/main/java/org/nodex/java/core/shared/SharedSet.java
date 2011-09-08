@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-public class SharedSet<E> implements Set<E> {
+class SharedSet<E> implements Set<E> {
 
   private final Set<E> set = new NonBlockingHashSet<>();
 
