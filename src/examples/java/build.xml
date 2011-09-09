@@ -20,26 +20,14 @@
         Build script for node.x Java examples
     </description>
 
-    <!-- set global properties for this build -->
-    <property name="target" location="target"/>
-    <property name="examples-src" location="."/>
-    <property name="examples-target" location="target/examples/classes"/>
-    <property name="core-lib" location="../../main/resources/jars"/>
-    <property name="rabbit-lib" location="../../main/resources/jars/rabbit"/>
-    <property name="jedis-lib" location="../../main/resources/jars/jedis"/>
-    <property name="core-jar" location="../../../target/node.x.jar"/>
-
+    <property name="src" value="."/>
+    <property name="output" value="classes"/>
+    <property name="libs" value="../../lib/java"/>
+    
     <path id="compile-classpath">
-        <fileset dir="${core-lib}">
+        <fileset dir="${libs}">
             <include name="*.jar"/>
         </fileset>
-        <fileset dir="${rabbit-lib}">
-            <include name="*.jar"/>
-        </fileset>
-        <fileset dir="${jedis-lib}">
-            <include name="*.jar"/>
-        </fileset>
-        <pathelement path="${core-jar}"/>
     </path>
 
     <target name="init">
@@ -48,12 +36,12 @@
     </target>
 
     <target name="compile" depends="init" description="compile the source for the examples">
-        <mkdir dir="${examples-target}"/>
-        <javac srcdir="${examples-src}" destdir="${examples-target}" classpathref="compile-classpath" debug="on"/>
+        <mkdir dir="${output}"/>
+        <javac srcdir="${src}" destdir="${output}" classpathref="compile-classpath" debug="on" includeantruntime="false"/>
     </target>
 
     <target name="clean" description="clean up">
-        <delete dir="${target}"/>
+        <delete dir="${output}"/>
     </target>
 
 </project>

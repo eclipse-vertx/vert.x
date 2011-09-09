@@ -20,7 +20,7 @@ Nodex::go {
     puts "Response #{resp.status_code}"
   }
 
-  filename = "upload.txt"
+  filename = "upload/upload.txt"
   FileSystem::stat(filename) { |compl|
     size = compl.result.size
     req.put_header("Content-Length", size)

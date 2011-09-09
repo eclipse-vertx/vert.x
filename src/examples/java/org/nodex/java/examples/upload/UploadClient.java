@@ -51,7 +51,7 @@ public class UploadClient extends NodexMain {
       }
     });
 
-    String filename = "upload.txt";
+    String filename = "upload/upload.txt";
 
     // For a non-chunked upload you need to specify size of upload up-front
     req.putHeader("Content-Length", Files.size(Paths.get(filename)));

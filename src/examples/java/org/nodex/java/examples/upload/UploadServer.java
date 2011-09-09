@@ -45,7 +45,7 @@ public class UploadServer extends NodexMain {
         // We first pause the request so we don't receive any data between now and when the file is opened
         req.pause();
 
-        final String filename = "file-" + UUID.randomUUID().toString() + ".upload";
+        final String filename = "upload/file-" + UUID.randomUUID().toString() + ".upload";
 
         FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
           public void onEvent(Completion<AsyncFile> completion) {

@@ -14,7 +14,7 @@ include Nodex
 
 Nodex::go {
   HttpServer.new.request_handler { |req|
-    filename = req.uri == "/" ? "index.html" : "." << req.uri
+    filename = "sendfile/" << (req.uri == "/" ? "index.html" : "." << req.uri)
     req.response.send_file(filename)
   }.listen(8080)
 }

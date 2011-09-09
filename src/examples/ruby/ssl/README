@@ -1,7 +1,0 @@
-Simple echo server and client over SSL
-=====================================
-
-To run the server: ./ssl_server.sh
-
-To run the client: ./ssl_client.sh
-

@@ -19,7 +19,7 @@ Nodex::go {
       ws.write_text_frame(buffer.to_s)
     }
   }.request_handler { |req|
-    req.response.send_file("ws.html") if req.uri == "/"
+    req.response.send_file("websockets/ws.html") if req.uri == "/"
   }.listen(8080)
 }
 
