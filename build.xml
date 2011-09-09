@@ -155,8 +155,8 @@
         <copy file="LICENSE.txt" todir="${dist-build}"/>
         <copy file="README.md" todir="${dist-build}"/>
 
-        <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead -->
-        <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/>
+        <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead
+        <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/> -->
 
         <tar destfile="${target}/node.x-${version-number}.tar" longfile="gnu">
           <tarfileset dir="${dist-build-base}" filemode="755">
