@@ -69,7 +69,7 @@
 
     <target name="compile-core" depends="init" description="compile the source for the core">
         <mkdir dir="${core-target}"/>
-        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on"/>
+        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on" includeantruntime="false"/>
     </target>
 
     <target name="jar-core" depends="compile-core" description="generate the core jar">
@@ -158,7 +158,7 @@
         <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead -->
         <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/>
 
-        <tar destfile="${target}/node.x-${version-number}.tar">
+        <tar destfile="${target}/node.x-${version-number}.tar" longfile="gnu">
           <tarfileset dir="${dist-build-base}" filemode="755">
             <include name="**/bin/**"/>
           </tarfileset>
