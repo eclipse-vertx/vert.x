@@ -70,21 +70,22 @@ Make sure the bin directory from the distro is on your PATH
 
 #### Java
 
-From anywhere 'nodex-java cp <your_classpath> <your_class_name>'
+From anywhere 'nodex-java -cp my_classpath org.foo.MyMainClass'
 
-Where <your_class_name> is a fully qualified class name of your main class.
+Where org.foo.MyMainClass is a fully qualified class name of your main class.
 
-Where <your_classpath> is a classpath which allows <your_class_name> to be located along with any other dependencies of your application
+Where my_classpath is a classpath which allows org.foo.MyMainClass to be located along with any other dependencies of your application
 
 The nodex-java basically takes the same params as the 'java' command
 
 #### Ruby
 
-From anywhere 'nodex-ruby <your_ruby_script>'
+From anywhere 'nodex-ruby my_ruby_script.rb'
 
-Where <your_ruby_script> is the script to execute.
+Where my_ruby_script.rb is the script to execute.
 
-nodex-ruby takes the same arguments as the jruby command, so you can pass in -I etc as necessary.
+nodex-ruby takes the same arguments as the jruby command, so you can pass in -I etc as necessary, if you want to add extra
+stuff to the LOAD_PATH
 
 ## Examples
 
