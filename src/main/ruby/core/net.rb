@@ -74,8 +74,6 @@ module Nodex
     def initialize
       @j_cliserv = org.nodex.java.core.net.NetServer.new
       super(@j_cliserv)
-
-      puts "created net server"
     end
 
     def client_auth_required=(val)
@@ -88,7 +86,6 @@ module Nodex
     end
 
     def listen(port, host = "0.0.0.0")
-      puts "listening"
       @j_cliserv.listen(port, host)
       self
     end

@@ -1,8 +1,0 @@
-Fanout server
-=============
-
-Fans out received data to all connections
-
-Run ./fanout_server.sh
-
-Then telnet localhost 8080 from different consoles. Note how data entered in telnet is echoed to all connected connections

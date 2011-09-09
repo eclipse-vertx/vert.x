@@ -1,8 +1,0 @@
-Static webserver sendfile example
-=================================
-
-Simple web server that uses sendfile to serve content directly from disk to the socket bypassing user space.
-
-To run server: ./sendfile_server.sh
-
-Then point your browser at http://localhost:8080

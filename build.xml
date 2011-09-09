@@ -21,18 +21,22 @@
     </description>
 
     <!-- set global properties for this build -->
-    <property name="target" location="target"/>
-    <property name="core-src" location="src/main/java"/>
-    <property name="core-target" location="target/core/classes"/>
-    <property name="core-lib" location="src/main/resources/jars"/>
-    <property name="rabbit-lib" location="src/main/resources/jars/rabbit"/>
-    <property name="jedis-lib" location="src/main/resources/jars/jedis"/>
+    <property name="target" value="target"/>
+    <property name="jar-file" value="node.x.jar"/>
+    <property name="version-number" value="1.0.alpha1"/>
+    <property name="dist-build-base" value="${target}/dist-build"/>
+    <property name="dist-build" value="${dist-build-base}/node.x-${version-number}"/>
+    <property name="core-src" value="src/main/java"/>
+    <property name="core-target" value="${target}/core/classes"/>
+    <property name="core-lib" value="src/main/resources/jars"/>
+    <property name="rabbit-lib" value="src/main/resources/jars/rabbit"/>
+    <property name="jedis-lib" value="src/main/resources/jars/jedis"/>
 
-    <property name="test-lib" location="src/tests/resources/jars"/>
-    <property name="tests-target" location="target/tests/classes"/>
-    <property name="tests-src" location="src/tests"/>
+    <property name="test-lib" value="src/tests/resources/jars"/>
+    <property name="tests-target" value="${target}/tests/classes"/>
+    <property name="tests-src" value="src/tests"/>
 
-    <property name="javadoc-dir" location="docs/java/api"/>
+    <property name="javadoc-dir" value="docs/java/api"/>
 
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
@@ -69,7 +73,7 @@
     </target>
 
     <target name="jar-core" depends="compile-core" description="generate the core jar">
-        <jar jarfile="target/node.x.jar" basedir="${core-target}" includes="**/*.class"/>
+        <jar jarfile="${target}/${jar-file}" basedir="${core-target}" includes="**/*.class"/>
     </target>
 
     <target name="clean" description="clean up">
@@ -79,7 +83,7 @@
 
     <target name="compile-tests" depends="jar-core">
         <mkdir dir="${tests-target}"/>
-        <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on"/>
+        <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
     </target>
 
     <target name="tests" depends="java-tests, ruby-tests">
@@ -97,14 +101,73 @@
     </target>
 
     <target name="javadoc" depends="compile-core">
-        <javadoc destdir="${javadoc-dir}" author="true" version="false" use="true" windowtitle="Node.x Java API"
+        <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="Node.x Java API"
                 classpathref="core-lib-classpath" Public="true">
             <fileset dir="${core-src}" defaultexcludes="yes">
                 <include name="org/nodex/java/core/**"/>
-                <!-- <exclude name="org/nodex/java/core/buffer/InternalBufferFactory.java"/> -->
             </fileset>
             <doctitle><![CDATA[<h1>Node.x Java API</h1>]]></doctitle>
         </javadoc>
+    </target>
+
+    <target name="dist" depends="clean, jar-core, javadoc">
+        <mkdir dir="${dist-build}"/>
+        <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
+
+        <copy todir="${dist-build}/lib/java">
+            <fileset dir="${core-lib}">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${dist-build}/lib/ruby">
+            <fileset dir="src/main/ruby">
+                <include name="**/*.rb"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${dist-build}/lib/groovy">
+            <fileset dir="src/main/groovy">
+                <include name="**/*.groovy"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${dist-build}/${javadoc-dir}">
+            <fileset dir="${target}/${javadoc-dir}"/>
+        </copy>
+
+        <!-- We need to use exec since the ant copy task does not preserve file permissions -->
+        <mkdir dir="${dist-build}/bin"/>
+
+        <exec executable="cp">
+            <arg value="src/scripts/nodex-java"/>
+            <arg value="${dist-build}/bin/nodex-java"/>
+        </exec>
+        <exec executable="cp">
+            <arg value="src/scripts/nodex-ruby"/>
+            <arg value="${dist-build}/bin/nodex-ruby"/>
+        </exec>
+
+        <copy todir="${dist-build}/examples">
+            <fileset dir="src/examples"/>
+        </copy>
+
+        <copy file="LICENSE.txt" todir="${dist-build}"/>
+        <copy file="README.md" todir="${dist-build}"/>
+
+        <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead -->
+        <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/>
+
+        <tar destfile="${target}/node.x-${version-number}.tar">
+          <tarfileset dir="${dist-build-base}" filemode="755">
+            <include name="**/bin/**"/>
+          </tarfileset>
+          <tarfileset dir="${dist-build-base}">
+            <exclude name="**/bin/**"/>
+          </tarfileset>
+        </tar>
+
+        <gzip destfile="${target}/node.x-${version-number}.tar.gz" src="${target}/node.x-${version-number}.tar"/>
     </target>
 
 </project>

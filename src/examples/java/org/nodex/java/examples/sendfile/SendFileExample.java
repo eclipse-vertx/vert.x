@@ -34,15 +34,17 @@ public class SendFileExample extends NodexMain {
     System.in.read();
   }
 
+  private static final String webroot = "sendfile/";
+
   public void go() throws Exception {
     //Here is the web server!
     new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
       public void onEvent(HttpServerRequest req) {
         if (req.path.equals("/")) {
-          req.response.sendFile("index.html");
+          req.response.sendFile(webroot + "index.html");
         } else {
           //Clearly in a real server you would check the path for better security!!
-          req.response.sendFile("." + req.path);
+          req.response.sendFile(webroot + req.path);
         }
       }
     }).listen(8080);

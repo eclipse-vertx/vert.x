@@ -52,7 +52,7 @@ public class WebsocketsExample extends NodexMain {
       }
     }).requestHandler(new EventHandler<HttpServerRequest>() {
       public void onEvent(HttpServerRequest req) {
-        if (req.path.equals("/")) req.response.sendFile("ws.html"); // Serve the html
+        if (req.path.equals("/")) req.response.sendFile("websockets/ws.html"); // Serve the html
       }
     }).listen(8080);
   }

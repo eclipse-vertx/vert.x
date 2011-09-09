@@ -38,6 +38,8 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 
 ## Building
 
+Pre-requisites:
+
 Pre-requisites: ant, JRuby, Java 7
 
 Node.x is java 7+ only. We use the new async file IO, and extended file system API in Java 7.
@@ -48,11 +50,59 @@ Also, going ahead, dynamic languages will benefit from InvokeDynamic support in 
 
 From root directory 'ant'
 
+### To run tests
+
+From root directory 'ant tests'
+
+### To build a distro
+
+From root directory 'ant dist'
+
+The distro tar.gz will be created in the 'target' directory
+
+### To install the distro
+
+Unzip the distro somewhere, e.g. in your home directory
+
+Make sure the bin directory from the distro is on your PATH
+
+### To run node.x
+
+#### Java
+
+From anywhere 'nodex-java cp <your_classpath> <your_class_name>'
+
+Where <your_class_name> is a fully qualified class name of your main class.
+
+Where <your_classpath> is a classpath which allows <your_class_name> to be located along with any other dependencies of your application
+
+The nodex-java basically takes the same params as the 'java' command
+
+#### Ruby
+
+From anywhere 'nodex-ruby <your_ruby_script>'
+
+Where <your_ruby_script> is the script to execute.
+
+nodex-ruby takes the same arguments as the jruby command, so you can pass in -I etc as necessary.
+
 ## Examples
+
+### Java
+
+Java examples are [here] (https://github.com/purplefox/node.x/tree/master/src/examples/java "Java examples")
+
+Examples must be run from a distro. First install the distro, then cd to the examples/java directory.
+
+Then read the README
+
+### Ruby
 
 Ruby examples are [here] (https://github.com/purplefox/node.x/tree/master/src/examples/ruby "Ruby examples")
 
-To run example, make sure core is built first, then cd to example directory, read the README (if it exists), then run the .sh file. (Sorry no Windows batch files as yet)
+Examples must be run from a distro. First install the distro, then cd to the examples/ruby directory.
+
+Then read the README
 
 ## Development discussions
 
@@ -65,7 +115,3 @@ There's an IRC channel at irc.freenode.net#nodex if you want to drop in to chat 
 ## Join us!!
 
 There is lots to do! Ping me twitter:@timfox, or drop a mail on the nodex-dev google group.
-
-
-
-
