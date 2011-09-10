@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class NodexImpl implements NodexInternal {
+final class NodexImpl implements NodexInternal {
 
   private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
@@ -252,7 +252,7 @@ public final class NodexImpl implements NodexInternal {
     return setTimeout(delay, true, handler);
   }
 
-  public long setTimeout(long delay, final EventHandler<Long> handler) {
+  public long setTimer(long delay, final EventHandler<Long> handler) {
     return setTimeout(delay, false, handler);
   }
 
@@ -293,7 +293,7 @@ public final class NodexImpl implements NodexInternal {
     return timerID;
   }
 
-  public boolean cancelTimeout(long id) {
+  public boolean cancelTimer(long id) {
     return cancelTimeout(id, true);
   }
 

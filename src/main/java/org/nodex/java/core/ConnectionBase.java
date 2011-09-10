@@ -30,9 +30,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
+ * <p>Abstract base class for different types of connections.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ConnectionBase {
+public abstract class ConnectionBase {
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {
     this.channel = channel;
@@ -48,16 +50,25 @@ public class ConnectionBase {
   protected EventHandler<Exception> exceptionHandler;
   protected EventHandler<Void> closedHandler;
 
+  /**
+   * Pause the connection, {@see ReadStream#pause}
+   */
   public void pause() {
     checkThread();
     channel.setReadable(false);
   }
 
+  /**
+   * Resume the connection, {@see ReadStream#resume}
+   */
   public void resume() {
     checkThread();
     channel.setReadable(true);
   }
 
+  /**
+   * Set the max size for the write queue, {@see WriteStream#setWriteQueueMaxSize}
+   */
   public void setWriteQueueMaxSize(int size) {
     checkThread();
     NioSocketChannelConfig conf = (NioSocketChannelConfig) channel.getConfig();
@@ -65,21 +76,33 @@ public class ConnectionBase {
     conf.setWriteBufferHighWaterMark(size);
   }
 
+  /**
+   * Is the write queue full?, {@see WriteStream#writeQueueFull}
+   */
   public boolean writeQueueFull() {
     checkThread();
     return !channel.isWritable();
   }
 
+  /**
+   * Close the connection
+   */
   public void close() {
     checkThread();
     channel.close();
   }
 
+  /**
+   * Set an exception handler on the connection
+   */
   public void exceptionHandler(EventHandler<Exception> handler) {
     checkThread();
     this.exceptionHandler = handler;
   }
 
+  /**
+   * Set a closed handler on the connection
+   */
   public void closedHandler(EventHandler<Void> handler) {
     checkThread();
     this.closedHandler = handler;

@@ -31,8 +31,6 @@ import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.SimpleEventHandler;
 import org.nodex.java.core.buffer.Buffer;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
