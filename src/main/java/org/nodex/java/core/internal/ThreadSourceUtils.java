@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core;
+package org.nodex.java.core.internal;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 

@@ -16,7 +16,7 @@
 
 package org.nodex.java.addons.amqp;
 
-import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.internal.NodexInternal;
 
 import java.io.IOException;
 

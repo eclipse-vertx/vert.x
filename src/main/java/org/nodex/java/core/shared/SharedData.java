@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
  *   {@link Byte}
  *   {@link Character}
  *   {@link java.math.BigDecimal}
- *   {@link byte[]} - this will be automatically copied, and the copy will be stored in the structure.
+ *   {@code byte[]} - this will be automatically copied, and the copy will be stored in the structure.
  *   {@link org.nodex.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.
  *   {@link org.nodex.java.core.Immutable} - if you mark your own class as {@code Immutable} you will be able to
