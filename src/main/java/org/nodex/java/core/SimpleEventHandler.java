@@ -17,6 +17,8 @@
 package org.nodex.java.core;
 
 /**
+ * <p>This class can be used for simple event handlers which don't receive an event with any value.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class SimpleEventHandler implements EventHandler<Void> {
@@ -25,5 +27,8 @@ public abstract class SimpleEventHandler implements EventHandler<Void> {
     onEvent();
   }
 
+  /**
+   * This method will be called when the event occurs. It should be overridden by the user.
+   */
   protected abstract void onEvent();
 }

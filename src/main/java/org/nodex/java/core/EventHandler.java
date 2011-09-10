@@ -17,10 +17,16 @@
 package org.nodex.java.core;
 
 /**
- * User: tim
- * Date: 31/08/11
- * Time: 08:57
+ *  <p>An event handler</p>
+ *
+ *  <p>This interface is used heavily throughout node.x as a handler for all types events</p>
+ *
+ *  @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface EventHandler<E> {
+
+  /**
+   * An event has occurred
+   */
   void onEvent(E event);
 }

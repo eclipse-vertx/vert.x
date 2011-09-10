@@ -18,6 +18,9 @@ package org.nodex.java.core;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class ThreadSourceUtils {
 
   /*

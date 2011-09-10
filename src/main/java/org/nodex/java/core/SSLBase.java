@@ -21,9 +21,11 @@ import org.nodex.java.core.net.TLSHelper;
 import javax.net.ssl.SSLContext;
 
 /**
+ * Abstract base class for SSL related stuff
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SSLBase {
+public abstract class SSLBase {
 
   protected boolean ssl;
   protected String keyStorePath;

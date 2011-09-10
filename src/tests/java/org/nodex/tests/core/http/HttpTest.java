@@ -133,7 +133,7 @@ public class HttpTest extends TestBase {
                 azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
                 //We write the response back after a random time to increase the chances of responses written in the
                 //wrong order if we didn't implement pipelining correctly
-                Nodex.instance.setTimeout((long) (10 * Math.random()), new EventHandler<Long>() {
+                Nodex.instance.setTimer((long) (10 * Math.random()), new EventHandler<Long>() {
                   public void onEvent(Long timerID) {
                     req.response.putHeader("count", String.valueOf(theCount));
                     req.response.write(buff);
@@ -413,7 +413,7 @@ public class HttpTest extends TestBase {
                 } else {
                   req.pause();
                   paused = true;
-                  Nodex.instance.setTimeout(1, new EventHandler<Long>() {
+                  Nodex.instance.setTimer(1, new EventHandler<Long>() {
                     public void onEvent(Long id) {
                       paused = false;
                       req.resume();
