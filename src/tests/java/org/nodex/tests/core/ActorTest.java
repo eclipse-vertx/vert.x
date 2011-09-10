@@ -17,7 +17,7 @@
 package org.nodex.tests.core;
 
 import org.nodex.java.core.EventHandler;
-import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.shared.SharedData;
 import org.testng.annotations.Test;
 

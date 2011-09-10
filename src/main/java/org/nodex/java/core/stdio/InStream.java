@@ -18,9 +18,8 @@ package org.nodex.java.core.stdio;
 
 import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.buffer.Buffer;
 
 import java.io.IOException;

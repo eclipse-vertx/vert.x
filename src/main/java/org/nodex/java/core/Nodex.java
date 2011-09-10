@@ -16,6 +16,8 @@
 
 package org.nodex.java.core;
 
+import org.nodex.java.core.internal.NodexInternal;
+
 /**
  *
  * <p>An instance of {@code Nodex} is available to all event loops in a running application.</p>

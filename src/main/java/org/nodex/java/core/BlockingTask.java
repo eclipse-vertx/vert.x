@@ -16,6 +16,8 @@
 
 package org.nodex.java.core;
 
+import org.nodex.java.core.internal.NodexInternal;
+
 /**
  * <p>Sometimes it is necessary to perform operations in node.x which are inherently blocking, e.g. talking to legacy
  * blocking APIs or libraries. This class allows blocking operations to be executed cleanly in an asychronous

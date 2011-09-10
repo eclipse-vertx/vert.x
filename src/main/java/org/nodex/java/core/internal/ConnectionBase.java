@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core;
+package org.nodex.java.core.internal;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -24,6 +24,9 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.streams.ReadStream;
+import org.nodex.java.core.streams.WriteStream;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +37,7 @@ import java.io.RandomAccessFile;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class ConnectionBase {
+public abstract class ConnectionBase implements ReadStream, WriteStream {
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {
     this.channel = channel;
@@ -51,7 +54,7 @@ public abstract class ConnectionBase {
   protected EventHandler<Void> closedHandler;
 
   /**
-   * Pause the connection, {@see ReadStream#pause}
+   * Pause the connection, see {@link ReadStream#pause}
    */
   public void pause() {
     checkThread();
@@ -59,7 +62,7 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * Resume the connection, {@see ReadStream#resume}
+   * Resume the connection, see {@link ReadStream#resume}
    */
   public void resume() {
     checkThread();
@@ -67,7 +70,7 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * Set the max size for the write queue, {@see WriteStream#setWriteQueueMaxSize}
+   * Set the max size for the write queue, see {@link WriteStream#setWriteQueueMaxSize}
    */
   public void setWriteQueueMaxSize(int size) {
     checkThread();
@@ -77,7 +80,7 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * Is the write queue full?, {@see WriteStream#writeQueueFull}
+   * Is the write queue full?, see {@link WriteStream#writeQueueFull}
    */
   public boolean writeQueueFull() {
     checkThread();

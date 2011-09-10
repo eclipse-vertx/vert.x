@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core;
+package org.nodex.java.core.internal;
 
 import org.nodex.java.core.net.TLSHelper;
 

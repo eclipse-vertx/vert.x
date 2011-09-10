@@ -105,6 +105,7 @@
                 classpathref="core-lib-classpath" Public="true">
             <fileset dir="${core-src}" defaultexcludes="yes">
                 <include name="org/nodex/java/core/**"/>
+                <include name="org/nodex/java/core/internal/**"/>
             </fileset>
             <doctitle><![CDATA[<h1>Node.x Java API</h1>]]></doctitle>
         </javadoc>
