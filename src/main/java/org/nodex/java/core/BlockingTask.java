@@ -17,20 +17,39 @@
 package org.nodex.java.core;
 
 /**
- * User: tim
- * Date: 02/08/11
- * Time: 11:20
+ * <p>Sometimes it is necessary to perform operations in node.x which are inherently blocking, e.g. talking to legacy
+ * blocking APIs or libraries. This class allows blocking operations to be executed cleanly in an asychronous
+ * environment.</p>
+ * <p>By subclassing this class, and executing it, node.x will perform the blocking operation on a thread from a
+ * background thread pool specially reserved for blocking operations. This means the event loop threads are not
+ * blocked and can continue to service other requests. Once the result has returned a {@link CompletionHandler}
+ * will be called with the result, or an Exception if it failed.</p>
+ * <p>It will rarely be necessary to use this class directly, it is normally used by libraries which wrap legacy
+ * blocking APIs into an asynchronous form suitable for a 100% asynchronous framework such as node.x</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class BlockingTask<T> {
 
   private final CompletionHandler<T> completionHandler;
 
+  /**
+   * Create a new {@code BlockingTask}. The {@code completionHandler} will be called when the operation is complete, or
+   * has failed.
+   */
   public BlockingTask(CompletionHandler<T> completionHandler) {
     this.completionHandler = completionHandler;
   }
 
+  /**
+   * Override this method and implement the actual blocking action in it. The result of the action should be returned
+   * in the return value of this method.
+   */
   public abstract T execute() throws Exception;
 
+  /**
+   * Run the blocking action using a thread from the background pool.
+   */
   public final void run() {
     final long contextID = Nodex.instance.getContextID();
     Runnable runner = new Runnable() {

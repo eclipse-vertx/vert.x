@@ -16,6 +16,8 @@
 
 package org.nodex.java.core.stdio;
 
+import org.nodex.java.core.Completion;
+import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.NodexInternal;
@@ -25,18 +27,26 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- *
+ * <p>An asynchronous wrapper around a {@link InputStream}</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class InStream {
+
+  /**
+   * Create a new {@code Instream} wrapping the {@link InputStream} in
+   */
   public InStream(InputStream in) {
     this.in = in;
   }
 
   private final InputStream in;
 
-  public void read(int bytes, EventHandler<Buffer> handler) {
+  /**
+   * Read {@code bytes} from the {@code InputStream}. When all the bytes have been read, {@code handler} will called
+   * with a {@link Buffer} containing the bytes.
+   */
+  public void read(int bytes, CompletionHandler<Buffer> handler) {
     Long contextID = Nodex.instance.getContextID();
     if (contextID == null) {
       throw new IllegalStateException("Stdio can only be used inside an event loop");
@@ -45,7 +55,8 @@ public class InStream {
     doRead(read, 0, handler, contextID);
   }
 
-  private void doRead(final byte[] read, final int offset, final EventHandler<Buffer> handler, final long contextID) {
+  private void doRead(final byte[] read, final int offset, final CompletionHandler<Buffer> handler,
+                      final long contextID) {
     final NodexInternal nodex = NodexInternal.instance;
     nodex.executeInBackground(new Runnable() {
       public void run() {
@@ -57,15 +68,14 @@ public class InStream {
             nodex.executeOnContext(contextID, new Runnable() {
               public void run() {
                 nodex.setContextID(contextID);
-                handler.onEvent(Buffer.create(read));
+                handler.onEvent(new Completion<>(Buffer.create(read)));
               }
             });
           } else {
             doRead(read, newOffset, handler, contextID);
           }
         } catch (IOException e) {
-          //TODO better error handling
-          e.printStackTrace(System.err);
+          handler.onEvent(new Completion(e));
         }
       }
     });

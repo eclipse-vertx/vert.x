@@ -22,6 +22,9 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public interface NodexInternal extends Nodex {
 
   static NodexInternal instance = new NodexImpl();

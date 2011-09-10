@@ -17,9 +17,7 @@
 package org.nodex.java.core;
 
 /**
- * User: tim
- * Date: 31/08/11
- * Time: 08:59
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class SimpleEventHandler implements EventHandler<Void> {
 

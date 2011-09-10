@@ -16,6 +16,9 @@
 
 package org.nodex.java.core;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public interface Nodex {
 
   static Nodex instance = NodexInternal.instance;
