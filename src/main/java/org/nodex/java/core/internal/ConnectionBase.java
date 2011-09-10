@@ -37,7 +37,7 @@ import java.io.RandomAccessFile;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class ConnectionBase implements ReadStream, WriteStream {
+public class ConnectionBase {
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {
     this.channel = channel;
