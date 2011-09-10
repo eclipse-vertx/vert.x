@@ -17,15 +17,25 @@
 package org.nodex.java.core.stdio;
 
 /**
+ * Provides asynchronous versions of stdin and stdout and stderr
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Stdio {
 
+  /**
+   * An asynchronous version of {@link System#in}
+   */
   public static final InStream in = new InStream(System.in);
 
+  /**
+   * An asynchronous version of {@link System#out}
+   */
   public static final OutStream out = new OutStream(System.out);
 
+  /**
+   * An asynchronous version of {@link System#err}
+   */
   public static final OutStream err = new OutStream(System.err);
 
 

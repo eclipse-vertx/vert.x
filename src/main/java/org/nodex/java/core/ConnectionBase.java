@@ -29,6 +29,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class ConnectionBase {
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {

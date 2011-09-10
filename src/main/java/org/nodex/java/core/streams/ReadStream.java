@@ -19,15 +19,39 @@ package org.nodex.java.core.streams;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.buffer.Buffer;
 
+/**
+ * <p>Represents a stream of data that can be read from.</p>
+ *
+ * <p>Any class that implements this interface can be used by a {@link Pump} to pump data from it
+ * to a {@link WriteStream}.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public interface ReadStream {
 
+  /**
+   * Set a data handler. As data is read, the handler will be called with the data.
+   */
   void dataHandler(EventHandler<Buffer> handler);
 
+  /**
+   * Pause the {@code ReadStream}. After calling this, the ReadStream will aim to send no more data to the {@code
+   * dataHandler}
+   */
   void pause();
 
+  /**
+   * Resume reading. If the {@code ReadStream} has been paused, reading will recommence on it.
+   */
   void resume();
 
+  /**
+   * Set an exception handler.
+   */
   void exceptionHandler(EventHandler<Exception> handler);
 
+  /**
+   * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
+   */
   void endHandler(EventHandler<Void> endHandler);
 }

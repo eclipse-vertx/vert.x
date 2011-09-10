@@ -17,9 +17,10 @@
 package org.nodex.java.core;
 
 /**
- * User: tim
- * Date: 01/09/11
- * Time: 17:29
+ * Instances of this class are used to provide a {@link Completion} to the user when an asynchronous action
+ * has completed.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface CompletionHandler<T> extends EventHandler<Completion<T>> {
 }

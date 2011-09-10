@@ -16,6 +16,9 @@
 
 package org.nodex.java.core.stdio;
 
+import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.buffer.Buffer;
+
 import java.io.PrintStream;
 
 /**
@@ -28,6 +31,7 @@ public class OutStream {
   }
 
   private final PrintStream out;
+
 
   //TODO
 }

@@ -20,6 +20,9 @@ import org.nodex.java.core.net.TLSHelper;
 
 import javax.net.ssl.SSLContext;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class SSLBase {
 
   protected boolean ssl;
