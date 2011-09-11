@@ -96,7 +96,7 @@ module Nodex
         @hash
       end
 
-      private :initialize
+
     end
 
     class SharedSet
@@ -168,7 +168,7 @@ module Nodex
         @j_set.size
       end
 
-      private :initialize
+
 
     end
   end

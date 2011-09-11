@@ -29,7 +29,7 @@ module Redis
         @connect_block.call(Connection.new(connection))
       end
 
-      private :initialize
+
     end
 
     def RedisClient.create_client
@@ -45,7 +45,7 @@ module Redis
       @java_client.connect(port, host, ConnectionCallback.new(connect_block))
     end
 
-    private :initialize
+
   end
 
   class Connection
@@ -60,7 +60,7 @@ module Redis
         @complete_block.call
       end
 
-      private :initialize
+
     end
 
     class ResultCallback < org.nodex.java.core.redis.ResultHandler
@@ -73,7 +73,7 @@ module Redis
         @result_block.call(value)
       end
 
-      private :initialize
+
     end
 
     def initialize(java_connection)
