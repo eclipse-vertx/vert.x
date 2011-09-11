@@ -18,6 +18,8 @@ module Nodex
 
   class Buffer
 
+    private_class_method :new
+
     # We include this so we can put a buffer in a shared data structure.
     # This class isn't actually immutable but it doesn't matter since it will get copied automatically
     # as it is added to the map
@@ -148,8 +150,6 @@ module Nodex
     def _to_java_buffer
       @buffer
     end
-
-    private :initialize
 
   end
 end

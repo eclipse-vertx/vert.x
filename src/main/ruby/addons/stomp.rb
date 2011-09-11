@@ -42,7 +42,7 @@ module Stomp
       @java_client = org.nodex.java.core.stomp.StompClient.connect(port, host, ConnectCallback.new(connect_block))
     end
 
-    private :initialize
+
   end
 
   class Connection
@@ -108,7 +108,7 @@ module Stomp
       end
     end
 
-    private :initialize
+
 
   end
 end

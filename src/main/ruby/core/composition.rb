@@ -53,8 +53,6 @@ module Nodex
     def end
       @java_composer.end
     end
-
-    private :initialize
   end
 
   class Completion
@@ -84,8 +82,6 @@ module Nodex
       @java_completion
     end
 
-    private :initialize
-
   end
 
   class Deferred
@@ -110,7 +106,6 @@ module Nodex
       @callback.call
     end
 
-    private :initialize
   end
 
 end
