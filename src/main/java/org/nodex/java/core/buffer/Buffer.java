@@ -33,7 +33,7 @@ import java.nio.charset.Charset;
  * <p>There are two ways to write data to a Buffer: The first method involves methods that take the form {@code setXXX}.
  * These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
  * has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
- * to be written.</p>
+ * to be written. All positions are measured in bytes and start with zero.</p>
  *
  * <p>The second method involves methods that take the form {@code appendXXX}; these methods append data
  * at the end of the buffer.</p>
@@ -52,7 +52,7 @@ public class Buffer {
   private DynamicChannelBuffer buffer;
 
   /**
-   * Creates a new empty Buffer, that is expected to have a size of {@code initialSizeHint} after data has been
+   * Creates a new empty Buffer that is expected to have a size of {@code initialSizeHint} after data has been
    * written to it.<p> Please note that {@code length} of the Buffer immediately after creation will be zero. The {@code initialSizeHint}
    * is merely a hint to the system for how much memory to initially allocate to the buffer to prevent excessive
    * automatic re-allocations as data is written to it.
