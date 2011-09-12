@@ -18,6 +18,8 @@ module Nodex
 
   class FileStats
 
+    #private class_method :new
+
     def initialize(j_stats)
       @j_stats = j_stats
     end
@@ -54,7 +56,7 @@ module Nodex
       @j_stats.size
     end
 
-    private :initialize
+
   end
 
   class FSStats
@@ -74,8 +76,6 @@ module Nodex
     def usable_space
       @j_stats.usableSpace
     end
-
-    private :initialize
 
   end
 
@@ -141,7 +141,7 @@ module Nodex
         @j_ws
       end
 
-      private :initialize
+
     end
 
     class ReadStream
@@ -176,11 +176,11 @@ module Nodex
         @j_rs
       end
 
-      private :initialize
+
 
     end
 
-    private :initialize
+
 
   end
 

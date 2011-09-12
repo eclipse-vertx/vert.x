@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core;
+package org.nodex.java.core.internal;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -24,11 +24,19 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
+import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.streams.ReadStream;
+import org.nodex.java.core.streams.WriteStream;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+/**
+ * <p>Abstract base class for different types of connections.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class ConnectionBase {
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {
@@ -45,16 +53,25 @@ public class ConnectionBase {
   protected EventHandler<Exception> exceptionHandler;
   protected EventHandler<Void> closedHandler;
 
+  /**
+   * Pause the connection, see {@link ReadStream#pause}
+   */
   public void pause() {
     checkThread();
     channel.setReadable(false);
   }
 
+  /**
+   * Resume the connection, see {@link ReadStream#resume}
+   */
   public void resume() {
     checkThread();
     channel.setReadable(true);
   }
 
+  /**
+   * Set the max size for the write queue, see {@link WriteStream#setWriteQueueMaxSize}
+   */
   public void setWriteQueueMaxSize(int size) {
     checkThread();
     NioSocketChannelConfig conf = (NioSocketChannelConfig) channel.getConfig();
@@ -62,21 +79,33 @@ public class ConnectionBase {
     conf.setWriteBufferHighWaterMark(size);
   }
 
+  /**
+   * Is the write queue full?, see {@link WriteStream#writeQueueFull}
+   */
   public boolean writeQueueFull() {
     checkThread();
     return !channel.isWritable();
   }
 
+  /**
+   * Close the connection
+   */
   public void close() {
     checkThread();
     channel.close();
   }
 
+  /**
+   * Set an exception handler on the connection
+   */
   public void exceptionHandler(EventHandler<Exception> handler) {
     checkThread();
     this.exceptionHandler = handler;
   }
 
+  /**
+   * Set a closed handler on the connection
+   */
   public void closedHandler(EventHandler<Void> handler) {
     checkThread();
     this.closedHandler = handler;

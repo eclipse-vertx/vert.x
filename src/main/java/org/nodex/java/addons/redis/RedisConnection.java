@@ -16,7 +16,7 @@
 
 package org.nodex.java.addons.redis;
 
-import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.composition.Composable;
 import redis.clients.jedis.Jedis;
 

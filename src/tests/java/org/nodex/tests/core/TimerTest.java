@@ -34,7 +34,7 @@ public class TimerTest extends TestBase {
   public void testNoContext() throws Exception {
     final AtomicBoolean fired = new AtomicBoolean(false);
     try {
-      Nodex.instance.setTimeout(1, new EventHandler<Long>() {
+      Nodex.instance.setTimer(1, new EventHandler<Long>() {
         public void onEvent(Long timerID) {
           fired.set(true);
         }
@@ -57,7 +57,7 @@ public class TimerTest extends TestBase {
         final Thread th = Thread.currentThread();
         final long contextID = Nodex.instance.getContextID();
 
-        Nodex.instance.setTimeout(1, new EventHandler<Long>() {
+        Nodex.instance.setTimer(1, new EventHandler<Long>() {
           public void onEvent(Long timerID) {
             azzert(th == Thread.currentThread());
             azzert(contextID == Nodex.instance.getContextID());
@@ -93,7 +93,7 @@ public class TimerTest extends TestBase {
             azzert(contextID == Nodex.instance.getContextID());
             count++;
             if (count == numFires) {
-              Nodex.instance.cancelTimeout(timerID);
+              Nodex.instance.cancelTimer(timerID);
               endLatch.countDown();
             }
             if (count > numFires) {
@@ -127,7 +127,7 @@ public class TimerTest extends TestBase {
         final long contextID = Nodex.instance.getContextID();
         final long start = System.nanoTime();
         final long delay = 100;
-        Nodex.instance.setTimeout(delay, new EventHandler<Long>() {
+        Nodex.instance.setTimer(delay, new EventHandler<Long>() {
           public void onEvent(Long timerID) {
             long dur = (System.nanoTime() - start) / 1000000;
             azzert(dur >= delay);

@@ -48,7 +48,7 @@ module Nodex
       @java_parser.fixedSizeMode(size)
     end
 
-    private :initialize
+
   end
 
 end

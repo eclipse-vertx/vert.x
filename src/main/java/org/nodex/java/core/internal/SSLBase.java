@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core;
+package org.nodex.java.core.internal;
 
 import org.nodex.java.core.net.TLSHelper;
 
 import javax.net.ssl.SSLContext;
 
-public class SSLBase {
+/**
+ * Abstract base class for SSL related stuff
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public abstract class SSLBase {
 
   protected boolean ssl;
   protected String keyStorePath;

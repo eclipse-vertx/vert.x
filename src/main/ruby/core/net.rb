@@ -66,7 +66,7 @@ module Nodex
       @j_cliserv.setTrafficClass(val)
     end
 
-    private :initialize
+
   end
 
   class NetServer < NetBase
@@ -209,7 +209,7 @@ module Nodex
       @write_handler_id
     end
 
-    private :initialize
+
   end
 end
 

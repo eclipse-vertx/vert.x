@@ -21,7 +21,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
-import org.nodex.java.core.ConnectionBase;
+import org.nodex.java.core.internal.ConnectionBase;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;

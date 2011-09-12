@@ -41,9 +41,9 @@ module Nodex
     TheMain.new(block).run
   end
 
-  def Nodex.set_timeout(delay, proc = nil, &hndlr)
+  def Nodex.set_timer(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.setTimeout(delay, hndlr)
+    org.nodex.java.core.Nodex.instance.setTimer(delay, hndlr)
   end
 
   def Nodex.set_periodic(delay, proc = nil, &hndlr)
@@ -51,8 +51,8 @@ module Nodex
     org.nodex.java.core.Nodex.instance.setPeriodic(delay, hndlr)
   end
 
-  def Nodex.cancel_timeout(id)
-    org.nodex.java.core.Nodex.instance.cancelTimeout(id)
+  def Nodex.cancel_timer(id)
+    org.nodex.java.core.Nodex.instance.cancelTimer(id)
   end
 
   def Nodex.register_handler(proc = nil, &hndlr)

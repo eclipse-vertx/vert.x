@@ -16,6 +16,8 @@
 
 package org.nodex.java.core;
 
+import org.nodex.java.core.internal.NodexInternal;
+
 /**
  * User: tim
  * Date: 15/08/11

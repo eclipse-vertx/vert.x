@@ -24,7 +24,7 @@ class TimerTest < Test::Unit::TestCase
     latch = Utils::Latch.new(1)
 
     Nodex::go {
-      Nodex::set_timeout(10) { |timer_id|
+      Nodex::set_timer(10) { |timer_id|
         latch.countdown
       }
     }
@@ -43,7 +43,7 @@ class TimerTest < Test::Unit::TestCase
       Nodex::set_periodic(10) { |timer_id|
         count += 1
         if count == fires
-          Nodex::cancel_timeout(timer_id)
+          Nodex::cancel_timer(timer_id)
           latch.countdown
         elsif count > fires
           assert(false, 'Fired too many times')

@@ -17,7 +17,7 @@
 package org.nodex.java.addons.amqp;
 
 import com.rabbitmq.client.ConnectionFactory;
-import org.nodex.java.core.NodexInternal;
+import org.nodex.java.core.internal.NodexInternal;
 
 import java.io.IOException;
 
