@@ -77,8 +77,6 @@ module Nodex
       @j_stats.usableSpace
     end
 
-
-
   end
 
   class AsyncFile

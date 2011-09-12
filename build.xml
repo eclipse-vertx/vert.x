@@ -103,10 +103,12 @@
 
     <target name="javadoc" depends="compile-core">
         <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="Node.x Java API"
-                classpathref="core-lib-classpath" Public="true">
-            <fileset dir="${core-src}" defaultexcludes="yes">
+                classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}" packagenames="org.nodex.java.core.*"
+                excludepackagenames="org.nodex.java.core.internal">
+            <!-- <fileset dir="${core-src}" defaultexcludes="yes">
                 <include name="org/nodex/java/core/**"/>
             </fileset>
+            -->
             <doctitle><![CDATA[<h1>Node.x Java API</h1>]]></doctitle>
         </javadoc>
     </target>

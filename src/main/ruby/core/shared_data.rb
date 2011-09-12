@@ -74,6 +74,7 @@ module Nodex
         val = SharedData.check_copy(val)
 
         # We call the java class directly - otherwise RubyHash does a scan of the whole map!! :(
+        # This will be fixed in JRuby 1.6.5
         @hash.put(key, val)
       end
 
