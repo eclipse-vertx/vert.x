@@ -24,6 +24,7 @@ require 'core/shared_data'
 
 module Nodex
 
+  # @private
   class TheMain < org.nodex.java.core.NodexMain
 
     def initialize(block)

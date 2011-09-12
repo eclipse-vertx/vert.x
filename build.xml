@@ -37,7 +37,7 @@
     <property name="tests-src" value="src/tests"/>
 
     <property name="javadoc-dir" value="docs/java/api"/>
-    <property name="rdoc-dir" value="docs/ruby/api"/>
+    <property name="rubydoc-dir" value="docs/ruby/api"/>
 
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
@@ -79,7 +79,6 @@
 
     <target name="clean" description="clean up">
         <delete dir="${target}"/>
-        <delete dir="${javadoc-dir}"/>
     </target>
 
     <target name="compile-tests" depends="jar-core">
@@ -113,14 +112,16 @@
         </javadoc>
     </target>
 
-    <target name="rdoc">
-        <exec executable="rdoc">
-            <arg line="src/main/ruby/ --main src/main/ruby/nodex.rb --exclude src/main/ruby/addons/ --op
-            target/docs/ruby/api"/>
-        </exec>
+    <!--
+    Needs:
+    jruby -S gem install yard
+    jruby -S gem install rdiscount
+    -->
+    <target name="yardoc">
+        <exec executable="yardoc"/>
     </target>
 
-    <target name="dist" depends="clean, jar-core, javadoc, rdoc">
+    <target name="dist" depends="clean, jar-core, javadoc, yardoc">
         <mkdir dir="${dist-build}"/>
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
 
@@ -144,6 +145,10 @@
 
         <copy todir="${dist-build}/${javadoc-dir}">
             <fileset dir="${target}/${javadoc-dir}"/>
+        </copy>
+
+        <copy todir="${dist-build}/${rubydoc-dir}">
+            <fileset dir="${target}/${rubydoc-dir}"/>
         </copy>
 
         <!-- We need to use exec since the ant copy task does not preserve file permissions -->

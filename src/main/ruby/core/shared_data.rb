@@ -18,7 +18,7 @@ include Java
 
 module Nodex
 
-  module SharedData
+  class SharedData
 
     module Immutable
       include org.nodex.java.core.Immutable
