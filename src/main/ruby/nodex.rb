@@ -22,6 +22,13 @@ require 'core/parsetools'
 require 'core/pump'
 require 'core/shared_data'
 
+# The Nodex modules defines the top level namespace within which all Nodex classes are found.
+#
+# This module also contains some class methods used for such things as setting and cancelling timers and
+# global event handlers, amongst other things.
+#
+# @author {http://tfox.org Tim Fox}
+
 module Nodex
 
   # @private

@@ -2,7 +2,7 @@
 
 ## What is Node.x?
 
-* A general purpose framework that uses an asynchronous event based style for building highly scalable applications
+* A general purpose framework that uses an event based style for building highly scalable applications
 * Runs on the JVM.
 * Everything is asynchronous.
 * Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*. Plus some.
@@ -14,14 +14,16 @@ Groovy and Java and going ahead... JavaScript (Rhino/Nashorn), Python (Jython), 
 * Incredibly simple concurrency model. Write your code as single threaded like node.js, watch it scale across multiple cores (unlike node.js)
 * Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets
 * Sendfile support for writing super scalable web servers
-* Plugins for talking AMQP, STOMP, Redis etc
+* Will provide plugins for talking AMQP, STOMP, Redis etc
 * Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
 
-## Ok, cut the crap, show me some examples
+## Jump to the examples
 
 Take a look at some of these working Ruby examples to see the kind of things you can do with Node.x
 
 [Ruby examples](https://github.com/purplefox/node.x/tree/master/src/examples/ruby "Ruby examples")
+
+[Java examples](https://github.com/purplefox/node.x/tree/master/src/examples/java "Java examples")
 
 ## What is the status of Node.x?
 
@@ -39,21 +41,28 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 
 ## Building
 
-Pre-requisites:
+### Pre-requisites
 
-Pre-requisites: ant, JRuby, Java 7
-
-Node.x is java 7+ only. We use the new async file IO, and extended file system API in Java 7.
-
-Also, going ahead, dynamic languages will benefit from InvokeDynamic support in Java 7+
+* [Apache ant] (http://ant.apache.org/) - This is the build tool currently used. Make sure the ant bin directory is on your PATH.
+* JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
+* JRuby, version 1.6.4 or later. Make sure the JRuby bin directory is on your PATH
+* Groovy. Make sure the Groovy bin directory is on your PATH.
+* Yard, for building the Ruby API documentation. To install yard 'jruby -S gem install rdiscount' followed by 'jruby -S gem install yard'
 
 ### To build core
 
 From root directory 'ant'
 
+### To build docs
+
+* To build javadoc: 'ant javadoc'
+* To build Ruby yard docs: 'ant yardoc'
+
 ### To run tests
 
-From root directory 'ant tests'
+* To run Java tests: 'ant javatests'
+* To run Ruby tests: 'ant rubytests'
+* To run all tests: 'ant tests'
 
 ### To build a distro
 
@@ -61,11 +70,35 @@ From root directory 'ant dist'
 
 The distro tar.gz will be created in the 'target' directory
 
+## Installation
+
+First you will need to obtain a distro. Once we have done some releases you'll be able to obtain a pre-made distro and
+install that. But, it's early days, so for now, you will have to build one yourself. See the previous section for how to do that.
+
+### Pre-requisites
+
+* Everyone will need JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
+* Operating system: Node.x currently runs on Linux and OSX. The only reason we don't say it runs on Windows yet is several shell scripts and we haven't got
+around to writine Windows batch file equivalents. If you're running on Windows best thing to do for now is to install a Linux VM using VMware Workstation (or whatever) and run it in that.
+
+#### Java API
+
+If you're just using the Java API you just need the JDK installed. If you want to run the Java examples from the distro, you will need
+Apache ant installed too.
+
+#### Ruby API
+
+If you're using the Ruby API you will also need to install JRuby, version 1.6.4 or later. Make sure the JRuby bin directory is on your PATH
+
+#### Groovy API
+
+If you're using the Groovy API you will also need to install Groovy. Make sure the Groovy bin directory is on your PATH.
+
 ### To install the distro
 
 Unzip the distro somewhere, e.g. in your home directory
 
-Make sure the bin directory from the distro is on your PATH
+Make sure the bin directory from the distro is on your PATH.
 
 ### To run node.x
 
@@ -87,6 +120,10 @@ Where my_ruby_script.rb is the script to execute.
 
 nodex-ruby takes the same arguments as the jruby command, so you can pass in -I etc as necessary, if you want to add extra
 stuff to the LOAD_PATH
+
+#### Groovy
+
+TODO
 
 ## Examples
 

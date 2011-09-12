@@ -16,6 +16,26 @@ require 'core/shared_data'
 
 module Nodex
 
+  # A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands
+  # as necessary to accomodate any bytes written to it.
+  #
+  # Buffers are used in many places in node.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
+  # {Websocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
+  #
+  # Buffer instances should always be created using the actory methods {#create} and {#create_from_str}.
+  #
+  # There are two ways to write data to a Buffer: The first method involves methods that take the form set_XXX.
+  # These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
+  # has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
+  # to be written. All positions are measured in bytes and start with zero.
+  #
+  # The second method involves methods that take the form append-XXX; these methods append data at the end of the buffer.
+  # Methods exist to both set and append all primitive types, String and  other instances of Buffer.
+  #
+  # Data can be read from a buffer by invoking methods which take the form get_XXX. These methods take a parameter
+  # representing the position in the Buffer from where to read data.
+  #
+  # @author {http://tfox.org Tim Fox}
   class Buffer
 
     private_class_method :new
@@ -25,26 +45,42 @@ module Nodex
     # as it is added to the map
     include SharedData::Immutable
 
+    # @private
     def initialize(j_buffer)
       @buffer = j_buffer
     end
 
-    def Buffer.create(size)
-      Buffer.new(org.nodex.java.core.buffer.Buffer.create(size))
+    # Creates a new empty buffer. The {#length} of the buffer immediately after creation will be zero.
+    # @param initial_size_hint [FixNum] is a hint to the system for how much memory to initially allocate to the buffer to prevent excessive automatic re-allocations as data is written to it.
+    def Buffer.create(initial_size_hint)
+      Buffer.new(org.nodex.java.core.buffer.Buffer.create(initial_size_hint))
     end
 
+    # Create a new Buffer from a String
+    # @param str [String] The String to encode into the Buffer
+    # @param enc [String] Encoding to use. Defaults to "UTF-8"
     def Buffer.create_from_str(str, enc = "UTF-8")
       Buffer.new(org.nodex.java.core.buffer.Buffer.create(str, enc))
     end
 
+    # Return a String representation of the buffer.
+    # @param enc [String] The encoding to use. Defaults to "UTF-8"
+    # @return [String] a String representation of the buffer.
     def to_s(enc = "UTF-8")
       @buffer.toString(enc)
     end
 
+    # Get the byte at position pos in the buffer.
+    # @param pos [FixNum] the position in the buffer from where to retrieve the byte
+    # @return [FixNum] the byte
     def get_byte(pos)
       @buffer.getByte(pos)
     end
 
+    # Get the fixnum represented by a sequence of bytes starting at position pos in the buffer.
+    # @param pos [FixNum] the position in the buffer from where to retrieve the FixNum.
+    # @param bytes [FixNum] the number of bytes to retrieve from position pos to create the FixNum. Valid values are 1, 2, 4 and 8.
+    # @return [FixNum] the FixNum
     def get_fixnum(pos, bytes)
       case bytes
         when 1
@@ -60,6 +96,10 @@ module Nodex
       end
     end
 
+    # Get the float represented by a sequence of bytes starting at position pos in the buffer.
+    # @param pos [Float] the position in the buffer from where to retrieve the Float.
+    # @param bytes [Float] the number of bytes to retrieve from position pos to create the Float. Valid values are 4 and 8.
+    # @return [Float] the Float
     def get_float(pos, bytes)
       case bytes
         when 4
@@ -71,10 +111,18 @@ module Nodex
       end
     end
 
+    # Appends a buffer to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
+    # @param buff [Buffer] the buffer to append.
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def append_buffer(buff)
       @buffer.appendBuffer(buff._to_java_buffer)
+      self
     end
 
+    # Appends a fixnum to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
+    # @param num [FixNum] the fixnum to append.
+    # @param bytes [FixNum] the number of bytes to write in the buffer to represent the fixnum. Valid values are 1, 2, 4 and 8.
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def append_fixnum(num, bytes)
       case bytes
         when 1
@@ -88,8 +136,13 @@ module Nodex
         else
           raise "bytes must be 1, 2, 4, or 8"
       end
+      self
     end
 
+    # Appends a float to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
+    # @param num [Float] the float to append.
+    # @param bytes [FixNum] the number of bytes to write in the buffer to represent the float. Valid values are 4 and 8.
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def append_float(num, bytes)
       case bytes
         when 4
@@ -101,10 +154,20 @@ module Nodex
       end
     end
 
+    # Appends a string to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
+    # @param str [String] the string to append.
+    # @param enc [String] the encoding to use. Defaults to "UTF-8"
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def append_str(str, enc = "UTF-8")
       @buffer.appendString(str, enc)
+      self
     end
 
+    # Sets bytes in the buffer to a representation of a fixnum. The buffer will expand as necessary to accomodate any bytes written.
+    # @param pos [FixNum] - the position in the buffer from where to start writing the fixnum
+    # @param num [FixNum]  - the fixnum to write
+    # @param bytes [FixNum] - the number of bytes to write to represent the fixnum. Valid values are 1, 2, 4, and 8
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def set_fixnum(pos, num, bytes)
       case bytes
         when 1
@@ -118,8 +181,14 @@ module Nodex
         else
           raise "bytes must be 1, 2, 4, or 8"
       end
+      self
     end
 
+    # Sets bytes in the buffer to a representation of a float. The buffer will expand as necessary to accomodate any bytes written.
+    # @param pos [FixNum] - the position in the buffer from where to start writing the float
+    # @param num [Float]  - the float to write
+    # @param bytes [FixNum] - the number of bytes to write to represent the float. Valid values are 4 and 8
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def set_float(pos, num, bytes)
       case bytes
         when 4
@@ -129,24 +198,37 @@ module Nodex
         else
           raise "bytes must be 4 or 8"
       end
+      self
     end
 
+    # Sets bytes in this buffer to the bytes of the specified buffer. The buffer will expand as necessary to accomodate any bytes written.
+    # @param pos [FixNum] - the position in this buffer from where to start writing the buffer
+    # @param buff [Buffer] - the buffer to write into this buffer
+    # @return [Buffer] a reference to self so multiple operations can be appended together.
     def set_bytes(pos, buff)
       @buffer.setBytes(pos, buff._to_java_buffer)
     end
 
+    # @return [FixNum] the length of this buffer, in bytes.
     def length
       @buffer.length
     end
 
+    # Get a copy of part of this buffer.
+    # @param start_pos [FixNum] - the position in this buffer from where to start the copy.
+    # @param end_pos [FixNum] - the copy will be made up to index end_pos - 1
+    # @return [Buffer] the copy
     def copy_part(start_pos, end_pos)
       Buffer.new(@buffer.copy(start_pos, end_pos))
     end
 
+    # Get a copy of the entire buffer.
+    # @return [Buffer] the copy
     def copy()
       Buffer.new(@buffer.copy())
     end
 
+    # @private
     def _to_java_buffer
       @buffer
     end
