@@ -184,7 +184,7 @@ module Nodex
 
   end
 
-  module FileSystem
+  class FileSystem
 
     def FileSystem.copy(from, to, &hndlr)
       org.nodex.java.core.file.FileSystem.instance.copy(from, to, hndlr)
