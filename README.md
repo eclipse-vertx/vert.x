@@ -43,7 +43,7 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 
 ### Pre-requisites
 
-* [Apache ant] (http://ant.apache.org/) - This is the build tool currently used. Make sure the ant bin directory is on your PATH.
+* Apache ant - This is the build tool currently used. Make sure the ant bin directory is on your PATH.
 * JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
 * JRuby, version 1.6.4 or later. Make sure the JRuby bin directory is on your PATH
 * Groovy. Make sure the Groovy bin directory is on your PATH.
@@ -78,8 +78,8 @@ install that. But, it's early days, so for now, you will have to build one yours
 ### Pre-requisites
 
 * Everyone will need JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
-* Operating system: Node.x currently runs on Linux and OSX. The only reason we don't say it runs on Windows yet is several shell scripts and we haven't got
-around to writine Windows batch file equivalents. If you're running on Windows best thing to do for now is to install a Linux VM using VMware Workstation (or whatever) and run it in that.
+* Operating system: Node.x currently runs on Linux and OSX. The only reason we don't say it runs on Windows yet is we have several shell scripts and we haven't got
+around to writine Windows batch file equivalents. To be honest, if you're on Windows, the best way to develop is by installing a Linux virtual machine and using that.
 
 #### Java API
 
@@ -133,7 +133,7 @@ Java examples are [here] (https://github.com/purplefox/node.x/tree/master/src/ex
 
 Examples must be run from a distro. First install the distro, then cd to the examples/java directory.
 
-Then read the README
+Then read the README that's there.
 
 ### Ruby
 
@@ -141,7 +141,7 @@ Ruby examples are [here] (https://github.com/purplefox/node.x/tree/master/src/ex
 
 Examples must be run from a distro. First install the distro, then cd to the examples/ruby directory.
 
-Then read the README
+Then read the README that's there.
 
 ## Development discussions
 
