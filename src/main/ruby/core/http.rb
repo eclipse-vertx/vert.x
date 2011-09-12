@@ -180,7 +180,7 @@ module Nodex
       @j_req = j_req
     end
 
-    private :initialize
+
 
     def put_header(key, value)
       @j_req.putHeader(key, value)
@@ -351,7 +351,7 @@ module Nodex
       @j_req
     end
 
-    private :initialize
+
   end
 
   class HttpServerRequest
@@ -429,7 +429,7 @@ module Nodex
       @j_req
     end
 
-    private :initialize
+
   end
 
   class HttpServerResponse
@@ -511,7 +511,7 @@ module Nodex
       @j_req
     end
 
-    private :initialize
+
 
   end
 
@@ -573,7 +573,7 @@ module Nodex
       @j_resp.close
     end
 
-    private :initialize
+
 
   end
 end

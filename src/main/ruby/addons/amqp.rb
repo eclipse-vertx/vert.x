@@ -35,8 +35,6 @@ module Amqp
       @java_client.connect(ConnectionCallback.new(connect_block))
     end
 
-    private :initialize
-
     class ConnectionCallback < org.nodex.java.core.amqp.AmqpConnectHandler
       def initialize(connect_block)
         super()
@@ -47,7 +45,7 @@ module Amqp
         @connect_block.call(Connection.new(connection))
       end
 
-      private :initialize
+
     end
   end
 
@@ -65,7 +63,7 @@ module Amqp
       @java_connection.close
     end
 
-    private :initialize
+
 
     class ChannelCallback < org.nodex.java.core.amqp.ChannelHandler
       def initialize(channel_block)
@@ -77,7 +75,7 @@ module Amqp
         @channel_block.call(Channel.new(channel))
       end
 
-      private :initialize
+
     end
   end
 
@@ -115,7 +113,7 @@ module Amqp
       @java_channel.close
     end
 
-    private :initialize
+
 
     class MessageHandler < org.nodex.java.core.amqp.AmqpMsgCallback
       def initialize(messageHandler)
@@ -128,7 +126,7 @@ module Amqp
         @messageHandler.call(Props.from_java_props(props), java_string)
       end
 
-      private :initialize
+
     end
 
     class CompleteCallback < org.nodex.java.core.Runnable
@@ -141,7 +139,7 @@ module Amqp
         @callback.call
       end
 
-      private :initialize
+
     end
   end
 
@@ -225,9 +223,9 @@ module Amqp
         @channel_handler.call(Channel.new(java_channel))
       end
 
-      private :initialize
+
     end
 
-    private :initialize
+
   end
 end

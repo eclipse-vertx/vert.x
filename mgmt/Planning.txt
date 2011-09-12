@@ -78,6 +78,7 @@ TODO
 18) Scala delimited continuations for making async code appear synchronous
 19) Make Java nodex methods static
 20) Package manager and deployment
+21) ConnectionBase - do we really need this? The abstraction is a bit messy
 
 
 

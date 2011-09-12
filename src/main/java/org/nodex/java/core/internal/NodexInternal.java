@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core;
+package org.nodex.java.core.internal;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import org.nodex.java.core.Nodex;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public interface NodexInternal extends Nodex {
 
   static NodexInternal instance = new NodexImpl();

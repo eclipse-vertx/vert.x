@@ -37,6 +37,7 @@
     <property name="tests-src" value="src/tests"/>
 
     <property name="javadoc-dir" value="docs/java/api"/>
+    <property name="rdoc-dir" value="docs/ruby/api"/>
 
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
@@ -69,7 +70,7 @@
 
     <target name="compile-core" depends="init" description="compile the source for the core">
         <mkdir dir="${core-target}"/>
-        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on"/>
+        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on" includeantruntime="false"/>
     </target>
 
     <target name="jar-core" depends="compile-core" description="generate the core jar">
@@ -102,15 +103,24 @@
 
     <target name="javadoc" depends="compile-core">
         <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="Node.x Java API"
-                classpathref="core-lib-classpath" Public="true">
-            <fileset dir="${core-src}" defaultexcludes="yes">
+                classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}" packagenames="org.nodex.java.core.*"
+                excludepackagenames="org.nodex.java.core.internal">
+            <!-- <fileset dir="${core-src}" defaultexcludes="yes">
                 <include name="org/nodex/java/core/**"/>
             </fileset>
+            -->
             <doctitle><![CDATA[<h1>Node.x Java API</h1>]]></doctitle>
         </javadoc>
     </target>
 
-    <target name="dist" depends="clean, jar-core, javadoc">
+    <target name="rdoc">
+        <exec executable="rdoc">
+            <arg line="src/main/ruby/ --main src/main/ruby/nodex.rb --exclude src/main/ruby/addons/ --op
+            target/docs/ruby/api"/>
+        </exec>
+    </target>
+
+    <target name="dist" depends="clean, jar-core, javadoc, rdoc">
         <mkdir dir="${dist-build}"/>
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
 
@@ -155,10 +165,10 @@
         <copy file="LICENSE.txt" todir="${dist-build}"/>
         <copy file="README.md" todir="${dist-build}"/>
 
-        <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead -->
-        <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/>
+        <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead
+        <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/> -->
 
-        <tar destfile="${target}/node.x-${version-number}.tar">
+        <tar destfile="${target}/node.x-${version-number}.tar" longfile="gnu">
           <tarfileset dir="${dist-build-base}" filemode="755">
             <include name="**/bin/**"/>
           </tarfileset>

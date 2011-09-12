@@ -16,6 +16,8 @@
 
 package org.nodex.tests.core.stdio;
 
+import org.nodex.java.core.Completion;
+import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.buffer.Buffer;
@@ -52,9 +54,9 @@ public class StdioTest extends TestBase {
 
         InStream in = new InStream(is);
 
-        in.read(1000, new EventHandler<Buffer>() {
-          public void onEvent(Buffer data) {
-            azzert(Utils.buffersEqual(buffin, data));
+        in.read(1000, new CompletionHandler<Buffer>() {
+          public void onEvent(Completion<Buffer> compl) {
+            azzert(Utils.buffersEqual(buffin, compl.result));
             latch.countDown();
           }
         });

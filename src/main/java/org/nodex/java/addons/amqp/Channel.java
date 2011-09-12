@@ -19,7 +19,7 @@ package org.nodex.java.addons.amqp;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import org.nodex.java.core.NodexImpl;
+import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.composition.Composable;
 
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class Channel {
 
   public void declareQueue(final String queueName, final boolean durable, final boolean exclusive, final boolean autoDelete,
                            final Runnable doneCallback) {
-    NodexImpl.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.queueDeclare(queueName, durable, exclusive, autoDelete, null);
@@ -73,7 +73,7 @@ public class Channel {
   }
 
   public void subscribe(final String queueName, final boolean autoAck, final AmqpMsgCallback messageCallback) {
-    NodexImpl.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.basicConsume(queueName, autoAck, "blah",
@@ -165,7 +165,7 @@ public class Channel {
 
 
   public void close(final Runnable doneCallback) {
-    NodexImpl.instance.executeInBackground(new Runnable() {
+    NodexInternal.instance.executeInBackground(new Runnable() {
       public void run() {
         try {
           channel.close();

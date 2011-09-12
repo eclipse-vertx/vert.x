@@ -48,9 +48,9 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.NodexInternal;
-import org.nodex.java.core.SSLBase;
-import org.nodex.java.core.ThreadSourceUtils;
+import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.internal.SSLBase;
+import org.nodex.java.core.internal.ThreadSourceUtils;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
