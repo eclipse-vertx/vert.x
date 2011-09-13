@@ -14,8 +14,6 @@
 
 require 'delegate'
 
-include Java
-
 module Nodex
 
   class SharedData

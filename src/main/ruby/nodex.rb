@@ -14,12 +14,14 @@
 
 include Java
 
+require 'core/global_handlers'
+require 'core/timers'
 require 'core/buffer'
 require 'core/file_system'
 require 'core/http'
 require 'core/net'
 require 'core/parsetools'
-require 'core/pump'
+require 'core/streams'
 require 'core/shared_data'
 
 # The Nodex modules defines the top level namespace within which all Nodex classes are found.
@@ -45,37 +47,15 @@ module Nodex
 
   end
 
-  def Nodex.go(&block)
+  # Runs a block in an event loop. The event loop will be chosen from all available loops by the system.
+  # Most node.x operations have to be run in an event loop, so this method is usually used at the beginning of your
+  # script to start things running.
+  # This method will accept either a Proc or a block.
+  # @param [Proc] proc a Proc to run
+  # @param [Block] block a block to run.
+  def Nodex.go(proc = nil, &block)
+    block = proc if proc
     TheMain.new(block).run
   end
-
-  def Nodex.set_timer(delay, proc = nil, &hndlr)
-    hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.setTimer(delay, hndlr)
-  end
-
-  def Nodex.set_periodic(delay, proc = nil, &hndlr)
-    hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.setPeriodic(delay, hndlr)
-  end
-
-  def Nodex.cancel_timer(id)
-    org.nodex.java.core.Nodex.instance.cancelTimer(id)
-  end
-
-  def Nodex.register_handler(proc = nil, &hndlr)
-    hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.registerHandler(hndlr)
-  end
-
-  def Nodex.unregister_handler(actor_id)
-    org.nodex.java.core.Nodex.instance.unregisterHandler(actor_id)
-  end
-
-  def Nodex.send_to_handler(actor_id, msg)
-    msg = msg.copy if msg.is_a?(Buffer)
-    org.nodex.java.core.Nodex.instance.sendToHandler(actor_id, msg)
-  end
-
 
 end

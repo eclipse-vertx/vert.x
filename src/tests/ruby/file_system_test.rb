@@ -60,7 +60,7 @@ class FileSystemTest < Test::Unit::TestCase
     Nodex::go {
       filename = FileDir + "/test-file.txt"
       FileSystem::create_file(filename) {
-        FileSystem::stat(filename) { |compl|
+        FileSystem::props(filename) { |compl|
           assert(compl.succeeded)
           stats = compl.result
           puts "creation time #{stats.creation_time}"
@@ -120,4 +120,43 @@ class FileSystemTest < Test::Unit::TestCase
     }
     assert(latch.await(5))
   end
+
+  def test_async_file_streams
+    latch = Utils::Latch.new 1
+    filename = FileDir + "/somefile.txt"
+    Nodex::go {
+      FileSystem::open(filename) { |compl|
+        assert(compl.succeeded)
+        file = compl.result
+        num_chunks = 100;
+        chunk_size = 1000;
+        tot_buff = Buffer.create(0)
+        write_stream = file.write_stream
+        for i in 0..num_chunks - 1
+          buff = Utils.gen_buffer(chunk_size)
+          tot_buff.append_buffer(buff)
+          write_stream.write_buffer(buff)
+        end
+        file.close{
+          FileSystem::open(filename) { |compl|
+            assert(compl.succeeded)
+            file = compl.result
+            read_stream = file.read_stream
+            tot_read = Buffer.create(0)
+            read_stream.data_handler{ |data|
+              tot_read.append_buffer(data)
+            }
+            read_stream.end_handler{
+              assert(Utils.buffers_equal(tot_buff, tot_read))
+              file.close {
+                latch.countdown
+              }
+            }
+          }
+        }
+      }
+    }
+    assert(latch.await(5))
+  end
+
 end

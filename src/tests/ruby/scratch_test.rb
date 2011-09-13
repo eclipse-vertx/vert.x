@@ -2,20 +2,22 @@ require 'test/unit'
 
 class ScratchTest < Test::Unit::TestCase
 
-  class SomeClass
 
-
-    def headers=(key, val)
-      []
-      puts "invoked headers= with #{key} #{val}"
+  module Wibble
+    def foo
+      self
     end
+  end
 
+  class Wobble
+    include Wibble
   end
 
   def test_foo
-    sc = SomeClass.new
 
-    sc.headers["foo"] = "bar"
+    w = Wobble.new
+
+    puts "self is #{w.foo}"
 
 
   end
