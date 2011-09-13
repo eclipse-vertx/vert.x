@@ -16,37 +16,71 @@ require 'delegate'
 
 module Nodex
 
+  # A mixin module which marks a class as immutable and therefore allows it to be stored in any shared data structure.
+  # Use this at your own risk. You need to make sure your class really is
+  # immutable before you mark it.
+  # @author {http://tfox.org Tim Fox}
+  module Immutable
+    include org.nodex.java.core.Immutable
+  end
+
+  # Sometimes it is desirable to share immutable data between different event loops, for example to implement a
+  # cache of data.
+  #
+  # This class allows instances of shared data structures to be looked up and used from different event loops.
+  # The data structures themselves will only allow certain data types to be stored into them. This shields the
+  # user from worrying about any thread safety issues might occur if mutable objects were shared between event loops.
+  #
+  # The following types can be stored in a shared data structure:
+  #
+  #   String
+  #   FixNum
+  #   Float
+  #   {Buffer} this will be automatically copied, and the copy will be stored in the structure.
+  #   {Immutable}
+  #
+  # @author {http://tfox.org Tim Fox}
   class SharedData
 
-    module Immutable
-      include org.nodex.java.core.Immutable
-    end
-
+    # Return a Hash with the specific name. All invocations of this method with the same value of name
+    # are guaranteed to return the same Hash instance.
+    # The Hash instance returned is a lock free Hash which supports a very high degree of concurrency.
+    # @param [String] key. Get the hash with the key.
+    # @return [Hash] the hash.
     def SharedData.get_hash(key)
       map = org.nodex.java.core.shared.SharedData.getMap(key)
       SharedHash.new(map)
     end
 
+    # Return a Set with the specific name. All invocations of this method with the same value of name
+    # are guaranteed to return the same Set instance.
+    # The Set instance returned is a lock free Set which supports a very high degree of concurrency.
+    # @param [String] key. Get the set with the key.
+    # @return [SharedSet] the set.
     def SharedData.get_set(key)
       set = org.nodex.java.core.shared.SharedData.getSet(key)
       SharedSet.new(set)
     end
 
-    def SharedData.get_counter(key)
-      org.nodex.java.core.shared.SharedData.getCounter(key)
-    end
+#    def SharedData.get_counter(key)
+#      org.nodex.java.core.shared.SharedData.getCounter(key)
+#    end
 
+    # Remove the hash
+    # @param [String] key. The key of the hash.
     def SharedData.remove_hash(key)
       org.nodex.java.core.shared.SharedData.removeMap(key)
     end
 
+    # Remove the set
+    # @param [String] key. The key of the set.
     def SharedData.remove_set(key)
       org.nodex.java.core.shared.SharedData.removeSet(key)
     end
 
-    def SharedData.remove_counter(key)
-      org.nodex.java.core.shared.SharedData.removeCounter(key)
-    end
+#    def SharedData.remove_counter(key)
+#      org.nodex.java.core.shared.SharedData.removeCounter(key)
+#    end
 
     # We need to copy certain objects because they're not immutable
     def SharedData.check_copy(obj)
@@ -58,6 +92,7 @@ module Nodex
       obj
     end
 
+    # @private
     class SharedHash < DelegateClass(Hash)
 
       def initialize(hash)
@@ -98,6 +133,7 @@ module Nodex
 
     end
 
+    # TODO
     class SharedSet
       def initialize(j_set)
         @j_set = j_set
@@ -166,8 +202,6 @@ module Nodex
       def size
         @j_set.size
       end
-
-
 
     end
   end

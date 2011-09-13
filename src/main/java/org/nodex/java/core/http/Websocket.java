@@ -31,7 +31,7 @@ import org.nodex.java.core.streams.WriteStream;
  * instance when a client succeeds in a websocket handshake with a server. Once an instance has been obtained it can
  * be used to send or receive buffers of data from the connection, a bit like a TCP socket.</p>
  *
- * <p>Instances of this class can only be used from the event loop thread which created the corresponding {@link HttpClientRequest}</p>
+ * <p>Instances of this class can only be used from the event loop thread which created it.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
