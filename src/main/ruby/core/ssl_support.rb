@@ -12,31 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include Java
 
 module Nodex
 
-  class Pump
-    def initialize(read_stream, write_stream)
-      j_rs = read_stream._to_read_stream
-      j_ws = write_stream._to_write_stream
-      @j_pump = org.nodex.java.core.streams.Pump.new(j_rs, j_ws)
+  module SSLSupport
+
+    def ssl=(val)
+      @j_del.setSSL(val)
+      self
     end
 
-    def write_queue_max_size=(val)
-      @j_pump.setWriteQueueMaxSize(val)
+    def key_store_path=(val)
+      @j_del.setKeyStorePath(val)
+      self
     end
 
-    def start
-      @j_pump.start
+    def key_store_password=(val)
+      @j_del.setKeyStorePassword(val)
+      self
     end
 
-    def stop
-      @j_pump.stop
+    def trust_store_path=(val)
+      @j_del.setTrustStorePath(val)
+      self
     end
 
-    def bytes_pumped
-      @j_pump.getBytesPumped
+    def trust_store_password=(val)
+      @j_del.setTrustStorePassword(val)
+      self
     end
+
   end
 end

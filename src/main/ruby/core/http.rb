@@ -12,163 +12,129 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include Java
+require 'core/streams'
+require 'core/ssl_support'
 
 module Nodex
 
   class HttpServer
 
+    include SSLSupport
+
     def initialize
-      @j_server = org.nodex.java.core.http.HttpServer.new
+      @j_del = org.nodex.java.core.http.HttpServer.new
     end
 
     def request_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_server.requestHandler { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+      @j_del.requestHandler { |j_del| hndlr.call(HttpServerRequest.new(j_del)) }
     end
 
     def websocket_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_server.websocketHandler { |ws| hndlr.call(Websocket.new(ws)) }
+      @j_del.websocketHandler { |ws| hndlr.call(Websocket.new(ws)) }
     end
 
     def listen(port, host = "0.0.0.0")
-      @j_server.listen(port, host)
-    end
-
-    def ssl=(val)
-      @j_server.setSSL(val)
-    end
-
-    def key_store_path=(val)
-      @j_server.setKeyStorePath(val)
-    end
-
-    def key_store_password=(val)
-      @j_server.setKeyStorePassword(val)
-    end
-
-    def trust_store_path=(val)
-      @j_server.setTrustStorePath(val)
-    end
-
-    def trust_store_password=(val)
-      @j_server.setTrustStorePassword(val)
+      @j_del.listen(port, host)
     end
 
     def client_auth_required=(val)
-      @j_server.setClientAuthRequired(val)
+      @j_del.setClientAuthRequired(val)
     end
 
     def close(&hndlr)
-      @j_server.close(hndlr)
+      @j_del.close(hndlr)
     end
   end
 
   class HttpClient
+
+    include SSLSupport
+
     def initialize
-      @j_client = org.nodex.java.core.http.HttpClient.new
+      @j_del = org.nodex.java.core.http.HttpClient.new
     end
 
     def exception_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_client.exceptionHandler(hndlr)
+      @j_del.exceptionHandler(hndlr)
     end
 
     def max_pool_size=(val)
-      @j_client.setMaxPoolSize(val)
+      @j_del.setMaxPoolSize(val)
     end
 
     def max_pool_size
-      @j_client.getMaxPoolSize
+      @j_del.getMaxPoolSize
     end
 
     def keep_alive=(val)
-      @j_client.setKeepAlive(val)
-    end
-
-    def ssl=(val)
-      @j_client.setSSL(val)
-    end
-
-    def key_store_path=(val)
-      @j_client.setKeyStorePath(val)
-    end
-
-    def key_store_password=(val)
-      @j_client.setKeyStorePassword(val)
-    end
-
-    def trust_store_path=(val)
-      @j_client.setTrustStorePath(val)
-    end
-
-    def trust_store_password=(val)
-      @j_client.setTrustStorePassword(val)
+      @j_del.setKeepAlive(val)
     end
 
     def trust_all=(val)
-      @j_client.setTrustAll(val)
+      @j_del.setTrustAll(val)
     end
 
     def port=(val)
-      @j_client.setPort(val)
+      @j_del.setPort(val)
     end
 
     def host=(val)
-      @j_client.setHost(val)
+      @j_del.setHost(val)
     end
 
     def connect_web_socket(uri, headers = nil, &hndlr)
-      @j_client.connectWebsocket(uri, headers) { |j_ws| hndlr.call(Websocket.new(j_ws)) }
+      @j_del.connectWebsocket(uri, headers) { |j_ws| hndlr.call(Websocket.new(j_ws)) }
     end
 
     def get_now(uri, headers = nil, &hndlr)
-      @j_client.getNow(uri, headers, resp_handler(hndlr))
+      @j_del.getNow(uri, headers, resp_handler(hndlr))
     end
 
     def options(uri, &hndlr)
-      HttpClientRequest.new(@j_client.options(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.options(uri, resp_handler(hndlr)))
     end
 
     def get(uri, &hndlr)
-      HttpClientRequest.new(@j_client.get(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.get(uri, resp_handler(hndlr)))
     end
 
     def head(uri, &hndlr)
-      HttpClientRequest.new(@j_client.head(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.head(uri, resp_handler(hndlr)))
     end
 
     def post(uri, &hndlr)
-      HttpClientRequest.new(@j_client.post(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.post(uri, resp_handler(hndlr)))
     end
 
     def put(uri, &hndlr)
-      HttpClientRequest.new(@j_client.put(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.put(uri, resp_handler(hndlr)))
     end
 
     def delete(uri, &hndlr)
-      HttpClientRequest.new(@j_client.delete(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.delete(uri, resp_handler(hndlr)))
     end
 
     def trace(uri, &hndlr)
-      HttpClientRequest.new(@j_client.trace(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.trace(uri, resp_handler(hndlr)))
     end
 
     def connect(uri, &hndlr)
-      HttpClientRequest.new(@j_client.connect(uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.connect(uri, resp_handler(hndlr)))
     end
 
     def request(method, uri, &hndlr)
-      HttpClientRequest.new(@j_client.request(method, uri, resp_handler(hndlr)))
+      HttpClientRequest.new(@j_del.request(method, uri, resp_handler(hndlr)))
     end
 
     def close
-      @j_client.close
+      @j_del.close
     end
 
     def resp_handler(hndlr)
-      Proc.new { |j_resp| hndlr.call(HttpClientResponse.new(j_resp)) }
+      Proc.new { |j_del| hndlr.call(HttpClientResponse.new(j_del)) }
     end
 
     private :resp_handler
@@ -176,83 +142,62 @@ module Nodex
   end
 
   class HttpClientRequest
-    def initialize(j_req)
-      @j_req = j_req
+
+    include WriteStream
+
+    def initialize(j_del)
+      @j_del = j_del
     end
 
-
-
     def put_header(key, value)
-      @j_req.putHeader(key, value)
+      @j_del.putHeader(key, value)
       self
     end
 
     def put_all_headers(headers)
       headers.each_pair do |k, v|
-        @j_req.putHeader(k, v)
+        @j_del.putHeader(k, v)
       end
       self
     end
 
     def write_buffer(chunk, &hndlr)
-      @j_req.writeBuffer(chunk._to_java_buffer)
+      @j_del.writeBuffer(chunk._to_java_buffer)
       self
     end
 
     def write_str(str, enc = nil, &hndlr)
       if enc == nil
-        @j_req.write(str)
+        @j_del.write(str)
       else
-        @j_req.write(str, enc)
+        @j_del.write(str, enc)
       end
       self
     end
 
-    def write_queue_max_size=(val)
-      @j_req.setWriteQueueMaxSize(val)
-      self
-    end
-
-    def write_queue_full?
-      @j_req.writeQueueFull
-    end
-
-    def drain_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_req.drainHandler(hndlr)
-      self
-    end
-
-    def exception_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_req.exceptionHandler(hndlr)
-      self
-    end
-
     def send_head
-      @j_req.sendHead
+      @j_del.sendHead
       self
     end
 
     def end
-      @j_req.end
+      @j_del.end
     end
 
     def chunked=(val)
-      @j_req.setChunked(val)
+      @j_del.setChunked(val)
       self
-    end
-
-    def _to_write_stream
-      @j_req
     end
 
   end
 
   class HttpClientResponse
-    def initialize(j_resp)
-      @j_resp = j_resp
-      @status_code = j_resp.statusCode
+
+    include ReadStream
+
+    def initialize(j_del)
+      @j_del = j_del
+      @status_code = j_del.statusCode
     end
 
     def status_code
@@ -260,12 +205,12 @@ module Nodex
     end
 
     def header(key)
-      @j_resp.getHeader(key)
+      @j_del.getHeader(key)
     end
 
     def headers
       if @headers == nil
-        hdrs = @j_resp.getHeaders
+        hdrs = @j_del.getHeaders
         iter = hdrs.entrySet.iterator
         @headers = {}
         while iter.hasNext
@@ -278,7 +223,7 @@ module Nodex
 
     def header_names
       if @header_names == nil
-        names = @j_resp.getHeaderNames
+        names = @j_del.getHeaderNames
         iter = names.iterator
         @header_names = Set.new
         while iter.hasNext
@@ -290,12 +235,12 @@ module Nodex
     end
 
     def trailer(key)
-      @j_resp.getTrailer(key)
+      @j_del.getTrailer(key)
     end
 
     def trailers
       if @trailers == nil
-        hdrs = @j_resp.getHeaders
+        hdrs = @j_del.getHeaders
         iter = hdrs.iterator
         @trailers = {}
         while iter.hasNext
@@ -308,7 +253,7 @@ module Nodex
 
     def trailer_names
       if @trailer_names == nil
-        names = @j_resp.getTrailerNames
+        names = @j_del.getTrailerNames
         iter = names.iterator
         @trailer_names = Set.new
         while iter.hasNext
@@ -319,53 +264,28 @@ module Nodex
       @trailer_names
     end
 
-    def data_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_resp.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
-    end
-
-    def end_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_resp.endHandler(hndlr)
-    end
-
-    def exception_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_resp.exceptionHandler(hndlr)
-    end
-
     def continue_handler
       hndlr = proc if proc
-      @j_resp.continueHandler(hndlr)
+      @j_del.continueHandler(hndlr)
     end
-
-    def pause
-      @j_resp.pause
-    end
-
-    def resume
-      @j_resp.resume
-    end
-
-    def _to_read_stream
-      @j_req
-    end
-
 
   end
 
   class HttpServerRequest
-    def initialize(j_req)
-      @j_req = j_req
-      @resp = HttpServerResponse.new(@j_req.response)
+
+    include ReadStream
+
+    def initialize(j_del)
+      @j_del = j_del
+      @resp = HttpServerResponse.new(@j_del.response)
     end
 
     def method
-      @j_req.method
+      @j_del.method
     end
 
     def uri
-      @j_req.uri
+      @j_del.uri
     end
 
     def response
@@ -373,12 +293,12 @@ module Nodex
     end
 
     def header(key)
-      @j_req.getHeader(key)
+      @j_del.getHeader(key)
     end
 
     def headers
       if (@headers == nil)
-        hdrs = @j_req.getHeaders
+        hdrs = @j_del.getHeaders
         iter = hdrs.entrySet.iterator
         @headers = {}
         while iter.hasNext
@@ -391,7 +311,7 @@ module Nodex
 
     def header_names
       if (@header_names == nil)
-        names = @j_req.getHeaderNames
+        names = @j_del.getHeaderNames
         iter = names.iterator
         @header_names = Set.new
         while iter.hasNext
@@ -402,178 +322,92 @@ module Nodex
       @header_names
     end
 
-    def data_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_req.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
-    end
-
-    def end_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_req.endHandler(hndlr)
-    end
-
-    def exception_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_req.exceptionHandler(hndlr)
-    end
-
-    def pause
-      @j_req.pause
-    end
-
-    def resume
-      @j_req.resume
-    end
-
-    def _to_read_stream
-      @j_req
-    end
-
-
   end
 
   class HttpServerResponse
-    def initialize(j_resp)
-      @j_resp = j_resp
+
+    include WriteStream
+
+    def initialize(j_del)
+      @j_del = j_del
     end
 
     def status_code=(val)
-      @j_resp.statusCode = val
+      @j_del.statusCode = val
     end
 
     def put_header(key, value)
-      @j_resp.putHeader(key, value)
+      @j_del.putHeader(key, value)
       self
     end
 
     def put_all_headers(headers)
       headers.each_pair do |k, v|
-        @j_resp.putHeader(k, v)
+        @j_del.putHeader(k, v)
       end
       self
     end
 
     def put_trailer(key, value)
-      @j_resp.putTrailer(key, value)
+      @j_del.putTrailer(key, value)
       self
     end
 
     def put_all_trailers(headers)
       trailers.each_pair do |k, v|
-        @j_resp.putTrailer(k, v)
+        @j_del.putTrailer(k, v)
       end
       self
     end
 
-    def write_queue_max_size=(val)
-      @j_resp.setWriteQueueMaxSize(val)
-      self
-    end
-
-    def write_queue_full?
-      @j_resp.writeQueueFull
-    end
-
-    def drain_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_resp.drainHandler(hndlr)
-    end
-
-    def exception_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_resp.exceptionHandler(hndlr)
-    end
-
     def write_buffer(chunk, &hndlr)
-      @j_resp.writeBuffer(chunk._to_java_buffer)
+      @j_del.writeBuffer(chunk._to_java_buffer)
       self
     end
 
     def write_str(str, enc = nil, &hndlr)
-      @j_resp.write(str, enc)
+      @j_del.write(str, enc)
       self
     end
 
     def end
-      @j_resp.end
+      @j_del.end
     end
 
     def send_file(path)
-      @j_resp.sendFile(path)
+      @j_del.sendFile(path)
     end
 
     def chunked=(val)
-      @j_resp.setChunked(val)
+      @j_del.setChunked(val)
       self
     end
-
-    def _to_write_stream
-      @j_req
-    end
-
-
 
   end
 
   class Websocket
 
+    include ReadStream, WriteStream
+
     def uri
-      @j_ws.uri
+      @j_del.uri
     end
 
     def initialize(j_ws)
-      @j_ws = j_ws
+      @j_del = j_ws
     end
 
     def write_binary_frame(buffer)
-      @j_ws.writeBinaryFrame(buffer._to_java_buffer)
+      @j_del.writeBinaryFrame(buffer._to_java_buffer)
     end
 
     def write_text_frame(str)
-      @j_ws.writeTextFrame(str)
-    end
-
-    def data_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_ws.dataHandler { |j_buff| hndlr.call(Buffer.new(j_buff)) }
-    end
-
-    def exception_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_ws.exceptionHandler(hndlr)
-    end
-
-    def drain_handler(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_ws.drainHandlerHandler(hndlr)
-    end
-
-    def pause
-      @j_ws.pause
-    end
-
-    def resume
-      @j_ws.resume
-    end
-
-    def write_queue_max_size=(val)
-      @j_resp.setWriteQueueMaxSize(val)
-      self
-    end
-
-    def write_queue_full?
-      @j_resp.writeQueueFull
-    end
-
-    def write_buffer(buffer)
-      write_binary_frame(buffer)
+      @j_del.writeTextFrame(str)
     end
 
     def close
-      @j_resp.close
+      @j_del.close
     end
-
-
 
   end
 end

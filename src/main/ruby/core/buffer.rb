@@ -22,7 +22,7 @@ module Nodex
   # Buffers are used in many places in node.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
   # {Websocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
   #
-  # Buffer instances should always be created using the actory methods {#create} and {#create_from_str}.
+  # Buffer instances should always be created using the factory methods {Buffer.create} and {Buffer.create_from_str}.
   #
   # There are two ways to write data to a Buffer: The first method involves methods that take the form set_XXX.
   # These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
