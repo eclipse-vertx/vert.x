@@ -133,8 +133,12 @@ module Nodex
 
     end
 
-    # TODO
+    # A highly concurrent set
+    #
+    # @author {http://tfox.org Tim Fox}
     class SharedSet
+
+      # @private
       def initialize(j_set)
         @j_set = j_set
       end
@@ -147,16 +151,23 @@ module Nodex
         end
       end
 
+      # @private
       def _to_java_set
         @j_set
       end
 
+      # Add an object to the set
+      # @param [Object] obj. The object to add
+      # @return [SharedSet} self
       def add(obj)
         obj = SharedData.check_copy(obj)
         @j_set.add(obj)
         self
       end
 
+      # Add an object to the set
+      # @param [Object] obj. The object to add
+      # @return [SharedSet] self if the object is not already in the set, otherwise nil
       def add?(obj)
         obj = SharedData.check_copy(obj)
         if !@j_set.contains(obj)
@@ -167,14 +178,20 @@ module Nodex
         end
       end
 
+      # Clear the set
       def clear
         @j_set.clear
       end
 
+      # Delete an object from the set
+      # @param [Object] obj. The object to delete
       def delete(obj)
         @j_set.remove(obj)
       end
 
+      # Delete an object from the set
+      # @param [Object] obj. The object to delete
+      # @return [SharedSet] self if the object was in the set before the remove, nil otherwise.
       def delete?(obj)
         if @j_set.contains(obj)
           @j_set.remove(obj)
@@ -184,6 +201,8 @@ module Nodex
         end
       end
 
+      # Call the block for every element of the set
+      # @param [Blovk] block. The block to call.
       def each(&block)
         iter = @j_set.iterator
         while iter.hasNext do
@@ -191,14 +210,19 @@ module Nodex
         end
       end
 
+      # @return [Boolean] true if the set is empty
       def empty?
         @j_set.isEmpty
       end
 
+      # Does the set contain an element?
+      # @param [Object] obj, the object to check if the set contains
+      # @return [Boolean] true if the object is contained in the set
       def include?(obj)
         @j_set.contains(obj)
       end
 
+      # @return [FixNum] The number of elements in the set
       def size
         @j_set.size
       end
