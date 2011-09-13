@@ -43,7 +43,7 @@ module Nodex
     # We include this so we can put a buffer in a shared data structure.
     # This class isn't actually immutable but it doesn't matter since it will get copied automatically
     # as it is added to the map
-    include SharedData::Immutable
+    include Immutable
 
     # @private
     def initialize(j_buffer)

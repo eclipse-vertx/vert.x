@@ -271,7 +271,7 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Ends the response. If no data has been written to the request body, the actual request won't get written until this method gets called.<p>
+   * Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.<p>
    * Once the response has ended, it cannot be used any more, and if keep alive is true the underlying connection will
    * be closed.
    */

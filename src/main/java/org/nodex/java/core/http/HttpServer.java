@@ -79,8 +79,6 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * <p>An {@code HttpServer} instance can only be used from the event loop that created it.</p>
  *
- * <p>Instances of this class can only be used from the event loop thread which created the corresponding {@link HttpClientRequest}</p>
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServer extends SSLBase {
