@@ -195,6 +195,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setSSL(boolean ssl) {
+    checkThread();
     return (HttpServer)super.setSSL(ssl);
   }
 
@@ -202,6 +203,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setKeyStorePath(String path) {
+    checkThread();
     return (HttpServer)super.setKeyStorePath(path);
   }
 
@@ -209,6 +211,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setKeyStorePassword(String pwd) {
+    checkThread();
     return (HttpServer)super.setKeyStorePassword(pwd);
   }
 
@@ -216,6 +219,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setTrustStorePath(String path) {
+    checkThread();
     return (HttpServer)super.setTrustStorePath(path);
   }
 
@@ -223,6 +227,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setTrustStorePassword(String pwd) {
+    checkThread();
     return (HttpServer)super.setTrustStorePassword(pwd);
   }
 
@@ -230,6 +235,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setClientAuthRequired(boolean required) {
+    checkThread();
     return (HttpServer)super.setClientAuthRequired(required);
   }
 
@@ -237,6 +243,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setTcpNoDelay(boolean tcpNoDelay) {
+    checkThread();
     return (HttpServer)super.setTcpNoDelay(tcpNoDelay);
   }
 
@@ -244,6 +251,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setSendBufferSize(int size) {
+    checkThread();
     return (HttpServer)super.setSendBufferSize(size);
   }
 
@@ -251,6 +259,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setReceiveBufferSize(int size) {
+    checkThread();
     return (HttpServer)super.setReceiveBufferSize(size);
   }
 
@@ -258,6 +267,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setTCPKeepAlive(boolean keepAlive) {
+    checkThread();
     return (HttpServer)super.setTCPKeepAlive(keepAlive);
   }
 
@@ -265,6 +275,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setReuseAddress(boolean reuse) {
+    checkThread();
     return (HttpServer)super.setReuseAddress(reuse);
   }
 
@@ -272,6 +283,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setSoLinger(boolean linger) {
+    checkThread();
     return (HttpServer)super.setSoLinger(linger);
   }
 
@@ -279,6 +291,7 @@ public class HttpServer extends NetServerBase {
    * {@inheritDoc}
    */
   public HttpServer setTrafficClass(int trafficClass) {
+    checkThread();
     return (HttpServer)super.setTrafficClass(trafficClass);
   }
 
@@ -309,13 +322,6 @@ public class HttpServer extends NetServerBase {
           });
         }
       });
-    }
-  }
-
-  protected void checkThread() {
-    // All ops must always be invoked on same thread
-    if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
   }
 

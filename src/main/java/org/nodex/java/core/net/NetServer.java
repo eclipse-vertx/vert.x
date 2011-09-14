@@ -88,6 +88,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setSSL(boolean ssl) {
+    checkThread();
     return (NetServer)super.setSSL(ssl);
   }
 
@@ -95,6 +96,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setKeyStorePath(String path) {
+    checkThread();
     return (NetServer)super.setKeyStorePath(path);
   }
 
@@ -102,6 +104,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setKeyStorePassword(String pwd) {
+    checkThread();
     return (NetServer)super.setKeyStorePassword(pwd);
   }
 
@@ -109,6 +112,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setTrustStorePath(String path) {
+    checkThread();
     return (NetServer)super.setTrustStorePath(path);
   }
 
@@ -116,6 +120,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setTrustStorePassword(String pwd) {
+    checkThread();
     return (NetServer)super.setTrustStorePassword(pwd);
   }
 
@@ -123,6 +128,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setClientAuthRequired(boolean required) {
+    checkThread();
     return (NetServer)super.setClientAuthRequired(required);
   }
 
@@ -130,6 +136,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setTcpNoDelay(boolean tcpNoDelay) {
+    checkThread();
     return (NetServer)super.setTcpNoDelay(tcpNoDelay);
   }
 
@@ -137,6 +144,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setSendBufferSize(int size) {
+    checkThread();
     return (NetServer)super.setSendBufferSize(size);
   }
 
@@ -144,6 +152,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setReceiveBufferSize(int size) {
+    checkThread();
     return (NetServer)super.setReceiveBufferSize(size);
   }
 
@@ -151,6 +160,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setTCPKeepAlive(boolean keepAlive) {
+    checkThread();
     return (NetServer)super.setTCPKeepAlive(keepAlive);
   }
 
@@ -158,6 +168,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setReuseAddress(boolean reuse) {
+    checkThread();
     return (NetServer)super.setReuseAddress(reuse);
   }
 
@@ -165,6 +176,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setSoLinger(boolean linger) {
+    checkThread();
     return (NetServer)super.setSoLinger(linger);
   }
 
@@ -172,6 +184,7 @@ public class NetServer extends NetServerBase {
    * {@inheritDoc}
    */
   public NetServer setTrafficClass(int trafficClass) {
+    checkThread();
     return (NetServer)super.setTrafficClass(trafficClass);
   }
 
@@ -289,13 +302,6 @@ public class NetServer extends NetServerBase {
           NodexInternal.instance.executeOnContext(contextID, runner);
         }
       });
-    }
-  }
-
-  private void checkThread() {
-    // All ops must always be invoked on same thread
-    if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
   }
 

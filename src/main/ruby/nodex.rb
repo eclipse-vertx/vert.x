@@ -23,6 +23,7 @@ require 'core/net'
 require 'core/parsetools'
 require 'core/streams'
 require 'core/shared_data'
+require 'core/std_io'
 
 # The Nodex modules defines the top level namespace within which all Nodex classes are found.
 #

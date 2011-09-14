@@ -16,11 +16,11 @@
 
 package org.nodex.java.core.stdio;
 
-import org.nodex.java.core.Completion;
-import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.streams.ReadStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,51 +30,97 @@ import java.io.InputStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class InStream {
+public class InStream extends StreamBase implements ReadStream {
+
+  private Handler<Buffer> dataHandler;
+  private Handler<Void> endHandler;
+  private boolean paused;
+  private final InputStream in;
+
+  private static final int BUFFER_SIZE = 1024;
 
   /**
    * Create a new {@code Instream} wrapping the {@link InputStream} in
    */
   public InStream(InputStream in) {
+    super();
     this.in = in;
   }
 
-  private final InputStream in;
-
   /**
-   * Read {@code bytes} from the {@code InputStream}. When all the bytes have been read, {@code handler} will called
-   * with a {@link Buffer} containing the bytes.
+   * {@inheritDoc}
    */
-  public void read(int bytes, CompletionHandler<Buffer> handler) {
-    Long contextID = Nodex.instance.getContextID();
-    if (contextID == null) {
-      throw new IllegalStateException("Stdio can only be used inside an event loop");
+  public void dataHandler(Handler<Buffer> handler) {
+    checkThread();
+    Handler<Buffer> oldHandler = this.dataHandler;
+    this.dataHandler = handler;
+    if (!paused && oldHandler == null && handler != null) {
+      doRead();
     }
-    byte[] read = new byte[bytes];
-    doRead(read, 0, handler, contextID);
   }
 
-  private void doRead(final byte[] read, final int offset, final CompletionHandler<Buffer> handler,
-                      final long contextID) {
+  /**
+   * {@inheritDoc}
+   */
+  public void pause() {
+    checkThread();
+    paused = true;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public void resume() {
+    checkThread();
+    paused = false;
+    if (dataHandler != null) {
+      doRead();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public void endHandler(Handler<Void> endHandler) {
+    checkThread();
+    this.endHandler = endHandler;
+  }
+
+  private void doRead() {
     final NodexInternal nodex = NodexInternal.instance;
     nodex.executeInBackground(new Runnable() {
       public void run() {
         try {
-          int bytesRead = in.read(read, offset, read.length - offset);
-          int newOffset = offset + bytesRead;
-          if (newOffset == read.length) {
-            //Done
+          byte[] buff = new byte[BUFFER_SIZE];
+          int bytesRead = in.read(buff);
+          if (bytesRead != -1) {
+            if (bytesRead < BUFFER_SIZE) {
+              byte[] buff2 = new byte[bytesRead];
+              System.arraycopy(buff, 0, buff2, 0, bytesRead);
+              buff = buff2;
+            }
+            final Buffer ret = Buffer.create(buff);
             nodex.executeOnContext(contextID, new Runnable() {
               public void run() {
                 nodex.setContextID(contextID);
-                handler.handle(new Completion<>(Buffer.create(read)));
+                if (!paused && dataHandler != null) {
+                  dataHandler.handle(ret);
+                  if (!paused && dataHandler != null) {
+                    doRead();
+                  }
+                }
               }
             });
           } else {
-            doRead(read, newOffset, handler, contextID);
+            // Will this ever happen?
+            if (endHandler != null) {
+              endHandler.handle(null);
+            }
           }
         } catch (IOException e) {
-          handler.handle(new Completion(e));
+          if (exceptionHandler != null) {
+            exceptionHandler.handle(e);
+          }
         }
       }
     });

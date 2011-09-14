@@ -18,15 +18,22 @@ package org.nodex.tests.core.stdio;
 
 import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.stdio.InStream;
+import org.nodex.java.core.stdio.OutStream;
+import org.nodex.java.core.streams.WriteStream;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -53,18 +60,34 @@ public class StdioTest extends TestBase {
 
         InStream in = new InStream(is);
 
-        in.read(1000, new CompletionHandler<Buffer>() {
-          public void handle(Completion<Buffer> compl) {
-            azzert(Utils.buffersEqual(buffin, compl.result));
+        final Buffer received = Buffer.create(0);
+
+        in.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+           System.out.println("received data");
+           received.appendBuffer(data);
+          }
+        });
+
+        in.endHandler(new SimpleHandler() {
+          public void handle() {
+            azzert(Utils.buffersEqual(buffin, received));
             latch.countDown();
           }
         });
+
       }
     }.run();
 
     azzert(latch.await(5, TimeUnit.SECONDS));
 
     throwAssertions();
+  }
+
+  @Test
+  public void testOut() throws Exception {
+
+    //TODO
   }
 }
 

@@ -16,27 +16,38 @@
 
 package org.nodex.java.core.stdio;
 
+import org.nodex.java.core.streams.ReadStream;
+import org.nodex.java.core.streams.WriteStream;
+
 /**
- * Provides asynchronous versions of stdin and stdout and stderr
+ * <p>Provides asynchronous stream wrappers around STDOUT, STDIN and STDERR</p>
+ *
+ * <p>These wrappers should be used if you want to use STDOUT, STDIN and STDERR in a non blocking way from inside
+ * an event loop.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Stdio {
 
   /**
-   * An asynchronous version of {@link System#in}
+   * Returns a {@code ReadStream} wrapped around STDIN
    */
-  public static final InStream in = new InStream(System.in);
+  public static ReadStream createInputStream() {
+    return new InStream(System.in);
+  }
 
   /**
-   * An asynchronous version of {@link System#out}
+   * Returns a {@code WriteStream} wrapped around STDOUT
    */
-  public static final OutStream out = new OutStream(System.out);
+  public static WriteStream createOutputStream() {
+    return new OutStream(System.out);
+  }
 
   /**
-   * An asynchronous version of {@link System#err}
+   * Returns a {@code WriteStream} wrapped around STDERR
    */
-  public static final OutStream err = new OutStream(System.err);
-
+  public static WriteStream createErrorStream() {
+    return new OutStream(System.err);
+  }
 
 }
