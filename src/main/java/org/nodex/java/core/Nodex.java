@@ -16,8 +16,6 @@
 
 package org.nodex.java.core;
 
-import org.nodex.java.core.internal.NodexInternal;
-
 /**
  *
  * <p>An instance of {@code Nodex} is available to all event loops in a running application.</p>
@@ -28,7 +26,7 @@ import org.nodex.java.core.internal.NodexInternal;
  */
 public interface Nodex {
 
-  static Nodex instance = NodexInternal.instance;
+  static Nodex instance = new NodexImpl();
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with

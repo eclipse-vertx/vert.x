@@ -42,8 +42,8 @@ module Nodex
     # Set the TCP keep alive setting.
     # @param [Boolean] val. If true, then TCP keep alive will be enabled.
     # @return [] A reference to self so invocations can be chained
-    def keep_alive=(val)
-      @j_del.setKeepAlive(val)
+    def tcp_keep_alive=(val)
+      @j_del.setTCPKeepAlive(val)
     end
 
     # Set the TCP reuse address setting.

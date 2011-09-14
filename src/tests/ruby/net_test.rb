@@ -166,7 +166,7 @@ class NetTest < Test::Unit::TestCase
       server.trust_store_password="blah"
       server.send_buffer_size=123123
       server.receive_buffer_size=218123
-      server.keep_alive=true
+      server.tcp_keep_alive=true
       server.reuse_address=true
       server.so_linger = true
       server.traffic_class=123
@@ -185,7 +185,7 @@ class NetTest < Test::Unit::TestCase
       client.trust_all=true
       client.send_buffer_size=123123
       client.receive_buffer_size=218123
-      client.keep_alive=true
+      client.tcp_keep_alive=true
       client.reuse_address=true
       client.so_linger = true
       client.traffic_class=123

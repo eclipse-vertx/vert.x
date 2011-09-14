@@ -36,14 +36,11 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.internal.NodexInternal;
-import org.nodex.java.core.internal.SSLBase;
-import org.nodex.java.core.internal.ThreadSourceUtils;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.internal.NodexInternal;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,20 +52,18 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetClient extends SSLBase {
+public class NetClient extends NetClientBase {
 
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
-  private Map<String, Object> connectionOptions = new HashMap<>();
   private EventHandler<Exception> exceptionHandler;
 
   /**
    * Create a new {@code NetClient}
    */
   public NetClient() {
-    connectionOptions.put("tcpNoDelay", true);
-    connectionOptions.put("keepAlive", true);
+    super();
   }
 
   /**
@@ -117,7 +112,7 @@ public class NetClient extends SSLBase {
         if (channelFuture.isSuccess()) {
           final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
 
-          ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+          runOnCorrectThread(ch, new Runnable() {
             public void run() {
               NodexInternal.instance.setContextID(contextID);
               NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
@@ -166,132 +161,94 @@ public class NetClient extends SSLBase {
   }
 
   /**
-   * If {@code ssl} is {@code true}, this signifies the client will create SSL connections
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetClient setSSL(boolean ssl) {
-    this.ssl = ssl;
-    return this;
+    return (NetClient)super.setSSL(ssl);
   }
 
   /**
-   * Set the path to the SSL client key store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL client key store is a standard Java Key Store, and should contain the client certificate. It's only necessary to supply
-   * a client key store if the server requires client authentication via client certificates.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetClient setKeyStorePath(String path) {
-    this.keyStorePath = path;
-    return this;
+    return (NetClient)super.setKeyStorePath(path);
   }
 
   /**
-   * Set the password for the SSL client key store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetClient setKeyStorePassword(String pwd) {
-    this.keyStorePassword = pwd;
-    return this;
+    return (NetClient)super.setKeyStorePassword(pwd);
   }
 
   /**
-   * Set the path to the SSL client trust store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL client trust store is a standard Java Key Store, and should contain the certificate(s) of the servers that the client trusts. The SSL
-   * handshake will fail if the server provides a certificate that the client does not trust.<p>
-   * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetClient setTrustStorePath(String path) {
-    this.trustStorePath = path;
-    return this;
+    return (NetClient)super.setTrustStorePath(path);
   }
 
   /**
-   * Set the password for the SSL client trust store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetClient setTrustStorePassword(String pwd) {
-    this.trustStorePassword = pwd;
-    return this;
+    return (NetClient)super.setTrustStorePassword(pwd);
   }
 
   /**
-   * If {@code trustAll} is set to {@code true} then the client will trust ALL server certifactes and will not attempt to authenticate them
-   * against it's local client trust store.<p>
-   * Use this method with caution!
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetClient setTrustAll(boolean trustAll) {
-    this.trustAll = trustAll;
-    return this;
+    return (NetClient)super.setTrustAll(trustAll);
   }
 
   /**
-   * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
-   * will turned <b>off</b> for the TCP connections created by this instance.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetClient setTcpNoDelay(boolean tcpNoDelay) {
-    connectionOptions.put("child.tcpNoDelay", tcpNoDelay);
-    return this;
+    return (NetClient)super.setTcpNoDelay(tcpNoDelay);
   }
 
   /**
-   * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetClient setSendBufferSize(int size) {
-    connectionOptions.put("child.sendBufferSize", size);
-    return this;
+    return (NetClient)super.setSendBufferSize(size);
   }
 
   /**
-   * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetClient setReceiveBufferSize(int size) {
-    connectionOptions.put("child.receiveBufferSize", size);
-    return this;
+    return (NetClient)super.setReceiveBufferSize(size);
   }
 
   /**
-   * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
-  public NetClient setKeepAlive(boolean keepAlive) {
-    connectionOptions.put("child.keepAlive", keepAlive);
-    return this;
+  public NetClient setTCPKeepAlive(boolean keepAlive) {
+    return (NetClient)super.setTCPKeepAlive(keepAlive);
   }
 
   /**
-   * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetClient setReuseAddress(boolean reuse) {
-    connectionOptions.put("child.reuseAddress", reuse);
-    return this;
+    return (NetClient)super.setReuseAddress(reuse);
   }
 
   /**
-   * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetClient setSoLinger(boolean linger) {
-    connectionOptions.put("child.soLinger", linger);
-    return this;
+    return (NetClient)super.setSoLinger(linger);
   }
 
   /**
-   * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetClient setTrafficClass(int trafficClass) {
-    connectionOptions.put("child.trafficClass", trafficClass);
-    return this;
+    return (NetClient)super.setTrafficClass(trafficClass);
   }
 
   private class ClientHandler extends SimpleChannelUpstreamHandler {
@@ -306,7 +263,7 @@ public class NetClient extends SSLBase {
       final NetSocket sock = socketMap.get(ch);
       socketMap.remove(ch);
       if (sock != null) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleClosed();
           }
@@ -329,7 +286,7 @@ public class NetClient extends SSLBase {
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -343,7 +300,7 @@ public class NetClient extends SSLBase {
       final NetSocket sock = socketMap.get(ch);
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
             ch.close();

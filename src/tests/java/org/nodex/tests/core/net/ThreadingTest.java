@@ -18,10 +18,10 @@ package org.nodex.tests.core.net;
 
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.SimpleEventHandler;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetServer;
 import org.nodex.java.core.net.NetSocket;

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core.internal;
+package org.nodex.java.core;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
-import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.shared.SharedUtils;
 
@@ -35,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class NodexImpl implements NodexInternal {
+class NodexImpl implements NodexInternal {
 
   private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();

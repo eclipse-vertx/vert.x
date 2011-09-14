@@ -39,16 +39,13 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.internal.NodexInternal;
-import org.nodex.java.core.internal.SSLBase;
-import org.nodex.java.core.internal.ThreadSourceUtils;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.internal.NodexInternal;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,31 +58,18 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetServer extends SSLBase {
+public class NetServer extends NetServerBase {
 
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
   private EventHandler<NetSocket> connectHandler;
-  private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
-  private final Thread th;
-
-  private ClientAuth clientAuth = ClientAuth.NONE;
 
   /**
    * Create a new NetServer instance.
    */
   public NetServer() {
-    if (Nodex.instance.getContextID() == null) {
-      throw new IllegalStateException("Net Server can only be used from an event loop");
-    }
-    this.th = Thread.currentThread();
-
-    //Defaults
-    connectionOptions.put("child.tcpNoDelay", true);
-    connectionOptions.put("child.keepAlive", true);
-    //TODO reuseAddress should be configurable
-    connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
+    super();
   }
 
   /**
@@ -101,144 +85,94 @@ public class NetServer extends SSLBase {
   }
 
   /**
-   * If {@code ssl} is {@code true}, this signifies the server will handle SSL connections
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetServer setSSL(boolean ssl) {
-    checkThread();
-    this.ssl = ssl;
-    return this;
+    return (NetServer)super.setSSL(ssl);
   }
 
   /**
-   * Set the path to the SSL server key store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL server key store is a standard Java Key Store, and should contain the server certificate. A key store
-   * must be provided for SSL to be operational.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetServer setKeyStorePath(String path) {
-    checkThread();
-    this.keyStorePath = path;
-    return this;
+    return (NetServer)super.setKeyStorePath(path);
   }
 
   /**
-   * Set the password for the SSL server key store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetServer setKeyStorePassword(String pwd) {
-    checkThread();
-    this.keyStorePassword = pwd;
-    return this;
+    return (NetServer)super.setKeyStorePassword(pwd);
   }
 
   /**
-   * Set the path to the SSL server trust store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL server trust store is a standard Java Key Store, and should contain the certificate(s) of the clients that the server trusts. The SSL
-   * handshake will fail if the server requires client authentication and provides a certificate that the server does not trust.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetServer setTrustStorePath(String path) {
-    checkThread();
-    this.trustStorePath = path;
-    return this;
+    return (NetServer)super.setTrustStorePath(path);
   }
 
   /**
-   * Set the password for the SSL server trust store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetServer setTrustStorePassword(String pwd) {
-    checkThread();
-    this.trustStorePassword = pwd;
-    return this;
+    return (NetServer)super.setTrustStorePassword(pwd);
   }
 
   /**
-   * Set {@code required} to true if you want the server to request client authentication from any connecting clients. This
-   * is an extra level of security in SSL, and requires clients to provide client certificates. Those certificates must be added
-   * to the server trust store.
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public NetServer setClientAuthRequired(boolean required) {
-    checkThread();
-    clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
-    return this;
+    return (NetServer)super.setClientAuthRequired(required);
   }
 
   /**
-   * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
-   * will turned <b>off</b> for the TCP connections accepted by this instance.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetServer setTcpNoDelay(boolean tcpNoDelay) {
-    checkThread();
-    connectionOptions.put("child.tcpNoDelay", tcpNoDelay);
-    return this;
+    return (NetServer)super.setTcpNoDelay(tcpNoDelay);
   }
 
   /**
-   * Set the TCP send buffer size for connections accepted by this instance to {@code size} in bytes.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetServer setSendBufferSize(int size) {
-    checkThread();
-    connectionOptions.put("child.sendBufferSize", size);
-    return this;
+    return (NetServer)super.setSendBufferSize(size);
   }
 
   /**
-   * Set the TCP receive buffer size for connections accepted by this instance to {@code size} in bytes.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetServer setReceiveBufferSize(int size) {
-    checkThread();
-    connectionOptions.put("child.receiveBufferSize", size);
-    return this;
+    return (NetServer)super.setReceiveBufferSize(size);
   }
 
   /**
-   * Set the TCP keepAlive setting for connections accepted by this instance to {@code keepAlive}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
-  public NetServer setKeepAlive(boolean keepAlive) {
-    checkThread();
-    connectionOptions.put("child.keepAlive", keepAlive);
-    return this;
+  public NetServer setTCPKeepAlive(boolean keepAlive) {
+    return (NetServer)super.setTCPKeepAlive(keepAlive);
   }
 
   /**
-   * Set the TCP reuseAddress setting for connections accepted by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetServer setReuseAddress(boolean reuse) {
-    checkThread();
-    connectionOptions.put("child.reuseAddress", reuse);
-    return this;
+    return (NetServer)super.setReuseAddress(reuse);
   }
 
   /**
-   * Set the TCP soLinger setting for connections accepted by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetServer setSoLinger(boolean linger) {
-    checkThread();
-    connectionOptions.put("child.soLinger", linger);
-    return this;
+    return (NetServer)super.setSoLinger(linger);
   }
 
   /**
-   * Set the TCP trafficClass setting for connections accepted by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
+   * {@inheritDoc}
    */
   public NetServer setTrafficClass(int trafficClass) {
-    checkThread();
-    connectionOptions.put("child.trafficClass", trafficClass);
-    return this;
+    return (NetServer)super.setTrafficClass(trafficClass);
   }
 
   /**
@@ -371,7 +305,7 @@ public class NetServer extends SSLBase {
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
-      ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+      runOnCorrectThread(ch, new Runnable() {
         public void run() {
           NodexInternal.instance.setContextID(contextID);
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
@@ -387,7 +321,7 @@ public class NetServer extends SSLBase {
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -400,7 +334,7 @@ public class NetServer extends SSLBase {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       if (sock != null) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleClosed();
             //System.out.println("Destroying context " + sock.getContextID());
@@ -425,7 +359,7 @@ public class NetServer extends SSLBase {
       ch.close();
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
           }

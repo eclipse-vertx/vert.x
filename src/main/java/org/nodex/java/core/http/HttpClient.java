@@ -40,11 +40,10 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.nodex.java.core.EventHandler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.internal.NodexInternal;
-import org.nodex.java.core.internal.SSLBase;
 import org.nodex.java.core.SimpleEventHandler;
-import org.nodex.java.core.internal.ThreadSourceUtils;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.net.NetClientBase;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
@@ -65,7 +64,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClient extends SSLBase {
+public class HttpClient extends NetClientBase {
 
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
@@ -83,6 +82,7 @@ public class HttpClient extends SSLBase {
    * Create an {@code HttpClient} instance
    */
   public HttpClient() {
+    super();
   }
 
   /**
@@ -124,68 +124,45 @@ public class HttpClient extends SSLBase {
   }
 
   /**
-   * If {@code ssl} is {@code true}, this signifies the client will create SSL connections
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpClient setSSL(boolean ssl) {
-    this.ssl = ssl;
-    return this;
+    return (HttpClient)super.setSSL(ssl);
   }
 
   /**
-   * Set the path to the SSL client key store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL client key store is a standard Java Key Store, and should contain the client certificate. It's only necessary to supply
-   * a client key store if the server requires client authentication via client certificates.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpClient setKeyStorePath(String path) {
-    this.keyStorePath = path;
-    return this;
+    return (HttpClient)super.setKeyStorePath(path);
   }
 
   /**
-   * Set the password for the SSL client key store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpClient setKeyStorePassword(String pwd) {
-    this.keyStorePassword = pwd;
-    return this;
+    return (HttpClient)super.setKeyStorePassword(pwd);
   }
 
   /**
-   * Set the path to the SSL client trust store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL client trust store is a standard Java Key Store, and should contain the certificate(s) of the servers that the client trusts. The SSL
-   * handshake will fail if the server provides a certificate that the client does not trust.<p>
-   * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpClient setTrustStorePath(String path) {
-    this.trustStorePath = path;
-    return this;
+    return (HttpClient)super.setTrustStorePath(path);
   }
 
   /**
-   * Set the password for the SSL client trust store. This method should only be used with the client in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpClient setTrustStorePassword(String pwd) {
-    this.trustStorePassword = pwd;
-    return this;
+    return (HttpClient)super.setTrustStorePassword(pwd);
   }
 
   /**
-   * If {@code trustAll} is set to {@code true} then the client will trust ALL server certifactes and will not attempt to authenticate them
-   * against it's local client trust store.<p>
-   * Use this method with caution!
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpClient setTrustAll(boolean trustAll) {
-    this.trustAll = trustAll;
-    return this;
+    return (HttpClient)super.setTrustAll(trustAll);
   }
 
   /**
@@ -332,6 +309,55 @@ public class HttpClient extends SSLBase {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setTcpNoDelay(boolean tcpNoDelay) {
+    return (HttpClient)super.setTcpNoDelay(tcpNoDelay);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setSendBufferSize(int size) {
+    return (HttpClient)super.setSendBufferSize(size);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setReceiveBufferSize(int size) {
+    return (HttpClient)super.setReceiveBufferSize(size);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setTCPKeepAlive(boolean keepAlive) {
+    return (HttpClient)super.setTCPKeepAlive(keepAlive);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setReuseAddress(boolean reuse) {
+    return (HttpClient)super.setReuseAddress(reuse);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setSoLinger(boolean linger) {
+    return (HttpClient)super.setSoLinger(linger);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpClient setTrafficClass(int trafficClass) {
+    return (HttpClient)super.setTrafficClass(trafficClass);
+  }
+
   //TODO FIXME - heavyweight synchronization for now FIXME
   //This will be a contention point
   //Need to be improved
@@ -404,7 +430,7 @@ public class HttpClient extends SSLBase {
 
     //Client connections share context with caller
     channelFactory.setWorker(NodexInternal.instance.getWorkerForContextID(contextID));
-
+    bootstrap.setOptions(connectionOptions);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
@@ -412,7 +438,7 @@ public class HttpClient extends SSLBase {
 
           final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
 
-          ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+          runOnCorrectThread(ch, new Runnable() {
             public void run() {
               final ClientConnection conn = new ClientConnection(HttpClient.this, ch,
                   host + ":" + port, ssl, keepAlive, contextID,
@@ -463,7 +489,7 @@ public class HttpClient extends SSLBase {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.remove(ch);
       if (conn != null) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             conn.handleClosed();
           }
@@ -475,7 +501,7 @@ public class HttpClient extends SSLBase {
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.get(ch);
-      ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+      runOnCorrectThread(ch, new Runnable() {
         public void run() {
           conn.handleInterestedOpsChanged();
         }
@@ -488,7 +514,7 @@ public class HttpClient extends SSLBase {
       final ClientConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             conn.handleException((Exception) t);
           }
