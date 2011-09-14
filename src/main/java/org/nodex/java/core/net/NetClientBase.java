@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core.stdio;
-
-import java.io.PrintStream;
+package org.nodex.java.core.net;
 
 /**
+ * Abstract base class for net clients
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class OutStream {
-  OutStream(PrintStream out) {
-    this.out = out;
+public abstract class NetClientBase extends NetBase {
+
+  /**
+   * If {@code trustAll} is set to {@code true} then the client will trust ALL server certifactes and will not attempt to authenticate them
+   * against it's local client trust store.<p>
+   * Use this method with caution!
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  public NetClientBase setTrustAll(boolean trustAll) {
+    this.trustAll = trustAll;
+    return this;
   }
-
-  private final PrintStream out;
-
-
-  //TODO
 }

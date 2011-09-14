@@ -47,16 +47,13 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.nodex.java.core.EventHandler;
-import org.nodex.java.core.Nodex;
 import org.nodex.java.core.internal.NodexInternal;
-import org.nodex.java.core.internal.SSLBase;
-import org.nodex.java.core.internal.ThreadSourceUtils;
+import org.nodex.java.core.net.NetServerBase;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -81,33 +78,19 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServer extends SSLBase {
+public class HttpServer extends NetServerBase {
 
   private EventHandler<HttpServerRequest> requestHandler;
   private EventHandler<Websocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
-  private Map<String, Object> connectionOptions = new HashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
-  private ClientAuth clientAuth = ClientAuth.NONE;
-  private final Thread th;
-  private final long contextID;
 
   /**
    * Create an {@code HttpServer}
    */
   public HttpServer() {
-    Long cid = Nodex.instance.getContextID();
-    if (cid == null) {
-      throw new IllegalStateException("HTTPServer can only be used from an event loop");
-    }
-    this.contextID = cid;
-    this.th = Thread.currentThread();
-
-    //Defaults
-    connectionOptions.put("child.tcpNoDelay", true);
-    connectionOptions.put("child.keepAlive", true);
-    connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
+    super();
   }
 
   /**
@@ -209,73 +192,94 @@ public class HttpServer extends SSLBase {
   }
 
   /**
-   * If {@code ssl} is {@code true}, this signifies the server will handle SSL connections
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpServer setSSL(boolean ssl) {
-    checkThread();
-    this.ssl = ssl;
-    return this;
+    return (HttpServer)super.setSSL(ssl);
   }
 
   /**
-   * Set the path to the SSL server key store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL server key store is a standard Java Key Store, and should contain the server certificate. A key store
-   * must be provided for SSL to be operational.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpServer setKeyStorePath(String path) {
-    checkThread();
-    this.keyStorePath = path;
-    return this;
+    return (HttpServer)super.setKeyStorePath(path);
   }
 
   /**
-   * Set the password for the SSL server key store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpServer setKeyStorePassword(String pwd) {
-    checkThread();
-    this.keyStorePassword = pwd;
-    return this;
+    return (HttpServer)super.setKeyStorePassword(pwd);
   }
 
   /**
-   * Set the path to the SSL server trust store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL server trust store is a standard Java Key Store, and should contain the certificate(s) of the clients that the server trusts. The SSL
-   * handshake will fail if the server requires client authentication and provides a certificate that the server does not trust.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpServer setTrustStorePath(String path) {
-    checkThread();
-    this.trustStorePath = path;
-    return this;
+    return (HttpServer)super.setTrustStorePath(path);
   }
 
   /**
-   * Set the password for the SSL server trust store. This method should only be used with the server in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpServer setTrustStorePassword(String pwd) {
-    checkThread();
-    this.trustStorePassword = pwd;
-    return this;
+    return (HttpServer)super.setTrustStorePassword(pwd);
   }
 
   /**
-   * Set {@code required} to true if you want the server to request client authentication from any connecting clients. This
-   * is an extra level of security in SSL, and requires clients to provide client certificates. Those certificates must be added
-   * to the server trust store.
-   * @return A reference to this, so multiple invocations can be chained together.
+   * {@inheritDoc}
    */
   public HttpServer setClientAuthRequired(boolean required) {
-    checkThread();
-    clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
-    return this;
+    return (HttpServer)super.setClientAuthRequired(required);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setTcpNoDelay(boolean tcpNoDelay) {
+    return (HttpServer)super.setTcpNoDelay(tcpNoDelay);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setSendBufferSize(int size) {
+    return (HttpServer)super.setSendBufferSize(size);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setReceiveBufferSize(int size) {
+    return (HttpServer)super.setReceiveBufferSize(size);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setTCPKeepAlive(boolean keepAlive) {
+    return (HttpServer)super.setTCPKeepAlive(keepAlive);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setReuseAddress(boolean reuse) {
+    return (HttpServer)super.setReuseAddress(reuse);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setSoLinger(boolean linger) {
+    return (HttpServer)super.setSoLinger(linger);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public HttpServer setTrafficClass(int trafficClass) {
+    return (HttpServer)super.setTrafficClass(trafficClass);
   }
 
   /**
@@ -387,7 +391,7 @@ public class HttpServer extends SSLBase {
       ch.close();
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             conn.handleException((Exception) t);
           }
@@ -401,7 +405,7 @@ public class HttpServer extends SSLBase {
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final long contextID = NodexInternal.instance.associateContextWithWorker(ch.getWorker());
-      ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+      runOnCorrectThread(ch, new Runnable() {
         public void run() {
           final ServerConnection conn = new ServerConnection(ch, contextID, Thread.currentThread());
           conn.requestHandler(requestHandler);
@@ -415,7 +419,7 @@ public class HttpServer extends SSLBase {
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.remove(ch);
-      ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+      runOnCorrectThread(ch, new Runnable() {
         public void run() {
           conn.handleClosed();
           NodexInternal.instance.destroyContext(conn.getContextID());
@@ -430,7 +434,7 @@ public class HttpServer extends SSLBase {
       final ServerConnection conn = connectionMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        ThreadSourceUtils.runOnCorrectThread(ch, new Runnable() {
+        runOnCorrectThread(ch, new Runnable() {
           public void run() {
             conn.handleInterestedOpsChanged();
           }

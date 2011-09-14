@@ -52,10 +52,13 @@ public class WebsocketTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
+
 
     new NodexMain() {
       public void go() throws Exception {
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
+
         final HttpServer server = new HttpServer().websocketHandler(new EventHandler<Websocket>() {
           public void onEvent(final Websocket ws) {
             azzert(path.equals(ws.uri));
@@ -82,6 +85,7 @@ public class WebsocketTest extends TestBase {
                   ws.close();
                   server.close(new SimpleEventHandler() {
                     public void onEvent() {
+                      client.close();
                       latch.countDown();
                     }
                   });

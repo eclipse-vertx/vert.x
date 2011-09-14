@@ -121,7 +121,7 @@ module Nodex
     # than {#max_pool_size} connections to be created at any one time.
     # @param [Boolean] val. The value to use for keep_alive
     def keep_alive=(val)
-      @j_del.setKeepAlive(val)
+      @j_del.setTCPKeepAlive(val)
       self
     end
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core.internal;
+package org.nodex.java.core.net;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -25,6 +25,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
 
@@ -33,11 +34,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- * <p>Abstract base class for different types of connections.</p>
+ * <p>Abstract base class for TCP connections.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ConnectionBase {
+public abstract class ConnectionBase {
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {
     this.channel = channel;

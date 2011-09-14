@@ -18,7 +18,7 @@ package org.nodex.java.core.http;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.nodex.java.core.internal.ConnectionBase;
+import org.nodex.java.core.net.ConnectionBase;
 
 public abstract class AbstractConnection extends ConnectionBase {
 

@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
  */
 public interface NodexInternal extends Nodex {
 
-  static NodexInternal instance = new NodexImpl();
+  static NodexInternal instance = (NodexInternal)Nodex.instance;
 
   NioWorkerPool getWorkerPool();
 

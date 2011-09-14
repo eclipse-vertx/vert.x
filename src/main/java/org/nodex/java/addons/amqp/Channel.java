@@ -19,8 +19,8 @@ package org.nodex.java.addons.amqp;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.composition.Composable;
+import org.nodex.java.core.internal.NodexInternal;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
