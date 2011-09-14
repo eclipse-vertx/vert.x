@@ -24,6 +24,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
+ * This class provides services for node.x core internal use only
+ * It is not part of the public API and should not be used by
+ * developers using Node.x
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface NodexInternal extends Nodex {
