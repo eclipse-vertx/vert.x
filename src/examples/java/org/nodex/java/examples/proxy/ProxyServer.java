@@ -16,9 +16,9 @@
 
 package org.nodex.java.examples.proxy;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.http.HttpClient;
 import org.nodex.java.core.http.HttpClientRequest;
@@ -38,23 +38,23 @@ public class ProxyServer extends NodexMain {
 
     final HttpClient client = new HttpClient().setHost("localhost").setPort(8282);
 
-    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
-      public void onEvent(final HttpServerRequest req) {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
         System.out.println("Proxying request: " + req.uri);
-        final HttpClientRequest cReq = client.request(req.method, req.uri, new EventHandler<HttpClientResponse>() {
-          public void onEvent(HttpClientResponse cRes) {
+        final HttpClientRequest cReq = client.request(req.method, req.uri, new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse cRes) {
             System.out.println("Proxying response: " + cRes.statusCode);
             req.response.statusCode = cRes.statusCode;
             req.response.putAllHeaders(cRes.getHeaders());
             req.response.setChunked(true);
-            cRes.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(Buffer data) {
+            cRes.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
                 System.out.println("Proxying response body:" + data);
                 req.response.write(data);
               }
             });
-            cRes.endHandler(new SimpleEventHandler() {
-              public void onEvent() {
+            cRes.endHandler(new SimpleHandler() {
+              public void handle() {
                 req.response.end();
               }
             });
@@ -62,14 +62,14 @@ public class ProxyServer extends NodexMain {
         });
         cReq.putAllHeaders(req.getHeaders());
         cReq.setChunked(true);
-        req.dataHandler(new EventHandler<Buffer>() {
-          public void onEvent(Buffer data) {
+        req.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
             System.out.println("Proxying request body:" + data);
             cReq.write(data);
           }
         });
-        req.endHandler(new SimpleEventHandler() {
-          public void onEvent() {
+        req.endHandler(new SimpleHandler() {
+          public void handle() {
             cReq.end();
           }
         });

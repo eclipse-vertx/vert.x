@@ -54,7 +54,7 @@ public class StdioTest extends TestBase {
         InStream in = new InStream(is);
 
         in.read(1000, new CompletionHandler<Buffer>() {
-          public void onEvent(Completion<Buffer> compl) {
+          public void handle(Completion<Buffer> compl) {
             azzert(Utils.buffersEqual(buffin, compl.result));
             latch.countDown();
           }

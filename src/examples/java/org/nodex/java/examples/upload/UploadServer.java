@@ -18,9 +18,9 @@ package org.nodex.java.examples.upload;
 
 import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.file.AsyncFile;
 import org.nodex.java.core.file.FileSystem;
 import org.nodex.java.core.http.HttpServer;
@@ -39,8 +39,8 @@ public class UploadServer extends NodexMain {
 
   public void go() throws Exception {
 
-    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
-      public void onEvent(final HttpServerRequest req) {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
 
         // We first pause the request so we don't receive any data between now and when the file is opened
         req.pause();
@@ -48,14 +48,14 @@ public class UploadServer extends NodexMain {
         final String filename = "upload/file-" + UUID.randomUUID().toString() + ".upload";
 
         FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
-          public void onEvent(Completion<AsyncFile> completion) {
+          public void handle(Completion<AsyncFile> completion) {
             final AsyncFile file = completion.result;
             final Pump pump = new Pump(req, file.getWriteStream());
             final long start = System.currentTimeMillis();
-            req.endHandler(new SimpleEventHandler() {
-              public void onEvent() {
+            req.endHandler(new SimpleHandler() {
+              public void handle() {
                 file.close(new CompletionHandler<Void>() {
-                  public void onEvent(Completion<Void> completion) {
+                  public void handle(Completion<Void> completion) {
                     if (completion.succeeded()) {
                       req.response.end();
                       long end = System.currentTimeMillis();

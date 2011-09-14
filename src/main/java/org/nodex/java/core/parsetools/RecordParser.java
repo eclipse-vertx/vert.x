@@ -16,7 +16,7 @@
 
 package org.nodex.java.core.parsetools;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 
 /**
@@ -45,7 +45,7 @@ import org.nodex.java.core.buffer.Buffer;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class RecordParser implements EventHandler<Buffer> {
+public class RecordParser implements Handler<Buffer> {
 
   private Buffer buff;
   private int pos;            // Current position in buffer
@@ -56,9 +56,9 @@ public class RecordParser implements EventHandler<Buffer> {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
-  private final EventHandler<Buffer> output;
+  private final Handler<Buffer> output;
 
-  private RecordParser(EventHandler<Buffer> output) {
+  private RecordParser(Handler<Buffer> output) {
     this.output = output;
   }
 
@@ -83,7 +83,7 @@ public class RecordParser implements EventHandler<Buffer> {
    * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
    * {@code output} Will receive whole records which have been parsed.
    */
-  public static RecordParser newDelimited(String delim, EventHandler<Buffer> output) {
+  public static RecordParser newDelimited(String delim, Handler<Buffer> output) {
     return newDelimited(latin1StringToBytes(delim), output);
   }
 
@@ -92,7 +92,7 @@ public class RecordParser implements EventHandler<Buffer> {
    * by the {@code byte[]} delim.<p>
    * {@code output} Will receive whole records which have been parsed.
    */
-  public static RecordParser newDelimited(byte[] delim, EventHandler<Buffer> output) {
+  public static RecordParser newDelimited(byte[] delim, Handler<Buffer> output) {
     RecordParser ls = new RecordParser(output);
     ls.delimitedMode(delim);
     return ls;
@@ -103,7 +103,7 @@ public class RecordParser implements EventHandler<Buffer> {
    * by the {@code size} parameter.<p>
    * {@code output} Will receive whole records which have been parsed.
    */
-  public static RecordParser newFixed(int size, EventHandler<Buffer> output) {
+  public static RecordParser newFixed(int size, Handler<Buffer> output) {
     if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
     RecordParser ls = new RecordParser(output);
     ls.fixedSizeMode(size);
@@ -173,7 +173,7 @@ public class RecordParser implements EventHandler<Buffer> {
           Buffer ret = buff.copy(start, pos - delim.length + 1);
           start = pos + 1;
           delimPos = 0;
-          output.onEvent(ret);
+          output.handle(ret);
         }
       }
     }
@@ -185,7 +185,7 @@ public class RecordParser implements EventHandler<Buffer> {
       int end = start + recordSize;
       Buffer ret = buff.copy(start, end);
       start = end;
-      output.onEvent(ret);
+      output.handle(ret);
     }
   }
 
@@ -193,7 +193,7 @@ public class RecordParser implements EventHandler<Buffer> {
    * This method is called to provide the parser with data.
    * @param buffer
    */
-  public void onEvent(Buffer buffer) {
+  public void handle(Buffer buffer) {
     if (buff == null) {
       buff = Buffer.create(buffer.length());
     }

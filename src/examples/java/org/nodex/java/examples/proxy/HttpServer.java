@@ -16,9 +16,9 @@
 
 package org.nodex.java.examples.proxy;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.http.HttpServerRequest;
 
@@ -31,20 +31,20 @@ public class HttpServer extends NodexMain {
   }
 
   public void go() throws Exception {
-    new org.nodex.java.core.http.HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
-      public void onEvent(final HttpServerRequest req) {
+    new org.nodex.java.core.http.HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
         for (String key : req.getHeaderNames()) {
           System.out.println(key + ":" + req.getHeader(key));
         }
-        req.dataHandler(new EventHandler<Buffer>() {
-          public void onEvent(Buffer data) {
+        req.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
             System.out.println("Got data: " + data);
           }
         });
-        req.endHandler(new SimpleEventHandler() {
-          public void onEvent() {
+        req.endHandler(new SimpleHandler() {
+          public void handle() {
             req.response.setChunked(true);
             //Now we got everything, send back some data
             for (int i = 0; i < 10; i++) {

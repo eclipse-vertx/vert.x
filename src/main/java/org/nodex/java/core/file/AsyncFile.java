@@ -19,7 +19,7 @@ package org.nodex.java.core.file;
 import org.nodex.java.core.BlockingTask;
 import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
@@ -90,15 +90,15 @@ public class AsyncFile {
     closed = true;
 
     CompletionHandler comp = new CompletionHandler<Void>() {
-      public void onEvent(Completion<Void> completion) {
+      public void handle(Completion<Void> completion) {
         if (completion.failed()) {
-          completionHandler.onEvent(completion);
+          completionHandler.handle(completion);
         } else {
           try {
             ch.close();
-            completionHandler.onEvent(completion);
+            completionHandler.handle(completion);
           } catch (IOException e) {
-            completionHandler.onEvent(new Completion<Void>(e));
+            completionHandler.handle(new Completion<Void>(e));
           }
         }
       }
@@ -108,7 +108,7 @@ public class AsyncFile {
       //Need to wait for all writes to complete before firing the completionHandler
       closedCompletionHandler = comp;
     } else {
-      completionHandler.onEvent(Completion.VOID_SUCCESSFUL_COMPLETION);
+      completionHandler.handle(Completion.VOID_SUCCESSFUL_COMPLETION);
     }
   }
 
@@ -148,8 +148,8 @@ public class AsyncFile {
     check();
     if (writeStream == null) {
       writeStream = new WriteStream() {
-        EventHandler<Exception> exceptionHandler;
-        EventHandler<Void> drainHandler;
+        Handler<Exception> exceptionHandler;
+        Handler<Void> drainHandler;
 
         int pos;
         int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
@@ -162,12 +162,12 @@ public class AsyncFile {
 
           doWrite(bb, pos, new CompletionHandler<Void>() {
 
-            public void onEvent(Completion<Void> completion) {
+            public void handle(Completion<Void> completion) {
               if (completion.succeeded()) {
                 checkContext();
                 checkDrained();
                 if (writesOutstanding == 0 && closedCompletionHandler != null) {
-                  closedCompletionHandler.onEvent(completion);
+                  closedCompletionHandler.handle(completion);
                 }
               } else {
                 handleException(completion.exception);
@@ -179,9 +179,9 @@ public class AsyncFile {
 
         private void checkDrained() {
           if (drainHandler != null && writesOutstanding <= lwm) {
-            EventHandler<Void> handler = drainHandler;
+            Handler<Void> handler = drainHandler;
             drainHandler = null;
-            handler.onEvent(null);
+            handler.handle(null);
           }
         }
 
@@ -196,20 +196,20 @@ public class AsyncFile {
           return writesOutstanding >= maxWrites;
         }
 
-        public void drainHandler(EventHandler<Void> handler) {
+        public void drainHandler(Handler<Void> handler) {
           check();
           this.drainHandler = handler;
           checkDrained();
         }
 
-        public void exceptionHandler(EventHandler<Exception> handler) {
+        public void exceptionHandler(Handler<Exception> handler) {
           check();
           this.exceptionHandler = handler;
         }
 
         void handleException(Exception e) {
           if (exceptionHandler != null) {
-            exceptionHandler.onEvent(e);
+            exceptionHandler.handle(e);
           } else {
             e.printStackTrace(System.err);
           }
@@ -228,9 +228,9 @@ public class AsyncFile {
       readStream = new ReadStream() {
 
         boolean paused;
-        EventHandler<Buffer> dataHandler;
-        EventHandler<Exception> exceptionHandler;
-        EventHandler<Void> endHandler;
+        Handler<Buffer> dataHandler;
+        Handler<Exception> exceptionHandler;
+        Handler<Void> endHandler;
         int pos;
         boolean readInProgress;
 
@@ -240,7 +240,7 @@ public class AsyncFile {
             Buffer buff = Buffer.create(BUFFER_SIZE);
             read(buff, 0, pos, BUFFER_SIZE, new CompletionHandler<Buffer>() {
 
-              public void onEvent(Completion<Buffer> completion) {
+              public void handle(Completion<Buffer> completion) {
                 if (completion.succeeded()) {
                   readInProgress = false;
                   Buffer buffer = completion.result;
@@ -262,7 +262,7 @@ public class AsyncFile {
           }
         }
 
-        public void dataHandler(EventHandler<Buffer> handler) {
+        public void dataHandler(Handler<Buffer> handler) {
           check();
           this.dataHandler = handler;
           if (dataHandler != null && !paused && !closed) {
@@ -270,12 +270,12 @@ public class AsyncFile {
           }
         }
 
-        public void exceptionHandler(EventHandler<Exception> handler) {
+        public void exceptionHandler(Handler<Exception> handler) {
           check();
           this.exceptionHandler = handler;
         }
 
-        public void endHandler(EventHandler<Void> handler) {
+        public void endHandler(Handler<Void> handler) {
           check();
           this.endHandler = handler;
         }
@@ -298,7 +298,7 @@ public class AsyncFile {
         void handleException(Exception e) {
           if (exceptionHandler != null) {
             checkContext();
-            exceptionHandler.onEvent(e);
+            exceptionHandler.handle(e);
           } else {
             e.printStackTrace(System.err);
           }
@@ -307,14 +307,14 @@ public class AsyncFile {
         void handleData(Buffer buffer) {
           if (dataHandler != null) {
             checkContext();
-            dataHandler.onEvent(buffer);
+            dataHandler.handle(buffer);
           }
         }
 
         void handleEnd() {
           if (endHandler != null) {
             checkContext();
-            endHandler.onEvent(null);
+            endHandler.handle(null);
           }
         }
       };
@@ -362,7 +362,7 @@ public class AsyncFile {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              completionHandler.onEvent(Completion.VOID_SUCCESSFUL_COMPLETION);
+              completionHandler.handle(Completion.VOID_SUCCESSFUL_COMPLETION);
             }
           });
         }
@@ -373,7 +373,7 @@ public class AsyncFile {
           final Exception e = (Exception) exc;
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completionHandler.onEvent(new Completion<Void>(e));
+              completionHandler.handle(new Completion<Void>(e));
             }
           });
         } else {
@@ -395,7 +395,7 @@ public class AsyncFile {
             setContextID();
             buff.flip();
             writeBuff.setBytes(offset, buff);
-            completionHandler.onEvent(new Completion<>(writeBuff));
+            completionHandler.handle(new Completion<>(writeBuff));
           }
         });
       }
@@ -421,7 +421,7 @@ public class AsyncFile {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               setContextID();
-              completionHandler.onEvent(new Completion<Buffer>(e));
+              completionHandler.handle(new Completion<Buffer>(e));
             }
           });
         } else {

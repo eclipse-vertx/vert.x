@@ -67,14 +67,14 @@ public class InStream {
             nodex.executeOnContext(contextID, new Runnable() {
               public void run() {
                 nodex.setContextID(contextID);
-                handler.onEvent(new Completion<>(Buffer.create(read)));
+                handler.handle(new Completion<>(Buffer.create(read)));
               }
             });
           } else {
             doRead(read, newOffset, handler, contextID);
           }
         } catch (IOException e) {
-          handler.onEvent(new Completion(e));
+          handler.handle(new Completion(e));
         }
       }
     });

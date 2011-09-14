@@ -16,7 +16,7 @@
 
 package org.nodex.java.examples.http;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.http.HttpClient;
@@ -36,10 +36,10 @@ public class ClientExample extends NodexMain {
   }
 
   public void go() throws Exception {
-    new HttpClient().setPort(8080).setHost("localhost").getNow("/", new EventHandler<HttpClientResponse>() {
-      public void onEvent(HttpClientResponse response) {
-        response.dataHandler(new EventHandler<Buffer>() {
-          public void onEvent(Buffer data) {
+    new HttpClient().setPort(8080).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse response) {
+        response.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
             System.out.println(data);
           }
         });

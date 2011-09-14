@@ -24,7 +24,7 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
@@ -51,8 +51,8 @@ public abstract class ConnectionBase {
   //For sanity checks
   protected final Thread th;
 
-  protected EventHandler<Exception> exceptionHandler;
-  protected EventHandler<Void> closedHandler;
+  protected Handler<Exception> exceptionHandler;
+  protected Handler<Void> closedHandler;
 
   /**
    * Pause the connection, see {@link ReadStream#pause}
@@ -99,7 +99,7 @@ public abstract class ConnectionBase {
   /**
    * Set an exception handler on the connection
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     checkThread();
     this.exceptionHandler = handler;
   }
@@ -107,7 +107,7 @@ public abstract class ConnectionBase {
   /**
    * Set a closed handler on the connection
    */
-  public void closedHandler(EventHandler<Void> handler) {
+  public void closedHandler(Handler<Void> handler) {
     checkThread();
     this.closedHandler = handler;
   }
@@ -120,7 +120,7 @@ public abstract class ConnectionBase {
     if (exceptionHandler != null) {
       setContextID();
       try {
-        exceptionHandler.onEvent(e);
+        exceptionHandler.handle(e);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
@@ -133,23 +133,23 @@ public abstract class ConnectionBase {
     if (closedHandler != null) {
       setContextID();
       try {
-        closedHandler.onEvent(null);
+        closedHandler.handle(null);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
     }
   }
 
-  protected void addFuture(final EventHandler<Void> doneHandler, final ChannelFuture future) {
+  protected void addFuture(final Handler<Void> doneHandler, final ChannelFuture future) {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
         setContextID();
         if (channelFuture.isSuccess()) {
-          doneHandler.onEvent(null);
+          doneHandler.handle(null);
         } else {
           Throwable err = channelFuture.getCause();
           if (exceptionHandler != null && err instanceof Exception) {
-            exceptionHandler.onEvent((Exception) err);
+            exceptionHandler.handle((Exception) err);
           } else {
             err.printStackTrace();
           }

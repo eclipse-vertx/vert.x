@@ -46,7 +46,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.net.NetServerBase;
 
@@ -80,8 +80,8 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class HttpServer extends NetServerBase {
 
-  private EventHandler<HttpServerRequest> requestHandler;
-  private EventHandler<Websocket> wsHandler;
+  private Handler<HttpServerRequest> requestHandler;
+  private Handler<Websocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -98,7 +98,7 @@ public class HttpServer extends NetServerBase {
    * instances of {@link HttpServerRequest} will be created and passed to this handler.
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer requestHandler(EventHandler<HttpServerRequest> requestHandler) {
+  public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     checkThread();
     this.requestHandler = requestHandler;
     return this;
@@ -109,7 +109,7 @@ public class HttpServer extends NetServerBase {
    * new {@link Websocket} instance will be created and passed to the handler.
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer websocketHandler(EventHandler<Websocket> wsHandler) {
+  public HttpServer websocketHandler(Handler<Websocket> wsHandler) {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
@@ -294,7 +294,7 @@ public class HttpServer extends NetServerBase {
    * Close the server. Any open HTTP connections will be closed. {@code doneHandler} will be called when the close
    * is complete.
    */
-  public void close(final EventHandler<Void> doneHandler) {
+  public void close(final Handler<Void> doneHandler) {
     checkThread();
     for (ServerConnection conn : connectionMap.values()) {
       conn.internalClose();
@@ -304,7 +304,7 @@ public class HttpServer extends NetServerBase {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              doneHandler.onEvent(null);
+              doneHandler.handle(null);
             }
           });
         }

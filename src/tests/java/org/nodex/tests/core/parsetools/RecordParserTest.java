@@ -16,7 +16,7 @@
 
 package org.nodex.tests.core.parsetools;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.parsetools.RecordParser;
 import org.nodex.tests.Utils;
@@ -81,11 +81,11 @@ public class RecordParserTest {
 
     final Buffer[] results = new Buffer[lines];
 
-    class MyHandler implements EventHandler<Buffer> {
+    class MyHandler implements Handler<Buffer> {
       RecordParser parser = RecordParser.newFixed(10, this);
       int pos;
 
-      public void onEvent(Buffer buff) {
+      public void handle(Buffer buff) {
         results[pos++] = buff;
         if (pos < lines) {
           Object type = types.get(pos);
@@ -175,10 +175,10 @@ public class RecordParserTest {
 
   private void doTestDelimited(final Buffer input, byte[] delim, Integer[] chunkSizes, final Buffer... expected) {
     final Buffer[] results = new Buffer[expected.length];
-    EventHandler<Buffer> out = new EventHandler<Buffer>() {
+    Handler<Buffer> out = new Handler<Buffer>() {
       int pos;
 
-      public void onEvent(Buffer buff) {
+      public void handle(Buffer buff) {
         results[pos++] = buff;
       }
     };
@@ -192,11 +192,11 @@ public class RecordParserTest {
   private void doTestFixed(final Buffer input, Integer[] chunkSizes, final Buffer... expected) {
     final Buffer[] results = new Buffer[expected.length];
 
-    class MyHandler implements EventHandler<Buffer> {
+    class MyHandler implements Handler<Buffer> {
       int pos;
       RecordParser parser = RecordParser.newFixed(expected[0].length(), this);
 
-      public void onEvent(Buffer buff) {
+      public void handle(Buffer buff) {
         results[pos++] = buff;
         if (pos < expected.length) {
           parser.fixedSizeMode(expected[pos].length());
@@ -219,7 +219,7 @@ public class RecordParserTest {
       int end = pos + chunkSize;
       end = end <= input.length() ? end : input.length();
       Buffer sub = input.copy(pos, end);
-      parser.onEvent(sub);
+      parser.handle(sub);
       pos += chunkSize;
     }
   }

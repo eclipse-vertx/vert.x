@@ -16,10 +16,10 @@
 
 package org.nodex.tests.core.net;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetServer;
@@ -73,21 +73,21 @@ public class TLSTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-          public void onEvent(String msg) {
-            server.close(new SimpleEventHandler() {
-              public void onEvent() {
+        final long actorId = Nodex.instance.registerHandler(new Handler<String>() {
+          public void handle(String msg) {
+            server.close(new SimpleHandler() {
+              public void handle() {
                 latch.countDown();
               }
             });
           }
         });
 
-        EventHandler<NetSocket> serverHandler = new EventHandler<NetSocket>() {
-          public void onEvent(final NetSocket sock) {
+        Handler<NetSocket> serverHandler = new Handler<NetSocket>() {
+          public void handle(final NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
-            sock.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(Buffer data) {
+            sock.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
                 checker.check();
                 receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
@@ -99,11 +99,11 @@ public class TLSTest extends TestBase {
           }
         };
 
-        EventHandler<NetSocket> clientHandler = new EventHandler<NetSocket>() {
-          public void onEvent(NetSocket sock) {
+        Handler<NetSocket> clientHandler = new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
 
-            sock.exceptionHandler(new EventHandler<Exception>() {
-              public void onEvent(Exception e) {
+            sock.exceptionHandler(new Handler<Exception>() {
+              public void handle(Exception e) {
                 e.printStackTrace();
                 excRef.set(e);
                 Nodex.instance.sendToHandler(actorId, "foo");

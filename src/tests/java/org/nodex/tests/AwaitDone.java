@@ -16,15 +16,15 @@
 
 package org.nodex.tests;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class AwaitDone implements EventHandler<Void> {
+public class AwaitDone implements Handler<Void> {
   private CountDownLatch latch = new CountDownLatch(1);
 
-  public void onEvent(Void v) {
+  public void handle(Void v) {
     latch.countDown();
   }
 

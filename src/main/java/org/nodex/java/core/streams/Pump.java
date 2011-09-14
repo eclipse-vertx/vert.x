@@ -16,7 +16,7 @@
 
 package org.nodex.java.core.streams;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 
 /**
@@ -41,14 +41,14 @@ public class Pump {
 
   private int pumped;
 
-  private final EventHandler<Void> drainHandler = new EventHandler<Void>() {
-    public void onEvent(Void v) {
+  private final Handler<Void> drainHandler = new Handler<Void>() {
+    public void handle(Void v) {
       readStream.resume();
     }
   };
 
-  private final EventHandler<Buffer> dataHandler = new EventHandler<Buffer>() {
-    public void onEvent(Buffer buffer) {
+  private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
+    public void handle(Buffer buffer) {
       writeStream.writeBuffer(buffer);
       pumped += buffer.length();
       if (writeStream.writeQueueFull()) {

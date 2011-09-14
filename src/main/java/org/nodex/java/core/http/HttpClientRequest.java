@@ -25,7 +25,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.WriteStream;
 
@@ -76,7 +76,7 @@ import java.util.Map;
 public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
-                    final EventHandler<HttpClientResponse> respHandler,
+                    final Handler<HttpClientResponse> respHandler,
                     final long contextID, final Thread th) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
@@ -88,15 +88,15 @@ public class HttpClientRequest implements WriteStream {
 
   private final HttpClient client;
   private final HttpRequest request;
-  private final EventHandler<HttpClientResponse> respHandler;
-  private EventHandler<Void> continueHandler;
+  private final Handler<HttpClientResponse> respHandler;
+  private Handler<Void> continueHandler;
   private final long contextID;
   final Thread th;
 
   private boolean chunked;
   private ClientConnection conn;
-  private EventHandler<Void> drainHandler;
-  private EventHandler<Exception> exceptionHandler;
+  private Handler<Void> drainHandler;
+  private Handler<Exception> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
   private LinkedList<PendingChunk> pendingChunks;
@@ -190,7 +190,7 @@ public class HttpClientRequest implements WriteStream {
    * Write a {@link Buffer} to the request body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpClientRequest write(Buffer chunk, EventHandler<Void> doneHandler) {
+  public HttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
     check();
     return write(chunk.getChannelBuffer(), doneHandler);
   }
@@ -199,7 +199,7 @@ public class HttpClientRequest implements WriteStream {
    * Write a {@link String} to the request body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpClientRequest write(String chunk, EventHandler<Void> doneHandler) {
+  public HttpClientRequest write(String chunk, Handler<Void> doneHandler) {
     checkThread();
     checkComplete();
     return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
@@ -209,7 +209,7 @@ public class HttpClientRequest implements WriteStream {
    * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpClientRequest write(String chunk, String enc, EventHandler<Void> doneHandler) {
+  public HttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
     check();
     return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
   }
@@ -255,7 +255,7 @@ public class HttpClientRequest implements WriteStream {
    * between different streams.
    * @param handler
    */
-  public void drainHandler(EventHandler<Void> handler) {
+  public void drainHandler(Handler<Void> handler) {
     check();
     this.drainHandler = handler;
     if (conn != null) {
@@ -268,7 +268,7 @@ public class HttpClientRequest implements WriteStream {
    * will be notified by calling the handler. If the request has no handler than any exceptions occurring will be
    * output to {@link System#err}
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     check();
     this.exceptionHandler = handler;
   }
@@ -280,14 +280,14 @@ public class HttpClientRequest implements WriteStream {
    * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
    * the {@link #sendHead()} method to force the request header to be written before the request has ended.
    */
-  public void continueHandler(EventHandler<Void> handler) {
+  public void continueHandler(Handler<Void> handler) {
     check();
     this.continueHandler = handler;
   }
 
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request. This is normally used
-   * to implement HTTP 100-continue handling, see {@link #continueHandler(EventHandler)} for more information.
+   * to implement HTTP 100-continue handling, see {@link #continueHandler(org.nodex.java.core.Handler)} for more information.
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest sendHead() {
@@ -330,14 +330,14 @@ public class HttpClientRequest implements WriteStream {
   void handleInterestedOpsChanged() {
     checkThread();
     if (drainHandler != null) {
-      drainHandler.onEvent(null);
+      drainHandler.handle(null);
     }
   }
 
   void handleException(Exception e) {
     checkThread();
     if (exceptionHandler != null) {
-      exceptionHandler.onEvent(e);
+      exceptionHandler.handle(e);
     } else {
       e.printStackTrace(System.err);
     }
@@ -347,10 +347,10 @@ public class HttpClientRequest implements WriteStream {
     try {
       if (resp.statusCode == 100) {
         if (continueHandler != null) {
-          continueHandler.onEvent(null);
+          continueHandler.handle(null);
         }
       } else {
-        respHandler.onEvent(resp);
+        respHandler.handle(resp);
       }
     } catch (Throwable t) {
       if (t instanceof Exception) {
@@ -374,8 +374,8 @@ public class HttpClientRequest implements WriteStream {
       //We defer actual connection until the first part of body is written or end is called
       //This gives the user an opportunity to set an exception handler before connecting so
       //they can capture any exceptions on connection
-      client.getConnection(new EventHandler<ClientConnection>() {
-        public void onEvent(ClientConnection conn) {
+      client.getConnection(new Handler<ClientConnection>() {
+        public void handle(ClientConnection conn) {
           connected(conn);
         }
       }, contextID);
@@ -440,7 +440,7 @@ public class HttpClientRequest implements WriteStream {
     conn.write(request);
   }
 
-  private HttpClientRequest write(ChannelBuffer buff, EventHandler<Void> doneHandler) {
+  private HttpClientRequest write(ChannelBuffer buff, Handler<Void> doneHandler) {
     written += buff.readableBytes();
 
     if (!chunked && written > contentLength) {
@@ -465,7 +465,7 @@ public class HttpClientRequest implements WriteStream {
     return this;
   }
 
-  private void sendChunk(ChannelBuffer buff, EventHandler<Void> doneHandler) {
+  private void sendChunk(ChannelBuffer buff, Handler<Void> doneHandler) {
     Object write = chunked ? new DefaultHttpChunk(buff) : buff;
     ChannelFuture writeFuture = conn.write(write);
     if (doneHandler != null) {
@@ -497,9 +497,9 @@ public class HttpClientRequest implements WriteStream {
 
   private static class PendingChunk {
     final ChannelBuffer chunk;
-    final EventHandler<Void> doneHandler;
+    final Handler<Void> doneHandler;
 
-    private PendingChunk(ChannelBuffer chunk, EventHandler<Void> doneHandler) {
+    private PendingChunk(ChannelBuffer chunk, Handler<Void> doneHandler) {
       this.chunk = chunk;
       this.doneHandler = doneHandler;
     }

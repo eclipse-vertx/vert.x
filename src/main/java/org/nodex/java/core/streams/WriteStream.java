@@ -16,7 +16,7 @@
 
 package org.nodex.java.core.streams;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 
 /**
@@ -54,10 +54,10 @@ public interface WriteStream {
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
    * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
    */
-  void drainHandler(EventHandler<Void> handler);
+  void drainHandler(Handler<Void> handler);
 
   /**
    * Set an exception handler on the stream
    */
-  void exceptionHandler(EventHandler<Exception> handler);
+  void exceptionHandler(Handler<Exception> handler);
 }

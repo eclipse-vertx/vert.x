@@ -16,7 +16,7 @@
 
 package org.nodex.java.examples.echo;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetClient;
@@ -32,11 +32,11 @@ public class EchoClient extends NodexMain {
   }
 
   public void go() throws Exception {
-    new NetClient().connect(8080, "localhost", new EventHandler<NetSocket>() {
-      public void onEvent(NetSocket socket) {
+    new NetClient().connect(8080, "localhost", new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
 
-        socket.dataHandler(new EventHandler<Buffer>() {
-          public void onEvent(Buffer buffer) {
+        socket.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
           }
         });

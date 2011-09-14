@@ -16,7 +16,7 @@
 
 package org.nodex.java.examples.sendfile;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.http.HttpServer;
 import org.nodex.java.core.http.HttpServerRequest;
@@ -38,8 +38,8 @@ public class SendFileExample extends NodexMain {
 
   public void go() throws Exception {
     //Here is the web server!
-    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
-      public void onEvent(HttpServerRequest req) {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
         if (req.path.equals("/")) {
           req.response.sendFile(webroot + "index.html");
         } else {

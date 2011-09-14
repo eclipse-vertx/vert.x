@@ -37,7 +37,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
@@ -54,14 +54,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Instances of this class can only be used from the event loop that created it. When connections are accepted by the server
  * they are supplied to the user in the form of a {@link NetSocket} instance that is passed via an instance of
- * {@link EventHandler} which is supplied to the server via the {@link #connectHandler} method.</p>
+ * {@link org.nodex.java.core.Handler} which is supplied to the server via the {@link #connectHandler} method.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServer extends NetServerBase {
 
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
-  private EventHandler<NetSocket> connectHandler;
+  private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
 
@@ -78,7 +78,7 @@ public class NetServer extends NetServerBase {
    * connect handler.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer connectHandler(EventHandler<NetSocket> connectHandler) {
+  public NetServer connectHandler(Handler<NetSocket> connectHandler) {
     checkThread();
     this.connectHandler = connectHandler;
     return this;
@@ -261,7 +261,7 @@ public class NetServer extends NetServerBase {
    * Close the server. This will close any currently open connections. The event handler {@code done} will be called
    * when the close is complete.
    */
-  public void close(final EventHandler<Void> done) {
+  public void close(final Handler<Void> done) {
     checkThread();
 
     long cid = Nodex.instance.getContextID();
@@ -283,7 +283,7 @@ public class NetServer extends NetServerBase {
           Runnable runner = new Runnable() {
             public void run() {
               listening = false;
-              done.onEvent(null);
+              done.handle(null);
             }
           };
           NodexInternal.instance.executeOnContext(contextID, runner);
@@ -310,7 +310,7 @@ public class NetServer extends NetServerBase {
           NodexInternal.instance.setContextID(contextID);
           NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-          connectHandler.onEvent(sock);
+          connectHandler.handle(sock);
         }
       });
     }

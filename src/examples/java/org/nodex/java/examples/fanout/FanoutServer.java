@@ -16,10 +16,10 @@
 
 package org.nodex.java.examples.fanout;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetServer;
 import org.nodex.java.core.net.NetSocket;
@@ -38,18 +38,18 @@ public class FanoutServer extends NodexMain {
   public void go() throws Exception {
     final Set<Long> connections = SharedData.getSet("conns");
 
-    new NetServer().connectHandler(new EventHandler<NetSocket>() {
-      public void onEvent(final NetSocket socket) {
+    new NetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(final NetSocket socket) {
         connections.add(socket.writeHandlerID);
-        socket.dataHandler(new EventHandler<Buffer>() {
-          public void onEvent(Buffer buffer) {
+        socket.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
             for (Long actorID : connections) {
               Nodex.instance.sendToHandler(actorID, buffer);
             }
           }
         });
-        socket.closedHandler(new SimpleEventHandler() {
-          public void onEvent() {
+        socket.closedHandler(new SimpleHandler() {
+          public void handle() {
             connections.remove(socket.writeHandlerID);
           }
         });

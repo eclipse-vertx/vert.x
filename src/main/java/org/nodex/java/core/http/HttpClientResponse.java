@@ -18,7 +18,7 @@ package org.nodex.java.core.http;
 
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.ReadStream;
 
@@ -29,8 +29,8 @@ import java.util.Set;
 /**
  * <p>Encapsulates a client-side HTTP response.</p>
  *
- * <p>An instance of this class is provided to the user via an {@link EventHandler} class that was specified when one of the
- * HTTP method operations, or the generic {@link HttpClient#request(String, String, EventHandler)} method was called on an instance of {@link HttpClient}.</p>
+ * <p>An instance of this class is provided to the user via an {@link org.nodex.java.core.Handler} class that was specified when one of the
+ * HTTP method operations, or the generic {@link HttpClient#request(String, String, org.nodex.java.core.Handler)} method was called on an instance of {@link HttpClient}.</p>
  *
  * <p>Instances of this class can only be used from the event loop thread which created the corresponding {@link HttpClientRequest}</p>
  *
@@ -40,9 +40,9 @@ public class HttpClientResponse implements ReadStream {
 
   private final ClientConnection conn;
   private final Thread th;
-  private EventHandler<Buffer> dataHandler;
-  private EventHandler<Void> endHandler;
-  private EventHandler<Exception> exceptionHandler;
+  private Handler<Buffer> dataHandler;
+  private Handler<Void> endHandler;
+  private Handler<Exception> exceptionHandler;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
   // Cache these for performance
@@ -142,7 +142,7 @@ public class HttpClientResponse implements ReadStream {
    * If the response has no body it will not be called at all.
    * @param dataHandler
    */
-  public void dataHandler(EventHandler<Buffer> dataHandler) {
+  public void dataHandler(Handler<Buffer> dataHandler) {
     checkThread();
     this.dataHandler = dataHandler;
   }
@@ -150,7 +150,7 @@ public class HttpClientResponse implements ReadStream {
   /**
    * Specify an end handler for the response. The {@code endHandler} is called once the entire response has been read.
    */
-  public void endHandler(EventHandler<Void> endHandler) {
+  public void endHandler(Handler<Void> endHandler) {
     checkThread();
     this.endHandler = endHandler;
   }
@@ -159,7 +159,7 @@ public class HttpClientResponse implements ReadStream {
    * Specify an exception handler for the response. The {@code exceptionHandler} is called if an exception occurs
    * when handling the response.
    */
-  public void exceptionHandler(EventHandler<Exception> exceptionHandler) {
+  public void exceptionHandler(Handler<Exception> exceptionHandler) {
     checkThread();
     this.exceptionHandler = exceptionHandler;
   }
@@ -187,7 +187,7 @@ public class HttpClientResponse implements ReadStream {
   void handleChunk(Buffer data) {
     checkThread();
     if (dataHandler != null) {
-      dataHandler.onEvent(data);
+      dataHandler.handle(data);
     }
   }
 
@@ -195,14 +195,14 @@ public class HttpClientResponse implements ReadStream {
     checkThread();
     this.trailer = trailer;
     if (endHandler != null) {
-      endHandler.onEvent(null);
+      endHandler.handle(null);
     }
   }
 
   void handleException(Exception e) {
     checkThread();
     if (exceptionHandler != null) {
-      exceptionHandler.onEvent(e);
+      exceptionHandler.handle(e);
     }
   }
 
