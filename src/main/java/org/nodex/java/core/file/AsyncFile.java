@@ -250,7 +250,7 @@ public class AsyncFile {
                   } else {
                     pos += buffer.length();
                     handleData(buffer);
-                    if (!paused) {
+                    if (!paused && dataHandler != null) {
                       doRead();
                     }
                   }

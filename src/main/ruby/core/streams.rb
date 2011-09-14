@@ -126,9 +126,9 @@ module Nodex
     def initialize(read_stream, write_stream)
       raise "read_stream is not a ReadStream" if !read_stream.is_a? ReadStream
       raise "write_stream is not a WriteStream" if !write_stream.is_a? WriteStream
-      j_del = read_stream._to_read_stream
-      j_del = write_stream._to_write_stream
-      @j_pump = org.nodex.java.core.streams.Pump.new(j_del, j_del)
+      j_rs = read_stream._to_read_stream
+      j_ws = write_stream._to_write_stream
+      @j_pump = org.nodex.java.core.streams.Pump.new(j_rs, j_ws)
     end
 
     def write_queue_max_size=(val)

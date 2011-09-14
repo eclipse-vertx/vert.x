@@ -60,6 +60,13 @@ public abstract class NetBase {
     }
   }
 
+  protected void checkThread() {
+    // All ops must always be invoked on same thread
+    if (Thread.currentThread() != th) {
+      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
+    }
+  }
+
   protected enum ClientAuth {
     NONE, REQUEST, REQUIRED
   }
