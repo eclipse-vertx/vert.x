@@ -38,9 +38,9 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.net.NetClientBase;
@@ -69,7 +69,7 @@ public class HttpClient extends NetClientBase {
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
-  private EventHandler<Exception> exceptionHandler;
+  private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
   private final Queue<ClientConnection> available = new ConcurrentLinkedQueue<ClientConnection>();
@@ -88,7 +88,7 @@ public class HttpClient extends NetClientBase {
   /**
    * Set the exception handler for the {@code HttpClient}
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -187,30 +187,30 @@ public class HttpClient extends NetClientBase {
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
-  public void connectWebsocket(final String uri, final EventHandler<Websocket> wsConnect) {
-    getConnection(new EventHandler<ClientConnection>() {
-      public void onEvent(final ClientConnection conn) {
+  public void connectWebsocket(final String uri, final Handler<Websocket> wsConnect) {
+    getConnection(new Handler<ClientConnection>() {
+      public void handle(final ClientConnection conn) {
         conn.toWebSocket(uri, wsConnect);
       }
     }, Nodex.instance.getContextID());
   }
 
   /**
-   * This is a quick version of the {@link #get(String, EventHandler) get()} method where you do not want to do anything with the request
+   * This is a quick version of the {@link #get(String, org.nodex.java.core.Handler) get()} method where you do not want to do anything with the request
    * before sending.<p>
    * Normally with any of the HTTP methods you create the request then when you are ready to send it you call
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public void getNow(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
     getNow(uri, null, responseHandler);
   }
 
   /**
-   * This method works in the same manner as {@link #getNow(String, EventHandler)},
+   * This method works in the same manner as {@link #getNow(String, org.nodex.java.core.Handler)},
    * except that it allows you specify a set of {@code headers} that will be sent with the request.
    */
-  public void getNow(String uri, Map<String, ? extends Object> headers, EventHandler<HttpClientResponse> responseHandler) {
+  public void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
       req.putAllHeaders(headers);
@@ -222,7 +222,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP OPTIONS request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest options(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest options(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("OPTIONS", uri, responseHandler);
   }
 
@@ -230,7 +230,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP GET request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest get(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest get(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("GET", uri, responseHandler);
   }
 
@@ -238,7 +238,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP HEAD request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest head(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest head(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("HEAD", uri, responseHandler);
   }
 
@@ -246,7 +246,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP POST request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest post(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest post(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("POST", uri, responseHandler);
   }
 
@@ -254,7 +254,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP PUT request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest put(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest put(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("PUT", uri, responseHandler);
   }
 
@@ -262,7 +262,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP DELETE request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest delete(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest delete(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("DELETE", uri, responseHandler);
   }
 
@@ -270,7 +270,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP TRACE request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest trace(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest trace(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("TRACE", uri, responseHandler);
   }
 
@@ -278,7 +278,7 @@ public class HttpClient extends NetClientBase {
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP CONNECT request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest connect(String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("CONNECT", uri, responseHandler);
   }
 
@@ -287,7 +287,7 @@ public class HttpClient extends NetClientBase {
    * (e.g. GET, POST, PUT etc) is specified using the parameter {@code method}<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public HttpClientRequest request(String method, String uri, EventHandler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
     final Long cid = Nodex.instance.getContextID();
     if (cid == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
@@ -362,10 +362,10 @@ public class HttpClient extends NetClientBase {
   //This will be a contention point
   //Need to be improved
 
-  synchronized void getConnection(EventHandler<ClientConnection> handler, long contextID) {
+  synchronized void getConnection(Handler<ClientConnection> handler, long contextID) {
     ClientConnection conn = available.poll();
     if (conn != null) {
-      handler.onEvent(conn);
+      handler.handle(conn);
     } else {
       if (connectionCount.get() < maxPoolSize) {
         if (connectionCount.incrementAndGet() <= maxPoolSize) {
@@ -393,7 +393,7 @@ public class HttpClient extends NetClientBase {
         NodexInternal.instance.executeOnContext(waiter.contextID, new Runnable() {
           public void run() {
             NodexInternal.instance.setContextID(waiter.contextID);
-            waiter.handler.onEvent(conn);
+            waiter.handler.handle(conn);
           }
         });
       } else {
@@ -402,7 +402,7 @@ public class HttpClient extends NetClientBase {
     }
   }
 
-  private void connect(final EventHandler<ClientConnection> connectHandler, final long contextID) {
+  private void connect(final Handler<ClientConnection> connectHandler, final long contextID) {
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
@@ -443,8 +443,8 @@ public class HttpClient extends NetClientBase {
               final ClientConnection conn = new ClientConnection(HttpClient.this, ch,
                   host + ":" + port, ssl, keepAlive, contextID,
                   Thread.currentThread());
-              conn.closedHandler(new SimpleEventHandler() {
-                public void onEvent() {
+              conn.closedHandler(new SimpleHandler() {
+                public void handle() {
                   if (connectionCount.decrementAndGet() < maxPoolSize) {
                     //Now the connection count has come down, maybe there is another waiter that can
                     //create a new connection
@@ -457,13 +457,13 @@ public class HttpClient extends NetClientBase {
               });
               connectionMap.put(ch, conn);
               NodexInternal.instance.setContextID(contextID);
-              connectHandler.onEvent(conn);
+              connectHandler.handle(conn);
             }
           });
         } else {
           Throwable t = channelFuture.getCause();
           if (t instanceof Exception && exceptionHandler != null) {
-            exceptionHandler.onEvent((Exception) t);
+            exceptionHandler.handle((Exception) t);
           } else {
             t.printStackTrace(System.err);
           }
@@ -473,10 +473,10 @@ public class HttpClient extends NetClientBase {
   }
 
   private static class Waiter {
-    final EventHandler<ClientConnection> handler;
+    final Handler<ClientConnection> handler;
     final long contextID;
 
-    private Waiter(EventHandler<ClientConnection> handler, long contextID) {
+    private Waiter(Handler<ClientConnection> handler, long contextID) {
       this.handler = handler;
       this.contextID = contextID;
     }

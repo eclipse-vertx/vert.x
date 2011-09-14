@@ -19,7 +19,7 @@ package org.nodex.java.core.http;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.ReadStream;
 
@@ -33,8 +33,8 @@ import java.util.Set;
  * <p>Encapsulates a server-side HTTP request.</p>
  *
  * <p>An instance of this class is created for each request that is handled by the server and is passed to the user via the
- * {@link EventHandler} instance registered with the {@link HttpServer} using the method
- * {@link HttpServer#requestHandler(org.nodex.java.core.EventHandler)}.<p>
+ * {@link org.nodex.java.core.Handler} instance registered with the {@link HttpServer} using the method
+ * {@link HttpServer#requestHandler(org.nodex.java.core.Handler)}.<p>
  *
  * <p>On creation a new execution context is assigned to each instance and an event loop is allocated to it from one
  * of the available ones. The instance must only be called from that event loop.</p>
@@ -47,9 +47,9 @@ import java.util.Set;
 public class HttpServerRequest implements ReadStream {
 
   private Map<String, List<String>> params;
-  private EventHandler<Buffer> dataHandler;
-  private EventHandler<Void> endHandler;
-  private EventHandler<Exception> exceptionHandler;
+  private Handler<Buffer> dataHandler;
+  private Handler<Void> endHandler;
+  private Handler<Exception> exceptionHandler;
   private final ServerConnection conn;
   private final HttpRequest request;
   //Cache this for performance
@@ -148,7 +148,7 @@ public class HttpServerRequest implements ReadStream {
    * If the request has no body it will not be called at all.
    * @param dataHandler
    */
-  public void dataHandler(EventHandler<Buffer> dataHandler) {
+  public void dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
   }
 
@@ -156,7 +156,7 @@ public class HttpServerRequest implements ReadStream {
    * Specify an exception handler for the request. The {@code exceptionHandler} is called if an exception occurs
    * when handling the request.
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -180,25 +180,25 @@ public class HttpServerRequest implements ReadStream {
   /**
    * Specify an end handler for the request. The {@code endHandler} is called once the entire request has been read.
    */
-  public void endHandler(EventHandler<Void> handler) {
+  public void endHandler(Handler<Void> handler) {
     this.endHandler = handler;
   }
 
   void handleData(Buffer data) {
     if (dataHandler != null) {
-      dataHandler.onEvent(data);
+      dataHandler.handle(data);
     }
   }
 
   void handleEnd() {
     if (endHandler != null) {
-      endHandler.onEvent(null);
+      endHandler.handle(null);
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onEvent(e);
+      exceptionHandler.handle(e);
     }
   }
 

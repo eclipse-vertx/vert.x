@@ -22,9 +22,9 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 
 import java.io.File;
@@ -35,8 +35,8 @@ class ServerConnection extends AbstractConnection {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private EventHandler<HttpServerRequest> requestHandler;
-  private EventHandler<Websocket> wsHandler;
+  private Handler<HttpServerRequest> requestHandler;
+  private Handler<Websocket> wsHandler;
   private HttpServerRequest currentRequest;
   private boolean pendingResponse;
   private Websocket ws;
@@ -87,11 +87,11 @@ class ServerConnection extends AbstractConnection {
     checkNextTick();
   }
 
-  void requestHandler(EventHandler<HttpServerRequest> handler) {
+  void requestHandler(Handler<HttpServerRequest> handler) {
     this.requestHandler = handler;
   }
 
-  void wsHandler(EventHandler<Websocket> handler) {
+  void wsHandler(Handler<Websocket> handler) {
     this.wsHandler = handler;
   }
 
@@ -106,7 +106,7 @@ class ServerConnection extends AbstractConnection {
       this.currentRequest = req;
       pendingResponse = true;
       if (requestHandler != null) {
-        requestHandler.onEvent(req);
+        requestHandler.handle(req);
       }
     } catch (Throwable t) {
       handleHandlerException(t);
@@ -151,7 +151,7 @@ class ServerConnection extends AbstractConnection {
     try {
       if (wsHandler != null) {
         setContextID();
-        wsHandler.onEvent(ws);
+        wsHandler.handle(ws);
         this.ws = ws;
       }
     } catch (Throwable t) {
@@ -188,7 +188,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(EventHandler<Void> doneHandler, ChannelFuture future) {
+  protected void addFuture(Handler<Void> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);
   }
 
@@ -235,8 +235,8 @@ class ServerConnection extends AbstractConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!sentCheck && !pending.isEmpty() && !paused && (!pendingResponse || pending.peek() instanceof HttpChunk)) {
       sentCheck = true;
-      Nodex.instance.nextTick(new SimpleEventHandler() {
-        public void onEvent() {
+      Nodex.instance.nextTick(new SimpleHandler() {
+        public void handle() {
           sentCheck = false;
           if (!paused) {
             Object msg = pending.poll();

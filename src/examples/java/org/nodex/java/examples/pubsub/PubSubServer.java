@@ -16,7 +16,7 @@
 
 package org.nodex.java.examples.pubsub;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.buffer.Buffer;
@@ -37,10 +37,10 @@ public class PubSubServer extends NodexMain {
   }
 
   public void go() throws Exception {
-    new NetServer().connectHandler(new EventHandler<NetSocket>() {
-      public void onEvent(final NetSocket socket) {
-        socket.dataHandler(RecordParser.newDelimited("\n", new EventHandler<Buffer>() {
-          public void onEvent(Buffer frame) {
+    new NetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(final NetSocket socket) {
+        socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
+          public void handle(Buffer frame) {
             String line = frame.toString().trim();
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {

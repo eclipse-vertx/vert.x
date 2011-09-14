@@ -16,7 +16,7 @@
 
 package org.nodex.java.examples.websockets;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.http.HttpServer;
@@ -37,11 +37,11 @@ public class WebsocketsExample extends NodexMain {
   }
 
   public void go() throws Exception {
-    new HttpServer().websocketHandler(new EventHandler<Websocket>() {
-      public void onEvent(final Websocket ws) {
+    new HttpServer().websocketHandler(new Handler<Websocket>() {
+      public void handle(final Websocket ws) {
         if (ws.uri.equals("/myapp")) {
-          ws.dataHandler(new EventHandler<Buffer>() {
-            public void onEvent(Buffer data) {
+          ws.dataHandler(new Handler<Buffer>() {
+            public void handle(Buffer data) {
               ws.writeTextFrame(data.toString()); // Echo it back
             }
           });
@@ -50,8 +50,8 @@ public class WebsocketsExample extends NodexMain {
           ws.close();
         }
       }
-    }).requestHandler(new EventHandler<HttpServerRequest>() {
-      public void onEvent(HttpServerRequest req) {
+    }).requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
         if (req.path.equals("/")) req.response.sendFile("websockets/ws.html"); // Serve the html
       }
     }).listen(8080);

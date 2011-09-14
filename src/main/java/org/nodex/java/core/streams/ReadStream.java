@@ -16,7 +16,7 @@
 
 package org.nodex.java.core.streams;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 
 /**
@@ -32,7 +32,7 @@ public interface ReadStream {
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */
-  void dataHandler(EventHandler<Buffer> handler);
+  void dataHandler(Handler<Buffer> handler);
 
   /**
    * Pause the {@code ReadStream}. After calling this, the ReadStream will aim to send no more data to the {@code
@@ -48,10 +48,10 @@ public interface ReadStream {
   /**
    * Set an exception handler.
    */
-  void exceptionHandler(EventHandler<Exception> handler);
+  void exceptionHandler(Handler<Exception> handler);
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
    */
-  void endHandler(EventHandler<Void> endHandler);
+  void endHandler(Handler<Void> endHandler);
 }

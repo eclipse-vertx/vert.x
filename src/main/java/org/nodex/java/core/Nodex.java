@@ -33,14 +33,14 @@ public interface Nodex {
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  long setTimer(long delay, EventHandler<Long> handler);
+  long setTimer(long delay, Handler<Long> handler);
 
   /**
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  long setPeriodic(long delay, EventHandler<Long> handler);
+  long setPeriodic(long delay, Handler<Long> handler);
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
@@ -54,7 +54,7 @@ public interface Nodex {
    * registerHandler} method.
    * @return the unique ID of the handler. This is required when calling {@link #sendToHandler}.
    */
-  <T> long registerHandler(EventHandler<T> handler);
+  <T> long registerHandler(Handler<T> handler);
 
   /**
    * Unregister the handler with the specified {@code handlerID}. This must be called from the same event loop that
@@ -77,7 +77,7 @@ public interface Nodex {
   /**
    * Call the specified event handler asynchronously on the next "tick" of the event loop.
    */
-  void nextTick(EventHandler<Void> handler);
+  void nextTick(Handler<Void> handler);
 
   /**
    * Run the specified Runnable inside an event loop. An event loop will be picked by the system from all available

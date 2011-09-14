@@ -21,7 +21,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.ReadStream;
@@ -38,9 +38,9 @@ import java.nio.charset.Charset;
  */
 public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 
-  private EventHandler<Buffer> dataHandler;
-  private EventHandler<Void> endHandler;
-  private EventHandler<Void> drainHandler;
+  private Handler<Buffer> dataHandler;
+  private Handler<Void> endHandler;
+  private Handler<Void> drainHandler;
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the system, the ID of that
@@ -53,8 +53,8 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
 
   NetSocket(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
-    writeHandlerID = Nodex.instance.registerHandler(new EventHandler<Buffer>() {
-      public void onEvent(Buffer buff) {
+    writeHandlerID = Nodex.instance.registerHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
         writeBuffer(buff);
       }
     });
@@ -102,7 +102,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    * Write a {@link Buffer} to the connection. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(Buffer data, EventHandler<Void> doneHandler) {
+  public NetSocket write(Buffer data, Handler<Void> doneHandler) {
     addFuture(doneHandler, doWrite(data.getChannelBuffer()));
     return this;
   }
@@ -111,7 +111,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    * Write a {@link String} to the connection, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(String str, EventHandler<Void> doneHandler) {
+  public NetSocket write(String str, Handler<Void> doneHandler) {
     addFuture(doneHandler, doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8)));
     return this;
   }
@@ -120,7 +120,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    * Write a {@link String} to the connection, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(String str, String enc, EventHandler<Void> doneHandler) {
+  public NetSocket write(String str, String enc, Handler<Void> doneHandler) {
     if (enc == null) {
       write(str, enc);
     } else {
@@ -132,7 +132,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   /**
    * Specify a data handler for the connection. As data is read from the connection the handler will be called.
    */
-  public void dataHandler(EventHandler<Buffer> dataHandler) {
+  public void dataHandler(Handler<Buffer> dataHandler) {
     checkThread();
     this.dataHandler = dataHandler;
   }
@@ -140,7 +140,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   /**
    * Specify an end handler for the connection. This will be called when the connection has ended, i.e. when it has been closed.
    */
-  public void endHandler(EventHandler<Void> endHandler) {
+  public void endHandler(Handler<Void> endHandler) {
     checkThread();
     this.endHandler = endHandler;
   }
@@ -152,7 +152,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.nodex.java.core.streams.Pump} class to pump data
    * between different streams.
    */
-  public void drainHandler(EventHandler<Void> drainHandler) {
+  public void drainHandler(Handler<Void> drainHandler) {
     checkThread();
     this.drainHandler = drainHandler;
     callDrainHandler(); //If the channel is already drained, we want to call it immediately
@@ -178,7 +178,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     Nodex.instance.unregisterHandler(writeHandlerID);
     if (endHandler != null) {
       try {
-        endHandler.onEvent(null);
+        endHandler.handle(null);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
@@ -198,7 +198,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     if (dataHandler != null) {
       setContextID();
       try {
-        dataHandler.onEvent(data);
+        dataHandler.handle(data);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
@@ -220,7 +220,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     if (drainHandler != null) {
       if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
         try {
-          drainHandler.onEvent(null);
+          drainHandler.handle(null);
         } catch (Throwable t) {
           handleHandlerException(t);
         }

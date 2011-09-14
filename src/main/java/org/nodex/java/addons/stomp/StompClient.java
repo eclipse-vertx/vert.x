@@ -16,7 +16,7 @@
 
 package org.nodex.java.addons.stomp;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetSocket;
 
@@ -31,8 +31,8 @@ public class StompClient {
 
   public static void connect(int port, String host, final String username, final String password,
                              final StompConnectHandler connectHandler) {
-    new NetClient().connect(port, host, new EventHandler<NetSocket>() {
-      public void onEvent(NetSocket sock) {
+    new NetClient().connect(port, host, new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
         final StompConnection conn = new StompConnection(sock);
         conn.connect(username, password, new Runnable() {
           public void run() {

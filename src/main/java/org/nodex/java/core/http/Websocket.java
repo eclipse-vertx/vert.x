@@ -18,7 +18,7 @@ package org.nodex.java.core.http;
 
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
@@ -39,10 +39,10 @@ public class Websocket implements ReadStream, WriteStream {
 
   private final AbstractConnection conn;
 
-  private EventHandler<Buffer> dataHandler;
-  private EventHandler<Void> drainHandler;
-  private EventHandler<Exception> exceptionHandler;
-  private EventHandler<Void> endHandler;
+  private Handler<Buffer> dataHandler;
+  private Handler<Void> drainHandler;
+  private Handler<Exception> exceptionHandler;
+  private Handler<Void> endHandler;
 
   Websocket(String uri, AbstractConnection conn) {
     this.uri = uri;
@@ -75,21 +75,21 @@ public class Websocket implements ReadStream, WriteStream {
    * Specify a data handler for the websocket. As data is received on the websocket the handler will be called, passing
    * in a Buffer of data
    */
-  public void dataHandler(EventHandler<Buffer> handler) {
+  public void dataHandler(Handler<Buffer> handler) {
     this.dataHandler = handler;
   }
 
   /**
    * Specify an end handler for the websocket. The {@code endHandler} is called once there is no more data to be read.
    */
-  public void endHandler(EventHandler<Void> handler) {
+  public void endHandler(Handler<Void> handler) {
     this.endHandler = handler;
   }
 
   /**
    * Specify an exception handler for the websocket. The {@code exceptionHandler} is called if an exception occurs.
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -148,7 +148,7 @@ public class Websocket implements ReadStream, WriteStream {
    * between different streams.
    * @param handler
    */
-  public void drainHandler(EventHandler<Void> handler) {
+  public void drainHandler(Handler<Void> handler) {
     this.drainHandler = handler;
   }
 
@@ -161,19 +161,19 @@ public class Websocket implements ReadStream, WriteStream {
 
   void handleFrame(WebSocketFrame frame) {
     if (dataHandler != null) {
-      dataHandler.onEvent(new Buffer(frame.getBinaryData()));
+      dataHandler.handle(new Buffer(frame.getBinaryData()));
     }
   }
 
   void writable() {
     if (drainHandler != null) {
-      drainHandler.onEvent(null);
+      drainHandler.handle(null);
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onEvent(e);
+      exceptionHandler.handle(e);
     }
   }
 }

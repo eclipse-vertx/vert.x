@@ -17,18 +17,16 @@
 package org.nodex.java.core;
 
 /**
- * <p>This class can be used for simple event handlers which don't receive an event with any value.</p>
+ *  <p>A generic handler</p>
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *  <p>This interface is used heavily throughout node.x as a handler for all types of asynchronous occurrences.</p>
+ *
+ *  @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class SimpleEventHandler implements EventHandler<Void> {
-
-  public void onEvent(Void event) {
-    onEvent();
-  }
+public interface Handler<E> {
 
   /**
-   * This method will be called when the event occurs. It should be overridden by the user.
+   * Something has happened, so handle it.
    */
-  protected abstract void onEvent();
+  void handle(E event);
 }

@@ -55,7 +55,7 @@ module Nodex
     # This method is called to provide the parser with data.
     # @param [Buffer] data. Input data to the parser.
     def input(data)
-      @java_parser.onEvent(data._to_java_buffer)
+      @java_parser.handle(data._to_java_buffer)
     end
 
     # Create a new RecordParser instance, initially in delimited mode, and where the delimiter can be represented

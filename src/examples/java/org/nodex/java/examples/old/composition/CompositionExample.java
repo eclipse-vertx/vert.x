@@ -35,7 +35,7 @@ import org.nodex.java.addons.stomp.StompMsgCallback;
 import org.nodex.java.addons.stomp.StompServer;
 import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.composition.Composable;
 import org.nodex.java.core.composition.Composer;
@@ -75,14 +75,14 @@ public class CompositionExample {
 
   private void httpServer() {
     final ChannelPool chPool = ChannelPool.createPool();
-    new HttpServer().requestHandler(new EventHandler<HttpServerRequest>() {
-      public void onEvent(final HttpServerRequest req) {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
         System.out.println("Request uri is " + req.uri);
         if (req.uri.equals("/")) {
           System.out.println("Serving index page");
           //Serve the main page
           FileSystem.instance.readFile("index.html", new CompletionHandler<Buffer>() {
-            public void onEvent(Completion<Buffer> completion) {
+            public void handle(Completion<Buffer> completion) {
               req.response.write(completion.result);
               req.response.end();
             }

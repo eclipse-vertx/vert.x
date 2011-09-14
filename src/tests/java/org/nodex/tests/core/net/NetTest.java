@@ -16,10 +16,10 @@
 
 package org.nodex.tests.core.net;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetServer;
@@ -49,19 +49,19 @@ public class NetTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-          public void onEvent(String msg) {
+        final long actorId = Nodex.instance.registerHandler(new Handler<String>() {
+          public void handle(String msg) {
 
-            server.close(new SimpleEventHandler() {
-              public void onEvent() {
+            server.close(new SimpleHandler() {
+              public void handle() {
                 latch.countDown();
               }
             });
           }
         });
 
-        server.connectHandler(new EventHandler<NetSocket>() {
-          public void onEvent(NetSocket sock) {
+        server.connectHandler(new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
             if (totalConnectCount.incrementAndGet() == 2 * connectCount) {
               Nodex.instance.sendToHandler(actorId, "foo");
             }
@@ -72,8 +72,8 @@ public class NetTest extends TestBase {
         NetClient client = new NetClient();
 
         for (int i = 0; i < connectCount; i++) {
-          client.connect(8181, new EventHandler<NetSocket>() {
-            public void onEvent(NetSocket sock) {
+          client.connect(8181, new Handler<NetSocket>() {
+            public void handle(NetSocket sock) {
               sock.close();
               if (totalConnectCount.incrementAndGet() == 2 * connectCount) {
                 Nodex.instance.sendToHandler(actorId, "foo");
@@ -155,21 +155,21 @@ public class NetTest extends TestBase {
         final Buffer sentBuff = Buffer.create(0);
         final Buffer receivedBuff = Buffer.create(0);
 
-        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-          public void onEvent(String msg) {
+        final long actorId = Nodex.instance.registerHandler(new Handler<String>() {
+          public void handle(String msg) {
             azzert(Utils.buffersEqual(sentBuff, receivedBuff));
-            server.close(new SimpleEventHandler() {
-              public void onEvent() {
+            server.close(new SimpleHandler() {
+              public void handle() {
                 latch.countDown();
               }
             });
           }
         });
 
-        server.connectHandler(new EventHandler<NetSocket>() {
-          public void onEvent(NetSocket sock) {
-            sock.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(Buffer data) {
+        server.connectHandler(new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
+            sock.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
                 receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
                   Nodex.instance.sendToHandler(actorId, "foo");
@@ -179,8 +179,8 @@ public class NetTest extends TestBase {
           }
         }).listen(8181);
 
-        NetClient client = new NetClient().connect(8181, new EventHandler<NetSocket>() {
-          public void onEvent(NetSocket sock) {
+        NetClient client = new NetClient().connect(8181, new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
             doWrite(sentBuff, sock, numSends, sendSize, checker);
           }
@@ -213,8 +213,8 @@ public class NetTest extends TestBase {
 
     new NodexMain() {
       public void go() throws Exception {
-        EventHandler<NetSocket> sender = new EventHandler<NetSocket>() {
-          public void onEvent(final NetSocket sock) {
+        Handler<NetSocket> sender = new Handler<NetSocket>() {
+          public void handle(final NetSocket sock) {
             String fileName = "./" + path;
             sock.sendFile(fileName);
           }
@@ -222,21 +222,21 @@ public class NetTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-          public void onEvent(String msg) {
-            server.close(new SimpleEventHandler() {
-              public void onEvent() {
+        final long actorId = Nodex.instance.registerHandler(new Handler<String>() {
+          public void handle(String msg) {
+            server.close(new SimpleHandler() {
+              public void handle() {
                 latch.countDown();
               }
             });
           }
         });
 
-        EventHandler<NetSocket> receiver = new EventHandler<NetSocket>() {
-          public void onEvent(NetSocket sock) {
+        Handler<NetSocket> receiver = new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
             final Buffer buff = Buffer.create(0);
-            sock.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(final Buffer data) {
+            sock.dataHandler(new Handler<Buffer>() {
+              public void handle(final Buffer data) {
                 buff.appendBuffer(data);
                 if (buff.length() == file.length()) {
                   azzert(content.equals(buff.toString()));
@@ -247,8 +247,8 @@ public class NetTest extends TestBase {
           }
         };
 
-        EventHandler<NetSocket> serverHandler = clientToServer ? receiver : sender;
-        EventHandler<NetSocket> clientHandler = clientToServer ? sender : receiver;
+        Handler<NetSocket> serverHandler = clientToServer ? receiver : sender;
+        Handler<NetSocket> clientHandler = clientToServer ? sender : receiver;
 
         server.connectHandler(serverHandler).listen(8181);
         new NetClient().connect(8181, clientHandler);
@@ -270,8 +270,8 @@ public class NetTest extends TestBase {
     if (count == 0) {
       sock.write(b);
     } else {
-      sock.write(b, new SimpleEventHandler() {
-        public void onEvent() {
+      sock.write(b, new SimpleHandler() {
+        public void handle() {
           checker.check();
           doWrite(sentBuff, sock, c, sendSize, checker);
         }
@@ -293,22 +293,22 @@ public class NetTest extends TestBase {
         final Buffer sentBuff = Buffer.create(0);
         final Buffer receivedBuff = Buffer.create(0);
 
-        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-          public void onEvent(String msg) {
+        final long actorId = Nodex.instance.registerHandler(new Handler<String>() {
+          public void handle(String msg) {
             azzert(Utils.buffersEqual(sentBuff, receivedBuff));
-            server.close(new SimpleEventHandler() {
-              public void onEvent() {
+            server.close(new SimpleHandler() {
+              public void handle() {
                 latch.countDown();
               }
             });
           }
         });
 
-        EventHandler<NetSocket> receiver = new EventHandler<NetSocket>() {
-          public void onEvent(final NetSocket sock) {
+        Handler<NetSocket> receiver = new Handler<NetSocket>() {
+          public void handle(final NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
-            sock.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(Buffer data) {
+            sock.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
                 checker.check();
                 receivedBuff.appendBuffer(data);
                 if (receivedBuff.length() == numSends * sendSize) {
@@ -320,8 +320,8 @@ public class NetTest extends TestBase {
           }
         };
 
-        EventHandler<NetSocket> sender = new EventHandler<NetSocket>() {
-          public void onEvent(NetSocket sock) {
+        Handler<NetSocket> sender = new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
             for (int i = 0; i < numSends; i++) {
               if (string) {
                 byte[] bytes = new byte[sendSize];
@@ -341,8 +341,8 @@ public class NetTest extends TestBase {
             }
           }
         };
-        EventHandler<NetSocket> serverHandler = clientToServer ? receiver : sender;
-        EventHandler<NetSocket> clientHandler = clientToServer ? sender : receiver;
+        Handler<NetSocket> serverHandler = clientToServer ? receiver : sender;
+        Handler<NetSocket> clientHandler = clientToServer ? sender : receiver;
 
         server.connectHandler(serverHandler).listen(8181);
         new NetClient().connect(8181, clientHandler);
@@ -367,21 +367,21 @@ public class NetTest extends TestBase {
 
         final NetServer server = new NetServer();
 
-        final long actorId = Nodex.instance.registerHandler(new EventHandler<String>() {
-          public void onEvent(String msg) {
-            server.close(new SimpleEventHandler() {
-              public void onEvent() {
+        final long actorId = Nodex.instance.registerHandler(new Handler<String>() {
+          public void handle(String msg) {
+            server.close(new SimpleHandler() {
+              public void handle() {
                 serverCloseLatch.countDown();
               }
             });
           }
         });
 
-        server.connectHandler(new EventHandler<NetSocket>() {
-          public void onEvent(final NetSocket sock) {
+        server.connectHandler(new Handler<NetSocket>() {
+          public void handle(final NetSocket sock) {
             final ContextChecker checker = new ContextChecker();
-            sock.closedHandler(new SimpleEventHandler() {
-              public void onEvent() {
+            sock.closedHandler(new SimpleHandler() {
+              public void handle() {
                 checker.check();
                 if (serverCloseCount.incrementAndGet() == connectCount) {
                   Nodex.instance.sendToHandler(actorId, "foo");
@@ -395,11 +395,11 @@ public class NetTest extends TestBase {
         NetClient client = new NetClient();
 
         for (int i = 0; i < connectCount; i++) {
-          client.connect(8181, new EventHandler<NetSocket>() {
-            public void onEvent(NetSocket sock) {
+          client.connect(8181, new Handler<NetSocket>() {
+            public void handle(NetSocket sock) {
               final ContextChecker checker = new ContextChecker();
-              sock.closedHandler(new SimpleEventHandler() {
-                public void onEvent() {
+              sock.closedHandler(new SimpleHandler() {
+                public void handle() {
                   checker.check();
                   if (clientCloseCount.incrementAndGet() == connectCount) {
                     clientCloseLatch.countDown();

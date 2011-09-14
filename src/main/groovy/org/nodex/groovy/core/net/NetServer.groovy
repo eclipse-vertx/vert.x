@@ -26,8 +26,8 @@ public class NetServer {
 
   def connectHandler(hndlr) {
     // Wrap the Groovy closure in a an anonymous class so the java core can call it
-    def gHandler = new org.nodex.java.core.EventHandler() {
-      void onEvent(jSocket) {
+    def gHandler = new org.nodex.java.core.Handler() {
+      void handle(jSocket) {
         hndlr.call(new NetSocket(jSocket))
       }
     }
@@ -48,8 +48,8 @@ public class NetServer {
 
     def dataHandler(hndlr) {
       // Wrap the Groovy closure in a an anonymous class so the java core can call it
-      def gHandler = new org.nodex.java.core.EventHandler() {
-        void onEvent(jBuffer) {
+      def gHandler = new org.nodex.java.core.Handler() {
+        void handle(jBuffer) {
           hndlr.call(jBuffer)
         }
       }

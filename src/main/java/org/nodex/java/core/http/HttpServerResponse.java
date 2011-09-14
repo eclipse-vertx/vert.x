@@ -28,7 +28,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.WriteStream;
 
@@ -68,8 +68,8 @@ public class HttpServerResponse implements WriteStream {
   private boolean headWritten;
   private ChannelFuture writeFuture;
   private boolean written;
-  private EventHandler<Void> drainHandler;
-  private EventHandler<Exception> exceptionHandler;
+  private Handler<Void> drainHandler;
+  private Handler<Exception> exceptionHandler;
   private long contentLength;
   private long writtenBytes;
   private boolean chunked;
@@ -199,7 +199,7 @@ public class HttpServerResponse implements WriteStream {
    * between different streams.
    * @param handler
    */
-  public void drainHandler(EventHandler<Void> handler) {
+  public void drainHandler(Handler<Void> handler) {
     checkWritten();
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
@@ -210,7 +210,7 @@ public class HttpServerResponse implements WriteStream {
    * will be notified by calling the handler. If the response has no handler than any exceptions occurring will be
    * output to {@link System#err}
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     checkWritten();
     this.exceptionHandler = handler;
   }
@@ -250,7 +250,7 @@ public class HttpServerResponse implements WriteStream {
    * Write a {@link Buffer} to the response body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(Buffer chunk, EventHandler<Void> doneHandler) {
+  public HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler) {
     return write(chunk.getChannelBuffer(), doneHandler);
   }
 
@@ -258,7 +258,7 @@ public class HttpServerResponse implements WriteStream {
    * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(String chunk, String enc, EventHandler<Void> doneHandler) {
+  public HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler) {
     return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
   }
 
@@ -266,7 +266,7 @@ public class HttpServerResponse implements WriteStream {
    * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(String chunk, EventHandler<Void> doneHandler) {
+  public HttpServerResponse write(String chunk, Handler<Void> doneHandler) {
     return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
   }
 
@@ -339,13 +339,13 @@ public class HttpServerResponse implements WriteStream {
 
   void writable() {
     if (drainHandler != null) {
-      drainHandler.onEvent(null);
+      drainHandler.handle(null);
     }
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.onEvent(e);
+      exceptionHandler.handle(e);
     }
   }
 
@@ -383,7 +383,7 @@ public class HttpServerResponse implements WriteStream {
     }
   }
 
-  private HttpServerResponse write(ChannelBuffer chunk, final EventHandler<Void> doneHandler) {
+  private HttpServerResponse write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
     checkWritten();
     writtenBytes += chunk.readableBytes();
     if (!chunked && writtenBytes > contentLength) {

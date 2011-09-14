@@ -79,7 +79,7 @@ class NodexImpl implements NodexInternal {
     return backgroundPoolSize;
   }
 
-  public <T> long registerHandler(EventHandler<T> actor) {
+  public <T> long registerHandler(Handler<T> actor) {
     Long contextID = getContextID();
     if (contextID == null) {
       throw new IllegalStateException("Cannot register handler with no context");
@@ -108,11 +108,11 @@ class NodexImpl implements NodexInternal {
     final T msg = SharedUtils.checkObject(message);
     final ActorHolder holder = actors.get(handlerID);
     if (holder != null) {
-      final EventHandler<T> actor = (EventHandler<T>) holder.actor; // FIXME - unchecked cast
+      final Handler<T> actor = (Handler<T>) holder.actor; // FIXME - unchecked cast
       executeOnContext(holder.contextID, new Runnable() {
         public void run() {
           setContextID(holder.contextID);
-          actor.onEvent(msg);
+          actor.handle(msg);
         }
       });
       return true;
@@ -222,14 +222,14 @@ class NodexImpl implements NodexInternal {
     executeOnContext(contextID, runnable, true);
   }
 
-  public void nextTick(final EventHandler<Void> handler) {
+  public void nextTick(final Handler<Void> handler) {
     Long contextID = getContextID();
     if (contextID == null) {
       throw new IllegalStateException("No context id");
     }
     executeOnContext(contextID, new Runnable() {
       public void run() {
-        handler.onEvent(null);
+        handler.handle(null);
       }
     }, false);
   }
@@ -249,11 +249,11 @@ class NodexImpl implements NodexInternal {
     }
   }
 
-  public long setPeriodic(long delay, final EventHandler<Long> handler) {
+  public long setPeriodic(long delay, final Handler<Long> handler) {
     return setTimeout(delay, true, handler);
   }
 
-  public long setTimer(long delay, final EventHandler<Long> handler) {
+  public long setTimer(long delay, final Handler<Long> handler) {
     return setTimeout(delay, false, handler);
   }
 
@@ -270,7 +270,7 @@ class NodexImpl implements NodexInternal {
     return contextID;
   }
 
-  private long setTimeout(final long delay, boolean periodic, final EventHandler<Long> handler) {
+  private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
     final long contextID = checkContextID();
 
     InternalTimerHandler myHandler;
@@ -329,17 +329,17 @@ class NodexImpl implements NodexInternal {
 
   private static class InternalTimerHandler implements Runnable {
     final long contextID;
-    final EventHandler<Long> handler;
+    final Handler<Long> handler;
     long timerID;
 
-    InternalTimerHandler(long contextID, EventHandler<Long> runnable) {
+    InternalTimerHandler(long contextID, Handler<Long> runnable) {
       this.contextID = contextID;
       this.handler = runnable;
     }
 
     public void run() {
       NodexInternal.instance.setContextID(contextID);
-      handler.onEvent(timerID);
+      handler.handle(timerID);
     }
   }
 
@@ -354,10 +354,10 @@ class NodexImpl implements NodexInternal {
   }
 
   private static class ActorHolder {
-    final EventHandler<?> actor;
+    final Handler<?> actor;
     final long contextID;
 
-    ActorHolder(EventHandler<?> actor, long contextID) {
+    ActorHolder(Handler<?> actor, long contextID) {
       this.actor = actor;
       this.contextID = contextID;
     }

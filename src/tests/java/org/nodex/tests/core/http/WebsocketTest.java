@@ -16,9 +16,9 @@
 
 package org.nodex.tests.core.http;
 
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
-import org.nodex.java.core.SimpleEventHandler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.http.HttpClient;
 import org.nodex.java.core.http.HttpServer;
@@ -59,11 +59,11 @@ public class WebsocketTest extends TestBase {
 
         final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
 
-        final HttpServer server = new HttpServer().websocketHandler(new EventHandler<Websocket>() {
-          public void onEvent(final Websocket ws) {
+        final HttpServer server = new HttpServer().websocketHandler(new Handler<Websocket>() {
+          public void handle(final Websocket ws) {
             azzert(path.equals(ws.uri));
-            ws.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(Buffer data) {
+            ws.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
                 //Echo it back
                 ws.writeBuffer(data);
               }
@@ -74,17 +74,17 @@ public class WebsocketTest extends TestBase {
         final int bsize = 100;
         final int sends = 10;
 
-        client.connectWebsocket(path, new EventHandler<Websocket>() {
-          public void onEvent(final Websocket ws) {
+        client.connectWebsocket(path, new Handler<Websocket>() {
+          public void handle(final Websocket ws) {
 
             final Buffer received = Buffer.create(0);
-            ws.dataHandler(new EventHandler<Buffer>() {
-              public void onEvent(Buffer data) {
+            ws.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
                 received.appendBuffer(data);
                 if (received.length() == bsize * sends) {
                   ws.close();
-                  server.close(new SimpleEventHandler() {
-                    public void onEvent() {
+                  server.close(new SimpleHandler() {
+                    public void handle() {
                       client.close();
                       latch.countDown();
                     }

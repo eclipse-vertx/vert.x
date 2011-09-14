@@ -17,16 +17,18 @@
 package org.nodex.java.core;
 
 /**
- *  <p>An event handler</p>
+ * <p>This class can be used for simple handlers which don't receive any value.</p>
  *
- *  <p>This interface is used heavily throughout node.x as a handler for all types events</p>
- *
- *  @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface EventHandler<E> {
+public abstract class SimpleHandler implements Handler<Void> {
+
+  public void handle(Void event) {
+    handle();
+  }
 
   /**
-   * An event has occurred
+   * This method will be called when the asynchronous action occurs. It should be overridden by the user.
    */
-  void onEvent(E event);
+  protected abstract void handle();
 }

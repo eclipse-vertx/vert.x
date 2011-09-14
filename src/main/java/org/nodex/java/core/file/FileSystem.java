@@ -513,11 +513,11 @@ public class FileSystem {
   public void readFileAsString(final String path, final String encoding, final CompletionHandler<String> completionHandler) {
     readFile(path, new CompletionHandler<Buffer>() {
       @Override
-      public void onEvent(Completion<Buffer> completion) {
+      public void handle(Completion<Buffer> completion) {
         if (completion.succeeded()) {
-          completionHandler.onEvent(new Completion<>(completion.result.toString(encoding)));
+          completionHandler.handle(new Completion<>(completion.result.toString(encoding)));
         } else {
-          completionHandler.onEvent(new Completion<String>(completion.exception));
+          completionHandler.handle(new Completion<String>(completion.exception));
         }
       }
     });

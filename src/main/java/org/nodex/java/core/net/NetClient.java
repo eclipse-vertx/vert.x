@@ -34,7 +34,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.nodex.java.core.EventHandler;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
@@ -57,7 +57,7 @@ public class NetClient extends NetClientBase {
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
-  private EventHandler<Exception> exceptionHandler;
+  private Handler<Exception> exceptionHandler;
 
   /**
    * Create a new {@code NetClient}
@@ -72,7 +72,7 @@ public class NetClient extends NetClientBase {
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient connect(int port, String host, final EventHandler<NetSocket> connectHandler) {
+  public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
 
     final Long contextID = Nodex.instance.getContextID();
     if (contextID == null) {
@@ -117,13 +117,13 @@ public class NetClient extends NetClientBase {
               NodexInternal.instance.setContextID(contextID);
               NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
               socketMap.put(ch, sock);
-              connectHandler.onEvent(sock);
+              connectHandler.handle(sock);
             }
           });
         } else {
           Throwable t = channelFuture.getCause();
           if (t instanceof Exception && exceptionHandler != null) {
-            exceptionHandler.onEvent((Exception) t);
+            exceptionHandler.handle((Exception) t);
           } else {
             t.printStackTrace(System.err);
           }
@@ -139,7 +139,7 @@ public class NetClient extends NetClientBase {
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient connect(int port, EventHandler<NetSocket> connectCallback) {
+  public NetClient connect(int port, Handler<NetSocket> connectCallback) {
     return connect(port, "localhost", connectCallback);
   }
 
@@ -156,7 +156,7 @@ public class NetClient extends NetClientBase {
    * Set the exception handler. Any exceptions that occur during connect or later on will be notified via the {@code handler}.
    * If no handler is supplied any exceptions will be printed to {@link System#err}
    */
-  public void exceptionHandler(EventHandler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
