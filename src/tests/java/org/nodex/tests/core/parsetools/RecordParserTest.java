@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class RecordParserTest {
 
   @Test

@@ -29,7 +29,9 @@ import java.io.FileWriter;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class TestBase {
 
   @BeforeClass

@@ -18,6 +18,9 @@ package org.nodex.tests;
 
 import org.nodex.java.core.buffer.Buffer;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class Utils {
 
   public static Buffer generateRandomBuffer(int length) {

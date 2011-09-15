@@ -16,23 +16,21 @@
 
 package org.nodex.java.addons.redis;
 
-import org.nodex.java.core.internal.NodexInternal;
-import redis.clients.jedis.Jedis;
+import org.nodex.java.core.Handler;
+import org.nodex.java.core.net.NetClient;
+import org.nodex.java.core.net.NetSocket;
 
 public class RedisClient {
-  public static RedisClient createClient() {
-    return new RedisClient();
+
+  public RedisClient() {
+
   }
 
-  private RedisClient() {
-  }
-
-  public void connect(int port, String host, final RedisConnectHandler connectHandler) {
-    final Jedis jedis = new Jedis(host, port);
-    NodexInternal.instance.executeInBackground(new Runnable() {
-      public void run() {
-        jedis.connect();
-        connectHandler.onConnect(new RedisConnection(jedis));
+  public void connect(String host, final Handler<RedisConnection> connectHandler) {
+    NetClient client = new NetClient();
+    client.connect(6379, host, new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+        connectHandler.handle(new RedisConnection(socket));
       }
     });
   }

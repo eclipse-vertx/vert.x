@@ -16,6 +16,17 @@
 
 package org.nodex.java.addons.redis;
 
-public interface RedisConnectHandler {
-  void onConnect(RedisConnection connection);
+/**
+ * Exception thrown by the RedisClient class
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class RedisException extends Exception {
+
+  /**
+   * Construct a {@code RedisException} with a message as specified by {@code msg}
+   */
+  public RedisException(String msg) {
+    super(msg);
+  }
 }
