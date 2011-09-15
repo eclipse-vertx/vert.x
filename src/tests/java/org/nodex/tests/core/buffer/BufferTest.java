@@ -21,6 +21,9 @@ import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class BufferTest extends TestBase {
 
 

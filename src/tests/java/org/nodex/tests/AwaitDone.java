@@ -21,6 +21,9 @@ import org.nodex.java.core.Handler;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class AwaitDone implements Handler<Void> {
   private CountDownLatch latch = new CountDownLatch(1);
 

@@ -28,9 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: tim
- * Date: 12/08/11
- * Time: 15:45
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SharedDataTest extends TestBase {
 

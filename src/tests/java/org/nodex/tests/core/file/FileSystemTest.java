@@ -51,9 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * User: tim
- * Date: 04/08/11
- * Time: 09:04
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystemTest extends TestBase {
 

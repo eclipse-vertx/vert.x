@@ -185,6 +185,7 @@ public class RecordParser implements Handler<Buffer> {
       int end = start + recordSize;
       Buffer ret = buff.copy(start, end);
       start = end;
+      pos = start - 1;
       output.handle(ret);
     }
   }
@@ -195,9 +196,10 @@ public class RecordParser implements Handler<Buffer> {
    */
   public void handle(Buffer buffer) {
     if (buff == null) {
-      buff = Buffer.create(buffer.length());
+      buff = buffer;
+    } else {
+      buff.appendBuffer(buffer);
     }
-    buff.appendBuffer(buffer);
     handleParsing();
   }
 }

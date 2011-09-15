@@ -24,6 +24,9 @@ import org.nodex.java.core.streams.WriteStream;
 import org.nodex.tests.Utils;
 import org.testng.annotations.Test;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class PumpTest {
 
   @Test

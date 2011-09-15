@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class ActorTest extends TestBase {
 
   private NodexInternal nodex = NodexInternal.instance;

@@ -25,6 +25,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class TimerTest extends TestBase {
 
   @Test

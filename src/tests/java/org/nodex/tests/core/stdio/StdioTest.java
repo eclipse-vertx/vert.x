@@ -38,9 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * User: tim
- * Date: 17/08/11
- * Time: 15:21
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class StdioTest extends TestBase {
 

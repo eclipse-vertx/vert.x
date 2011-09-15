@@ -31,7 +31,7 @@ public class Parser implements Handler<Buffer> {
 
   private final FrameHandler output;
   private Map<String, String> headers = new HashMap<>();
-  private static final byte[] EOL_DELIM = new byte[]{(byte) '\n'};
+  private static final byte[] EOL_DELIM = new byte[]{'\n'};
   private static final byte[] EOM_DELIM = new byte[]{0};
   private final RecordParser frameParser = RecordParser.newDelimited(EOL_DELIM, new Handler<Buffer>() {
     public void handle(Buffer line) {
