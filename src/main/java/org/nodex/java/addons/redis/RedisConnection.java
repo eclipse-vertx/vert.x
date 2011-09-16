@@ -26,6 +26,17 @@ import java.nio.charset.Charset;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * <p>Represents a connection to a Redis server.</p>
+ *
+ * <p>A connection allows you to send commands to a Redis server. Replies will be delivered via the {@link CompletionHandler}
+ * that you specify with each command. Redis connections support pipelining so you can send many commands before you
+ * receive any replies.</p>
+ *
+ * <p>For a full description of the various Redis commands, please see the <a href="http://redis.io/commands">Redis documentation</a>.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class RedisConnection {
 
 private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -134,10 +145,38 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
   private static final byte[] UNSUBSCRIBE_COMMAND = "UNSUBSCRIBE".getBytes(UTF8);
   private static final byte[] UNWATCH_COMMAND = "UNWATCH".getBytes(UTF8);
   private static final byte[] WATCH_COMMAND = "WATCH".getBytes(UTF8);
-
+  private static final byte[] ZADD_COMMAND = "ZADD".getBytes(UTF8);
+  private static final byte[] ZCARD_COMMAND = "ZCARD".getBytes(UTF8);
+  private static final byte[] ZCOUNT_COMMAND = "ZCOUNT".getBytes(UTF8);
+  private static final byte[] ZINCRBY_COMMAND = "ZINCRBY".getBytes(UTF8);
+  private static final byte[] ZINTERSTORE_COMMAND = "ZINTERSTORE".getBytes(UTF8);
+  private static final byte[] ZRANGE_COMMAND = "ZRANGE".getBytes(UTF8);
+  private static final byte[] ZRANGEBYSCORE_COMMAND = "ZRANGEBYSCORE".getBytes(UTF8);
+  private static final byte[] ZRANK_COMMAND = "ZRANK".getBytes(UTF8);
+  private static final byte[] ZREM_COMMAND = "ZREM".getBytes(UTF8);
+  private static final byte[] ZREMRANGEBYRANK_COMMAND = "ZREMRANGEBYRANK".getBytes(UTF8);
+  private static final byte[] ZREMRANGEBYSCORE_COMMAND = "ZREMRANGEBYSCORE".getBytes(UTF8);
+  private static final byte[] ZREVRANGE_COMMAND = "ZREVRANGE".getBytes(UTF8);
+  private static final byte[] ZREVRANGEBYSCORE_COMMAND = "ZREVRANGEBYSCORE".getBytes(UTF8);
+  private static final byte[] ZREVRANK_COMMAND = "ZREVRANK".getBytes(UTF8);
+  private static final byte[] ZSCORE_COMMAND = "ZSCORE".getBytes(UTF8);
+  private static final byte[] ZUNIONSTORE_COMMAND = "ZUNIONSTORE".getBytes(UTF8);
 
   private static final byte[] INSERT_BEFORE = "BEFORE".getBytes(UTF8);
   private static final byte[] INSERT_AFTER = "AFTER".getBytes(UTF8);
+
+  private static final byte[] LIMIT = "LIMIT".getBytes(UTF8);
+
+  private static final byte[] SORT_BY = "BY".getBytes(UTF8);
+  private static final byte[] SORT_GET = "GET".getBytes(UTF8);
+  private static final byte[] SORT_DESC = "DESC".getBytes(UTF8);
+  private static final byte[] SORT_ALPHA = "ALPHA".getBytes(UTF8);
+  private static final byte[] SORT_STORE = "STORE".getBytes(UTF8);
+
+  private static final byte[] WEIGHTS = "WEIGHTS".getBytes(UTF8);
+  private static final byte[] AGGREGRATE = "AGGREGRATE".getBytes(UTF8);
+
+  private static final byte[] WITHSCORES = "WITHSCORES".getBytes(UTF8);
 
 
   private final NetSocket socket;
@@ -152,6 +191,9 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
     }));
   }
 
+  /**
+   * Close the connection
+   */
   public void close() {
     socket.close();
   }
@@ -782,28 +824,28 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
     args[1] = key.getBytes(UTF8);
     int pos = 2;
     if (pattern != null) {
-      args[pos++] = "BY".getBytes(UTF8);
+      args[pos++] = SORT_BY;
       args[pos++] = pattern.getBytes(UTF8);
     }
     if (offset != -1) {
-      args[pos++] = "LIMIT".getBytes(UTF8);
+      args[pos++] = LIMIT;
       args[pos++] = intToBytes(offset);
       args[pos++] = intToBytes(count);
     }
     if (getPatterns != null) {
       for (String getPattern: getPatterns) {
-        args[pos++] = "GET".getBytes(UTF8);
+        args[pos++] = SORT_GET;
         args[pos++] = getPattern.getBytes(UTF8);
       }
     }
     if (!ascending) {
-      args[pos++] = "DESC".getBytes(UTF8);
+      args[pos++] = SORT_DESC;
     }
     if (alpha) {
-      args[pos++] = "ALPHA".getBytes(UTF8);
+      args[pos++] = SORT_ALPHA;
     }
     if (storeDestination != null) {
-      args[pos++] = "STORE".getBytes(UTF8);
+      args[pos++] = SORT_STORE;
       args[pos++] = storeDestination.getBytes(UTF8);
     }
     sendCommand(args, convertMultiBulkHandler(handler));
@@ -914,15 +956,219 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
     watch(new String[] { key }, handler);
   }
 
+  public void zAdd(String key, double[] scores, byte[][] members, CompletionHandler<Integer> handler) {
+    byte[][] args = new byte[2 + 2 * scores.length][];
+    args[0] = ZADD_COMMAND;
+    args[1] = key.getBytes(UTF8);
+    for (int i = 0; i < scores.length; i++) {
+      args[i * 2 + 2] = String.valueOf(scores[i]).getBytes(UTF8);
+      args[i * 2 + 3] = members[i];
+    }
+    sendCommand(args, convertIntegerHandler(handler));
+  }
 
+  public void zAdd(String key, double[] scores, String[] members, CompletionHandler<Integer> handler) {
+    byte[][] args = new byte[members.length][];
+    for (int i = 0; i < members.length; i++) {
+      args[i] = members[i].getBytes(UTF8);
+    }
+    zAdd(key, scores, args, handler);
+  }
 
+  public void zAdd(String key, double score, String member, CompletionHandler<Integer> handler) {
+    zAdd(key, new double[] {score}, new String[] {member}, handler);
+  }
 
+  public void zAdd(String key, double score, byte[] member, CompletionHandler<Integer> handler) {
+    zAdd(key, new double[] {score}, new byte[][] {member}, handler);
+  }
 
+  public void zCard(String key, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZCARD_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  }
+
+  public void zCount(String key, double min, double max, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZCOUNT_COMMAND, key.getBytes(UTF8), String.valueOf(min).getBytes(UTF8), String.valueOf(max).getBytes(UTF8)}, convertIntegerHandler(handler));
+  }
+
+  public void zIncrBy(String key, int increment, byte[] member, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZINCRBY_COMMAND, key.getBytes(UTF8), intToBytes(increment), member}, convertIntegerHandler(handler));
+  }
+
+  public void zIncrBy(String key, int increment, String member, CompletionHandler<Integer> handler) {
+    zIncrBy(key, increment, member.getBytes(UTF8), handler);
+  }
+
+  public enum AggregateType {
+    SUM, MIN, MAX
+  }
+
+  public void zInterStore(String destination, int numKeys, String[] keys, double[] weights, AggregateType aggType, CompletionHandler<Integer> handler) {
+    int argsLen = 3 + keys.length + (weights != null ? 1 + weights.length : 0) + 2;
+    byte[][] args = new byte[argsLen][];
+    args[0] = ZINTERSTORE_COMMAND;
+    args[1] = destination.getBytes(UTF8);
+    args[2] = intToBytes(numKeys);
+    int pos = 3;
+    for (String key: keys) {
+      args[pos++] = key.getBytes(UTF8);
+    }
+    if (weights != null) {
+      args[pos++] = WEIGHTS;
+      for (double weight: weights) {
+        args[pos++] = String.valueOf(weight).getBytes(UTF8);
+      }
+    }
+    args[pos++] = AGGREGRATE;
+    args[pos++] = aggType.toString().getBytes(UTF8);
+    sendCommand(args, convertIntegerHandler(handler));
+  }
+
+  public void zInterStore(String destination, int numKeys, String[] keys, AggregateType aggType, CompletionHandler<Integer> handler) {
+    zInterStore(destination, numKeys, keys, null, aggType, handler);
+  }
+
+  public void zRange(String key, double start, double stop, boolean withScores, CompletionHandler<byte[][]> handler) {
+    byte[][] args = new byte[4 + (withScores ? 1 : 0)][];
+    args[0] = ZRANGE_COMMAND;
+    args[1] = key.getBytes(UTF8);
+    args[2] = String.valueOf(start).getBytes(UTF8);
+    args[3] = String.valueOf(stop).getBytes(UTF8);
+    if (withScores) {
+      args[4] = WITHSCORES;
+    }
+    sendCommand(args, convertMultiBulkHandler(handler));
+  }
+
+  public void zRangeByScore(String key, double min, double max, boolean withScores, int offset, int count, CompletionHandler<byte[][]> handler) {
+    byte[][] args = new byte[4 + (withScores ? 1 : 0) + (offset != -1 ? 3 : 0)][];
+    args[0] = ZRANGEBYSCORE_COMMAND;
+    args[1] = key.getBytes(UTF8);
+    args[2] = String.valueOf(min).getBytes(UTF8);
+    args[3] = String.valueOf(max).getBytes(UTF8);
+    int pos = 4;
+    if (withScores) {
+      args[pos++] = WITHSCORES;
+    }
+    if (offset != -1) {
+      args[pos++] = LIMIT;
+      args[pos++] = intToBytes(offset);
+      args[pos++] = intToBytes(count);
+    }
+    sendCommand(args, convertMultiBulkHandler(handler));
+  }
+
+  public void zRank(String key, byte[] member, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZRANK_COMMAND, member, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  }
+
+  public void zRank(String key, String member, CompletionHandler<Integer> handler) {
+    zRank(key, member.getBytes(UTF8), handler);
+  }
+
+  public void zRem(String key, byte[][] members, CompletionHandler<Integer> handler) {
+    byte[][] args = new byte[2 + members.length][];
+    args[0] = ZREM_COMMAND;
+    args[1] = key.getBytes(UTF8);
+    System.arraycopy(members, 0, args, 2, members.length);
+    sendCommand(args, convertIntegerHandler(handler));
+  }
+
+  public void zRem(String key, String[] members, CompletionHandler<Integer> handler) {
+    byte[][] args = new byte[members.length][];
+    for (int i = 0; i < members.length; i++) {
+      args[i] = members[i].getBytes(UTF8);
+    }
+    zRem(key, args, handler);
+  }
+
+  public void zRem(String key, String member, CompletionHandler<Integer> handler) {
+    zRem(key, new String[] {member}, handler);
+  }
+
+  public void zRem(String key, byte[] member, CompletionHandler<Integer> handler) {
+    zRem(key, new byte[][] {member}, handler);
+  }
+
+  public void zRemRangeByRank(String key, int start, int stop, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZREMRANGEBYRANK_COMMAND, key.getBytes(UTF8), intToBytes(start), intToBytes(stop)}, convertIntegerHandler(handler));
+  }
+
+  public void zRemRangeByScore(String key, double min, double max, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZREMRANGEBYSCORE_COMMAND, key.getBytes(UTF8), String.valueOf(min).getBytes(UTF8), String.valueOf(max).getBytes(UTF8)}, convertIntegerHandler(handler));
+  }
+
+  public void zRevRange(String key, double start, double stop, boolean withScores, CompletionHandler<byte[][]> handler) {
+    byte[][] args = new byte[4 + (withScores ? 1 : 0)][];
+    args[0] = ZREVRANGE_COMMAND;
+    args[1] = key.getBytes(UTF8);
+    args[2] = String.valueOf(start).getBytes(UTF8);
+    args[3] = String.valueOf(stop).getBytes(UTF8);
+    if (withScores) {
+      args[4] = WITHSCORES;
+    }
+    sendCommand(args, convertMultiBulkHandler(handler));
+  }
+
+  public void zRevRangeByScore(String key, double min, double max, boolean withScores, int offset, int count, CompletionHandler<byte[][]> handler) {
+    byte[][] args = new byte[4 + (withScores ? 1 : 0) + (offset != -1 ? 3 : 0)][];
+    args[0] = ZREVRANGEBYSCORE_COMMAND;
+    args[1] = key.getBytes(UTF8);
+    args[2] = String.valueOf(min).getBytes(UTF8);
+    args[3] = String.valueOf(max).getBytes(UTF8);
+    int pos = 4;
+    if (withScores) {
+      args[pos++] = WITHSCORES;
+    }
+    if (offset != -1) {
+      args[pos++] = LIMIT;
+      args[pos++] = intToBytes(offset);
+      args[pos++] = intToBytes(count);
+    }
+    sendCommand(args, convertMultiBulkHandler(handler));
+  }
+
+  public void zRevRank(String key, byte[] member, CompletionHandler<Integer> handler) {
+    sendCommand(new byte[][] {ZREVRANK_COMMAND, member, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  }
+
+  public void zRevRank(String key, String member, CompletionHandler<Integer> handler) {
+    zRevRank(key, member.getBytes(UTF8), handler);
+  }
+
+  public void zScore(String key, byte[] member, CompletionHandler<byte[]> handler) {
+    sendCommand(new byte[][] {ZSCORE_COMMAND, member, key.getBytes(UTF8)}, convertBulkHandler(handler));
+  }
+
+  public void zScore(String key, String member, CompletionHandler<byte[]> handler) {
+    zScore(key, member.getBytes(UTF8), handler);
+  }
+
+  public void zUnionStore(String destination, int numKeys, String[] keys, double[] weights, AggregateType aggType, CompletionHandler<Integer> handler) {
+    int argsLen = 3 + keys.length + (weights != null ? 1 + weights.length : 0) + 2;
+    byte[][] args = new byte[argsLen][];
+    args[0] = ZUNIONSTORE_COMMAND;
+    args[1] = destination.getBytes(UTF8);
+    args[2] = intToBytes(numKeys);
+    int pos = 3;
+    for (String key: keys) {
+      args[pos++] = key.getBytes(UTF8);
+    }
+    if (weights != null) {
+      args[pos++] = WEIGHTS;
+      for (double weight: weights) {
+        args[pos++] = String.valueOf(weight).getBytes(UTF8);
+      }
+    }
+    args[pos++] = AGGREGRATE;
+    args[pos++] = aggType.toString().getBytes(UTF8);
+    sendCommand(args, convertIntegerHandler(handler));
+  }
 
 
 
   public void sendCommand(byte[][] args, CompletionHandler<Object> responseHandler) {
-    Buffer buff = Buffer.create(0);
+    Buffer buff = Buffer.create(64);
     buff.appendByte(ReplyParser.STAR);
     buff.appendString(String.valueOf(args.length));
     buff.appendBytes(ReplyParser.CRLF);
@@ -1011,3 +1257,5 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
   }
 
 }
+
+
