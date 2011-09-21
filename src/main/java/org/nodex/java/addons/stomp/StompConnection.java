@@ -17,7 +17,7 @@
 package org.nodex.java.addons.stomp;
 
 import org.nodex.java.core.buffer.Buffer;
-import org.nodex.java.core.composition.Composable;
+
 import org.nodex.java.core.net.NetSocket;
 
 import java.util.HashMap;
@@ -107,26 +107,26 @@ public class StompConnection {
 
   // Request-response pattern
 
-  public Composable request(String dest, Buffer body, final StompMsgCallback responseCallback) {
-    return request(dest, new HashMap<String, String>(), body, responseCallback);
-  }
-
-  public Composable request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
-    final Composable c = new Composable();
-    if (responseQueue == null) setupResponseHandler();
-    String cid = UUID.randomUUID().toString();
-    headers.put(CORRELATION_ID_HEADER, cid);
-    headers.put(REPLY_TO_HEADER, responseQueue);
-    StompMsgCallback cb = new StompMsgCallback() {
-      public void onMessage(Map<String, String> headers, Buffer body) {
-        responseCallback.onMessage(headers, body);
-        c.complete();
-      }
-    };
-    callbacks.put(cid, cb);
-    send(dest, headers, body);
-    return c;
-  }
+//  public Composable request(String dest, Buffer body, final StompMsgCallback responseCallback) {
+//    return request(dest, new HashMap<String, String>(), body, responseCallback);
+//  }
+//
+//  public Composable request(String dest, Map<String, String> headers, Buffer body, final StompMsgCallback responseCallback) {
+//    final Composable c = new Composable();
+//    if (responseQueue == null) setupResponseHandler();
+//    String cid = UUID.randomUUID().toString();
+//    headers.put(CORRELATION_ID_HEADER, cid);
+//    headers.put(REPLY_TO_HEADER, responseQueue);
+//    StompMsgCallback cb = new StompMsgCallback() {
+//      public void onMessage(Map<String, String> headers, Buffer body) {
+//        responseCallback.onMessage(headers, body);
+//        c.complete();
+//      }
+//    };
+//    callbacks.put(cid, cb);
+//    send(dest, headers, body);
+//    return c;
+//  }
 
   // Subscribe without receipt
   public synchronized void subscribe(String dest, StompMsgCallback messageCallback) {

@@ -16,8 +16,11 @@
 
 package org.nodex.java.core;
 
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface CompletionHandler<T> extends Handler<Deferred<T>> {
+public interface Deferred<T> extends Future<T> {
+
+  Deferred<T> execute();
 }

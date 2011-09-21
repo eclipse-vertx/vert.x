@@ -16,21 +16,21 @@
 
 package org.nodex.java.addons.redis;
 
-import org.nodex.java.core.Completion;
-import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.Handler;
+import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetSocket;
+import org.nodex.java.core.Deferred;
 
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * <p>Represents a connection to a Redis server.</p>
  *
- * <p>A connection allows you to send commands to a Redis server. Replies will be delivered via the {@link CompletionHandler}
- * that you specify with each command. Redis connections support pipelining so you can send many commands before you
+ * <p>A connection allows you to send commands to a Redis server. Redis connections support pipelining so you can send many commands before you
  * receive any replies.</p>
  *
  * <p>For a full description of the various Redis commands, please see the <a href="http://redis.io/commands">Redis documentation</a>.</p>
@@ -39,15 +39,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class RedisConnection {
 
-private static final Charset UTF8 = Charset.forName("UTF-8");
+  private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private static final byte[] APPEND_COMMAND = "APPEND".getBytes(UTF8);
-  private static final byte[] AUTH_COMMAND = "APPEND".getBytes(UTF8);
+  private static final byte[] AUTH_COMMAND = "AUTH".getBytes(UTF8);
   private static final byte[] BGREWRITEAOF_COMMAND = "BGREWRITEAOF".getBytes(UTF8);
   private static final byte[] BGSAVE_COMMAND = "BGSAVE".getBytes(UTF8);
   private static final byte[] BLPOP_COMMAND = "BLPOP".getBytes(UTF8);
   private static final byte[] BRPOP_COMMAND = "BRPOP".getBytes(UTF8);
-  private static final byte[] BRPOPLPUSH_COMMAND = "BRPOPLPUSH_COMMAND".getBytes(UTF8);
+  private static final byte[] BRPOPLPUSH_COMMAND = "BRPOPLPUSH".getBytes(UTF8);
   private static final byte[] CONFIG_GET_COMMAND = "CONFIG GET".getBytes(UTF8);
   private static final byte[] CONFIG_SET_COMMAND = "CONFIG SET".getBytes(UTF8);
   private static final byte[] CONFIG_RESET_STAT_COMMAND = "CONFIG RESET STAT".getBytes(UTF8);
@@ -178,15 +178,14 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private static final byte[] WITHSCORES = "WITHSCORES".getBytes(UTF8);
 
-
   private final NetSocket socket;
-  private Queue<CompletionHandler<Object>> requests = new ConcurrentLinkedQueue<>();
+  private Queue<RedisDeferred<?>> requests = new ConcurrentLinkedQueue<>();
 
   RedisConnection(NetSocket socket) {
     this.socket = socket;
-    socket.dataHandler(new ReplyParser(new Handler<Completion<Object>>() {
-      public void handle(Completion<Object> completion) {
-        doHandle(completion);
+    socket.dataHandler(new ReplyParser(new Handler<RedisReply>() {
+      public void handle(RedisReply reply) {
+        doHandle(reply);
       }
     }));
   }
@@ -198,1064 +197,883 @@ private static final Charset UTF8 = Charset.forName("UTF-8");
     socket.close();
   }
 
-  public void append(String key, String value, CompletionHandler<Integer> handler) {
-    append(key, value.getBytes(UTF8), handler);
+  public Deferred<Integer> append(Buffer key, Buffer value) {
+    return createIntegerDeferred(APPEND_COMMAND, key, value);
   }
 
-  public void append(String key, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {APPEND_COMMAND, key.getBytes(UTF8), value}, convertIntegerHandler(handler));
+  public Deferred<Integer> append(String key, Buffer value) {
+    return append(Buffer.create(key), value);
   }
 
-  public void auth(String password, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {AUTH_COMMAND, password.getBytes(UTF8)}, convertVoidHandler(handler));
+  public Deferred<Integer> append(String key, String value) {
+    return append(Buffer.create(key), Buffer.create(value));
   }
 
-  public void bgRewriteAOF(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {BGREWRITEAOF_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Void> auth(Buffer password) {
+    return createVoidDeferred(AUTH_COMMAND, password);
   }
 
-  public void bgSave(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {BGSAVE_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Void> auth(String password) {
+    return auth(Buffer.create(password));
   }
 
-  public void bLPop(String keys[], int timeout, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[keys.length + 2][];
-    args[0] = BLPOP_COMMAND;
-    System.arraycopy(keys, 0, args, 1, keys.length);
-    args[args.length - 1] = intToBytes(timeout);
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Void> bgRewriteAOF() {
+    return createVoidDeferred(BGREWRITEAOF_COMMAND);
   }
 
-  public void bRPop(String keys[], int timeout, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[keys.length + 2][];
-    args[0] = BRPOP_COMMAND;
-    System.arraycopy(keys, 0, args, 1, keys.length);
-    args[args.length - 1] = intToBytes(timeout);
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Void> bgSave() {
+    return createVoidDeferred(BGSAVE_COMMAND);
   }
 
-  public void bRPopLPush(String source, String destination, int timeout, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {BRPOPLPUSH_COMMAND, source.getBytes(UTF8), destination.getBytes(UTF8),
-                String.valueOf(timeout).getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Buffer[]> bLPop(int timeout, Buffer... keys) {
+    Buffer[] args = new Buffer[keys.length + 1];
+    System.arraycopy(keys, 0, args, 0, keys.length);
+    args[args.length - 1] = intToBuffer(timeout);
+    return createMultiBulkDeferred(BLPOP_COMMAND, args);
   }
 
-  public void configGet(String parameter, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {CONFIG_GET_COMMAND, parameter.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Buffer[]> bLPop(int timeout, String... keys) {
+    return bLPop(timeout, toBufferArray(keys));
   }
 
-  public void configSet(String parameter, byte[] value, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {CONFIG_SET_COMMAND, parameter.getBytes(UTF8), value}, convertVoidHandler(handler));
+  public Deferred<Buffer[]> bRPop(int timeout, Buffer... keys) {
+    return createMultiBulkDeferred(BRPOP_COMMAND, toBufferArray(keys, intToBuffer(timeout)));
   }
 
-  public void configSet(String parameter, String value, CompletionHandler<Void> handler) {
-    configSet(parameter, value.getBytes(UTF8), handler);
+  public Deferred<Buffer[]> bRPop(int timeout, String... keys) {
+    return bRPop(timeout, toBufferArray(keys));
   }
 
-  public void configResetStat(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {CONFIG_RESET_STAT_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Buffer> bRPopLPush(Buffer source, Buffer destination, int timeout) {
+    return createBulkDeferred(BRPOPLPUSH_COMMAND, source, destination, intToBuffer(timeout));
   }
 
-  public void dbSize(CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {DB_SIZE_COMMAND}, convertIntegerHandler(handler));
+  public Deferred<Buffer> bRPopLPush(String source, String destination, int timeout) {
+    return bRPopLPush(Buffer.create(source), Buffer.create(destination), timeout);
   }
 
-  public void debugObject(String key, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {DEBUG_OBJECT_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Buffer> configGet(Buffer parameter) {
+    return createBulkDeferred(CONFIG_GET_COMMAND, parameter);
   }
 
-  public void debugSegFault(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {DEBUG_SEG_FAULT_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Buffer> configGet(String parameter) {
+    return configGet(Buffer.create(parameter));
   }
 
-  public void decr(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {DECR_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Void> configSet(Buffer parameter, Buffer value) {
+    return createVoidDeferred(CONFIG_SET_COMMAND, parameter, value);
   }
 
-  public void decrBy(String key, int decrement, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {DECRBY_COMMAND, key.getBytes(UTF8), intToBytes(decrement)}, convertIntegerHandler(handler));
+  public Deferred<Void> configSet(String parameter, String value) {
+    return configSet(Buffer.create(parameter), Buffer.create(value));
   }
 
-  public void del(String[] keys, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[keys.length + 1][];
-    args[0] = DEL_COMMAND;
-    System.arraycopy(keys, 0, args, 1, keys.length);
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Void> configResetStat() {
+    return createVoidDeferred(CONFIG_RESET_STAT_COMMAND);
   }
 
-  public void discard(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {DISCARD_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Integer> dbSize() {
+    return createIntegerDeferred(DB_SIZE_COMMAND);
   }
 
-  public void echo(CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {ECHO_COMMAND}, convertBulkHandler(handler));
+  public Deferred<Void> debugSegFault() {
+    return createVoidDeferred(DEBUG_SEG_FAULT_COMMAND);
   }
 
-  public void exec(CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {EXEC_COMMAND}, convertMultiBulkHandler(handler));
+  public Deferred<Integer> decr(Buffer key) {
+    return createIntegerDeferred(DECR_COMMAND, key);
   }
 
-  public void exists(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {EXISTS_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Integer> decr(String key) {
+    return decr(Buffer.create(key));
   }
 
-  public void expire(String key, int seconds, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {EXPIRE_COMMAND, key.getBytes(UTF8), intToBytes(seconds)}, convertIntegerHandler(handler));
+  public Deferred<Integer> decrBy(Buffer key, int decrement) {
+    return createIntegerDeferred(DECRBY_COMMAND, key, intToBuffer(decrement));
   }
 
-  public void expireAt(String key, int timestamp, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {EXPIREAT_COMMAND, key.getBytes(UTF8), intToBytes(timestamp)}, convertIntegerHandler(handler));
+  public Deferred<Integer> decrBy(String key, int decrement) {
+    return decrBy(Buffer.create(key), decrement);
   }
 
-  public void flushAll(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {FLUSHALL_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Integer> del(Buffer... keys) {
+    return createIntegerDeferred(DEL_COMMAND, keys);
   }
 
-  public void flushDB(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {FLUSHDB_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Integer> del(String... keys) {
+    return del(toBufferArray(keys));
   }
 
-  public void get(String key, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {GET_COMMAND, key.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Void> discard() {
+    return createVoidDeferred(DISCARD_COMMAND);
   }
 
-  public void getBit(String key, int offset, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {GETBIT_COMMAND, key.getBytes(UTF8), intToBytes(offset)}, convertIntegerHandler(handler));
+  public Deferred<Buffer> echo(Buffer message) {
+    return createBulkDeferred(ECHO_COMMAND, message);
   }
 
-  public void getRange(String key, int start, int end, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {GETRANGE_COMMAND, key.getBytes(UTF8), intToBytes(start), intToBytes(end)}, convertBulkHandler(handler));
+  public Deferred<Buffer> echo(String message) {
+    return echo(Buffer.create(message));
   }
 
-  public void getSet(String key, byte[] value, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {GETSET_COMMAND, key.getBytes(UTF8), value}, convertBulkHandler(handler));
+  public Deferred<Buffer[]> exec() {
+    return createMultiBulkDeferred(EXEC_COMMAND);
   }
 
-  public void getSet(String key, String value, CompletionHandler<byte[]> handler) {
-    getSet(key, value.getBytes(UTF8), handler);
+  public Deferred<Boolean> exists(Buffer key) {
+    return createBooleanDeferred(EXISTS_COMMAND, key);
   }
 
-  public void hDel(String key, String[] fields, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[fields.length + 2][];
-    args[0] = HDEL_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    for (int i = 0; i < fields.length; i++) {
-      args[i + 2] = fields[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Boolean> exists(String key) {
+    return exists(Buffer.create(key));
   }
 
-  public void hExists(String key, String field, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {HEXISTS_COMMAND, key.getBytes(UTF8), field.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Boolean> expire(Buffer key, int seconds) {
+    return createBooleanDeferred(EXPIRE_COMMAND, key, intToBuffer(seconds));
   }
 
-  public void hGet(String key, String field, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {HGET_COMMAND, key.getBytes(UTF8), field.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Boolean> expire(String key, int seconds) {
+    return expire(Buffer.create(key), seconds);
   }
 
-  public void hGetAll(String key, CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {HGETALL_COMMAND, key.getBytes(UTF8)}, convertMultiBulkHandler(handler));
+  public Deferred<Boolean> expireAt(Buffer key, int timestamp) {
+    return createBooleanDeferred(EXPIREAT_COMMAND, key, intToBuffer(timestamp));
   }
 
-  public void hIncrBy(String key, String field, int increment, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {HINCRBY_COMMAND, key.getBytes(UTF8), field.getBytes(UTF8), intToBytes(increment)}, convertIntegerHandler(handler));
+  public Deferred<Boolean> expireAt(String key, int timestamp) {
+    return expireAt(Buffer.create(key), timestamp);
   }
 
-  public void hKeys(String key, CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {HKEYS_COMMAND, key.getBytes(UTF8)}, convertMultiBulkHandler(handler));
+  public Deferred<Void> flushAll() {
+    return createVoidDeferred(FLUSHALL_COMMAND);
   }
 
-  public void hLen(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {HLEN_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Void> flushDB() {
+    return createVoidDeferred(FLUSHDB_COMMAND);
   }
 
-  public void hmGet(String key, String[] fields, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[fields.length + 2][];
-    args[0] = HMGET_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    for (int i = 0; i < fields.length; i++) {
-      args[i + 2] = fields[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Buffer> get(Buffer key) {
+    return createBulkDeferred(GET_COMMAND, key);
   }
 
-  public void hmSet(String key, String[] fields, String[] values, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[2 * fields.length + 2][];
-    args[0] = HMSET_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    for (int i = 0; i < fields.length; i ++) {
-      args[2 * i + 2] = fields[i].getBytes(UTF8);
-      args[2 * i + 3] = values[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertVoidHandler(handler));
+  public Deferred<Buffer> get(String key) {
+    return get(Buffer.create(key));
   }
 
-  public void hSet(String key, String field, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {HSET_COMMAND, key.getBytes(UTF8), field.getBytes(UTF8), value}, convertIntegerHandler(handler));
+  public Deferred<Integer> getBit(Buffer key, int offset) {
+    return createIntegerDeferred(GETBIT_COMMAND, key, intToBuffer(offset));
   }
 
-  public void hSet(String key, String field, String value, CompletionHandler<Integer> handler) {
-    hSet(key, field, value.getBytes(UTF8), handler);
+  public Deferred<Integer> getBit(String key, int offset) {
+    return getBit(Buffer.create(key), offset);
   }
 
-  public void hSetNx(String key, String field, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {HSETNX_COMMAND, key.getBytes(UTF8), field.getBytes(UTF8), value}, convertIntegerHandler(handler));
+  public Deferred<Buffer> getRange(Buffer key, int start, int end) {
+    return createBulkDeferred(GETRANGE_COMMAND, key, intToBuffer(start), intToBuffer(end));
   }
 
-  public void hSetNx(String key, String field, String value, CompletionHandler<Integer> handler) {
-    hSetNx(key, field, value.getBytes(UTF8), handler);
+  public Deferred<Buffer> getRange(String key, int start, int end) {
+    return getRange(Buffer.create(key), start, end);
   }
 
-  public void hVals(String key, CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {HVALS_COMMAND, key.getBytes(UTF8)}, convertMultiBulkHandler(handler));
+  public Deferred<Buffer> getSet(Buffer key, Buffer value) {
+    return createBulkDeferred(GETSET_COMMAND, key, value);
   }
 
-  public void incr(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {INCR_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Buffer> getSet(String key, Buffer value) {
+    return getSet(Buffer.create(key), value);
   }
 
-  public void incrBy(String key, int increment, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {INCRBY_COMMAND, key.getBytes(UTF8), intToBytes(increment)}, convertIntegerHandler(handler));
+  public Deferred<Buffer> getSet(String key, String value) {
+    return getSet(Buffer.create(key), Buffer.create(value));
   }
 
-  public void info(CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {INFO_COMMAND}, convertBulkHandler(handler));
+  public Deferred<Integer> hDel(Buffer key, Buffer... fields) {
+    return createIntegerDeferred(HDEL_COMMAND, toBufferArray(key, fields));
   }
 
-  public void keys(String pattern, CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {KEYS_COMMAND, pattern.getBytes(UTF8)}, convertMultiBulkHandler(handler));
+  public Deferred<Integer> hDel(String key, Buffer... fields) {
+    return hDel(Buffer.create(key), fields);
   }
 
-  public void lastSave(CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {LASTSAVE_COMMAND}, convertIntegerHandler(handler));
+  public Deferred<Integer> hDel(String key, String... fields) {
+    return hDel(Buffer.create(key), toBufferArray(fields));
   }
 
-  public void lIndex(String key, int index, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {LINDEX_COMMAND, key.getBytes(UTF8), intToBytes(index)}, convertBulkHandler(handler));
+  public Deferred<Boolean> hExists(Buffer key, Buffer field) {
+    return createBooleanDeferred(HEXISTS_COMMAND, key, field);
   }
 
-  public void lInsert(String key, boolean before, byte[] pivot, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {LINSERT_COMMAND, key.getBytes(UTF8),
-                              before ? INSERT_BEFORE : INSERT_AFTER, pivot, value}, convertIntegerHandler(handler));
+  public Deferred<Boolean> hExists(String key, Buffer field) {
+    return hExists(Buffer.create(key), field);
   }
 
-  public void lInsert(String key, boolean before, String pivot, String value, CompletionHandler<Integer> handler) {
-    lInsert(key, before, pivot.getBytes(UTF8), value.getBytes(UTF8), handler);
-  }
-
-  public void lLen(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {LLEN_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
-  }
-
-  public void lPop(String key, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {LPOP_COMMAND, key.getBytes(UTF8)}, convertBulkHandler(handler));
-  }
-
-  public void lPush(String key, byte[][] values, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[values.length + 2][];
-    args[0] = LPUSH_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    System.arraycopy(values, 0, args, 2, values.length);
-    sendCommand(args, convertIntegerHandler(handler));
-  }
-
-  public void lPush(String key, String[] values, CompletionHandler<Integer> handler) {
-    byte[][] vals = new byte[values.length][];
-    for (int i = 0; i < values.length; i++) {
-      vals[i] = values[i].getBytes(UTF8);
-    }
-    lPush(key, vals, handler);
-  }
-
-  public void lPush(String key, String value, CompletionHandler<Integer> handler) {
-    lPush(key, new String[] {value}, handler);
-  }
-
-  public void lPush(String key, byte[] value, CompletionHandler<Integer> handler) {
-    lPush(key, new byte[][] {value}, handler);
-  }
-
-  public void lPushX(String key, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {LPUSHX_COMMAND, key.getBytes(UTF8), value}, convertIntegerHandler(handler));
-  }
-
-  public void lPushX(String key, String value, CompletionHandler<Integer> handler) {
-    lPushX(key, value.getBytes(UTF8), handler);
-  }
-
-  public void lRange(String key, int start, int stop, CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {LRANGE_COMMAND, key.getBytes(UTF8), intToBytes(start), intToBytes(stop)}, convertMultiBulkHandler(handler));
-  }
+  //DO I really need to create string versions of all method?? Perhaps FOR NOW, we should just use buffers????
 
-  public void lRem(String key, int count, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {LREM_COMMAND, key.getBytes(UTF8), intToBytes(count), value}, convertIntegerHandler(handler));
+  public Deferred<Buffer> hGet(Buffer key, Buffer field) {
+    return createBulkDeferred(HGET_COMMAND, key, field);
   }
 
-  public void lRem(String key, int count, String value, CompletionHandler<Integer> handler) {
-    lRem(key, count, value.getBytes(UTF8), handler);
+  public Deferred<Buffer[]> hGetAll(Buffer key) {
+    return createMultiBulkDeferred(HGETALL_COMMAND, key);
   }
 
-  public void lSet(String key, int index, byte[] value, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {LSET_COMMAND, key.getBytes(UTF8), intToBytes(index), value}, convertVoidHandler(handler));
+  public Deferred<Integer> hIncrBy(Buffer key, Buffer field, int increment) {
+    return createIntegerDeferred(HINCRBY_COMMAND, key, field, intToBuffer(increment));
   }
 
-  public void lSet(String key, int index, String value, CompletionHandler<Void> handler) {
-    lSet(key, index, value.getBytes(UTF8), handler);
+  public Deferred<Buffer[]> hKeys(Buffer key) {
+    return createMultiBulkDeferred(HKEYS_COMMAND, key);
   }
 
-  public void lTrim(String key, int start, int stop, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {LTRIM_COMMAND, key.getBytes(UTF8), intToBytes(start), intToBytes(stop)}, convertVoidHandler(handler));
+  public Deferred<Integer> hLen(Buffer key) {
+    return createIntegerDeferred(HLEN_COMMAND, key);
   }
 
-  public void mget(String keys[], CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[keys.length + 1][];
-    args[0] = MGET_COMMAND;
-    System.arraycopy(keys, 0, args, 1, keys.length);
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Buffer[]> hmGet(Buffer key, Buffer... fields) {
+    return createMultiBulkDeferred(HMGET_COMMAND, toBufferArray(key, fields));
   }
 
-  public void move(String key, String db, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {MOVE_COMMAND, key.getBytes(UTF8), db.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Void> hmSet(Buffer key, Map<Buffer, Buffer> map) {
+    return createVoidDeferred(HMSET_COMMAND, toBufferArray(key, toBufferArray(map)));
   }
 
-  public void mset(String[] keys, byte[][] values, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[2 * keys.length + 1][];
-    args[0] = MSET_COMMAND;
-    for (int i = 0; i < keys.length; i ++) {
-      args[2 * i + 1] = keys[i].getBytes(UTF8);
-      args[2 * i + 2] = values[i];
-    }
-    sendCommand(args, convertVoidHandler(handler));
+  public Deferred<Boolean> hSet(Buffer key, Buffer field, Buffer value) {
+    return createBooleanDeferred(HSET_COMMAND, key, field, value);
   }
 
-  public void mset(String[] keys, String[] values, CompletionHandler<Void> handler) {
-    byte[][] vals = new byte[values.length][];
-    for (int i = 0; i < values.length; i++) {
-      vals[i] = values[i].getBytes(UTF8);
-    }
-    mset(keys, vals, handler);
+  public Deferred<Boolean> hSetNx(Buffer key, Buffer field, Buffer value) {
+    return createBooleanDeferred(HSETNX_COMMAND, key, field, value);
   }
 
-  public void msetNX(String[] keys, byte[][] values, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[2 * keys.length + 1][];
-    args[0] = MSETNX_COMMAND;
-    for (int i = 0; i < keys.length; i ++) {
-      args[2 * i + 1] = keys[i].getBytes(UTF8);
-      args[2 * i + 2] = values[i];
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Buffer[]> hVals(Buffer key) {
+    return createMultiBulkDeferred(HVALS_COMMAND, key);
   }
 
-  public void msetNX(String[] keys, String[] values, CompletionHandler<Integer> handler) {
-    byte[][] vals = new byte[values.length][];
-    for (int i = 0; i < values.length; i++) {
-      vals[i] = values[i].getBytes(UTF8);
-    }
-    msetNX(keys, vals, handler);
+  public Deferred<Integer> incr(Buffer key) {
+    return createIntegerDeferred(INCR_COMMAND, key);
   }
 
-  public void multi(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {MULTI_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Integer> incrBy(Buffer key, int increment) {
+    return createIntegerDeferred(INCRBY_COMMAND, key, intToBuffer(increment));
   }
 
-  public void persist(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {PERSIST_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Buffer> info() {
+    return createBulkDeferred(INFO_COMMAND);
   }
 
-  public void ping(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {PING_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Buffer[]> keys(Buffer pattern) {
+    return createMultiBulkDeferred(KEYS_COMMAND, pattern);
   }
 
-  public void pSubscribe(String[] patterns, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[patterns.length + 1][];
-    args[0] = PSUBSCRIBE_COMMAND;
-    for (int i = 0; i < patterns.length; i++) {
-      args[i + 1] = patterns[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertVoidHandler(handler));
+  public Deferred<Integer> lastSave() {
+    return createIntegerDeferred(LASTSAVE_COMMAND);
   }
 
-  public void pSubscribe(String pattern, CompletionHandler<Void> handler) {
-    pSubscribe(new String[] {pattern}, handler);
+  public Deferred<Buffer> lIndex(Buffer key, int index) {
+    return createBulkDeferred(LINDEX_COMMAND, key, intToBuffer(index));
   }
 
-  public void publish(String channel, byte[] message, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {PUBLISH_COMMAND, channel.getBytes(UTF8), message}, convertIntegerHandler(handler));
+  public Deferred<Integer> lInsert(Buffer key, boolean before, Buffer pivot, Buffer value) {
+    return createIntegerDeferred(LINSERT_COMMAND, key, Buffer.create(before ? INSERT_BEFORE : INSERT_AFTER), pivot, value);
   }
 
-  public void publish(String channel, String message, CompletionHandler<Integer> handler) {
-    publish(channel, message.getBytes(UTF8), handler);
+  public Deferred<Integer> lLen(Buffer key) {
+    return createIntegerDeferred(LLEN_COMMAND, key);
   }
 
-  public void pUnsubscribe(String[] patterns, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[patterns.length + 1][];
-    args[0] = PUNSUBSCRIBE_COMMAND;
-    for (int i = 0; i < patterns.length; i++) {
-      args[i + 1] = patterns[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertVoidHandler(handler));
+  public Deferred<Buffer> lPop(Buffer key) {
+    return createBulkDeferred(LPOP_COMMAND, key);
   }
 
-  public void pUnsubscribe(String pattern, CompletionHandler<Void> handler) {
-    pUnsubscribe(new String[] {pattern}, handler);
+  public Deferred<Integer> lPush(Buffer key, Buffer... values) {
+    return createIntegerDeferred(LPUSH_COMMAND, toBufferArray(key, values));
   }
 
-  public void quit(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {QUIT_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Integer> lPushX(Buffer key, Buffer value) {
+    return createIntegerDeferred(LPUSHX_COMMAND, key, value);
   }
 
-  public void randomKey(CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {RANDOMKEY_COMMAND}, convertBulkHandler(handler));
+  public Deferred<Buffer[]> lRange(Buffer key, int start, int stop) {
+    return createMultiBulkDeferred(LRANGE_COMMAND, key, intToBuffer(start), intToBuffer(stop));
   }
 
-  public void rename(String key, String newKey, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {RENAME_COMMAND, key.getBytes(UTF8), newKey.getBytes(UTF8)}, convertVoidHandler(handler));
+  public Deferred<Integer> lRem(Buffer key, int count, Buffer value) {
+    return createIntegerDeferred(LREM_COMMAND, key, intToBuffer(count), value);
   }
 
-  public void renameNX(String key, String newKey, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {RENAMENX_COMMAND, key.getBytes(UTF8), newKey.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Void> lSet(Buffer key, int index, Buffer value) {
+    return createVoidDeferred(LSET_COMMAND, key, intToBuffer(index), value);
   }
 
-  public void rPop(String key, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {RPOP_COMMAND, key.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Void> lTrim(Buffer key, int start, int stop) {
+    return createVoidDeferred(LTRIM_COMMAND, key, intToBuffer(start), intToBuffer(stop));
   }
 
-  public void rPoplPush(String source, String destination, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {RPOPLPUSH_COMMAND, source.getBytes(UTF8), destination.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Buffer[]> mget(Buffer... keys) {
+    return createMultiBulkDeferred(MGET_COMMAND, keys);
   }
 
-  public void rPush(String key, byte[][] values, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[values.length + 1][];
-    args[0] = RPUSH_COMMAND;
-    for (int i = 0; i < values.length; i++) {
-      args[i + 1] = values[i];
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Boolean> move(Buffer key, Buffer db) {
+    return createBooleanDeferred(MOVE_COMMAND, key, db);
   }
 
-  public void rPush(String key, String[] values, CompletionHandler<Integer> handler) {
-    byte[][] vals = new byte[values.length][];
-    for (int i = 0; i < values.length; i++) {
-      vals[i] = values[i].getBytes(UTF8);
-    }
-    rPush(key, vals, handler);
+  public Deferred<Void> mset(Map<Buffer, Buffer> map) {
+    return createVoidDeferred(MSET_COMMAND, toBufferArray(map));
   }
 
-  public void rPush(String key, String value, CompletionHandler<Integer> handler) {
-    rPush(key, new String[] {value}, handler);
+  public Deferred<Boolean> msetNx(Map<Buffer, Buffer> map) {
+    return createBooleanDeferred(MSETNX_COMMAND, toBufferArray(map));
   }
 
-  public void rPush(String key, byte[] value, CompletionHandler<Integer> handler) {
-    rPush(key, new byte[][] {value}, handler);
+  public Deferred<Void> multi() {
+    return createVoidDeferred(MULTI_COMMAND);
   }
 
-  public void rPushX(String key, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {RPUSHX_COMMAND, key.getBytes(UTF8), value}, convertIntegerHandler(handler));
+  public Deferred<Boolean> persist(Buffer key) {
+    return createBooleanDeferred(PERSIST_COMMAND, key);
   }
 
-  public void rPushX(String key, String value, CompletionHandler<Integer> handler) {
-    rPushX(key, value.getBytes(UTF8), handler);
+  public Deferred<Void> ping() {
+    return createVoidDeferred(PING_COMMAND);
   }
 
-  public void sAdd(String key, byte[][] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[members.length + 1][];
-    args[0] = SADD_COMMAND;
-    for (int i = 0; i < members.length; i++) {
-      args[i + 1] = members[i];
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Void> pSubscribe(Buffer... patterns) {
+    return createVoidDeferred(PSUBSCRIBE_COMMAND, patterns);
   }
 
-  public void sAdd(String key, String[] members, CompletionHandler<Integer> handler) {
-    byte[][] vals = new byte[members.length][];
-    for (int i = 0; i < members.length; i++) {
-      vals[i] = members[i].getBytes(UTF8);
-    }
-    sAdd(key, vals, handler);
+  public Deferred<Integer> publish(Buffer channel, Buffer message) {
+    return createIntegerDeferred(PUBLISH_COMMAND, channel, message);
   }
 
-  public void sAdd(String key, String member, CompletionHandler<Integer> handler) {
-    sAdd(key, new String[] {member}, handler);
+  public Deferred<Void> pUnsubscribe(Buffer... patterns) {
+    return createVoidDeferred(PUNSUBSCRIBE_COMMAND, patterns);
   }
 
-  public void sAdd(String key, byte[] member, CompletionHandler<Integer> handler) {
-    sAdd(key, new byte[][] {member}, handler);
+  public Deferred<Void> quit() {
+    return createVoidDeferred(QUIT_COMMAND);
   }
 
-  public void save(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {SAVE_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Buffer> randomKey() {
+    return createBulkDeferred(RANDOMKEY_COMMAND);
   }
 
-  public void sCard(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {SCARD_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Void> rename(Buffer key, Buffer newKey) {
+    return createVoidDeferred(RENAME_COMMAND, key, newKey);
   }
 
-  public void sDiff(String key, String[] others, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[others.length + 2][];
-    args[0] = SDIFF_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    for (int i = 0; i < others.length; i++) {
-      args[i + 2] = others[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Boolean> renameNX(Buffer key, Buffer newKey) {
+    return createBooleanDeferred(RENAMENX_COMMAND, key, newKey);
   }
 
-  public void sDiff(String key, String other, CompletionHandler<byte[][]> handler) {
-    sDiff(key, new String[] {other}, handler);
+  public Deferred<Buffer> rPop(Buffer key) {
+    return createBulkDeferred(RPOP_COMMAND, key);
   }
 
-  public void sDiffStore(String key, String[] others, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[others.length + 2][];
-    args[0] = SDIFFSTORE_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    for (int i = 0; i < others.length; i++) {
-      args[i + 2] = others[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Buffer> rPoplPush(Buffer source, Buffer destination) {
+    return createBulkDeferred(RPOPLPUSH_COMMAND, source, destination);
   }
 
-  public void sDiffStore(String key, String other, CompletionHandler<Integer> handler) {
-    sDiffStore(key, new String[] {other}, handler);
+  public Deferred<Integer> rPush(Buffer key, Buffer... values) {
+    return createIntegerDeferred(RPUSH_COMMAND, toBufferArray(key, values));
   }
 
-  public void select(int index, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {SELECT_COMMAND, intToBytes(index)}, convertVoidHandler(handler));
+  public Deferred<Integer> rPushX(Buffer key, Buffer value) {
+    return createIntegerDeferred(RPUSHX_COMMAND, key, value);
   }
 
-  public void set(String key, String value, CompletionHandler<String> handler) {
-    set(key, value.getBytes(UTF8), handler);
+  public Deferred<Integer> sAdd(Buffer key, Buffer... members) {
+    return createIntegerDeferred(SADD_COMMAND, toBufferArray(key, members));
   }
 
-  public void set(String key, byte[] value, CompletionHandler<String> handler) {
-    sendCommand(new byte[][] {SET_COMMAND, key.getBytes(UTF8), value}, convertStringHandler(handler));
+  public Deferred<Void> save() {
+    return createVoidDeferred(SAVE_COMMAND);
   }
 
-  public void setBit(String key, int offset, int value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {SETBIT_COMMAND, key.getBytes(UTF8), intToBytes(offset), intToBytes(value)}, convertIntegerHandler(handler));
+  public Deferred<Integer> sCard(Buffer key) {
+    return createIntegerDeferred(SCARD_COMMAND, key);
   }
 
-  public void setEx(String key, int seconds, String value, CompletionHandler<Void> handler) {
-    setEx(key, seconds, value.getBytes(UTF8), handler);
+  public Deferred<Buffer[]> sDiff(Buffer key, Buffer... others) {
+    return createMultiBulkDeferred(SDIFF_COMMAND, toBufferArray(key, others));
   }
 
-  public void setEx(String key, int seconds, byte[] value, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {SETEX_COMMAND, key.getBytes(UTF8), intToBytes(seconds), value}, convertVoidHandler(handler));
+  public Deferred<Integer> sDiffStore(Buffer key, Buffer... others) {
+    return createIntegerDeferred(SDIFFSTORE_COMMAND, toBufferArray(key, others));
   }
 
-  public void setNx(String key, String value, CompletionHandler<Integer> handler) {
-    setNx(key, value.getBytes(UTF8), handler);
+  public Deferred<Void> select(int index) {
+    return createVoidDeferred(SELECT_COMMAND, intToBuffer(index));
   }
 
-  public void setNx(String key, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {SETNX_COMMAND, key.getBytes(UTF8), value}, convertIntegerHandler(handler));
+  public Deferred<Void> set(Buffer key, Buffer value) {
+    return createVoidDeferred(SET_COMMAND, key, value);
   }
 
-  public void setRange(String key, int offset, String value, CompletionHandler<Integer> handler) {
-    setRange(key, offset, value.getBytes(UTF8), handler);
+  public Deferred<Integer> setBit(Buffer key, int offset, int value) {
+    return createIntegerDeferred(SETBIT_COMMAND, key, intToBuffer(offset), intToBuffer(value));
   }
 
-  public void setRange(String key, int offset, byte[] value, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {SETRANGE_COMMAND, key.getBytes(UTF8), intToBytes(offset), value}, convertIntegerHandler(handler));
+  public Deferred<Void> setEx(Buffer key, int seconds, Buffer value) {
+    return createVoidDeferred(SETEX_COMMAND, key, intToBuffer(seconds), value);
   }
 
-  public void shutdown(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {SHUTDOWN_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Boolean> setNx(Buffer key, Buffer value) {
+    return createBooleanDeferred(SETNX_COMMAND, key, value);
   }
 
-  public void sInter(String[] keys, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[keys.length + 1][];
-    args[0] = SINTER_COMMAND;
-    for (int i = 0; i < keys.length; i++) {
-      args[i + 1] = keys[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Integer> setRange(Buffer key, int offset, Buffer value) {
+    return createIntegerDeferred(SETRANGE_COMMAND, key, intToBuffer(offset), value);
   }
 
-  public void sInterStore(String[] keys, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[keys.length + 1][];
-    args[0] = SINTERSTORE_COMMAND;
-    for (int i = 0; i < keys.length; i++) {
-      args[i + 1] = keys[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Void> shutdown() {
+    return createVoidDeferred(SHUTDOWN_COMMAND);
   }
 
-  public void sIsMember(String key, byte[] member, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {SISMEMBER_COMMAND, key.getBytes(UTF8), member}, convertIntegerHandler(handler));
+  public Deferred<Buffer[]> sInter(Buffer... keys) {
+    return createMultiBulkDeferred(SINTER_COMMAND, keys);
   }
 
-  public void sIsMember(String key, String member, CompletionHandler<Integer> handler) {
-    sIsMember(key, member.getBytes(UTF8), handler);
+  public Deferred<Integer> sInterStore(Buffer destination, Buffer... keys) {
+    return createIntegerDeferred(SINTERSTORE_COMMAND, toBufferArray(destination, keys));
   }
 
-  public void slaveOf(String host, int port, CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {SLAVEOF_COMMAND, host.getBytes(UTF8), intToBytes(port)}, convertVoidHandler(handler));
+  public Deferred<Boolean> sIsMember(Buffer key, Buffer member) {
+    return createBooleanDeferred(SISMEMBER_COMMAND, key, member);
   }
 
-  public void sMembers(String key, CompletionHandler<byte[][]> handler) {
-    sendCommand(new byte[][] {SMEMBERS_COMMAND, key.getBytes(UTF8)}, convertMultiBulkHandler(handler));
+  public Deferred<Void> slaveOf(String host, int port) {
+    return createVoidDeferred(SLAVEOF_COMMAND, Buffer.create(host), intToBuffer(port));
   }
 
-  public void sMove(String source, String destination, byte[] member, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {SMOVE_COMMAND, source.getBytes(UTF8), destination.getBytes(UTF8), member}, convertIntegerHandler(handler));
+  public Deferred<Buffer[]> sMembers(Buffer key) {
+    return createMultiBulkDeferred(SMEMBERS_COMMAND, key);
   }
 
-  public void sMove(String source, String destination, String member, CompletionHandler<Integer> handler) {
-    sMove(source, destination, member.getBytes(UTF8), handler);
+  public Deferred<Boolean> sMove(Buffer source, Buffer destination, Buffer member) {
+    return createBooleanDeferred(SMOVE_COMMAND, source, destination, member);
   }
 
-  public void sort(String key, CompletionHandler<byte[][]> handler) {
-    sort(key, null, -1, -1, null, true, false, null, handler);
+  public Deferred<Buffer[]> sort(Buffer key) {
+    return sort(key, null, -1, -1, null, true, false, null);
   }
 
-  public void sort(String key, String pattern, CompletionHandler<byte[][]> handler) {
-    sort(key, pattern, -1, -1, null, true, false, null, handler);
+  public Deferred<Buffer[]> sort(Buffer key, Buffer pattern) {
+    return sort(key, pattern, -1, -1, null, true, false, null);
   }
 
-  public void sort(String key, String pattern, boolean ascending, boolean alpha, CompletionHandler<byte[][]> handler) {
-    sort(key, pattern, -1, -1, null, ascending, alpha, null, handler);
+  public Deferred<Buffer[]> sort(Buffer key, Buffer pattern, boolean ascending, boolean alpha) {
+    return sort(key, pattern, -1, -1, null, ascending, alpha, null);
   }
 
-  public void sort(String key, String pattern, int offset, int count, String[] getPatterns,
-                   boolean ascending, boolean alpha, String storeDestination, CompletionHandler<byte[][]> handler) {
-    int argsLen = 2 + (pattern == null ? 0 : 2) + (offset == -1 ? 0 : 3) + (getPatterns == null ? 0 : 2 * getPatterns.length) +
+  public Deferred<Buffer[]> sort(Buffer key, Buffer pattern, int offset, int count, Buffer[] getPatterns,
+                   boolean ascending, boolean alpha, Buffer storeDestination) {
+    int argsLen = 1 + (pattern == null ? 0 : 2) + (offset == -1 ? 0 : 3) + (getPatterns == null ? 0 : 2 * getPatterns.length) +
       (ascending ? 0 : 1) + (alpha ? 1: 0) + (storeDestination == null ? 0 : 2);
-    byte[][] args = new byte[argsLen][];
-    args[0] = SORT_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    int pos = 2;
+    Buffer[] args = new Buffer[argsLen];
+    args[0] = key;
+    int pos = 1;
     if (pattern != null) {
-      args[pos++] = SORT_BY;
-      args[pos++] = pattern.getBytes(UTF8);
+      args[pos++] = Buffer.create(SORT_BY);
+      args[pos++] = pattern;
     }
     if (offset != -1) {
-      args[pos++] = LIMIT;
-      args[pos++] = intToBytes(offset);
-      args[pos++] = intToBytes(count);
+      args[pos++] = Buffer.create(LIMIT);
+      args[pos++] = intToBuffer(offset);
+      args[pos++] = intToBuffer(count);
     }
     if (getPatterns != null) {
-      for (String getPattern: getPatterns) {
-        args[pos++] = SORT_GET;
-        args[pos++] = getPattern.getBytes(UTF8);
+      for (Buffer getPattern: getPatterns) {
+        args[pos++] = Buffer.create(SORT_GET);
+        args[pos++] = getPattern;
       }
     }
     if (!ascending) {
-      args[pos++] = SORT_DESC;
+      args[pos++] = Buffer.create(SORT_DESC);
     }
     if (alpha) {
-      args[pos++] = SORT_ALPHA;
+      args[pos++] = Buffer.create(SORT_ALPHA);
     }
     if (storeDestination != null) {
-      args[pos++] = SORT_STORE;
-      args[pos++] = storeDestination.getBytes(UTF8);
+      args[pos++] = Buffer.create(SORT_STORE);
+      args[pos++] = storeDestination;
     }
-    sendCommand(args, convertMultiBulkHandler(handler));
+    return createMultiBulkDeferred(SORT_COMMAND, args);
   }
 
-  public void sPop(String key, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {SPOP_COMMAND, key.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Buffer> sPop(Buffer key) {
+    return createBulkDeferred(SPOP_COMMAND, key);
   }
 
-  public void sRandMember(String key, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {SRANDMEMBER_COMMAND, key.getBytes(UTF8)}, convertBulkHandler(handler));
+  public Deferred<Buffer> sRandMember(Buffer key) {
+    return createBulkDeferred(SRANDMEMBER_COMMAND, key);
   }
 
-  public void sRem(String key, byte[][] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[2 + members.length][];
-    args[0] = SREM_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    System.arraycopy(members, 0, args, 2, members.length);
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Integer> sRem(Buffer key, Buffer... members) {
+    return createIntegerDeferred(SREM_COMMAND, toBufferArray(key, members));
   }
 
-  public void sRem(String key, String[] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[members.length][];
-    for (int i = 0; i < members.length; i++) {
-      args[i] = members[i].getBytes(UTF8);
-    }
-    sRem(key, args, handler);
+  public Deferred<Integer> strLen(Buffer key) {
+    return createIntegerDeferred(STRLEN_COMMAND, key);
   }
 
-  public void sRem(String key, String member, CompletionHandler<Integer> handler) {
-    sRem(key, new String[] { member }, handler);
+  public Deferred<Void> subscribe(Buffer... channels) {
+    return createVoidDeferred(SUBSCRIBE_COMMAND, channels);
   }
 
-  public void sRem(String key, byte[] member, CompletionHandler<Integer> handler) {
-    sRem(key, new byte[][] { member }, handler);
+  public Deferred<Buffer[]> sUnion(Buffer... keys) {
+    return createMultiBulkDeferred(SUNION_COMMAND, keys);
   }
 
-  public void strLen(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {STRLEN_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Integer> sUnionStore(Buffer destination, Buffer... keys) {
+    return createIntegerDeferred(SUNIONSTORE_COMMAND, toBufferArray(destination, keys));
   }
 
-  public void subscribe(String[] channels, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[channels.length + 1][];
-    args[0] = SUBSCRIBE_COMMAND;
-    for (int i = 0; i < channels.length; i++) {
-      args[i + 1] = channels[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertVoidHandler(handler));
+  public Deferred<Integer> ttl(Buffer key) {
+    return createIntegerDeferred(TTL_COMMAND, key);
   }
 
-  public void subscribe(String channel, CompletionHandler<Void> handler) {
-    subscribe(new String[] {channel}, handler);
+  public Deferred<Void> type(Buffer key) {
+    return createVoidDeferred(TYPE_COMMAND, key);
   }
 
-  public void sUnion(String[] keys, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[keys.length + 1][];
-    args[0] = SUNION_COMMAND;
-    for (int i = 0; i < keys.length; i++) {
-      args[i + 1] = keys[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
+  public Deferred<Void> unsubscribe(Buffer... channels) {
+    return createVoidDeferred(UNSUBSCRIBE_COMMAND, channels);
   }
 
-  public void sUnionStore(String[] keys, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[keys.length + 1][];
-    args[0] = SUNIONSTORE_COMMAND;
-    for (int i = 0; i < keys.length; i++) {
-      args[i + 1] = keys[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertIntegerHandler(handler));
+  public Deferred<Void> unwatch() {
+    return createVoidDeferred(UNWATCH_COMMAND);
   }
 
-  public void ttl(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {TTL_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
+  public Deferred<Void> watch(Buffer... keys) {
+    return createVoidDeferred(WATCH_COMMAND, keys);
   }
 
-  public void type(String key, CompletionHandler<String> handler) {
-    sendCommand(new byte[][] {TYPE_COMMAND, key.getBytes(UTF8)}, convertStringHandler(handler));
+  public Deferred<Integer> zAdd(Buffer key, Map<Double, Buffer> map) {
+    return createIntegerDeferred(ZADD_COMMAND, toBufferArray(key, toBufferArrayD(map)));
   }
 
-  public void unsubscribe(String[] channels, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[channels.length + 1][];
-    args[0] = UNSUBSCRIBE_COMMAND;
-    for (int i = 0; i < channels.length; i++) {
-      args[i + 1] = channels[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertVoidHandler(handler));
+  public Deferred<Integer> zAdd(Buffer key, double score, Buffer member) {
+    return createIntegerDeferred(ZADD_COMMAND, key, doubleToBuffer(score), member);
   }
 
-  public void unsubscribe(String channel, CompletionHandler<Void> handler) {
-    unsubscribe(new String[] {channel}, handler);
+  public Deferred<Integer> zCard(Buffer key) {
+    return createIntegerDeferred(ZCARD_COMMAND, key);
   }
 
-  public void unwatch(CompletionHandler<Void> handler) {
-    sendCommand(new byte[][] {UNWATCH_COMMAND}, convertVoidHandler(handler));
+  public Deferred<Integer> zCount(Buffer key, double min, double max) {
+    return createIntegerDeferred(ZCOUNT_COMMAND, key, doubleToBuffer(min), doubleToBuffer(max));
   }
 
-  public void watch(String[] keys, CompletionHandler<Void> handler) {
-    byte[][] args = new byte[1 + keys.length][];
-    args[0] = WATCH_COMMAND;
-    for (int i = 0; i < keys.length; i++) {
-      args[i + 1] = keys[i].getBytes(UTF8);
-    }
-    sendCommand(args, convertVoidHandler(handler));
-  }
-
-  public void watch(String key, CompletionHandler<Void> handler) {
-    watch(new String[] { key }, handler);
-  }
-
-  public void zAdd(String key, double[] scores, byte[][] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[2 + 2 * scores.length][];
-    args[0] = ZADD_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    for (int i = 0; i < scores.length; i++) {
-      args[i * 2 + 2] = String.valueOf(scores[i]).getBytes(UTF8);
-      args[i * 2 + 3] = members[i];
-    }
-    sendCommand(args, convertIntegerHandler(handler));
-  }
-
-  public void zAdd(String key, double[] scores, String[] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[members.length][];
-    for (int i = 0; i < members.length; i++) {
-      args[i] = members[i].getBytes(UTF8);
-    }
-    zAdd(key, scores, args, handler);
-  }
-
-  public void zAdd(String key, double score, String member, CompletionHandler<Integer> handler) {
-    zAdd(key, new double[] {score}, new String[] {member}, handler);
-  }
-
-  public void zAdd(String key, double score, byte[] member, CompletionHandler<Integer> handler) {
-    zAdd(key, new double[] {score}, new byte[][] {member}, handler);
-  }
-
-  public void zCard(String key, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZCARD_COMMAND, key.getBytes(UTF8)}, convertIntegerHandler(handler));
-  }
-
-  public void zCount(String key, double min, double max, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZCOUNT_COMMAND, key.getBytes(UTF8), String.valueOf(min).getBytes(UTF8), String.valueOf(max).getBytes(UTF8)}, convertIntegerHandler(handler));
-  }
-
-  public void zIncrBy(String key, int increment, byte[] member, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZINCRBY_COMMAND, key.getBytes(UTF8), intToBytes(increment), member}, convertIntegerHandler(handler));
-  }
-
-  public void zIncrBy(String key, int increment, String member, CompletionHandler<Integer> handler) {
-    zIncrBy(key, increment, member.getBytes(UTF8), handler);
+  public Deferred<Integer> zIncrBy(Buffer key, int increment, Buffer member) {
+    return createIntegerDeferred(ZINCRBY_COMMAND, key, intToBuffer(increment), member);
   }
 
   public enum AggregateType {
     SUM, MIN, MAX
   }
 
-  public void zInterStore(String destination, int numKeys, String[] keys, double[] weights, AggregateType aggType, CompletionHandler<Integer> handler) {
-    int argsLen = 3 + keys.length + (weights != null ? 1 + weights.length : 0) + 2;
-    byte[][] args = new byte[argsLen][];
-    args[0] = ZINTERSTORE_COMMAND;
-    args[1] = destination.getBytes(UTF8);
-    args[2] = intToBytes(numKeys);
-    int pos = 3;
-    for (String key: keys) {
-      args[pos++] = key.getBytes(UTF8);
+  public Deferred<Integer> zInterStore(Buffer destination, int numKeys, Buffer[] keys, double[] weights, AggregateType aggType) {
+    int argsLen = 2 + keys.length + (weights != null ? 1 + weights.length : 0) + 2;
+    Buffer[] args = new Buffer[argsLen];
+    args[0] = destination;
+    args[1] = intToBuffer(numKeys);
+    int pos = 2;
+    for (Buffer key: keys) {
+      args[pos++] = key;
     }
     if (weights != null) {
-      args[pos++] = WEIGHTS;
+      args[pos++] = Buffer.create(WEIGHTS);
       for (double weight: weights) {
-        args[pos++] = String.valueOf(weight).getBytes(UTF8);
+        args[pos++] = doubleToBuffer(weight);
       }
     }
-    args[pos++] = AGGREGRATE;
-    args[pos++] = aggType.toString().getBytes(UTF8);
-    sendCommand(args, convertIntegerHandler(handler));
+    args[pos++] = Buffer.create(AGGREGRATE);
+    args[pos] = Buffer.create(aggType.toString());
+    return createIntegerDeferred(ZINTERSTORE_COMMAND, args);
   }
 
-  public void zInterStore(String destination, int numKeys, String[] keys, AggregateType aggType, CompletionHandler<Integer> handler) {
-    zInterStore(destination, numKeys, keys, null, aggType, handler);
-  }
-
-  public void zRange(String key, double start, double stop, boolean withScores, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[4 + (withScores ? 1 : 0)][];
-    args[0] = ZRANGE_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    args[2] = String.valueOf(start).getBytes(UTF8);
-    args[3] = String.valueOf(stop).getBytes(UTF8);
+  public Deferred<Buffer[]> zRange(Buffer key, double start, double stop, boolean withScores) {
+    Buffer[] args = new Buffer[3 + (withScores ? 1 : 0)];
+    args[0] = key;
+    args[1] = doubleToBuffer(start);
+    args[2] = doubleToBuffer(stop);
     if (withScores) {
-      args[4] = WITHSCORES;
+      args[3] = Buffer.create(WITHSCORES);
     }
-    sendCommand(args, convertMultiBulkHandler(handler));
+    return createMultiBulkDeferred(ZRANGE_COMMAND, args);
   }
 
-  public void zRangeByScore(String key, double min, double max, boolean withScores, int offset, int count, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[4 + (withScores ? 1 : 0) + (offset != -1 ? 3 : 0)][];
-    args[0] = ZRANGEBYSCORE_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    args[2] = String.valueOf(min).getBytes(UTF8);
-    args[3] = String.valueOf(max).getBytes(UTF8);
-    int pos = 4;
-    if (withScores) {
-      args[pos++] = WITHSCORES;
-    }
-    if (offset != -1) {
-      args[pos++] = LIMIT;
-      args[pos++] = intToBytes(offset);
-      args[pos++] = intToBytes(count);
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
-  }
-
-  public void zRank(String key, byte[] member, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZRANK_COMMAND, member, key.getBytes(UTF8)}, convertIntegerHandler(handler));
-  }
-
-  public void zRank(String key, String member, CompletionHandler<Integer> handler) {
-    zRank(key, member.getBytes(UTF8), handler);
-  }
-
-  public void zRem(String key, byte[][] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[2 + members.length][];
-    args[0] = ZREM_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    System.arraycopy(members, 0, args, 2, members.length);
-    sendCommand(args, convertIntegerHandler(handler));
-  }
-
-  public void zRem(String key, String[] members, CompletionHandler<Integer> handler) {
-    byte[][] args = new byte[members.length][];
-    for (int i = 0; i < members.length; i++) {
-      args[i] = members[i].getBytes(UTF8);
-    }
-    zRem(key, args, handler);
-  }
-
-  public void zRem(String key, String member, CompletionHandler<Integer> handler) {
-    zRem(key, new String[] {member}, handler);
-  }
-
-  public void zRem(String key, byte[] member, CompletionHandler<Integer> handler) {
-    zRem(key, new byte[][] {member}, handler);
-  }
-
-  public void zRemRangeByRank(String key, int start, int stop, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZREMRANGEBYRANK_COMMAND, key.getBytes(UTF8), intToBytes(start), intToBytes(stop)}, convertIntegerHandler(handler));
-  }
-
-  public void zRemRangeByScore(String key, double min, double max, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZREMRANGEBYSCORE_COMMAND, key.getBytes(UTF8), String.valueOf(min).getBytes(UTF8), String.valueOf(max).getBytes(UTF8)}, convertIntegerHandler(handler));
-  }
-
-  public void zRevRange(String key, double start, double stop, boolean withScores, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[4 + (withScores ? 1 : 0)][];
-    args[0] = ZREVRANGE_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    args[2] = String.valueOf(start).getBytes(UTF8);
-    args[3] = String.valueOf(stop).getBytes(UTF8);
-    if (withScores) {
-      args[4] = WITHSCORES;
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
-  }
-
-  public void zRevRangeByScore(String key, double min, double max, boolean withScores, int offset, int count, CompletionHandler<byte[][]> handler) {
-    byte[][] args = new byte[4 + (withScores ? 1 : 0) + (offset != -1 ? 3 : 0)][];
-    args[0] = ZREVRANGEBYSCORE_COMMAND;
-    args[1] = key.getBytes(UTF8);
-    args[2] = String.valueOf(min).getBytes(UTF8);
-    args[3] = String.valueOf(max).getBytes(UTF8);
-    int pos = 4;
-    if (withScores) {
-      args[pos++] = WITHSCORES;
-    }
-    if (offset != -1) {
-      args[pos++] = LIMIT;
-      args[pos++] = intToBytes(offset);
-      args[pos++] = intToBytes(count);
-    }
-    sendCommand(args, convertMultiBulkHandler(handler));
-  }
-
-  public void zRevRank(String key, byte[] member, CompletionHandler<Integer> handler) {
-    sendCommand(new byte[][] {ZREVRANK_COMMAND, member, key.getBytes(UTF8)}, convertIntegerHandler(handler));
-  }
-
-  public void zRevRank(String key, String member, CompletionHandler<Integer> handler) {
-    zRevRank(key, member.getBytes(UTF8), handler);
-  }
-
-  public void zScore(String key, byte[] member, CompletionHandler<byte[]> handler) {
-    sendCommand(new byte[][] {ZSCORE_COMMAND, member, key.getBytes(UTF8)}, convertBulkHandler(handler));
-  }
-
-  public void zScore(String key, String member, CompletionHandler<byte[]> handler) {
-    zScore(key, member.getBytes(UTF8), handler);
-  }
-
-  public void zUnionStore(String destination, int numKeys, String[] keys, double[] weights, AggregateType aggType, CompletionHandler<Integer> handler) {
-    int argsLen = 3 + keys.length + (weights != null ? 1 + weights.length : 0) + 2;
-    byte[][] args = new byte[argsLen][];
-    args[0] = ZUNIONSTORE_COMMAND;
-    args[1] = destination.getBytes(UTF8);
-    args[2] = intToBytes(numKeys);
+  public Deferred<Buffer[]> zRangeByScore(Buffer key, double min, double max, boolean withScores, int offset, int count) {
+    Buffer[] args = new Buffer[3 + (withScores ? 1 : 0) + (offset != -1 ? 3 : 0)];
+    args[0] = key;
+    args[1] = doubleToBuffer(min);
+    args[2] = doubleToBuffer(max);
     int pos = 3;
-    for (String key: keys) {
-      args[pos++] = key.getBytes(UTF8);
+    if (withScores) {
+      args[pos++] = Buffer.create(WITHSCORES);
+    }
+    if (offset != -1) {
+      args[pos++] = Buffer.create(LIMIT);
+      args[pos++] = intToBuffer(offset);
+      args[pos++] = intToBuffer(count);
+    }
+    return createMultiBulkDeferred(ZRANGEBYSCORE_COMMAND, args);
+  }
+
+  public Deferred<Integer> zRank(Buffer key, Buffer member) {
+    return createIntegerDeferred(ZRANK_COMMAND, key, member);
+  }
+
+  public Deferred<Integer> zRem(Buffer key, Buffer... members) {
+    return createIntegerDeferred(ZREM_COMMAND, toBufferArray(key, members));
+  }
+
+  public Deferred<Integer> zRemRangeByRank(Buffer key, int start, int stop) {
+    return createIntegerDeferred(ZREMRANGEBYRANK_COMMAND, key, intToBuffer(start), intToBuffer(stop));
+  }
+
+  public Deferred<Integer> zRemRangeByScore(Buffer key, double min, double max) {
+    return createIntegerDeferred(ZREMRANGEBYSCORE_COMMAND, key, doubleToBuffer(min), doubleToBuffer(max));
+  }
+
+  public Deferred<Buffer[]> zRevRange(Buffer key, double start, double stop, boolean withScores) {
+    Buffer[] args = new Buffer[3 + (withScores ? 1 : 0)];
+    args[0] = key;
+    args[1] = doubleToBuffer(start);
+    args[2] = doubleToBuffer(stop);
+    if (withScores) {
+      args[3] = Buffer.create(WITHSCORES);
+    }
+    return createMultiBulkDeferred(ZREVRANGE_COMMAND, args);
+  }
+
+  public Deferred<Buffer[]> zRevRangeByScore(Buffer key, double min, double max, boolean withScores, int offset, int count) {
+    Buffer[] args = new Buffer[3 + (withScores ? 1 : 0) + (offset != -1 ? 3 : 0)];
+    args[0] = key;
+    args[1] = doubleToBuffer(min);
+    args[2] = doubleToBuffer(max);
+    int pos = 3;
+    if (withScores) {
+      args[pos++] = Buffer.create(WITHSCORES);
+    }
+    if (offset != -1) {
+      args[pos++] = Buffer.create(LIMIT);
+      args[pos++] = intToBuffer(offset);
+      args[pos] = intToBuffer(count);
+    }
+    return createMultiBulkDeferred(ZREVRANGEBYSCORE_COMMAND, args);
+  }
+
+  public Deferred<Integer> zRevRank(Buffer key, Buffer member) {
+    return createIntegerDeferred(ZREVRANK_COMMAND, key, member);
+  }
+
+  public Deferred<Double> zScore(Buffer key, Buffer member) {
+    return createDoubleDeferred(ZSCORE_COMMAND, key, member);
+  }
+
+  public Deferred<Integer> zUnionStore(Buffer destination, int numKeys, Buffer[] keys, double[] weights, AggregateType aggType) {
+    int argsLen = 2 + keys.length + (weights != null ? 1 + weights.length : 0) + 2;
+    Buffer[] args = new Buffer[argsLen];
+    args[0] = destination;
+    args[1] = intToBuffer(numKeys);
+    int pos = 2;
+    for (Buffer key: keys) {
+      args[pos++] = key;
     }
     if (weights != null) {
-      args[pos++] = WEIGHTS;
+      args[pos++] = Buffer.create(WEIGHTS);
       for (double weight: weights) {
-        args[pos++] = String.valueOf(weight).getBytes(UTF8);
+        args[pos++] = doubleToBuffer(weight);
       }
     }
-    args[pos++] = AGGREGRATE;
-    args[pos++] = aggType.toString().getBytes(UTF8);
-    sendCommand(args, convertIntegerHandler(handler));
+    args[pos++] = Buffer.create(AGGREGRATE);
+    args[pos] = Buffer.create(aggType.toString());
+    return createIntegerDeferred(ZUNIONSTORE_COMMAND, args);
   }
 
-
-
-  public void sendCommand(byte[][] args, CompletionHandler<Object> responseHandler) {
+  private Buffer createCommand(byte[] command, Buffer... args) {
     Buffer buff = Buffer.create(64);
     buff.appendByte(ReplyParser.STAR);
-    buff.appendString(String.valueOf(args.length));
+    buff.appendString(String.valueOf(args.length + 1));
+    buff.appendBytes(ReplyParser.CRLF);
+    buff.appendByte(ReplyParser.DOLLAR);
+    buff.appendString(String.valueOf(command.length));
+    buff.appendBytes(ReplyParser.CRLF);
+    buff.appendBytes(command);
     buff.appendBytes(ReplyParser.CRLF);
     for (int i = 0; i < args.length; i++) {
       buff.appendByte(ReplyParser.DOLLAR);
-      byte[] arg = args[i];
-      buff.appendString(String.valueOf(arg.length));
+      Buffer arg = args[i];
+      buff.appendString(String.valueOf(arg.length()));
       buff.appendBytes(ReplyParser.CRLF);
-      buff.appendBytes(arg);
+      buff.appendBuffer(arg);
       buff.appendBytes(ReplyParser.CRLF);
     }
-    requests.add(responseHandler);
-    socket.write(buff);
+    return buff;
   }
 
-  private byte[] intToBytes(int i) {
-    return String.valueOf(i).getBytes(UTF8);
+  public Deferred<Double> createDoubleDeferred(byte[] command, Buffer... args) {
+    final Buffer buff = createCommand(command, args);
+    return new RedisDeferred<Double>(DeferredType.DOUBLE) {
+      public void run() {
+        requests.add(this);
+        socket.write(buff);
+      }
+    };
   }
 
-  private void doHandle(Completion<Object> completion) {
-    CompletionHandler<Object> handler = requests.poll();
-    if (handler == null) {
-      throw new IllegalStateException("Protocol out of sync, received response without request");
+  public Deferred<Integer> createIntegerDeferred(byte[] command, Buffer... args) {
+    final Buffer buff = createCommand(command, args);
+    return new RedisDeferred<Integer>(DeferredType.INTEGER) {
+      public void run() {
+        requests.add(this);
+        socket.write(buff);
+      }
+    };
+  }
+
+  public Deferred<Void> createVoidDeferred(byte[] command, Buffer... args) {
+    final Buffer buff = createCommand(command, args);
+    return new RedisDeferred<Void>(DeferredType.VOID) {
+      public void run() {
+        requests.add(this);
+        socket.write(buff);
+      }
+    };
+  }
+
+  public Deferred<Boolean> createBooleanDeferred(byte[] command, Buffer... args) {
+    final Buffer buff = createCommand(command, args);
+    return new RedisDeferred<Boolean>(DeferredType.BOOLEAN) {
+      public void run() {
+        requests.add(this);
+        socket.write(buff);
+      }
+    };
+  }
+
+  public Deferred<Buffer> createBulkDeferred(byte[] command, Buffer... args) {
+    final Buffer buff = createCommand(command, args);
+    return new RedisDeferred<Buffer>(DeferredType.BULK) {
+      public void run() {
+        requests.add(this);
+        socket.write(buff);
+      }
+    };
+  }
+
+  public Deferred<Buffer[]> createMultiBulkDeferred(byte[] command, Buffer... args) {
+    final Buffer buff = createCommand(command, args);
+    return new RedisDeferred<Buffer[]>(DeferredType.MULTI_BULK) {
+      public void run() {
+        requests.add(this);
+        socket.write(buff);
+      }
+    };
+  }
+
+  private Buffer[] toBufferArray(Buffer[] buffers, Buffer... others) {
+    Buffer[] args = new Buffer[buffers.length + others.length];
+    System.arraycopy(buffers, 0, args, 0, buffers.length);
+    System.arraycopy(others, 0, args, buffers.length, others.length);
+    return args;
+  }
+
+  private Buffer[] toBufferArray(Buffer firstBuff, Buffer... others) {
+    Buffer[] args = new Buffer[1 + others.length];
+    args[0] = firstBuff;
+    System.arraycopy(others, 0, args, 1, others.length);
+    return args;
+  }
+
+  private Buffer[] toBufferArray(Map<Buffer, Buffer> map) {
+    Buffer[] buffs = new Buffer[map.size() * 2];
+    int pos = 0;
+    for (Map.Entry<Buffer, Buffer> entry: map.entrySet()) {
+      buffs[pos++] = entry.getKey();
+      buffs[pos++] = entry.getValue();
     }
-    handler.handle(completion);
+    return buffs;
   }
 
-  private CompletionHandler<Object> convertStringHandler(final CompletionHandler<String> handler) {
-    return new CompletionHandler<Object>() {
-      public void handle(Completion<Object> completion) {
-        if (completion.succeeded()) {
-          handler.handle(new Completion<>((String)completion.result));
-        } else {
-          handler.handle(new Completion<String>(completion.exception));
+  private Buffer[] toBufferArrayD(Map<Double, Buffer> map) {
+    Buffer[] buffs = new Buffer[map.size() * 2];
+    int pos = 0;
+    for (Map.Entry<Double, Buffer> entry: map.entrySet()) {
+      buffs[pos++] = Buffer.create(entry.getKey().toString());
+      buffs[pos++] = entry.getValue();
+    }
+    return buffs;
+  }
+
+  private Buffer[] toBufferArray(String[] strs) {
+    Buffer[] buffs = new Buffer[strs.length];
+    for (int i = 0; i < strs.length; i++) {
+      buffs[i] = Buffer.create(strs[i]);
+    }
+    return buffs;
+  }
+
+  private Buffer intToBuffer(int i) {
+    return Buffer.create(String.valueOf(i));
+  }
+
+  private Buffer doubleToBuffer(double d) {
+    return Buffer.create(String.valueOf(d));
+  }
+
+  private void doHandle(RedisReply reply) {
+    RedisDeferred<?> deferred = requests.poll();
+    deferred.setReply(reply);
+  }
+
+  private static enum DeferredType {
+    VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
+  }
+
+  private abstract class RedisDeferred<T> extends SimpleDeferred<T> {
+
+    final DeferredType type;
+
+    RedisDeferred(DeferredType type) {
+      this.type = type;
+    }
+
+    void setReply(RedisReply reply) {
+      if (reply.type == RedisReply.Type.ERROR) {
+        setException(new RedisException(reply.error));
+      } else {
+        switch (type) {
+          case VOID: {
+            setResult(null);
+            break;
+          }
+          case BOOLEAN: {
+            ((RedisDeferred<Boolean>)this).setResult(reply.intResult == 1);
+            break;
+          }
+          case INTEGER: {
+            ((RedisDeferred<Integer>)this).setResult(reply.intResult);
+            break;
+          }
+          case DOUBLE: {
+            ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
+            break;
+          }
+          case BULK: {
+            ((RedisDeferred<Buffer>)this).setResult(reply.bulkResult);
+            break;
+          }
+          case MULTI_BULK: {
+            ((RedisDeferred<Buffer[]>)this).setResult(reply.multiBulkResult);
+            break;
+          }
         }
       }
-    };
+    }
   }
-
-  private CompletionHandler<Object> convertIntegerHandler(final CompletionHandler<Integer> handler) {
-    return new CompletionHandler<Object>() {
-      public void handle(Completion<Object> completion) {
-        if (completion.succeeded()) {
-          handler.handle(new Completion<>((Integer)completion.result));
-        } else {
-          handler.handle(new Completion<Integer>(completion.exception));
-        }
-      }
-    };
-  }
-
-  private CompletionHandler<Object> convertBulkHandler(final CompletionHandler<byte[]> handler) {
-    return new CompletionHandler<Object>() {
-      public void handle(Completion<Object> completion) {
-        if (completion.succeeded()) {
-          handler.handle(new Completion<>((byte[])completion.result));
-        } else {
-          handler.handle(new Completion<byte[]>(completion.exception));
-        }
-      }
-    };
-  }
-
-  private CompletionHandler<Object> convertMultiBulkHandler(final CompletionHandler<byte[][]> handler) {
-    return new CompletionHandler<Object>() {
-      public void handle(Completion<Object> completion) {
-        if (completion.succeeded()) {
-          handler.handle(new Completion<>((byte[][])completion.result));
-        } else {
-          handler.handle(new Completion<byte[][]>(completion.exception));
-        }
-      }
-    };
-  }
-
-  private CompletionHandler<Object> convertVoidHandler(final CompletionHandler<Void> handler) {
-    return new CompletionHandler<Object>() {
-      public void handle(Completion<Object> completion) {
-        if (completion.succeeded()) {
-          handler.handle(Completion.VOID_SUCCESSFUL_COMPLETION);
-        } else {
-          handler.handle(new Completion<Void>(completion.exception));
-        }
-      }
-    };
-  }
-
 }
 
 

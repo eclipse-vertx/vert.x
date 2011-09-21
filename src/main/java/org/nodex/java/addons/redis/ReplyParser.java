@@ -16,7 +16,6 @@
 
 package org.nodex.java.addons.redis;
 
-import org.nodex.java.core.Completion;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.parsetools.RecordParser;
@@ -36,12 +35,12 @@ public class ReplyParser implements Handler<Buffer> {
   static final byte MINUS = (byte)'-';
 
   private final RecordParser recordParser;
-  private final Handler<Completion<Object>> replyHandler;
+  private final Handler<RedisReply> replyHandler;
   private ReplyParseState respState = ReplyParseState.TYPE;
-  private byte[][] multiBulkResponses;
+  private Buffer[] multiBulkResponses;
   private int multiBulkIndex;
 
-  public ReplyParser(Handler<Completion<Object>> replyHandler) {
+  public ReplyParser(Handler<RedisReply> replyHandler) {
     recordParser = RecordParser.newFixed(1, new Handler<Buffer>() {
       public void handle(Buffer data) {
         doHandle(data);
@@ -84,13 +83,13 @@ public class ReplyParser implements Handler<Buffer> {
         }
         break;
       case ONE_LINE:
-        sendReply(data.toString());
+        sendOneLineReply(data.toString());
         break;
       case ERROR:
-        sendError(data.toString());
+        sendErrorReply(data.toString());
         break;
       case INTEGER:
-        sendReply(Integer.valueOf(data.toString()));
+        sendIntegerReply(Integer.valueOf(data.toString()));
         break;
       case BULK_NUM_BYTES:
         String sbytes = data.toString();
@@ -103,25 +102,23 @@ public class ReplyParser implements Handler<Buffer> {
             multiBulkIndex++;
             if (multiBulkIndex > multiBulkResponses.length) {
               //Done multi-bulk
-              sendReply(multiBulkResponses);
+              sendMultiBulkReply(multiBulkResponses);
             }
           } else {
-            sendReply(null);
+            sendBulkReply(null);
           }
         }
         break;
       case BULK_DATA:
-        byte[] b = data.getBytes();
         //Remove the trailing CRLF
-        byte[] bytes = new byte[b.length - 2];
-        System.arraycopy(b, 0, bytes, 0, bytes.length);
+        Buffer bytes = data.copy(0, data.length() - 2);
         if (multiBulkResponses == null) {
-          sendReply(bytes);
+          sendBulkReply(bytes);
         } else {
           multiBulkResponses[multiBulkIndex++] = bytes;
           if (multiBulkIndex == multiBulkResponses.length) {
             //Done multi-bulk
-            sendReply(multiBulkResponses);
+            sendMultiBulkReply(multiBulkResponses);
           } else {
             recordParser.fixedSizeMode(1);
             respState = ReplyParseState.TYPE;
@@ -132,11 +129,11 @@ public class ReplyParser implements Handler<Buffer> {
         sbytes = data.toString();
         int numResponses = Integer.valueOf(sbytes);
         if (numResponses != 0) {
-          multiBulkResponses = new byte[numResponses][];
+          multiBulkResponses = new Buffer[numResponses];
           recordParser.fixedSizeMode(1);
           respState = ReplyParseState.TYPE;
         } else {
-          sendReply(new byte[0][]);
+          sendMultiBulkReply(new Buffer[0]);
         }
         break;
       default:
@@ -151,13 +148,28 @@ public class ReplyParser implements Handler<Buffer> {
     multiBulkIndex = 0;
   }
 
-  private void sendReply(Object reply) {
-    replyHandler.handle(new Completion<>(reply));
+  private void sendOneLineReply(String reply) {
+    replyHandler.handle(new RedisReply(reply));
     reset();
   }
 
-  private void sendError(String error) {
-    replyHandler.handle(new Completion<>(new RedisException(error)));
+  private void sendIntegerReply(int reply) {
+    replyHandler.handle(new RedisReply(reply));
+    reset();
+  }
+
+  private void sendBulkReply(Buffer reply) {
+    replyHandler.handle(new RedisReply(reply));
+    reset();
+  }
+
+  private void sendMultiBulkReply(Buffer[] reply) {
+    replyHandler.handle(new RedisReply(reply));
+    reset();
+  }
+
+  private void sendErrorReply(String error) {
+    replyHandler.handle(new RedisReply(RedisReply.Type.ERROR, error));
     reset();
   }
 

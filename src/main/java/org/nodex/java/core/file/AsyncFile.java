@@ -17,10 +17,12 @@
 package org.nodex.java.core.file;
 
 import org.nodex.java.core.BlockingTask;
-import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Deferred;
+import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
+import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.streams.ReadStream;
@@ -54,7 +56,7 @@ public class AsyncFile {
   private boolean closed;
   private ReadStream readStream;
   private WriteStream writeStream;
-  private CompletionHandler closedCompletionHandler;
+  private Deferred<Void> closedDeferred;
   private long writesOutstanding;
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
@@ -78,67 +80,80 @@ public class AsyncFile {
     this.th = th;
   }
 
-  /**
-   * Close the file.<p>
-   * The actual close will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.<p>
-   * This method must be called using the same event loop the file was opened from.
-   */
-  public void close(final CompletionHandler<Void> completionHandler) {
+  public Deferred<Void> closeDeferred() {
     check();
 
     closed = true;
 
-    CompletionHandler comp = new CompletionHandler<Void>() {
-      public void handle(Completion<Void> completion) {
-        if (completion.failed()) {
-          completionHandler.handle(completion);
-        } else {
-          try {
-            ch.close();
-            completionHandler.handle(completion);
-          } catch (IOException e) {
-            completionHandler.handle(new Completion<Void>(e));
+    Deferred<Void> deferred = new SimpleDeferred<Void>() {
+
+      @Override
+      public Deferred<Void> execute() {
+        if (!complete) {
+          if (writesOutstanding == 0) {
+            run();
+            complete = true;
+          } else {
+            closedDeferred = this;
           }
+        }
+        return this;
+      }
+
+      public void run() {
+        try {
+          ch.close();
+          setResult(null);
+        } catch (IOException e) {
+          setException(e);
         }
       }
     };
 
-    if (writesOutstanding > 0) {
-      //Need to wait for all writes to complete before firing the completionHandler
-      closedCompletionHandler = comp;
-    } else {
-      completionHandler.handle(Completion.VOID_SUCCESSFUL_COMPLETION);
-    }
+    return deferred;
+  }
+
+  /**
+   * Close the file.<p>
+   * The actual close will happen asynchronously. This method must be called using the same event loop the file was opened from.
+   */
+  public Future<Void> close() {
+    return closeDeferred().execute();
+  }
+
+  public Deferred<Void> writeDeferred(Buffer buffer, int position) {
+    check();
+    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
+    return doWrite(bb, position);
   }
 
   /**
    * Write a {@link Buffer} to the file at position {@code position} in the file. If {@code position} lies outside of the current size
    * of the file, the file will be enlarged to encompass it.<p>
-   * The actual write will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails. When multiple writes are invoked on the same file
+   * The actual write will happen asynchronously, when multiple writes are invoked on the same file
    * there are no guarantees as to order in which those writes actually occur.<p>
    * This method must be called using the same event loop the file was opened from.
    */
-  public void write(Buffer buffer, int position, final CompletionHandler completionHandler) {
+  public Future<Void> write(Buffer buffer, int position) {
+    return writeDeferred(buffer, position).execute();
+  }
+
+  public Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
     check();
-    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
-    doWrite(bb, position, completionHandler, true);
+    ByteBuffer bb = ByteBuffer.allocate(length);
+    return doRead(buffer, offset, bb, position);
   }
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file. The read data will be written into the
    * specified {@code Buffer buffer} at position {@code offset}.<p>
    * {@code position + length} must lie within the confines of the file.<p>
-   * The actual read will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails. When multiple reads are invoked on the same file
+   * The actual read will happen asynchronously. When multiple reads are invoked on the same file
    * there are no guarantees as to order in which those reads actually occur.<p>
    * This method must be called using the same event loop the file was opened from.
    */
-  public void read(Buffer buffer, int offset, int position, int length, final CompletionHandler<Buffer> completionHandler) {
-    check();
-    ByteBuffer bb = ByteBuffer.allocate(length);
-    doRead(buffer, offset, bb, position, completionHandler);
+  public Deferred<Buffer> read(Buffer buffer, int offset, int position, int length) {
+    return readDeferred(buffer, offset, position, length).execute();
   }
 
   /**
@@ -160,20 +175,22 @@ public class AsyncFile {
           final int length = buffer.length();
           ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
 
-          doWrite(bb, pos, new CompletionHandler<Void>() {
+          Deferred<Void> deferred = doWrite(bb, pos);
+          deferred.execute();
+          deferred.handler(new CompletionHandler<Void>() {
 
-            public void handle(Completion<Void> completion) {
-              if (completion.succeeded()) {
+            public void handle(Deferred<Void> deferred) {
+              if (deferred.succeeded()) {
                 checkContext();
                 checkDrained();
-                if (writesOutstanding == 0 && closedCompletionHandler != null) {
-                  closedCompletionHandler.handle(completion);
+                if (writesOutstanding == 0 && closedDeferred != null) {
+                  closedDeferred.execute();
                 }
               } else {
-                handleException(completion.exception);
+                handleException(deferred.exception());
               }
             }
-          }, true);
+          });
           pos += length;
         }
 
@@ -238,12 +255,14 @@ public class AsyncFile {
           if (!readInProgress) {
             readInProgress = true;
             Buffer buff = Buffer.create(BUFFER_SIZE);
-            read(buff, 0, pos, BUFFER_SIZE, new CompletionHandler<Buffer>() {
+            Deferred<Buffer> deferred = read(buff, 0, pos, BUFFER_SIZE);
 
-              public void handle(Completion<Buffer> completion) {
-                if (completion.succeeded()) {
+            deferred.handler(new CompletionHandler<Buffer>() {
+
+              public void handle(Deferred<Buffer> deferred) {
+                if (deferred.succeeded()) {
                   readInProgress = false;
-                  Buffer buffer = completion.result;
+                  Buffer buffer = deferred.result();
                   if (buffer.length() == 0) {
                     // Empty buffer represents end of file
                     handleEnd();
@@ -255,7 +274,7 @@ public class AsyncFile {
                     }
                   }
                 } else {
-                  handleException(completion.exception);
+                  handleException(deferred.exception());
                 }
               }
             });
@@ -322,33 +341,54 @@ public class AsyncFile {
     return readStream;
   }
 
-  /**
-   * Flush any writes made to this file to underlying persistent storage.<p>
-   * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
-   * The actual flush will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.<p>
-   */
-  public void flush(CompletionHandler<Void> completionHandler) {
+  public Deferred<Void> flushDeferred() {
     checkClosed();
     checkContext();
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         ch.force(false);
         return null;
       }
-    }.run();
+    };
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final CompletionHandler<Void> completionHandler, final boolean add) {
-    if (add) {
-      writesOutstanding += buff.limit();
+  /**
+   * Flush any writes made to this file to underlying persistent storage.<p>
+   * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
+   * The actual flush will happen asynchronously.<p>
+   */
+  public Future<Void> flush() {
+    return flushDeferred().execute();
+  }
+
+  private Deferred<Void> doWrite(final ByteBuffer buff, final int position) {
+    writesOutstanding += buff.limit();
+
+    SimpleDeferred<Void> sd = new MyDeferred<Void>() {
+      public void run() {
+        doWrite(buff, position, this);
+      }
+    };
+
+    return sd;
+  }
+
+  private static abstract class MyDeferred<Void> extends SimpleDeferred<Void> {
+
+    public void setResult(Void result) {
+      super.setResult(result);
     }
+
+    public void setException(Exception e) {
+      super.setException(e);
+    }
+  }
+
+  private void doWrite(final ByteBuffer buff, final int position, final MyDeferred<Void> deferred) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       public void completed(Integer bytesWritten, Object attachment) {
-
-        //writesOutstanding.addAndGet(-bytesWritten);
 
         int pos = position;
 
@@ -356,13 +396,13 @@ public class AsyncFile {
           // partial write
           pos += bytesWritten;
           // resubmit
-          doWrite(buff, pos, completionHandler, false);
+          doWrite(buff, pos, deferred);
         } else {
           // It's been fully written
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              completionHandler.handle(Completion.VOID_SUCCESSFUL_COMPLETION);
+              deferred.setResult(null);
             }
           });
         }
@@ -373,7 +413,7 @@ public class AsyncFile {
           final Exception e = (Exception) exc;
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
-              completionHandler.handle(new Completion<Void>(e));
+              deferred.setException(e);
             }
           });
         } else {
@@ -383,7 +423,19 @@ public class AsyncFile {
     });
   }
 
-  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final CompletionHandler<Buffer> completionHandler) {
+  private Deferred<Buffer> doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position) {
+    SimpleDeferred<Buffer> sd = new MyDeferred<Buffer>() {
+      public void run() {
+        doRead(writeBuff, offset, buff, position, this);
+      }
+    };
+
+    return sd;
+  }
+
+  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final MyDeferred<Buffer> deferred) {
+
+
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -395,7 +447,7 @@ public class AsyncFile {
             setContextID();
             buff.flip();
             writeBuff.setBytes(offset, buff);
-            completionHandler.handle(new Completion<>(writeBuff));
+            deferred.setResult(writeBuff);
           }
         });
       }
@@ -408,7 +460,7 @@ public class AsyncFile {
           // partial read
           pos += bytesRead;
           // resubmit
-          doRead(writeBuff, offset, buff, pos, completionHandler);
+          doRead(writeBuff, offset, buff, pos, deferred);
         } else {
           // It's been fully written
           done();
@@ -421,7 +473,7 @@ public class AsyncFile {
           NodexInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               setContextID();
-              completionHandler.handle(new Completion<Buffer>(e));
+              deferred.setException(e);
             }
           });
         } else {

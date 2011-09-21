@@ -25,15 +25,15 @@ class FileSystemTest < Test::Unit::TestCase
   def setup
     latch = Utils::Latch.new 1
     Nodex::go {
-      FileSystem::exists(FileDir) { |exists|
+      FileSystem::exists(FileDir).handler{ |exists|
         if exists
-          FileSystem::delete_recursive(FileDir) {
-            FileSystem::mkdir(FileDir) {
+          FileSystem::delete_recursive(FileDir).handler{
+            FileSystem::mkdir(FileDir).handler {
               latch.countdown
             }
           }
         else
-          FileSystem::mkdir(FileDir) {
+          FileSystem::mkdir(FileDir).handler {
             latch.countdown
           }
         end
@@ -45,9 +45,8 @@ class FileSystemTest < Test::Unit::TestCase
   def teardown
     latch = Utils::Latch.new 1
     Nodex::go {
-      FileSystem::delete_recursive(FileDir) {
-        FileSystem::mkdir(FileDir) {
-          puts "Test dir deleted ok"
+      FileSystem::delete_recursive(FileDir).handler{
+        FileSystem::mkdir(FileDir).handler{
           latch.countdown
         }
       }
@@ -59,18 +58,18 @@ class FileSystemTest < Test::Unit::TestCase
     latch = Utils::Latch.new 1
     Nodex::go {
       filename = FileDir + "/test-file.txt"
-      FileSystem::create_file(filename) {
-        FileSystem::props(filename) { |compl|
-          assert(compl.succeeded)
+      FileSystem::create_file(filename).handler{
+        FileSystem::props(filename).handler{ |compl|
+          assert(compl.succeeded?)
           stats = compl.result
-          puts "creation time #{stats.creation_time}"
-          puts "last access time #{stats.last_access_time}"
-          puts "last modification time #{stats.last_modified_time}"
-          puts "directory? #{stats.directory?}"
-          puts "regular file? #{stats.regular_file?}"
-          puts "symbolic link? #{stats.symbolic_link?}"
-          puts "other? #{stats.other?}"
-          puts "size #{stats.size}"
+#          puts "creation time #{stats.creation_time}"
+#          puts "last access time #{stats.last_access_time}"
+#          puts "last modification time #{stats.last_modified_time}"
+#          puts "directory? #{stats.directory?}"
+#          puts "regular file? #{stats.regular_file?}"
+#          puts "symbolic link? #{stats.symbolic_link?}"
+#          puts "other? #{stats.other?}"
+#          puts "size #{stats.size}"
           assert(stats.regular_file?)
           latch.countdown
         }
@@ -82,8 +81,8 @@ class FileSystemTest < Test::Unit::TestCase
   def test_async_file
     latch = Utils::Latch.new 1
     Nodex::go {
-      FileSystem::open(FileDir + "/somefile.txt") { |compl|
-        assert(compl.succeeded)
+      FileSystem::open(FileDir + "/somefile.txt").handler{ |compl|
+        assert(compl.succeeded?)
         file = compl.result
         num_chunks = 100;
         chunk_size = 1000;
@@ -92,7 +91,7 @@ class FileSystemTest < Test::Unit::TestCase
         for i in 0..num_chunks - 1
           buff = Utils.gen_buffer(chunk_size)
           tot_buff.append_buffer(buff)
-          file.write(buff, i * chunk_size) {
+          file.write(buff, i * chunk_size).handler{
             written += 1
             if written == num_chunks
               # all written
@@ -100,14 +99,14 @@ class FileSystemTest < Test::Unit::TestCase
               read = 0
               for j in 0..num_chunks - 1
                 pos = j * chunk_size
-                file.read(tot_read, pos, pos, chunk_size) { |compl|
-                  assert(compl.succeeded)
+                file.read(tot_read, pos, pos, chunk_size).handler{ |compl|
+                  assert(compl.succeeded?)
                   buff = compl.result
                   read += 1
                   if read == num_chunks
                     # all read
                     assert(Utils.buffers_equal(tot_buff, tot_read))
-                    file.close {
+                    file.close.handler{
                       latch.countdown
                     }
                   end
@@ -125,8 +124,8 @@ class FileSystemTest < Test::Unit::TestCase
     latch = Utils::Latch.new 1
     filename = FileDir + "/somefile.txt"
     Nodex::go {
-      FileSystem::open(filename) { |compl|
-        assert(compl.succeeded)
+      FileSystem::open(filename).handler{ |compl|
+        assert(compl.succeeded?)
         file = compl.result
         num_chunks = 100;
         chunk_size = 1000;
@@ -137,9 +136,9 @@ class FileSystemTest < Test::Unit::TestCase
           tot_buff.append_buffer(buff)
           write_stream.write_buffer(buff)
         end
-        file.close{
-          FileSystem::open(filename) { |compl|
-            assert(compl.succeeded)
+        file.close.handler{
+          FileSystem::open(filename).handler{ |compl|
+            assert(compl.succeeded?)
             file = compl.result
             read_stream = file.read_stream
             tot_read = Buffer.create(0)
@@ -148,7 +147,7 @@ class FileSystemTest < Test::Unit::TestCase
             }
             read_stream.end_handler{
               assert(Utils.buffers_equal(tot_buff, tot_read))
-              file.close {
+              file.close.handler {
                 latch.countdown
               }
             }

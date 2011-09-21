@@ -19,7 +19,6 @@ package org.nodex.java.addons.amqp;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import org.nodex.java.core.composition.Composable;
 import org.nodex.java.core.internal.NodexInternal;
 
 import java.io.IOException;
@@ -98,71 +97,71 @@ public class Channel {
 
   private Map<String, AmqpMsgCallback> callbacks = new ConcurrentHashMap();
   private volatile String responseQueue;
-  private Composable responseQueueSetup = new Composable();
-
-  private synchronized void createResponseQueue() {
-    if (responseQueue == null) {
-      final String queueName = UUID.randomUUID().toString();
-      declareQueue(queueName, false, true, true, new Runnable() {
-        public void run() {
-          responseQueue = queueName;
-          responseQueueSetup.complete(); //Queue is now set up
-          subscribe(queueName, true, new AmqpMsgCallback() {
-            public void onMessage(AmqpProps props, byte[] body) {
-              String cid = props.correlationId;
-              if (cid == null) {
-                //TODO better error reporting
-                System.err.println("No correlation id");
-              } else {
-                AmqpMsgCallback cb = callbacks.get(cid);
-                if (cb == null) {
-                  System.err.println("No callback for correlation id");
-                } else {
-                  cb.onMessage(props, body);
-                }
-              }
-            }
-          });
-        }
-      });
-    }
-  }
+//  private Composable responseQueueSetup = new Composable();
+//
+//  private synchronized void createResponseQueue() {
+//    if (responseQueue == null) {
+//      final String queueName = UUID.randomUUID().toString();
+//      declareQueue(queueName, false, true, true, new Runnable() {
+//        public void run() {
+//          responseQueue = queueName;
+//          responseQueueSetup.complete(); //Queue is now set up
+//          subscribe(queueName, true, new AmqpMsgCallback() {
+//            public void onMessage(AmqpProps props, byte[] body) {
+//              String cid = props.correlationId;
+//              if (cid == null) {
+//                //TODO better error reporting
+//                System.err.println("No correlation id");
+//              } else {
+//                AmqpMsgCallback cb = callbacks.get(cid);
+//                if (cb == null) {
+//                  System.err.println("No callback for correlation id");
+//                } else {
+//                  cb.onMessage(props, body);
+//                }
+//              }
+//            }
+//          });
+//        }
+//      });
+//    }
+//  }
 
   // Request-response pattern
 
-  public Composable request(final String exchange, final String routingKey, final AmqpProps props, final String body, final AmqpMsgCallback responseCallback) {
-    try {
-      return request(exchange, routingKey, props, body == null ? null : body.getBytes("UTF-8"), responseCallback);
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
-
-  public Composable request(final String exchange, final String routingKey, final AmqpProps props, final byte[] body, final AmqpMsgCallback responseCallback) {
-    final AmqpProps theProps = props == null ? new AmqpProps() : props;
-    if (responseQueue == null) createResponseQueue();
-    //We make sure we don't actually send until the response queue has been setup, this is done by using a
-    //Composable
-    final Composable c = new Composable();
-    responseQueueSetup.onComplete(new Runnable() {
-      public void run() {
-        AmqpMsgCallback cb = new AmqpMsgCallback() {
-          public void onMessage(AmqpProps props, byte[] body) {
-            responseCallback.onMessage(props, body);
-            c.complete();
-          }
-        };
-        String cid = UUID.randomUUID().toString();
-        theProps.correlationId = cid;
-        theProps.replyTo = responseQueue;
-        callbacks.put(cid, cb);
-        publish(exchange, routingKey, theProps, body);
-      }
-    });
-    return c;
-  }
-
+//  public Composable request(final String exchange, final String routingKey, final AmqpProps props, final String body, final AmqpMsgCallback responseCallback) {
+//    try {
+//      return request(exchange, routingKey, props, body == null ? null : body.getBytes("UTF-8"), responseCallback);
+//    } catch (UnsupportedEncodingException e) {
+//      e.printStackTrace();
+//      return null;
+//    }
+//  }
+//
+//  public Composable request(final String exchange, final String routingKey, final AmqpProps props, final byte[] body, final AmqpMsgCallback responseCallback) {
+//    final AmqpProps theProps = props == null ? new AmqpProps() : props;
+//    if (responseQueue == null) createResponseQueue();
+//    //We make sure we don't actually send until the response queue has been setup, this is done by using a
+//    //Composable
+//    final Composable c = new Composable();
+//    responseQueueSetup.onComplete(new Runnable() {
+//      public void run() {
+//        AmqpMsgCallback cb = new AmqpMsgCallback() {
+//          public void onMessage(AmqpProps props, byte[] body) {
+//            responseCallback.onMessage(props, body);
+//            c.complete();
+//          }
+//        };
+//        String cid = UUID.randomUUID().toString();
+//        theProps.correlationId = cid;
+//        theProps.replyTo = responseQueue;
+//        callbacks.put(cid, cb);
+//        publish(exchange, routingKey, theProps, body);
+//      }
+//    });
+//    return c;
+//  }
+//
 
   public void close(final Runnable doneCallback) {
     NodexInternal.instance.executeInBackground(new Runnable() {

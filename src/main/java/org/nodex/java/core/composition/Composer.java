@@ -16,79 +16,109 @@
 
 package org.nodex.java.core.composition;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Deferred;
+import org.nodex.java.core.Future;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class Composer {
 
-  private List<Runnable> runList = new ArrayList();
-  private int pos;
+  private List<WaitingBatch> batches = new ArrayList<>();
+  private WaitingBatch currentBatch;
+  private boolean executed;
 
-  public Composer when(final Runnable handler) {
-    Deferred deff = new Deferred(handler);
-    return when(deff);
+  public <T> Future<T> parallel(Deferred<T> future) {
+    checkExecuted();
+    if (!future.complete()) {
+      if (currentBatch == null) {
+        currentBatch = new WaitingBatch();
+        batches.add(currentBatch);
+      }
+      currentBatch.addFuture(future);
+      final WaitingBatch batch = currentBatch;
+      future.handler(new CompletionHandler<T>() {
+        public void handle(Deferred<T> f) {
+          batch.complete();
+        }
+      });
+      checkAll();
+    }
+    return future;
   }
 
-  public Composer when(final Composable composable) {
-    return when(new Composable[]{composable});
+  public <T> Future<T> series(Deferred<T> future) {
+    checkExecuted();
+    currentBatch = null;
+    return parallel(future);
   }
 
-  public Composer when(final Composable... composables) {
-    Runnable run = new Runnable() {
-      public void run() {
-        final AtomicInteger countDown = new AtomicInteger(composables.length);
-        Runnable cb = new Runnable() {
-          public void run() {
-            if (countDown.decrementAndGet() == 0) {
-              next();
-            }
-          }
-        };
-        for (Composable c : composables) {
-          c.execute();
-          c.onComplete(cb);
+  public void execute() {
+    if (!executed) {
+      if (!batches.isEmpty()) {
+        WaitingBatch batch = batches.get(0);
+        batch.execute();
+      }
+      executed = true;
+    }
+  }
+
+  private class WaitingBatch {
+
+    Set<Deferred<?>> futures = new HashSet<>();
+    int pending;
+    boolean executed;
+
+    void addFuture(Deferred<?> future) {
+      if (!future.complete()) {
+        pending++;
+      }
+      futures.add(future);
+    }
+
+    void complete() {
+      pending--;
+      if (pending == 0) {
+        checkAll();
+      }
+    }
+
+    void execute() {
+      if (!executed) {
+        executed = true;
+        for (Deferred<?> future: futures) {
+          future.execute();
         }
       }
-    };
-    runList.add(run);
-    return this;
-  }
-
-  public Composer afterDelay(long delay, final Composable composable) {
-    return this;
-  }
-
-  public void end() {
-    pos = 0;
-    runCurrent();
-  }
-
-  private void next() {
-    pos++;
-    if (pos < runList.size()) {
-      runCurrent();
     }
   }
 
-  private void runCurrent() {
-    Runnable run = runList.get(pos);
-    run.run();
-  }
-
-  private static class Deferred extends Composable {
-
-    private final Runnable cb;
-
-    Deferred(Runnable cb) {
-      this.cb = cb;
-    }
-
-    @Override
-    public void execute() {
-      cb.run();
-      complete();
+  private void checkExecuted() {
+    if (executed) {
+      throw new IllegalStateException("Composer has already been executed");
     }
   }
 
+  private void checkAll() {
+    if (executed) {
+      boolean executeNext = false;
+      for (WaitingBatch batch: batches) {
+        if (executeNext) {
+          batch.execute();
+          executeNext = false;
+        }
+        if (batch.pending == 0) {
+          executeNext = true;
+        } else {
+          break;
+        }
+      }
+    }
+  }
 }

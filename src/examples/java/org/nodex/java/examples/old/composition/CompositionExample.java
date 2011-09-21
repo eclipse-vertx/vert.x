@@ -16,36 +16,6 @@
 
 package org.nodex.java.examples.old.composition;
 
-import org.nodex.java.addons.amqp.AmqpClient;
-import org.nodex.java.addons.amqp.AmqpConnectHandler;
-import org.nodex.java.addons.amqp.AmqpConnection;
-import org.nodex.java.addons.amqp.AmqpMsgCallback;
-import org.nodex.java.addons.amqp.AmqpProps;
-import org.nodex.java.addons.amqp.Channel;
-import org.nodex.java.addons.amqp.ChannelHandler;
-import org.nodex.java.addons.amqp.ChannelPool;
-import org.nodex.java.addons.redis.RedisClient;
-import org.nodex.java.addons.redis.RedisConnection;
-import org.nodex.java.addons.stomp.StompClient;
-import org.nodex.java.addons.stomp.StompConnectHandler;
-import org.nodex.java.addons.stomp.StompConnection;
-import org.nodex.java.addons.stomp.StompMsgCallback;
-import org.nodex.java.addons.stomp.StompServer;
-import org.nodex.java.core.Completion;
-import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.Handler;
-import org.nodex.java.core.buffer.Buffer;
-import org.nodex.java.core.composition.Composable;
-import org.nodex.java.core.composition.Composer;
-import org.nodex.java.core.file.FileSystem;
-import org.nodex.java.core.http.HttpServer;
-import org.nodex.java.core.http.HttpServerRequest;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class CompositionExample {
   public static void main(String[] args) throws Exception {
 //    new CompositionExample().run();

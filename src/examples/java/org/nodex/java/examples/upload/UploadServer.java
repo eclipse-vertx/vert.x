@@ -16,8 +16,7 @@
 
 package org.nodex.java.examples.upload;
 
-import org.nodex.java.core.Completion;
-import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Deferred;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.SimpleHandler;
@@ -25,6 +24,7 @@ import org.nodex.java.core.file.AsyncFile;
 import org.nodex.java.core.file.FileSystem;
 import org.nodex.java.core.http.HttpServer;
 import org.nodex.java.core.http.HttpServerRequest;
+import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.streams.Pump;
 
 import java.util.UUID;
@@ -47,21 +47,21 @@ public class UploadServer extends NodexMain {
 
         final String filename = "upload/file-" + UUID.randomUUID().toString() + ".upload";
 
-        FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
-          public void handle(Completion<AsyncFile> completion) {
-            final AsyncFile file = completion.result;
+        FileSystem.instance.open(filename).handler(new CompletionHandler<AsyncFile>() {
+          public void handle(Deferred<AsyncFile> deferred) {
+            final AsyncFile file = deferred.result();
             final Pump pump = new Pump(req, file.getWriteStream());
             final long start = System.currentTimeMillis();
             req.endHandler(new SimpleHandler() {
               public void handle() {
-                file.close(new CompletionHandler<Void>() {
-                  public void handle(Completion<Void> completion) {
-                    if (completion.succeeded()) {
+                file.close().handler(new CompletionHandler<Void>() {
+                  public void handle(Deferred<Void> deferred) {
+                    if (deferred.succeeded()) {
                       req.response.end();
                       long end = System.currentTimeMillis();
                       System.out.println("Uploaded " + pump.getBytesPumped() + " bytes to " + filename + " in " + (end - start) + " ms");
                     } else {
-                      completion.exception.printStackTrace(System.err);
+                      deferred.exception().printStackTrace(System.err);
                     }
                   }
                 });

@@ -16,7 +16,6 @@
 
 package org.nodex.tests.core.file;
 
-import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.SimpleHandler;
@@ -26,6 +25,8 @@ import org.nodex.java.core.file.FileProps;
 import org.nodex.java.core.file.FileSystem;
 import org.nodex.java.core.file.FileSystemException;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.Deferred;
+import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.streams.Pump;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
@@ -204,18 +205,18 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
 
         if (recursive) {
-          FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, true, compl);
+          FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, true).handler(compl);
         } else {
-          FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, compl);
+          FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target).handler(compl);
         }
       }
     });
@@ -307,21 +308,29 @@ public class FileSystemTest extends TestBase {
     throwAssertions();
   }
 
+  abstract class TestDeferred<T> extends SimpleDeferred<T> {
+    public void setResult(T res) {
+      super.setResult(res);
+    }
+
+    public void setException(Exception e) {
+      super.setException(e);
+    }
+  }
+
   private Exception testMove(final String source, final String target) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Exception> exception = new AtomicReference<>();
     run(latch, new Runnable() {
       public void run() {
-        CompletionHandler compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+        FileSystem.instance.move(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target).handler(new CompletionHandler<Void>() {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
-        };
-
-        FileSystem.instance.move(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, compl);
+        });
       }
     });
     return exception.get();
@@ -357,10 +366,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen, new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+        FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen).handler(
+          new CompletionHandler<Void>() {
+          public void handle(Deferred<Void> completion) {
             if (completion.failed()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
@@ -442,18 +452,18 @@ public class FileSystemTest extends TestBase {
       public void run() {
 
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
 
         if (dirPerms != null) {
-          FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms, dirPerms, compl);
+          FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms, dirPerms).handler(compl);
         } else {
-          FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms, compl);
+          FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms).handler(compl);
         }
       }
     });
@@ -540,20 +550,20 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
-          public void handle(Completion<FileProps> completion) {
+          public void handle(Deferred<FileProps> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             } else {
-              stats.set(completion.result);
+              stats.set(completion.result());
             }
             latch.countDown();
           }
         };
 
         if (link) {
-          FileSystem.instance.lprops(TEST_DIR + pathSep + fileName, compl);
+          FileSystem.instance.lprops(TEST_DIR + pathSep + fileName).handler(compl);
         } else {
-          FileSystem.instance.props(TEST_DIR + pathSep + fileName, compl);
+          FileSystem.instance.props(TEST_DIR + pathSep + fileName).handler(compl);
         }
       }
     });
@@ -591,18 +601,18 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
         if (symbolic) {
           // Symlink is relative
-          FileSystem.instance.symlink(TEST_DIR + pathSep + from, to, compl);
+          FileSystem.instance.symlink(TEST_DIR + pathSep + from, to).handler(compl);
         } else {
-          FileSystem.instance.link(TEST_DIR + pathSep + from, TEST_DIR + pathSep + to, compl);
+          FileSystem.instance.link(TEST_DIR + pathSep + from, TEST_DIR + pathSep + to).handler(compl);
         }
       }
     });
@@ -627,14 +637,14 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.unlink(TEST_DIR + pathSep + linkName, compl);
+        FileSystem.instance.unlink(TEST_DIR + pathSep + linkName).handler(compl);
       }
     });
 
@@ -658,16 +668,16 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String> compl = new CompletionHandler<String>() {
-          public void handle(Completion<String> completion) {
+          public void handle(Deferred<String> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             } else {
-              name.set(completion.result);
+              name.set(completion.result());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.readSymlink(TEST_DIR + pathSep + linkName, compl);
+        FileSystem.instance.readSymlink(TEST_DIR + pathSep + linkName).handler(compl);
 
       }
     });
@@ -744,17 +754,17 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
         if (recursive) {
-          FileSystem.instance.delete(TEST_DIR + pathSep + fileName, recursive, compl);
+          FileSystem.instance.delete(TEST_DIR + pathSep + fileName, recursive).handler(compl);
         } else {
-          FileSystem.instance.delete(TEST_DIR + pathSep + fileName, compl);
+          FileSystem.instance.delete(TEST_DIR + pathSep + fileName).handler(compl);
         }
       }
     });
@@ -821,24 +831,24 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
         if (createParents) {
           if (perms != null) {
-            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, createParents, compl);
+            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, createParents).handler(compl);
           } else {
-            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, createParents, compl);
+            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, createParents).handler(compl);
           }
         } else {
           if (perms != null) {
-            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, compl);
+            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms).handler(compl);
           } else {
-            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, compl);
+            FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName).handler(compl);
           }
         }
       }
@@ -907,19 +917,19 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String[]> compl = new CompletionHandler<String[]>() {
-          public void handle(Completion<String[]> completion) {
+          public void handle(Deferred<String[]> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             } else {
-              res.set(completion.result);
+              res.set(completion.result());
             }
             latch.countDown();
           }
         };
         if (filter == null) {
-          FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, compl);
+          FileSystem.instance.readDir(TEST_DIR + pathSep + dirName).handler(compl);
         } else {
-          FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, filter, compl);
+          FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, filter).handler(compl);
         }
       }
     });
@@ -944,16 +954,16 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Buffer> compl = new CompletionHandler<Buffer>() {
-          public void handle(Completion<Buffer> completion) {
+          public void handle(Deferred<Buffer> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             } else {
-              res.set(completion.result);
+              res.set(completion.result());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.readFile(TEST_DIR + pathSep + fileName, compl);
+        FileSystem.instance.readFile(TEST_DIR + pathSep + fileName).handler(compl);
       }
     });
 
@@ -975,16 +985,16 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String> compl = new CompletionHandler<String>() {
-          public void handle(Completion<String> completion) {
+          public void handle(Deferred<String> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             } else {
-              res.set(completion.result);
+              res.set(completion.result());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.readFileAsString(TEST_DIR + pathSep + fileName, "UTF-8", compl);
+        FileSystem.instance.readFileAsString(TEST_DIR + pathSep + fileName, "UTF-8").handler(compl);
       }
     });
 
@@ -1006,14 +1016,14 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff, compl);
+        FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff).handler(compl);
       }
     });
 
@@ -1036,14 +1046,14 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (!completion.succeeded()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.writeStringToFile(TEST_DIR + pathSep + fileName, content, "UTF-8", compl);
+        FileSystem.instance.writeStringToFile(TEST_DIR + pathSep + fileName, content, "UTF-8").handler(compl);
       }
     });
 
@@ -1075,31 +1085,31 @@ public class FileSystemTest extends TestBase {
       }
 
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionHandler<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Completion<AsyncFile> completion) {
+          public void handle(Deferred<AsyncFile> completion) {
             if (completion.succeeded()) {
               for (int i = 0; i < chunks; i++) {
 
                 Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
                 azzert(chunk.length() == chunkSize);
 
-                completion.result.write(chunk, i * chunkSize, new CompletionHandler<Void>() {
+                completion.result().write(chunk, i * chunkSize).handler(new CompletionHandler<Void>() {
 
-                  public void handle(Completion<Void> completion) {
+                  public void handle(Deferred<Void> completion) {
                     if (completion.succeeded()) {
                       latch.countDown();
                     } else {
-                      completion.exception.printStackTrace();
-                      exception.set(completion.exception);
+                      completion.exception().printStackTrace();
+                      exception.set(completion.exception());
                       countDownAll();
                     }
                   }
                 });
               }
             } else {
-              exception.set(completion.exception);
-              completion.exception.printStackTrace();
+              exception.set(completion.exception());
+              completion.exception().printStackTrace();
               countDownAll();
             }
           }
@@ -1131,32 +1141,32 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
 
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionHandler<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Completion<AsyncFile> completion) {
+          public void handle(Deferred<AsyncFile> completion) {
             if (completion.succeeded()) {
               final Buffer buff = Buffer.create(chunks * chunkSize);
               final AtomicInteger reads = new AtomicInteger(0);
               for (int i = 0; i < chunks; i++) {
-                completion.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new CompletionHandler<Buffer>() {
-                  public void handle(Completion<Buffer> completion) {
+                completion.result().read(buff, i * chunkSize, i * chunkSize, chunkSize).handler(new CompletionHandler<Buffer>() {
+                  public void handle(Deferred<Buffer> completion) {
                     if (completion.succeeded()) {
                       if (reads.incrementAndGet() == chunks) {
                         azzert(Utils.buffersEqual(expected, buff));
-                        azzert(buff == completion.result);
+                        azzert(buff == completion.result());
                         latch.countDown();
                       }
                     } else {
-                      completion.exception.printStackTrace();
-                      exception.set(completion.exception);
+                      completion.exception().printStackTrace();
+                      exception.set(completion.exception());
                       latch.countDown();
                     }
                   }
                 });
               }
             } else {
-              exception.set(completion.exception);
-              completion.exception.printStackTrace();
+              exception.set(completion.exception());
+              completion.exception().printStackTrace();
               latch.countDown();
             }
           }
@@ -1183,11 +1193,11 @@ public class FileSystemTest extends TestBase {
 
     run(latch, new Runnable() {
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, new CompletionHandler<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Completion<AsyncFile> completion) {
+          public void handle(Deferred<AsyncFile> completion) {
             if (completion.succeeded()) {
-              WriteStream ws = completion.result.getWriteStream();
+              WriteStream ws = completion.result().getWriteStream();
 
               ws.exceptionHandler(new Handler<Exception>() {
                 public void handle(Exception e) {
@@ -1204,18 +1214,18 @@ public class FileSystemTest extends TestBase {
                 ws.writeBuffer(chunk);
               }
 
-              completion.result.close(new CompletionHandler<Void>() {
-                public void handle(Completion<Void> completion) {
+              completion.result().close().handler(new CompletionHandler<Void>() {
+                public void handle(Deferred<Void> completion) {
                   if (completion.failed()) {
-                    completion.exception.printStackTrace();
-                    exception.set(completion.exception);
+                    completion.exception().printStackTrace();
+                    exception.set(completion.exception());
                   }
                   latch.countDown();
                 }
               });
             } else {
-              exception.set(completion.exception);
-              completion.exception.printStackTrace();
+              exception.set(completion.exception());
+              completion.exception().printStackTrace();
               latch.countDown();
             }
           }
@@ -1246,11 +1256,11 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
 
       public void run() {
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new CompletionHandler<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Completion<AsyncFile> completion) {
+          public void handle(Deferred<AsyncFile> completion) {
             if (completion.succeeded()) {
-              ReadStream rs = completion.result.getReadStream();
+              ReadStream rs = completion.result().getReadStream();
 
               final Buffer buff = Buffer.create(0);
 
@@ -1276,8 +1286,8 @@ public class FileSystemTest extends TestBase {
                 }
               });
             } else {
-              exception.set(completion.exception);
-              completion.exception.printStackTrace();
+              exception.set(completion.exception());
+              completion.exception().printStackTrace();
               latch.countDown();
             }
           }
@@ -1309,18 +1319,18 @@ public class FileSystemTest extends TestBase {
 
       public void run() {
         // Open file for reading
-        FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false, new CompletionHandler<AsyncFile>() {
+        FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Completion<AsyncFile> completion) {
+          public void handle(Deferred<AsyncFile> completion) {
             if (completion.succeeded()) {
-              final ReadStream rs = completion.result.getReadStream();
+              final ReadStream rs = completion.result().getReadStream();
 
               //Open file for writing
-              FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true, new CompletionHandler<AsyncFile>() {
+              FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true).handler(new CompletionHandler<AsyncFile>() {
 
-                public void handle(final Completion<AsyncFile> completion) {
+                public void handle(final Deferred<AsyncFile> completion) {
                   if (completion.succeeded()) {
-                    WriteStream ws = completion.result.getWriteStream();
+                    WriteStream ws = completion.result().getWriteStream();
 
                     Pump p = new Pump(rs, ws);
 
@@ -1328,12 +1338,12 @@ public class FileSystemTest extends TestBase {
 
                     rs.endHandler(new SimpleHandler() {
                       public void handle() {
-                        completion.result.close(new CompletionHandler<Void>() {
+                        completion.result().close().handler(new CompletionHandler<Void>() {
 
-                          public void handle(Completion<Void> completion) {
+                          public void handle(Deferred<Void> completion) {
                             if (completion.failed()) {
-                              exception.set(completion.exception);
-                              completion.exception.printStackTrace();
+                              exception.set(completion.exception());
+                              completion.exception().printStackTrace();
                             }
                             latch.countDown();
                           }
@@ -1341,15 +1351,15 @@ public class FileSystemTest extends TestBase {
                       }
                     });
                   } else {
-                    exception.set(completion.exception);
-                    completion.exception.printStackTrace();
+                    exception.set(completion.exception());
+                    completion.exception().printStackTrace();
                     latch.countDown();
                   }
                 }
               });
             } else {
-              exception.set(completion.exception);
-              completion.exception.printStackTrace();
+              exception.set(completion.exception());
+              completion.exception().printStackTrace();
               latch.countDown();
             }
           }
@@ -1383,17 +1393,17 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler compl = new CompletionHandler<Void>() {
-          public void handle(Completion<Void> completion) {
+          public void handle(Deferred<Void> completion) {
             if (completion.failed()) {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
         if (perms != null) {
-          FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, perms, compl);
+          FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, perms).handler(compl);
         } else {
-          FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, compl);
+          FileSystem.instance.createFile(TEST_DIR + pathSep + fileName).handler(compl);
         }
       }
     });
@@ -1418,16 +1428,16 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Boolean> compl = new CompletionHandler<Boolean>() {
-          public void handle(Completion<Boolean> completion) {
+          public void handle(Deferred<Boolean> completion) {
             if (completion.succeeded()) {
-              ares.set(completion.result);
+              ares.set(completion.result());
             } else {
-              exception.set(completion.exception);
+              exception.set(completion.exception());
             }
             latch.countDown();
           }
         };
-        FileSystem.instance.exists(TEST_DIR + pathSep + fileName, compl);
+        FileSystem.instance.exists(TEST_DIR + pathSep + fileName).handler(compl);
       }
     });
 

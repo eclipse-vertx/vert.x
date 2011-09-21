@@ -17,10 +17,10 @@
 package org.nodex.java.core.file;
 
 import org.nodex.java.core.BlockingTask;
-import org.nodex.java.core.Completion;
-import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Future;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.Deferred;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -60,29 +60,24 @@ public class FileSystem {
   private FileSystem() {
   }
 
-  /**
-   * Copy a file from the path {@code from} to path {@code to}<p>
-   * The copy will fail if the destination if the destination already exists.<p>
-   * The actual copy will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.
-   */
-  public void copy(String from, String to, CompletionHandler<Void> completionHandler) {
-    copy(from, to, false, completionHandler);
+  public Deferred<Void> copyDeferred(String from, String to) {
+    return copyDeferred(from, to, false);
   }
 
   /**
    * Copy a file from the path {@code from} to path {@code to}<p>
-   * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
-   * will be copied recursively to the destination {@code to}.<p>
    * The copy will fail if the destination if the destination already exists.<p>
-   * The actual copy will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.
+   * The actual copy will happen asynchronously.
    */
-  public void copy(String from, String to, final boolean recursive, CompletionHandler<Void> completionHandler) {
+  public Future<Void> copy(String from, String to) {
+    return copyDeferred(from, to).execute();
+  }
+
+  public Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         try {
           if (recursive) {
             Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
@@ -115,21 +110,26 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
   }
 
   /**
-   * Move a file from the path {@code from} to path {@code to}<p>
-   * The move will fail if the destination if the destination already exists.<p>
-   * The actual move will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.
+   * Copy a file from the path {@code from} to path {@code to}<p>
+   * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
+   * will be copied recursively to the destination {@code to}.<p>
+   * The copy will fail if the destination if the destination already exists.<p>
+   * The actual copy will happen asynchronously.
    */
-  public void move(String from, String to, CompletionHandler<Void> completionHandler) {
+  public Future<Void> copy(String from, String to, final boolean recursive) {
+    return copyDeferred(from, to, recursive).execute();
+  }
+
+  public Deferred<Void> moveDeferred(String from, String to) {
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         try {
           Files.move(source, target);
         } catch (FileAlreadyExistsException e) {
@@ -139,18 +139,21 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
   }
 
   /**
-   * Truncate the file represented by {@code path} to length {@code len}, in bytes.<p>
-   * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
-   * The actual truncate will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.
+   * Move a file from the path {@code from} to path {@code to}<p>
+   * The move will fail if the destination if the destination already exists.<p>
+   * The actual move will happen asynchronously.
    */
-  public void truncate(final String path, final long len, CompletionHandler<Void> completionHandler) {
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+  public Future<Void> move(String from, String to) {
+    return moveDeferred(from, to).execute();
+  }
+
+  public Deferred<Void> truncateDeferred(final String path, final long len) {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         if (len < 0) {
           throw new FileSystemException("Cannot truncate file to size < 0");
         }
@@ -169,33 +172,37 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Truncate the file represented by {@code path} to length {@code len}, in bytes.<p>
+   * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
+   * The actual truncate will happen asynchronously.
+   */
+  public Future<Void> truncate(final String path, final long len) {
+    return truncateDeferred(path, len).execute();
+  }
+
+  public Deferred<Void> chmodDeferred(String path, String perms) {
+    return chmodDeferred(path, perms, null);
   }
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}.
    * The permission String takes the form rwxr-x--- as specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * The actual chmod will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.
+   * The actual chmod will happen asynchronously.
    */
-  public void chmod(String path, String perms, CompletionHandler<Void> completionHandler) {
-    chmod(path, perms, null, completionHandler);
+  public Future<Void> chmod(String path, String perms) {
+    return chmodDeferred(path, perms).execute();
   }
 
-  /**
-   * Change the permissions on the file represented by {@code path} to {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
-   * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
-   * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
-   * The actual chmod will happen asynchronously, and the specified {@code completionHandler} will be called
-   * when the operation is complete, or, if the operation fails.
-   */
-  public void chmod(String path, String perms, String dirPerms, CompletionHandler<Void> completionHandler) {
+  public Deferred<Void> chmodDeferred(String path, String perms, String dirPerms) {
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         try {
           if (dirPermissions != null) {
             Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
@@ -219,31 +226,49 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Change the permissions on the file represented by {@code path} to {@code perms}.
+   * The permission String takes the form rwxr-x--- as specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
+   * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
+   * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
+   * The actual chmod will happen asynchronously.
+   */
+  public Future<Void> chmod(String path, String perms, String dirPerms) {
+    return chmodDeferred(path, perms, dirPerms).execute();
+  }
+
+
+  public Deferred<FileProps> propsDeferred(String path) {
+    return props(path, true);
   }
 
   /**
    * Obtain properties for the file represented by {@code path}. If the file is a link, the link will be followed.<p>
-   * The actual properties will be obtained asynchronously
-   * and the specified {@code completionHandler} will be called with the results, or, if the operation fails.
+   * The actual properties will be obtained asynchronously.
    */
-  public void props(String path, CompletionHandler<FileProps> completionHandler) {
-    props(path, true, completionHandler);
+  public Future<FileProps> props(String path) {
+    return propsDeferred(path).execute();
+  }
+
+  public Deferred<FileProps> lpropsDeferred(String path) {
+    return props(path, false);
   }
 
   /**
    * Obtain properties for the link represented by {@code path}. The link will not be followed.<p>
-   * The actual properties will be obtained asynchronously
-   * and the specified {@code completionHandler} will be called with the results, or, if the operation fails.
+   * The actual properties will be obtained asynchronously.
    */
-  public void lprops(String path, CompletionHandler<FileProps> completionHandler) {
-    props(path, false, completionHandler);
+  public Future<FileProps> lprops(String path) {
+    return lpropsDeferred(path).execute();
   }
 
-  private void props(String path, final boolean followLinks, CompletionHandler<FileProps> completionHandler) {
+  private Deferred<FileProps> props(String path, final boolean followLinks) {
     final Path target = Paths.get(path);
-    new BlockingTask<FileProps>(completionHandler) {
-      public FileProps execute() throws Exception {
+    return new BlockingTask<FileProps>() {
+      public FileProps action() throws Exception {
         try {
           BasicFileAttributes attrs;
           if (followLinks) {
@@ -256,32 +281,38 @@ public class FileSystem {
           throw new FileSystemException("No such file: " + target);
         }
       }
-    }.run();
+    };
+  }
+
+  public Deferred<Void> linkDeferred(String link, String existing) {
+    return link(link, existing, false);
   }
 
   /**
    * Create a hard link on the file system from {@code link} to {@code existing}.<p>
-   * The actual link will be created asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual link will be created asynchronously.
    */
-  public void link(String link, String existing, CompletionHandler<Void> completionHandler) {
-    link(link, existing, false, completionHandler);
+  public Future<Void> link(String link, String existing) {
+    return linkDeferred(link, existing).execute();
+  }
+
+  public Deferred<Void> symlinkDeferred(String link, String existing) {
+    return link(link, existing, true);
   }
 
   /**
    * Create a symbolic link on the file system from {@code link} to {@code existing}.<p>
-   * The actual link will be created asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual link will be created asynchronously.
    */
-  public void symlink(String link, String existing, CompletionHandler<Void> completionHandler) {
-    link(link, existing, true, completionHandler);
+  public Future<Void> symlink(String link, String existing) {
+    return symlinkDeferred(link, existing).execute();
   }
 
-  private void link(String link, String existing, final boolean symbolic, CompletionHandler<Void> completionHandler) {
+  private Deferred<Void> link(String link, String existing, final boolean symbolic) {
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         try {
           if (symbolic) {
             Files.createSymbolicLink(source, target);
@@ -293,62 +324,64 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
+  }
+
+  public Deferred<Void> unlinkDeferred(String link) {
+    return deleteDeferred(link);
   }
 
   /**
    * Unlinks the link on the file system represented by the path {@code link}.<p>
-   * The actual unlink will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual unlink will be done asynchronously.
    */
-  public void unlink(String link, CompletionHandler<Void> completionHandler) {
-    delete(link, completionHandler);
+  public Future<Void> unlink(String link) {
+    return unlinkDeferred(link).execute();
   }
 
-  /**
-   * Returns the path representing the file that the symbolic link specified by {@code link} points to.<p>
-   * The actual read will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the result on completion, or, if the operation fails.
-   */
-  public void readSymlink(String link, CompletionHandler<String> completionHandler) {
+  public Deferred<String> readSymlinkDeferred(String link) {
     final Path source = Paths.get(link);
-    new BlockingTask<String>(completionHandler) {
-      public String execute() throws Exception {
+    return new BlockingTask<String>() {
+      public String action() throws Exception {
         try {
           return Files.readSymbolicLink(source).toString();
         } catch (NotLinkException e) {
           throw new FileSystemException("Cannot read " + source + " it's not a symbolic link");
         }
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Returns the path representing the file that the symbolic link specified by {@code link} points to.<p>
+   * The actual read will be done asynchronously.
+   */
+  public Future<String> readSymlink(String link) {
+    return readSymlinkDeferred(link).execute();
+  }
+
+  public Deferred<Void> deleteDeferred(String path) {
+    return deleteDeferred(path, false);
   }
 
   /**
    * Deletes the file represented by the specified {@code path}.<p>
-   * The actual delete will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual delete will be done asynchronously.
    */
-  public void delete(String path, CompletionHandler<Void> completionHandler) {
-    delete(path, false, completionHandler);
+  public Future<Void> delete(String path) {
+    return deleteDeferred(path).execute();
   }
 
-  /**
-   * Deletes the file represented by the specified {@code path}.<p>
-   * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
-   * The actual delete will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
-   */
-  public void delete(String path, final boolean recursive, CompletionHandler<Void> completionHandler) {
+  public Deferred<Void> deleteDeferred(String path, final boolean recursive) {
     final Path source = Paths.get(path);
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         if (recursive) {
           Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
               Files.delete(file);
               return FileVisitResult.CONTINUE;
             }
-
             public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
               if (e == null) {
                 Files.delete(dir);
@@ -369,17 +402,33 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Deletes the file represented by the specified {@code path}.<p>
+   * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
+   * The actual delete will be done asynchronously.
+   */
+  public Future<Void> delete(String path, final boolean recursive) {
+    return deleteDeferred(path, recursive).execute();
+  }
+
+  public Deferred<Void> mkdirDeferred(String path) {
+    return mkdirDeferred(path, null, false);
   }
 
   /**
    * Create the directory represented by {@code path}.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual create will be done asynchronously.
    */
-  public void mkdir(String path, CompletionHandler<Void> completionHandler) {
-    mkdir(path, null, false, completionHandler);
+  public Future<Void> mkdir(String path) {
+    return mkdirDeferred(path).execute();
+  }
+
+  public Deferred<Void> mkdirDeferred(String path, boolean createParents) {
+    return mkdirDeferred(path, null, createParents);
   }
 
   /**
@@ -387,11 +436,14 @@ public class FileSystem {
    * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual create will be done asynchronously.
    */
-  public void mkdir(String path, boolean createParents, CompletionHandler<Void> completionHandler) {
-    mkdir(path, null, createParents, completionHandler);
+  public Future<Void> mkdir(String path, boolean createParents) {
+    return mkdirDeferred(path, createParents).execute();
+  }
+
+  public Deferred<Void> mkdirDeferred(String path, String perms) {
+    return mkdirDeferred(path, perms, false);
   }
 
   /**
@@ -399,28 +451,17 @@ public class FileSystem {
    * The new directory will be created with permissions as specified by {@code perms}.
    * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual create will be done asynchronously.
    */
-  public void mkdir(String path, String perms, CompletionHandler<Void> completionHandler) {
-    mkdir(path, perms, false, completionHandler);
+  public Future<Void> mkdir(String path, String perms) {
+    return mkdirDeferred(path, perms).execute();
   }
 
-  /**
-   * Create the directory represented by {@code path}.<p>
-   * The new directory will be created with permissions as specified by {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
-   * will also be created.<p>
-   * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
-   */
-  public void mkdir(String path, final String perms, final boolean createParents, CompletionHandler<Void> completionHandler) {
+  public Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         try {
           if (createParents) {
             if (attrs != null) {
@@ -442,34 +483,38 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Create the directory represented by {@code path}.<p>
+   * The new directory will be created with permissions as specified by {@code perms}.
+   * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
+   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
+   * will also be created.<p>
+   * The operation will fail if the directory already exists.<p>
+   * The actual create will be done asynchronously.
+   */
+  public Future<Void> mkdir(String path, final String perms, final boolean createParents) {
+    return mkdirDeferred(path, perms, createParents).execute();
+  }
+
+  public Deferred<String[]> readDirDeferred(final String path) {
+    return readDirDeferred(path, null);
   }
 
   /**
    * Read the contents of the directory specified by {@code path}.<p>
    * The result is an array of String representing the paths of the files inside the directory.<p>
-   * The actual read will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the results on completion, or, if the operation fails.
-   * @param path
-   * @param completionHandler
+   * The actual read will be done asynchronously.
    */
-  public void readDir(final String path, CompletionHandler<String[]> completionHandler) {
-    readDir(path, null, completionHandler);
+  public Future<String[]> readDir(final String path) {
+    return readDirDeferred(path).execute();
   }
 
-  /**
-   * Read the contents of the directory specified by {@code path}.<p>
-   * The result is an array of String representing the paths of the files inside the directory.<p>
-   * If {@code filter} is specified then only the paths that match @{filter} will be returned.
-   * {@code filter} is a regular expression.<p>
-   * The actual read will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the results on completion, or, if the operation fails.
-   * @param path
-   * @param completionHandler
-   */
-  public void readDir(final String path, final String filter, CompletionHandler<String[]> completionHandler) {
-    new BlockingTask<String[]>(completionHandler) {
-      public String[] execute() throws Exception {
+  public Deferred<String[]> readDirDeferred(final String path, final String filter) {
+    return new BlockingTask<String[]>() {
+      public String[] action() throws Exception {
         File file = new File(path);
         if (!file.exists()) {
           throw new FileSystemException("Cannot read directory " + path + ". Does not exist");
@@ -501,68 +546,89 @@ public class FileSystem {
           return ret;
         }
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Read the contents of the directory specified by {@code path}.<p>
+   * The result is an array of String representing the paths of the files inside the directory.<p>
+   * If {@code filter} is specified then only the paths that match @{filter} will be returned.
+   * {@code filter} is a regular expression.<p>
+   * The actual read will be done asynchronously.
+   */
+  public Future<String[]> readDir(final String path, final String filter) {
+    return readDirDeferred(path, filter).execute();
+  }
+
+  public Deferred<String> readFileAsStringDeferred(final String path, final String encoding) {
+    return new BlockingTask<String>() {
+      public String action() throws Exception {
+        Path target = Paths.get(path);
+        byte[] bytes = Files.readAllBytes(target);
+        Buffer buff = Buffer.create(bytes);
+        return buff.toString("UTF-8");
+      }
+    };
   }
 
   /**
    * Reads the entire file as represented by the path {@code path} as a String, using the encoding {@code enc}<p>
    * Do not user this method to read very large files or you risk running out of available RAM.<p>
-   * The actual read will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the results on completion, or, if the operation fails.
+   * The actual read will be done asynchronously.
    */
-  public void readFileAsString(final String path, final String encoding, final CompletionHandler<String> completionHandler) {
-    readFile(path, new CompletionHandler<Buffer>() {
-      @Override
-      public void handle(Completion<Buffer> completion) {
-        if (completion.succeeded()) {
-          completionHandler.handle(new Completion<>(completion.result.toString(encoding)));
-        } else {
-          completionHandler.handle(new Completion<String>(completion.exception));
-        }
-      }
-    });
+  public Future<String> readFileAsString(final String path, final String encoding) {
+    return readFileAsStringDeferred(path, encoding).execute();
   }
 
-  /**
-   * Reads the entire file as represented by the path {@code path} as a {@link Buffer}.<p>
-   * Do not user this method to read very large files or you risk running out of available RAM.<p>
-   * The actual read will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the results on completion, or, if the operation fails.
-   */
-  public void readFile(final String path, CompletionHandler<Buffer> completionHandler) {
-    new BlockingTask<Buffer>(completionHandler) {
-      public Buffer execute() throws Exception {
+  public Deferred<Buffer> readFileDeferred(final String path) {
+    return new BlockingTask<Buffer>() {
+      public Buffer action() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
         Buffer buff = Buffer.create(bytes);
         return buff;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Reads the entire file as represented by the path {@code path} as a {@link Buffer}.<p>
+   * Do not user this method to read very large files or you risk running out of available RAM.<p>
+   * The actual read will be done asynchronously.
+   */
+  public Future<Buffer> readFile(final String path) {
+    return readFileDeferred(path).execute();
+  }
+
+  public Deferred<Void> writeStringToFileDeferred(String path, String str, String enc) {
+    Buffer buff = Buffer.create(str, enc);
+    return writeFileDeferred(path, buff);
   }
 
   /**
    * Creates and writes the specified {@code String str} to the file represented by the path {@code path} using the encoding {@code enc}.<p>
-   * The actual write will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
+   * The actual write will be done asynchronously.
    */
-  public void writeStringToFile(String path, String str, String enc, CompletionHandler<Void> completionHandler) {
-    Buffer buff = Buffer.create(str, enc);
-    writeFile(path, buff, completionHandler);
+  public Future<Void> writeStringToFile(String path, String str, String enc) {
+    return writeStringToFileDeferred(path, str, enc).execute();
   }
 
-  /**
-   * Creates and writes the specified {@code Buffer data} to the file represented by the path {@code path}.<p>
-   * The actual write will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails.
-   */
-  public void writeFile(final String path, final Buffer data, CompletionHandler<Void> completionHandler) {
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+  public Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         Path target = Paths.get(path);
         Files.write(target, data.getBytes());
         return null;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Creates and writes the specified {@code Buffer data} to the file represented by the path {@code path}.<p>
+   * The actual write will be done asynchronously.
+   */
+  public Future<Void> writeFile(final String path, final Buffer data) {
+    return writeFileDeferred(path, data).execute();
   }
 
   public void lock() {
@@ -581,16 +647,22 @@ public class FileSystem {
     //TODO
   }
 
+  public Deferred<AsyncFile> openDeferred(final String path) {
+    return openDeferred(path, null, true, true, true, false);
+  }
+
   /**
    * Open the file represented by {@code path}.<p>
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
    * Write operation will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the {@link AsyncFile} on completion, or, if the operation fails
+   * The actual open will be done asynchronously.
    */
-  public void open(final String path,
-                   CompletionHandler<AsyncFile> completionHandler) {
-    open(path, null, true, true, true, false, completionHandler);
+  public Future<AsyncFile> open(final String path) {
+    return openDeferred(path).execute();
+  }
+
+  public Deferred<AsyncFile> openDeferred(final String path, String perms) {
+    return openDeferred(path, perms, true, true, true, false);
   }
 
   /**
@@ -598,12 +670,14 @@ public class FileSystem {
    * The file is opened for both reading and writing. If the file does not already exist it will be created with the
    * permissions as specified by {@code perms}.
    * Write operation will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the {@link AsyncFile} on completion, or, if the operation fails
+   * The actual open will be done asynchronously.
    */
-  public void open(final String path, String perms,
-                   CompletionHandler<AsyncFile> completionHandler) {
-    open(path, perms, true, true, true, false, completionHandler);
+  public Future<AsyncFile> open(final String path, String perms) {
+    return openDeferred(path, perms).execute();
+  }
+
+  public Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean createNew) {
+    return openDeferred(path, perms, true, true, createNew, false);
   }
 
   /**
@@ -612,12 +686,14 @@ public class FileSystem {
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.
    * Write operations will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the {@link AsyncFile} on completion, or, if the operation fails
+   * The actual open will be done asynchronously.
    */
-  public void open(final String path, String perms, final boolean createNew,
-                   CompletionHandler<AsyncFile> completionHandler) {
-    open(path, perms, true, true, createNew, false, completionHandler);
+  public Future<AsyncFile> open(final String path, String perms, final boolean createNew) {
+    return openDeferred(path, perms, createNew).execute();
+  }
+
+  public Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
+    return openDeferred(path, perms, read, write, createNew, false);
   }
 
   /**
@@ -628,12 +704,21 @@ public class FileSystem {
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.<p>
    * Write operations will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the {@link AsyncFile} on completion, or, if the operation fails
+   * The actual open will be done asynchronously.
    */
-  public void open(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                   CompletionHandler<AsyncFile> completionHandler) {
-    open(path, perms, read, write, createNew, false, completionHandler);
+  public Future<AsyncFile> open(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
+    return openDeferred(path, perms, read, write, createNew).execute();
+  }
+
+  public Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+                   final boolean flush) {
+    final long contextID = Nodex.instance.getContextID();
+    final Thread th = Thread.currentThread();
+    return new BlockingTask<AsyncFile>() {
+      public AsyncFile action() throws Exception {
+        return doOpen(path, perms, read, write, createNew, flush, contextID, th);
+      }
+    };
   }
 
   /**
@@ -646,18 +731,11 @@ public class FileSystem {
    * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
    * storage on each write.<p>
    * Write operations will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously and the specified {@code completionHandler} will be called
-   * with the {@link AsyncFile} on completion, or, if the operation fails
+   * The actual open will be done asynchronously.
    */
-  public void open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean flush, CompletionHandler<AsyncFile> completionHandler) {
-    final long contextID = Nodex.instance.getContextID();
-    final Thread th = Thread.currentThread();
-    new BlockingTask<AsyncFile>(completionHandler) {
-      public AsyncFile execute() throws Exception {
-        return doOpen(path, perms, read, write, createNew, flush, contextID, th);
-      }
-    }.run();
+  public Future<AsyncFile> open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+                   final boolean flush) {
+    return openDeferred(path, perms, read, write, createNew, flush).execute();
   }
 
   private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
@@ -666,24 +744,22 @@ public class FileSystem {
     return new AsyncFile(path, perms, read, write, createNew, flush, contextID, th);
   }
 
-  /**
-   * Creates an empty file with the specified {@code path}.<p>
-   * The actual creation will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails
-   */
-  public void createFile(final String path, CompletionHandler<Void> completionHandler) {
-    createFile(path, null, completionHandler);
+  public Deferred<Void> createFileDeferred(final String path) {
+    return createFileDeferred(path, null);
   }
 
   /**
-   * Creates an empty file with the specified {@code path} and permissions {@code perms}<p>
-   * The actual creation will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion, or, if the operation fails
+   * Creates an empty file with the specified {@code path}.<p>
+   * The actual creation will be done asynchronously.
    */
-  public void createFile(final String path, final String perms, CompletionHandler<Void> completionHandler) {
+  public Future<Void> createFile(final String path) {
+    return createFileDeferred(path).execute();
+  }
+
+  public Deferred<Void> createFileDeferred(final String path, final String perms) {
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    new BlockingTask<Void>(completionHandler) {
-      public Void execute() throws Exception {
+    return new BlockingTask<Void>() {
+      public Void action() throws Exception {
         try {
           Path target = Paths.get(path);
           if (attrs != null) {
@@ -696,36 +772,50 @@ public class FileSystem {
         }
         return null;
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Creates an empty file with the specified {@code path} and permissions {@code perms}<p>
+   * The actual creation will be done asynchronously.
+   */
+  public Future<Void> createFile(final String path, final String perms) {
+    return createFileDeferred(path, perms).execute();
+  }
+
+  public Deferred<Boolean> existsDeferred(final String path) {
+    return new BlockingTask<Boolean>() {
+      public Boolean action() throws Exception {
+        File file = new File(path);
+        return file.exists();
+      }
+    };
   }
 
   /**
    * Determines whether the file as specified by the path {@code path} exists.<p>
-   * The actual check will be done asynchronously and the specified {@code completionHandler} will be called
-   * on completion with the result, or, if the operation fails
+   * The actual check will be done asynchronously.
    */
-  public void exists(final String path, CompletionHandler<Boolean> completionHandler) {
-    new BlockingTask<Boolean>(completionHandler) {
-      public Boolean execute() throws Exception {
-        File file = new File(path);
-        return file.exists();
-      }
-    }.run();
+  public Future<Boolean> exists(final String path) {
+    return existsDeferred(path).execute();
   }
 
-  /**
-   * Returns properties of the file-system being used by the specified {@code path}<p>
-   * The actual properties are obtained asynchronously and the specified {@code completionHandler} will be called
-   * on completion with the result, or, if the operation fails
-   */
-  public void getFSProps(final String path, CompletionHandler<FileSystemProps> completionHandler) {
-    new BlockingTask<FileSystemProps>(completionHandler) {
-      public FileSystemProps execute() throws Exception {
+  public Deferred<FileSystemProps> getFSPropsDeferred(final String path) {
+    return new BlockingTask<FileSystemProps>() {
+      public FileSystemProps action() throws Exception {
         Path target = Paths.get(path);
         FileStore fs = Files.getFileStore(target);
         return new FileSystemProps(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
       }
-    }.run();
+    };
+  }
+
+  /**
+   * Returns properties of the file-system being used by the specified {@code path}<p>
+   * The actual properties are obtained asynchronously.
+   */
+  public Future<FileSystemProps> getFSProps(final String path) {
+    return getFSPropsDeferred(path).execute();
   }
 
 }

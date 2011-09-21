@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require 'core/streams'
+require 'core/composition'
 
 module Nodex
 
@@ -69,7 +70,7 @@ module Nodex
 
   # Represents the properties of a file system
   # @author {http://tfox.org Tim Fox}
-  class FSStats
+  class FSProps
 
     # @private
     def initialize(j_props)
@@ -109,8 +110,12 @@ module Nodex
     # when the operation is complete, or if the operation fails.
     # This method must be called using the same event loop the file was opened from.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def close(&hndlr)
-      @j_file.close(hndlr)
+    def close
+      Future.new(@j_file.close)
+    end
+
+    def close_deferred
+      Deferred.new(@j_file.closeDeferred)
     end
 
     # Write a {Buffer} to the file.
@@ -122,8 +127,12 @@ module Nodex
     # @param [FixNum] position The position in the file where to write the buffer. Position is measured in bytes and
     # starts with zero at the beginning of the file.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def write(buffer, position, &hndlr)
-      @j_file.write(buffer._to_java_buffer, position, hndlr)
+    def write(buffer, position)
+      Future.new(@j_file.write(buffer._to_java_buffer, position))
+    end
+
+    def write_deferred(buffer, position)
+      Deferred.new(@j_file.writeDeferred(buffer._to_java_buffer, position))
     end
 
     # Reads some data from a file into a buffer.
@@ -137,9 +146,11 @@ module Nodex
     # @param [FixNum] length The number of bytes to read.
     # @param [Block] hndlr a block representing the handler which is called on completion.
     def read(buffer, offset, position, length, &hndlr)
-      @j_file.read(buffer._to_java_buffer, offset, position, length, Proc.new { |compl|
-        hndlr.call(org.nodex.java.core.Completion.new(Buffer.new(compl.result)))
-      })
+      Future.new(@j_file.read(buffer._to_java_buffer, offset, position, length)){ |j_buff| Buffer.new(j_buff) }
+    end
+
+    def read_deferred(buffer, offset, position, length, &hndlr)
+      Deferred.new(@j_file.readDeferred(buffer._to_java_buffer, offset, position, length)){ |j_buff| Buffer.new(j_buff) }
     end
 
     # @return [WriteStream] A write stream operating on the file.
@@ -160,8 +171,12 @@ module Nodex
     # when the operation is complete, or, if the operation fails.
     # This method must be called using the same event loop the file was opened from.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def flush(&hndlr)
-      @j_file.flush(hndlr)
+    def flush
+      Future.new(@j_file.flush)
+    end
+
+    def flush_deferred
+      Deferred.new(@j_file.flushDeferred)
     end
 
     # @private
@@ -192,8 +207,12 @@ module Nodex
     # @param [String] from Path of file to copy
     # @param [String] to Path of file to copy to
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.copy(from, to, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.copy(from, to, hndlr)
+    def FileSystem.copy(from, to)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.copy(from, to))
+    end
+
+    def FileSystem.copy_deferred(from, to)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.copyDeferred(from, to))
     end
 
     # Copy a file recursively. The copy will fail if from does not exist, or if to already exists and is not empty.
@@ -204,8 +223,12 @@ module Nodex
     # @param [String] from Path of file to copy
     # @param [String] to Path of file to copy to
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.copy_recursive(from, to, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.copy(from, to, true, hndlr)
+    def FileSystem.copy_recursive(from, to)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.copy(from, to, true))
+    end
+
+    def FileSystem.copy_recursive_deferred(from, to)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.copyDeferred(from, to, true))
     end
 
     # Move a file. The move will fail if from does not exist, or if to already exists.
@@ -214,8 +237,12 @@ module Nodex
     # @param [String] from Path of file to move
     # @param [String] to Path of file to move to
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.move(from, to, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.move(from, to, hndlr)
+    def FileSystem.move(from, to)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.move(from, to))
+    end
+
+    def FileSystem.move_deferred(from, to)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.moveDeferred(from, to))
     end
 
     # Truncate a file. The move will fail if path does not exist.
@@ -224,8 +251,12 @@ module Nodex
     # @param [String] path Path of file to truncate
     # @param [FixNum] len Length to truncate file to. Will fail if len < 0. If len > file size then will do nothing.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.truncate(path, len, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.truncate(path, len, hndlr)
+    def FileSystem.truncate(path, len)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.truncate(path, len))
+    end
+
+    def FileSystem.truncate_deferred(path, len)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.truncateDeferred(path, len))
     end
 
     # Change the permissions on a file. If the file is directory then all contents will also have their permissions changed recursively.
@@ -237,18 +268,24 @@ module Nodex
     # used to set the permissions for any regular files (not directories).
     # @param [String] dir_perms A permission string of the form rwxr-x---. Used to set permissions for regular files.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.chmod(path, perms, dir_perms = nil, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.chmod(path, perms, dir_perms, hndlr)
+    def FileSystem.chmod(path, perms, dir_perms = nil)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.chmod(path, perms, dir_perms))
+    end
+
+    def FileSystem.chmod_deferred(path, perms, dir_perms = nil)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.chmodDeferred(path, perms, dir_perms))
     end
 
     # Get file properties for a file. The properties are obtained asynchronously and the handler will be called when
     # the operation is complete, or if the operation fails.
     # @param [String] path Path to file
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.props(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.props(path, Proc.new { |compl|
-        hndlr.call(org.nodex.java.core.Completion.new(FileProps.new(compl.result)))
-      })
+    def FileSystem.props(path)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.props(path)) { |j_props| FileProps.new(j_props) }
+    end
+
+    def FileSystem.props_deferred(path)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.propsDeferred(path)) { |j_props| FileProps.new(j_props) }
     end
 
     # Create a hard link. The link is done asynchronously and the handler will be called when
@@ -256,8 +293,12 @@ module Nodex
     # @param [String] link Path of the link to create.
     # @param [String] existing Path of where the link points to.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.link(link, existing, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.link(link, existing, hndlr)
+    def FileSystem.link(link, existing)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.link(link, existing))
+    end
+
+    def FileSystem.link_deferred(link, existing)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.linkDeferred(link, existing))
     end
 
     # Create a symbolic link. The link is done asynchronously and the handler will be called when
@@ -265,16 +306,24 @@ module Nodex
     # @param [String] link Path of the link to create.
     # @param [String] existing Path of where the link points to.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.sym_link(link, existing, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.symLink(link, existing, hndlr)
+    def FileSystem.sym_link(link, existing)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.symLink(link, existing))
+    end
+
+    def FileSystem.sym_link_deferred(link, existing)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.symLinkDeferred(link, existing))
     end
 
     # Unlink a hard link. The unlink is done asynchronously and the handler will be called when
     # the operation is complete, or if the operation fails.
     # @param [String] link Path of the link to unlink.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.unlink(link, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.unlink(link, hndlr)
+    def FileSystem.unlink(link)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.unlink(link))
+    end
+
+    def FileSystem.unlink_deferred(link)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.unlinkDeferred(link))
     end
 
     # Read a symbolic link. I.e. tells you where the symbolic link points.
@@ -282,8 +331,12 @@ module Nodex
     # the operation is complete, or if the operation fails.
     # @param [String] link Path of the link to read.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.read_sym_link(link, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.readSymLink(link, hndlr)
+    def FileSystem.read_sym_link(link)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.readSymLink(link))
+    end
+
+    def FileSystem.read_sym_link_deferred(link)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.readSymLinkDeferred(link))
     end
 
     # Delete a file on the file system.
@@ -292,8 +345,12 @@ module Nodex
     # the operation is complete, or if the operation fails.
     # @param [String] path Path of the file to delete.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.delete(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.delete(path, hndlr)
+    def FileSystem.delete(path)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.delete(path))
+    end
+
+    def FileSystem.delete_deferred(path)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.deleteDeferred(path))
     end
 
     # Delete a file on the file system, recursively.
@@ -303,8 +360,12 @@ module Nodex
     # the operation is complete, or if the operation fails.
     # @param [String] path Path of the file to delete.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.delete_recursive(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.delete(path, true, hndlr)
+    def FileSystem.delete_recursive(path)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.delete(path, true))
+    end
+
+    def FileSystem.delete_recursive_deferred(path)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.deleteDeferred(path, true))
     end
 
     # Create a directory.
@@ -315,8 +376,12 @@ module Nodex
     # @param [String] path Path of the directory to create.
     # @param [String] perms. A permission string of the form rwxr-x--- to give directory.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.mkdir(path, perms = nil, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms, hndlr)
+    def FileSystem.mkdir(path, perms = nil)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms))
+    end
+
+    def FileSystem.mkdir_deferred(path, perms = nil)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms))
     end
 
     # Create a directory, and create all it's parent directories if they do not already exist.
@@ -326,8 +391,12 @@ module Nodex
     # @param [String] path Path of the directory to create.
     # @param [String] perms. A permission string of the form rwxr-x--- to give the created directory(ies).
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.mkdir_with_parents(path, perms = nil, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms, true, hndlr)
+    def FileSystem.mkdir_with_parents(path, perms = nil)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.mkdir(path, perms, true))
+    end
+
+    def FileSystem.mkdir_with_parents_deferred(path, perms = nil)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.mkdirDeferred(path, perms, true))
     end
 
     # Read a directory, i.e. list it's contents
@@ -338,8 +407,12 @@ module Nodex
     # @param [String] filter A regular expression to filter out the contents of the directory. If the filter is not nil
     # then only files which match the filter will be returned.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.read_dir(path, filter = nil, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.readDir(path, filter, hndlr)
+    def FileSystem.read_dir(path, filter = nil)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.readDir(path, filter))
+    end
+
+    def FileSystem.read_dir_deferred(path, filter = nil)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.readDirDeferred(path, filter))
     end
 
     # Read the contents of an entire file as a String.
@@ -348,8 +421,12 @@ module Nodex
     # @param [String] path Path of the file to read.
     # @param [String] encoding Encoding to assume when decoding the bytes to a String
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.read_file_as_string(path, encoding = "UTF-8", &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.readFileAsString(path, encoding, hndlr)
+    def FileSystem.read_file_as_string(path, encoding = "UTF-8")
+      Future.new(org.nodex.java.core.file.FileSystem.instance.readFileAsString(path, encoding))
+    end
+
+    def FileSystem.read_file_as_string_deferred(path, encoding = "UTF-8")
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.readFileAsStringDeferred(path, encoding))
     end
 
     # Write a String as the entire contents of a file.
@@ -359,8 +436,12 @@ module Nodex
     # @param [String] str The String to write
     # @param [String] encoding Encoding to assume when endoding the String to bytes
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.write_string_to_file(path, str, encoding = "UTF-8", &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.writeFileAsString(path, str, encoding, hndlr)
+    def FileSystem.write_string_to_file(path, str, encoding = "UTF-8")
+      Future.new(org.nodex.java.core.file.FileSystem.instance.writeFileAsString(path, str, encoding))
+    end
+
+    def FileSystem.write_string_to_file_deferred(path, str, encoding = "UTF-8")
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.writeFileAsStringDeferred(path, str, encoding))
     end
 
     def FileSystem.lock
@@ -389,14 +470,12 @@ module Nodex
     # @param [Boolean] create_new Create the file if it doesn't already exist?
     # @param [Boolean] flush Whenever any data is written to the file, flush all changes to permanent storage immediately?
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.open(path, perms = nil, read = true, write = true, create_new = true, flush = false, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.open(path, perms, read, write, create_new, flush, Proc.new { |compl|
-        if compl.succeeded
-          hndlr.call(org.nodex.java.core.Completion.new(AsyncFile.new(compl.result)))
-        else
-          hndlr.call(compl)
-        end
-      })
+    def FileSystem.open(path, perms = nil, read = true, write = true, create_new = true, flush = false)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.open(path, perms, read, write, create_new, flush)) { |j_file| AsyncFile.new(j_file)}
+    end
+
+    def FileSystem.open_deferred(path, perms = nil, read = true, write = true, create_new = true, flush = false)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.openDeferred(path, perms, read, write, create_new, flush)) { |j_file| AsyncFile.new(j_file)}
     end
 
     # Create a new empty file.
@@ -405,8 +484,12 @@ module Nodex
     # @param [String] path Path of the file to create.
     # @param [String] perms The file will be created with these permissions.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.create_file(path, perms = nil, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.createFile(path, perms, hndlr)
+    def FileSystem.create_file(path, perms = nil)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.createFile(path, perms))
+    end
+
+    def FileSystem.create_file_deferred(path, perms = nil)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.createFileDeferred(path, perms))
     end
 
     # Does a file exist?
@@ -414,8 +497,12 @@ module Nodex
     # the operation is complete or if the operation failed.
     # @param [String] path Path of the file to check.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    def FileSystem.exists(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.exists(path, hndlr)
+    def FileSystem.exists(path)
+      Future.new(org.nodex.java.core.file.FileSystem.instance.exists(path))
+    end
+
+    def FileSystem.exists_deferred(path)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.existsDeferred(path))
     end
 
     # Get properties for the file system.
@@ -424,9 +511,11 @@ module Nodex
     # @param [String] path Path in the file system.
     # @param [Block] hndlr a block representing the handler which is called on completion.
     def FileSystem.fs_props(path, &hndlr)
-      org.nodex.java.core.file.FileSystem.instance.getFSProps(path, Proc.new { |j_props|
-        hndlr.call(org.nodex.java.core.Completion.new(FSStats.new(j_props)))
-      })
+      Future.new(org.nodex.java.core.file.FileSystem.instance.getFSProps(path)){ |j_props| FSProps.new(j_props)}
+    end
+
+    def FileSystem.fs_props_deferred(path, &hndlr)
+      Deferred.new(org.nodex.java.core.file.FileSystem.instance.getFSPropsDeferred(path)){ |j_props| FSProps.new(j_props)}
     end
   end
 end

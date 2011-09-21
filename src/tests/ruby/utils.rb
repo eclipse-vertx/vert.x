@@ -37,7 +37,6 @@ module Utils
   end
 
   def Utils.buffers_equal(buff1, buff2)
-    puts "buff1 length #{buff1.length} buff2 length #{buff2.length}"
     org.nodex.tests.Utils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end
 end

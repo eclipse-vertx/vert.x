@@ -16,8 +16,8 @@
 
 package org.nodex.tests.addons.redis;
 
+import org.nodex.java.addons.redis.RedisReply;
 import org.nodex.java.addons.redis.ReplyParser;
-import org.nodex.java.core.Completion;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.tests.Utils;
@@ -69,9 +69,9 @@ public class ReplyParserTest extends TestBase {
       }
     }
 
-    final List<Completion<Object>> completions = new ArrayList<>();
-    ReplyParser parser = new ReplyParser(new Handler<Completion<Object>>() {
-      public void handle(Completion<Object> compl) {
+    final List<RedisReply> completions = new ArrayList<>();
+    ReplyParser parser = new ReplyParser(new Handler<RedisReply>() {
+      public void handle(RedisReply compl) {
         completions.add(compl);
       }
     });
@@ -91,7 +91,7 @@ public class ReplyParserTest extends TestBase {
 
     void addError(String error) {
       buff.appendByte((byte)'-').appendString(error).appendBytes(CRLF);
-      responses.add(new Exception(error));
+      responses.add(error);
     }
 
     void addOneLine(String line) {
@@ -123,32 +123,27 @@ public class ReplyParserTest extends TestBase {
       buff.appendBytes(data).appendBytes(CRLF);
     }
 
-    void validate(List<Completion<Object>> completions) {
+    void validate(List<RedisReply> completions) {
       azzert(completions.size() == responses.size());
 
       Iterator<Object> respIter = responses.iterator();
-      for (Completion<Object> compl: completions) {
+      for (RedisReply compl: completions) {
         Object resp = respIter.next();
-        if (!compl.succeeded()) {
-          azzert(resp instanceof Exception);
-          azzert(((Exception)resp).getMessage().equals(compl.exception.getMessage()));
+        if (compl.error != null) {
+          azzert(resp.equals(compl.error));
         } else {
           if (resp instanceof String) {
-            azzert(compl.result instanceof String);
-            azzert(compl.result.equals(resp));
+            azzert(compl.line.equals(resp));
           } else if (resp instanceof Integer) {
-            azzert(compl.result instanceof Integer);
-            azzert(compl.result.equals(resp));
-          } else if (resp instanceof byte[]) {
-            azzert(compl.result instanceof byte[]);
-            azzert(Utils.byteArraysEqual((byte[])compl.result, (byte[])resp));
-          } else if (resp instanceof byte[][]) {
-            azzert(compl.result instanceof byte[][]);
-            byte[][] expected = (byte[][])resp;
-            byte[][] actual = (byte[][])compl.result;
+            azzert(resp.equals(compl.intResult));
+          } else if (resp instanceof Buffer) {
+            azzert(Utils.buffersEqual(compl.bulkResult, (Buffer)resp));
+          } else if (resp instanceof Buffer[]) {
+            Buffer[] expected = (Buffer[])resp;
+            Buffer[] actual = compl.multiBulkResult;
             azzert(expected.length == actual.length);
             for (int i = 0; i < expected.length; i++) {
-              azzert(Utils.byteArraysEqual(expected[i], actual[i]));
+              azzert(Utils.buffersEqual(expected[i], actual[i]));
             }
           }
         }
