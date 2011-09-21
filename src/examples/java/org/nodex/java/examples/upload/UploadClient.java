@@ -17,7 +17,7 @@
 package org.nodex.java.examples.upload;
 
 import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.Deferred;
+import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.SimpleHandler;
@@ -60,7 +60,7 @@ public class UploadClient extends NodexMain {
     // req.setChunked(true);
 
     FileSystem.instance.open(filename).handler(new CompletionHandler<AsyncFile>() {
-      public void handle(Deferred<AsyncFile> completion) {
+      public void handle(Future<AsyncFile> completion) {
         final AsyncFile file = completion.result();
         Pump pump = new Pump(file.getReadStream(), req);
         pump.start();
@@ -69,7 +69,7 @@ public class UploadClient extends NodexMain {
           public void handle() {
 
             file.close().handler(new CompletionHandler<Void>() {
-              public void handle(Deferred<Void> completion) {
+              public void handle(Future<Void> completion) {
                 if (completion.succeeded()) {
                   req.end();
                   System.out.println("Sent request");

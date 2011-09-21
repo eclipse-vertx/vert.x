@@ -17,10 +17,10 @@
 package org.nodex.java.core.file;
 
 import org.nodex.java.core.BlockingTask;
+import org.nodex.java.core.Deferred;
 import org.nodex.java.core.Future;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
-import org.nodex.java.core.Deferred;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -60,19 +60,30 @@ public class FileSystem {
   private FileSystem() {
   }
 
+  /**
+   * The same as {@link #copy(String, String)} but the copy does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> copyDeferred(String from, String to) {
     return copyDeferred(from, to, false);
   }
 
   /**
-   * Copy a file from the path {@code from} to path {@code to}<p>
+   * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
    * The copy will fail if the destination if the destination already exists.<p>
    * The actual copy will happen asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> copy(String from, String to) {
     return copyDeferred(from, to).execute();
   }
 
+  /**
+   * The same as {@link #copy(String, String, boolean)} but the copy does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
@@ -114,16 +125,21 @@ public class FileSystem {
   }
 
   /**
-   * Copy a file from the path {@code from} to path {@code to}<p>
+   * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
    * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
    * will be copied recursively to the destination {@code to}.<p>
    * The copy will fail if the destination if the destination already exists.<p>
-   * The actual copy will happen asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> copy(String from, String to, final boolean recursive) {
     return copyDeferred(from, to, recursive).execute();
   }
 
+  /**
+   * The same as {@link #move(String, String)} but the move does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> moveDeferred(String from, String to) {
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
@@ -143,14 +159,20 @@ public class FileSystem {
   }
 
   /**
-   * Move a file from the path {@code from} to path {@code to}<p>
-   * The move will fail if the destination if the destination already exists.<p>
+   * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
+   * The move will fail if the destination already exists.<p>
    * The actual move will happen asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> move(String from, String to) {
     return moveDeferred(from, to).execute();
   }
 
+  /**
+   * The same as {@link #truncate(String, long)} but the truncate does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> truncateDeferred(final String path, final long len) {
     return new BlockingTask<Void>() {
       public Void action() throws Exception {
@@ -176,27 +198,37 @@ public class FileSystem {
   }
 
   /**
-   * Truncate the file represented by {@code path} to length {@code len}, in bytes.<p>
+   * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
    * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
-   * The actual truncate will happen asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> truncate(final String path, final long len) {
     return truncateDeferred(path, len).execute();
   }
 
+  /**
+   * The same as {@link #chmod(String, String)} but the chmod does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> chmodDeferred(String path, String perms) {
     return chmodDeferred(path, perms, null);
   }
 
   /**
-   * Change the permissions on the file represented by {@code path} to {@code perms}.
+   * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
    * The permission String takes the form rwxr-x--- as specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * The actual chmod will happen asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> chmod(String path, String perms) {
     return chmodDeferred(path, perms).execute();
   }
 
+  /**
+   * The same as {@link #chmod(String, String, String)} but the chmod does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> chmodDeferred(String path, String perms, String dirPerms) {
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
@@ -230,36 +262,47 @@ public class FileSystem {
   }
 
   /**
-   * Change the permissions on the file represented by {@code path} to {@code perms}.
+   * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
    * The permission String takes the form rwxr-x--- as specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
    * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
    * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
-   * The actual chmod will happen asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> chmod(String path, String perms, String dirPerms) {
     return chmodDeferred(path, perms, dirPerms).execute();
   }
 
 
+  /**
+   * The same as {@link #props(String)} but the props does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<FileProps> propsDeferred(String path) {
     return props(path, true);
   }
 
   /**
-   * Obtain properties for the file represented by {@code path}. If the file is a link, the link will be followed.<p>
-   * The actual properties will be obtained asynchronously.
+   * Obtain properties for the file represented by {@code path}, asynchronously.
+   * If the file is a link, the link will be followed.
+   * @return a Future representing the future result of the action.
    */
   public Future<FileProps> props(String path) {
     return propsDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #lprops(String)} but the lprops does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<FileProps> lpropsDeferred(String path) {
     return props(path, false);
   }
 
   /**
-   * Obtain properties for the link represented by {@code path}. The link will not be followed.<p>
-   * The actual properties will be obtained asynchronously.
+   * Obtain properties for the link represented by {@code path}, asynchronously. The link will not be followed.
+   * @return a Future representing the future result of the action.
    */
   public Future<FileProps> lprops(String path) {
     return lpropsDeferred(path).execute();
@@ -284,25 +327,35 @@ public class FileSystem {
     };
   }
 
+  /**
+   * The same as {@link #link(String, String)} but the link does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> linkDeferred(String link, String existing) {
     return link(link, existing, false);
   }
 
   /**
-   * Create a hard link on the file system from {@code link} to {@code existing}.<p>
-   * The actual link will be created asynchronously.
+   * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> link(String link, String existing) {
     return linkDeferred(link, existing).execute();
   }
 
+  /**
+   * The same as {@link #symlink(String, String)} but the symlink does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> symlinkDeferred(String link, String existing) {
     return link(link, existing, true);
   }
 
   /**
-   * Create a symbolic link on the file system from {@code link} to {@code existing}.<p>
-   * The actual link will be created asynchronously.
+   * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> symlink(String link, String existing) {
     return symlinkDeferred(link, existing).execute();
@@ -327,18 +380,28 @@ public class FileSystem {
     };
   }
 
+  /**
+   * The same as {@link #unlink(String)} but the unlink does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> unlinkDeferred(String link) {
     return deleteDeferred(link);
   }
 
   /**
-   * Unlinks the link on the file system represented by the path {@code link}.<p>
-   * The actual unlink will be done asynchronously.
+   * Unlinks the link on the file system represented by the path {@code link}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> unlink(String link) {
     return unlinkDeferred(link).execute();
   }
 
+  /**
+   * The same as {@link #readSymlink(String)} but the read does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<String> readSymlinkDeferred(String link) {
     final Path source = Paths.get(link);
     return new BlockingTask<String>() {
@@ -353,25 +416,35 @@ public class FileSystem {
   }
 
   /**
-   * Returns the path representing the file that the symbolic link specified by {@code link} points to.<p>
-   * The actual read will be done asynchronously.
+   * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<String> readSymlink(String link) {
     return readSymlinkDeferred(link).execute();
   }
 
+  /**
+   * The same as {@link #delete(String)} but the delete does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> deleteDeferred(String path) {
     return deleteDeferred(path, false);
   }
 
   /**
-   * Deletes the file represented by the specified {@code path}.<p>
-   * The actual delete will be done asynchronously.
+   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> delete(String path) {
     return deleteDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #delete(String, boolean)} but the delete does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> deleteDeferred(String path, final boolean recursive) {
     final Path source = Paths.get(path);
     return new BlockingTask<Void>() {
@@ -406,57 +479,77 @@ public class FileSystem {
   }
 
   /**
-   * Deletes the file represented by the specified {@code path}.<p>
+   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
    * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
-   * The actual delete will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> delete(String path, final boolean recursive) {
     return deleteDeferred(path, recursive).execute();
   }
 
+  /**
+   * The same as {@link #mkdir(String)} but the mkdir does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> mkdirDeferred(String path) {
     return mkdirDeferred(path, null, false);
   }
 
   /**
-   * Create the directory represented by {@code path}.<p>
+   * Create the directory represented by {@code path}, asynchronously.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> mkdir(String path) {
     return mkdirDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #mkdir(String, boolean)} but the mkdir does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> mkdirDeferred(String path, boolean createParents) {
     return mkdirDeferred(path, null, createParents);
   }
 
   /**
-   * Create the directory represented by {@code path}.<p>
+   * Create the directory represented by {@code path}, asynchronously.<p>
    * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> mkdir(String path, boolean createParents) {
     return mkdirDeferred(path, createParents).execute();
   }
 
+  /**
+   * The same as {@link #mkdir(String, String)} but the mkdir does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> mkdirDeferred(String path, String perms) {
     return mkdirDeferred(path, perms, false);
   }
 
   /**
-   * Create the directory represented by {@code path}.<p>
+   * Create the directory represented by {@code path}, asynchronously.<p>
    * The new directory will be created with permissions as specified by {@code perms}.
    * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> mkdir(String path, String perms) {
     return mkdirDeferred(path, perms).execute();
   }
 
+  /**
+   * The same as {@link #mkdir(String, String, boolean)} but the mkdir does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
@@ -487,31 +580,41 @@ public class FileSystem {
   }
 
   /**
-   * Create the directory represented by {@code path}.<p>
+   * Create the directory represented by {@code path}, asynchronously.<p>
    * The new directory will be created with permissions as specified by {@code perms}.
    * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
-   * The actual create will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> mkdir(String path, final String perms, final boolean createParents) {
     return mkdirDeferred(path, perms, createParents).execute();
   }
 
+  /**
+   * The same as {@link #readDir(String)} but the read does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<String[]> readDirDeferred(final String path) {
     return readDirDeferred(path, null);
   }
 
   /**
-   * Read the contents of the directory specified by {@code path}.<p>
-   * The result is an array of String representing the paths of the files inside the directory.<p>
-   * The actual read will be done asynchronously.
+   * Read the contents of the directory specified by {@code path}, asynchronously
+   * @return a Future representing the future result of the action.
+   * The result is an array of String representing the paths of the files inside the directory.
    */
   public Future<String[]> readDir(final String path) {
     return readDirDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #readDir(String, String)} but the read does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<String[]> readDirDeferred(final String path, final String filter) {
     return new BlockingTask<String[]>() {
       public String[] action() throws Exception {
@@ -550,36 +653,20 @@ public class FileSystem {
   }
 
   /**
-   * Read the contents of the directory specified by {@code path}.<p>
-   * The result is an array of String representing the paths of the files inside the directory.<p>
-   * If {@code filter} is specified then only the paths that match @{filter} will be returned.
-   * {@code filter} is a regular expression.<p>
-   * The actual read will be done asynchronously.
+   * Read the contents of the directory specified by {@code path}, asynchronously<p>
+   * {@code filter} is a regular expression. If {@code filter} is specified then only the paths that match @{filter} will be returned.<p>
+   * @return a Future representing the future result of the action.
+   * The result is an array of String representing the paths of the files inside the directory.
    */
   public Future<String[]> readDir(final String path, final String filter) {
     return readDirDeferred(path, filter).execute();
   }
 
-  public Deferred<String> readFileAsStringDeferred(final String path, final String encoding) {
-    return new BlockingTask<String>() {
-      public String action() throws Exception {
-        Path target = Paths.get(path);
-        byte[] bytes = Files.readAllBytes(target);
-        Buffer buff = Buffer.create(bytes);
-        return buff.toString("UTF-8");
-      }
-    };
-  }
-
   /**
-   * Reads the entire file as represented by the path {@code path} as a String, using the encoding {@code enc}<p>
-   * Do not user this method to read very large files or you risk running out of available RAM.<p>
-   * The actual read will be done asynchronously.
+   * The same as {@link #readFile(String)} but the read does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
    */
-  public Future<String> readFileAsString(final String path, final String encoding) {
-    return readFileAsStringDeferred(path, encoding).execute();
-  }
-
   public Deferred<Buffer> readFileDeferred(final String path) {
     return new BlockingTask<Buffer>() {
       public Buffer action() throws Exception {
@@ -592,27 +679,19 @@ public class FileSystem {
   }
 
   /**
-   * Reads the entire file as represented by the path {@code path} as a {@link Buffer}.<p>
+   * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
    * Do not user this method to read very large files or you risk running out of available RAM.<p>
-   * The actual read will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<Buffer> readFile(final String path) {
     return readFileDeferred(path).execute();
   }
 
-  public Deferred<Void> writeStringToFileDeferred(String path, String str, String enc) {
-    Buffer buff = Buffer.create(str, enc);
-    return writeFileDeferred(path, buff);
-  }
-
   /**
-   * Creates and writes the specified {@code String str} to the file represented by the path {@code path} using the encoding {@code enc}.<p>
-   * The actual write will be done asynchronously.
+   * The same as {@link #writeFile(String, Buffer)} but the write does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
    */
-  public Future<Void> writeStringToFile(String path, String str, String enc) {
-    return writeStringToFileDeferred(path, str, enc).execute();
-  }
-
   public Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
     return new BlockingTask<Void>() {
       public Void action() throws Exception {
@@ -624,8 +703,8 @@ public class FileSystem {
   }
 
   /**
-   * Creates and writes the specified {@code Buffer data} to the file represented by the path {@code path}.<p>
-   * The actual write will be done asynchronously.
+   * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> writeFile(final String path, final Buffer data) {
     return writeFileDeferred(path, data).execute();
@@ -647,69 +726,94 @@ public class FileSystem {
     //TODO
   }
 
+  /**
+   * The same as {@link #open(String)} but the open does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<AsyncFile> openDeferred(final String path) {
     return openDeferred(path, null, true, true, true, false);
   }
 
   /**
-   * Open the file represented by {@code path}.<p>
+   * Open the file represented by {@code path}, asynchronously.<p>
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
-   * Write operation will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously.
+   * Write operations will not automatically flush to storage.
+   * @return a Future representing the future result of the action.
    */
   public Future<AsyncFile> open(final String path) {
     return openDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #open(String, String)} but the open does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<AsyncFile> openDeferred(final String path, String perms) {
     return openDeferred(path, perms, true, true, true, false);
   }
 
   /**
-   * Open the file represented by {@code path}.<p>
+   * Open the file represented by {@code path}, asynchronously.<p>
    * The file is opened for both reading and writing. If the file does not already exist it will be created with the
    * permissions as specified by {@code perms}.
-   * Write operation will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously.
+   * Write operations will not automatically flush to storage.
+   * @return a Future representing the future result of the action.
    */
   public Future<AsyncFile> open(final String path, String perms) {
     return openDeferred(path, perms).execute();
   }
 
+  /**
+   * The same as {@link #open(String, String, boolean)} but the open does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean createNew) {
     return openDeferred(path, perms, true, true, createNew, false);
   }
 
   /**
-   * Open the file represented by {@code path}.<p>
+   * Open the file represented by {@code path}, asynchronously.<p>
    * The file is opened for both reading and writing. If the file does not already exist and
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.
-   * Write operations will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously.
+   * Write operations will not automatically flush to storage.
+   * @return a Future representing the future result of the action.
    */
   public Future<AsyncFile> open(final String path, String perms, final boolean createNew) {
     return openDeferred(path, perms, createNew).execute();
   }
 
+  /**
+   * The same as {@link #open(String, String, boolean, boolean, boolean)} but the open does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
     return openDeferred(path, perms, read, write, createNew, false);
   }
 
   /**
-   * Open the file represented by {@code path}.<p>
+   * Open the file represented by {@code path}, asynchronously.<p>
    * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
    * will be opened for writing.<p>
    * If the file does not already exist and
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.<p>
-   * Write operations will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously.
+   * Write operations will not automatically flush to storage.
+   * @return a Future representing the future result of the action.
    */
   public Future<AsyncFile> open(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
     return openDeferred(path, perms, read, write, createNew).execute();
   }
 
+  /**
+   * The same as {@link #open(String, String, boolean, boolean, boolean, boolean)} but the open does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
     final long contextID = Nodex.instance.getContextID();
@@ -722,7 +826,7 @@ public class FileSystem {
   }
 
   /**
-   * Open the file represented by {@code path}.<p>
+   * Open the file represented by {@code path}, asynchronously.<p>
    * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
    * will be opened for writing.<p>
    * If the file does not already exist and
@@ -730,8 +834,7 @@ public class FileSystem {
    * the operation will fail.<p>
    * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
    * storage on each write.<p>
-   * Write operations will not automatically flush to storage.<p>
-   * The actual open will be done asynchronously.
+   * @return a Future representing the future result of the action.
    */
   public Future<AsyncFile> open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
@@ -744,18 +847,28 @@ public class FileSystem {
     return new AsyncFile(path, perms, read, write, createNew, flush, contextID, th);
   }
 
+  /**
+   * The same as {@link #createFile(String)} but the create does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> createFileDeferred(final String path) {
     return createFileDeferred(path, null);
   }
 
   /**
-   * Creates an empty file with the specified {@code path}.<p>
-   * The actual creation will be done asynchronously.
+   * Creates an empty file with the specified {@code path}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> createFile(final String path) {
     return createFileDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #createFile(String, String)} but the create does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> createFileDeferred(final String path, final String perms) {
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingTask<Void>() {
@@ -776,13 +889,18 @@ public class FileSystem {
   }
 
   /**
-   * Creates an empty file with the specified {@code path} and permissions {@code perms}<p>
-   * The actual creation will be done asynchronously.
+   * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Void> createFile(final String path, final String perms) {
     return createFileDeferred(path, perms).execute();
   }
 
+  /**
+   * The same as {@link #exists(String)} but the operation does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Boolean> existsDeferred(final String path) {
     return new BlockingTask<Boolean>() {
       public Boolean action() throws Exception {
@@ -793,13 +911,18 @@ public class FileSystem {
   }
 
   /**
-   * Determines whether the file as specified by the path {@code path} exists.<p>
-   * The actual check will be done asynchronously.
+   * Determines whether the file as specified by the path {@code path} exists, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<Boolean> exists(final String path) {
     return existsDeferred(path).execute();
   }
 
+  /**
+   * The same as {@link #getFSProps(String)} but the check does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<FileSystemProps> getFSPropsDeferred(final String path) {
     return new BlockingTask<FileSystemProps>() {
       public FileSystemProps action() throws Exception {
@@ -811,8 +934,8 @@ public class FileSystem {
   }
 
   /**
-   * Returns properties of the file-system being used by the specified {@code path}<p>
-   * The actual properties are obtained asynchronously.
+   * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
+   * @return a Future representing the future result of the action.
    */
   public Future<FileSystemProps> getFSProps(final String path) {
     return getFSPropsDeferred(path).execute();

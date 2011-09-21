@@ -17,7 +17,6 @@
 package org.nodex.java.addons.stomp;
 
 import org.nodex.java.core.buffer.Buffer;
-
 import org.nodex.java.core.net.NetSocket;
 
 import java.util.HashMap;

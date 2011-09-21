@@ -17,7 +17,6 @@
 package org.nodex.java.core.stdio;
 
 import org.nodex.java.core.Handler;
-import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.streams.ReadStream;

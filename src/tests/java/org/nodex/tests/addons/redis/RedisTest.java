@@ -23,14 +23,10 @@ import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleAction;
-import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.composition.Composer;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;

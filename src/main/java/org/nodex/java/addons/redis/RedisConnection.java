@@ -16,11 +16,11 @@
 
 package org.nodex.java.addons.redis;
 
+import org.nodex.java.core.Deferred;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetSocket;
-import org.nodex.java.core.Deferred;
 
 import java.nio.charset.Charset;
 import java.util.Map;

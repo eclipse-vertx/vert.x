@@ -77,12 +77,19 @@ module Nodex
     end
 
     def execute
+      raise "Cannot execute a Deferred which has been returned by a Composer" if @block_execution
       @j_del.execute
     end
 
     # @private
     def _to_j_del
       @j_del
+    end
+
+    # @private
+    def block_execution
+      @block_execution = true
+      self
     end
 
   end
@@ -95,13 +102,13 @@ module Nodex
     def parallel(deferred)
       check_deferred(deferred)
       @j_comp.parallel(deferred._to_j_del)
-      deferred
+      deferred.block_execution
     end
 
     def series(deferred)
       check_deferred(deferred)
       @j_comp.series(deferred._to_j_del)
-      deferred
+      deferred.block_execution
     end
 
     def check_deferred(deferred)

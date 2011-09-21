@@ -16,10 +16,15 @@
 
 package org.nodex.java.core;
 
-import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.Deferred;
-
 /**
+ * <p>SimpleDeferred is useful when you want to create your own Deferred instances.</p>
+ *
+ * <p>Normally, instances of Deferred are returned from node.x modules to represent operations such as getting a key from
+ * a Redis server, or copying a file. However if you wish to create your own instances you can do this by subclassing this
+ * class and implementing the {@link #run} method.</p>
+ *
+ * <p>When the operation is complete be sure to call {@link #setResult} or {@link #setException}</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class SimpleDeferred<T> implements Deferred<T> {
@@ -30,31 +35,60 @@ public abstract class SimpleDeferred<T> implements Deferred<T> {
   protected boolean executed;
   protected boolean complete;
 
+  /**
+   * {@inheritDoc}
+   */
   public T result() {
     return result;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public Exception exception() {
     return exception;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public boolean complete() {
     return complete;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public boolean succeeded() {
     return complete && exception == null;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public boolean failed() {
     return complete && exception != null;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public void handler(CompletionHandler<T> completionHandler) {
     this.completionHandler = completionHandler;
     if (complete) {
       callHandler();
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public Deferred<T> execute() {
+    if (!executed) {
+      run();
+      executed = true;
+    }
+    return this;
   }
 
   protected void setResult(T result) {
@@ -69,14 +103,11 @@ public abstract class SimpleDeferred<T> implements Deferred<T> {
     callHandler();
   }
 
-  public Deferred<T> execute() {
-    if (!executed) {
-      run();
-      executed = true;
-    }
-    return this;
-  }
 
+  /**
+   * Override this method to implement the deferred operation.
+   * When the operation is complete be sure to call {@link #setResult} or {@link #setException}
+   */
   protected abstract void run();
 
   private void callHandler() {
