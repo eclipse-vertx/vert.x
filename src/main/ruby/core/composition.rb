@@ -155,8 +155,8 @@ module Nodex
   #
   # @example
   #   comp = Composer.new
-  #   future = comp.parallel(d1)
-  #   comp.series_action{ puts "Result of d1 is #{future.result}" }
+  #   future = comp.series(d1)
+  #   comp.series{ puts "Result of d1 is #{future.result}" }
   #   comp.execute
   #
   # In the above example, when {#execute} is invoked d1 will be executed. When d1 completes the result of the action
@@ -174,7 +174,7 @@ module Nodex
     # @param [Deferred] deferred - The [Deferred] to add. This can be nil if a block is specified instead.
     # @param [Block] block - An arbitrary block to execute with the same semantics of the [Deferred].
     # @return [Future] A Future representing the future result of the Deferred.
-    def parallel(deferred, &block)
+    def parallel(deferred = nil, &block)
       if deferred != nil
         check_deferred(deferred)
         @j_comp.parallel(deferred._to_j_del)
@@ -182,7 +182,7 @@ module Nodex
       elsif block != nil
         j_def = TheAction.new(block)
         @j_comp.parallel(j_def)
-        j_def.block_execution
+        #j_def.block_execution
       end
     end
 
@@ -191,7 +191,7 @@ module Nodex
     # @param [Deferred] deferred - The [Deferred] to add. This can be nil if a block is specified instead.
     # @param [Block] block - An arbitrary block to execute with the same semantics of the [Deferred].
     # @return [Future] A Future representing the future result of the Deferred.
-    def series(deferred, &block)
+    def series(deferred = nil, &block)
       if deferred != nil
         check_deferred(deferred)
         @j_comp.series(deferred._to_j_del)
@@ -199,7 +199,7 @@ module Nodex
       elsif block != nil
         j_def = TheAction.new(block)
         @j_comp.series(j_def)
-        j_def.block_execution
+        #j_def.block_execution
       end
     end
 
@@ -224,21 +224,14 @@ module Nodex
     class TheAction < org.nodex.java.core.Action
 
       def initialize(block)
+        super()
         @block = block
       end
 
       def action
-        block.call
+        @block.call
       end
 
-      def execute
-        super() if !@block_execution
-      end
-
-      def block_execution
-        @block_execution = true
-        self
-      end
     end
   end
 

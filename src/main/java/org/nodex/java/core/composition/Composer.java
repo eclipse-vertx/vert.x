@@ -128,11 +128,11 @@ public class Composer {
    */
   public void execute() {
     if (!executed) {
+      executed = true;
       if (!batches.isEmpty()) {
         WaitingBatch batch = batches.get(0);
         batch.execute();
       }
-      executed = true;
     }
   }
 
@@ -140,7 +140,7 @@ public class Composer {
 
     Set<Deferred<?>> futures = new HashSet<>();
     int pending;
-    boolean executed;
+    boolean batchExecuted;
 
     void addFuture(Deferred<?> future) {
       if (!future.complete()) {
@@ -157,8 +157,8 @@ public class Composer {
     }
 
     void execute() {
-      if (!executed) {
-        executed = true;
+      if (!batchExecuted) {
+        batchExecuted = true;
         for (Deferred<?> future: futures) {
           future.execute();
         }
