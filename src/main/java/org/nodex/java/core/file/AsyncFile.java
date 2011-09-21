@@ -80,6 +80,11 @@ public class AsyncFile {
     this.th = th;
   }
 
+  /**
+   * The same as {@link #close} but the close does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> closeDeferred() {
     check();
 
@@ -114,13 +119,19 @@ public class AsyncFile {
   }
 
   /**
-   * Close the file.<p>
-   * The actual close will happen asynchronously. This method must be called using the same event loop the file was opened from.
+   * Close the file asynchronously.<p>
+   * This method must be called using the same event loop the file was opened from.
+   * @return a Future representing the future result of closing the file.
    */
   public Future<Void> close() {
     return closeDeferred().execute();
   }
 
+  /**
+   * The same as {@link #write} but the write does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> writeDeferred(Buffer buffer, int position) {
     check();
     ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
@@ -128,16 +139,23 @@ public class AsyncFile {
   }
 
   /**
-   * Write a {@link Buffer} to the file at position {@code position} in the file. If {@code position} lies outside of the current size
+   * Write a {@link Buffer} to the file at position {@code position} in the file, asynchronously.
+   * If {@code position} lies outside of the current size
    * of the file, the file will be enlarged to encompass it.<p>
-   * The actual write will happen asynchronously, when multiple writes are invoked on the same file
+   * When multiple writes are invoked on the same file
    * there are no guarantees as to order in which those writes actually occur.<p>
    * This method must be called using the same event loop the file was opened from.
+   * @return a Future representing the future result of the write.
    */
   public Future<Void> write(Buffer buffer, int position) {
     return writeDeferred(buffer, position).execute();
   }
 
+  /**
+   * The same as {@link #read} but the read does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
@@ -145,14 +163,16 @@ public class AsyncFile {
   }
 
   /**
-   * Reads {@code length} bytes of data from the file at position {@code position} in the file. The read data will be written into the
+   * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
+   * The read data will be written into the
    * specified {@code Buffer buffer} at position {@code offset}.<p>
    * {@code position + length} must lie within the confines of the file.<p>
-   * The actual read will happen asynchronously. When multiple reads are invoked on the same file
+   * When multiple reads are invoked on the same file
    * there are no guarantees as to order in which those reads actually occur.<p>
    * This method must be called using the same event loop the file was opened from.
+   * @return a Future representing the future result of the write.
    */
-  public Deferred<Buffer> read(Buffer buffer, int offset, int position, int length) {
+  public Future<Buffer> read(Buffer buffer, int offset, int position, int length) {
     return readDeferred(buffer, offset, position, length).execute();
   }
 
@@ -179,7 +199,7 @@ public class AsyncFile {
           deferred.execute();
           deferred.handler(new CompletionHandler<Void>() {
 
-            public void handle(Deferred<Void> deferred) {
+            public void handle(Future<Void> deferred) {
               if (deferred.succeeded()) {
                 checkContext();
                 checkDrained();
@@ -255,11 +275,11 @@ public class AsyncFile {
           if (!readInProgress) {
             readInProgress = true;
             Buffer buff = Buffer.create(BUFFER_SIZE);
-            Deferred<Buffer> deferred = read(buff, 0, pos, BUFFER_SIZE);
+            Future<Buffer> deferred = read(buff, 0, pos, BUFFER_SIZE);
 
             deferred.handler(new CompletionHandler<Buffer>() {
 
-              public void handle(Deferred<Buffer> deferred) {
+              public void handle(Future<Buffer> deferred) {
                 if (deferred.succeeded()) {
                   readInProgress = false;
                   Buffer buffer = deferred.result();
@@ -341,6 +361,11 @@ public class AsyncFile {
     return readStream;
   }
 
+  /**
+   * The same as {@link #flush} but the flush does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
   public Deferred<Void> flushDeferred() {
     checkClosed();
     checkContext();
@@ -355,7 +380,8 @@ public class AsyncFile {
   /**
    * Flush any writes made to this file to underlying persistent storage.<p>
    * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
-   * The actual flush will happen asynchronously.<p>
+   * The actual flush will happen asynchronously.
+   * @return a Future representing the future result of the write.
    */
   public Future<Void> flush() {
     return flushDeferred().execute();

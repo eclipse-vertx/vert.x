@@ -18,9 +18,20 @@ package org.nodex.java.core;
 
 
 /**
+ * <p>Represents something that hasn't happened yet, but will occur when the {@link #execute} method is called.</p>
+ * <p>Once it has been executed it behaves identically to a {@link Future}.</p>
+ * <p>Instances of Deferred can represent all kinds of deferred operations, e.g. copying a file or getting a value from
+ * a Redis server. Since the actual execution of the action is deferred until the execute method is called, it allows
+ * multiple instances of Deferred to be composed together into more complex control flows, e.g. using the {@link org.nodex.java.core.composition.Composer} class.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Deferred<T> extends Future<T> {
 
+  /**
+   * Execute the deferred operation. If the Deferred has already been executed the call will be ignored.
+   * Once the deferred has been executed it behaves like a {@link Future}.
+   * @return a reference to this
+   */
   Deferred<T> execute();
 }

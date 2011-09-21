@@ -17,7 +17,9 @@
 package org.nodex.tests.core.file;
 
 import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
+import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.file.AsyncFile;
@@ -25,8 +27,6 @@ import org.nodex.java.core.file.FileProps;
 import org.nodex.java.core.file.FileSystem;
 import org.nodex.java.core.file.FileSystemException;
 import org.nodex.java.core.internal.NodexInternal;
-import org.nodex.java.core.Deferred;
-import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.streams.Pump;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
@@ -37,7 +37,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -205,7 +204,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -324,7 +323,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         FileSystem.instance.move(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target).handler(new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -367,14 +366,14 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen).handler(
-          new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
-            if (completion.failed()) {
-              exception.set(completion.exception());
-            }
-            latch.countDown();
-          }
-        });
+            new CompletionHandler<Void>() {
+              public void handle(Future<Void> completion) {
+                if (completion.failed()) {
+                  exception.set(completion.exception());
+                }
+                latch.countDown();
+              }
+            });
       }
     });
     return exception.get();
@@ -452,7 +451,7 @@ public class FileSystemTest extends TestBase {
       public void run() {
 
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -550,7 +549,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
-          public void handle(Deferred<FileProps> completion) {
+          public void handle(Future<FileProps> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             } else {
@@ -601,7 +600,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -637,7 +636,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -668,7 +667,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String> compl = new CompletionHandler<String>() {
-          public void handle(Deferred<String> completion) {
+          public void handle(Future<String> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             } else {
@@ -754,7 +753,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -831,7 +830,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -917,7 +916,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<String[]> compl = new CompletionHandler<String[]>() {
-          public void handle(Deferred<String[]> completion) {
+          public void handle(Future<String[]> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             } else {
@@ -954,7 +953,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Buffer> compl = new CompletionHandler<Buffer>() {
-          public void handle(Deferred<Buffer> completion) {
+          public void handle(Future<Buffer> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             } else {
@@ -973,37 +972,6 @@ public class FileSystemTest extends TestBase {
   }
 
   @Test
-  public void testReadFileAsString() throws Exception {
-    final String content = Utils.randomAlphaString(1000);
-    final String fileName = "some-file.dat";
-    createFile(fileName, content.getBytes("UTF-8"));
-
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Exception> exception = new AtomicReference<>();
-    final AtomicReference<String> res = new AtomicReference<>();
-
-    run(latch, new Runnable() {
-      public void run() {
-        CompletionHandler<String> compl = new CompletionHandler<String>() {
-          public void handle(Deferred<String> completion) {
-            if (!completion.succeeded()) {
-              exception.set(completion.exception());
-            } else {
-              res.set(completion.result());
-            }
-            latch.countDown();
-          }
-        };
-        FileSystem.instance.readFileAsString(TEST_DIR + pathSep + fileName, "UTF-8").handler(compl);
-      }
-    });
-
-    azzert(exception.get() == null);
-    azzert(content.equals(res.get()));
-    throwAssertions();
-  }
-
-  @Test
   public void testWriteFile() throws Exception {
     byte[] content = Utils.generateRandomByteArray(1000);
     final Buffer buff = Buffer.create(content);
@@ -1016,7 +984,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (!completion.succeeded()) {
               exception.set(completion.exception());
             }
@@ -1035,35 +1003,6 @@ public class FileSystemTest extends TestBase {
     throwAssertions();
   }
 
-  @Test
-  public void testWriteStringToFile() throws Exception {
-    final String content = Utils.randomAlphaString(10);
-    final String fileName = "some-file.dat";
-
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Exception> exception = new AtomicReference<>();
-
-    run(latch, new Runnable() {
-      public void run() {
-        CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
-            if (!completion.succeeded()) {
-              exception.set(completion.exception());
-            }
-            latch.countDown();
-          }
-        };
-        FileSystem.instance.writeStringToFile(TEST_DIR + pathSep + fileName, content, "UTF-8").handler(compl);
-      }
-    });
-
-    azzert(exception.get() == null);
-    azzert(fileExists(fileName));
-    byte[] readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-    String readStr = new String(readBytes, Charset.forName("UTF-8"));
-    azzert(content.equals(readStr));
-    throwAssertions();
-  }
 
   @Test
   public void testWriteAsync() throws Exception {
@@ -1087,7 +1026,7 @@ public class FileSystemTest extends TestBase {
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Deferred<AsyncFile> completion) {
+          public void handle(Future<AsyncFile> completion) {
             if (completion.succeeded()) {
               for (int i = 0; i < chunks; i++) {
 
@@ -1096,7 +1035,7 @@ public class FileSystemTest extends TestBase {
 
                 completion.result().write(chunk, i * chunkSize).handler(new CompletionHandler<Void>() {
 
-                  public void handle(Deferred<Void> completion) {
+                  public void handle(Future<Void> completion) {
                     if (completion.succeeded()) {
                       latch.countDown();
                     } else {
@@ -1143,13 +1082,13 @@ public class FileSystemTest extends TestBase {
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Deferred<AsyncFile> completion) {
+          public void handle(Future<AsyncFile> completion) {
             if (completion.succeeded()) {
               final Buffer buff = Buffer.create(chunks * chunkSize);
               final AtomicInteger reads = new AtomicInteger(0);
               for (int i = 0; i < chunks; i++) {
                 completion.result().read(buff, i * chunkSize, i * chunkSize, chunkSize).handler(new CompletionHandler<Buffer>() {
-                  public void handle(Deferred<Buffer> completion) {
+                  public void handle(Future<Buffer> completion) {
                     if (completion.succeeded()) {
                       if (reads.incrementAndGet() == chunks) {
                         azzert(Utils.buffersEqual(expected, buff));
@@ -1195,7 +1134,7 @@ public class FileSystemTest extends TestBase {
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Deferred<AsyncFile> completion) {
+          public void handle(Future<AsyncFile> completion) {
             if (completion.succeeded()) {
               WriteStream ws = completion.result().getWriteStream();
 
@@ -1215,7 +1154,7 @@ public class FileSystemTest extends TestBase {
               }
 
               completion.result().close().handler(new CompletionHandler<Void>() {
-                public void handle(Deferred<Void> completion) {
+                public void handle(Future<Void> completion) {
                   if (completion.failed()) {
                     completion.exception().printStackTrace();
                     exception.set(completion.exception());
@@ -1258,7 +1197,7 @@ public class FileSystemTest extends TestBase {
       public void run() {
         FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Deferred<AsyncFile> completion) {
+          public void handle(Future<AsyncFile> completion) {
             if (completion.succeeded()) {
               ReadStream rs = completion.result().getReadStream();
 
@@ -1321,14 +1260,14 @@ public class FileSystemTest extends TestBase {
         // Open file for reading
         FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
 
-          public void handle(Deferred<AsyncFile> completion) {
+          public void handle(Future<AsyncFile> completion) {
             if (completion.succeeded()) {
               final ReadStream rs = completion.result().getReadStream();
 
               //Open file for writing
               FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true).handler(new CompletionHandler<AsyncFile>() {
 
-                public void handle(final Deferred<AsyncFile> completion) {
+                public void handle(final Future<AsyncFile> completion) {
                   if (completion.succeeded()) {
                     WriteStream ws = completion.result().getWriteStream();
 
@@ -1340,7 +1279,7 @@ public class FileSystemTest extends TestBase {
                       public void handle() {
                         completion.result().close().handler(new CompletionHandler<Void>() {
 
-                          public void handle(Deferred<Void> completion) {
+                          public void handle(Future<Void> completion) {
                             if (completion.failed()) {
                               exception.set(completion.exception());
                               completion.exception().printStackTrace();
@@ -1393,7 +1332,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler compl = new CompletionHandler<Void>() {
-          public void handle(Deferred<Void> completion) {
+          public void handle(Future<Void> completion) {
             if (completion.failed()) {
               exception.set(completion.exception());
             }
@@ -1428,7 +1367,7 @@ public class FileSystemTest extends TestBase {
     run(latch, new Runnable() {
       public void run() {
         CompletionHandler<Boolean> compl = new CompletionHandler<Boolean>() {
-          public void handle(Deferred<Boolean> completion) {
+          public void handle(Future<Boolean> completion) {
             if (completion.succeeded()) {
               ares.set(completion.result());
             } else {

@@ -16,7 +16,8 @@
 
 package org.nodex.java.examples.upload;
 
-import org.nodex.java.core.Deferred;
+import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.SimpleHandler;
@@ -24,7 +25,6 @@ import org.nodex.java.core.file.AsyncFile;
 import org.nodex.java.core.file.FileSystem;
 import org.nodex.java.core.http.HttpServer;
 import org.nodex.java.core.http.HttpServerRequest;
-import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.streams.Pump;
 
 import java.util.UUID;
@@ -48,14 +48,14 @@ public class UploadServer extends NodexMain {
         final String filename = "upload/file-" + UUID.randomUUID().toString() + ".upload";
 
         FileSystem.instance.open(filename).handler(new CompletionHandler<AsyncFile>() {
-          public void handle(Deferred<AsyncFile> deferred) {
+          public void handle(Future<AsyncFile> deferred) {
             final AsyncFile file = deferred.result();
             final Pump pump = new Pump(req, file.getWriteStream());
             final long start = System.currentTimeMillis();
             req.endHandler(new SimpleHandler() {
               public void handle() {
                 file.close().handler(new CompletionHandler<Void>() {
-                  public void handle(Deferred<Void> deferred) {
+                  public void handle(Future<Void> deferred) {
                     if (deferred.succeeded()) {
                       req.response.end();
                       long end = System.currentTimeMillis();

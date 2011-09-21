@@ -22,13 +22,14 @@ class ScratchTest < Test::Unit::TestCase
     puts "f2: #{f2.wibble}"
 
     class << f2
-      remove_method :wibble
+      Object.remove_method :wibble
     end
 
     puts "f1: #{f1.wibble}"
     puts "f2: #{f2.wibble}"
 
 
+    raise "goo"
 
   end
 

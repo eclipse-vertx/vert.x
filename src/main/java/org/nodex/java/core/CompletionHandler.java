@@ -17,7 +17,9 @@
 package org.nodex.java.core;
 
 /**
+ * <p>A handler that will be called when a {@link Future} completes or fails.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface CompletionHandler<T> extends Handler<Deferred<T>> {
+public interface CompletionHandler<T> extends Handler<Future<T>> {
 }

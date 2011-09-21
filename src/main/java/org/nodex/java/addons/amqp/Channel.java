@@ -24,7 +24,6 @@ import org.nodex.java.core.internal.NodexInternal;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Channel {

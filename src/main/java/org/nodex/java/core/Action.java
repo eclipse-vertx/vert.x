@@ -17,6 +17,11 @@
 package org.nodex.java.core;
 
 /**
+ * <p>An Implementation of {@link Deferred} which can be used to implement custom synchronous actions.</p>
+ *
+ * <p>If you wish to create an instance of Deferred which computes a result immediately without blocking, then
+ * this class can be subclassed and the action method implemented.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class Action<T> extends SimpleDeferred<T> {
@@ -30,5 +35,10 @@ public abstract class Action<T> extends SimpleDeferred<T> {
     }
   }
 
+  /**
+   * Implement this method in a subclass to implement the non blocking synchronous action and return the result as the
+   * return value of the method.
+   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link BlockingTask} for that.
+   */
   protected abstract T action() throws Exception;
 }
