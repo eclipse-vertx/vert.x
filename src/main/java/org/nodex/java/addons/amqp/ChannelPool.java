@@ -16,7 +16,7 @@
 
 package org.nodex.java.addons.amqp;
 
-import org.nodex.java.core.composition.Composable;
+//import org.nodex.java.core.composition.Composable;
 
 public class ChannelPool {
   public static ChannelPool createPool() {
@@ -63,30 +63,30 @@ public class ChannelPool {
 
   //FIXME - for demo we just have one connection
   private volatile AmqpConnection connection;
-  private Composable connected = new Composable();
+ // private Composable connected = new Composable();
 
-  private synchronized void createConnection() {
-    if (connection == null) {
-      client.connect(new AmqpConnectHandler() {
-        public void onConnect(AmqpConnection conn) {
-          connection = conn;
-          connected.complete();
-        }
-      });
-    }
-  }
-
-  public void getChannel(final ChannelHandler channelHandler) {
-    if (connection == null) createConnection();
-    connected.onComplete(new Runnable() {
-      public void run() {
-        //FIXME - for the demo we just get a new channel each time
-        //Also this is broken since if more than one call to getChannel comes in before connection is created
-        //previous requestHandler will be overwritten
-        connection.createChannel(channelHandler);
-      }
-    });
-  }
+//  private synchronized void createConnection() {
+//    if (connection == null) {
+//      client.connect(new AmqpConnectHandler() {
+//        public void onConnect(AmqpConnection conn) {
+//          connection = conn;
+//          connected.complete();
+//        }
+//      });
+//    }
+//  }
+//
+//  public void getChannel(final ChannelHandler channelHandler) {
+//    if (connection == null) createConnection();
+//    connected.onComplete(new Runnable() {
+//      public void run() {
+//        //FIXME - for the demo we just get a new channel each time
+//        //Also this is broken since if more than one call to getChannel comes in before connection is created
+//        //previous requestHandler will be overwritten
+//        connection.createChannel(channelHandler);
+//      }
+//    });
+//  }
 
   public void returnChannel(Channel channel) {
     channel.close(null);

@@ -16,8 +16,8 @@
 
 package org.nodex.java.examples.upload;
 
-import org.nodex.java.core.Completion;
 import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Deferred;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.NodexMain;
 import org.nodex.java.core.SimpleHandler;
@@ -59,22 +59,22 @@ public class UploadClient extends NodexMain {
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);
 
-    FileSystem.instance.open(filename, new CompletionHandler<AsyncFile>() {
-      public void handle(Completion<AsyncFile> completion) {
-        final AsyncFile file = completion.result;
+    FileSystem.instance.open(filename).handler(new CompletionHandler<AsyncFile>() {
+      public void handle(Deferred<AsyncFile> completion) {
+        final AsyncFile file = completion.result();
         Pump pump = new Pump(file.getReadStream(), req);
         pump.start();
 
         file.getReadStream().endHandler(new SimpleHandler() {
           public void handle() {
 
-            file.close(new CompletionHandler<Void>() {
-              public void handle(Completion<Void> completion) {
+            file.close().handler(new CompletionHandler<Void>() {
+              public void handle(Deferred<Void> completion) {
                 if (completion.succeeded()) {
                   req.end();
                   System.out.println("Sent request");
                 } else {
-                  completion.exception.printStackTrace(System.err);
+                  completion.exception().printStackTrace(System.err);
                 }
               }
             });

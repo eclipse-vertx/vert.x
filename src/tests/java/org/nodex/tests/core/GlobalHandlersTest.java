@@ -28,12 +28,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ActorTest extends TestBase {
+public class GlobalHandlersTest extends TestBase {
 
   private NodexInternal nodex = NodexInternal.instance;
 
   @Test
-  public void testActor() throws Exception {
+  public void testGlobalHandlers() throws Exception {
 
     final String message = "Hello actor";
 

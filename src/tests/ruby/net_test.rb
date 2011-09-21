@@ -53,11 +53,11 @@ class NetTest < Test::Unit::TestCase
         }
 
         socket.drain_handler {
-          puts "drained\n"
+          #puts "drained\n"
         }
 
         socket.end_handler {
-          puts "end\n"
+          #puts "end\n"
         }
 
         (1..sends).each { |i|
@@ -125,15 +125,15 @@ class NetTest < Test::Unit::TestCase
         #Just call the methods. Real testing is done in java tests
 
         socket.drain_handler {
-          puts "drained\n"
+          #puts "drained\n"
         }
 
         socket.end_handler {
-          puts "end\n"
+          #puts "end\n"
         }
 
         socket.closed_handler {
-          puts "closed\n"
+          #puts "closed\n"
         }
 
         socket.pause

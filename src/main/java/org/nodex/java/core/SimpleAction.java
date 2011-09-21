@@ -19,5 +19,13 @@ package org.nodex.java.core;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface CompletionHandler<T> extends Handler<Deferred<T>> {
+public abstract class SimpleAction extends Action<Void> {
+
+  @Override
+  protected Void action() throws Exception {
+    act();
+    return null;
+  }
+
+  protected abstract void act();
 }

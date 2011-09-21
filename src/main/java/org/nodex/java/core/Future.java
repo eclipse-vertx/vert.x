@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package org.nodex.java.core.composition;
+package org.nodex.java.core;
 
-public class Composable {
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public interface Future<T> {
 
-  private Runnable onComplete;
-  private boolean complete;
+  T result();
 
-  public synchronized void onComplete(Runnable completion) {
-    this.onComplete = completion;
-    if (complete) {
-      completion.run();
-    }
-  }
+  Exception exception();
 
-  public synchronized void complete() {
-    if (onComplete != null) {
-      onComplete.run();
-    }
-    complete = true;
-  }
+  boolean complete();
 
-  public void execute() {
-  }
+  boolean succeeded();
+
+  boolean failed();
+
+  void handler(CompletionHandler<T> handler);
 }
