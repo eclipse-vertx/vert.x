@@ -69,9 +69,7 @@ module Nodex
     # it will be called when the operation completes or fails, passing in a reference to self.
     def handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.handler{ |j_def|
-        hndlr.call(self)
-      }
+      @j_del.handler{ |j_def| hndlr.call(self) }
     end
 
     # @private

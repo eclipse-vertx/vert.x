@@ -15,16 +15,16 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
-  NetClient.new.connect(8080, "localhost") { |socket|
+Nodex::go do
+  NetClient.new.connect(8080, "localhost") do |socket|
     socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
-    (1..10).each { |i|
+    (1..10).each do |i|
       str = "hello #{i}\n"
       puts "Echo client sending #{str}"
       socket.write_buffer(Buffer.create_from_str(str))
-    }
-  }
-}
+    end
+  end
+end
 
 puts "hit enter to exit"
 STDIN.gets

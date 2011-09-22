@@ -14,17 +14,17 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   client = HttpClient.new
   client.port = 8080
   client.host = "localhost"
-  client.get_now("/") { |resp|
+  client.get_now("/") do |resp|
     puts "Got response #{resp.status_code}"
-    resp.data_handler { |buffer|
+    resp.data_handler do |buffer|
       puts "Got data #{buffer}"
-    }
-  }
-}
+    end
+  end
+end
 
 puts "hit enter to exit"
 STDIN.gets

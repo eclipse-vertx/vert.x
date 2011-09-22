@@ -15,17 +15,17 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   server = HttpServer.new
   server.ssl = true
   server.key_store_path = "server-keystore.jks"
   server.key_store_password = "wibble"
 
-  server.request_handler { |req|
+  server.request_handler do |req|
     req.response.chunked = true
     req.response.write_str("<html><body><h1>Hello from Node.x over HTTPS!</h1></body></html>", "UTF-8").end
-  }.listen(4443)
-}
+  end.listen(4443)
+end
 
 puts "hit enter to exit"
 STDIN.gets

@@ -15,14 +15,14 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   server = NetServer.new
   server.ssl = true
   server.key_store_path="server-keystore.jks"
   server.key_store_password="wibble"
   server.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }
   server.listen(4443)
-}
+end
 puts "hit enter to exit"
 STDIN.gets
 

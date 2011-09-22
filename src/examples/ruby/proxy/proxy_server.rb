@@ -15,34 +15,34 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   client = HttpClient.new
   client.port = 8282
   client.host = "localhost"
 
-  HttpServer.new.request_handler { |req|
+  HttpServer.new.request_handler do |req|
     puts "Proxying request: #{req.uri}"
 
-    c_req = client.request(req.method, req.uri) { |c_res|
+    c_req = client.request(req.method, req.uri) do |c_res|
       puts "Proxying response: #{c_res.status_code}"
       req.response.status_code = c_res.status_code
       req.response.put_all_headers(c_res.headers)
-      c_res.data_handler { |data|
+      c_res.data_handler do |data|
         puts "Proxying response body: #{data}"
         req.response.write_buffer(data);
-      }
+      end
       c_res.end_handler { req.response.end }
-    }
+    end
 
     c_req.put_all_headers(req.headers)
-    req.data_handler { |data|
+    req.data_handler do |data|
       puts "Proxying request body #{data}"
       c_req.write_buffer(data)
-    }
+    end
     req.end_handler { c_req.end }
 
-  }.listen(8080)
-}
+  end.listen(8080)
+end
 
 puts "hit enter to exit"
 STDIN.gets
