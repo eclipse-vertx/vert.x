@@ -19,7 +19,7 @@ package org.nodex.tests.core.file;
 import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
-import org.nodex.java.core.SimpleDeferred;
+import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.file.AsyncFile;
@@ -305,16 +305,6 @@ public class FileSystemTest extends TestBase {
     azzert(fileExists(target + pathSep + dir2 + file3));
 
     throwAssertions();
-  }
-
-  abstract class TestDeferred<T> extends SimpleDeferred<T> {
-    public void setResult(T res) {
-      super.setResult(res);
-    }
-
-    public void setException(Exception e) {
-      super.setException(e);
-    }
   }
 
   private Exception testMove(final String source, final String target) throws Exception {

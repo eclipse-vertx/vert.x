@@ -16,13 +16,13 @@
 
 package org.nodex.java.core.file;
 
-import org.nodex.java.core.BlockingTask;
+import org.nodex.java.core.BlockingAction;
 import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.Deferred;
+import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
-import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.streams.ReadStream;
@@ -90,7 +90,7 @@ public class AsyncFile {
 
     closed = true;
 
-    Deferred<Void> deferred = new SimpleDeferred<Void>() {
+    Deferred<Void> deferred = new DeferredAction<Void>() {
 
       @Override
       public Deferred<Void> execute() {
@@ -369,7 +369,7 @@ public class AsyncFile {
   public Deferred<Void> flushDeferred() {
     checkClosed();
     checkContext();
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         ch.force(false);
         return null;
@@ -390,7 +390,7 @@ public class AsyncFile {
   private Deferred<Void> doWrite(final ByteBuffer buff, final int position) {
     writesOutstanding += buff.limit();
 
-    SimpleDeferred<Void> sd = new MyDeferred<Void>() {
+    DeferredAction<Void> sd = new DeferredAction<Void>() {
       public void run() {
         doWrite(buff, position, this);
       }
@@ -399,18 +399,7 @@ public class AsyncFile {
     return sd;
   }
 
-  private static abstract class MyDeferred<Void> extends SimpleDeferred<Void> {
-
-    public void setResult(Void result) {
-      super.setResult(result);
-    }
-
-    public void setException(Exception e) {
-      super.setException(e);
-    }
-  }
-
-  private void doWrite(final ByteBuffer buff, final int position, final MyDeferred<Void> deferred) {
+  private void doWrite(final ByteBuffer buff, final int position, final DeferredAction<Void> deferred) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -450,7 +439,7 @@ public class AsyncFile {
   }
 
   private Deferred<Buffer> doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position) {
-    SimpleDeferred<Buffer> sd = new MyDeferred<Buffer>() {
+    DeferredAction<Buffer> sd = new DeferredAction<Buffer>() {
       public void run() {
         doRead(writeBuff, offset, buff, position, this);
       }
@@ -459,7 +448,7 @@ public class AsyncFile {
     return sd;
   }
 
-  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final MyDeferred<Buffer> deferred) {
+  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final DeferredAction<Buffer> deferred) {
 
 
 

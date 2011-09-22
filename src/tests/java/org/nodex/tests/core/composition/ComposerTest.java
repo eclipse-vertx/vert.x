@@ -16,7 +16,7 @@
 
 package org.nodex.tests.core.composition;
 
-import org.nodex.java.core.SimpleDeferred;
+import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.composition.Composer;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -199,7 +199,7 @@ public class ComposerTest extends TestBase {
     }
   }
 
-  class MyDeferred extends SimpleDeferred<Void> {
+  class MyDeferred extends DeferredAction<Void> {
 
     @Override
     protected void run() {

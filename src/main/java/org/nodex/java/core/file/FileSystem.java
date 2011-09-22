@@ -16,7 +16,7 @@
 
 package org.nodex.java.core.file;
 
-import org.nodex.java.core.BlockingTask;
+import org.nodex.java.core.BlockingAction;
 import org.nodex.java.core.Deferred;
 import org.nodex.java.core.Future;
 import org.nodex.java.core.Nodex;
@@ -87,7 +87,7 @@ public class FileSystem {
   public Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         try {
           if (recursive) {
@@ -144,7 +144,7 @@ public class FileSystem {
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         try {
           Files.move(source, target);
@@ -174,7 +174,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> truncateDeferred(final String path, final long len) {
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         if (len < 0) {
           throw new FileSystemException("Cannot truncate file to size < 0");
@@ -233,7 +233,7 @@ public class FileSystem {
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         try {
           if (dirPermissions != null) {
@@ -310,7 +310,7 @@ public class FileSystem {
 
   private Deferred<FileProps> props(String path, final boolean followLinks) {
     final Path target = Paths.get(path);
-    return new BlockingTask<FileProps>() {
+    return new BlockingAction<FileProps>() {
       public FileProps action() throws Exception {
         try {
           BasicFileAttributes attrs;
@@ -364,7 +364,7 @@ public class FileSystem {
   private Deferred<Void> link(String link, String existing, final boolean symbolic) {
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         try {
           if (symbolic) {
@@ -404,7 +404,7 @@ public class FileSystem {
    */
   public Deferred<String> readSymlinkDeferred(String link) {
     final Path source = Paths.get(link);
-    return new BlockingTask<String>() {
+    return new BlockingAction<String>() {
       public String action() throws Exception {
         try {
           return Files.readSymbolicLink(source).toString();
@@ -447,7 +447,7 @@ public class FileSystem {
    */
   public Deferred<Void> deleteDeferred(String path, final boolean recursive) {
     final Path source = Paths.get(path);
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         if (recursive) {
           Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
@@ -553,7 +553,7 @@ public class FileSystem {
   public Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         try {
           if (createParents) {
@@ -616,7 +616,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<String[]> readDirDeferred(final String path, final String filter) {
-    return new BlockingTask<String[]>() {
+    return new BlockingAction<String[]>() {
       public String[] action() throws Exception {
         File file = new File(path);
         if (!file.exists()) {
@@ -668,7 +668,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Buffer> readFileDeferred(final String path) {
-    return new BlockingTask<Buffer>() {
+    return new BlockingAction<Buffer>() {
       public Buffer action() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
@@ -693,7 +693,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         Path target = Paths.get(path);
         Files.write(target, data.getBytes());
@@ -818,7 +818,7 @@ public class FileSystem {
                    final boolean flush) {
     final long contextID = Nodex.instance.getContextID();
     final Thread th = Thread.currentThread();
-    return new BlockingTask<AsyncFile>() {
+    return new BlockingAction<AsyncFile>() {
       public AsyncFile action() throws Exception {
         return doOpen(path, perms, read, write, createNew, flush, contextID, th);
       }
@@ -871,7 +871,7 @@ public class FileSystem {
    */
   public Deferred<Void> createFileDeferred(final String path, final String perms) {
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    return new BlockingTask<Void>() {
+    return new BlockingAction<Void>() {
       public Void action() throws Exception {
         try {
           Path target = Paths.get(path);
@@ -902,7 +902,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Boolean> existsDeferred(final String path) {
-    return new BlockingTask<Boolean>() {
+    return new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
         File file = new File(path);
         return file.exists();
@@ -924,7 +924,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<FileSystemProps> getFSPropsDeferred(final String path) {
-    return new BlockingTask<FileSystemProps>() {
+    return new BlockingAction<FileSystemProps>() {
       public FileSystemProps action() throws Exception {
         Path target = Paths.get(path);
         FileStore fs = Files.getFileStore(target);
