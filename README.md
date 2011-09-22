@@ -2,10 +2,10 @@
 
 ## What is Node.x?
 
-* A general purpose framework that uses an event based style for building highly scalable applications
+* A general purpose asynchronous framework that uses an event based style for building highly scalable applications
 * Runs on the JVM.
-* Everything is asynchronous.
-* Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*. Plus some.
+* Everything is non-blocking.
+* Embraces the style of node.js and extends it to the JVM. Think node.js *on steroids*.
 * Polyglot. The same (or similar) API will be available in multiple languages: Initially Ruby (JRuby),
 Groovy and Java and going ahead... JavaScript (Rhino/Nashorn), Python (Jython), Clojure, Scala etc.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.

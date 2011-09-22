@@ -64,4 +64,31 @@ public class RedisReply {
     this.multiBulkResult = multiBulk;
   }
 
+  public String toString() {
+    StringBuilder sb = new StringBuilder(type.toString()).append(":");
+    switch (type) {
+      case ERROR: {
+        sb.append(error);
+        break;
+      }
+      case ONE_LINE: {
+        sb.append(line);
+        break;
+      }
+      case INTEGER:
+        sb.append(intResult);
+        break;
+      case BULK:
+        sb.append(bulkResult.toString());
+        break;
+      case MULTI_BULK:
+        sb.append(multiBulkResult.length).append(":");
+        for (Buffer buff: multiBulkResult) {
+          sb.append(buff.toString());
+        }
+        break;
+    }
+    return sb.toString();
+  }
+
 }

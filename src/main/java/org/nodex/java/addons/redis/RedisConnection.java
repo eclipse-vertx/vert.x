@@ -17,9 +17,7 @@
 package org.nodex.java.addons.redis;
 
 import org.nodex.java.core.Handler;
-import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
-import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.net.NetSocket;
 
 import java.util.Queue;
@@ -45,11 +43,13 @@ class RedisConnection {
   }
 
   void writeRequest(RedisDeferred<?> deferred, Buffer request) {
+    //System.out.println("Sending redis request on " + System.identityHashCode(this) +" " + request);
     requests.add(deferred);
     socket.write(request);
   }
 
   private void doHandle(RedisReply reply) {
+    System.out.println("Got redis reply: " + reply);
     RedisDeferred<?> deferred = requests.poll();
     if (deferred == null) {
       throw new IllegalStateException("Unsolicited response");

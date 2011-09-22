@@ -19,9 +19,7 @@ package org.nodex.java.addons.redis;
 import org.nodex.java.core.ConnectionPool;
 import org.nodex.java.core.Deferred;
 import org.nodex.java.core.Handler;
-import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
-import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetSocket;
 
@@ -72,6 +70,7 @@ public class RedisClient {
 
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
+  // The commands
   private static final byte[] APPEND_COMMAND = "APPEND".getBytes(UTF8);
   private static final byte[] AUTH_COMMAND = "AUTH".getBytes(UTF8);
   private static final byte[] BGREWRITEAOF_COMMAND = "BGREWRITEAOF".getBytes(UTF8);
@@ -193,20 +192,17 @@ public class RedisClient {
   private static final byte[] ZSCORE_COMMAND = "ZSCORE".getBytes(UTF8);
   private static final byte[] ZUNIONSTORE_COMMAND = "ZUNIONSTORE".getBytes(UTF8);
 
+  // Various keywords used in commands
   private static final byte[] INSERT_BEFORE = "BEFORE".getBytes(UTF8);
   private static final byte[] INSERT_AFTER = "AFTER".getBytes(UTF8);
-
   private static final byte[] LIMIT = "LIMIT".getBytes(UTF8);
-
   private static final byte[] SORT_BY = "BY".getBytes(UTF8);
   private static final byte[] SORT_GET = "GET".getBytes(UTF8);
   private static final byte[] SORT_DESC = "DESC".getBytes(UTF8);
   private static final byte[] SORT_ALPHA = "ALPHA".getBytes(UTF8);
   private static final byte[] SORT_STORE = "STORE".getBytes(UTF8);
-
   private static final byte[] WEIGHTS = "WEIGHTS".getBytes(UTF8);
   private static final byte[] AGGREGRATE = "AGGREGRATE".getBytes(UTF8);
-
   private static final byte[] WITHSCORES = "WITHSCORES".getBytes(UTF8);
 
   private final ConnectionPool<RedisConnection> pool = new ConnectionPool<RedisConnection>() {
@@ -214,12 +210,14 @@ public class RedisClient {
       internalConnect(connectHandler, contextID);
     }
   };
-
+  private final NetClient client = new NetClient();
   private String host = "localhost";
   private int port = 6379;
-  private NetClient client = new NetClient();
   private Handler<Exception> exceptionHandler;
 
+  /**
+   * Create a new RedisClient
+   */
   public RedisClient() {
   }
 
@@ -239,6 +237,11 @@ public class RedisClient {
   public RedisClient setHost(String host) {
     this.host = host;
     return this;
+  }
+
+  public void close() {
+    pool.close();
+    client.close();
   }
 
   /**
