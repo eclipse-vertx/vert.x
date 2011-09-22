@@ -38,6 +38,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.nodex.java.core.ConnectionPool;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleHandler;
@@ -72,10 +73,11 @@ public class HttpClient extends NetClientBase {
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
-  private final Queue<ClientConnection> available = new ConcurrentLinkedQueue<ClientConnection>();
-  private int maxPoolSize = 1;
-  private final AtomicInteger connectionCount = new AtomicInteger(0);
-  private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<Waiter>();
+  private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
+    protected void connect(Handler<ClientConnection> connectHandler, long contextID) {
+      internalConnect(connectHandler, contextID);
+    }
+  };
   private boolean keepAlive = true;
 
   /**
@@ -98,7 +100,7 @@ public class HttpClient extends NetClientBase {
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setMaxPoolSize(int maxConnections) {
-    this.maxPoolSize = maxConnections;
+    pool.setMaxPoolSize(maxConnections);
     return this;
   }
 
@@ -106,7 +108,7 @@ public class HttpClient extends NetClientBase {
    * Returns the maximum number of connections in the pool
    */
   public int getMaxPoolSize() {
-    return maxPoolSize;
+    return pool.getMaxPoolSize();
   }
 
   /**
@@ -299,11 +301,7 @@ public class HttpClient extends NetClientBase {
    * Close the HTTP client. This will cause any pooled HTTP connections to be closed.
    */
   public void close() {
-    available.clear();
-    if (!waiters.isEmpty()) {
-      System.out.println("Warning: Closing HTTP client, but there are " + waiters.size() + " waiting for connections");
-    }
-    waiters.clear();
+    pool.close();
     for (ClientConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
@@ -358,51 +356,20 @@ public class HttpClient extends NetClientBase {
     return (HttpClient)super.setTrafficClass(trafficClass);
   }
 
-  //TODO FIXME - heavyweight synchronization for now FIXME
-  //This will be a contention point
-  //Need to be improved
-
-  synchronized void getConnection(Handler<ClientConnection> handler, long contextID) {
-    ClientConnection conn = available.poll();
-    if (conn != null) {
-      handler.handle(conn);
-    } else {
-      if (connectionCount.get() < maxPoolSize) {
-        if (connectionCount.incrementAndGet() <= maxPoolSize) {
-          //Create new connection
-          connect(handler, contextID);
-          return;
-        } else {
-          connectionCount.decrementAndGet();
-        }
-      }
-      // Add to waiters
-      waiters.add(new Waiter(handler, contextID));
-    }
+  void getConnection(Handler<ClientConnection> handler, long contextID) {
+    pool.getConnection(handler, contextID);
   }
 
-  synchronized void returnConnection(final ClientConnection conn) {
+  void returnConnection(final ClientConnection conn) {
     if (!conn.keepAlive) {
-      //Just close it
+      //Close it
       conn.internalClose();
     } else {
-      //Return it to the pool
-      final Waiter waiter = waiters.poll();
-
-      if (waiter != null) {
-        NodexInternal.instance.executeOnContext(waiter.contextID, new Runnable() {
-          public void run() {
-            NodexInternal.instance.setContextID(waiter.contextID);
-            waiter.handler.handle(conn);
-          }
-        });
-      } else {
-        available.add(conn);
-      }
+      pool.returnConnection(conn);
     }
   }
 
-  private void connect(final Handler<ClientConnection> connectHandler, final long contextID) {
+  private void internalConnect(final Handler<ClientConnection> connectHandler, final long contextID) {
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
@@ -445,14 +412,7 @@ public class HttpClient extends NetClientBase {
                   Thread.currentThread());
               conn.closedHandler(new SimpleHandler() {
                 public void handle() {
-                  if (connectionCount.decrementAndGet() < maxPoolSize) {
-                    //Now the connection count has come down, maybe there is another waiter that can
-                    //create a new connection
-                    Waiter waiter = waiters.poll();
-                    if (waiter != null) {
-                      getConnection(waiter.handler, waiter.contextID);
-                    }
-                  }
+                  pool.connectionClosed();
                 }
               });
               connectionMap.put(ch, conn);

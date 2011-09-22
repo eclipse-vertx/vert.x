@@ -17,10 +17,8 @@
 package org.nodex.tests.addons.redis;
 
 import org.nodex.java.addons.redis.RedisClient;
-import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisException;
 import org.nodex.java.core.Future;
-import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleAction;
 import org.nodex.java.core.buffer.Buffer;
@@ -57,7 +55,7 @@ public class RedisTest extends TestBase {
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private Composer comp;
-  private RedisConnection conn;
+  private RedisClient client;
   private CountDownLatch latch;
 
   // Tests -----------------------------
@@ -77,47 +75,47 @@ public class RedisTest extends TestBase {
   }
 
   public void doTestAppend() {
-    comp.series(conn.set(key1, val1));
-    comp.series(conn.append(key1, val2));
+    comp.series(client.set(key1, val1));
+    comp.series(client.append(key1, val2));
     assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
   }
 
   public void doTestAuth() {
-    Future<Void> res = comp.series(conn.auth(Buffer.create("whatever")));
+    Future<Void> res = comp.series(client.auth(Buffer.create("whatever")));
     assertResult(res, null);
   }
 
   public void doTestBgWriteAOF() {
-    Future<Void> res = comp.series(conn.bgRewriteAOF());
+    Future<Void> res = comp.series(client.bgRewriteAOF());
     assertResult(res, null);
   }
 
   public void doBGSave() {
-    Future<Void> res = comp.series(conn.bgSave());
+    Future<Void> res = comp.series(client.bgSave());
     assertResult(res, null);
   }
 
   public void doBLPop() {
-    final Future<Integer> res1 = comp.series(conn.lPush(keyl1, val1));
-    final Future<Integer> res2 = comp.series(conn.lPush(keyl2, val2));
-    final Future<Buffer[]> res = comp.series(conn.bLPop(10, keyl1, keyl2));
+    final Future<Integer> res1 = comp.series(client.lPush(keyl1, val1));
+    final Future<Integer> res2 = comp.series(client.lPush(keyl2, val2));
+    final Future<Buffer[]> res = comp.series(client.bLPop(10, keyl1, keyl2));
     assertResult(res1, 1);
     assertResult(res2, 1);
     assertResult(res, new Buffer[] { keyl1, val1});
   }
 
   public void doBRPop() {
-    final Future<Integer> res1 = comp.series(conn.lPush(keyl1, val1));
-    final Future<Integer> res2 = comp.series(conn.lPush(keyl2, val2));
-    final Future<Buffer[]> res = comp.series(conn.bRPop(10, keyl1, keyl2));
+    final Future<Integer> res1 = comp.series(client.lPush(keyl1, val1));
+    final Future<Integer> res2 = comp.series(client.lPush(keyl2, val2));
+    final Future<Buffer[]> res = comp.series(client.bRPop(10, keyl1, keyl2));
     assertResult(res1, 1);
     assertResult(res2, 1);
     assertResult(res, new Buffer[] { keyl1, val1});
   }
 
   public void doBRPopLPush() {
-    final Future<Integer> res1 = comp.series(conn.lPush(keyl1, val1));
-    final Future<Buffer> res = comp.series(conn.bRPopLPush(keyl1, keyl2, 10));
+    final Future<Integer> res1 = comp.series(client.lPush(keyl1, val1));
+    final Future<Buffer> res = comp.series(client.bRPopLPush(keyl1, keyl2, 10));
     assertResult(res1, 1);
     assertResult(res, val1);
   }
@@ -137,7 +135,7 @@ public class RedisTest extends TestBase {
   }
 
   private void clearKeys() {
-    comp.series(conn.flushDB());
+    comp.series(client.flushDB());
   }
 
   private void assertException(final Future<?> future, final String error) {
@@ -176,9 +174,8 @@ public class RedisTest extends TestBase {
     });
   }
 
-
   private void assertKey(Buffer key, final Buffer value) {
-    final Future<Buffer> res = comp.series(conn.get(key));
+    final Future<Buffer> res = comp.series(client.get(key));
     comp.series(new TestAction() {
       protected void doAct() {
         System.out.println("Val is " + res.result());
@@ -190,7 +187,6 @@ public class RedisTest extends TestBase {
   private void done() {
     comp.series(new TestAction() {
       protected void doAct() {
-        conn.close();
         latch.countDown();
       }
     });
@@ -198,22 +194,16 @@ public class RedisTest extends TestBase {
   }
 
   private void runTest(final Method method) throws Exception {
-
     Nodex.instance.go(new Runnable() {
       public void run() {
-        RedisClient client = new RedisClient();
-        client.connect("localhost", new Handler<RedisConnection>() {
-          public void handle(RedisConnection theConn) {
-            try {
-              conn = theConn;
-              clearKeys();
-              method.invoke(RedisTest.this);
-              done();
-            } catch (Exception e) {
-              azzert(false, "Exception thrown " + e.getMessage());
-            }
-          }
-        });
+        try {
+          client = new RedisClient();
+          clearKeys();
+          method.invoke(RedisTest.this);
+          done();
+        } catch (Exception e) {
+          azzert(false, "Exception thrown " + e.getMessage());
+        }
       }
     });
     azzert(latch.await(5, TimeUnit.SECONDS));
