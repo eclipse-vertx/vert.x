@@ -17,7 +17,7 @@
 package org.nodex.java.core;
 
 /**
- * <p>SimpleDeferred is useful when you want to create your own Deferred instances.</p>
+ * <p>DeferredAction is useful when you want to create your own Deferred actions.</p>
  *
  * <p>Normally, instances of Deferred are returned from node.x modules to represent operations such as getting a key from
  * a Redis server, or copying a file. However if you wish to create your own instances you can do this by subclassing this
@@ -27,7 +27,7 @@ package org.nodex.java.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class SimpleDeferred<T> implements Deferred<T> {
+public abstract class DeferredAction<T> implements Deferred<T> {
 
   private T result;
   private Exception exception;
@@ -91,18 +91,23 @@ public abstract class SimpleDeferred<T> implements Deferred<T> {
     return this;
   }
 
-  protected void setResult(T result) {
+  /**
+   * Call this method with the result of the action when it is complete.
+   */
+  public void setResult(T result) {
     complete = true;
     this.result = result;
     callHandler();
   }
 
-  protected void setException(Exception e) {
+  /**
+   * Call this method with an Exception if the action failed
+   */
+  public void setException(Exception e) {
     complete = true;
     this.exception = e;
     callHandler();
   }
-
 
   /**
    * Override this method to implement the deferred operation.

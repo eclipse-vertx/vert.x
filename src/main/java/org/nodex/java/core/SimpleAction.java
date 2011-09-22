@@ -24,7 +24,7 @@ package org.nodex.java.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class SimpleAction extends Action<Void> {
+public abstract class SimpleAction extends SynchronousAction<Void> {
 
   @Override
   protected Void action() throws Exception {
@@ -34,7 +34,7 @@ public abstract class SimpleAction extends Action<Void> {
 
    /**
    * Implement this method in a subclass to implement the non blocking synchronous action .
-   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link BlockingTask} for that.
+   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link BlockingAction} for that.
    */
   protected abstract void act();
 }

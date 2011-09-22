@@ -90,6 +90,7 @@ module Nodex
   class Deferred < Future
 
     # @private
+    # For internal use only
     def initialize(j_del, &result_converter)
       super(j_del, &result_converter)
       @j_del = j_del
@@ -111,6 +112,52 @@ module Nodex
     def block_execution
       @block_execution = true
       self
+    end
+
+  end
+
+  # DeferredAction is useful when you want to create your own Deferred actions.
+  #
+  # Normally, instances of Deferred are returned from node.x modules to represent operations such as getting a key from
+  # a Redis server, or copying a file. However if you wish to create your own instances you can do this by creating an
+  # instance of this class specifying a block/Proc when creating it.
+  #
+  # The block/Proc will get called when the action is executed. Be sure to call {#result=} or {#exception=} when
+  # the action is complete.
+  #
+  # @author {http://tfox.org Tim Fox}
+  class DeferredAction < Deferred
+
+    # @private
+    class InternalDeferred < org.nodex.java.core.DeferredAction
+
+      def initialize(hndlr)
+        super()
+        @hndlr = hndlr
+      end
+
+      def run
+        @hndlr.call
+      end
+    end
+
+    # Create a new DeferredAction
+    # @param [Proc] A proc representing the action to run when this is executed
+    # @param [block] A block representing the action to run when this is executed
+    def initialize(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del = InternalDeferred.new(hndlr)
+      super(@j_del)
+    end
+
+    # Set the result. If the operation succeeded you must call this when the operation is complete
+    def result=(result)
+      @j_del.setResult(result)
+    end
+
+    # Set the exception. If the operation failed you must call this when the operation is complete
+    def exception=(exception)
+      @j_del.setException(exception)
     end
 
   end
@@ -219,7 +266,7 @@ module Nodex
     private :check_deferred
 
     # @private
-    class TheAction < org.nodex.java.core.Action
+    class TheAction < org.nodex.java.core.SynchronousAction
 
       def initialize(block)
         super()

@@ -22,7 +22,7 @@ import org.nodex.java.core.internal.NodexInternal;
  * <p>Sometimes it is necessary to perform operations in node.x which are inherently blocking, e.g. talking to legacy
  * blocking APIs or libraries. This class allows blocking operations to be executed cleanly in an asychronous
  * environment.</p>
- * <p>By subclassing this class, and executing it, node.x will perform the blocking operation on a thread from a
+ * <p>By subclassing this class, implementing the {@link SynchronousAction#action} method and executing it, node.x will perform the blocking operation on a thread from a
  * background thread pool specially reserved for blocking operations. This means the event loop threads are not
  * blocked and can continue to service other requests.</p>
  * <p>It will rarely be necessary to use this class directly, it is normally used by libraries which wrap legacy
@@ -30,12 +30,12 @@ import org.nodex.java.core.internal.NodexInternal;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BlockingTask<T> extends Action<T> {
+public abstract class BlockingAction<T> extends SynchronousAction<T> {
 
   /**
    * Run the blocking action using a thread from the background pool.
    */
-  public final void run() {
+  protected void run() {
     final long contextID = Nodex.instance.getContextID();
     Runnable runner = new Runnable() {
       public void run() {

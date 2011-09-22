@@ -17,8 +17,8 @@
 package org.nodex.java.addons.redis;
 
 import org.nodex.java.core.Deferred;
+import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Handler;
-import org.nodex.java.core.SimpleDeferred;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetSocket;
 
@@ -1033,7 +1033,7 @@ public class RedisConnection {
     VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
   }
 
-  private abstract class RedisDeferred<T> extends SimpleDeferred<T> {
+  private abstract class RedisDeferred<T> extends DeferredAction<T> {
 
     final DeferredType type;
 
