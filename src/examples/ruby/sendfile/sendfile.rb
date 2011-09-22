@@ -15,12 +15,12 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
-  HttpServer.new.request_handler { |req|
+Nodex::go do
+  HttpServer.new.request_handler do |req|
     filename = "sendfile/" << (req.uri == "/" ? "index.html" : "." << req.uri)
     req.response.send_file(filename)
-  }.listen(8080)
-}
+  end.listen(8080)
+end
 
 puts "hit enter to exit"
 STDIN.gets

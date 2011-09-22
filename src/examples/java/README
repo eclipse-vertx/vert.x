@@ -177,11 +177,11 @@ HTTP request and streams the data to a file on disk.
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.upload.UploadClient
+nodex-java -cp classes org.nodex.java.examples.upload.UploadServer
 
 To run the client:
 
-nodex-java -cp classes org.nodex.java.examples.upload.UploadServer
+nodex-java -cp classes org.nodex.java.examples.upload.UploadClient
 
 Websockets
 ==========

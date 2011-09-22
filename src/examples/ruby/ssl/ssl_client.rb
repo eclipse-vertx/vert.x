@@ -15,20 +15,19 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
-
+Nodex::go do
   client = NetClient.new
   client.ssl = true
   client.trust_all = true
-  client.connect(4443, "localhost") { |socket|
+  client.connect(4443, "localhost") do |socket|
     socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
-    (1..10).each { |i|
+    (1..10).each do |i|
       str = "hello #{i}\n"
       puts "Echo client sending #{str}"
       socket.write_buffer(Buffer.create_from_str(str))
-    }
-  }
-}
+    end
+  end
+end
 
 puts "hit enter to exit"
 STDIN.gets

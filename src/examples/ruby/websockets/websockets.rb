@@ -15,16 +15,14 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
-  HttpServer.new.websocket_handler { |ws|
+Nodex::go do
+  HttpServer.new.websocket_handler do |ws|
     ws.close if ws.uri != "/myapp"
-    ws.data_handler { |buffer|
-      ws.write_text_frame(buffer.to_s)
-    }
-  }.request_handler { |req|
+    ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
+  end.request_handler do |req|
     req.response.send_file("websockets/ws.html") if req.uri == "/"
-  }.listen(8080)
-}
+  end.listen(8080)
+end
 
 puts "hit enter to exit"
 STDIN.gets

@@ -15,9 +15,9 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
-  NetServer.new.connect_handler { |socket|
-    parser = RecordParser.new_delimited("\n") { |line|
+Nodex::go do
+  NetServer.new.connect_handler do |socket|
+    parser = RecordParser.new_delimited("\n") do |line|
       line = line.to_s.rstrip
       if line.start_with?("subscribe,")
         topic_name = line.split(",", 2)[1]
@@ -37,11 +37,10 @@ Nodex::go {
         puts "topic is #{topic}"
         topic.each { |actor_id| Nodex::send_to_handler(actor_id, Buffer.create_from_str(sp[2])) }
       end
-    }
+    end
     socket.data_handler(parser)
-  }.listen(8080)
-}
+  end.listen(8080)
+end
 
 puts "hit enter to exit"
 STDIN.gets
-server.stop

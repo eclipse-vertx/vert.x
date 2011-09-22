@@ -15,28 +15,23 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   client = HttpClient.new
   client.port = 8080
   client.host = "localhost"
-  req = client.put("/someurl") { |resp|
-    puts "Response #{resp.status_code}"
-  }
-
+  req = client.put("/someurl") { |resp| puts "Response #{resp.status_code}" }
   filename = "upload/upload.txt"
-  FileSystem::stat(filename) { |compl|
+  FileSystem::props(filename).handler do |compl|
     size = compl.result.size
     req.put_header("Content-Length", size)
-    FileSystem::open(filename) { |compl|
+    FileSystem::open(filename).handler do |compl|
       rs = compl.result.read_stream
       pump = Pump.new(rs, req)
-      rs.end_handler {
-        req.end
-      }
+      rs.end_handler { req.end }
       pump.start
-    }
-  }
-}
+    end
+  end
+end
 
 puts "hit enter to exit"
 STDIN.gets

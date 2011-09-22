@@ -103,7 +103,7 @@ module Nodex
     # @return [NetServer] A reference to self so invocations can be chained
     def connect_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.connectHandler { |j_socket| hndlr.call(NetSocket.new(j_socket)) }
+      @j_del.connectHandler{ |j_socket| hndlr.call(NetSocket.new(j_socket)) }
       self
     end
 

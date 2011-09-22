@@ -16,27 +16,26 @@ require "nodex"
 require "set"
 include Nodex
 
-Nodex::go {
-  HttpServer.new.request_handler { |req|
+Nodex::go do
+  HttpServer.new.request_handler do |req|
     req.pause
     filename = (0...9).map { ('A'..'Z').to_a[rand(26)] }.join
     filename << ".uploaded"
-    FileSystem::open(filename) { |compl|
+    FileSystem::open(filename).handler do |compl|
       pump = Pump.new(req, compl.result.write_stream)
       start_time = Time.now
-      req.end_handler {
-        compl.result.close {
+      req.end_handler do
+        compl.result.close.handler do
           end_time = Time.now
           puts "Uploaded #{pump.bytes_pumped} bytes to #{filename} in #{1000 * (end_time - start_time)} ms"
           req.response.end
-        }
-      }
+        end
+      end
       pump.start
       req.resume
-    }
-
-  }.listen(8080)
-}
+    end
+  end.listen(8080)
+end
 
 puts "hit enter to exit"
 STDIN.gets

@@ -15,16 +15,16 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   conns = SharedData::get_set("conns")
-  NetServer.new.connect_handler { |socket|
+  NetServer.new.connect_handler do |socket|
     conns.add(socket.write_handler_id)
-    socket.data_handler { |data|
+    socket.data_handler do |data|
       conns.each { |actor_id| Nodex::send_to_handler(actor_id, data) }
-    }
+    end
     socket.closed_handler { conns.delete(socket.write_handler_id) }
-  }.listen(8080)
-}
+  end.listen(8080)
+end
 
 puts "hit enter to exit"
 STDIN.gets

@@ -15,9 +15,9 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   NetServer.new.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
-}
+end
 puts "hit enter to exit"
 STDIN.gets
 

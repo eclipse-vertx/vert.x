@@ -15,19 +15,17 @@
 require "nodex"
 include Nodex
 
-Nodex::go {
+Nodex::go do
   client = HttpClient.new
   client.ssl = true
   client.port = 4443
   client.host = "localhost"
   client.trust_all = true
-  client.get_now("/") { |resp|
+  client.get_now("/") do |resp|
     puts "Got response #{resp.status_code}"
-    resp.data_handler { |buffer|
-      puts "Got data #{buffer}"
-    }
-  }
-}
+    resp.data_handler { |buffer| puts "Got data #{buffer}"  }
+  end
+end
 
 puts "hit enter to exit"
 STDIN.gets

@@ -72,7 +72,8 @@ module Nodex
 
     # Set a data handler. As data is read, the handler will be called with the data.
     # @param [Block] hndlr. The data handler
-    def data_handler(&hndlr)
+    def data_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
       @j_del.dataHandler(Proc.new { |j_buff|
         hndlr.call(Buffer.new(j_buff))
       })

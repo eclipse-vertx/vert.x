@@ -16,20 +16,15 @@ require "nodex"
 require "set"
 include Nodex
 
-Nodex::go {
-  HttpServer.new.request_handler { |req|
+Nodex::go do
+  HttpServer.new.request_handler do |req|
     puts "Got request #{req.uri}"
-    req.header_names.each { |header_name|
-      puts "#{header_name} : #{req.header(header_name)}"
-    }
+    req.header_names.each { |header_name| puts "#{header_name} : #{req.header(header_name)}" }
 
-    req.data_handler { |data|
-      puts "Got data #{data}"
-    }
+    req.data_handler { |data| puts "Got data #{data}" }
 
-    req.end_handler {
-        # Now send back a response
-
+    req.end_handler do
+      # Now send back a response
       req.response.chunked = true
 
       for i in 0..9
@@ -37,9 +32,9 @@ Nodex::go {
       end
 
       req.response.end
-    }
-  }.listen(8282)
-}
+    end
+  end.listen(8282)
+end
 
 puts "hit enter to exit"
 STDIN.gets
