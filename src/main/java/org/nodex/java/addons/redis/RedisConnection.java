@@ -217,7 +217,8 @@ public class RedisConnection {
   private NetSocket connection;
   private boolean connectionRequested;
   private boolean closed;
-  private boolean inTransaction;
+  private TxReplyHandler currentSendingHandler;
+  private TxReplyHandler currentReplyingHandler;
 
   /**
    * Create a new RedisClient
@@ -1065,56 +1066,6 @@ public class RedisConnection {
     return Buffer.create(String.valueOf(d));
   }
 
-  private class TxReplyHandler implements ReplyHandler {
-
-    final Queue<RedisDeferred<?>> deferreds = new LinkedList<>();
-
-    RedisDeferred<?> endDeferred; // The Deferred corresponding to the EXEC/DISCARD
-
-    boolean discarded;
-
-    public void setReply(RedisReply reply) {
-
-      if (reply.type == RedisReply.Type.ONE_LINE) {
-        if (reply.line.equals("QUEUED")) {
-          return;
-        }
-      }
-
-      if (discarded) {
-        for (RedisDeferred<?> deferred: deferreds) {
-          deferred.setException(new RedisException("Transaction discarded"));
-        }
-        sendEnd();
-      } else {
-        RedisDeferred<?> deferred = deferreds.poll();
-        if (deferred != null) {
-          deferred.setReply(reply);
-          if (deferreds.isEmpty()) {
-            sendEnd();
-          }
-        } else {
-          sendEnd();
-        }
-      }
-    }
-
-    private void sendEnd() {
-      if (endDeferred != null) {
-        endDeferred.setResult(null);
-        endDeferred = null;
-      } else {
-        throw new IllegalStateException("Invalid tx response");
-      }
-    }
-  }
-
-  private TxReplyHandler currentSendingHandler;
-
-  private interface ReplyHandler {
-    void setReply(RedisReply reply);
-  }
-
   private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer) {
 
     if (!closed) {
@@ -1184,8 +1135,6 @@ public class RedisConnection {
     pendingWrites.clear();
   }
 
-  private TxReplyHandler currentReplyingHandler;
-
   private void doHandle(final RedisReply reply) {
     //The reply can come back on a different thread since the underlying connection is pooled so could have been
     //created originally on a different context, so we need to make sure the reply is executed on the correct
@@ -1216,58 +1165,6 @@ public class RedisConnection {
     currentReplyingHandler.setReply(reply);
     if (currentReplyingHandler.deferreds.isEmpty()) {
       currentReplyingHandler = null;
-    }
-  }
-
-  private abstract static class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandler {
-
-    static enum DeferredType {
-       VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
-    }
-
-    static enum CommandType {
-      MULTI, EXEC, DISCARD, OTHER
-    }
-
-    final DeferredType type;
-    CommandType commandType = CommandType.OTHER;
-
-    RedisDeferred(DeferredType type) {
-      this.type = type;
-    }
-
-    public void setReply(final RedisReply reply) {
-      if (reply.type == RedisReply.Type.ERROR) {
-        setException(new RedisException(reply.error));
-      } else {
-        //If transacted the user should ignore the result, the EXEC will give the correct results
-        switch (type) {
-          case VOID: {
-            setResult(null);
-            break;
-          }
-          case BOOLEAN: {
-            ((RedisDeferred<Boolean>)this).setResult(reply.intResult == 1);
-            break;
-          }
-          case INTEGER: {
-            ((RedisDeferred<Integer>)this).setResult(reply.intResult);
-            break;
-          }
-          case DOUBLE: {
-            ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
-            break;
-          }
-          case BULK: {
-            ((RedisDeferred<Buffer>)this).setResult(reply.bulkResult);
-            break;
-          }
-          case MULTI_BULK: {
-            ((RedisDeferred<Buffer[]>)this).setResult(reply.multiBulkResult);
-            break;
-          }
-        }
-      }
     }
   }
 }
