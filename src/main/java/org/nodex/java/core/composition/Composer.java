@@ -138,7 +138,7 @@ public class Composer {
 
   private class WaitingBatch {
 
-    Set<Deferred<?>> futures = new HashSet<>();
+    List<Deferred<?>> futures = new ArrayList<>();
     int pending;
     boolean batchExecuted;
 

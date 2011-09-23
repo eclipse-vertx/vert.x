@@ -16,8 +16,9 @@
 
 package org.nodex.tests.addons.redis;
 
-import org.nodex.java.addons.redis.RedisClient;
+import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisException;
+import org.nodex.java.addons.redis.RedisPool;
 import org.nodex.java.core.Future;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleAction;
@@ -43,6 +44,12 @@ public class RedisTest extends TestBase {
   private static final Buffer key4 = Buffer.create("key4");
   private static final Buffer key5 = Buffer.create("key5");
 
+  private static final Buffer field1 = Buffer.create("field1");
+  private static final Buffer field2 = Buffer.create("field2");
+  private static final Buffer field3 = Buffer.create("field3");
+  private static final Buffer field4 = Buffer.create("field4");
+  private static final Buffer field5 = Buffer.create("field5");
+
   private static final Buffer keyl1 = Buffer.create("keyl1");
   private static final Buffer keyl2 = Buffer.create("keyl2");
 
@@ -55,7 +62,8 @@ public class RedisTest extends TestBase {
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private Composer comp;
-  private RedisClient client;
+  private RedisPool pool;
+  private RedisConnection connection;
   private CountDownLatch latch;
 
   // Tests -----------------------------
@@ -63,143 +71,210 @@ public class RedisTest extends TestBase {
   @Test
   public void testAll() throws Exception {
     try {
-    Method[] methods = RedisTest.class.getMethods();
-    for (Method method: methods) {
-      if (method.getName().startsWith("do")) {
-        setup();
-        System.out.println("RUNNING TEST: " + method.getName());
-        runTest(method);
-        System.out.println("TEST COMPLETE: " + method.getName());
-        teardown();
+      Method[] methods = RedisTest.class.getMethods();
+      for (Method method: methods) {
+        if (method.getName().startsWith("do")) {
+          setup();
+          System.out.println("RUNNING TEST: " + method.getName());
+          runTest(method);
+          System.out.println("TEST COMPLETE: " + method.getName());
+          teardown();
+        }
       }
-    }
     } catch (Exception e) {
       e.printStackTrace();
+      azzert(false, e.getMessage());
     }
   }
 
-//  public void doTestAppend() {
-//    comp.series(client.set(key1, val1));
-//    comp.series(client.append(key1, val2));
-//    assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
-//  }
-//
-//  public void doTestAuth() {
-//    Future<Void> res = comp.series(client.auth(Buffer.create("whatever")));
-//    assertResult(res, null);
-//  }
-//
-//  public void doTestBgWriteAOF() {
-//    Future<Void> res = comp.series(client.bgRewriteAOF());
-//    assertResult(res, null);
-//  }
-//
-//  public void doBGSave() {
-//    Future<Void> res = comp.series(client.bgSave());
-//    assertResult(res, null);
-//  }
-//
-//  public void doBLPop() {
-//    Future<Integer> res1 = comp.series(client.lPush(keyl1, val1));
-//    Future<Integer> res2 = comp.series(client.lPush(keyl2, val2));
-//    Future<Buffer[]> res = comp.series(client.bLPop(10, keyl1, keyl2));
-//    assertResult(res1, 1);
-//    assertResult(res2, 1);
-//    assertResult(res, new Buffer[] { keyl1, val1});
-//  }
-//
-//  public void doBRPop() {
-//    Future<Integer> res1 = comp.series(client.lPush(keyl1, val1));
-//    Future<Integer> res2 = comp.series(client.lPush(keyl2, val2));
-//    Future<Buffer[]> res = comp.series(client.bRPop(10, keyl1, keyl2));
-//    assertResult(res1, 1);
-//    assertResult(res2, 1);
-//    assertResult(res, new Buffer[] { keyl1, val1});
-//  }
-//
-//  public void doBRPopLPush() {
-//    Future<Integer> res1 = comp.series(client.lPush(keyl1, val1));
-//    Future<Buffer> res = comp.series(client.bRPopLPush(keyl1, keyl2, 10));
-//    assertResult(res1, 1);
-//    assertResult(res, val1);
-//  }
+  public void doTestAppend() {
+    comp.series(connection.set(key1, val1));
+    comp.series(connection.append(key1, val2));
+    assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
+  }
+
+  public void doTestAuth() {
+    Future<Void> res = comp.series(connection.auth(Buffer.create("whatever")));
+    assertResult(res, null);
+  }
+
+  public void doTestBgWriteAOF() {
+    Future<Void> res = comp.series(connection.bgRewriteAOF());
+    assertResult(res, null);
+  }
+
+  public void doBGSave() {
+    Future<Void> res = comp.series(connection.bgSave());
+    assertResult(res, null);
+  }
+
+  public void doBLPop() {
+    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
+    Future<Integer> res2 = comp.series(connection.lPush(keyl2, val2));
+    Future<Buffer[]> res = comp.series(connection.bLPop(10, keyl1, keyl2));
+    assertResult(res1, 1);
+    assertResult(res2, 1);
+    assertResult(res, new Buffer[] { keyl1, val1});
+  }
+
+  public void doBRPop() {
+    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
+    Future<Integer> res2 = comp.series(connection.lPush(keyl2, val2));
+    Future<Buffer[]> res = comp.series(connection.bRPop(10, keyl1, keyl2));
+    assertResult(res1, 1);
+    assertResult(res2, 1);
+    assertResult(res, new Buffer[] { keyl1, val1});
+  }
+
+  public void doBRPopLPush() {
+    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
+    Future<Buffer> res = comp.series(connection.bRPopLPush(keyl1, keyl2, 10));
+    assertResult(res1, 1);
+    assertResult(res, val1);
+  }
 
 //  None of the config commands seem to be recognised by Redis
 //
 //  public void doConfigGet() {
-//    final Future<Buffer> res = comp.series(client.configGet("*"));
+//    final Future<Buffer> res = comp.series(connection.configGet("*"));
 //    assertResult(res, "foo");
 //  }
 //
 //  public void doConfigSet() {
-//    Future<Void> res = comp.series(client.configSet(key1, val1));
+//    Future<Void> res = comp.series(connection.configSet(key1, val1));
 //    assertResult(res, null);
 //  }
 //
 //  public void doConfigResetStat() {
-//    Future<Void> res = comp.series(client.configResetStat());
+//    Future<Void> res = comp.series(connection.configResetStat());
 //    assertResult(res, null);
 //  }
 
-//  public void doDBSize() {
-//    int num = 10;
-//    for (int i = 0; i < num; i ++) {
-//      comp.parallel(client.set(Buffer.create("key" + i), val1));
-//    }
-//    Future<Integer> res = comp.series(client.dbSize());
-//    assertResult(res, num);
-//  }
-//
-//  public void doDecr() {
-//    int num = 10;
-//    comp.series(client.set(key1, Buffer.create(String.valueOf(num))));
-//    Future<Integer> res = comp.series(client.decr(key1));
-//    assertResult(res, num - 1);
-//  }
-//
-//  public void doDecrBy() {
-//    int num = 10;
-//    int decr = 4;
-//    comp.series(client.set(key1, Buffer.create(String.valueOf(num))));
-//    Future<Integer> res = comp.series(client.decrBy(key1, decr));
-//    assertResult(res, num - decr);
-//  }
-//
-//  public void doDel() {
-//    comp.parallel(client.set(key1, val1));
-//    comp.parallel(client.set(key2, val2));
-//    comp.parallel(client.set(key3, val3));
-//    Future<Integer> res = comp.series(client.dbSize());
-//    assertResult(res, 3);
-//    comp.series(client.del(key1, key2));
-//    res = comp.series(client.dbSize());
-//    assertResult(res, 1);
-//  }
-//
-//  public void doMultiDiscard() {
-//    Future<Void> res1 = comp.series(client.multi());
-//    Future<Void> res2 = comp.series(client.discard());
-//    assertResult(res1, null);
-//    assertResult(res2, null);
-//  }
-//
-//  public void doEcho() {
-//    Buffer msg = Buffer.create("foo");
-//    Future<Buffer> res = comp.series(client.echo(msg));
-//    assertResult(res, msg);
-//  }
+  public void doDBSize() {
+    int num = 10;
+    for (int i = 0; i < num; i ++) {
+      comp.parallel(connection.set(Buffer.create("key" + i), val1));
+    }
+    Future<Integer> res = comp.series(connection.dbSize());
+    assertResult(res, num);
+  }
 
-   public void doMultiExec() {
-    comp.series(client.set(key1, Buffer.create(String.valueOf(0))));
-    Future<Void> res1 = comp.series(client.multi());
+  public void doDecr() {
+    int num = 10;
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(num))));
+    Future<Integer> res = comp.series(connection.decr(key1));
+    assertResult(res, num - 1);
+  }
+
+  public void doDecrBy() {
+    int num = 10;
+    int decr = 4;
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(num))));
+    Future<Integer> res = comp.series(connection.decrBy(key1, decr));
+    assertResult(res, num - decr);
+  }
+
+  public void doDel() {
+    comp.parallel(connection.set(key1, val1));
+    comp.parallel(connection.set(key2, val2));
+    comp.parallel(connection.set(key3, val3));
+    Future<Integer> res = comp.series(connection.dbSize());
+    assertResult(res, 3);
+    comp.series(connection.del(key1, key2));
+    res = comp.series(connection.dbSize());
+    assertResult(res, 1);
+  }
+
+  public void doMultiDiscard() {
+    Future<Void> res1 = comp.series(connection.multi());
+    Future<Void> res2 = comp.series(connection.discard());
     assertResult(res1, null);
-    Future<Integer> res2 = comp.series(client.incr(key1));
-    Future<Integer> res3 = comp.series(client.incr(key1));
-    Future<Buffer[]> res4 = comp.series(client.exec());
-    //assertResult(res2, new Buffer[] {Buffer.create(String.valueOf(1)), Buffer.create(String.valueOf(2))});
+    assertResult(res2, null);
+  }
+
+  public void doEcho() {
+    Buffer msg = Buffer.create("foo");
+    Future<Buffer> res = comp.series(connection.echo(msg));
+    assertResult(res, msg);
+  }
+
+  public void doTransactionExec() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Integer> res2 = comp.series(connection.incr(key1));
+    Future<Integer> res3 = comp.parallel(connection.incr(key1));
+    Future<Void> res4 = comp.parallel(connection.exec());
+    assertResult(res4, null);
+    assertResult(res2,  1);
+    assertResult(res3,  2);
+  }
+
+  public void doTransactionWithMultiBulkExec() {
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Boolean> res2 = comp.parallel(connection.hSet(key1, field1, val1));
+    Future<Boolean> res3 = comp.parallel(connection.hSet(key1, field2, val2));
+    Future<Buffer[]> res4 = comp.parallel(connection.hGetAll(key1));
+    Future<Void> res5 = comp.parallel(connection.exec());
+    assertResult(res5, null);
+    assertResult(res2,  true);
+    assertResult(res3,  true);
+    assertResult(res4,  new Buffer[] {field1, val1, field2, val2});
+  }
+
+  public void doTransactionMixed() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Integer> res2 = comp.series(connection.incr(key1));
+    Future<Integer> res3 = comp.parallel(connection.incr(key1));
+    Future<Void> res4 = comp.parallel(connection.exec());
+    assertResult(res4, null);
+    assertResult(res2,  1);
+    assertResult(res3,  2);
+    Future<Integer> res5 = comp.series(connection.incr(key1));
+    assertResult(res5, 3);
+    Future<Void> res6 = comp.series(connection.multi());
+    assertResult(res6, null);
+    Future<Integer> res7 = comp.series(connection.incr(key1));
+    Future<Integer> res8 = comp.parallel(connection.incr(key1));
+    Future<Void> res9 = comp.parallel(connection.exec());
+    assertResult(res9, null);
+    assertResult(res7,  4);
+    assertResult(res8,  5);
+  }
+
+  public void doTransactionDiscard() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Integer> res2 = comp.series(connection.incr(key1));
+    Future<Integer> res3 = comp.parallel(connection.incr(key1));
+    Future<Void> res4 = comp.parallel(connection.discard());
+    assertException(res2, "Transaction discarded");
+    assertException(res3, "Transaction discarded");
+    assertResult(res4, null);
+  }
+
+  public void doEmptyTransactionExec() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Void> res2 = comp.parallel(connection.exec());
+    assertResult(res2, null);
+  }
+
+  public void doEmptyTransactionDiscard() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Void> res2 = comp.parallel(connection.discard());
+    assertResult(res2, null);
   }
 
   // Private -------------------------
+
 
   private void setup() {
     comp = new Composer();
@@ -207,13 +282,14 @@ public class RedisTest extends TestBase {
   }
 
   private void teardown() {
+    pool = null;
     comp = null;
     latch = null;
   }
 
   private void clearKeys() {
-    comp.series(client.flushDB());
-    comp.series(client.echo(val1)); // This is just a filler and makes sure the flush is complete before the test is run
+    comp.series(connection.flushDB());
+    comp.series(connection.echo(val1)); // This is just a filler and makes sure the flush is complete before the test is run
   }
 
   private void assertException(final Future<?> future, final String error) {
@@ -249,7 +325,7 @@ public class RedisTest extends TestBase {
               azzert(Utils.buffersEqual(expected[i], mb[i]));
             }
           } else {
-            azzert(value.equals(future.result()));
+            azzert(value.equals(future.result()), "Expected: " + value + " Actual: " + future.result());
           }
         }
       }
@@ -257,7 +333,7 @@ public class RedisTest extends TestBase {
   }
 
   private void assertKey(Buffer key, final Buffer value) {
-    final Future<Buffer> res = comp.series(client.get(key));
+    final Future<Buffer> res = comp.series(connection.get(key));
     comp.series(new TestAction() {
       protected void doAct() {
         azzert(Utils.buffersEqual(value, res.result()));
@@ -266,9 +342,10 @@ public class RedisTest extends TestBase {
   }
 
   private void done() {
+    comp.series(connection.close());
     comp.series(new TestAction() {
       protected void doAct() {
-        client.close();
+        pool.close();
         latch.countDown();
       }
     });
@@ -279,7 +356,8 @@ public class RedisTest extends TestBase {
     Nodex.instance.go(new Runnable() {
       public void run() {
         try {
-          client = new RedisClient();
+          pool = new RedisPool();
+          connection = pool.connection();
           clearKeys();
           method.invoke(RedisTest.this);
           done();
@@ -304,6 +382,4 @@ public class RedisTest extends TestBase {
 
     protected abstract void doAct();
   }
-
-
 }
