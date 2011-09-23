@@ -19,7 +19,10 @@ package org.nodex.tests.addons.redis;
 import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisException;
 import org.nodex.java.addons.redis.RedisPool;
+import org.nodex.java.core.Deferred;
+import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Future;
+import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleAction;
 import org.nodex.java.core.buffer.Buffer;
@@ -49,6 +52,11 @@ public class RedisTest extends TestBase {
   private static final Buffer field3 = Buffer.create("field3");
   private static final Buffer field4 = Buffer.create("field4");
   private static final Buffer field5 = Buffer.create("field5");
+
+  private static final Buffer channel1 = Buffer.create("channel1");
+  private static final Buffer channel2 = Buffer.create("channel2");
+  private static final Buffer channel3 = Buffer.create("channel3");
+
 
   private static final Buffer keyl1 = Buffer.create("keyl1");
   private static final Buffer keyl2 = Buffer.create("keyl2");
@@ -273,8 +281,99 @@ public class RedisTest extends TestBase {
     assertResult(res2, null);
   }
 
-  // Private -------------------------
+  public void doPubSub() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(3);
+    RedisConnection conn1 = pool.connection();
+    final RedisConnection conn2 = pool.connection();
+    final RedisConnection conn3 = pool.connection();
 
+    Future<Void> res1 = comp.series(conn2.subscribe(channel1));
+    assertResult(res1, null);
+
+    Future<Void> res2 = comp.series(conn3.subscribe(channel1));
+    assertResult(res2, null);
+
+    final DeferredAction<Buffer> def1 = new DeferredAction<Buffer>() {
+      public void run() {
+        conn2.subscriberHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            setResult(buffer);
+          }
+        });
+      }
+    };
+
+    final DeferredAction<Buffer> def2 = new DeferredAction<Buffer>() {
+      public void run() {
+        conn3.subscriberHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            setResult(buffer);
+          }
+        });
+      }
+    };
+
+    Future<Buffer> res3 = comp.series(def1);
+    Future<Buffer> res4 = comp.parallel(def2);
+
+    Future<Integer> res5 = comp.parallel(conn1.publish(channel1, val1));
+
+    assertResult(res5, 2);
+
+    assertResult(res3, val1);
+    assertResult(res4, val1);
+
+    comp.series(conn1.close());
+    comp.parallel(conn2.close());
+    comp.parallel(conn3.close());
+  }
+
+  public void doPubSubOnlySubscribe() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(3);
+    RedisConnection conn1 = pool.connection();
+
+    Future<Void> res1 = comp.series(conn1.subscribe(channel1));
+    assertResult(res1, null);
+
+    Future<Void> res2 = comp.series(conn1.set(key1, val1));
+    assertException(res2, "Can only subscribe when in subscribe mode");
+
+    Future<Void> res3 = comp.series(conn1.unsubscribe(channel1));
+    assertResult(res3, null);
+
+    Future<Void> res4 = comp.series(conn1.set(key1, val1));
+    assertResult(res4, null);
+
+    comp.series(conn1.close());
+  }
+
+  public void doPubSubSubscribeMultiple() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(3);
+    RedisConnection conn1 = pool.connection();
+
+    Future<Void> res1 = comp.series(conn1.subscribe(channel1));
+    assertResult(res1, null);
+
+    Future<Void> res2 = comp.series(conn1.subscribe(channel2));
+    assertResult(res2, null);
+
+
+    Future<Void> res3 = comp.series(conn1.set(key1, val1));
+    assertException(res3, "Can only subscribe when in subscribe mode");
+
+    Future<Void> res4 = comp.series(conn1.unsubscribe(channel1));
+    assertResult(res4, null);
+
+    Future<Void> res5 = comp.series(conn1.unsubscribe(channel2));
+    assertResult(res5, null);
+
+    Future<Void> res6 = comp.series(conn1.set(key1, val1));
+    assertResult(res6, null);
+
+    comp.series(conn1.close());
+  }
+
+  // Private -------------------------
 
   private void setup() {
     comp = new Composer();
