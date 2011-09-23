@@ -54,6 +54,23 @@ public class RedisPool {
     return this;
   }
 
+  /**
+   * Set the maximum pool size to the value specified by {@code maxConnections}<p>
+   * The client will maintain up to {@code maxConnections} HTTP connections in an internal pool<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  public RedisPool setMaxPoolSize(int maxConnections) {
+    pool.setMaxPoolSize(maxConnections);
+    return this;
+  }
+
+  /**
+   * Returns the maximum number of connections in the pool
+   */
+  public int getMaxPoolSize() {
+    return pool.getMaxPoolSize();
+  }
+
   public RedisConnection connection() {
     return new RedisConnection(pool);
   }

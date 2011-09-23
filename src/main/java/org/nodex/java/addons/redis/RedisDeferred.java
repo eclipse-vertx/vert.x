@@ -24,52 +24,52 @@ import org.nodex.java.core.buffer.Buffer;
  */
 abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandler {
 
-    static enum DeferredType {
-       VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
-    }
+  static enum DeferredType {
+     VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
+  }
 
-    static enum CommandType {
-      MULTI, EXEC, DISCARD, OTHER
-    }
+  static enum TxCommandType {
+    MULTI, EXEC, DISCARD, OTHER
+  }
 
-    final DeferredType type;
-    CommandType commandType = CommandType.OTHER;
+  final DeferredType type;
+  TxCommandType commandType = TxCommandType.OTHER;
 
-    RedisDeferred(DeferredType type) {
-      this.type = type;
-    }
+  RedisDeferred(DeferredType type) {
+    this.type = type;
+  }
 
-    public void setReply(final RedisReply reply) {
-      if (reply.type == RedisReply.Type.ERROR) {
-        setException(new RedisException(reply.error));
-      } else {
-        //If transacted the user should ignore the result, the EXEC will give the correct results
-        switch (type) {
-          case VOID: {
-            setResult(null);
-            break;
-          }
-          case BOOLEAN: {
-            ((RedisDeferred<Boolean>)this).setResult(reply.intResult == 1);
-            break;
-          }
-          case INTEGER: {
-            ((RedisDeferred<Integer>)this).setResult(reply.intResult);
-            break;
-          }
-          case DOUBLE: {
-            ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
-            break;
-          }
-          case BULK: {
-            ((RedisDeferred<Buffer>)this).setResult(reply.bulkResult);
-            break;
-          }
-          case MULTI_BULK: {
-            ((RedisDeferred<Buffer[]>)this).setResult(reply.multiBulkResult);
-            break;
-          }
+  public void setReply(final RedisReply reply) {
+    if (reply.type == RedisReply.Type.ERROR) {
+      setException(new RedisException(reply.error));
+    } else {
+      //If transacted the user should ignore the result, the EXEC will give the correct results
+      switch (type) {
+        case VOID: {
+          setResult(null);
+          break;
+        }
+        case BOOLEAN: {
+          ((RedisDeferred<Boolean>)this).setResult(reply.intResult == 1);
+          break;
+        }
+        case INTEGER: {
+          ((RedisDeferred<Integer>)this).setResult(reply.intResult);
+          break;
+        }
+        case DOUBLE: {
+          ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
+          break;
+        }
+        case BULK: {
+          ((RedisDeferred<Buffer>)this).setResult(reply.bulkResult);
+          break;
+        }
+        case MULTI_BULK: {
+          ((RedisDeferred<Buffer[]>)this).setResult(reply.multiBulkResult);
+          break;
         }
       }
     }
   }
+}

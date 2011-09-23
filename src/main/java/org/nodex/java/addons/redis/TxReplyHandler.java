@@ -25,19 +25,15 @@ import java.util.Queue;
 class TxReplyHandler implements ReplyHandler {
 
   final Queue<RedisDeferred<?>> deferreds = new LinkedList<>();
-
   RedisDeferred<?> endDeferred; // The Deferred corresponding to the EXEC/DISCARD
-
   boolean discarded;
 
   public void setReply(RedisReply reply) {
-
     if (reply.type == RedisReply.Type.ONE_LINE) {
       if (reply.line.equals("QUEUED")) {
         return;
       }
     }
-
     if (discarded) {
       for (RedisDeferred<?> deferred: deferreds) {
         deferred.setException(new RedisException("Transaction discarded"));

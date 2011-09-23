@@ -18,7 +18,6 @@ package org.nodex.java.addons.redis;
 
 import org.nodex.java.core.ConnectionPool;
 import org.nodex.java.core.Deferred;
-import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleAction;
@@ -29,7 +28,6 @@ import org.nodex.java.core.net.NetSocket;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 
 /**
  * <p>An asynchronous, pooling, Redis client</p>
@@ -219,6 +217,8 @@ public class RedisConnection {
   private boolean closed;
   private TxReplyHandler currentSendingHandler;
   private TxReplyHandler currentReplyingHandler;
+  private boolean subscriber;
+  private Handler<Buffer> subscriberHandler;
 
   /**
    * Create a new RedisClient
@@ -238,6 +238,11 @@ public class RedisConnection {
       }
     };
   }
+
+  public void subscriberHandler(Handler<Buffer> handler) {
+    this.subscriberHandler = handler;
+  }
+
 
   public Deferred<Integer> append(Buffer key, Buffer value) {
     return createIntegerDeferred(APPEND_COMMAND, key, value);
@@ -348,7 +353,7 @@ public class RedisConnection {
 
   public Deferred<Void> discard() {
     RedisDeferred<Void> deferred = createVoidDeferred(DISCARD_COMMAND);
-    deferred.commandType = RedisDeferred.CommandType.DISCARD;
+    deferred.commandType = RedisDeferred.TxCommandType.DISCARD;
     return deferred;
   }
 
@@ -362,7 +367,7 @@ public class RedisConnection {
 
   public Deferred<Void> exec() {
     RedisDeferred<Void> deferred = createVoidDeferred(EXEC_COMMAND);
-    deferred.commandType = RedisDeferred.CommandType.EXEC;
+    deferred.commandType = RedisDeferred.TxCommandType.EXEC;
     return deferred;
   }
 
@@ -574,7 +579,7 @@ public class RedisConnection {
 
   public Deferred<Void> multi() {
     RedisDeferred<Void> deferred = createVoidDeferred(MULTI_COMMAND);
-    deferred.commandType = RedisDeferred.CommandType.MULTI;
+    deferred.commandType = RedisDeferred.TxCommandType.MULTI;
     return deferred;
   }
 
@@ -587,7 +592,7 @@ public class RedisConnection {
   }
 
   public Deferred<Void> pSubscribe(Buffer... patterns) {
-    return createVoidDeferred(PSUBSCRIBE_COMMAND, patterns);
+    return doSubscribe(PSUBSCRIBE_COMMAND, patterns);
   }
 
   public Deferred<Integer> publish(Buffer channel, Buffer message) {
@@ -595,7 +600,7 @@ public class RedisConnection {
   }
 
   public Deferred<Void> pUnsubscribe(Buffer... patterns) {
-    return createVoidDeferred(PUNSUBSCRIBE_COMMAND, patterns);
+    return doUnsubscribe(PUNSUBSCRIBE_COMMAND, patterns);
   }
 
   public Deferred<Void> quit() {
@@ -766,7 +771,7 @@ public class RedisConnection {
   }
 
   public Deferred<Void> subscribe(Buffer... channels) {
-    return createVoidDeferred(SUBSCRIBE_COMMAND, channels);
+    return doSubscribe(SUBSCRIBE_COMMAND, channels);
   }
 
   public Deferred<Buffer[]> sUnion(Buffer... keys) {
@@ -786,7 +791,7 @@ public class RedisConnection {
   }
 
   public Deferred<Void> unsubscribe(Buffer... channels) {
-    return createVoidDeferred(UNSUBSCRIBE_COMMAND, channels);
+    return doUnsubscribe(UNSUBSCRIBE_COMMAND, channels);
   }
 
   public Deferred<Void> unwatch() {
@@ -941,6 +946,38 @@ public class RedisConnection {
     return createIntegerDeferred(ZUNIONSTORE_COMMAND, args);
   }
 
+  private Deferred<Void> doSubscribe(byte[] command,  Buffer... channels) {
+    final Buffer buff = createCommand(command, channels);
+    return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID) {
+      public void run() {
+        subscriber = true;
+        System.out.println("Switching to subscribe mode");
+        sendRequest(this, buff, true);
+      }
+      public void setReply(RedisReply reply) {
+        setResult(null);
+      }
+    };
+  }
+
+  private Deferred<Void> doUnsubscribe(byte[] command,  Buffer... channels) {
+    final Buffer buff = createCommand(command, channels);
+    return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID) {
+      public void run() {
+        sendRequest(this, buff, true);
+      }
+      public void setReply(RedisReply reply) {
+        int num = reply.intResult;
+        if (num == 0) {
+          System.out.println("Switching to normal mode");
+          subscriber = false;
+        }
+        setResult(null);
+      }
+    };
+  }
+
+
   private Buffer createCommand(byte[] command, Buffer... args) {
     Buffer buff = Buffer.create(64);
     buff.appendByte(ReplyParser.STAR);
@@ -962,7 +999,7 @@ public class RedisConnection {
     return buff;
   }
 
-  public RedisDeferred<Double> createDoubleDeferred(byte[] command, Buffer... args) {
+  private RedisDeferred<Double> createDoubleDeferred(byte[] command, Buffer... args) {
     final Buffer buff = createCommand(command, args);
     return new RedisDeferred<Double>(RedisDeferred.DeferredType.DOUBLE) {
       public void run() {
@@ -971,7 +1008,7 @@ public class RedisConnection {
     };
   }
 
-  public RedisDeferred<Integer> createIntegerDeferred(byte[] command, Buffer... args) {
+  private RedisDeferred<Integer> createIntegerDeferred(byte[] command, Buffer... args) {
     final Buffer buff = createCommand(command, args);
     return new RedisDeferred<Integer>(RedisDeferred.DeferredType.INTEGER) {
       public void run() {
@@ -980,7 +1017,7 @@ public class RedisConnection {
     };
   }
 
-  public RedisDeferred<Void> createVoidDeferred(byte[] command, Buffer... args) {
+  private RedisDeferred<Void> createVoidDeferred(byte[] command, Buffer... args) {
     final Buffer buff = createCommand(command, args);
     return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID) {
       public void run() {
@@ -989,7 +1026,7 @@ public class RedisConnection {
     };
   }
 
-  public RedisDeferred<Boolean> createBooleanDeferred(byte[] command, Buffer... args) {
+  private RedisDeferred<Boolean> createBooleanDeferred(byte[] command, Buffer... args) {
     final Buffer buff = createCommand(command, args);
     return new RedisDeferred<Boolean>(RedisDeferred.DeferredType.BOOLEAN) {
       public void run() {
@@ -998,7 +1035,7 @@ public class RedisConnection {
     };
   }
 
-  public RedisDeferred<Buffer> createBulkDeferred(byte[] command, Buffer... args) {
+  private RedisDeferred<Buffer> createBulkDeferred(byte[] command, Buffer... args) {
     final Buffer buff = createCommand(command, args);
     return new RedisDeferred<Buffer>(RedisDeferred.DeferredType.BULK) {
       public void run() {
@@ -1007,7 +1044,7 @@ public class RedisConnection {
     };
   }
 
-  public RedisDeferred<Buffer[]> createMultiBulkDeferred(byte[] command, Buffer... args) {
+  private RedisDeferred<Buffer[]> createMultiBulkDeferred(byte[] command, Buffer... args) {
     final Buffer buff = createCommand(command, args);
     return new RedisDeferred<Buffer[]>(RedisDeferred.DeferredType.MULTI_BULK) {
       public void run() {
@@ -1067,56 +1104,64 @@ public class RedisConnection {
   }
 
   private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer) {
+    sendRequest(deferred, buffer, false);
+  }
 
+  private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe) {
     if (!closed) {
-      switch (deferred.commandType) {
-        case MULTI: {
-          if (currentSendingHandler != null) {
-            throw new IllegalStateException("Already in tx");
-          }
-          deferredQueue.add(deferred);
-          currentSendingHandler = new TxReplyHandler();
-          deferredQueue.add(currentSendingHandler);
-          break;
-        } case EXEC: {
-          if (currentSendingHandler == null) {
-            throw new IllegalStateException("Not in tx");
-          }
-          currentSendingHandler.endDeferred = deferred;
-          currentSendingHandler = null;
-          break;
-        } case DISCARD: {
-          if (currentSendingHandler == null) {
-            throw new IllegalStateException("Not in tx");
-          }
-          currentSendingHandler.endDeferred = deferred;
-          currentSendingHandler.discarded = true;
-          currentSendingHandler = null;
-          break;
-        } case OTHER: {
-          if (currentSendingHandler != null) {
-            //BODY OF TX
-            currentSendingHandler.deferreds.add(deferred);
-          } else {
-            //Non transacted
-            deferredQueue.add(deferred);
-          }
-        }
-      }
-
-      if (connection == null) {
-        if (!connectionRequested) {
-          pool.getConnection(new Handler<NetSocket>() {
-            public void handle(NetSocket conn) {
-              setSocket(conn);
-            }
-          }, NodexInternal.instance.getContextID());
-          connectionRequested = true;
-        }
-        pendingWrites.add(buffer);
+      if (subscriber && !subscribe) {
+        deferred.setException(new RedisException("Can only subscribe when in subscribe mode"));
       } else {
-        System.out.println("Writing request: " + buffer);
-        connection.write(buffer);
+        switch (deferred.commandType) {
+          case MULTI: {
+            if (currentSendingHandler != null) {
+              throw new IllegalStateException("Already in tx");
+            }
+            deferredQueue.add(deferred);
+            currentSendingHandler = new TxReplyHandler();
+            deferredQueue.add(currentSendingHandler);
+            break;
+          } case EXEC: {
+            if (currentSendingHandler == null) {
+              throw new IllegalStateException("Not in tx");
+            }
+            currentSendingHandler.endDeferred = deferred;
+            currentSendingHandler = null;
+            break;
+          } case DISCARD: {
+            if (currentSendingHandler == null) {
+              throw new IllegalStateException("Not in tx");
+            }
+            currentSendingHandler.endDeferred = deferred;
+            currentSendingHandler.discarded = true;
+            currentSendingHandler = null;
+            break;
+          }
+          case OTHER: {
+            if (currentSendingHandler != null) {
+              //BODY OF TX
+              currentSendingHandler.deferreds.add(deferred);
+            } else {
+              //Non transacted
+              deferredQueue.add(deferred);
+            }
+          }
+        }
+
+        if (connection == null) {
+          if (!connectionRequested) {
+            pool.getConnection(new Handler<NetSocket>() {
+              public void handle(NetSocket conn) {
+                setSocket(conn);
+              }
+            }, NodexInternal.instance.getContextID());
+            connectionRequested = true;
+          }
+          pendingWrites.add(buffer);
+        } else {
+          System.out.println("Writing request: " + buffer);
+          connection.write(buffer);
+        }
       }
     }
   }
@@ -1146,14 +1191,27 @@ public class RedisConnection {
           transactionReply(reply);
         } else {
           ReplyHandler handler = deferredQueue.poll();
-          if (handler == null) {
-            System.err.println("Unsolicited response");
+          if (subscriber) {
+            switch (reply.type) {
+              case INTEGER: {
+                handler.setReply(reply);
+                break;
+              } case MULTI_BULK: {
+                if (subscriberHandler != null) {
+                  subscriberHandler.handle(reply.multiBulkResult[2]);
+                }
+              }
+            }
           } else {
-            if (handler instanceof TxReplyHandler) {
-              currentReplyingHandler = (TxReplyHandler)handler;
-              transactionReply(reply);
+            if (handler == null) {
+              System.err.println("Unsolicited response");
             } else {
-              handler.setReply(reply);
+              if (handler instanceof TxReplyHandler) {
+                currentReplyingHandler = (TxReplyHandler)handler;
+                transactionReply(reply);
+              } else {
+                handler.setReply(reply);
+              }
             }
           }
         }
