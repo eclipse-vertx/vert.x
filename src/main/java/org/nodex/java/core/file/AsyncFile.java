@@ -42,8 +42,8 @@ import java.util.HashSet;
 /**
  * <p>Represents a file on the file-system which can be read from, or written to asynchronously.</p>
  * <p>Methods also exist to get a {@link org.nodex.java.core.streams.ReadStream} or a
- *  {@link org.nodex.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
- *  other streams, e.g. an {@link org.nodex.java.core.http.HttpClientRequest} instance, using the {@link org.nodex.java.core.streams.Pump} class</p>
+ * {@link org.nodex.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
+ * other streams, e.g. an {@link org.nodex.java.core.http.HttpClientRequest} instance, using the {@link org.nodex.java.core.streams.Pump} class</p>
  * @author <a href="http://tfox.org">Tim Fox</a>
   */
 public class AsyncFile {
