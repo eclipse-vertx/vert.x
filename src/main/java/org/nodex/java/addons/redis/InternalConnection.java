@@ -27,6 +27,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
+ *
+ * This is the actual connection which gets pooled, RedisConnection is just a handle to an instance of InternalConnection
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class InternalConnection implements Handler<RedisReply>{
@@ -34,7 +37,6 @@ public class InternalConnection implements Handler<RedisReply>{
   private final LinkedList<ReplyHandler> deferredQueue = new LinkedList<>();
   private final NetSocket socket;
   private final ConnectionPool<InternalConnection> pool;
-  private boolean closed;
   private TxReplyHandler currentTXSendingHandler;
   private boolean subscriber;
   private ReplyHandler currentReplyHandler;
@@ -52,68 +54,59 @@ public class InternalConnection implements Handler<RedisReply>{
     } else if (currentTXSendingHandler != null) {
       deferred.setException(new RedisException("Please complete the transaction before closing connection"));
     } else {
-      System.out.println("Closing conneciton");
-      closed = true;
       pool.returnConnection(InternalConnection.this);
       deferred.setResult(null);
     }
   }
 
-  void sendRequest(final RedisConnection.RedisDeferred<?> deferred, Buffer buffer, long contextID) {
+  void sendRequest(final RedisDeferred<?> deferred, Buffer buffer, long contextID) {
     sendRequest(deferred, buffer, false, contextID);
   }
 
-  void sendRequest(final RedisConnection.RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe, long contextID) {
-    if (!closed) {
-      if (subscriber && !subscribe) {
-        deferred.setException(new RedisException("It is not legal to send commands other than SUBSCRIBE and UNSUBSCRIBE when in subscribe mode"));
-      } else {
-        switch (deferred.commandType) {
-          case MULTI: {
-            if (currentTXSendingHandler != null) {
-              throw new IllegalStateException("Already in tx");
-            }
-            deferredQueue.add(deferred);
-            currentTXSendingHandler = new TxReplyHandler(contextID);
-            deferredQueue.add(currentTXSendingHandler);
-            break;
-          } case EXEC: {
-            if (currentTXSendingHandler == null) {
-              throw new IllegalStateException("Not in tx");
-            }
-            currentTXSendingHandler.endDeferred = deferred;
-            currentTXSendingHandler = null;
-            break;
-          } case DISCARD: {
-            if (currentTXSendingHandler == null) {
-              throw new IllegalStateException("Not in tx");
-            }
-            currentTXSendingHandler.endDeferred = deferred;
-            currentTXSendingHandler.discarded = true;
-            currentTXSendingHandler = null;
-            break;
+  void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe, long contextID) {
+    if (subscriber && !subscribe) {
+      deferred.setException(new RedisException("It is not legal to send commands other than SUBSCRIBE and UNSUBSCRIBE when in subscribe mode"));
+    } else {
+      switch (deferred.commandType) {
+        case MULTI: {
+          if (currentTXSendingHandler != null) {
+            throw new IllegalStateException("Already in tx");
           }
-          case OTHER: {
-            if (currentTXSendingHandler != null) {
-              //BODY OF TX
-              currentTXSendingHandler.deferreds.add(deferred);
-            } else {
-              //Non transacted
-              deferredQueue.add(deferred);
-            }
+          deferredQueue.add(deferred);
+          currentTXSendingHandler = new TxReplyHandler(contextID);
+          deferredQueue.add(currentTXSendingHandler);
+          break;
+        } case EXEC: {
+          if (currentTXSendingHandler == null) {
+            throw new IllegalStateException("Not in tx");
+          }
+          currentTXSendingHandler.endDeferred = deferred;
+          currentTXSendingHandler = null;
+          break;
+        } case DISCARD: {
+          if (currentTXSendingHandler == null) {
+            throw new IllegalStateException("Not in tx");
+          }
+          currentTXSendingHandler.endDeferred = deferred;
+          currentTXSendingHandler.discarded = true;
+          currentTXSendingHandler = null;
+          break;
+        }
+        case OTHER: {
+          if (currentTXSendingHandler != null) {
+            //BODY OF TX
+            currentTXSendingHandler.deferreds.add(deferred);
+          } else {
+            //Non transacted
+            deferredQueue.add(deferred);
           }
         }
-
-        System.out.println("Writing request: " + buffer);
-        socket.write(buffer);
       }
+      socket.write(buffer);
     }
   }
 
   public void handle(final RedisReply reply) {
-
-    System.out.println("Handling r reply " + reply);
-
     if (currentReplyHandler != null) {
       currentReplyHandler.handleReply(reply);
     } else {
@@ -141,7 +134,7 @@ public class InternalConnection implements Handler<RedisReply>{
   }
 
 
-  abstract class BaseReplyHandler implements Runnable, ReplyHandler {
+  private abstract class BaseReplyHandler implements Runnable, ReplyHandler {
     final long contextID;
 
     BaseReplyHandler(long contextID) {
@@ -158,7 +151,7 @@ public class InternalConnection implements Handler<RedisReply>{
     }
   }
 
-  class SubscriberHandler extends BaseReplyHandler {
+  private class SubscriberHandler extends BaseReplyHandler {
 
     SubscriberHandler(long contextID) {
       super(contextID);
@@ -185,10 +178,10 @@ public class InternalConnection implements Handler<RedisReply>{
     }
   }
 
-  class TxReplyHandler extends BaseReplyHandler {
+  private class TxReplyHandler extends BaseReplyHandler {
 
-    final Queue<RedisConnection.RedisDeferred<?>> deferreds = new LinkedList<>();
-    RedisConnection.RedisDeferred<?> endDeferred; // The Deferred corresponding to the EXEC/DISCARD
+    final Queue<RedisDeferred<?>> deferreds = new LinkedList<>();
+    RedisDeferred<?> endDeferred; // The Deferred corresponding to the EXEC/DISCARD
     boolean discarded;
 
     TxReplyHandler(long contextID) {
@@ -199,20 +192,18 @@ public class InternalConnection implements Handler<RedisReply>{
 
       currentReplyHandler = this;
 
-      System.out.println("Handling tx reply: " + reply);
-
       if (reply.type == RedisReply.Type.ONE_LINE) {
         if (reply.line.equals("QUEUED")) {
           return;
         }
       }
       if (discarded) {
-        for (RedisConnection.RedisDeferred<?> deferred: deferreds) {
+        for (RedisDeferred<?> deferred: deferreds) {
           deferred.setException(new RedisException("Transaction discarded"));
         }
         sendEnd();
       } else {
-        RedisConnection.RedisDeferred<?> deferred = deferreds.poll();
+        RedisDeferred<?> deferred = deferreds.poll();
         if (deferred != null) {
           //We are already on correct context so we can run it directly
           deferred.handleReplyDirect(reply);

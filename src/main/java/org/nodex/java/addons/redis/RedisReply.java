@@ -19,6 +19,8 @@ package org.nodex.java.addons.redis;
 import org.nodex.java.core.buffer.Buffer;
 
 /**
+ * <p>Represents a reply from a Redis server</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisReply {
