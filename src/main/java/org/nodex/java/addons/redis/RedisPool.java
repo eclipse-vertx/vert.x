@@ -27,14 +27,13 @@ import org.nodex.java.core.net.NetSocket;
 public class RedisPool {
 
   private final NetClient client = new NetClient();
-  private final ConnectionPool<NetSocket> pool = new ConnectionPool<NetSocket>() {
-    protected void connect(Handler<NetSocket> connectHandler, long contextID) {
+  private final ConnectionPool<InternalConnection> pool = new ConnectionPool<InternalConnection>() {
+    protected void connect(Handler<InternalConnection> connectHandler, long contextID) {
       internalConnect(connectHandler, contextID);
     }
   };
   private String host = "localhost";
   private int port = 6379;
-  private Handler<Exception> exceptionHandler;
 
   /**
    * Set the port that the client will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
@@ -80,18 +79,10 @@ public class RedisPool {
     client.close();
   }
 
-   /**
-   * Set the exception handler
-   */
-  public void exceptionHandler(Handler<Exception> handler) {
-    this.exceptionHandler = handler;
-  }
-
-  private void internalConnect(final Handler<NetSocket> connectHandler, long contextID) {
+  private void internalConnect(final Handler<InternalConnection> connectHandler, long contextID) {
     client.connect(port, host, new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-        socket.exceptionHandler(exceptionHandler);
-        connectHandler.handle(socket);
+        connectHandler.handle(new InternalConnection(pool, socket));
       }
     });
   }

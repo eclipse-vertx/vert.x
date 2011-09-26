@@ -19,7 +19,6 @@ package org.nodex.tests.core.file;
 import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
-import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.file.AsyncFile;

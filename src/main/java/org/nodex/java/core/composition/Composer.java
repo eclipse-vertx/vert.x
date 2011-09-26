@@ -18,12 +18,11 @@ package org.nodex.java.core.composition;
 
 import org.nodex.java.core.CompletionHandler;
 import org.nodex.java.core.Deferred;
+import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Future;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * <p>Composer allows asynchronous control flows to be defined</p>
@@ -90,6 +89,12 @@ public class Composer {
    */
   public <T> Future<T> parallel(Deferred<T> deferred) {
     checkExecuted();
+    //We can't return the original Deferred since we want the user to be able to set their own handler on the returned
+    //value, but we use the handler on the Deferred
+    final DeferredAction<T> ret = new DeferredAction<T>() {
+      public void run() {
+      }
+    };
     if (!deferred.complete()) {
       if (currentBatch == null) {
         currentBatch = new WaitingBatch();
@@ -99,12 +104,17 @@ public class Composer {
       final WaitingBatch batch = currentBatch;
       deferred.handler(new CompletionHandler<T>() {
         public void handle(Future<T> f) {
+          if (f.succeeded()) {
+            ret.setResult(f.result());
+          } else {
+            ret.setException(f.exception());
+          }
           batch.complete();
         }
       });
       checkAll();
     }
-    return deferred;
+    return ret;
   }
 
   /**
