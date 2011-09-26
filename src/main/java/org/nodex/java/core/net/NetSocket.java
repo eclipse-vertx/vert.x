@@ -23,6 +23,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
@@ -155,7 +156,11 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   public void drainHandler(Handler<Void> drainHandler) {
     checkThread();
     this.drainHandler = drainHandler;
-    callDrainHandler(); //If the channel is already drained, we want to call it immediately
+    Nodex.instance.nextTick(new SimpleHandler() {
+      public void handle() {
+        callDrainHandler(); //If the channel is already drained, we want to call it immediately
+      }
+    });
   }
 
   /**
@@ -218,7 +223,8 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
 
   private void callDrainHandler() {
     if (drainHandler != null) {
-      if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
+      //if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
+      if (channel.isWritable()) {
         try {
           drainHandler.handle(null);
         } catch (Throwable t) {
