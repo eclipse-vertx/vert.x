@@ -20,5 +20,5 @@ package org.nodex.java.addons.redis;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 interface ReplyHandler {
-  void setReply(RedisReply reply);
+  void handleReply(RedisReply reply);
 }

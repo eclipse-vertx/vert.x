@@ -49,10 +49,7 @@ import org.nodex.java.core.net.NetClientBase;
 import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>An asynchronous, pooling, HTTP 1.1 client</p>
