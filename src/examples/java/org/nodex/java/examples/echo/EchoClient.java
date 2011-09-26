@@ -41,7 +41,7 @@ public class EchoClient extends NodexMain {
           }
         });
 
-        //Now send some dataHandler
+        //Now send some data
         for (int i = 0; i < 10; i++) {
           String str = "hello" + i + "\n";
           System.out.print("Net client sending: " + str);

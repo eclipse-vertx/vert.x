@@ -189,7 +189,7 @@ module Nodex
   #   comp.series(d7)
   #   comp.parallel(d8)
   #   comp.parallel(d9)
-  #   comp.execute()
+  #   comp.execute
   #
   # In the above example, when {#execute} is invoked, d1, d2, and d3 will be executed. When d1, d2, and d3
   # have all completed, then d4 and d5 will be executed. When d4 and d5 have completed d6 will be executed.
@@ -227,7 +227,6 @@ module Nodex
       elsif block != nil
         j_def = TheAction.new(block)
         @j_comp.parallel(j_def)
-        #j_def.block_execution
       end
     end
 
@@ -244,7 +243,6 @@ module Nodex
       elsif block != nil
         j_def = TheAction.new(block)
         @j_comp.series(j_def)
-        #j_def.block_execution
       end
     end
 
