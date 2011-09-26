@@ -19,12 +19,7 @@ package org.nodex.tests.addons.redis;
 import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisException;
 import org.nodex.java.addons.redis.RedisPool;
-import org.nodex.java.core.CompletionHandler;
-import org.nodex.java.core.DeferredAction;
-import org.nodex.java.core.Future;
-import org.nodex.java.core.Handler;
-import org.nodex.java.core.Nodex;
-import org.nodex.java.core.SimpleAction;
+import org.nodex.java.core.*;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.composition.Composer;
 import org.nodex.tests.Utils;
@@ -97,285 +92,285 @@ public class RedisTest extends TestBase {
     }
   }
 
-//  public void doTestAppend() {
-//    comp.series(connection.set(key1, val1));
-//    comp.series(connection.append(key1, val2));
-//    assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
+  public void doTestAppend() {
+    comp.series(connection.set(key1, val1));
+    comp.series(connection.append(key1, val2));
+    assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
+  }
+
+  public void doTestAuth() {
+    Future<Void> res = comp.series(connection.auth(Buffer.create("whatever")));
+    assertResult(res, null);
+  }
+
+  public void doTestBgWriteAOF() {
+    Future<Void> res = comp.series(connection.bgRewriteAOF());
+    assertResult(res, null);
+  }
+
+  public void doBGSave() {
+    Future<Void> res = comp.series(connection.bgSave());
+    assertResult(res, null);
+  }
+
+  public void doBLPop() {
+    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
+    Future<Integer> res2 = comp.series(connection.lPush(keyl2, val2));
+    Future<Buffer[]> res = comp.series(connection.bLPop(10, keyl1, keyl2));
+    assertResult(res1, 1);
+    assertResult(res2, 1);
+    assertResult(res, new Buffer[] { keyl1, val1});
+  }
+
+  public void doBRPop() {
+    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
+    Future<Integer> res2 = comp.series(connection.lPush(keyl2, val2));
+    Future<Buffer[]> res = comp.series(connection.bRPop(10, keyl1, keyl2));
+    assertResult(res1, 1);
+    assertResult(res2, 1);
+    assertResult(res, new Buffer[] { keyl1, val1});
+  }
+
+  public void doBRPopLPush() {
+    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
+    Future<Buffer> res = comp.series(connection.bRPopLPush(keyl1, keyl2, 10));
+    assertResult(res1, 1);
+    assertResult(res, val1);
+  }
+
+//  None of the config commands seem to be recognised by Redis
+//
+//  public void doConfigGet() {
+//    final Future<Buffer> res = comp.series(connection.configGet("*"));
+//    assertResult(res, "foo");
 //  }
 //
-//  public void doTestAuth() {
-//    Future<Void> res = comp.series(connection.auth(Buffer.create("whatever")));
+//  public void doConfigSet() {
+//    Future<Void> res = comp.series(connection.configSet(key1, val1));
 //    assertResult(res, null);
 //  }
 //
-//  public void doTestBgWriteAOF() {
-//    Future<Void> res = comp.series(connection.bgRewriteAOF());
+//  public void doConfigResetStat() {
+//    Future<Void> res = comp.series(connection.configResetStat());
 //    assertResult(res, null);
-//  }
-//
-//  public void doBGSave() {
-//    Future<Void> res = comp.series(connection.bgSave());
-//    assertResult(res, null);
-//  }
-//
-//  public void doBLPop() {
-//    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
-//    Future<Integer> res2 = comp.series(connection.lPush(keyl2, val2));
-//    Future<Buffer[]> res = comp.series(connection.bLPop(10, keyl1, keyl2));
-//    assertResult(res1, 1);
-//    assertResult(res2, 1);
-//    assertResult(res, new Buffer[] { keyl1, val1});
-//  }
-//
-//  public void doBRPop() {
-//    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
-//    Future<Integer> res2 = comp.series(connection.lPush(keyl2, val2));
-//    Future<Buffer[]> res = comp.series(connection.bRPop(10, keyl1, keyl2));
-//    assertResult(res1, 1);
-//    assertResult(res2, 1);
-//    assertResult(res, new Buffer[] { keyl1, val1});
-//  }
-//
-//  public void doBRPopLPush() {
-//    Future<Integer> res1 = comp.series(connection.lPush(keyl1, val1));
-//    Future<Buffer> res = comp.series(connection.bRPopLPush(keyl1, keyl2, 10));
-//    assertResult(res1, 1);
-//    assertResult(res, val1);
-//  }
-//
-////  None of the config commands seem to be recognised by Redis
-////
-////  public void doConfigGet() {
-////    final Future<Buffer> res = comp.series(connection.configGet("*"));
-////    assertResult(res, "foo");
-////  }
-////
-////  public void doConfigSet() {
-////    Future<Void> res = comp.series(connection.configSet(key1, val1));
-////    assertResult(res, null);
-////  }
-////
-////  public void doConfigResetStat() {
-////    Future<Void> res = comp.series(connection.configResetStat());
-////    assertResult(res, null);
-////  }
-//
-//  public void doDBSize() {
-//    int num = 10;
-//    for (int i = 0; i < num; i ++) {
-//      comp.parallel(connection.set(Buffer.create("key" + i), val1));
-//    }
-//    Future<Integer> res = comp.series(connection.dbSize());
-//    assertResult(res, num);
-//  }
-//
-//  public void doDecr() {
-//    int num = 10;
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(num))));
-//    Future<Integer> res = comp.series(connection.decr(key1));
-//    assertResult(res, num - 1);
-//  }
-//
-//  public void doDecrBy() {
-//    int num = 10;
-//    int decr = 4;
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(num))));
-//    Future<Integer> res = comp.series(connection.decrBy(key1, decr));
-//    assertResult(res, num - decr);
-//  }
-//
-//  public void doDel() {
-//    comp.parallel(connection.set(key1, val1));
-//    comp.parallel(connection.set(key2, val2));
-//    comp.parallel(connection.set(key3, val3));
-//    Future<Integer> res = comp.series(connection.dbSize());
-//    assertResult(res, 3);
-//    comp.series(connection.del(key1, key2));
-//    res = comp.series(connection.dbSize());
-//    assertResult(res, 1);
-//  }
-//
-//  public void doMultiDiscard() {
-//    Future<Void> res1 = comp.series(connection.multi());
-//    Future<Void> res2 = comp.series(connection.discard());
-//    assertResult(res1, null);
-//    assertResult(res2, null);
-//  }
-//
-//  public void doEcho() {
-//    Buffer msg = Buffer.create("foo");
-//    Future<Buffer> res = comp.series(connection.echo(msg));
-//    assertResult(res, msg);
-//  }
-//
-//  public void doTransactionExec() {
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
-//    Future<Void> res1 = comp.series(connection.multi());
-//    assertResult(res1, null);
-//    Future<Integer> res2 = comp.series(connection.incr(key1));
-//    Future<Integer> res3 = comp.parallel(connection.incr(key1));
-//    Future<Void> res4 = comp.parallel(connection.exec());
-//    assertResult(res4, null);
-//    assertResult(res2,  1);
-//    assertResult(res3,  2);
-//  }
-//
-//  public void doTransactionWithMultiBulkExec() {
-//    Future<Void> res1 = comp.series(connection.multi());
-//    assertResult(res1, null);
-//    Future<Boolean> res2 = comp.parallel(connection.hSet(key1, field1, val1));
-//    Future<Boolean> res3 = comp.parallel(connection.hSet(key1, field2, val2));
-//    Future<Buffer[]> res4 = comp.parallel(connection.hGetAll(key1));
-//    Future<Void> res5 = comp.parallel(connection.exec());
-//    assertResult(res5, null);
-//    assertResult(res2,  true);
-//    assertResult(res3,  true);
-//    assertResult(res4,  new Buffer[] {field1, val1, field2, val2});
-//  }
-//
-//  public void doTransactionMixed() {
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
-//    Future<Void> res1 = comp.series(connection.multi());
-//    assertResult(res1, null);
-//    Future<Integer> res2 = comp.series(connection.incr(key1));
-//    Future<Integer> res3 = comp.parallel(connection.incr(key1));
-//    Future<Void> res4 = comp.parallel(connection.exec());
-//    assertResult(res4, null);
-//    assertResult(res2,  1);
-//    assertResult(res3,  2);
-//    Future<Integer> res5 = comp.series(connection.incr(key1));
-//    assertResult(res5, 3);
-//    Future<Void> res6 = comp.series(connection.multi());
-//    assertResult(res6, null);
-//    Future<Integer> res7 = comp.series(connection.incr(key1));
-//    Future<Integer> res8 = comp.parallel(connection.incr(key1));
-//    Future<Void> res9 = comp.parallel(connection.exec());
-//    assertResult(res9, null);
-//    assertResult(res7,  4);
-//    assertResult(res8,  5);
-//  }
-//
-//  public void doTransactionDiscard() {
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
-//    Future<Void> res1 = comp.series(connection.multi());
-//    assertResult(res1, null);
-//    Future<Integer> res2 = comp.series(connection.incr(key1));
-//    Future<Integer> res3 = comp.parallel(connection.incr(key1));
-//    Future<Void> res4 = comp.parallel(connection.discard());
-//    assertException(res2, "Transaction discarded");
-//    assertException(res3, "Transaction discarded");
-//    assertResult(res4, null);
-//  }
-//
-//  public void doEmptyTransactionExec() {
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
-//    Future<Void> res1 = comp.series(connection.multi());
-//    assertResult(res1, null);
-//    Future<Void> res2 = comp.parallel(connection.exec());
-//    assertResult(res2, null);
-//  }
-//
-//  public void doEmptyTransactionDiscard() {
-//    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
-//    Future<Void> res1 = comp.series(connection.multi());
-//    assertResult(res1, null);
-//    Future<Void> res2 = comp.parallel(connection.discard());
-//    assertResult(res2, null);
-//  }
-//
-//  public void doPubSub() {
-//    RedisPool pool = new RedisPool().setMaxPoolSize(3);
-//    RedisConnection conn1 = pool.connection();
-//    final RedisConnection conn2 = pool.connection();
-//    final RedisConnection conn3 = pool.connection();
-//
-//    Future<Void> res1 = comp.series(conn2.subscribe(channel1));
-//    assertResult(res1, null);
-//
-//    Future<Void> res2 = comp.series(conn3.subscribe(channel1));
-//    assertResult(res2, null);
-//
-//    final DeferredAction<Buffer> def1 = new DeferredAction<Buffer>() {
-//      public void run() {
-//        conn2.subscriberHandler(new Handler<Buffer>() {
-//          public void handle(Buffer buffer) {
-//            setResult(buffer);
-//          }
-//        });
-//      }
-//    };
-//
-//    final DeferredAction<Buffer> def2 = new DeferredAction<Buffer>() {
-//      public void run() {
-//        conn3.subscriberHandler(new Handler<Buffer>() {
-//          public void handle(Buffer buffer) {
-//            setResult(buffer);
-//          }
-//        });
-//      }
-//    };
-//
-//    Future<Buffer> res3 = comp.series(def1);
-//    Future<Buffer> res4 = comp.parallel(def2);
-//
-//    Future<Integer> res5 = comp.parallel(conn1.publish(channel1, val1));
-//
-//    assertResult(res5, 2);
-//
-//    assertResult(res3, val1);
-//    assertResult(res4, val1);
-//
-//    comp.series(conn1.close());
-//    comp.parallel(conn2.close());
-//    comp.parallel(conn3.close());
-//  }
-//
-//  public void doPubSubOnlySubscribe() {
-//    RedisPool pool = new RedisPool().setMaxPoolSize(3);
-//    RedisConnection conn1 = pool.connection();
-//
-//    Future<Void> res1 = comp.series(conn1.subscribe(channel1));
-//    assertResult(res1, null);
-//
-//    Future<Void> res2 = comp.series(conn1.set(key1, val1));
-//    assertException(res2, "Can only subscribe when in subscribe mode");
-//
-//    Future<Void> res3 = comp.series(conn1.unsubscribe(channel1));
-//    assertResult(res3, null);
-//
-//    Future<Void> res4 = comp.series(conn1.set(key1, val1));
-//    assertResult(res4, null);
-//
-//    comp.series(conn1.close());
-//  }
-//
-//  public void doPubSubSubscribeMultiple() {
-//    RedisPool pool = new RedisPool().setMaxPoolSize(3);
-//    RedisConnection conn1 = pool.connection();
-//
-//    Future<Void> res1 = comp.series(conn1.subscribe(channel1));
-//    assertResult(res1, null);
-//
-//    Future<Void> res2 = comp.series(conn1.subscribe(channel2));
-//    assertResult(res2, null);
-//
-//    Future<Void> res3 = comp.series(conn1.set(key1, val1));
-//    assertException(res3, "It is not legal to send commands other than SUBSCRIBE and UNSUBSCRIBE when in subscribe mode");
-//
-//    Future<Void> res4 = comp.series(conn1.unsubscribe(channel1));
-//    assertResult(res4, null);
-//
-//    Future<Void> res5 = comp.series(conn1.unsubscribe(channel2));
-//    assertResult(res5, null);
-//
-//    Future<Void> res6 = comp.series(conn1.set(key1, val1));
-//    assertResult(res6, null);
-//
-//    comp.series(conn1.close());
 //  }
 
-  public void doPooling() {
-    RedisPool pool = new RedisPool().setMaxPoolSize(5);
+  public void doDBSize() {
+    int num = 10;
+    for (int i = 0; i < num; i ++) {
+      comp.parallel(connection.set(Buffer.create("key" + i), val1));
+    }
+    Future<Integer> res = comp.series(connection.dbSize());
+    assertResult(res, num);
+  }
+
+  public void doDecr() {
+    int num = 10;
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(num))));
+    Future<Integer> res = comp.series(connection.decr(key1));
+    assertResult(res, num - 1);
+  }
+
+  public void doDecrBy() {
+    int num = 10;
+    int decr = 4;
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(num))));
+    Future<Integer> res = comp.series(connection.decrBy(key1, decr));
+    assertResult(res, num - decr);
+  }
+
+  public void doDel() {
+    comp.parallel(connection.set(key1, val1));
+    comp.parallel(connection.set(key2, val2));
+    comp.parallel(connection.set(key3, val3));
+    Future<Integer> res = comp.series(connection.dbSize());
+    assertResult(res, 3);
+    comp.series(connection.del(key1, key2));
+    res = comp.series(connection.dbSize());
+    assertResult(res, 1);
+  }
+
+  public void doMultiDiscard() {
+    Future<Void> res1 = comp.series(connection.multi());
+    Future<Void> res2 = comp.series(connection.discard());
+    assertResult(res1, null);
+    assertResult(res2, null);
+  }
+
+  public void doEcho() {
+    Buffer msg = Buffer.create("foo");
+    Future<Buffer> res = comp.series(connection.echo(msg));
+    assertResult(res, msg);
+  }
+
+  public void doTransactionExec() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Integer> res2 = comp.series(connection.incr(key1));
+    Future<Integer> res3 = comp.parallel(connection.incr(key1));
+    Future<Void> res4 = comp.parallel(connection.exec());
+    assertResult(res4, null);
+    assertResult(res2,  1);
+    assertResult(res3,  2);
+  }
+
+  public void doTransactionWithMultiBulkExec() {
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Boolean> res2 = comp.parallel(connection.hSet(key1, field1, val1));
+    Future<Boolean> res3 = comp.parallel(connection.hSet(key1, field2, val2));
+    Future<Buffer[]> res4 = comp.parallel(connection.hGetAll(key1));
+    Future<Void> res5 = comp.parallel(connection.exec());
+    assertResult(res5, null);
+    assertResult(res2,  true);
+    assertResult(res3,  true);
+    assertResult(res4,  new Buffer[] {field1, val1, field2, val2});
+  }
+
+  public void doTransactionMixed() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Integer> res2 = comp.series(connection.incr(key1));
+    Future<Integer> res3 = comp.parallel(connection.incr(key1));
+    Future<Void> res4 = comp.parallel(connection.exec());
+    assertResult(res4, null);
+    assertResult(res2,  1);
+    assertResult(res3,  2);
+    Future<Integer> res5 = comp.series(connection.incr(key1));
+    assertResult(res5, 3);
+    Future<Void> res6 = comp.series(connection.multi());
+    assertResult(res6, null);
+    Future<Integer> res7 = comp.series(connection.incr(key1));
+    Future<Integer> res8 = comp.parallel(connection.incr(key1));
+    Future<Void> res9 = comp.parallel(connection.exec());
+    assertResult(res9, null);
+    assertResult(res7,  4);
+    assertResult(res8,  5);
+  }
+
+  public void doTransactionDiscard() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Integer> res2 = comp.series(connection.incr(key1));
+    Future<Integer> res3 = comp.parallel(connection.incr(key1));
+    Future<Void> res4 = comp.parallel(connection.discard());
+    assertException(res2, "Transaction discarded");
+    assertException(res3, "Transaction discarded");
+    assertResult(res4, null);
+  }
+
+  public void doEmptyTransactionExec() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Void> res2 = comp.parallel(connection.exec());
+    assertResult(res2, null);
+  }
+
+  public void doEmptyTransactionDiscard() {
+    comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    Future<Void> res1 = comp.series(connection.multi());
+    assertResult(res1, null);
+    Future<Void> res2 = comp.parallel(connection.discard());
+    assertResult(res2, null);
+  }
+
+  public void doPubSub() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(3);
+    RedisConnection conn1 = pool.connection();
+    final RedisConnection conn2 = pool.connection();
+    final RedisConnection conn3 = pool.connection();
+
+    Future<Void> res1 = comp.series(conn2.subscribe(channel1));
+    assertResult(res1, null);
+
+    Future<Void> res2 = comp.series(conn3.subscribe(channel1));
+    assertResult(res2, null);
+
+    final DeferredAction<Buffer> def1 = new DeferredAction<Buffer>() {
+      public void run() {
+        conn2.subscriberHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            setResult(buffer);
+          }
+        });
+      }
+    };
+
+    final DeferredAction<Buffer> def2 = new DeferredAction<Buffer>() {
+      public void run() {
+        conn3.subscriberHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            setResult(buffer);
+          }
+        });
+      }
+    };
+
+    Future<Buffer> res3 = comp.series(def1);
+    Future<Buffer> res4 = comp.parallel(def2);
+
+    Future<Integer> res5 = comp.parallel(conn1.publish(channel1, val1));
+
+    assertResult(res5, 2);
+
+    assertResult(res3, val1);
+    assertResult(res4, val1);
+
+    comp.series(conn1.closeDeferred());
+    comp.parallel(conn2.closeDeferred());
+    comp.parallel(conn3.closeDeferred());
+  }
+
+  public void doPubSubOnlySubscribe() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(3);
+    RedisConnection conn1 = pool.connection();
+
+    Future<Void> res1 = comp.series(conn1.subscribe(channel1));
+    assertResult(res1, null);
+
+    Future<Void> res2 = comp.series(conn1.set(key1, val1));
+    assertException(res2, "It is not legal to send commands other than SUBSCRIBE and UNSUBSCRIBE when in subscribe mode");
+
+    Future<Void> res3 = comp.series(conn1.unsubscribe(channel1));
+    assertResult(res3, null);
+
+    Future<Void> res4 = comp.series(conn1.set(key1, val1));
+    assertResult(res4, null);
+
+    comp.series(conn1.closeDeferred());
+  }
+
+  public void doPubSubSubscribeMultiple() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(3);
+    RedisConnection conn1 = pool.connection();
+
+    Future<Void> res1 = comp.series(conn1.subscribe(channel1));
+    assertResult(res1, null);
+
+    Future<Void> res2 = comp.series(conn1.subscribe(channel2));
+    assertResult(res2, null);
+
+    Future<Void> res3 = comp.series(conn1.set(key1, val1));
+    assertException(res3, "It is not legal to send commands other than SUBSCRIBE and UNSUBSCRIBE when in subscribe mode");
+
+    Future<Void> res4 = comp.series(conn1.unsubscribe(channel1));
+    assertResult(res4, null);
+
+    Future<Void> res5 = comp.series(conn1.unsubscribe(channel2));
+    assertResult(res5, null);
+
+    Future<Void> res6 = comp.series(conn1.set(key1, val1));
+    assertResult(res6, null);
+
+    comp.series(conn1.closeDeferred());
+  }
+
+  public void doPooling1() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(10);
 
     int numConnections = 100;
 
@@ -383,9 +378,11 @@ public class RedisTest extends TestBase {
     for (int i= 0; i < numConnections; i++) {
       final RedisConnection conn = pool.connection();
       Future<Integer> res = comp.parallel(conn.incr(key1));
-      comp.parallel(conn.close());
+      comp.parallel(conn.closeDeferred());
       futures.add(res);
     }
+
+    final int expected = (numConnections + 1) * numConnections / 2;
 
     comp.series(new SimpleAction() {
       public void act() {
@@ -393,10 +390,21 @@ public class RedisTest extends TestBase {
         for (Future<Integer> future: futures) {
           tot += future.result();
         }
-        System.out.println("Tot is " + tot);
+
+        azzert(expected == tot);
       }
     });
+  }
 
+  public void doPooling2() {
+    RedisPool pool = new RedisPool().setMaxPoolSize(10);
+
+    int numConnections = 100;
+
+    for (int i= 0; i < numConnections; i++) {
+      final RedisConnection conn = pool.connection();
+      comp.parallel(conn.closeDeferred());
+    }
   }
 
   // Private -------------------------
@@ -435,8 +443,6 @@ public class RedisTest extends TestBase {
         }
         azzert(future.succeeded());
         Object res = future.result();
-        System.out.println("Asserting expected: " + value + " actual " + res);
-
         if (res == null) {
           azzert(value == null);
         } else {
@@ -467,7 +473,7 @@ public class RedisTest extends TestBase {
   }
 
   private void done() {
-    comp.series(connection.close());
+    comp.series(connection.closeDeferred());
     comp.series(new TestAction() {
       protected void doAct() {
         pool.close();

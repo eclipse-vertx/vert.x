@@ -16,12 +16,7 @@
 
 package org.nodex.java.addons.redis;
 
-import org.nodex.java.core.ConnectionPool;
-import org.nodex.java.core.Deferred;
-import org.nodex.java.core.DeferredAction;
-import org.nodex.java.core.Handler;
-import org.nodex.java.core.Nodex;
-import org.nodex.java.core.SimpleAction;
+import org.nodex.java.core.*;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 
@@ -30,11 +25,22 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
- * <p>An asynchronous, pooling, Redis client</p>
+ * <p>Represents a connection to a Redis server.</p>
  *
- * <p>Instances of this class maintain a pool of connections to a specific Redis server. As Deferred actions are
- * executed, a connection is borrowed from the pool, the action is written, and the connection is returned. It can
- * be safely used from different event loops.</p>
+ * <p>Instances of this class are obtained from {@link RedisPool#connection}. The actual TCP connections to Redis
+ * are obtained lazily fron the pool when actions are executed. You can have many instances of RedisConnection
+ * sharing a limited pool of actual TCP connections. Once you have done writing requests you should call {@link #close}
+ * to return the underlying TCP connection to the pool. You do not have to wait for all your responses to return before calling
+ * close. The class supports pipelining, i.e. you can safely send many requests in succession before any of the results have returned.</p>
+ *
+ * A couple of caveats:
+ *
+ * <ul>
+ *   <li>If you have subscribed to any Redis channels, the connection will be put into subscription mode and you
+ *   cannot send any commands apart from SUBSCRIBE and UNSUBSCRIBE, or close the connection, until you have unsubscribed from all channels.</li>
+ *   <li>If you have started a transaction with MULTI you cannot close the connection until the transaction has been completed using
+ *   EXEC or DISCARD.</li>
+ * </ul>
  *
  * <p>Actions are returned as instances of {@link Deferred}. The actual actions won't be executed until the
  * {@link Deferred#execute} method is called. This allows multiple Deferred instances to be composed together
@@ -43,10 +49,11 @@ import java.util.Map;
  * <p>An example of using this class directly would be:</p>
  *
  * <pre>
- * RedisClient client = new RedisClient();
+ * final RedisConnection conn = pool.connection();
  * client.set(Buffer.create("key1"), Buffer.create("value1").handler(new CompletionHandler() {
  *   public void handle(Future&lt;Void&gt; f) {
  *     System.out.println("The value has been successfully set");
+ *     conn.close();
  *   }
  * }
  * </pre>
@@ -54,17 +61,18 @@ import java.util.Map;
  * <p>Or using a {@link org.nodex.java.core.composition.Composer}</p>
  *
  * <pre>
- * RedisClient client = new RedisClient();
+ * RedisConnection conn = pool.connection();
  * Composer comp = new Composer();
- * comp.parallel(client.set(Buffer.create("key1"), Buffer.create("value1")));
- * comp.parallel(client.set(Buffer.create("key2"), Buffer.create("value2")));
- * Future&lt;Buffer&gt; result1 = comp.series(client.get(Buffer.create("key1")));
- * Future&lt;Buffer&gt; result2 = comp.parallel(client.get(Buffer.create("key2")));
+ * comp.parallel(conn.set(Buffer.create("key1"), Buffer.create("value1")));
+ * comp.parallel(conn.set(Buffer.create("key2"), Buffer.create("value2")));
+ * Future&lt;Buffer&gt; result1 = comp.series(conn.get(Buffer.create("key1")));
+ * Future&lt;Buffer&gt; result2 = comp.parallel(conn.get(Buffer.create("key2")));
  * comp.series(new SimpleAction() {
  *   protected void act() {
- *     client.set(Buffer.create("key3"), Buffer.create(result1.result + result2.result));
+ *     conn.set(Buffer.create("key3"), Buffer.create(result1.result + result2.result));
  *   }
  * }
+ * comp.parallel(conn.closeDeferred());
  * </pre>
  *
  * <p>For a full description of the various Redis commands, please see the <a href="http://redis.io/commands">Redis documentation</a>.</p>
@@ -209,10 +217,11 @@ public class RedisConnection {
   private static final byte[] WITHSCORES = "WITHSCORES".getBytes(UTF8);
 
   private final ConnectionPool<InternalConnection> pool;
-  private InternalConnection conn;
+  InternalConnection conn;
   private final LinkedList<RedisDeferred<?>> pending = new LinkedList<>();
   private Handler<Buffer> subscriberHandler;
   private DeferredAction<Void> closeDeferred;
+  private boolean connectionRequested;
 
   /**
    * Create a new RedisClient
@@ -221,13 +230,29 @@ public class RedisConnection {
     this.pool = pool;
   }
 
-  public Deferred<Void> close() {
+  /**
+   * Close the file asynchronously.<p>
+   * This method must be called using the same event loop the file was opened from.
+   * @return a Future representing the future result of closing the file.
+   */
+  public Future<Void> close() {
+    return closeDeferred().execute();
+  }
 
+  /**
+   * The same as {@link #close} but the close does not start until the {@link Deferred#execute} method
+   * is called on the Deferred instance returned by this method.
+   * @return a Deferred representing the as-yet unexecuted action.
+   */
+  public Deferred<Void> closeDeferred() {
     return new DeferredAction<Void>() {
       public void run() {
         if (conn != null) {
           conn.close(this);
           conn = null;
+        } else if (pending.isEmpty()){
+          //No internal connection and never going to get one
+          setResult(null);
         } else {
           closeDeferred = this;
         }
@@ -241,6 +266,11 @@ public class RedisConnection {
     } else {
       subscriberHandler = handler;
     }
+  }
+
+  void addToPending(RedisDeferred<?> deferred) {
+    getConnection();
+    pending.add(deferred);
   }
 
   public Deferred<Integer> append(Buffer key, Buffer value) {
@@ -352,7 +382,7 @@ public class RedisConnection {
 
   public Deferred<Void> discard() {
     RedisDeferred<Void> deferred = createVoidDeferred(DISCARD_COMMAND);
-    deferred.commandType = TxCommandType.DISCARD;
+    deferred.commandType = RedisDeferred.TxCommandType.DISCARD;
     return deferred;
   }
 
@@ -366,7 +396,7 @@ public class RedisConnection {
 
   public Deferred<Void> exec() {
     RedisDeferred<Void> deferred = createVoidDeferred(EXEC_COMMAND);
-    deferred.commandType = TxCommandType.EXEC;
+    deferred.commandType = RedisDeferred.TxCommandType.EXEC;
     return deferred;
   }
 
@@ -578,7 +608,7 @@ public class RedisConnection {
 
   public Deferred<Void> multi() {
     RedisDeferred<Void> deferred = createVoidDeferred(MULTI_COMMAND);
-    deferred.commandType = TxCommandType.MULTI;
+    deferred.commandType = RedisDeferred.TxCommandType.MULTI;
     return deferred;
   }
 
@@ -947,15 +977,13 @@ public class RedisConnection {
 
   private Deferred<Void> doSubscribe(final byte[] command,  final Buffer... channels) {
 
-    return new RedisDeferred<Void>(DeferredType.VOID) {
+    return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
       public void run() {
         final Buffer buff = createCommand(command, channels);
-
-        System.out.println("Switching to subscribe mode");
-        conn.sendRequest(this, buff, true, contextID);
+        rc.conn.sendRequest(this, buff, true, contextID);
       }
       public void handleReply(RedisReply reply) {
-        conn.subscribe(contextID);
+        rc.conn.subscribe(contextID);
         setResult(null);
       }
     };
@@ -963,22 +991,19 @@ public class RedisConnection {
 
   private Deferred<Void> doUnsubscribe(byte[] command,  Buffer... channels) {
     final Buffer buff = createCommand(command, channels);
-    return new RedisDeferred<Void>(DeferredType.VOID) {
+    return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
       public void run() {
-        conn.sendRequest(this, buff, true, contextID);
+        rc.conn.sendRequest(this, buff, true, contextID);
       }
       public void handleReply(RedisReply reply) {
         int num = reply.intResult;
-        System.out.println("Reply from unsubscribe, num is " + num);
         if (num == 0) {
-          System.out.println("Switching to normal mode");
-          conn.unsubscribe();
+          rc.conn.unsubscribe();
         }
         setResult(null);
       }
     };
   }
-
 
   private Buffer createCommand(byte[] command, Buffer... args) {
     Buffer buff = Buffer.create(64);
@@ -1002,52 +1027,52 @@ public class RedisConnection {
   }
 
   private RedisDeferred<Double> createDoubleDeferred(final byte[] command, final Buffer... args) {
-    return new RedisDeferred<Double>(DeferredType.DOUBLE) {
+    return new RedisDeferred<Double>(RedisDeferred.DeferredType.DOUBLE, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        conn.sendRequest(this, buff, contextID);
+        rc.conn.sendRequest(this, buff, contextID);
       }
     };
   }
 
   private RedisDeferred<Integer> createIntegerDeferred(final byte[] command, final Buffer... args) {
-    return new RedisDeferred<Integer>(DeferredType.INTEGER) {
+    return new RedisDeferred<Integer>(RedisDeferred.DeferredType.INTEGER, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        conn.sendRequest(this, buff, contextID);
+        rc.conn.sendRequest(this, buff, contextID);
       }
     };
   }
 
   private RedisDeferred<Void> createVoidDeferred(final byte[] command, final Buffer... args) {
-    return new RedisDeferred<Void>(DeferredType.VOID) {
+    return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        conn.sendRequest(this, buff, contextID);
+        rc.conn.sendRequest(this, buff, contextID);
       }
     };
   }
 
   private RedisDeferred<Boolean> createBooleanDeferred(final byte[] command, final Buffer... args) {
-    return new RedisDeferred<Boolean>(DeferredType.BOOLEAN) {
+    return new RedisDeferred<Boolean>(RedisDeferred.DeferredType.BOOLEAN, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        conn.sendRequest(this, buff, contextID);
+        rc.conn.sendRequest(this, buff, contextID);
       }
     };
   }
 
   private RedisDeferred<Buffer> createBulkDeferred(final byte[] command, final Buffer... args) {
-    return new RedisDeferred<Buffer>(DeferredType.BULK) {
+    return new RedisDeferred<Buffer>(RedisDeferred.DeferredType.BULK, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        conn.sendRequest(this, buff, contextID);
+        rc.conn.sendRequest(this, buff, contextID);
       }
     };
   }
 
   private RedisDeferred<Buffer[]> createMultiBulkDeferred(final byte[] command, final Buffer... args) {
-    return new RedisDeferred<Buffer[]>(DeferredType.MULTI_BULK) {
+    return new RedisDeferred<Buffer[]>(RedisDeferred.DeferredType.MULTI_BULK, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
         conn.sendRequest(this, buff, contextID);
@@ -1105,8 +1130,6 @@ public class RedisConnection {
     return Buffer.create(String.valueOf(d));
   }
 
-  private boolean connectionRequested;
-
   private void getConnection() {
     if (!connectionRequested) {
       pool.getConnection(new Handler<InternalConnection>() {
@@ -1120,11 +1143,7 @@ public class RedisConnection {
 
   private void setConnection(InternalConnection conn) {
     this.conn = conn;
-    System.out.println("Connection has arrived");
     for (RedisDeferred<?> deff: pending) {
-      //System.out.println("Writing request: " + buff);
-      //connection.write(buff);
-      System.out.println("Executing");
       deff.execute();
     }
     pending.clear();
@@ -1138,97 +1157,4 @@ public class RedisConnection {
     }
   }
 
-  enum DeferredType {
-    VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
-  }
-
-  enum TxCommandType {
-    MULTI, EXEC, DISCARD, OTHER
-  }
-
-  abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandler {
-
-    final DeferredType type;
-    final long contextID;
-    TxCommandType commandType = TxCommandType.OTHER;
-    RedisReply reply;
-
-    RedisDeferred(DeferredType type) {
-      this.type = type;
-      this.contextID = Nodex.instance.getContextID();
-    }
-
-    @Override
-    public Deferred<T> execute() {
-      if (conn == null) {
-        getConnection();
-        pending.add(this);
-        System.out.println("No connection yet, adding to pending");
-      } else {
-        if (!executed) {
-          run();
-          executed = true;
-        }
-      }
-      return this;
-    }
-
-    void doHandleReply() {
-      System.out.println("deferred type is " + type);
-      System.out.println("reply.bulkResult is " + reply.bulkResult);
-      if (reply.type == RedisReply.Type.ERROR) {
-        System.out.println("reply type is error ");
-        setException(new RedisException(reply.error));
-      } else {
-
-        //If transacted the user should ignore the result, the EXEC will give the correct results
-        switch (type) {
-          case VOID: {
-            setResult(null);
-            break;
-          }
-          case BOOLEAN: {
-            ((RedisDeferred<Boolean>)this).setResult(reply.intResult == 1);
-            break;
-          }
-          case INTEGER: {
-            ((RedisDeferred<Integer>)this).setResult(reply.intResult);
-            break;
-          }
-          case DOUBLE: {
-            ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
-            break;
-          }
-          case BULK: {
-            System.out.println("Gonna set bulk result " + reply.bulkResult);
-            ((RedisDeferred<Buffer>)this).setResult(reply.bulkResult);
-            break;
-          }
-          case MULTI_BULK: {
-            ((RedisDeferred<Buffer[]>)this).setResult(reply.multiBulkResult);
-            break;
-          }
-        }
-      }
-    }
-
-    public void handleReply(final RedisReply reply) {
-      System.out.println("Got redis reply: " + reply);
-      this.reply = reply;
-      NodexInternal.instance.executeOnContext(contextID, new Runnable() {
-        public void run() {
-          try {
-            doHandleReply();
-          } catch (Exception e) {
-            e.printStackTrace(System.err);
-          }
-        }
-      });
-    }
-
-    public void handleReplyDirect(final RedisReply reply) {
-      this.reply = reply;
-      doHandleReply();
-    }
-  }
 }

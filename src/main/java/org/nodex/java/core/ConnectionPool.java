@@ -95,6 +95,7 @@ public abstract class ConnectionPool<T> {
    * Return a connection to the pool so it can be used by others.
    */
   public synchronized void returnConnection(final T conn) {
+
     //Return it to the pool
     final Waiter waiter = waiters.poll();
 

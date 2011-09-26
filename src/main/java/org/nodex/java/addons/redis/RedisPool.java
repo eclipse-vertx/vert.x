@@ -22,6 +22,11 @@ import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetSocket;
 
 /**
+ * <p>Instances of this class maintain a pool of connections to a Redis Server and act as a factory for
+ * {@link RedisConnection} instances via the {@link #connection} method. Once a RedisConnection has been done
+ * with, the {@link RedisConnection#close} method should be called to return it's underlying TCP connection to
+ * the pool.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisPool {
@@ -70,10 +75,16 @@ public class RedisPool {
     return pool.getMaxPoolSize();
   }
 
+  /**
+   * Get a RedisConnection.
+   */
   public RedisConnection connection() {
     return new RedisConnection(pool);
   }
 
+  /**
+   * Close the pool. Any pooled connections will be closed.
+   */
   public void close() {
     pool.close();
     client.close();

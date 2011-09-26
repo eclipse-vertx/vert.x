@@ -17,7 +17,7 @@
 package org.nodex.java.addons.redis;
 
 /**
- * Exception thrown by the RedisClient class
+ * Exception thrown by the Redis client
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
