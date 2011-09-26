@@ -493,6 +493,7 @@ public class RedisTest extends TestBase {
           method.invoke(RedisTest.this);
           done();
         } catch (Exception e) {
+          e.printStackTrace();
           azzert(false, "Exception thrown " + e.getMessage());
         }
       }

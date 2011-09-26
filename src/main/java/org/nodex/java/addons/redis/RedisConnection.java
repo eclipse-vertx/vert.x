@@ -76,6 +76,8 @@ import java.util.Map;
  * </pre>
  *
  * <p>For a full description of the various Redis commands, please see the <a href="http://redis.io/commands">Redis documentation</a>.</p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisConnection {
 
@@ -277,20 +279,8 @@ public class RedisConnection {
     return createIntegerDeferred(APPEND_COMMAND, key, value);
   }
 
-  public Deferred<Integer> append(String key, Buffer value) {
-    return append(Buffer.create(key), value);
-  }
-
-  public Deferred<Integer> append(String key, String value) {
-    return append(Buffer.create(key), Buffer.create(value));
-  }
-
   public Deferred<Void> auth(Buffer password) {
     return createVoidDeferred(AUTH_COMMAND, password);
-  }
-
-  public Deferred<Void> auth(String password) {
-    return auth(Buffer.create(password));
   }
 
   public Deferred<Void> bgRewriteAOF() {
@@ -308,77 +298,38 @@ public class RedisConnection {
     return createMultiBulkDeferred(BLPOP_COMMAND, args);
   }
 
-  public Deferred<Buffer[]> bLPop(int timeout, String... keys) {
-    return bLPop(timeout, toBufferArray(keys));
-  }
-
   public Deferred<Buffer[]> bRPop(int timeout, Buffer... keys) {
     return createMultiBulkDeferred(BRPOP_COMMAND, toBufferArray(keys, intToBuffer(timeout)));
-  }
-
-  public Deferred<Buffer[]> bRPop(int timeout, String... keys) {
-    return bRPop(timeout, toBufferArray(keys));
   }
 
   public Deferred<Buffer> bRPopLPush(Buffer source, Buffer destination, int timeout) {
     return createBulkDeferred(BRPOPLPUSH_COMMAND, source, destination, intToBuffer(timeout));
   }
 
-  public Deferred<Buffer> bRPopLPush(String source, String destination, int timeout) {
-    return bRPopLPush(Buffer.create(source), Buffer.create(destination), timeout);
-  }
-
   public Deferred<Buffer> configGet(Buffer parameter) {
     return createBulkDeferred(CONFIG_GET_COMMAND, parameter);
-  }
-
-  public Deferred<Buffer> configGet(String parameter) {
-    return configGet(Buffer.create(parameter));
   }
 
   public Deferred<Void> configSet(Buffer parameter, Buffer value) {
     return createVoidDeferred(CONFIG_SET_COMMAND, parameter, value);
   }
 
-  public Deferred<Void> configSet(String parameter, String value) {
-    return configSet(Buffer.create(parameter), Buffer.create(value));
-  }
-
-  public Deferred<Void> configResetStat() {
-    return createVoidDeferred(CONFIG_RESET_STAT_COMMAND);
-  }
-
   public Deferred<Integer> dbSize() {
     return createIntegerDeferred(DB_SIZE_COMMAND);
-  }
-
-  public Deferred<Void> debugSegFault() {
-    return createVoidDeferred(DEBUG_SEG_FAULT_COMMAND);
   }
 
   public Deferred<Integer> decr(Buffer key) {
     return createIntegerDeferred(DECR_COMMAND, key);
   }
 
-  public Deferred<Integer> decr(String key) {
-    return decr(Buffer.create(key));
-  }
-
   public Deferred<Integer> decrBy(Buffer key, int decrement) {
     return createIntegerDeferred(DECRBY_COMMAND, key, intToBuffer(decrement));
-  }
-
-  public Deferred<Integer> decrBy(String key, int decrement) {
-    return decrBy(Buffer.create(key), decrement);
   }
 
   public Deferred<Integer> del(Buffer... keys) {
     return createIntegerDeferred(DEL_COMMAND, keys);
   }
 
-  public Deferred<Integer> del(String... keys) {
-    return del(toBufferArray(keys));
-  }
 
   public Deferred<Void> discard() {
     RedisDeferred<Void> deferred = createVoidDeferred(DISCARD_COMMAND);
@@ -388,10 +339,6 @@ public class RedisConnection {
 
   public Deferred<Buffer> echo(Buffer message) {
     return createBulkDeferred(ECHO_COMMAND, message);
-  }
-
-  public Deferred<Buffer> echo(String message) {
-    return echo(Buffer.create(message));
   }
 
   public Deferred<Void> exec() {
@@ -404,24 +351,12 @@ public class RedisConnection {
     return createBooleanDeferred(EXISTS_COMMAND, key);
   }
 
-  public Deferred<Boolean> exists(String key) {
-    return exists(Buffer.create(key));
-  }
-
   public Deferred<Boolean> expire(Buffer key, int seconds) {
     return createBooleanDeferred(EXPIRE_COMMAND, key, intToBuffer(seconds));
   }
 
-  public Deferred<Boolean> expire(String key, int seconds) {
-    return expire(Buffer.create(key), seconds);
-  }
-
   public Deferred<Boolean> expireAt(Buffer key, int timestamp) {
     return createBooleanDeferred(EXPIREAT_COMMAND, key, intToBuffer(timestamp));
-  }
-
-  public Deferred<Boolean> expireAt(String key, int timestamp) {
-    return expireAt(Buffer.create(key), timestamp);
   }
 
   public Deferred<Void> flushAll() {
@@ -436,59 +371,25 @@ public class RedisConnection {
     return createBulkDeferred(GET_COMMAND, key);
   }
 
-  public Deferred<Buffer> get(String key) {
-    return get(Buffer.create(key));
-  }
-
   public Deferred<Integer> getBit(Buffer key, int offset) {
     return createIntegerDeferred(GETBIT_COMMAND, key, intToBuffer(offset));
-  }
-
-  public Deferred<Integer> getBit(String key, int offset) {
-    return getBit(Buffer.create(key), offset);
   }
 
   public Deferred<Buffer> getRange(Buffer key, int start, int end) {
     return createBulkDeferred(GETRANGE_COMMAND, key, intToBuffer(start), intToBuffer(end));
   }
 
-  public Deferred<Buffer> getRange(String key, int start, int end) {
-    return getRange(Buffer.create(key), start, end);
-  }
-
   public Deferred<Buffer> getSet(Buffer key, Buffer value) {
     return createBulkDeferred(GETSET_COMMAND, key, value);
-  }
-
-  public Deferred<Buffer> getSet(String key, Buffer value) {
-    return getSet(Buffer.create(key), value);
-  }
-
-  public Deferred<Buffer> getSet(String key, String value) {
-    return getSet(Buffer.create(key), Buffer.create(value));
   }
 
   public Deferred<Integer> hDel(Buffer key, Buffer... fields) {
     return createIntegerDeferred(HDEL_COMMAND, toBufferArray(key, fields));
   }
 
-  public Deferred<Integer> hDel(String key, Buffer... fields) {
-    return hDel(Buffer.create(key), fields);
-  }
-
-  public Deferred<Integer> hDel(String key, String... fields) {
-    return hDel(Buffer.create(key), toBufferArray(fields));
-  }
-
   public Deferred<Boolean> hExists(Buffer key, Buffer field) {
     return createBooleanDeferred(HEXISTS_COMMAND, key, field);
   }
-
-  public Deferred<Boolean> hExists(String key, Buffer field) {
-    return hExists(Buffer.create(key), field);
-  }
-
-  //DO I really need to create string versions of all method?? Perhaps FOR NOW, we should just use buffers????
 
   public Deferred<Buffer> hGet(Buffer key, Buffer field) {
     return createBulkDeferred(HGET_COMMAND, key, field);
