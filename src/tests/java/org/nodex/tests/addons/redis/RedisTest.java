@@ -19,7 +19,12 @@ package org.nodex.tests.addons.redis;
 import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisException;
 import org.nodex.java.addons.redis.RedisPool;
-import org.nodex.java.core.*;
+import org.nodex.java.core.Deferred;
+import org.nodex.java.core.DeferredAction;
+import org.nodex.java.core.Future;
+import org.nodex.java.core.Handler;
+import org.nodex.java.core.Nodex;
+import org.nodex.java.core.SimpleAction;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.composition.Composer;
 import org.nodex.tests.Utils;
@@ -27,7 +32,6 @@ import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,20 +48,15 @@ public class RedisTest extends TestBase {
   private static final Buffer key2 = Buffer.create("key2");
   private static final Buffer key3 = Buffer.create("key3");
   private static final Buffer key4 = Buffer.create("key4");
-  private static final Buffer key5 = Buffer.create("key5");
 
   private static final Buffer field1 = Buffer.create("field1");
   private static final Buffer field2 = Buffer.create("field2");
   private static final Buffer field3 = Buffer.create("field3");
-  private static final Buffer field4 = Buffer.create("field4");
-  private static final Buffer field5 = Buffer.create("field5");
 
   private static final Buffer channel1 = Buffer.create("channel1");
   private static final Buffer channel2 = Buffer.create("channel2");
-  private static final Buffer channel3 = Buffer.create("channel3");
 
   private static final Buffer pattern1 = Buffer.create("channel*");
-
 
   private static final Buffer keyl1 = Buffer.create("keyl1");
   private static final Buffer keyl2 = Buffer.create("keyl2");
@@ -68,8 +67,6 @@ public class RedisTest extends TestBase {
   private static final Buffer val4 = Buffer.create("val4");
   private static final Buffer val5 = Buffer.create("val5");
 
-  private static final Charset UTF8 = Charset.forName("UTF-8");
-
   private Composer comp;
   private RedisPool pool;
   private RedisConnection connection;
@@ -78,33 +75,590 @@ public class RedisTest extends TestBase {
   // Tests -----------------------------
 
   @Test
-  public void testAll() throws Exception {
-    try {
-      Method[] methods = RedisTest.class.getMethods();
-      for (Method method: methods) {
-        if (method.getName().startsWith("do")) {
-          setup();
-          System.out.println("RUNNING TEST: " + method.getName());
-          runTest(method);
-          System.out.println("TEST COMPLETE: " + method.getName());
-          teardown();
-        }
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      azzert(false, e.getMessage());
-    }
+  public void testBGSave() throws Exception {
+    runTest("doBGSave");
   }
+
+  @Test
+  public void testBLPop() throws Exception {
+    runTest("doBLPop");
+  }
+
+  @Test
+  public void testBRPop() throws Exception {
+    runTest("doBRPop");
+  }
+
+  @Test
+  public void testBRPopLPush() throws Exception {
+    runTest("doBRPopLPush");
+  }
+
+  @Test
+  public void testDBSize() throws Exception {
+    runTest("doDBSize");
+  }
+
+  @Test
+  public void testDecr() throws Exception {
+    runTest("doDecr");
+  }
+
+  @Test
+  public void testDecrBy() throws Exception {
+    runTest("doDecrBy");
+  }
+
+  @Test
+  public void testDel() throws Exception {
+    runTest("doDel");
+  }
+
+  @Test
+  public void testEcho() throws Exception {
+    runTest("doEcho");
+  }
+
+  @Test
+  public void testEmptyTransactionDiscard() throws Exception {
+    runTest("doEmptyTransactionDiscard");
+  }
+
+  @Test
+  public void testEmptyTransactionExec() throws Exception {
+    runTest("doEmptyTransactionExec");
+  }
+
+  @Test
+  public void testExists() throws Exception {
+    runTest("doExists");
+  }
+
+  @Test
+  public void testExpire() throws Exception {
+    runTest("doExpire");
+  }
+
+  @Test
+  public void testExpireAt() throws Exception {
+    runTest("doExpireAt");
+  }
+
+  @Test
+  public void testFlushAll() throws Exception {
+    runTest("doFlushAll");
+  }
+
+  @Test
+  public void testFlushDB() throws Exception {
+    runTest("doFlushDB");
+  }
+
+  @Test
+  public void testGet() throws Exception {
+    runTest("doGet");
+  }
+
+  @Test
+  public void testGetRange() throws Exception {
+    runTest("doGetRange");
+  }
+
+  @Test
+  public void testGetSet() throws Exception {
+    runTest("doGetSet");
+  }
+
+  @Test
+  public void testHExists() throws Exception {
+    runTest("doHExists");
+  }
+
+  @Test
+  public void testHGet() throws Exception {
+    runTest("doHGet");
+  }
+
+  @Test
+  public void testHGetAll() throws Exception {
+    runTest("doHGetAll");
+  }
+
+  @Test
+  public void testHIncrBy() throws Exception {
+    runTest("doHIncrBy");
+  }
+
+  @Test
+  public void testHKeys() throws Exception {
+    runTest("doHKeys");
+  }
+
+  @Test
+  public void testHLen() throws Exception {
+    runTest("doHLen");
+  }
+
+  @Test
+  public void testHMGet() throws Exception {
+    runTest("doHMGet");
+  }
+
+  @Test
+  public void testHMSet() throws Exception {
+    runTest("doHMSet");
+  }
+
+  @Test
+  public void testHSet() throws Exception {
+    runTest("doHSet");
+  }
+
+  @Test
+  public void testHSetNX() throws Exception {
+    runTest("doHSetNX");
+  }
+
+  @Test
+  public void testHVals() throws Exception {
+    runTest("doHVals");
+  }
+
+  @Test
+  public void testHdel() throws Exception {
+    runTest("doHdel");
+  }
+
+  @Test
+  public void testIncr() throws Exception {
+    runTest("doIncr");
+  }
+
+  @Test
+  public void testIncrBy() throws Exception {
+    runTest("doIncrBy");
+  }
+
+  @Test
+  public void testInfo() throws Exception {
+    runTest("doInfo");
+  }
+
+  @Test
+  public void testKeys() throws Exception {
+    runTest("doKeys");
+  }
+
+  @Test
+  public void testLIndex() throws Exception {
+    runTest("doLIndex");
+  }
+
+  @Test
+  public void testLInsert() throws Exception {
+    runTest("doLInsert");
+  }
+
+  @Test
+  public void testLLen() throws Exception {
+    runTest("doLLen");
+  }
+
+  @Test
+  public void testLPop() throws Exception {
+    runTest("doLPop");
+  }
+
+  @Test
+  public void testLPush() throws Exception {
+    runTest("doLPush");
+  }
+
+  @Test
+  public void testLPushX() throws Exception {
+    runTest("doLPushX");
+  }
+
+  @Test
+  public void testLRange() throws Exception {
+    runTest("doLRange");
+  }
+
+  @Test
+  public void testLRem() throws Exception {
+    runTest("doLRem");
+  }
+
+  @Test
+  public void testLSet() throws Exception {
+    runTest("doLSet");
+  }
+
+  @Test
+  public void testLTrim() throws Exception {
+    runTest("doLTrim");
+  }
+
+  @Test
+  public void testLastSave() throws Exception {
+    runTest("doLastSave");
+  }
+
+  @Test
+  public void testMGet() throws Exception {
+    runTest("doMGet");
+  }
+
+  @Test
+  public void testMSet() throws Exception {
+    runTest("doMSet");
+  }
+
+  @Test
+  public void testMSetNx() throws Exception {
+    runTest("doMSetNx");
+  }
+
+  @Test
+  public void testMultiDiscard() throws Exception {
+    runTest("doMultiDiscard");
+  }
+
+  @Test
+  public void testPersist() throws Exception {
+    runTest("doPersist");
+  }
+
+  @Test
+  public void testPing() throws Exception {
+    runTest("doPing");
+  }
+
+  @Test
+  public void testPooling1() throws Exception {
+    runTest("doPooling1");
+  }
+
+  @Test
+  public void testPooling2() throws Exception {
+    runTest("doPooling2");
+  }
+
+  @Test
+  public void testPubSub() throws Exception {
+    runTest("doPubSub");
+  }
+
+  @Test
+  public void testPubSubOnlySubscribe() throws Exception {
+    runTest("doPubSubOnlySubscribe");
+  }
+
+  @Test
+  public void testPubSubPatterns() throws Exception {
+    runTest("doPubSubPatterns");
+  }
+
+  @Test
+  public void testPubSubSubscribeMultiple() throws Exception {
+    runTest("doPubSubSubscribeMultiple");
+  }
+
+  @Test
+  public void testRPop() throws Exception {
+    runTest("doRPop");
+  }
+
+  @Test
+  public void testRPopLPush() throws Exception {
+    runTest("doRPopLPush");
+  }
+
+  @Test
+  public void testRPush() throws Exception {
+    runTest("doRPush");
+  }
+
+  @Test
+  public void testRPushX() throws Exception {
+    runTest("doRPushX");
+  }
+
+  @Test
+  public void testRandomKey() throws Exception {
+    runTest("doRandomKey");
+  }
+
+  @Test
+  public void testRename() throws Exception {
+    runTest("doRename");
+  }
+
+  @Test
+  public void testRenameNx() throws Exception {
+    runTest("doRenameNx");
+  }
+
+  @Test
+  public void testSAdd() throws Exception {
+    runTest("doSAdd");
+  }
+
+  @Test
+  public void testSCard() throws Exception {
+    runTest("doSCard");
+  }
+
+  @Test
+  public void testSDiff() throws Exception {
+    runTest("doSDiff");
+  }
+
+  @Test
+  public void testSDiffStore() throws Exception {
+    runTest("doSDiffStore");
+  }
+
+  @Test
+  public void testSInter() throws Exception {
+    runTest("doSInter");
+  }
+
+  @Test
+  public void testSInterStore() throws Exception {
+    runTest("doSInterStore");
+  }
+
+  @Test
+  public void testSIsMember() throws Exception {
+    runTest("doSIsMember");
+  }
+
+  @Test
+  public void testSMembers() throws Exception {
+    runTest("doSMembers");
+  }
+
+  @Test
+  public void testSMove() throws Exception {
+    runTest("doSMove");
+  }
+
+  @Test
+  public void testSPop() throws Exception {
+    runTest("doSPop");
+  }
+
+  @Test
+  public void testSRandMember() throws Exception {
+    runTest("doSRandMember");
+  }
+
+  @Test
+  public void testSRem() throws Exception {
+    runTest("doSRem");
+  }
+
+  @Test
+  public void testSUnion() throws Exception {
+    runTest("doSUnion");
+  }
+
+  @Test
+  public void testSUnionStore() throws Exception {
+    runTest("doSUnionStore");
+  }
+
+  @Test
+  public void testSave() throws Exception {
+    runTest("doSave");
+  }
+
+  @Test
+  public void testSelect() throws Exception {
+    runTest("doSelect");
+  }
+
+  @Test
+  public void testSet() throws Exception {
+    runTest("doSet");
+  }
+
+  @Test
+  public void testSetEx() throws Exception {
+    runTest("doSetEx");
+  }
+
+  @Test
+  public void testSetGetBit() throws Exception {
+    runTest("doSetGetBit");
+  }
+
+  @Test
+  public void testSetNx() throws Exception {
+    runTest("doSetNx");
+  }
+
+  @Test
+  public void testSetRange() throws Exception {
+    runTest("doSetRange");
+  }
+
+  @Test
+  public void testSortAlpha() throws Exception {
+    runTest("doSortAlpha");
+  }
+
+  @Test
+  public void testSortAscending() throws Exception {
+    runTest("doSortAscending");
+  }
+
+  @Test
+  public void testSortDescending() throws Exception {
+    runTest("doSortDescending");
+  }
+
+  @Test
+  public void testSortLimit() throws Exception {
+    runTest("doSortLimit");
+  }
+
+  @Test
+  public void testStrLen() throws Exception {
+    runTest("doStrLen");
+  }
+
+  @Test
+  public void testTTL() throws Exception {
+    runTest("doTTL");
+  }
+
+  @Test
+  public void testTestAppend() throws Exception {
+    runTest("doTestAppend");
+  }
+
+  @Test
+  public void testTestBgWriteAOF() throws Exception {
+    runTest("doTestBgWriteAOF");
+  }
+
+  @Test
+  public void testTestWithPassword() throws Exception {
+    runTest("doTestWithPassword");
+  }
+
+  @Test
+  public void testTransactionDiscard() throws Exception {
+    runTest("doTransactionDiscard");
+  }
+
+  @Test
+  public void testTransactionExec() throws Exception {
+    runTest("doTransactionExec");
+  }
+
+  @Test
+  public void testTransactionMixed() throws Exception {
+    runTest("doTransactionMixed");
+  }
+
+  @Test
+  public void testTransactionWithMultiBulkExec() throws Exception {
+    runTest("doTransactionWithMultiBulkExec");
+  }
+
+  @Test
+  public void testType() throws Exception {
+    runTest("doType");
+  }
+
+  @Test
+  public void testWatchUnWatch() throws Exception {
+    runTest("doWatchUnWatch");
+  }
+
+  @Test
+  public void testZAdd() throws Exception {
+    runTest("doZAdd");
+  }
+
+  @Test
+  public void testZCard() throws Exception {
+    runTest("doZCard");
+  }
+
+  @Test
+  public void testZCount() throws Exception {
+    runTest("doZCount");
+  }
+
+  @Test
+  public void testZIncrBy() throws Exception {
+    runTest("doZIncrBy");
+  }
+
+  @Test
+  public void testZInterStore() throws Exception {
+    runTest("doZInterStore");
+  }
+
+  @Test
+  public void testZRange() throws Exception {
+    runTest("doZRange");
+  }
+
+  @Test
+  public void testZRangeByScore() throws Exception {
+    runTest("doZRangeByScore");
+  }
+
+  @Test
+  public void testZRank() throws Exception {
+    runTest("doZRank");
+  }
+
+  @Test
+  public void testZRem() throws Exception {
+    runTest("doZRem");
+  }
+
+  @Test
+  public void testZRemRangeByRank() throws Exception {
+    runTest("doZRemRangeByRank");
+  }
+
+  @Test
+  public void testZRevRange() throws Exception {
+    runTest("doZRevRange");
+  }
+
+  @Test
+  public void testZRevRangeByScore() throws Exception {
+    runTest("doZRevRangeByScore");
+  }
+
+  @Test
+  public void testZRevRank() throws Exception {
+    runTest("doZRevRank");
+  }
+
+  @Test
+  public void testZScore() throws Exception {
+    runTest("doZScore");
+  }
+
+  @Test
+  public void testZUnionStore() throws Exception {
+    runTest("doZUnionStore");
+  }
+
 
   public void doTestAppend() {
     comp.series(connection.set(key1, val1));
     comp.series(connection.append(key1, val2));
     assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
-  }
-
-  public void doTestAuth() {
-    Future<Void> res = comp.series(connection.auth(Buffer.create("whatever")));
-    assertResult(res, null);
   }
 
   public void doTestBgWriteAOF() {
@@ -123,7 +677,7 @@ public class RedisTest extends TestBase {
     Future<Buffer[]> res = comp.series(connection.bLPop(10, keyl1, keyl2));
     assertResult(res1, 1);
     assertResult(res2, 1);
-    assertResult(res, new Buffer[] { keyl1, val1});
+    assertResult(res, new Buffer[]{keyl1, val1});
   }
 
   public void doBRPop() {
@@ -132,7 +686,7 @@ public class RedisTest extends TestBase {
     Future<Buffer[]> res = comp.series(connection.bRPop(10, keyl1, keyl2));
     assertResult(res1, 1);
     assertResult(res2, 1);
-    assertResult(res, new Buffer[] { keyl1, val1});
+    assertResult(res, new Buffer[]{keyl1, val1});
   }
 
   public void doBRPopLPush() {
@@ -161,7 +715,7 @@ public class RedisTest extends TestBase {
 
   public void doDBSize() {
     int num = 10;
-    for (int i = 0; i < num; i ++) {
+    for (int i = 0; i < num; i++) {
       comp.parallel(connection.set(Buffer.create("key" + i), val1));
     }
     Future<Integer> res = comp.series(connection.dbSize());
@@ -215,8 +769,8 @@ public class RedisTest extends TestBase {
     Future<Integer> res3 = comp.parallel(connection.incr(key1));
     Future<Void> res4 = comp.parallel(connection.exec());
     assertResult(res4, null);
-    assertResult(res2,  1);
-    assertResult(res3,  2);
+    assertResult(res2, 1);
+    assertResult(res3, 2);
   }
 
   public void doTransactionWithMultiBulkExec() {
@@ -227,9 +781,9 @@ public class RedisTest extends TestBase {
     Future<Buffer[]> res4 = comp.parallel(connection.hGetAll(key1));
     Future<Void> res5 = comp.parallel(connection.exec());
     assertResult(res5, null);
-    assertResult(res2,  true);
-    assertResult(res3,  true);
-    assertResult(res4,  new Buffer[] {field1, val1, field2, val2});
+    assertResult(res2, true);
+    assertResult(res3, true);
+    assertResult(res4, new Buffer[]{field1, val1, field2, val2});
   }
 
   public void doTransactionMixed() {
@@ -240,8 +794,8 @@ public class RedisTest extends TestBase {
     Future<Integer> res3 = comp.parallel(connection.incr(key1));
     Future<Void> res4 = comp.parallel(connection.exec());
     assertResult(res4, null);
-    assertResult(res2,  1);
-    assertResult(res3,  2);
+    assertResult(res2, 1);
+    assertResult(res3, 2);
     Future<Integer> res5 = comp.series(connection.incr(key1));
     assertResult(res5, 3);
     Future<Void> res6 = comp.series(connection.multi());
@@ -250,8 +804,8 @@ public class RedisTest extends TestBase {
     Future<Integer> res8 = comp.parallel(connection.incr(key1));
     Future<Void> res9 = comp.parallel(connection.exec());
     assertResult(res9, null);
-    assertResult(res7,  4);
-    assertResult(res8,  5);
+    assertResult(res7, 4);
+    assertResult(res8, 5);
   }
 
   public void doTransactionDiscard() {
@@ -282,7 +836,7 @@ public class RedisTest extends TestBase {
     assertResult(res2, null);
   }
 
-  private void doPubSub(boolean patterns) {
+  public void doPubSub(boolean patterns) {
     RedisPool pool = new RedisPool().setMaxPoolSize(3);
     RedisConnection conn1 = pool.connection();
     final RedisConnection conn2 = pool.connection();
@@ -397,7 +951,7 @@ public class RedisTest extends TestBase {
     int numConnections = 100;
 
     final Set<Future<Integer>> futures = new HashSet<>();
-    for (int i= 0; i < numConnections; i++) {
+    for (int i = 0; i < numConnections; i++) {
       final RedisConnection conn = pool.connection();
       Future<Integer> res = comp.parallel(conn.incr(key1));
       comp.parallel(conn.closeDeferred());
@@ -409,7 +963,7 @@ public class RedisTest extends TestBase {
     comp.series(new SimpleAction() {
       public void act() {
         int tot = 0;
-        for (Future<Integer> future: futures) {
+        for (Future<Integer> future : futures) {
           tot += future.result();
         }
 
@@ -423,7 +977,7 @@ public class RedisTest extends TestBase {
 
     int numConnections = 100;
 
-    for (int i= 0; i < numConnections; i++) {
+    for (int i = 0; i < numConnections; i++) {
       // Get connection and return immediately
       final RedisConnection conn = pool.connection();
       comp.parallel(conn.closeDeferred());
@@ -520,7 +1074,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.hSet(key1, field1, val1));
     comp.series(connection.hSet(key1, field2, val2));
     Future<Buffer[]> res1 = comp.series(connection.hGetAll(key1));
-    assertResult(res1, new Buffer[] {field1, val1, field2, val2});
+    assertResult(res1, new Buffer[]{field1, val1, field2, val2});
   }
 
   public void doHIncrBy() {
@@ -535,7 +1089,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.hSet(key1, field1, val1));
     comp.series(connection.hSet(key1, field2, val2));
     Future<Buffer[]> res1 = comp.series(connection.hKeys(key1));
-    assertResult(res1, new Buffer[] {field1, field2});
+    assertResult(res1, new Buffer[]{field1, field2});
   }
 
   public void doHLen() {
@@ -549,7 +1103,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.hSet(key1, field1, val1));
     comp.series(connection.hSet(key1, field2, val2));
     Future<Buffer[]> res1 = comp.series(connection.hmGet(key1, field1, field2, field3));
-    assertResult(res1, new Buffer[] {val1, val2, null});
+    assertResult(res1, new Buffer[]{val1, val2, null});
   }
 
   public void doHMSet() {
@@ -584,7 +1138,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.hSet(key1, field1, val1));
     comp.series(connection.hSet(key1, field2, val2));
     Future<Buffer[]> res1 = comp.series(connection.hVals(key1));
-    assertResult(res1, new Buffer[] {val1, val2});
+    assertResult(res1, new Buffer[]{val1, val2});
   }
 
   public void doIncr() {
@@ -618,7 +1172,7 @@ public class RedisTest extends TestBase {
     map.put(Buffer.create("otherkey"), val5);
     comp.series(connection.mset(map));
     final Future<Buffer[]> res = comp.series(connection.keys(Buffer.create("key*")));
-    assertSameElements(res, new Buffer[] { key1, key2, key3, key4} );
+    assertSameElements(res, new Buffer[]{key1, key2, key3, key4});
   }
 
   public void doLastSave() {
@@ -651,7 +1205,7 @@ public class RedisTest extends TestBase {
     assertResult(res1, 1);
     assertResult(res2, 2);
     assertResult(res3, 3);
-    assertResult(res4, new Buffer[] {val1, val3, val2});
+    assertResult(res4, new Buffer[]{val1, val3, val2});
   }
 
   public void doLLen() {
@@ -674,7 +1228,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPush(key1, val2));
     comp.series(connection.lPush(key1, val3));
     Future<Buffer[]> res = comp.series(connection.lRange(key1, 0, -1));
-    assertResult(res, new Buffer[] { val3, val2, val1 });
+    assertResult(res, new Buffer[]{val3, val2, val1});
   }
 
   public void doLPushX() {
@@ -683,9 +1237,9 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPushX(key1, val3));
     comp.series(connection.lPushX(key2, val1));
     Future<Buffer[]> res1 = comp.series(connection.lRange(key1, 0, -1));
-    assertResult(res1, new Buffer[] { val3, val2, val1 });
+    assertResult(res1, new Buffer[]{val3, val2, val1});
     Future<Buffer[]> res2 = comp.series(connection.lRange(key2, 0, -1));
-    assertResult(res2, new Buffer[] { });
+    assertResult(res2, new Buffer[]{});
   }
 
   public void doLRange() {
@@ -693,7 +1247,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPush(key1, val2));
     comp.series(connection.lPush(key1, val3));
     Future<Buffer[]> res = comp.series(connection.lRange(key1, 0, -1));
-    assertResult(res, new Buffer[] { val3, val2, val1 });
+    assertResult(res, new Buffer[]{val3, val2, val1});
   }
 
   public void doLRem() {
@@ -703,7 +1257,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.rPush(key1, val1));
     Future<Integer> res1 = comp.series(connection.lRem(key1, -2, val1));
     Future<Buffer[]> res2 = comp.series(connection.lRange(key1, 0, -1));
-    assertResult(res2, new Buffer[] { val1, val2});
+    assertResult(res2, new Buffer[]{val1, val2});
   }
 
   public void doLSet() {
@@ -713,7 +1267,7 @@ public class RedisTest extends TestBase {
     Future<Void> res1 = comp.series(connection.lSet(key1, 0, val4));
     Future<Buffer[]> res2 = comp.series(connection.lRange(key1, 0, -1));
     assertResult(res1, null);
-    assertResult(res2, new Buffer[] { val4, val2, val3});
+    assertResult(res2, new Buffer[]{val4, val2, val3});
   }
 
   public void doLTrim() {
@@ -723,7 +1277,7 @@ public class RedisTest extends TestBase {
     Future<Void> res1 = comp.series(connection.lTrim(key1, 1, -1));
     Future<Buffer[]> res2 = comp.series(connection.lRange(key1, 0, -1));
     assertResult(res1, null);
-    assertResult(res2, new Buffer[] { val2, val3});
+    assertResult(res2, new Buffer[]{val2, val3});
   }
 
   public void doMGet() {
@@ -731,7 +1285,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.set(key2, val2));
     comp.series(connection.set(key3, val3));
     Future<Buffer[]> res2 = comp.series(connection.mget(key1, key2));
-    assertResult(res2, new Buffer[] { val1, val2});
+    assertResult(res2, new Buffer[]{val1, val2});
   }
 
 //  public void doMove() {
@@ -764,7 +1318,7 @@ public class RedisTest extends TestBase {
     assertResult(res1, true);
     assertResult(res2, false);
     Future<Buffer[]> res3 = comp.series(connection.mget(key1, key2, key3));
-    assertResult(res3, new Buffer[] { val1, val2, null});
+    assertResult(res3, new Buffer[]{val1, val2, null});
   }
 
   public void doPersist() {
@@ -824,14 +1378,14 @@ public class RedisTest extends TestBase {
     comp.series(connection.rPush(key1, val1));
     comp.series(connection.rPush(key1, val2));
     Future<Buffer[]> res = comp.series(connection.lRange(key1, 0, -1));
-    assertResult(res, new Buffer[] {val1, val2});
+    assertResult(res, new Buffer[]{val1, val2});
   }
 
   public void doRPushX() {
     comp.series(connection.rPushX(key1, val1));
     comp.series(connection.rPushX(key1, val2));
     Future<Buffer[]> res = comp.series(connection.lRange(key1, 0, -1));
-    assertResult(res, new Buffer[] {});
+    assertResult(res, new Buffer[]{});
   }
 
   public void doSAdd() {
@@ -842,7 +1396,7 @@ public class RedisTest extends TestBase {
     assertResult(res1, 1);
     assertResult(res2, 1);
     assertResult(res3, 0);
-    assertSameElements(res4, new Buffer[] {val1, val2});
+    assertSameElements(res4, new Buffer[]{val1, val2});
   }
 
   public void doSave() {
@@ -865,7 +1419,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.sAdd(key2, val3));
     comp.series(connection.sAdd(key2, val4));
     Future<Buffer[]> res = comp.series(connection.sDiff(key1, key2));
-    assertSameElements(res, new Buffer[] {val1});
+    assertSameElements(res, new Buffer[]{val1});
   }
 
   public void doSDiffStore() {
@@ -922,10 +1476,10 @@ public class RedisTest extends TestBase {
     comp.series(connection.sAdd(key2, val3));
     comp.series(connection.sAdd(key2, val4));
     Future<Buffer[]> res = comp.series(connection.sInter(key1, key2));
-    assertSameElements(res, new Buffer[] {val2, val3});
+    assertSameElements(res, new Buffer[]{val2, val3});
   }
 
-   public void doSInterStore() {
+  public void doSInterStore() {
     comp.series(connection.sAdd(key1, val1));
     comp.series(connection.sAdd(key1, val2));
     comp.series(connection.sAdd(key1, val3));
@@ -951,7 +1505,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.sAdd(key1, val2));
     comp.series(connection.sAdd(key1, val3));
     Future<Buffer[]> res = comp.series(connection.sMembers(key1));
-    assertSameElements(res, new Buffer[] {val1, val2, val3});
+    assertSameElements(res, new Buffer[]{val1, val2, val3});
   }
 
   public void doSMove() {
@@ -961,7 +1515,7 @@ public class RedisTest extends TestBase {
     Future<Boolean> res1 = comp.series(connection.sMove(key1, key2, val1));
     Future<Buffer[]> res2 = comp.series(connection.sMembers(key2));
     assertResult(res1, true);
-    assertSameElements(res2, new Buffer[] {val1, val3});
+    assertSameElements(res2, new Buffer[]{val1, val3});
   }
 
   public void doSortAscending() {
@@ -969,7 +1523,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPush(key1, buffFromInt(1)));
     comp.series(connection.lPush(key1, buffFromInt(2)));
     Future<Buffer[]> res = comp.series(connection.sort(key1));
-    assertResult(res, new Buffer[] {buffFromInt(1), buffFromInt(2), buffFromInt(3)});
+    assertResult(res, new Buffer[]{buffFromInt(1), buffFromInt(2), buffFromInt(3)});
   }
 
   public void doSortDescending() {
@@ -977,7 +1531,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPush(key1, buffFromInt(1)));
     comp.series(connection.lPush(key1, buffFromInt(2)));
     Future<Buffer[]> res = comp.series(connection.sort(key1, false));
-    assertResult(res, new Buffer[] {buffFromInt(3), buffFromInt(2), buffFromInt(1)});
+    assertResult(res, new Buffer[]{buffFromInt(3), buffFromInt(2), buffFromInt(1)});
   }
 
   public void doSortAlpha() {
@@ -985,7 +1539,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPush(key1, val1));
     comp.series(connection.lPush(key1, val2));
     Future<Buffer[]> res = comp.series(connection.sort(key1, true, true));
-    assertResult(res, new Buffer[] {val1, val2, val3});
+    assertResult(res, new Buffer[]{val1, val2, val3});
   }
 
   public void doSortLimit() {
@@ -993,7 +1547,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.lPush(key1, buffFromInt(1)));
     comp.series(connection.lPush(key1, buffFromInt(2)));
     Future<Buffer[]> res = comp.series(connection.sort(key1, 1, 1, true, false));
-    assertResult(res, new Buffer[] {buffFromInt(2)});
+    assertResult(res, new Buffer[]{buffFromInt(2)});
   }
 
   public void doSPop() {
@@ -1001,7 +1555,7 @@ public class RedisTest extends TestBase {
     Future<Buffer> res1 = comp.series(connection.sPop(key1));
     assertResult(res1, val1);
     Future<Buffer[]> res2 = comp.series(connection.sMembers(key1));
-    assertSameElements(res2, new Buffer[] {});
+    assertSameElements(res2, new Buffer[]{});
   }
 
   public void doSRandMember() {
@@ -1009,7 +1563,7 @@ public class RedisTest extends TestBase {
     Future<Buffer> res1 = comp.series(connection.sRandMember(key1));
     assertResult(res1, val1);
     Future<Buffer[]> res2 = comp.series(connection.sMembers(key1));
-    assertSameElements(res2, new Buffer[] {val1});
+    assertSameElements(res2, new Buffer[]{val1});
   }
 
   public void doSRem() {
@@ -1019,7 +1573,7 @@ public class RedisTest extends TestBase {
     Future<Integer> res1 = comp.series(connection.sRem(key1, val1));
     Future<Buffer[]> res2 = comp.series(connection.sMembers(key1));
     assertResult(res1, 1);
-    assertSameElements(res2, new Buffer[] {val2, val3});
+    assertSameElements(res2, new Buffer[]{val2, val3});
   }
 
   public void doStrLen() {
@@ -1036,7 +1590,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.sAdd(key2, val3));
     comp.series(connection.sAdd(key2, val4));
     Future<Buffer[]> res = comp.series(connection.sUnion(key1, key2));
-    assertSameElements(res, new Buffer[] {val1, val2, val3, val4});
+    assertSameElements(res, new Buffer[]{val1, val2, val3, val4});
   }
 
   public void doSUnionStore() {
@@ -1081,7 +1635,7 @@ public class RedisTest extends TestBase {
     assertResult(res1, 1);
     assertResult(res2, 1);
     assertResult(res3, 1);
-    assertResult(res4, new Buffer[] { val1, buffFromInt(1), val2, buffFromInt(2), val3, buffFromInt(3) });
+    assertResult(res4, new Buffer[]{val1, buffFromInt(1), val2, buffFromInt(2), val3, buffFromInt(3)});
   }
 
   public void doZCard() {
@@ -1106,7 +1660,7 @@ public class RedisTest extends TestBase {
     Future<Double> res1 = comp.series(connection.zIncrBy(key1, 2.5, val1));
     Future<Buffer[]> res2 = comp.series(connection.zRange(key1, 0, -1, true));
     assertResult(res1, 3.5);
-    assertSameElements(res2, new Buffer[] { val1, buffFromDouble(3.5), val2, buffFromInt(2) });
+    assertSameElements(res2, new Buffer[]{val1, buffFromDouble(3.5), val2, buffFromInt(2)});
   }
 
   public void doZInterStore() {
@@ -1115,10 +1669,10 @@ public class RedisTest extends TestBase {
     comp.series(connection.zAdd(key2, 1.0, val1));
     comp.series(connection.zAdd(key2, 2.0, val2));
     comp.series(connection.zAdd(key2, 3.0, val3));
-    Future<Integer> res = comp.series(connection.zInterStore(key3, 2, new Buffer[] {key1, key2}, new double[] {2.0, 3.0}, RedisConnection.AggregateType.SUM));
+    Future<Integer> res = comp.series(connection.zInterStore(key3, 2, new Buffer[]{key1, key2}, new double[]{2.0, 3.0}, RedisConnection.AggregateType.SUM));
     assertResult(res, 2);
     Future<Buffer[]> res2 = comp.series(connection.zRange(key3, 0, -1, true));
-    assertSameElements(res2, new Buffer[] { val1, buffFromInt(5), val2, buffFromInt(10) });
+    assertSameElements(res2, new Buffer[]{val1, buffFromInt(5), val2, buffFromInt(10)});
   }
 
   public void doZRange() {
@@ -1126,7 +1680,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.zAdd(key1, 2.0, val2));
     comp.series(connection.zAdd(key1, 3.0, val3));
     Future<Buffer[]> res = comp.series(connection.zRange(key1, 0, -1, true));
-    assertResult(res, new Buffer[] { val1, buffFromInt(1), val2, buffFromInt(2), val3, buffFromInt(3) });
+    assertResult(res, new Buffer[]{val1, buffFromInt(1), val2, buffFromInt(2), val3, buffFromInt(3)});
   }
 
   public void doZRangeByScore() {
@@ -1134,7 +1688,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.zAdd(key1, 2.0, val2));
     comp.series(connection.zAdd(key1, 3.0, val3));
     Future<Buffer[]> res = comp.series(connection.zRangeByScore(key1, 2.0, 3.0, true, 0, -1));
-    assertResult(res, new Buffer[] { val2, buffFromInt(2), val3, buffFromInt(3) });
+    assertResult(res, new Buffer[]{val2, buffFromInt(2), val3, buffFromInt(3)});
   }
 
   public void doZRank() {
@@ -1152,7 +1706,7 @@ public class RedisTest extends TestBase {
     Future<Integer> res1 = comp.series(connection.zRem(key1, val1));
     Future<Buffer[]> res2 = comp.series(connection.zRange(key1, 0, -1, false));
     assertResult(res1, 1);
-    assertSameElements(res2, new Buffer[] { val2, val3});
+    assertSameElements(res2, new Buffer[]{val2, val3});
   }
 
   public void doZRemRangeByRank() {
@@ -1162,7 +1716,7 @@ public class RedisTest extends TestBase {
     Future<Integer> res1 = comp.series(connection.zRemRangeByRank(key1, 0, 1));
     Future<Buffer[]> res2 = comp.series(connection.zRange(key1, 0, -1, false));
     assertResult(res1, 2);
-    assertSameElements(res2, new Buffer[] { val3});
+    assertSameElements(res2, new Buffer[]{val3});
   }
 
   public void doZRevRange() {
@@ -1170,7 +1724,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.zAdd(key1, 2.0, val2));
     comp.series(connection.zAdd(key1, 3.0, val3));
     Future<Buffer[]> res = comp.series(connection.zRevRange(key1, 0, -1, true));
-    assertResult(res, new Buffer[] { val3, buffFromInt(3), val2, buffFromInt(2), val1, buffFromInt(1) });
+    assertResult(res, new Buffer[]{val3, buffFromInt(3), val2, buffFromInt(2), val1, buffFromInt(1)});
   }
 
   public void doZRevRangeByScore() {
@@ -1178,7 +1732,7 @@ public class RedisTest extends TestBase {
     comp.series(connection.zAdd(key1, 2.0, val2));
     comp.series(connection.zAdd(key1, 3.0, val3));
     Future<Buffer[]> res = comp.series(connection.zRevRangeByScore(key1, 3.0, 2.0, true, 0, -1));
-    assertResult(res, new Buffer[] { val3, buffFromInt(3), val2, buffFromInt(2) });
+    assertResult(res, new Buffer[]{val3, buffFromInt(3), val2, buffFromInt(2)});
   }
 
   public void doZRevRank() {
@@ -1201,14 +1755,19 @@ public class RedisTest extends TestBase {
     comp.series(connection.zAdd(key2, 1.0, val1));
     comp.series(connection.zAdd(key2, 2.0, val2));
     comp.series(connection.zAdd(key2, 3.0, val3));
-    Future<Integer> res = comp.series(connection.zUnionStore(key3, 2, new Buffer[] {key1, key2}, new double[] {2.0, 3.0}, RedisConnection.AggregateType.SUM));
+    Future<Integer> res = comp.series(connection.zUnionStore(key3, 2, new Buffer[]{key1, key2}, new double[]{2.0, 3.0}, RedisConnection.AggregateType.SUM));
     assertResult(res, 3);
     Future<Buffer[]> res2 = comp.series(connection.zRange(key3, 0, -1, true));
-    assertSameElements(res2, new Buffer[] { val1, buffFromInt(5), val2, buffFromInt(10), val3, buffFromInt(9) });
+    assertSameElements(res2, new Buffer[]{val1, buffFromInt(5), val2, buffFromInt(10), val3, buffFromInt(9)});
   }
 
-
-  // Private -------------------------
+  public void doTestWithPassword() {
+    RedisPool pool2 = new RedisPool().setPassword("whatever");
+    RedisConnection conn2 = pool2.connection();
+    comp.series(conn2.ping());
+    conn2.close();
+    pool2.close();
+  }
 
   private void setup() {
     comp = new Composer();
@@ -1256,10 +1815,10 @@ public class RedisTest extends TestBase {
           azzert(value == null, "Expected: " + value + " Actual: " + res);
         } else {
           if (res instanceof Buffer) {
-            azzert(Utils.buffersEqual((Buffer)value, (Buffer)res), "Expected: " + value + " Actual: " + res);
+            azzert(Utils.buffersEqual((Buffer) value, (Buffer) res), "Expected: " + value + " Actual: " + res);
           } else if (res instanceof Buffer[]) {
-            Buffer[] mb = (Buffer[])res;
-            Buffer[] expected = (Buffer[])value;
+            Buffer[] mb = (Buffer[]) res;
+            Buffer[] expected = (Buffer[]) value;
             for (int i = 0; i < expected.length; i++) {
               if (expected[i] != null) {
                 azzert(Utils.buffersEqual(expected[i], mb[i]), "Buffer not equal: " + expected[i] + " " + mb[i]);
@@ -1319,7 +1878,9 @@ public class RedisTest extends TestBase {
     comp.execute();
   }
 
-  private void runTest(final Method method) throws Exception {
+  private void runTest(final String methodName) throws Exception {
+    final Method method = RedisTest.class.getMethod(methodName);
+    setup();
     Nodex.instance.go(new Runnable() {
       public void run() {
         try {
@@ -1336,6 +1897,7 @@ public class RedisTest extends TestBase {
     });
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
+    teardown();
   }
 
   private abstract class TestAction extends SimpleAction {

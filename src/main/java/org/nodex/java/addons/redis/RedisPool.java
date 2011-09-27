@@ -39,6 +39,7 @@ public class RedisPool {
   };
   private String host = "localhost";
   private int port = 6379;
+  private String password;
 
   /**
    * Set the port that the client will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
@@ -76,10 +77,18 @@ public class RedisPool {
   }
 
   /**
+   * Set the password to be used for authentication
+   */
+  public RedisPool setPassword(String password) {
+    this.password = password;
+    return this;
+  }
+
+  /**
    * Get a RedisConnection.
    */
   public RedisConnection connection() {
-    return new RedisConnection(pool);
+    return new RedisConnection(pool, password);
   }
 
   /**

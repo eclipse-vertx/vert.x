@@ -219,6 +219,7 @@ public class RedisConnection {
   private static final byte[] WITHSCORES = "WITHSCORES".getBytes(UTF8);
 
   private final ConnectionPool<InternalConnection> pool;
+  private final String password;
   InternalConnection conn;
   private final LinkedList<RedisDeferred<?>> pending = new LinkedList<>();
   private Handler<Buffer> subscriberHandler;
@@ -228,8 +229,9 @@ public class RedisConnection {
   /**
    * Create a new RedisClient
    */
-  RedisConnection(ConnectionPool<InternalConnection> pool) {
+  RedisConnection(ConnectionPool<InternalConnection> pool, String password) {
     this.pool = pool;
+    this.password = password;
   }
 
   /**
@@ -279,7 +281,7 @@ public class RedisConnection {
     return createIntegerDeferred(APPEND_COMMAND, key, value);
   }
 
-  public Deferred<Void> auth(Buffer password) {
+  private Deferred<Void> auth(Buffer password) {
     return createVoidDeferred(AUTH_COMMAND, password);
   }
 
@@ -1069,6 +1071,9 @@ public class RedisConnection {
 
   private void setConnection(InternalConnection conn) {
     this.conn = conn;
+    if (password != null) {
+      auth(Buffer.create(password)).execute();
+    }
     for (RedisDeferred<?> deff: pending) {
       deff.execute();
     }
