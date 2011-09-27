@@ -36,6 +36,7 @@ Google+
 Supervisors
 Remote Actors
 Socket-IO
+Sock-JS
 Web framework
 JNDI
 JMS
@@ -52,7 +53,7 @@ JRuby                                                        7
 Clojure
 Groovy
 Groovy++
-JavaScript
+JavaScript (Rhino/Nashorn?)
 Jython
 Scala
 

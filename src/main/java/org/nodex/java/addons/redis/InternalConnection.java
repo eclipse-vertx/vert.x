@@ -170,11 +170,26 @@ public class InternalConnection implements Handler<RedisReply>{
           break;
         } case MULTI_BULK: {
           // A message
-          if (subscriberHandler != null) {
-            subscriberHandler.handle(reply.multiBulkResult[2]);
+          String type = reply.multiBulkResult[0].toString();
+          switch (type) {
+            case "message": {
+              deliverMessage(reply.multiBulkResult[2]);
+              break;
+            }
+            case "pmessage": {
+              deliverMessage(reply.multiBulkResult[3]);
+              break;
+            }
           }
+
         }
       }
+    }
+  }
+
+  private void deliverMessage(Buffer msg) {
+    if (subscriberHandler != null) {
+      subscriberHandler.handle(msg);
     }
   }
 
@@ -227,3 +242,4 @@ public class InternalConnection implements Handler<RedisReply>{
     }
   }
 }
+

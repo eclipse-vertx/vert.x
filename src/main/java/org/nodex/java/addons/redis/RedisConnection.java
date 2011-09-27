@@ -144,7 +144,7 @@ public class RedisConnection {
   private static final byte[] MSET_COMMAND = "MSET".getBytes(UTF8);
   private static final byte[] MSETNX_COMMAND = "MSETNX".getBytes(UTF8);
   private static final byte[] MULTI_COMMAND = "MULTI".getBytes(UTF8);
-  private static final byte[] PERSIST_COMMAND = "MULTI".getBytes(UTF8);
+  private static final byte[] PERSIST_COMMAND = "PERSIST".getBytes(UTF8);
   private static final byte[] PING_COMMAND = "PING".getBytes(UTF8);
   private static final byte[] PSUBSCRIBE_COMMAND = "PSUBSCRIBE".getBytes(UTF8);
   private static final byte[] PUNSUBSCRIBE_COMMAND = "PUNSUBSCRIBE".getBytes(UTF8);
@@ -161,7 +161,7 @@ public class RedisConnection {
   private static final byte[] SAVE_COMMAND = "SAVE".getBytes(UTF8);
   private static final byte[] SCARD_COMMAND = "SCARD".getBytes(UTF8);
   private static final byte[] SDIFF_COMMAND = "SDIFF".getBytes(UTF8);
-  private static final byte[] SDIFFSTORE_COMMAND = "SDIFF".getBytes(UTF8);
+  private static final byte[] SDIFFSTORE_COMMAND = "SDIFFSTORE".getBytes(UTF8);
   private static final byte[] SELECT_COMMAND = "SELECT".getBytes(UTF8);
   private static final byte[] SET_COMMAND = "SET".getBytes(UTF8);
   private static final byte[] SETBIT_COMMAND = "SETBIT".getBytes(UTF8);
@@ -215,7 +215,7 @@ public class RedisConnection {
   private static final byte[] SORT_ALPHA = "ALPHA".getBytes(UTF8);
   private static final byte[] SORT_STORE = "STORE".getBytes(UTF8);
   private static final byte[] WEIGHTS = "WEIGHTS".getBytes(UTF8);
-  private static final byte[] AGGREGRATE = "AGGREGRATE".getBytes(UTF8);
+  private static final byte[] AGGREGRATE = "AGGREGATE".getBytes(UTF8);
   private static final byte[] WITHSCORES = "WITHSCORES".getBytes(UTF8);
 
   private final ConnectionPool<InternalConnection> pool;
@@ -467,6 +467,10 @@ public class RedisConnection {
     return createBulkDeferred(LPOP_COMMAND, key);
   }
 
+  public Deferred<Integer> lPush(Buffer key, Buffer value) {
+    return createIntegerDeferred(LPUSH_COMMAND, key, value);
+  }
+
   public Deferred<Integer> lPush(Buffer key, Buffer... values) {
     return createIntegerDeferred(LPUSH_COMMAND, toBufferArray(key, values));
   }
@@ -533,9 +537,9 @@ public class RedisConnection {
     return doUnsubscribe(PUNSUBSCRIBE_COMMAND, patterns);
   }
 
-  public Deferred<Void> quit() {
-    return createVoidDeferred(QUIT_COMMAND);
-  }
+//  public Deferred<Void> quit() {
+//    return createVoidDeferred(QUIT_COMMAND);
+//  }
 
   public Deferred<Buffer> randomKey() {
     return createBulkDeferred(RANDOMKEY_COMMAND);
@@ -581,8 +585,8 @@ public class RedisConnection {
     return createMultiBulkDeferred(SDIFF_COMMAND, toBufferArray(key, others));
   }
 
-  public Deferred<Integer> sDiffStore(Buffer key, Buffer... others) {
-    return createIntegerDeferred(SDIFFSTORE_COMMAND, toBufferArray(key, others));
+  public Deferred<Integer> sDiffStore(Buffer destination, Buffer key, Buffer... others) {
+    return createIntegerDeferred(SDIFFSTORE_COMMAND, toBufferArray(destination, toBufferArray(key, others)));
   }
 
   public Deferred<Void> select(int index) {
@@ -641,8 +645,20 @@ public class RedisConnection {
     return sort(key, null, -1, -1, null, true, false, null);
   }
 
+  public Deferred<Buffer[]> sort(Buffer key, boolean ascending) {
+    return sort(key, null, -1, -1, null, ascending, false, null);
+  }
+
   public Deferred<Buffer[]> sort(Buffer key, Buffer pattern) {
     return sort(key, pattern, -1, -1, null, true, false, null);
+  }
+
+  public Deferred<Buffer[]> sort(Buffer key, boolean ascending, boolean alpha) {
+    return sort(key, null, -1, -1, null, ascending, alpha, null);
+  }
+
+  public Deferred<Buffer[]> sort(Buffer key, int offset, int count, boolean ascending, boolean alpha) {
+    return sort(key, null, offset, count, null, ascending, alpha, null);
   }
 
   public Deferred<Buffer[]> sort(Buffer key, Buffer pattern, boolean ascending, boolean alpha) {
@@ -716,8 +732,8 @@ public class RedisConnection {
     return createIntegerDeferred(TTL_COMMAND, key);
   }
 
-  public Deferred<Void> type(Buffer key) {
-    return createVoidDeferred(TYPE_COMMAND, key);
+  public Deferred<String> type(Buffer key) {
+    return createStringDeferred(TYPE_COMMAND, key);
   }
 
   public Deferred<Void> unsubscribe(Buffer... channels) {
@@ -748,8 +764,8 @@ public class RedisConnection {
     return createIntegerDeferred(ZCOUNT_COMMAND, key, doubleToBuffer(min), doubleToBuffer(max));
   }
 
-  public Deferred<Integer> zIncrBy(Buffer key, int increment, Buffer member) {
-    return createIntegerDeferred(ZINCRBY_COMMAND, key, intToBuffer(increment), member);
+  public Deferred<Double> zIncrBy(Buffer key, double increment, Buffer member) {
+    return createDoubleDeferred(ZINCRBY_COMMAND, key, doubleToBuffer(increment), member);
   }
 
   public enum AggregateType {
@@ -776,11 +792,11 @@ public class RedisConnection {
     return createIntegerDeferred(ZINTERSTORE_COMMAND, args);
   }
 
-  public Deferred<Buffer[]> zRange(Buffer key, double start, double stop, boolean withScores) {
+  public Deferred<Buffer[]> zRange(Buffer key, int start, int stop, boolean withScores) {
     Buffer[] args = new Buffer[3 + (withScores ? 1 : 0)];
     args[0] = key;
-    args[1] = doubleToBuffer(start);
-    args[2] = doubleToBuffer(stop);
+    args[1] = intToBuffer(start);
+    args[2] = intToBuffer(stop);
     if (withScores) {
       args[3] = Buffer.create(WITHSCORES);
     }
@@ -820,11 +836,11 @@ public class RedisConnection {
     return createIntegerDeferred(ZREMRANGEBYSCORE_COMMAND, key, doubleToBuffer(min), doubleToBuffer(max));
   }
 
-  public Deferred<Buffer[]> zRevRange(Buffer key, double start, double stop, boolean withScores) {
+  public Deferred<Buffer[]> zRevRange(Buffer key, int start, int stop, boolean withScores) {
     Buffer[] args = new Buffer[3 + (withScores ? 1 : 0)];
     args[0] = key;
-    args[1] = doubleToBuffer(start);
-    args[2] = doubleToBuffer(stop);
+    args[1] = intToBuffer(start);
+    args[2] = intToBuffer(stop);
     if (withScores) {
       args[3] = Buffer.create(WITHSCORES);
     }
@@ -947,6 +963,15 @@ public class RedisConnection {
 
   private RedisDeferred<Void> createVoidDeferred(final byte[] command, final Buffer... args) {
     return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
+      public void run() {
+        Buffer buff = createCommand(command, args);
+        rc.conn.sendRequest(this, buff, contextID);
+      }
+    };
+  }
+
+  private RedisDeferred<String> createStringDeferred(final byte[] command, final Buffer... args) {
+    return new RedisDeferred<String>(RedisDeferred.DeferredType.STRING, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
         rc.conn.sendRequest(this, buff, contextID);

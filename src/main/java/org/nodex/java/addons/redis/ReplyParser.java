@@ -100,7 +100,7 @@ public class ReplyParser implements Handler<Buffer> {
         } else {
           if (multiBulkResponses != null) {
             multiBulkIndex++;
-            if (multiBulkIndex > multiBulkResponses.length) {
+            if (multiBulkIndex == multiBulkResponses.length) {
               //Done multi-bulk
               sendMultiBulkReply(multiBulkResponses);
             }
