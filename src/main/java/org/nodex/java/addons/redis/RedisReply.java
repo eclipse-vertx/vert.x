@@ -81,12 +81,13 @@ public class RedisReply {
         sb.append(intResult);
         break;
       case BULK:
-        sb.append(bulkResult.toString());
+        sb.append(bulkResult == null ? "null" : bulkResult.toString());
         break;
       case MULTI_BULK:
         sb.append(multiBulkResult.length).append(":");
         for (Buffer buff: multiBulkResult) {
-          sb.append(buff.toString());
+          sb.append(buff == null ? "null" : buff.toString());
+          sb.append("\n");
         }
         break;
     }

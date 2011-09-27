@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011 VMware, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.nodex.java.addons.redis;
 
 import org.nodex.java.core.Deferred;
@@ -12,7 +28,7 @@ import org.nodex.java.core.internal.NodexInternal;
 abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandler {
 
   static enum DeferredType {
-    VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE
+    VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE, STRING
   }
 
   static enum TxCommandType {
@@ -60,12 +76,20 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
           ((RedisDeferred<Boolean>)this).setResult(reply.intResult == 1);
           break;
         }
+        case STRING: {
+          ((RedisDeferred<String>)this).setResult(reply.line);
+          break;
+        }
         case INTEGER: {
           ((RedisDeferred<Integer>)this).setResult(reply.intResult);
           break;
         }
         case DOUBLE: {
-          ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
+          if (reply.bulkResult != null) {
+            ((RedisDeferred<Double>)this).setResult(Double.valueOf(reply.bulkResult.toString()));
+          } else {
+            setResult(null);
+          }
           break;
         }
         case BULK: {
