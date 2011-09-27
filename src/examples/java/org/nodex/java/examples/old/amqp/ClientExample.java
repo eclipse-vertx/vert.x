@@ -16,12 +16,12 @@
 
 package org.nodex.java.examples.old.amqp;
 
-import org.nodex.java.addons.amqp.AmqpConnectHandler;
-import org.nodex.java.addons.amqp.AmqpConnection;
-import org.nodex.java.addons.amqp.AmqpMsgCallback;
-import org.nodex.java.addons.amqp.AmqpProps;
-import org.nodex.java.addons.amqp.Channel;
-import org.nodex.java.addons.amqp.ChannelHandler;
+import org.nodex.java.addons.old.amqp.AmqpConnectHandler;
+import org.nodex.java.addons.old.amqp.AmqpConnection;
+import org.nodex.java.addons.old.amqp.AmqpMsgCallback;
+import org.nodex.java.addons.old.amqp.AmqpProps;
+import org.nodex.java.addons.old.amqp.Channel;
+import org.nodex.java.addons.old.amqp.ChannelHandler;
 
 import java.io.IOException;
 
@@ -30,7 +30,7 @@ public class ClientExample {
   private static String QUEUE_NAME = "my-queue";
 
   public static void main(String[] args) throws IOException {
-    org.nodex.java.addons.amqp.AmqpClient.createClient().connect(new AmqpConnectHandler() {
+    org.nodex.java.addons.old.amqp.AmqpClient.createClient().connect(new AmqpConnectHandler() {
       public void onConnect(AmqpConnection conn) {
         conn.createChannel(new ChannelHandler() {
           public void onCreate(final Channel channel) {

@@ -16,10 +16,10 @@
 
 package org.nodex.java.examples.old.stomp;
 
-import org.nodex.java.addons.stomp.StompClient;
-import org.nodex.java.addons.stomp.StompConnectHandler;
-import org.nodex.java.addons.stomp.StompConnection;
-import org.nodex.java.addons.stomp.StompMsgCallback;
+import org.nodex.java.addons.old.stomp.StompClient;
+import org.nodex.java.addons.old.stomp.StompConnectHandler;
+import org.nodex.java.addons.old.stomp.StompConnection;
+import org.nodex.java.addons.old.stomp.StompMsgCallback;
 import org.nodex.java.core.buffer.Buffer;
 
 import java.util.Map;

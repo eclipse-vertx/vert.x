@@ -14,8 +14,23 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.amqp;
+package org.nodex.java.addons.old.stomp;
 
-public abstract class AmqpMsgCallback {
-  public abstract void onMessage(AmqpProps props, byte[] body);
+import org.nodex.java.core.net.NetSocket;
+
+class StompServerConnection extends StompConnection {
+  protected StompServerConnection(NetSocket socket) {
+    super(socket);
+  }
+
+  private FrameHandler frameHandler;
+
+  protected void frameHandler(FrameHandler frameHandler) {
+    this.frameHandler = frameHandler;
+  }
+
+  @Override
+  protected void handleFrame(Frame frame) {
+    frameHandler.onFrame(frame);
+  }
 }

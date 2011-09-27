@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.amqp;
+package org.nodex.java.addons.old.stomp;
 
-public abstract class AmqpConnectHandler {
-  public abstract void onConnect(AmqpConnection connection);
+public interface StompConnectHandler {
+  void onConnect(StompConnection connection);
 }

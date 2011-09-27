@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.stomp;
+package org.nodex.java.addons.old.stomp;
 
 public interface FrameHandler {
   void onFrame(Frame frame);

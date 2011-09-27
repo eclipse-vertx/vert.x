@@ -16,7 +16,7 @@
 
 package org.nodex.java.examples.old.stomp;
 
-import org.nodex.java.addons.stomp.StompServer;
+import org.nodex.java.addons.old.stomp.StompServer;
 import org.nodex.java.core.net.NetServer;
 
 public class ServerExample {

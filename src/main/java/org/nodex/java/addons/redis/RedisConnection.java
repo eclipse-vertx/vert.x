@@ -264,6 +264,10 @@ public class RedisConnection {
     };
   }
 
+  /**
+   * Set a handler which will receive messages when the connection is in subscribe mode.
+   * @param handler
+   */
   public void subscriberHandler(Handler<Buffer> handler) {
     if (conn != null) {
       conn.subscriberHandler = handler;
