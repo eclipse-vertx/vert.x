@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.amqp;
+package org.nodex.java.addons.old.amqp;
 
 public abstract class ChannelHandler {
   public abstract void onCreate(Channel channel);

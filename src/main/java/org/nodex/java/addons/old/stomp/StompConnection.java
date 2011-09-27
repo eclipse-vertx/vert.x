@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.stomp;
+package org.nodex.java.addons.old.stomp;
 
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.net.NetSocket;

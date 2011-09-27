@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.amqp;
+package org.nodex.java.addons.old.amqp;
 
 import com.rabbitmq.client.ConnectionFactory;
 import org.nodex.java.core.internal.NodexInternal;

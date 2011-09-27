@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package org.nodex.java.addons.stomp;
+package org.nodex.java.addons.old.amqp;
 
-import org.nodex.java.core.buffer.Buffer;
-
-import java.util.Map;
-
-public interface StompMsgCallback {
-  void onMessage(Map<String, String> headers, Buffer body);
+public abstract class AmqpMsgCallback {
+  public abstract void onMessage(AmqpProps props, byte[] body);
 }
