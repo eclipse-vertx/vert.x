@@ -28,11 +28,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>TODO the implementation can be improved. Currently it uses synchronization which may cause
  * contention issues under high load. Consider replacing with lock-free algorithm.</p>
  *
- * <p>TODO update to use Futures</T></p>
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class ConnectionPool2<T> {
+public abstract class OldConnectionPool<T> {
 
   private final Queue<T> available = new ConcurrentLinkedQueue<>();
   private int maxPoolSize = 1;
@@ -60,90 +58,56 @@ public abstract class ConnectionPool2<T> {
    * @param handler The handler
    * @param contextID The context id
    */
-  public void getConnection(Handler<T> handler, long contextID) {
-    boolean connect = false;
-    outer: synchronized (this) {
-      T conn = available.poll();
-      if (conn != null) {
-        handler.handle(conn);
-      } else {
-        if (connectionCount.get() < maxPoolSize) {
-          if (connectionCount.incrementAndGet() <= maxPoolSize) {
-            //Create new connection
-            connect = true;
-            break outer;
-          } else {
-            connectionCount.decrementAndGet();
-          }
+  public synchronized void getConnection(Handler<T> handler, long contextID) {
+    T conn = available.poll();
+    if (conn != null) {
+      handler.handle(conn);
+    } else {
+      if (connectionCount.get() < maxPoolSize) {
+        if (connectionCount.incrementAndGet() <= maxPoolSize) {
+          //Create new connection
+          connect(handler, contextID);
+          return;
+        } else {
+          connectionCount.decrementAndGet();
         }
-        // Add to waiters
-        waiters.add(new Waiter(handler, contextID));
       }
-    }
-    if (connect) {
-      connect(handler, contextID);
+      // Add to waiters
+      waiters.add(new Waiter(handler, contextID));
     }
   }
 
   /**
    * Inform the pool that the connection has been closed externally.
    */
-  public void connectionClosed() {
-
-    Waiter waiter;
-
-    synchronized (this) {
-
-      if (connectionCount.decrementAndGet() < maxPoolSize) {
-        //Now the connection count has come down, maybe there is another waiter that can
-        //create a new connection
-        waiter = waiters.poll();
-        if (waiter != null) {
-          //getConnection(waiter.handler, waiter.contextID);
-          connectionCount.incrementAndGet();
-        }
-      } else {
-        waiter = null;
+  public synchronized void connectionClosed() {
+    if (connectionCount.decrementAndGet() < maxPoolSize) {
+      //Now the connection count has come down, maybe there is another waiter that can
+      //create a new connection
+      Waiter waiter = waiters.poll();
+      if (waiter != null) {
+        getConnection(waiter.handler, waiter.contextID);
       }
-    }
-
-    if (waiter != null) {
-      connect(waiter.handler, waiter.contextID);
     }
   }
 
   /**
    * Return a connection to the pool so it can be used by others.
    */
-  public void returnConnection(final T conn) {
+  public synchronized void returnConnection(final T conn) {
 
-    Waiter waiter;
-
-    synchronized (this) {
-
-      //Return it to the pool
-      waiter = waiters.poll();
-
-      if (waiter != null) {
-//        NodexInternal.instance.executeOnContext(waiter.contextID, new Runnable() {
-//          public void run() {
-//            NodexInternal.instance.setContextID(waiter.contextID);
-//            waiter.handler.handle(conn);
-//          }
-//        });
-      } else {
-        available.add(conn);
-      }
-    }
+    //Return it to the pool
+    final Waiter waiter = waiters.poll();
 
     if (waiter != null) {
-      final Waiter w = waiter;
-      NodexInternal.instance.executeOnContext(w.contextID, new Runnable() {
+      NodexInternal.instance.executeOnContext(waiter.contextID, new Runnable() {
         public void run() {
-          NodexInternal.instance.setContextID(w.contextID);
-          w.handler.handle(conn);
+          NodexInternal.instance.setContextID(waiter.contextID);
+          waiter.handler.handle(conn);
         }
       });
+    } else {
+      available.add(conn);
     }
   }
 
