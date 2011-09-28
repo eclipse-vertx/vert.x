@@ -27,58 +27,9 @@ package org.nodex.java.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class DeferredAction<T> implements Deferred<T> {
+public abstract class DeferredAction<T> extends SimpleFuture<T> implements Deferred<T> {
 
-  private T result;
-  private Exception exception;
-  private CompletionHandler<T> completionHandler;
   protected boolean executed;
-  protected boolean complete;
-
-  /**
-   * {@inheritDoc}
-   */
-  public T result() {
-    return result;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public Exception exception() {
-    return exception;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public boolean complete() {
-    return complete;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public boolean succeeded() {
-    return complete && exception == null;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public boolean failed() {
-    return complete && exception != null;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public void handler(CompletionHandler<T> completionHandler) {
-    this.completionHandler = completionHandler;
-    if (complete) {
-      callHandler();
-    }
-  }
 
   /**
    * {@inheritDoc}
@@ -92,32 +43,9 @@ public abstract class DeferredAction<T> implements Deferred<T> {
   }
 
   /**
-   * Call this method with the result of the action when it is complete.
-   */
-  public void setResult(T result) {
-    complete = true;
-    this.result = result;
-    callHandler();
-  }
-
-  /**
-   * Call this method with an Exception if the action failed
-   */
-  public void setException(Exception e) {
-    complete = true;
-    this.exception = e;
-    callHandler();
-  }
-
-  /**
    * Override this method to implement the deferred operation.
    * When the operation is complete be sure to call {@link #setResult} or {@link #setException}
    */
   protected abstract void run();
 
-  private void callHandler() {
-    if (completionHandler != null) {
-      completionHandler.handle(this);
-    }
-  }
 }
