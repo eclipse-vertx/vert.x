@@ -18,24 +18,20 @@ package org.nodex.java.core;
 
 import org.nodex.java.core.internal.NodexInternal;
 
+import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>A simple, non-blocking pool implementation</p>
- *
- * <p>TODO the implementation can be improved. Currently it uses synchronization which may cause
- * contention issues under high load. Consider replacing with lock-free algorithm.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ConnectionPool<T> {
 
-  private final Queue<T> available = new ConcurrentLinkedQueue<>();
+  private final Queue<T> available = new LinkedList<>();
   private int maxPoolSize = 1;
-  private final AtomicInteger connectionCount = new AtomicInteger(0);
-  private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<>();
+  private int connectionCount;
+  private final Queue<Waiter> waiters = new LinkedList<>();
 
   /**
    * Set the maximum pool size to the value specified by {@code maxConnections}<p>
@@ -58,56 +54,75 @@ public abstract class ConnectionPool<T> {
    * @param handler The handler
    * @param contextID The context id
    */
-  public synchronized void getConnection(Handler<T> handler, long contextID) {
-    T conn = available.poll();
-    if (conn != null) {
-      handler.handle(conn);
-    } else {
-      if (connectionCount.get() < maxPoolSize) {
-        if (connectionCount.incrementAndGet() <= maxPoolSize) {
-          //Create new connection
-          connect(handler, contextID);
-          return;
-        } else {
-          connectionCount.decrementAndGet();
+  public void getConnection(Handler<T> handler, long contextID) {
+    boolean connect = false;
+    outer: synchronized (this) {
+      T conn = available.poll();
+      if (conn != null) {
+        handler.handle(conn);
+      } else {
+        if (connectionCount < maxPoolSize) {
+          if (++connectionCount <= maxPoolSize) {
+            //Create new connection
+            connect = true;
+            break outer;
+          } else {
+            connectionCount--;
+          }
         }
+        // Add to waiters
+        waiters.add(new Waiter(handler, contextID));
       }
-      // Add to waiters
-      waiters.add(new Waiter(handler, contextID));
+    }
+    // We do the actual connect outside the sync block to minimise the critical section
+    if (connect) {
+      connect(handler, contextID);
     }
   }
 
   /**
    * Inform the pool that the connection has been closed externally.
    */
-  public synchronized void connectionClosed() {
-    if (connectionCount.decrementAndGet() < maxPoolSize) {
-      //Now the connection count has come down, maybe there is another waiter that can
-      //create a new connection
-      Waiter waiter = waiters.poll();
-      if (waiter != null) {
-        getConnection(waiter.handler, waiter.contextID);
+  public void connectionClosed() {
+    Waiter waiter;
+    synchronized (this) {
+      if (--connectionCount < maxPoolSize) {
+        //Now the connection count has come down, maybe there is another waiter that can
+        //create a new connection
+        waiter = waiters.poll();
+        if (waiter != null) {
+          connectionCount++;
+        }
+      } else {
+        waiter = null;
       }
+    }
+    // We do the actual connect outside the sync block to minimise the critical section
+    if (waiter != null) {
+      connect(waiter.handler, waiter.contextID);
     }
   }
 
   /**
    * Return a connection to the pool so it can be used by others.
    */
-  public synchronized void returnConnection(final T conn) {
-
-    //Return it to the pool
-    final Waiter waiter = waiters.poll();
-
+  public void returnConnection(final T conn) {
+    Waiter waiter;
+    synchronized (this) {
+      //Return it to the pool
+      waiter = waiters.poll();
+      if (waiter == null) {
+        available.add(conn);
+      }
+    }
     if (waiter != null) {
-      NodexInternal.instance.executeOnContext(waiter.contextID, new Runnable() {
+      final Waiter w = waiter;
+      NodexInternal.instance.executeOnContext(w.contextID, new Runnable() {
         public void run() {
-          NodexInternal.instance.setContextID(waiter.contextID);
-          waiter.handler.handle(conn);
+          NodexInternal.instance.setContextID(w.contextID);
+          w.handler.handle(conn);
         }
       });
-    } else {
-      available.add(conn);
     }
   }
 

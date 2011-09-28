@@ -79,6 +79,8 @@ TODO
 20) Package manager and deployment
 21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.
+22) Per thread connection pools. If we can have multiple connection pools, one for each core thread then they don't
+need any synchronization.
 
 
 
