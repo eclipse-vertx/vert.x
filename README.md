@@ -43,9 +43,6 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 
 ### Pre-requisites
 
-* A sentient lifeform
-* A computer
-* Electricity
 * Operating system: Node.x currently runs on Linux and OSX. If you're on Windows, install a Linux virtual machine using your favourite virtualisation software and use that.
 * Apache ant - This is the build tool currently used. Make sure the ant bin directory is on your PATH.
 * JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
