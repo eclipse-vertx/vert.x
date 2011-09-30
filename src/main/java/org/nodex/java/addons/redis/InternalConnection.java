@@ -19,6 +19,7 @@ package org.nodex.java.addons.redis;
 import org.nodex.java.core.ConnectionPool;
 import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Handler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 import org.nodex.java.core.net.NetSocket;
@@ -41,11 +42,23 @@ public class InternalConnection implements Handler<RedisReply>{
   private boolean subscriber;
   private ReplyHandler currentReplyHandler;
   Handler<Buffer> subscriberHandler;
+  private boolean closed;
 
-  InternalConnection(ConnectionPool<InternalConnection> pool, NetSocket socket) {
+  InternalConnection(final ConnectionPool<InternalConnection> pool, final NetSocket socket) {
     this.pool = pool;
     this.socket = socket;
     socket.dataHandler(new ReplyParser(this));
+    socket.closedHandler(new SimpleHandler() {
+      public void handle() {
+        System.err.println("Channel closed");
+        socket.close();
+        pool.connectionClosed();
+        closed = true;
+        if (closedHandler != null) {
+          closedHandler.handle(null);
+        }
+      }
+    });
   }
 
   void close(DeferredAction<Void> deferred) {
@@ -59,11 +72,17 @@ public class InternalConnection implements Handler<RedisReply>{
     }
   }
 
-  void sendRequest(final RedisDeferred<?> deferred, Buffer buffer, long contextID) {
-    sendRequest(deferred, buffer, false, contextID);
+  private Handler<Void> closedHandler;
+
+  void closedHandler(Handler<Void> handler) {
+    this.closedHandler = handler;
   }
 
   void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe, long contextID) {
+    if (closed) {
+      System.err.println("Socket is closed");
+      return;
+    }
     if (subscriber && !subscribe) {
       deferred.setException(new RedisException("It is not legal to send commands other than SUBSCRIBE and UNSUBSCRIBE when in subscribe mode"));
     } else {

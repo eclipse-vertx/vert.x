@@ -162,7 +162,6 @@ module Nodex
 
   end
 
-
   # Composer allows asynchronous control flows to be defined.
   #
   # This is useful when you have some asynchronous actions to be performed after other actions have completed.
