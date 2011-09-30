@@ -17,8 +17,7 @@ include Nodex
 
 Nodex::go do
   HttpServer.new.request_handler do |req|
-    req.response.chunked = true
-    req.response.write_str("<html><body><h1>Hello from Node.x!</h1></body></html>", "UTF-8").end
+    req.response.write_str_and_end("<html><body><h1>Hello from Node.x!</h1></body></html>")
   end.listen(8080)
 end
 

@@ -355,6 +355,20 @@ module Nodex
       @j_del.end
     end
 
+    # Same as {#write_buffer_and_end} but writes a String
+    # @param [String] str The String to write
+    # @param [String] enc The encoding
+    def write_str_and_end(str, enc = "UTF-8")
+      @j_del.end(str, enc)
+    end
+
+    # Same as {#end} but writes some data to the response body before ending. If the response is not chunked and
+    # no other data has been written then the Content-Length header will be automatically set
+    # @param [Buffer] chunk The Buffer to write
+    def write_buffer_and_end(chunk)
+      @j_del.end(chunk._to_java_buffer)
+    end
+
     # Sets whether the request should used HTTP chunked encoding or not.
     # @param [Boolean] val. If val is true, this request will use HTTP chunked encoding, and each call to write to the body
     # will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
@@ -690,6 +704,20 @@ module Nodex
     # be closed.
     def end
       @j_del.end
+    end
+
+    # Same as {#write_buffer_and_end} but writes a String
+    # @param [String] str The String to write
+    # @param [String] enc The encoding
+    def write_str_and_end(str, enc = "UTF-8")
+      @j_del.end(str, enc)
+    end
+
+    # Same as {#end} but writes some data to the response body before ending. If the response is not chunked and
+    # no other data has been written then the Content-Length header will be automatically set
+    # @param [Buffer] chunk The Buffer to write
+    def write_buffer_and_end(chunk)
+      @j_del.end(chunk._to_java_buffer)
     end
 
   end

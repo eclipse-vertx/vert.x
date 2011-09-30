@@ -316,6 +316,86 @@ public class HttpTest extends TestBase {
   }
 
   @Test
+  public void testWriteAndEndString() throws Exception {
+    testWriteAndEnd(true);
+  }
+
+  @Test
+  public void testWriteAndEndBuffer() throws Exception {
+    testWriteAndEnd(false);
+  }
+
+  private void testWriteAndEnd(final boolean string) throws Exception {
+    final String host = "localhost";
+    final int port = 8181;
+
+    final Buffer toSend = Buffer.create("ioqwjdiwqjdioqwjdijqwdijqwjiod");
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    new NodexMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+          final Buffer received = Buffer.create(0);
+
+          public void handle(final HttpServerRequest req) {
+            req.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
+                received.appendBuffer(data);
+              }
+            });
+            req.endHandler(new SimpleHandler() {
+              public void handle() {
+                assert (Utils.buffersEqual(toSend, received));
+                if (string) {
+                  req.response.end(received.toString());
+                } else {
+                  req.response.end(received);
+                }
+              }
+            });
+          }
+        }).listen(port, host);
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host);
+
+        final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+          final Buffer received = Buffer.create(0);
+          public void handle(HttpClientResponse resp) {
+            assert (200 == resp.statusCode);
+            resp.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
+                received.appendBuffer(data);
+              }
+            });
+
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                assert (Utils.buffersEqual(toSend, received));
+                server.close(new SimpleHandler() {
+                  public void handle() {
+                    client.close();
+                    latch.countDown();
+                  }
+                });
+              }
+            });
+          }
+        });
+        if (string) {
+          req.end(toSend.toString());
+        } else {
+          req.end(toSend);
+        }
+      }
+    }.run();
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
+  }
+
+  @Test
   public void testSimple() throws Exception {
     final String host = "localhost";
     final int port = 8181;
@@ -343,7 +423,7 @@ public class HttpTest extends TestBase {
                 received.appendBuffer(data);
                 if (received.length() == toSend.length()) {
                   assert (Utils.buffersEqual(toSend, received));
-                  req.response.end();
+                  req.response.end(received);
                 }
               }
             });
@@ -670,11 +750,7 @@ public class HttpTest extends TestBase {
     }.run();
 
     azzert(latch.await(5, TimeUnit.SECONDS));
-    ///awaitClose(server);
-    //client.close();
-
     throwAssertions();
-
   }
 
   private HttpClientRequest getRequest(boolean specificMethod, String method, String path, String paramsString,

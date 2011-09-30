@@ -37,9 +37,8 @@ public class ServerExample extends NodexMain {
         for (String key : req.getHeaderNames()) {
           System.out.println(key + ":" + req.getHeader(key));
         }
-        req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
-        req.response.setChunked(true);
-        req.response.write("<html><body><h1>Hello from node.x!</h1></body></html>", "UTF-8").end();
+        req.response.putHeader("Content-Type", "text/html; charset=UTF-8").
+                     end("<html><body><h1>Hello from node.x!</h1></body></html>");
       }
     }).listen(8080);
   }
