@@ -81,6 +81,7 @@ TODO
 otherwise can't do proper pipelining since can't guarantee same connection.
 22) Per thread connection pools. If we can have multiple connection pools, one for each core thread then they don't
 need any synchronization.
+23) Netclient, Redis and HTTP connection reconnection. Most of the code is there, need to implement timer for reconnect.
 
 
 

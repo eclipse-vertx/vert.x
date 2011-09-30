@@ -48,6 +48,10 @@ public abstract class ConnectionPool<T> {
     return maxPoolSize;
   }
 
+  public synchronized void report() {
+    System.out.println("available: " + available.size() + " connection count: " + connectionCount + " waiters: " + waiters.size());
+  }
+
   /**
    * Get a connection from the pool. The connection is returned in the handler, some time in the future if a
    * connection becomes available.
@@ -56,26 +60,27 @@ public abstract class ConnectionPool<T> {
    */
   public void getConnection(Handler<T> handler, long contextID) {
     boolean connect = false;
+    T conn;
     outer: synchronized (this) {
-      T conn = available.poll();
+      conn = available.poll();
       if (conn != null) {
-        handler.handle(conn);
+        break outer;
       } else {
         if (connectionCount < maxPoolSize) {
-          if (++connectionCount <= maxPoolSize) {
-            //Create new connection
-            connect = true;
-            break outer;
-          } else {
-            connectionCount--;
-          }
+          //Create new connection
+          connect = true;
+          connectionCount++;
+          break outer;
         }
         // Add to waiters
         waiters.add(new Waiter(handler, contextID));
       }
     }
-    // We do the actual connect outside the sync block to minimise the critical section
-    if (connect) {
+    // We do this outside the sync block to minimise the critical section
+    if (conn != null) {
+      handler.handle(conn);
+    }
+    else if (connect) {
       connect(handler, contextID);
     }
   }
@@ -86,7 +91,8 @@ public abstract class ConnectionPool<T> {
   public void connectionClosed() {
     Waiter waiter;
     synchronized (this) {
-      if (--connectionCount < maxPoolSize) {
+      connectionCount--;
+      if (connectionCount < maxPoolSize) {
         //Now the connection count has come down, maybe there is another waiter that can
         //create a new connection
         waiter = waiters.poll();

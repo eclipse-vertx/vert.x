@@ -92,7 +92,7 @@
     <target name="java-tests" depends="compile-tests">
         <testng classpathref="test-classpath">
             <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.net.NetTest.*"> -->
-            <classfileset dir="${tests-target}" includes="**/*.class" excludes="**/RedisTest.class"/>
+            <classfileset dir="${tests-target}" includes="**/*.class" excludes="**/redis/*.class"/>
         </testng>
     </target>
 
