@@ -16,7 +16,12 @@
 
 package org.nodex.java.addons.redis;
 
-import org.nodex.java.core.*;
+import org.nodex.java.core.ConnectionPool;
+import org.nodex.java.core.Deferred;
+import org.nodex.java.core.DeferredAction;
+import org.nodex.java.core.Future;
+import org.nodex.java.core.Handler;
+import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
 
@@ -281,8 +286,8 @@ public class RedisConnection {
   }
 
   void addToPending(RedisDeferred<?> deferred) {
-    getConnection();
     pending.add(deferred);
+    getConnection();
   }
 
   public Deferred<Integer> append(Buffer key, Buffer value) {

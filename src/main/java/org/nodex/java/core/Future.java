@@ -55,5 +55,5 @@ public interface Future<T> {
    * Set a handler on the Future. If the operation has already completed it will be called immediately, otherwise
    * it will be called when the operation completes or fails, passing in a reference to this.
    */
-  void handler(CompletionHandler<T> handler);
+  Future<T> handler(CompletionHandler<T> handler);
 }

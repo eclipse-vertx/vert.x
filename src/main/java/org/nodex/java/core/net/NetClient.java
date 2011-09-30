@@ -264,9 +264,6 @@ public class NetClient extends NetClientBase {
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.get(ch);
-
-      System.out.println("Channel closed netty");
-
       socketMap.remove(ch);
       if (sock != null) {
         runOnCorrectThread(ch, new Runnable() {
@@ -302,8 +299,6 @@ public class NetClient extends NetClientBase {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-
-      System.out.println("Exception caught at netty");
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.get(ch);
       final Throwable t = e.getCause();

@@ -43,6 +43,14 @@ public abstract class DeferredAction<T> extends SimpleFuture<T> implements Defer
   }
 
   /**
+   * {@inheritDoc}
+   */
+  public Deferred<T> handler(CompletionHandler<T> completionHandler) {
+    super.handler(completionHandler);
+    return this;
+  }
+
+  /**
    * Override this method to implement the deferred operation.
    * When the operation is complete be sure to call {@link #setResult} or {@link #setException}
    */

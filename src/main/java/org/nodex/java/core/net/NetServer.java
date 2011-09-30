@@ -343,7 +343,6 @@ public class NetServer extends NetServerBase {
         runOnCorrectThread(ch, new Runnable() {
           public void run() {
             sock.handleClosed();
-            //System.out.println("Destroying context " + sock.getContextID());
             NodexInternal.instance.destroyContext(sock.getContextID());
           }
         });
