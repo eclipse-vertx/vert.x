@@ -64,11 +64,12 @@ public class SimpleFuture<T> implements Future<T> {
   /**
    * {@inheritDoc}
    */
-  public void handler(CompletionHandler<T> completionHandler) {
+  public Future<T> handler(CompletionHandler<T> completionHandler) {
     this.completionHandler = completionHandler;
     if (complete) {
       callHandler();
     }
+    return this;
   }
 
   /**

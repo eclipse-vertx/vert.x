@@ -193,6 +193,20 @@ nodex-ruby websockets/websockets.rb
 
 Then point your browser at: http://localhost:8080
 
+Redis
+=====
+
+This example demonstrates a simple HTTP server which responds to HTTP requests to '/' with a page containing a hit counter.
+The count is stored in a Redis Server and incremented each time using the Redis INCR command.
+
+To run this example you must have a Redis server running on localhost.
+
+The, to run the example:
+
+nodex-ruby redis/RedisExample
+
+Then point your browser at: http://localhost:8080 and hit refresh a few times
+
 
 
 

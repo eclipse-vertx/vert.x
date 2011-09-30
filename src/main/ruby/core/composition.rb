@@ -70,6 +70,7 @@ module Nodex
     def handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.handler{ |j_def| hndlr.call(self) }
+      self
     end
 
     # @private

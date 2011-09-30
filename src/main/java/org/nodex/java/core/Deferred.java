@@ -34,4 +34,9 @@ public interface Deferred<T> extends Future<T> {
    * @return a reference to this
    */
   Deferred<T> execute();
+
+  /**
+   * {@inheritDoc}
+   */
+  Deferred<T> handler(CompletionHandler<T> handler);
 }
