@@ -23,10 +23,8 @@ Nodex::go do
     if req.uri == "/"
       conn = pool.connection
       conn.incr(key).handler{ |future|
-        content = Buffer.create("<html><body><h1>Hit count is #{future.result}</h1></body></html>")
         req.response.put_header("Content-Type", "text/html; charset=UTF-8").
-                     put_header("Content-Length", content.length).
-                     write_buffer(content).end
+            write_str_and_end("<html><body><h1>Hit count is #{future.result}</h1></body></html>")
         conn.close
       }.execute
     else

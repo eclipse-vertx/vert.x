@@ -68,7 +68,7 @@ TODO
 4) StartTLS
 5) endHandler handlers not currently being called - check this
 6) Websocket close protocol
-7) Synchronous versions of filesystem ops
+7) Synchronous versions of filesystem ops ??
 8) Filesystem lock + watch
 9) Javadoc
 10) Ruby doc
@@ -76,7 +76,6 @@ TODO
 13) HTTP server side 100-continue handling
 14) Allow to set HTTP response reason
 15) Netty should build timers into event loop
-16) More tests needed!
 19) Make Java nodex methods static
 20) Package manager and deployment
 21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
