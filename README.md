@@ -43,12 +43,12 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 
 ### Pre-requisites
 
-* Operating system: Node.x currently runs on Linux and OSX. If you're on Windows, install a Linux virtual machine using your favourite virtualisation software and use that.
+* Operating system: Node.x currently runs on Linux and OSX. If you're on Windows, create a Linux virtual machine using your favourite virtualisation software and use that.
 * Apache ant - This is the build tool currently used. Make sure the ant bin directory is on your PATH.
 * JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
 * JRuby, version 1.6.4 or later. Make sure the JRuby bin directory is on your PATH
-* Groovy. Make sure the Groovy bin directory is on your PATH.
-* Yard, for building the Ruby API documentation. To install yard 'jruby -S gem install rdiscount' followed by 'jruby -S gem install yard'
+* Yard, for building the Ruby API documentation. To install yard 'jruby -S gem install rdiscount' followed by 'jruby -S gem install yard'  
+* Groovy. Make sure the Groovy bin directory is on your PATH.   
 
 ### To build core
 
@@ -78,13 +78,12 @@ install that. But, it's early days, so for now, you will have to build one yours
 
 ### Pre-requisites
 
-* Operating system: Node.x currently runs on Linux and OSX. If you're on Windows, install a Linux virtual machine using your favourite virtualisation software and use that.
+* Operating system: Node.x currently runs on Linux and OSX. If you're on Windows, create a Linux virtual machine using your favourite virtualisation software and use that.
 * Everyone will need JDK, version 1.7.0 or later. You can use OpenJDK or the official Oracle JDK. Make sure the JDK bin directory is on your PATH.
 
 #### Java API
 
-If you're just using the Java API you just need the JDK installed. If you want to run the Java examples from the distro, you will need
-Apache ant installed too.
+If you're just using the Java API you just need the JDK installed. If you want to run the Java examples from the distro, you will need Apache ant installed too.
 
 #### Ruby API
 
@@ -133,7 +132,7 @@ Java examples are [here] (https://github.com/purplefox/node.x/tree/master/src/ex
 
 Examples must be run from a distro. First install the distro, then cd to the examples/java directory.
 
-Then read the README that's there.
+Then read the README there.
 
 ### Ruby
 
@@ -141,7 +140,7 @@ Ruby examples are [here] (https://github.com/purplefox/node.x/tree/master/src/ex
 
 Examples must be run from a distro. First install the distro, then cd to the examples/ruby directory.
 
-Then read the README that's there.
+Then read the README there.
 
 ## Development discussions
 
