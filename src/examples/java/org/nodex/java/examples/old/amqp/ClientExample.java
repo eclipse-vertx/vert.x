@@ -16,45 +16,36 @@
 
 package org.nodex.java.examples.old.amqp;
 
-import org.nodex.java.addons.old.amqp.AmqpConnectHandler;
-import org.nodex.java.addons.old.amqp.AmqpConnection;
-import org.nodex.java.addons.old.amqp.AmqpMsgCallback;
-import org.nodex.java.addons.old.amqp.AmqpProps;
-import org.nodex.java.addons.old.amqp.Channel;
-import org.nodex.java.addons.old.amqp.ChannelHandler;
-
-import java.io.IOException;
-
 public class ClientExample {
-
-  private static String QUEUE_NAME = "my-queue";
-
-  public static void main(String[] args) throws IOException {
-    org.nodex.java.addons.old.amqp.AmqpClient.createClient().connect(new AmqpConnectHandler() {
-      public void onConnect(AmqpConnection conn) {
-        conn.createChannel(new ChannelHandler() {
-          public void onCreate(final Channel channel) {
-            channel.declareQueue(QUEUE_NAME, false, true, true, new Runnable() {
-              public void run() {
-                System.out.println("declared ok");
-                channel.subscribe(QUEUE_NAME, true, new AmqpMsgCallback() {
-                  public void onMessage(AmqpProps props, byte[] body) {
-                    System.out.println("Got message " + new String(body));
-                  }
-                });
-                //Send some messages
-                for (int i = 0; i < 10; i++) {
-                  channel.publish("", QUEUE_NAME, null, "message " + i);
-                }
-                System.out.println("Sent messages");
-              }
-            });
-          }
-        });
-      }
-    });
-
-    System.out.println("Any key to exit");
-    System.in.read();
-  }
+//
+//  private static String QUEUE_NAME = "my-queue";
+//
+//  public static void main(String[] args) throws IOException {
+//    org.nodex.java.addons.old.amqp.AmqpClient.createClient().connect(new AmqpConnectHandler() {
+//      public void onConnect(AmqpConnection conn) {
+//        conn.createChannel(new ChannelHandler() {
+//          public void onCreate(final Channel channel) {
+//            channel.declareQueue(QUEUE_NAME, false, true, true, new Runnable() {
+//              public void run() {
+//                System.out.println("declared ok");
+//                channel.subscribe(QUEUE_NAME, true, new AmqpMsgCallback() {
+//                  public void onMessage(AmqpProps props, byte[] body) {
+//                    System.out.println("Got message " + new String(body));
+//                  }
+//                });
+//                //Send some messages
+//                for (int i = 0; i < 10; i++) {
+//                  channel.publish("", QUEUE_NAME, null, "message " + i);
+//                }
+//                System.out.println("Sent messages");
+//              }
+//            });
+//          }
+//        });
+//      }
+//    });
+//
+//    System.out.println("Any key to exit");
+//    System.in.read();
+//  }
 }

@@ -55,7 +55,6 @@ public class StdioTest extends TestBase {
 
         in.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-           System.out.println("received data");
            received.appendBuffer(data);
           }
         });

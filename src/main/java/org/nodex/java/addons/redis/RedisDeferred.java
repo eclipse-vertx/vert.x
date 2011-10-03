@@ -21,11 +21,14 @@ import org.nodex.java.core.DeferredAction;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandler {
+
+  private static final Logger log = Logger.getLogger(RedisDeferred.class);
 
   static enum DeferredType {
     VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE, STRING
@@ -111,7 +114,7 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
         try {
           doHandleReply();
         } catch (Exception e) {
-          e.printStackTrace(System.err);
+          log.error(e);
         }
       }
     });

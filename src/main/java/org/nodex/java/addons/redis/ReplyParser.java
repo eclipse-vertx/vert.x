@@ -18,6 +18,7 @@ package org.nodex.java.addons.redis;
 
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.parsetools.RecordParser;
 
 /**
@@ -26,6 +27,8 @@ import org.nodex.java.core.parsetools.RecordParser;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ReplyParser implements Handler<Buffer> {
+
+  private static final Logger log = Logger.getLogger(ReplyParser.class);
 
   static final byte[] CRLF = new byte[]{'\r', '\n'};
   static final byte STAR = (byte)'*';
@@ -79,7 +82,7 @@ public class ReplyParser implements Handler<Buffer> {
             recordParser.delimitedMode(CRLF);
             break;
           default:
-            System.err.println("Invalid response type: " + type);
+            log.error("Invalid response type: " + type);
         }
         break;
       case ONE_LINE:

@@ -20,6 +20,7 @@ import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisPool;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
 
@@ -30,6 +31,8 @@ import org.testng.annotations.Test;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisReconnectTest extends TestBase {
+
+  private static final Logger log = Logger.getLogger(RedisReconnectTest.class);
 
   @Test
   public void test1() throws Exception {
@@ -46,16 +49,14 @@ public class RedisReconnectTest extends TestBase {
 
         Nodex.instance.setTimer(10000, new Handler<Long>() {
           public void handle(Long timerID) {
-            System.out.println("Timer fired");
             conn.ping().execute();
           }
         });
       }
     });
 
-    System.out.println("Sleeping");
+    log.debug("Sleeping");
     Thread.sleep(30000);
-    System.out.println("Done");
 
   }
 }

@@ -27,6 +27,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.buffer.Buffer;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.streams.WriteStream;
 
 import java.util.LinkedList;
@@ -74,6 +75,8 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientRequest implements WriteStream {
+
+  private static final Logger log = Logger.getLogger(HttpClient.class);
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,
@@ -366,7 +369,7 @@ public class HttpClientRequest implements WriteStream {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     } else {
-      e.printStackTrace(System.err);
+      log.error(e);
     }
   }
 
@@ -383,7 +386,7 @@ public class HttpClientRequest implements WriteStream {
       if (t instanceof Exception) {
         handleException((Exception) t);
       } else {
-        t.printStackTrace(System.err);
+        log.error(t);
       }
     }
   }

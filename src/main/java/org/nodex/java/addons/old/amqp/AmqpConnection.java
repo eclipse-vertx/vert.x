@@ -16,43 +16,39 @@
 
 package org.nodex.java.addons.old.amqp;
 
-import org.nodex.java.core.internal.NodexInternal;
-
-import java.io.IOException;
-
 public class AmqpConnection {
-
-  private com.rabbitmq.client.Connection conn;
-
-  AmqpConnection(com.rabbitmq.client.Connection conn) {
-    this.conn = conn;
-  }
-
-  public void createChannel(final ChannelHandler channelHandler) {
-    NodexInternal.instance.executeInBackground(new Runnable() {
-      public void run() {
-        try {
-          channelHandler.onCreate(new Channel(conn.createChannel()));
-        } catch (IOException e) {
-          //TODO handle exceptionHandler by passing them back on callback
-          e.printStackTrace();
-        }
-      }
-    });
-  }
-
-  public void close(final Runnable doneCallback) {
-    NodexInternal.instance.executeInBackground(new Runnable() {
-      public void run() {
-        try {
-          conn.close();
-          //FIXME - again this is sync
-          doneCallback.run();
-        } catch (IOException e) {
-          //TODO handle exceptionHandler by passing them back on callback
-          e.printStackTrace();
-        }
-      }
-    });
-  }
+//
+//  private com.rabbitmq.client.Connection conn;
+//
+//  AmqpConnection(com.rabbitmq.client.Connection conn) {
+//    this.conn = conn;
+//  }
+//
+//  public void createChannel(final ChannelHandler channelHandler) {
+//    NodexInternal.instance.executeInBackground(new Runnable() {
+//      public void run() {
+//        try {
+//          channelHandler.onCreate(new Channel(conn.createChannel()));
+//        } catch (IOException e) {
+//          //TODO handle exceptionHandler by passing them back on callback
+//          e.printStackTrace();
+//        }
+//      }
+//    });
+//  }
+//
+//  public void close(final Runnable doneCallback) {
+//    NodexInternal.instance.executeInBackground(new Runnable() {
+//      public void run() {
+//        try {
+//          conn.close();
+//          //FIXME - again this is sync
+//          doneCallback.run();
+//        } catch (IOException e) {
+//          //TODO handle exceptionHandler by passing them back on callback
+//          e.printStackTrace();
+//        }
+//      }
+//    });
+//  }
 }

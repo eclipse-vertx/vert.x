@@ -26,6 +26,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
 
@@ -39,6 +40,8 @@ import java.io.RandomAccessFile;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ConnectionBase {
+
+  private static final Logger log = Logger.getLogger(ConnectionBase.class);
 
   protected ConnectionBase(Channel channel, long contextID, Thread th) {
     this.channel = channel;
@@ -172,8 +175,7 @@ public abstract class ConnectionBase {
 
   protected void handleHandlerException(Throwable t) {
     //We log errors otherwise they will get swallowed
-    //TODO logging
-    t.printStackTrace(System.err);
+    log.error(t);
   }
 
   protected boolean isSSL() {

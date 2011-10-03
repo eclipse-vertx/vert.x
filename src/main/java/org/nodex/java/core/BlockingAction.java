@@ -17,6 +17,7 @@
 package org.nodex.java.core;
 
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 
 /**
  * <p>Sometimes it is necessary to perform operations in node.x which are inherently blocking, e.g. talking to legacy
@@ -31,6 +32,8 @@ import org.nodex.java.core.internal.NodexInternal;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class BlockingAction<T> extends SynchronousAction<T> {
+
+  private static final Logger log = Logger.getLogger(BlockingAction.class);
 
   /**
    * Run the blocking action using a thread from the background pool.
@@ -54,7 +57,7 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
           });
         } catch (Throwable t) {
           //Not much we can do, just log it
-          t.printStackTrace(System.err);
+          log.error(t);
         }
       }
     };

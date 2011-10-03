@@ -19,4 +19,4 @@ done
 
 DIRNAME=`dirname "$PRG"`
 
-jruby -I$DIRNAME/../lib/java:$DIRNAME/../lib/ruby -rnode.x.jar -rnetty.jar -rhigh-scale-lib.jar "$@"
+jruby -J-Djava.util.logging.config.file=$DIRNAME/../logging.properties -I$DIRNAME/../lib/java:$DIRNAME/../lib/ruby -rnode.x.jar -rnetty.jar -rhigh-scale-lib.jar "$@"

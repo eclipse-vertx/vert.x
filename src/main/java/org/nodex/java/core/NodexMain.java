@@ -17,12 +17,15 @@
 package org.nodex.java.core;
 
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class NodexMain {
+
+  private static final Logger log = Logger.getLogger(NodexMain.class);
 
   public void run() {
     final long contextID = NodexInternal.instance.createAndAssociateContext();
@@ -32,7 +35,7 @@ public abstract class NodexMain {
         try {
           go();
         } catch (Throwable t) {
-          t.printStackTrace(System.err);
+          log.error(t);
         }
       }
     });
