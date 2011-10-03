@@ -22,6 +22,7 @@ import org.nodex.java.core.Handler;
 import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.net.NetSocket;
 
 import java.util.LinkedList;
@@ -34,6 +35,8 @@ import java.util.Queue;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class InternalConnection implements Handler<RedisReply>{
+
+  private static final Logger log = Logger.getLogger(InternalConnection.class);
 
   private final LinkedList<ReplyHandler> deferredQueue = new LinkedList<>();
   private final NetSocket socket;
@@ -50,7 +53,6 @@ public class InternalConnection implements Handler<RedisReply>{
     socket.dataHandler(new ReplyParser(this));
     socket.closedHandler(new SimpleHandler() {
       public void handle() {
-        System.err.println("Channel closed");
         socket.close();
         pool.connectionClosed();
         closed = true;
@@ -80,7 +82,7 @@ public class InternalConnection implements Handler<RedisReply>{
 
   void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe, long contextID) {
     if (closed) {
-      System.err.println("Socket is closed");
+      log.warn("Socket is closed");
       return;
     }
     if (subscriber && !subscribe) {
@@ -131,7 +133,7 @@ public class InternalConnection implements Handler<RedisReply>{
     } else {
       ReplyHandler handler = deferredQueue.poll();
       if (handler == null) {
-        System.err.println("Unsolicited response");
+        log.warn("Unsolicited response");
       } else {
         handler.handleReply(reply);
       }
@@ -182,7 +184,7 @@ public class InternalConnection implements Handler<RedisReply>{
           // unsubscribe or subscribe
           ReplyHandler handler = deferredQueue.poll();
           if (handler == null) {
-            System.err.println("Protocol error");
+            log.warn("Protocol error");
           } else {
             handler.handleReply(reply);
           }

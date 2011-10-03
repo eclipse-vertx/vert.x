@@ -17,6 +17,7 @@
 package org.nodex.java.core;
 
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -27,6 +28,8 @@ import java.util.Queue;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ConnectionPool<T> {
+
+  private static final Logger log = Logger.getLogger(ConnectionPool.class);
 
   private final Queue<T> available = new LinkedList<>();
   private int maxPoolSize = 1;
@@ -49,7 +52,7 @@ public abstract class ConnectionPool<T> {
   }
 
   public synchronized void report() {
-    System.out.println("available: " + available.size() + " connection count: " + connectionCount + " waiters: " + waiters.size());
+    log.trace("available: " + available.size() + " connection count: " + connectionCount + " waiters: " + waiters.size());
   }
 
   /**

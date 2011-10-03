@@ -16,58 +16,53 @@
 
 package org.nodex.java.addons.old.amqp;
 
-import com.rabbitmq.client.ConnectionFactory;
-import org.nodex.java.core.internal.NodexInternal;
-
-import java.io.IOException;
-
 public class AmqpClient {
-
-  public static AmqpClient createClient() {
-    return new AmqpClient();
-  }
-
-  private AmqpClient() {
-    cf = new ConnectionFactory();
-  }
-
-  private ConnectionFactory cf;
-
-  public AmqpClient setHost(String host) {
-    cf.setHost(host);
-    return this;
-  }
-
-  public AmqpClient setPort(int port) {
-    cf.setPort(port);
-    return this;
-  }
-
-  public AmqpClient setUsername(String username) {
-    cf.setUsername(username);
-    return this;
-  }
-
-  public AmqpClient setPassword(String password) {
-    cf.setPassword(password);
-    return this;
-  }
-
-  public AmqpClient setVirtualHost(String virtualHost) {
-    cf.setVirtualHost(virtualHost);
-    return this;
-  }
-
-  public void connect(final AmqpConnectHandler connectHandler) {
-    NodexInternal.instance.executeInBackground(new Runnable() {
-      public void run() {
-        try {
-          connectHandler.onConnect(new AmqpConnection(cf.newConnection()));
-        } catch (IOException e) {
-          //TODO handle exceptionHandler by passing them back on callback
-          e.printStackTrace();
-        }
-      }
-    });
-  }
+//
+//  public static AmqpClient createClient() {
+//    return new AmqpClient();
+//  }
+//
+//  private AmqpClient() {
+//    cf = new ConnectionFactory();
+//  }
+//
+//  private ConnectionFactory cf;
+//
+//  public AmqpClient setHost(String host) {
+//    cf.setHost(host);
+//    return this;
+//  }
+//
+//  public AmqpClient setPort(int port) {
+//    cf.setPort(port);
+//    return this;
+//  }
+//
+//  public AmqpClient setUsername(String username) {
+//    cf.setUsername(username);
+//    return this;
+//  }
+//
+//  public AmqpClient setPassword(String password) {
+//    cf.setPassword(password);
+//    return this;
+//  }
+//
+//  public AmqpClient setVirtualHost(String virtualHost) {
+//    cf.setVirtualHost(virtualHost);
+//    return this;
+//  }
+//
+//  public void connect(final AmqpConnectHandler connectHandler) {
+//    NodexInternal.instance.executeInBackground(new Runnable() {
+//      public void run() {
+//        try {
+//          connectHandler.onConnect(new AmqpConnection(cf.newConnection()));
+//        } catch (IOException e) {
+//          //TODO handle exceptionHandler by passing them back on callback
+//          e.printStackTrace();
+//        }
+//      }
+//    });
+//  }
 }

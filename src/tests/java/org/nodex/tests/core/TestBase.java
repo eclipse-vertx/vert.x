@@ -18,6 +18,7 @@ package org.nodex.tests.core;
 
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.http.HttpServer;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.net.NetServer;
 import org.nodex.tests.AwaitDone;
 import org.testng.annotations.AfterClass;
@@ -34,14 +35,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class TestBase {
 
+  private static final Logger log = Logger.getLogger(TestBase.class);
+
   @BeforeClass
   public void setUp() {
-    System.out.println("*** STARTING TEST " + this.getClass().getName());
+    log.debug("*** STARTING TEST " + this.getClass().getName());
   }
 
   @AfterClass
   public void tearDown() {
-    System.out.println("*** STOPPING TEST " + this.getClass().getName());
+    log.debug("*** STOPPING TEST " + this.getClass().getName());
   }
 
 

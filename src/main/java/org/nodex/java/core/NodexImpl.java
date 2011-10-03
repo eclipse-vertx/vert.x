@@ -22,6 +22,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.shared.SharedUtils;
 
 import java.util.Map;
@@ -35,6 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 class NodexImpl implements NodexInternal {
+
+  private static final Logger log = Logger.getLogger(NodexImpl.class);
 
   private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
@@ -133,7 +136,7 @@ class NodexImpl implements NodexInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-          t.printStackTrace(System.err);
+         log.error(t);
         }
       }
     });

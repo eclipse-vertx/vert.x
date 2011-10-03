@@ -18,6 +18,7 @@ package org.nodex.java.addons.redis;
 
 import org.nodex.java.core.ConnectionPool;
 import org.nodex.java.core.Handler;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.net.NetClient;
 import org.nodex.java.core.net.NetSocket;
 
@@ -32,6 +33,8 @@ import org.nodex.java.core.net.NetSocket;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisPool {
+
+  private static final Logger log = Logger.getLogger(RedisPool.class);
 
   private final NetClient client = new NetClient();
   private final ConnectionPool<InternalConnection> pool = new ConnectionPool<InternalConnection>() {
@@ -49,7 +52,7 @@ public class RedisPool {
   public RedisPool() {
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        System.err.println("Failed to connect");
+        log.error("Failed to connect", e);
       }
     });
   }

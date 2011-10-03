@@ -17,5 +17,5 @@
 package org.nodex.java.addons.old.amqp;
 
 public abstract class AmqpConnectHandler {
-  public abstract void onConnect(AmqpConnection connection);
+ // public abstract void onConnect(AmqpConnection connection);
 }

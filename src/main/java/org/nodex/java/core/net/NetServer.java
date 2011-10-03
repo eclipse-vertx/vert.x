@@ -41,6 +41,7 @@ import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
@@ -59,6 +60,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServer extends NetServerBase {
+
+  private static final Logger log = Logger.getLogger(NetServer.class);
 
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
   private Handler<NetSocket> connectHandler;
@@ -255,7 +258,7 @@ public class NetServer extends NetServerBase {
       //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
       Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
       serverChannelGroup.add(serverChannel);
-      System.out.println("Net server listening on " + host + ":" + port);
+      log.info("Net server listening on " + host + ":" + port);
     } catch (UnknownHostException e) {
       e.printStackTrace();
     }

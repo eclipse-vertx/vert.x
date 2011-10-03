@@ -26,6 +26,7 @@ import org.nodex.java.core.http.HttpClientRequest;
 import org.nodex.java.core.http.HttpClientResponse;
 import org.nodex.java.core.http.HttpServer;
 import org.nodex.java.core.http.HttpServerRequest;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.tests.Utils;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
@@ -42,6 +43,8 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpTest extends TestBase {
+
+  private static final Logger log = Logger.getLogger(HttpTest.class);
 
   @Test
   public void testGetNow() throws Exception {
@@ -821,7 +824,7 @@ public class HttpTest extends TestBase {
 
   private void dumpHeaders(HttpClientResponse response) {
     for (String key : response.getHeaderNames()) {
-      System.out.println(key + ":" + response.getHeader(key));
+      log.debug(key + ":" + response.getHeader(key));
     }
   }
 

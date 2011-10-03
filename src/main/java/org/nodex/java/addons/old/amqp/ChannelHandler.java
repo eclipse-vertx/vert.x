@@ -17,5 +17,5 @@
 package org.nodex.java.addons.old.amqp;
 
 public abstract class ChannelHandler {
-  public abstract void onCreate(Channel channel);
+ // public abstract void onCreate(Channel channel);
 }

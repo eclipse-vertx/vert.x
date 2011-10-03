@@ -28,7 +28,7 @@ APPEND_CP=false
 for arg in "$@"
 do
   if $APPEND_CP ; then
-    arg=$EXTRA_CLASSPATH:$arg
+    arg=$arg:$EXTRA_CLASSPATH
     APPEND_CP=false    
   fi
   if [ $arg = "-cp" ] || [ $arg = "-classpath" ]; then
@@ -37,4 +37,4 @@ do
   NEW_ARGS=$NEW_ARGS" "$arg
 done
 
-java $NEW_ARGS
+java -Djava.util.logging.config.file=$DIRNAME/../logging.properties $NEW_ARGS

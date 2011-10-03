@@ -44,6 +44,7 @@ import org.nodex.java.core.Nodex;
 import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.net.NetClientBase;
 
 import javax.net.ssl.SSLEngine;
@@ -63,6 +64,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClient extends NetClientBase {
+
+  private static final Logger log = Logger.getLogger(HttpClientRequest.class);
 
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
@@ -422,22 +425,12 @@ public class HttpClient extends NetClientBase {
           if (t instanceof Exception && exceptionHandler != null) {
             exceptionHandler.handle((Exception) t);
           } else {
-            t.printStackTrace(System.err);
+            log.error(t);
           }
         }
       }
     });
   }
-
-//  private static class Waiter {
-//    final Handler<ClientConnection> handler;
-//    final long contextID;
-//
-//    private Waiter(Handler<ClientConnection> handler, long contextID) {
-//      this.handler = handler;
-//      this.contextID = contextID;
-//    }
-//  }
 
   private class ClientHandler extends SimpleChannelUpstreamHandler {
 
@@ -477,7 +470,7 @@ public class HttpClient extends NetClientBase {
           }
         });
       } else {
-        t.printStackTrace(System.err);
+        log.error(t);
       }
     }
 

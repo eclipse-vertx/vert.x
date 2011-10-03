@@ -25,6 +25,7 @@ import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 import org.nodex.java.core.streams.ReadStream;
 import org.nodex.java.core.streams.WriteStream;
 
@@ -47,6 +48,8 @@ import java.util.HashSet;
  * @author <a href="http://tfox.org">Tim Fox</a>
   */
 public class AsyncFile {
+
+  private static final Logger log = Logger.getLogger(AsyncFile.class);
 
   public static final int BUFFER_SIZE = 8192;
 
@@ -248,7 +251,7 @@ public class AsyncFile {
           if (exceptionHandler != null) {
             exceptionHandler.handle(e);
           } else {
-            e.printStackTrace(System.err);
+            log.error(e);
           }
         }
       };
@@ -339,7 +342,7 @@ public class AsyncFile {
             checkContext();
             exceptionHandler.handle(e);
           } else {
-            e.printStackTrace(System.err);
+            log.error(e);
           }
         }
 
@@ -432,7 +435,7 @@ public class AsyncFile {
             }
           });
         } else {
-          exc.printStackTrace(System.err);
+          log.error(exc);
         }
       }
     });
@@ -492,7 +495,7 @@ public class AsyncFile {
             }
           });
         } else {
-          exc.printStackTrace(System.err);
+          log.error(exc);
         }
       }
     });
