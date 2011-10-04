@@ -132,7 +132,8 @@
 
         <copy todir="${dist-build}/lib/java">
             <fileset dir="${core-lib}">
-                <include name="*.jar"/>
+                <include name="netty.jar"/>
+                <include name="high-scale-lib.jar"/>
             </fileset>
         </copy>
 
