@@ -18,11 +18,17 @@ package org.nodex.tests.addons.redis;
 
 import org.nodex.java.addons.redis.RedisConnection;
 import org.nodex.java.addons.redis.RedisPool;
+import org.nodex.java.core.CompletionHandler;
+import org.nodex.java.core.Future;
 import org.nodex.java.core.Handler;
 import org.nodex.java.core.Nodex;
+import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.logging.Logger;
 import org.nodex.tests.core.TestBase;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -35,28 +41,94 @@ public class RedisReconnectTest extends TestBase {
   private static final Logger log = Logger.getLogger(RedisReconnectTest.class);
 
   @Test
-  public void test1() throws Exception {
+  public void testConnectionFailure() throws Exception {
+
+    final CountDownLatch latch = new CountDownLatch(1);
 
     Nodex.instance.go(new Runnable() {
       public void run() {
         RedisPool pool = new RedisPool();
 
         pool.setMaxPoolSize(1);
+        pool.setReconnectAttempts(1000);
 
         final RedisConnection conn = pool.connection();
 
-        conn.ping().execute();
+        log.info("Executing a set");
+        conn.set(Buffer.create("key1"), Buffer.create("val1")).handler(new CompletionHandler<Void>() {
+          public void handle(Future<Void> future) {
+            log.info("Result of set returned");
+          }
+        }).execute();
+
+        log.info("Now sleeping. Please kill redis");
 
         Nodex.instance.setTimer(10000, new Handler<Long>() {
           public void handle(Long timerID) {
-            conn.ping().execute();
+
+            log.info("Executing a get");
+            conn.get(Buffer.create("key1")).handler(new CompletionHandler<Buffer>() {
+              public void handle(Future<Buffer> future) {
+                log.info("Result of get returned " + future.result());
+
+                conn.close();
+                latch.countDown();
+              }
+            }).execute();
           }
         });
       }
     });
 
-    log.debug("Sleeping");
-    Thread.sleep(30000);
+    assert(latch.await(1000000, TimeUnit.SECONDS));
+
+  }
+
+  @Test
+  public void testConnectionFailureWhenInPool() throws Exception {
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    Nodex.instance.go(new Runnable() {
+      public void run() {
+        final RedisPool pool = new RedisPool();
+
+        pool.setMaxPoolSize(1);
+        pool.setReconnectAttempts(1000000);
+
+        RedisConnection conn1 = pool.connection();
+
+        log.info("Executing a set");
+        conn1.set(Buffer.create("key1"), Buffer.create("val1")).handler(new CompletionHandler<Void>() {
+          public void handle(Future<Void> future) {
+            log.info("Result of set returned");
+          }
+        }).execute();
+
+        conn1.close();
+
+        log.info("Now sleeping. Please kill redis");
+
+        Nodex.instance.setTimer(10000, new Handler<Long>() {
+          public void handle(Long timerID) {
+
+            final RedisConnection conn2 = pool.connection();
+
+            log.info("Executing a get");
+            conn2.get(Buffer.create("key1")).handler(new CompletionHandler<Buffer>() {
+              public void handle(Future<Buffer> future) {
+                log.info("Result of get returned " + future.result());
+
+                conn2.close();
+                latch.countDown();
+              }
+            }).execute();
+          }
+        });
+      }
+    });
+
+    assert(latch.await(100000, TimeUnit.SECONDS));
 
   }
 }

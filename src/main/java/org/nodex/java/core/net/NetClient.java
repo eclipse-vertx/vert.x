@@ -18,18 +18,7 @@ package org.nodex.java.core.net;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelState;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
@@ -51,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>Multiple connections to different servers can be made using the same instance. Instances of this class can be shared by different
  * event loops.</p>
  *
+ * <p>This client supports a configurable number of connection attempts and a configurable delay between attempts.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetClient extends NetClientBase {
@@ -61,6 +52,8 @@ public class NetClient extends NetClientBase {
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap<>();
   private Handler<Exception> exceptionHandler;
+  private int reconnectAttempts;
+  private long reconnectInterval = 1000;
 
   /**
    * Create a new {@code NetClient}
@@ -76,6 +69,10 @@ public class NetClient extends NetClientBase {
    * @return a reference to this so multiple method calls can be chained together
    */
   public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
+    return connect(port, host, connectHandler, reconnectAttempts);
+  }
+
+  private NetClient connect(final int port, final String host, final Handler<NetSocket> connectHandler, final int remainingAttempts) {
 
     final Long contextID = Nodex.instance.getContextID();
     if (contextID == null) {
@@ -112,9 +109,9 @@ public class NetClient extends NetClientBase {
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
-        if (channelFuture.isSuccess()) {
-          final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
+        final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
 
+        if (channelFuture.isSuccess()) {
           runOnCorrectThread(ch, new Runnable() {
             public void run() {
               NodexInternal.instance.setContextID(contextID);
@@ -124,14 +121,26 @@ public class NetClient extends NetClientBase {
             }
           });
         } else {
-
-          // TODO - set a timer for reconnection attempts
-
-          Throwable t = channelFuture.getCause();
-          if (t instanceof Exception && exceptionHandler != null) {
-            exceptionHandler.handle((Exception) t);
+          if (remainingAttempts > 0) {
+            runOnCorrectThread(ch, new Runnable() {
+              public void run() {
+                NodexInternal.instance.setContextID(contextID);
+                log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
+                //Set a timer to retry connection
+                Nodex.instance.setTimer(reconnectInterval, new Handler<Long>() {
+                  public void handle(Long timerID) {
+                    connect(port, host, connectHandler, remainingAttempts - 1);
+                  }
+                });
+               }
+            });
           } else {
-            log.error(t);
+            Throwable t = channelFuture.getCause();
+            if (t instanceof Exception && exceptionHandler != null) {
+              exceptionHandler.handle((Exception) t);
+            } else {
+              log.error(t);
+            }
           }
         }
       }
@@ -156,6 +165,41 @@ public class NetClient extends NetClientBase {
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
+  }
+
+  /**
+   * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
+   * to connect a further number of times, before it fails. Default value is zero.
+   */
+  public void setReconnectAttempts(int attempts) {
+    if (attempts < 0) {
+      throw new IllegalArgumentException("Invalid attempts: " + attempts);
+    }
+    this.reconnectAttempts = attempts;
+  }
+
+  /**
+   * Get the number of reconnect attempts
+   */
+  public int getReconnectAttempts() {
+    return reconnectAttempts;
+  }
+
+  /**
+   * Set the reconnect interval, in milliseconds
+   */
+  public void setReconnectInterval(long interval) {
+    if (interval < 1) {
+      throw new IllegalArgumentException("Invalid interval: " + interval);
+    }
+    this.reconnectInterval = interval;
+  }
+
+  /**
+   * Get the reconnect interval, in milliseconds.
+   */
+  public long getReconnectInterval() {
+    return reconnectInterval;
   }
 
   /**

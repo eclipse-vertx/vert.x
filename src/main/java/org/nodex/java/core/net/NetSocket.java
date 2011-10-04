@@ -178,9 +178,6 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   protected void handleClosed() {
-    super.handleClosed();
-    setContextID();
-    Nodex.instance.unregisterHandler(writeHandlerID);
     if (endHandler != null) {
       try {
         endHandler.handle(null);
@@ -188,6 +185,9 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
         handleHandlerException(t);
       }
     }
+    super.handleClosed();
+    setContextID();
+    Nodex.instance.unregisterHandler(writeHandlerID);
   }
 
   protected void handleException(Exception e) {

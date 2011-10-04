@@ -224,7 +224,7 @@ module Nodex
 
     # Get a copy of the entire buffer.
     # @return [Buffer] the copy
-    def copy()
+    def copy
       Buffer.new(@buffer.copy())
     end
 

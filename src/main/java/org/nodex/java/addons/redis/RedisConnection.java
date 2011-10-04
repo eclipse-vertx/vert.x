@@ -24,6 +24,7 @@ import org.nodex.java.core.Handler;
 import org.nodex.java.core.SimpleHandler;
 import org.nodex.java.core.buffer.Buffer;
 import org.nodex.java.core.internal.NodexInternal;
+import org.nodex.java.core.logging.Logger;
 
 import java.nio.charset.Charset;
 import java.util.LinkedList;
@@ -89,6 +90,8 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisConnection {
+
+  private static final Logger log = Logger.getLogger(RedisConnection.class);
 
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -1089,29 +1092,36 @@ public class RedisConnection {
     }
   }
 
-  private void setConnection(InternalConnection conn) {
-    this.conn = conn;
-    conn.closedHandler(new SimpleHandler() {
-      public void handle() {
-        RedisConnection.this.conn = null;
-        connectionRequested = false;
+  private void setConnection(final InternalConnection conn) {
+    if (conn.isClosed()) {
+      // This can happen if the connection failed when still in the pool -we need to request a new one
+      pool.connectionClosed();
+      connectionRequested = false;
+      getConnection();
+    } else {
+      this.conn = conn;
+      conn.closedHandler(new SimpleHandler() {
+        public void handle() {
+          RedisConnection.this.conn = null;
+          connectionRequested = false;
+          conn.closedHandler(null);
+        }
+      });
+      if (password != null) {
+        auth(Buffer.create(password)).execute();
       }
-    });
-    if (password != null) {
-      auth(Buffer.create(password)).execute();
-    }
-    for (RedisDeferred<?> deff: pending) {
-      deff.execute();
-    }
-    pending.clear();
-    if (subscriberHandler != null) {
-      conn.subscriberHandler = subscriberHandler;
-    }
-    //Might already be closed by the user before the internal connection was got
-    if (closeDeferred != null) {
-      conn.close(closeDeferred);
-      closeDeferred = null;
+      for (RedisDeferred<?> deff: pending) {
+        deff.execute();
+      }
+      pending.clear();
+      if (subscriberHandler != null) {
+        conn.subscriberHandler = subscriberHandler;
+      }
+      //Might already be closed by the user before the internal connection was got
+      if (closeDeferred != null) {
+        conn.close(closeDeferred);
+        closeDeferred = null;
+      }
     }
   }
-
 }

@@ -46,6 +46,7 @@ public class InternalConnection implements Handler<RedisReply>{
   private ReplyHandler currentReplyHandler;
   Handler<Buffer> subscriberHandler;
   private boolean closed;
+  private Handler<Void> closedHandler;
 
   InternalConnection(final ConnectionPool<InternalConnection> pool, final NetSocket socket) {
     this.pool = pool;
@@ -59,8 +60,13 @@ public class InternalConnection implements Handler<RedisReply>{
         if (closedHandler != null) {
           closedHandler.handle(null);
         }
+        socket.closedHandler(null);
       }
     });
+  }
+
+  boolean isClosed() {
+    return closed;
   }
 
   void close(DeferredAction<Void> deferred) {
@@ -69,12 +75,21 @@ public class InternalConnection implements Handler<RedisReply>{
     } else if (currentTXSendingHandler != null) {
       deferred.setException(new RedisException("Please complete the transaction before closing connection"));
     } else {
+      closedHandler = null;
+      socket.closedHandler(new SimpleHandler() {
+        public void handle() {
+          //The socket has died while in the pool - we just close the socket
+          //If a user retrieves a connection with a closed socket, this will detected the first time they
+          //try and send a command on it, at which point a new connection will be requested
+          socket.close();
+          closed = true;
+        }
+      });
+
       pool.returnConnection(InternalConnection.this);
       deferred.setResult(null);
     }
   }
-
-  private Handler<Void> closedHandler;
 
   void closedHandler(Handler<Void> handler) {
     this.closedHandler = handler;
@@ -202,7 +217,6 @@ public class InternalConnection implements Handler<RedisReply>{
               break;
             }
           }
-
         }
       }
     }
