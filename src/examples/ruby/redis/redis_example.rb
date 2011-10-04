@@ -13,7 +13,6 @@
 # limitations under the License.
 
 require "nodex"
-require "addons/redis"
 include Nodex
 
 Nodex::go do

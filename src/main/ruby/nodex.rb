@@ -26,6 +26,8 @@ require 'core/shared_data'
 require 'core/std_io'
 require 'core/composition'
 
+require 'addons/redis'
+
 # The Nodex modules defines the top level namespace within which all Nodex classes are found.
 #
 # This module also contains some class methods used for such things as setting and cancelling timers and
