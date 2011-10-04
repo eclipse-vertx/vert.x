@@ -76,13 +76,14 @@ TODO
 13) HTTP server side 100-continue handling
 14) Allow to set HTTP response reason
 15) Netty should build timers into event loop
-19) Make Java nodex methods static
+19) Make Java nodex methods static ??
 20) Package manager and deployment
 21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.
 22) Per thread connection pools. If we can have multiple connection pools, one for each core thread then they don't
 need any synchronization.
 23) Netclient, Redis and HTTP connection reconnection. Most of the code is there, need to implement timer for reconnect.
+24) Look at Redis cluster support in client
 
 
 

@@ -29,6 +29,8 @@ import org.nodex.java.core.net.NetSocket;
  * the pool.</p>
  * <p>If Redis authentication is enabled on the server, a password should be set using the {@link #setPassword}
  * method.</p>
+ * <p>This pool supports reconnect attempts. If the Redis Server is unavailable it can be configured to
+ * automatically reconnect until it is available.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -98,6 +100,35 @@ public class RedisPool {
   public RedisPool setPassword(String password) {
     this.password = password;
     return this;
+  }
+
+  /**
+   * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
+   * to connect a further number of times, before it fails. Default value is zero.
+   */
+  public void setReconnectAttempts(int attempts) {
+    client.setReconnectAttempts(attempts);
+  }
+
+  /**
+   * Get the number of reconnect attempts
+   */
+  public int getReconnectAttempts() {
+    return client.getReconnectAttempts();
+  }
+
+  /**
+   * Set the reconnect interval, in milliseconds
+   */
+  public void setReconnectInterval(long interval) {
+    client.setReconnectInterval(interval);
+  }
+
+  /**
+   * Get the reconnect interval, in milliseconds.
+   */
+  public long getReconnectInterval() {
+    return client.getReconnectInterval();
   }
 
   /**

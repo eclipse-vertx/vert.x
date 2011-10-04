@@ -87,7 +87,8 @@
         <testng classpathref="test-classpath">
             <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.net.NetTest.*"> -->
             <sysproperty key="java.util.logging.config.file" value="${resources-dir}/logging.properties"/>
-            <classfileset dir="${tests-target}" includes="**/*.class" excludes="**/redis/*.class"/>
+            <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
+            <!-- <classfileset dir="${tests-target}" includes="**/RedisReconnectTest.class"/> -->
         </testng>
     </target>
 
