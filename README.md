@@ -52,7 +52,7 @@ Instructions for building node.x from source are [here](https://github.com/purpl
 
 Instructions for installing and running node.x are are [here] (https://github.com/purplefox/node.x/wiki/Instructions-for-installing-and-running-node.x)
 
-## Development discussions
+## Development and user discussions
 
 [node.x dev Google Group](http://groups.google.com/group/nodex-dev "Node.x dev")
 
