@@ -80,10 +80,19 @@ TODO
 20) Package manager and deployment
 21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.
+
+For people who don't care about pipelining, then all the request methods should ALSO live on the pool - this is a
+shortcut to writing .connection() and clos()ing each time
+
+Websockets should also be obtained immediately from a call to websocket() on the HTTPPool class, this will return
+a ClientWebsocket instance, which will try and connect() immediately. If anything is written before being connected
+it will go into a pending list, like with HttpClientRequest
+
 22) Per thread connection pools. If we can have multiple connection pools, one for each core thread then they don't
 need any synchronization.
 23) HTTP connection reconnection.
 24) Look at Redis cluster support in client
+25) Core JSON support
 
 
 
