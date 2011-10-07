@@ -2,18 +2,18 @@
 
 ## What is Node.x?
 
-The next generation polyglot asynchronous application container.
+The next generation polyglot asynchronous application framework.
 
 * Runs on the JVM.
-* Everything is non-blocking.
 * Embraces the good bits of event driven frameworks like node.js without the bad bits. Then adds some even juicier bits.
-* Polyglot. Node.x will be usable from multiple languages: Ruby (JRuby), Groovy, Java, JavaScript, Python, Clojure, Scala. Write your code in the language *you* choose. Leverage the power of node.x from that language.
+* Everything is non-blocking.
+* Polyglot. Node.x will be usable from multiple languages: Ruby, Groovy, Java, JavaScript, Python, Clojure, Scala. Write your code in the language *you* choose. Leverage the power of node.x from that language.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
 * Incredibly simple concurrency model. Write your code as single threaded but watch it scale across multiple cores. No need to worry about concurrency.
-* Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets
-* Efficiently serve static files from the filesystem bypassing user-space altogether.
+* Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, etc.
+* Efficiently serve static files from the filesystem bypassing userspace altogether.
 * Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
 * Asynchronous plugins will be provided for a wide variety of other systems and protocols including AMQP, Redis, REST, Gemfire, MongoDB, STOMP, Twitter, SMTP, JDBC, Memcached, JMS, ZeroMQ, JDBC, web frameworks, etc
 * Module manager. Install modules from a public repository. Create your own applications and push them to the repo. Creates a market for an ecosystem of node.x modules.
@@ -43,6 +43,8 @@ Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much 
 ## Binary downloads
 
 Binary releases are available here
+
+[Coming soon!]
 
 ## Building from source
 
