@@ -50,7 +50,7 @@ Instructions for building node.x from source are [here](https://github.com/purpl
 
 ## Installation and running the examples
 
-Instructions for installing and running node.x are are [here] (https://github.com/purplefox/node.x/wiki/Installation-instructions)
+Instructions for installing and running node.x are are [here] (https://github.com/purplefox/node.x/wiki/Instructions-for-installing-and-running-node.x)
 
 ## Development discussions
 
@@ -62,4 +62,4 @@ There's an IRC channel at irc.freenode.net#nodex if you want to drop in to chat 
 
 ## Join us!!
 
-There is lots to do! We are looking for contributors - both individual and corporate. Ping me twitter:@timfox, or drop a mail on the nodex-dev google group.
+There is lots to do! We are looking for contributors - both individual and corporate. Ping me twitter:@timfox, or post on the nodex-dev google group.
