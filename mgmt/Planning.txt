@@ -18,6 +18,7 @@ Node (including Timers, registering handlers) - done
 FileSystem - done
 ParseTools - done
 Http - done
+Module manager
 
 Add on modules
 ==============
@@ -74,7 +75,6 @@ TODO
 10) Ruby doc
 12) Netty needs to implement event loop
 13) HTTP server side 100-continue handling
-14) Allow to set HTTP response reason
 15) Netty should build timers into event loop
 19) Make Java nodex methods static ??
 20) Package manager and deployment
