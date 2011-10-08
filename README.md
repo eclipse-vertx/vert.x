@@ -58,6 +58,10 @@ Instructions for installing and running node.x are are [here] (https://github.co
 
 [node.x dev Google Group](http://groups.google.com/group/nodex-dev "Node.x dev")
 
+## FAQ
+
+FAQ [here] (https://github.com/purplefox/node.x/wiki/FAQ)
+
 ## IRC
 
 There's an IRC channel at irc.freenode.net#nodex if you want to drop in to chat about any user or development topics
