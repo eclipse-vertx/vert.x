@@ -1,0 +1,650 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Nodex::Composer
+  
+    &mdash; Node.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (C)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Nodex.html" title="Nodex (module)">Nodex</a></span></span>
+     &raquo; 
+    <span class="title">Composer</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Nodex::Composer
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Nodex::Composer</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/composition.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+Composer allows asynchronous control flows to be defined.
+</p>
+<p>
+This is useful when you have some asynchronous actions to be performed
+after other actions have completed. In a asynchronous framework such as
+node.x you cannot just block on the result of one action before executing
+the next one, since an event loop thread must never block. By using
+Composer you can describe the execution order of a sequence of actions in a
+quasi-direct way, even though when they execute it will all be
+asynchronous.
+</p>
+<p>
+Each action to execute is represented by an instance of <span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span>. A
+Deferred represents an action which is yet to be executed. Instances of
+Deferred can represent any asynchronous action, e.g. copying a file from A
+to B, or getting a key from a Redis server.
+</p>
+<p>
+An example of using this class is as follows:
+</p>
+<p>
+In the above example, when <span class='object_link'><a href="#execute-instance_method" title="Nodex::Composer#execute (method)">#execute</a></span> is invoked, d1, d2, and d3 will be
+executed. When d1, d2, and d3 have all completed, then d4 and d5 will be
+executed. When d4 and d5 have completed d6 will be executed. When d6 has
+completed d7, d8 and d9 will be executed. All this will occur asynchronous
+with no thread blocking for anything to complete.
+</p>
+<p>
+Here is another example which uses the return values from actions in
+subsequent actions:
+</p>
+<p>
+In the above example, when <span class='object_link'><a href="#execute-instance_method" title="Nodex::Composer#execute (method)">#execute</a></span> is invoked d1 will be executed. When
+d1 completes the result of the action will be available in the <span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span>
+future, and the second action will be executed which simply displays the
+result.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h3>Examples:</h3>
+    
+      <h4><div class='inline'></div></h4>
+      <pre class="example code"><span class='comment val'># d1..dn are instances of Deferred, returned from other node.x modules, e.g. {@link org.nodex.java.core.file.FileSystem}</span>
+
+<span class='comp identifier id'>comp</span> <span class='assign token'>=</span> <span class='new identifier id'>new</span> <span class='Composer constant id'>Composer</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='d1 identifier id'>d1</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='d2 identifier id'>d2</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='d3 identifier id'>d3</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='d4 identifier id'>d4</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='d5 identifier id'>d5</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='d6 identifier id'>d6</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='d7 identifier id'>d7</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='d8 identifier id'>d8</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='d9 identifier id'>d9</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='execute identifier id'>execute</span>
+</pre>
+    
+      <h4><div class='inline'></div></h4>
+      <pre class="example code"><span class='comp identifier id'>comp</span> <span class='assign token'>=</span> <span class='Composer constant id'>Composer</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+<span class='future identifier id'>future</span> <span class='assign token'>=</span> <span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='d1 identifier id'>d1</span><span class='rparen token'>)</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lbrace token'>{</span> <span class='puts identifier id'>puts</span> <span class='dstring node'>&quot;Result of d1 is #{future.result}&quot;</span> <span class='rbrace token'>}</span>
+<span class='comp identifier id'>comp</span><span class='dot token'>.</span><span class='execute identifier id'>execute</span>
+</pre>
+    
+  </div>
+<h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div>
+
+
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#execute-instance_method" title="#execute (instance method)">- (Object) <strong>execute</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Start executing any Deferred instances added to this composer.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">- (Composer) <strong>initialize</strong> </a>
+    
+
+    
+  </span>
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+A new instance of Composer.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#parallel-instance_method" title="#parallel (instance method)">- (Future) <strong>parallel</strong>(deferred = nil, &amp;block) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Add a <span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span> or a block to be executed in parallel with any other
+Deferred instances added using this method since the last time (if any) the
+<span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span> method was invoked.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#series-instance_method" title="#series (instance method)">- (Future) <strong>series</strong>(deferred = nil, &amp;block) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Adds a Deferred that will be executed after any other Deferred instances
+that were added to this Composer have completed.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <p class="signature first" id="initialize-instance_method">
+  
+    - (<tt><span class='object_link'><a href="" title="Nodex::Composer (class)">Composer</a></span></tt>) <strong>initialize</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+A new instance of Composer
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+212
+213
+214</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 212</span>
+
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span>
+  <span class='@j_comp ivar id'>@j_comp</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='nodex identifier id'>nodex</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='composition identifier id'>composition</span><span class='dot token'>.</span><span class='Composer constant id'>Composer</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="execute-instance_method">
+  
+    - (<tt>Object</tt>) <strong>execute</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Start executing any Deferred instances added to this composer. Any
+instances added with <span class='object_link'><a href="#parallel-instance_method" title="Nodex::Composer#parallel (method)">#parallel</a></span> will be executed immediately until the
+first instance added with <span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span> is encountered. Once all of those
+instances have completed then, the next &quot;batch&quot; of Deferred
+instances starting from instance added with <span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span> up until the next
+instance added with <span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span> will be executed. Once all of those have
+completed the next batch up until the next <span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span> will be executed. This
+process continues until all Deferred instances have been executed.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+255
+256
+257</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 255</span>
+
+<span class='def def kw'>def</span> <span class='execute identifier id'>execute</span>
+  <span class='@j_comp ivar id'>@j_comp</span><span class='dot token'>.</span><span class='execute identifier id'>execute</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="parallel-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>) <strong>parallel</strong>(deferred = nil, &amp;block) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Add a <span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span> or a block to be executed in parallel with any other
+Deferred instances added using this method since the last time (if any) the
+<span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span> method was invoked. All such Deferred instances will be executed
+only when there are no more Deferred instances that have not yet completed
+and were added before the last call to <span class='object_link'><a href="#series-instance_method" title="Nodex::Composer#series (method)">#series</a></span>.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>deferred</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><ul>
+<li>The [Deferred] to add. This can be nil if a block is specified instead.
+
+</li>
+</ul>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>block</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><ul>
+<li>An arbitrary block to execute with the same semantics of the [Deferred].
+
+</li>
+</ul>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A Future representing the future result of the Deferred.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 222</span>
+
+<span class='def def kw'>def</span> <span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='deferred identifier id'>deferred</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='deferred identifier id'>deferred</span> <span class='neq op'>!=</span> <span class='nil nil kw'>nil</span>
+    <span class='check_deferred identifier id'>check_deferred</span><span class='lparen token'>(</span><span class='deferred identifier id'>deferred</span><span class='rparen token'>)</span>
+    <span class='@j_comp ivar id'>@j_comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='deferred identifier id'>deferred</span><span class='dot token'>.</span><span class='_to_j_del identifier id'>_to_j_del</span><span class='rparen token'>)</span>
+    <span class='deferred identifier id'>deferred</span><span class='dot token'>.</span><span class='block_execution identifier id'>block_execution</span>
+  <span class='elsif elsif kw'>elsif</span> <span class='block identifier id'>block</span> <span class='neq op'>!=</span> <span class='nil nil kw'>nil</span>
+    <span class='j_def identifier id'>j_def</span> <span class='assign token'>=</span> <span class='TheAction constant id'>TheAction</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+    <span class='@j_comp ivar id'>@j_comp</span><span class='dot token'>.</span><span class='parallel identifier id'>parallel</span><span class='lparen token'>(</span><span class='j_def identifier id'>j_def</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="series-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>) <strong>series</strong>(deferred = nil, &amp;block) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Adds a Deferred that will be executed after any other Deferred instances
+that were added to this Composer have completed.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>deferred</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><ul>
+<li>The [Deferred] to add. This can be nil if a block is specified instead.
+
+</li>
+</ul>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>block</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><ul>
+<li>An arbitrary block to execute with the same semantics of the [Deferred].
+
+</li>
+</ul>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A Future representing the future result of the Deferred.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 238</span>
+
+<span class='def def kw'>def</span> <span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='deferred identifier id'>deferred</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='deferred identifier id'>deferred</span> <span class='neq op'>!=</span> <span class='nil nil kw'>nil</span>
+    <span class='check_deferred identifier id'>check_deferred</span><span class='lparen token'>(</span><span class='deferred identifier id'>deferred</span><span class='rparen token'>)</span>
+    <span class='@j_comp ivar id'>@j_comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='deferred identifier id'>deferred</span><span class='dot token'>.</span><span class='_to_j_del identifier id'>_to_j_del</span><span class='rparen token'>)</span>
+    <span class='deferred identifier id'>deferred</span><span class='dot token'>.</span><span class='block_execution identifier id'>block_execution</span>
+  <span class='elsif elsif kw'>elsif</span> <span class='block identifier id'>block</span> <span class='neq op'>!=</span> <span class='nil nil kw'>nil</span>
+    <span class='j_def identifier id'>j_def</span> <span class='assign token'>=</span> <span class='TheAction constant id'>TheAction</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+    <span class='@j_comp ivar id'>@j_comp</span><span class='dot token'>.</span><span class='series identifier id'>series</span><span class='lparen token'>(</span><span class='j_def identifier id'>j_def</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Mon Oct 10 13:16:16 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
