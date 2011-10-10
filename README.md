@@ -28,7 +28,7 @@ Take a look at some of these working Ruby examples to see the kind of things you
 
 ## What is the status of Node.x?
 
-We are working on getting the first binary release out ASAP.
+The first binary release, node.x 0.1, has been released. We aim to follow the mantra of "release early, release often"
 
 ## What is the architecture?
 
@@ -39,12 +39,6 @@ We do not expose the Java API directly in the other languages since we wish to r
 We don't leak Java stuff to other languages through the API.
 
 Node.x internally uses [Netty](https://github.com/netty/netty "Netty") for much of the asynchronous IO.
-
-## Binary downloads
-
-Binary releases are available here
-
-[Coming soon!]
 
 ## Building from source
 

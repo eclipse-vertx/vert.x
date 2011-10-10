@@ -177,6 +177,12 @@
         <copy file="LICENSE.txt" todir="${dist-build}"/>
         <copy file="README.md" todir="${dist-build}"/>
 
+        <copy todir="${dist-build}">
+            <fileset dir="rel-notes">
+                <include name="release-notes-${version-number}.txt"/>
+            </fileset>
+        </copy>
+
         <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead
         <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/> -->
 
