@@ -1,0 +1,1153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Nodex::AsyncFile
+  
+    &mdash; Node.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (A)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Nodex.html" title="Nodex (module)">Nodex</a></span></span>
+     &raquo; 
+    <span class="title">AsyncFile</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Nodex::AsyncFile
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Nodex::AsyncFile</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/file_system.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+Represents a file on the file-system which can be read from, or written to
+asynchronously. Methods also exist to get a read stream or a write stream
+on the file. This allows the data to be pumped to and from other streams,
+e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Nodex::HttpClientRequest (class)">HttpClientRequest</a></span> instance, using the <span class='object_link'><a href="Pump.html" title="Nodex::Pump (class)">Pump</a></span> class
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div>
+
+
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#close-instance_method" title="#close (instance method)">- (Future) <strong>close</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Close the file, asynchronously.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#close_deferred-instance_method" title="#close_deferred (instance method)">- (Deferred) <strong>close_deferred</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The same as <span class='object_link'><a href="#close-instance_method" title="Nodex::AsyncFile#close (method)">#close</a></span> but the close does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#flush-instance_method" title="#flush (instance method)">- (Future) <strong>flush</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Flush any writes made to this file to underlying persistent storage,
+asynchronously.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#flush_deferred-instance_method" title="#flush_deferred (instance method)">- (Deferred) <strong>flush_deferred</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The same as <span class='object_link'><a href="#flush-instance_method" title="Nodex::AsyncFile#flush (method)">#flush</a></span> but the action does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#read-instance_method" title="#read (instance method)">- (Future) <strong>read</strong>(buffer, offset, position, length, &amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Reads some data from a file into a buffer, asynchronously.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#read_deferred-instance_method" title="#read_deferred (instance method)">- (Deferred) <strong>read_deferred</strong>(buffer, offset, position, length, &amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The same as <span class='object_link'><a href="#read-instance_method" title="Nodex::AsyncFile#read (method)">#read</a></span> but the action does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#read_stream-instance_method" title="#read_stream (instance method)">- (ReadStream) <strong>read_stream</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+This method must be called using the same event loop the file was opened
+from.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#write-instance_method" title="#write (instance method)">- (Future) <strong>write</strong>(buffer, position) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Write a <span class='object_link'><a href="Buffer.html" title="Nodex::Buffer (class)">Buffer</a></span> to the file, asynchronously.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#write_deferred-instance_method" title="#write_deferred (instance method)">- (Deferred) <strong>write_deferred</strong>(buffer, position) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The same as <span class='object_link'><a href="#write-instance_method" title="Nodex::AsyncFile#write (method)">#write</a></span> but the write does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#write_stream-instance_method" title="#write_stream (instance method)">- (WriteStream) <strong>write_stream</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+This method must be called using the same event loop the file was opened
+from.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="close-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>) <strong>close</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Close the file, asynchronously. This method must be called using the same
+event loop the file was opened from.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Future representing the future result of closing the file.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+111
+112
+113</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 111</span>
+
+<span class='def def kw'>def</span> <span class='close identifier id'>close</span>
+  <span class='Future constant id'>Future</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='close identifier id'>close</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="close_deferred-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>) <strong>close_deferred</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The same as <span class='object_link'><a href="#close-instance_method" title="Nodex::AsyncFile#close (method)">#close</a></span> but the close does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Deferred representing the as-yet unexecuted action.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+118
+119
+120</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 118</span>
+
+<span class='def def kw'>def</span> <span class='close_deferred identifier id'>close_deferred</span>
+  <span class='Deferred constant id'>Deferred</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='closeDeferred identifier id'>closeDeferred</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="flush-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>) <strong>flush</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Flush any writes made to this file to underlying persistent storage,
+asynchronously. If the file was opened with flush set to true then calling
+this method will have no effect. This method must be called using the same
+event loop the file was opened from.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>hndlr</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a block representing the handler which is called on completion.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Future representing the future result of the action.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+178
+179
+180</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 178</span>
+
+<span class='def def kw'>def</span> <span class='flush identifier id'>flush</span>
+  <span class='Future constant id'>Future</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='flush identifier id'>flush</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="flush_deferred-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>) <strong>flush_deferred</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The same as <span class='object_link'><a href="#flush-instance_method" title="Nodex::AsyncFile#flush (method)">#flush</a></span> but the action does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Deferred representing the as-yet unexecuted action.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+185
+186
+187</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 185</span>
+
+<span class='def def kw'>def</span> <span class='flush_deferred identifier id'>flush_deferred</span>
+  <span class='Deferred constant id'>Deferred</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='flushDeferred identifier id'>flushDeferred</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="read-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>) <strong>read</strong>(buffer, offset, position, length, &amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Reads some data from a file into a buffer, asynchronously. When multiple
+reads are invoked on the same file there are no guarantees as to order in
+which those reads actually occur. This method must be called using the same
+event loop the file was opened from.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>buffer</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Buffer.html" title="Nodex::Buffer (class)">Buffer</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The buffer into which the data which is read is written.
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>offset</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The position in the buffer where to start writing the data.
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>position</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The position in the file where to read the data.
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>length</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The number of bytes to read.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Future representing the future result of the action. The type of
+<span class='object_link'><a href="Future.html#result-instance_method" title="Nodex::Future#result (method)">Future#result</a></span> is <span class='object_link'><a href="Buffer.html" title="Nodex::Buffer (class)">Buffer</a></span>.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+150
+151
+152</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 150</span>
+
+<span class='def def kw'>def</span> <span class='read identifier id'>read</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='offset identifier id'>offset</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='comma token'>,</span> <span class='length identifier id'>length</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='Future constant id'>Future</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='read identifier id'>read</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='comma token'>,</span> <span class='offset identifier id'>offset</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='comma token'>,</span> <span class='length identifier id'>length</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_buff identifier id'>j_buff</span><span class='bitor op'>|</span> <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_buff identifier id'>j_buff</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="read_deferred-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>) <strong>read_deferred</strong>(buffer, offset, position, length, &amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The same as <span class='object_link'><a href="#read-instance_method" title="Nodex::AsyncFile#read (method)">#read</a></span> but the action does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Deferred representing the as-yet unexecuted action.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+157
+158
+159</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 157</span>
+
+<span class='def def kw'>def</span> <span class='read_deferred identifier id'>read_deferred</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='offset identifier id'>offset</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='comma token'>,</span> <span class='length identifier id'>length</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='Deferred constant id'>Deferred</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='readDeferred identifier id'>readDeferred</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='comma token'>,</span> <span class='offset identifier id'>offset</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='comma token'>,</span> <span class='length identifier id'>length</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_buff identifier id'>j_buff</span><span class='bitor op'>|</span> <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_buff identifier id'>j_buff</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="read_stream-instance_method">
+  
+    - (<tt><span class='object_link'><a href="ReadStream.html" title="Nodex::ReadStream (module)">ReadStream</a></span></tt>) <strong>read_stream</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+This method must be called using the same event loop the file was opened
+from.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="ReadStream.html" title="Nodex::ReadStream (module)">ReadStream</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A read stream operating on the file.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+169
+170
+171</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 169</span>
+
+<span class='def def kw'>def</span> <span class='read_stream identifier id'>read_stream</span>
+  <span class='AsyncFileReadStream constant id'>AsyncFileReadStream</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='getReadStream identifier id'>getReadStream</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="write-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>) <strong>write</strong>(buffer, position) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Write a <span class='object_link'><a href="Buffer.html" title="Nodex::Buffer (class)">Buffer</a></span> to the file, asynchronously. When multiple writes are
+invoked on the same file there are no guarantees as to order in which those
+writes actually occur. This method must be called using the same event loop
+the file was opened from. starts with zero at the beginning of the file.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>buffer</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Buffer.html" title="Nodex::Buffer (class)">Buffer</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The buffer to write
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>position</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The position in the file where to write the buffer. Position is measured in
+bytes and
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Future representing the future result of the action.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+130
+131
+132</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 130</span>
+
+<span class='def def kw'>def</span> <span class='write identifier id'>write</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='rparen token'>)</span>
+  <span class='Future constant id'>Future</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='write identifier id'>write</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="write_deferred-instance_method">
+  
+    - (<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>) <strong>write_deferred</strong>(buffer, position) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The same as <span class='object_link'><a href="#write-instance_method" title="Nodex::AsyncFile#write (method)">#write</a></span> but the write does not start until the
+<span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">Deferred#execute</a></span> method is called on the Deferred instance returned by
+this method.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a Deferred representing the as-yet unexecuted action.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+137
+138
+139</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 137</span>
+
+<span class='def def kw'>def</span> <span class='write_deferred identifier id'>write_deferred</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='rparen token'>)</span>
+  <span class='Deferred constant id'>Deferred</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='writeDeferred identifier id'>writeDeferred</span><span class='lparen token'>(</span><span class='buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='comma token'>,</span> <span class='position identifier id'>position</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="write_stream-instance_method">
+  
+    - (<tt><span class='object_link'><a href="WriteStream.html" title="Nodex::WriteStream (module)">WriteStream</a></span></tt>) <strong>write_stream</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+This method must be called using the same event loop the file was opened
+from.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="WriteStream.html" title="Nodex::WriteStream (module)">WriteStream</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A write stream operating on the file.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+163
+164
+165</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 163</span>
+
+<span class='def def kw'>def</span> <span class='write_stream identifier id'>write_stream</span>
+  <span class='AsyncFileWriteStream constant id'>AsyncFileWriteStream</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='getWriteStream identifier id'>getWriteStream</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Mon Oct 10 13:16:15 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>

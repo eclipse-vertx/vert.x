@@ -1,0 +1,447 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Nodex::DeferredAction
+  
+    &mdash; Node.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (D)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Nodex.html" title="Nodex (module)">Nodex</a></span></span>
+     &raquo; 
+    <span class="title">DeferredAction</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Nodex::DeferredAction
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName"><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></li>
+          
+            <li class="next"><span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></li>
+          
+            <li class="next">Nodex::DeferredAction</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/composition.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+DeferredAction is useful when you want to create your own Deferred actions.
+</p>
+<p>
+Normally, instances of Deferred are returned from node.x modules to
+represent operations such as getting a key from a Redis server, or copying
+a file. However if you wish to create your own instances you can do this by
+creating an instance of this class specifying a block/Proc when creating
+it.
+</p>
+<p>
+The block/Proc will get called when the action is executed. Be sure to call
+<span class='object_link'><a href="#result%3D-instance_method" title="Nodex::DeferredAction#result= (method)">#result=</a></span> or <span class='object_link'><a href="#exception%3D-instance_method" title="Nodex::DeferredAction#exception= (method)">#exception=</a></span> when the action is complete.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div>
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#exception%3D-instance_method" title="#exception= (instance method)">- (Object) <strong>exception=</strong>(exception) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Set the exception.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">- (DeferredAction) <strong>initialize</strong>(proc = nil, &amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Create a new DeferredAction.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#result%3D-instance_method" title="#result= (instance method)">- (Object) <strong>result=</strong>(result) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Set the result.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Deferred.html" title="Nodex::Deferred (class)">Deferred</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Deferred.html#execute-instance_method" title="Nodex::Deferred#execute (method)">#execute</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Future.html#complete%3F-instance_method" title="Nodex::Future#complete? (method)">#complete?</a></span>, <span class='object_link'><a href="Future.html#exception-instance_method" title="Nodex::Future#exception (method)">#exception</a></span>, <span class='object_link'><a href="Future.html#failed%3F-instance_method" title="Nodex::Future#failed? (method)">#failed?</a></span>, <span class='object_link'><a href="Future.html#handler-instance_method" title="Nodex::Future#handler (method)">#handler</a></span>, <span class='object_link'><a href="Future.html#result-instance_method" title="Nodex::Future#result (method)">#result</a></span>, <span class='object_link'><a href="Future.html#succeeded%3F-instance_method" title="Nodex::Future#succeeded? (method)">#succeeded?</a></span></p>
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <p class="signature first" id="initialize-instance_method">
+  
+    - (<tt><span class='object_link'><a href="" title="Nodex::DeferredAction (class)">DeferredAction</a></span></tt>) <strong>initialize</strong>(proc = nil, &amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Create a new DeferredAction
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>A</span>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+proc representing the action to run when this is executed
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>A</span>
+      
+      
+        <span class='type'>(<tt>block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+block representing the action to run when this is executed
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+148
+149
+150
+151
+152</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 148</span>
+
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='InternalDeferred constant id'>InternalDeferred</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='super super kw'>super</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="exception=-instance_method">
+  
+    - (<tt>Object</tt>) <strong>exception=</strong>(exception) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Set the exception. If the operation failed you must call this when the
+operation is complete
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+160
+161
+162</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 160</span>
+
+<span class='def def kw'>def</span> <span class='exception= identifier id'>exception=</span><span class='lparen token'>(</span><span class='exception identifier id'>exception</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setException identifier id'>setException</span><span class='lparen token'>(</span><span class='exception identifier id'>exception</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="result=-instance_method">
+  
+    - (<tt>Object</tt>) <strong>result=</strong>(result) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Set the result. If the operation succeeded you must call this when the
+operation is complete
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+155
+156
+157</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 155</span>
+
+<span class='def def kw'>def</span> <span class='result= identifier id'>result=</span><span class='lparen token'>(</span><span class='result identifier id'>result</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setResult identifier id'>setResult</span><span class='lparen token'>(</span><span class='result identifier id'>result</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Mon Oct 10 13:16:16 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
