@@ -30,6 +30,8 @@ Take a look at some of these working Ruby examples to see the kind of things you
 
 The first binary release, node.x 0.1, has been released. We aim to follow the mantra of "release early, release often"
 
+You can find the Road-map [here] (https://github.com/purplefox/node.x/wiki/Road-map)
+
 ## What is the architecture?
 
 Node.x *core* is written in Java. We then provide a thin layer in each of the JVM languages we support which allows the API to be used in each of the supported languages.
