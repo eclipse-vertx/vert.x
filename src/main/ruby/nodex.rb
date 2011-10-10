@@ -34,7 +34,6 @@ require 'addons/redis'
 # global event handlers, amongst other things.
 #
 # @author {http://tfox.org Tim Fox}
-
 module Nodex
 
   # @private

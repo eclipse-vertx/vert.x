@@ -37,7 +37,7 @@ module Nodex
   end
 
   # Cancels a timer.
-  # @param [FixNum] id the id of the timer, as returned from {Nodex#set_timer} or {Nodex#set_periodic}
+  # @param [FixNum] id the id of the timer, as returned from {Nodex.set_timer} or {Nodex.set_periodic}
   # @return [Boolean] true if the timer was cancelled, false if it wasn't found.
   def Nodex.cancel_timer(id)
     org.nodex.java.core.Nodex.instance.cancelTimer(id)
