@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Nodex
+module Vertx
   class Composer
     def Composer.compose
       Composer.new
     end
 
     def initialize
-      @java_composer = org.nodex.java.core.composition.Composer.compose
+      @java_composer = org.vertx.java.core.composition.Composer.compose
     end
 
     # parallel and then can be combined
 
-    COMPLETION_CLASS_SYM = "org.nodex.java.core.composition.Composable".to_sym
+    COMPLETION_CLASS_SYM = "org.vertx.java.core.composition.Composable".to_sym
 
     def when(*completions, &block)
       if block
@@ -58,7 +58,7 @@ module Nodex
   class Completion
 
     def Completion.create
-      Completion.new(org.nodex.java.core.composition.Composable.new)
+      Completion.new(org.vertx.java.core.composition.Composable.new)
     end
 
     def Completion.create_from_java_completion(java_completion)
@@ -87,7 +87,7 @@ module Nodex
   class Deferred
     def initialize(proc = nil, &block)
       block = proc if proc
-      @java_deffered = org.nodex.java.core.composition.Deferred.new(CompleteHandler.new(block))
+      @java_deffered = org.vertx.java.core.composition.Deferred.new(CompleteHandler.new(block))
     end
 
     def _to_java_completion
@@ -96,7 +96,7 @@ module Nodex
 
   end
 
-  class CompleteHandler < org.nodex.java.core.Runnable
+  class CompleteHandler < org.vertx.java.core.Runnable
     def initialize(callback)
       super()
       @callback = callback

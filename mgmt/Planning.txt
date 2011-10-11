@@ -1,4 +1,4 @@
-Node.x planning/ideas/TODO
+vert.x planning/ideas/TODO
 ==========================
 
 Modules
@@ -14,7 +14,7 @@ STDIO - done
 Buffer - done
 Composition - partially done
 Shared data - done
-Node (including Timers, registering handlers) - done
+Vertx (including Timers, registering handlers) - done
 FileSystem - done
 ParseTools - done
 Http - done
@@ -76,7 +76,7 @@ TODO
 12) Netty needs to implement event loop
 13) HTTP server side 100-continue handling
 15) Netty should build timers into event loop
-19) Make Java nodex methods static ??
+19) Make Java vertx methods static ??
 20) Package manager and deployment
 21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.

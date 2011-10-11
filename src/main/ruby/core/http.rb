@@ -15,7 +15,7 @@
 require 'core/streams'
 require 'core/ssl_support'
 
-module Nodex
+module Vertx
 
   # An HTTP server.
   # The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.
@@ -28,7 +28,7 @@ module Nodex
 
     # Create a new HttpServer
     def initialize
-      @j_del = org.nodex.java.core.http.HttpServer.new
+      @j_del = org.vertx.java.core.http.HttpServer.new
     end
 
     # Set the HTTP request handler for the server.
@@ -88,7 +88,7 @@ module Nodex
 
     # Create a new HttpClient
     def initialize
-      @j_del = org.nodex.java.core.http.HttpClient.new
+      @j_del = org.vertx.java.core.http.HttpClient.new
     end
 
     # Set the exception handler.

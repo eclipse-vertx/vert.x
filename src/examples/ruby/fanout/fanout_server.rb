@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
-Nodex::go do
+Vertx::go do
   conns = SharedData::get_set("conns")
   NetServer.new.connect_handler do |socket|
     conns.add(socket.write_handler_id)
     socket.data_handler do |data|
-      conns.each { |actor_id| Nodex::send_to_handler(actor_id, data) }
+      conns.each { |actor_id| Vertx::send_to_handler(actor_id, data) }
     end
     socket.closed_handler { conns.delete(socket.write_handler_id) }
   end.listen(8080)

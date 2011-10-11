@@ -13,9 +13,9 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'utils'
-include Nodex
+include Vertx
 
 class NetTest < Test::Unit::TestCase
 
@@ -23,7 +23,7 @@ class NetTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new 1
 
-    Nodex::go {
+    Vertx::go {
       server = NetServer.new.connect_handler { |socket|
         socket.data_handler { |data|
           socket.write_buffer(data) # Just echo it back
@@ -75,7 +75,7 @@ class NetTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new 1
 
-    Nodex::go {
+    Vertx::go {
 
         # Let's do full SSL with client auth
 
@@ -156,7 +156,7 @@ class NetTest < Test::Unit::TestCase
   def test_methods
     latch = Utils::Latch.new 1
 
-    Nodex::go {
+    Vertx::go {
       server = NetServer.new
 
       server.ssl=true

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-module Nodex
+module Vertx
 
   # A mixin module allowing SSL attributes to be set on classes
   #

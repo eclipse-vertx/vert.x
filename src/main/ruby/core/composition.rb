@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Nodex
+module Vertx
 
   # Represents an operation that may or may not have completed yet.
   # It contains methods to determine it it has completed, failed or succeded, and allows a handler to
@@ -85,7 +85,7 @@ module Nodex
   #
   # Instances of Deferred can represent all kinds of deferred operations, e.g. copying a file or getting a value from
   # a Redis server. Since the actual execution of the action is deferred until the execute method is called, it allows
-  # multiple instances of Deferred to be composed together into more complex control flows, e.g. using the {org.nodex.java.core.composition.Composer} class.
+  # multiple instances of Deferred to be composed together into more complex control flows, e.g. using the {org.vertx.java.core.composition.Composer} class.
   #
   # @author {http://tfox.org Tim Fox}
   class Deferred < Future
@@ -119,7 +119,7 @@ module Nodex
 
   # DeferredAction is useful when you want to create your own Deferred actions.
   #
-  # Normally, instances of Deferred are returned from node.x modules to represent operations such as getting a key from
+  # Normally, instances of Deferred are returned from vert.x modules to represent operations such as getting a key from
   # a Redis server, or copying a file. However if you wish to create your own instances you can do this by creating an
   # instance of this class specifying a block/Proc when creating it.
   #
@@ -130,7 +130,7 @@ module Nodex
   class DeferredAction < Deferred
 
     # @private
-    class InternalDeferred < org.nodex.java.core.DeferredAction
+    class InternalDeferred < org.vertx.java.core.DeferredAction
 
       def initialize(hndlr)
         super()
@@ -166,7 +166,7 @@ module Nodex
   # Composer allows asynchronous control flows to be defined.
   #
   # This is useful when you have some asynchronous actions to be performed after other actions have completed.
-  # In a asynchronous framework such as node.x you cannot just block on the result of one action before executing
+  # In a asynchronous framework such as vert.x you cannot just block on the result of one action before executing
   # the next one, since an event loop thread must never block. By using Composer you can describe the execution order
   # of a sequence of actions in a quasi-direct way, even though when they execute it will all be asynchronous.
   #
@@ -177,7 +177,7 @@ module Nodex
   # An example of using this class is as follows:
   #
   # @example
-  #   # d1..dn are instances of Deferred, returned from other node.x modules, e.g. {@link org.nodex.java.core.file.FileSystem}
+  #   # d1..dn are instances of Deferred, returned from other vert.x modules, e.g. {@link org.vertx.java.core.file.FileSystem}
   #
   #   comp = new Composer.new
   #   comp.parallel(d1)
@@ -210,7 +210,7 @@ module Nodex
   # @author {http://tfox.org Tim Fox}
   class Composer
     def initialize
-      @j_comp = org.nodex.java.core.composition.Composer.new
+      @j_comp = org.vertx.java.core.composition.Composer.new
     end
 
     # Add a {Deferred} or a block to be executed in parallel with any other Deferred instances added using this method since the
@@ -258,13 +258,13 @@ module Nodex
 
     # @private
     def check_deferred(deferred)
-      raise "Please specify an instance of Nodex::Deferred" if !deferred.is_a? Deferred
+      raise "Please specify an instance of Vertx::Deferred" if !deferred.is_a? Deferred
     end
 
     private :check_deferred
 
     # @private
-    class TheAction < org.nodex.java.core.SynchronousAction
+    class TheAction < org.vertx.java.core.SynchronousAction
 
       def initialize(block)
         super()

@@ -14,18 +14,18 @@
   ~ limitations under the License.
   -->
 
-<project name="node.x" default="jar-core" basedir=".">
+<project name="vert.x" default="jar-core" basedir=".">
 
     <description>
-        Build script for node.x
+        Build script for vert.x
     </description>
 
     <!-- set global properties for this build -->
     <property name="target" value="target"/>
-    <property name="jar-file" value="node.x.jar"/>
+    <property name="jar-file" value="vert.x.jar"/>
     <property name="version-number" value="0.1"/>
     <property name="dist-build-base" value="${target}/dist-build"/>
-    <property name="dist-build" value="${dist-build-base}/node.x-${version-number}"/>
+    <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
     <property name="core-src" value="src/main/java"/>
     <property name="core-target" value="${target}/core/classes"/>
 
@@ -51,7 +51,7 @@
             <include name="*.jar"/>
         </fileset>
         <pathelement location="${tests-target}"/>
-        <pathelement location="target/node.x.jar"/>
+        <pathelement location="target/vert.x.jar"/>
     </path>
 
     <taskdef name="testng" classpathref="test-classpath"
@@ -85,7 +85,7 @@
 
     <target name="java-tests" depends="compile-tests">
         <testng classpathref="test-classpath">
-            <!-- <testng classpathref="test-classpath" methods="org.nodex.tests.core.net.NetTest.*"> -->
+            <!-- <testng classpathref="test-classpath" methods="org.vertx.tests.core.net.NetTest.*"> -->
             <sysproperty key="java.util.logging.config.file" value="${resources-dir}/logging.properties"/>
             <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
             <!-- <classfileset dir="${tests-target}" includes="**/RedisReconnectTest.class"/> -->
@@ -104,14 +104,14 @@
     </target>
 
     <target name="javadoc" depends="compile-core">
-        <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="Node.x Java API"
-                classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}" packagenames="org.nodex.java.core.*"
-                excludepackagenames="org.nodex.java.core.internal">
+        <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
+                classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}" packagenames="org.vertx.java.core.*"
+                excludepackagenames="org.vertx.java.core.internal">
             <!-- <fileset dir="${core-src}" defaultexcludes="yes">
-                <include name="org/nodex/java/core/**"/>
+                <include name="org/vertx/java/core/**"/>
             </fileset>
             -->
-            <doctitle><![CDATA[<h1>Node.x Java API</h1>]]></doctitle>
+            <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
         </javadoc>
     </target>
 
@@ -162,12 +162,12 @@
         <mkdir dir="${dist-build}/bin"/>
 
         <exec executable="cp">
-            <arg value="src/scripts/nodex-java"/>
-            <arg value="${dist-build}/bin/nodex-java"/>
+            <arg value="src/scripts/vertx-java"/>
+            <arg value="${dist-build}/bin/vertx-java"/>
         </exec>
         <exec executable="cp">
-            <arg value="src/scripts/nodex-ruby"/>
-            <arg value="${dist-build}/bin/nodex-ruby"/>
+            <arg value="src/scripts/vertx-ruby"/>
+            <arg value="${dist-build}/bin/vertx-ruby"/>
         </exec>
 
         <copy todir="${dist-build}/examples">
@@ -184,9 +184,9 @@
         </copy>
 
         <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead
-        <zip destfile="${target}/node.x-${version-number}.zip" basedir="${dist-build-base}"/> -->
+        <zip destfile="${target}/vert.x-${version-number}.zip" basedir="${dist-build-base}"/> -->
 
-        <tar destfile="${target}/node.x-${version-number}.tar" longfile="gnu">
+        <tar destfile="${target}/vert.x-${version-number}.tar" longfile="gnu">
           <tarfileset dir="${dist-build-base}" filemode="755">
             <include name="**/bin/**"/>
           </tarfileset>
@@ -195,7 +195,7 @@
           </tarfileset>
         </tar>
 
-        <gzip destfile="${target}/node.x-${version-number}.tar.gz" src="${target}/node.x-${version-number}.tar"/>
+        <gzip destfile="${target}/vert.x-${version-number}.tar.gz" src="${target}/vert.x-${version-number}.tar"/>
     </target>
 
 </project>

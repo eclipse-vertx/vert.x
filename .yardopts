@@ -1,1 +1,1 @@
---title "Node.x Ruby API" --readme README.md --no-private --output-dir target/docs/ruby/api/ src/main/ruby/nodex.rb src/main/ruby/core/** - LICENSE.txt
+--title "vert.x Ruby API" --readme README.md --no-private --output-dir target/docs/ruby/api/ src/main/ruby/vertx.rb src/main/ruby/core/** - LICENSE.txt

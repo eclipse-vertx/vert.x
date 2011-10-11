@@ -13,9 +13,9 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'utils'
-include Nodex
+include Vertx
 
 # TODO More thorough testing required
 class FileSystemTest < Test::Unit::TestCase
@@ -24,7 +24,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def setup
     latch = Utils::Latch.new 1
-    Nodex::go {
+    Vertx::go {
       FileSystem::exists(FileDir).handler{ |exists|
         if exists
           FileSystem::delete_recursive(FileDir).handler{
@@ -44,7 +44,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def teardown
     latch = Utils::Latch.new 1
-    Nodex::go {
+    Vertx::go {
       FileSystem::delete_recursive(FileDir).handler{
         FileSystem::mkdir(FileDir).handler{
           latch.countdown
@@ -56,7 +56,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def test_stats
     latch = Utils::Latch.new 1
-    Nodex::go {
+    Vertx::go {
       filename = FileDir + "/test-file.txt"
       FileSystem::create_file(filename).handler{
         FileSystem::props(filename).handler{ |compl|
@@ -80,7 +80,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def test_async_file
     latch = Utils::Latch.new 1
-    Nodex::go {
+    Vertx::go {
       FileSystem::open(FileDir + "/somefile.txt").handler{ |compl|
         assert(compl.succeeded?)
         file = compl.result
@@ -123,7 +123,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_async_file_streams
     latch = Utils::Latch.new 1
     filename = FileDir + "/somefile.txt"
-    Nodex::go {
+    Vertx::go {
       FileSystem::open(filename).handler{ |compl|
         assert(compl.succeeded?)
         file = compl.result

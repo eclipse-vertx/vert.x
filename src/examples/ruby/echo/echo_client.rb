@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
-Nodex::go do
+Vertx::go do
   NetClient.new.connect(8080, "localhost") do |socket|
     socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
     (1..10).each do |i|

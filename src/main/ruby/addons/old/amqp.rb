@@ -22,7 +22,7 @@ module Amqp
     attr_accessor :host, :port, :username, :password, :virtual_host
 
     def AmqpClient.create_client
-      java_client = org.nodex.java.core.amqp.AmqpClient.createClient
+      java_client = org.vertx.java.core.amqp.AmqpClient.createClient
       AmqpClient.new(java_client)
     end
 
@@ -35,7 +35,7 @@ module Amqp
       @java_client.connect(ConnectionCallback.new(connect_block))
     end
 
-    class ConnectionCallback < org.nodex.java.core.amqp.AmqpConnectHandler
+    class ConnectionCallback < org.vertx.java.core.amqp.AmqpConnectHandler
       def initialize(connect_block)
         super()
         @connect_block = connect_block
@@ -65,7 +65,7 @@ module Amqp
 
 
 
-    class ChannelCallback < org.nodex.java.core.amqp.ChannelHandler
+    class ChannelCallback < org.vertx.java.core.amqp.ChannelHandler
       def initialize(channel_block)
         super()
         @channel_block = channel_block
@@ -115,7 +115,7 @@ module Amqp
 
 
 
-    class MessageHandler < org.nodex.java.core.amqp.AmqpMsgCallback
+    class MessageHandler < org.vertx.java.core.amqp.AmqpMsgCallback
       def initialize(messageHandler)
         super()
         @messageHandler = messageHandler
@@ -129,7 +129,7 @@ module Amqp
 
     end
 
-    class CompleteCallback < org.nodex.java.core.Runnable
+    class CompleteCallback < org.vertx.java.core.Runnable
       def initialize(callback)
         super()
         @callback = callback
@@ -176,7 +176,7 @@ module Amqp
     end
 
     def to_java_props
-      java_props = org.nodex.java.core.amqp.AmqpProps.new
+      java_props = org.vertx.java.core.amqp.AmqpProps.new
       java_props.appId = app_id
       java_props.classId = class_id
       java_props.clusterId = cluster_id
@@ -203,7 +203,7 @@ module Amqp
     end
 
     def ChannelPool.create_pool
-      java_pool = org.nodex.java.core.amqp.ChannelPool.createPool
+      java_pool = org.vertx.java.core.amqp.ChannelPool.createPool
       ChannelPool.new(java_pool)
     end
 
@@ -212,7 +212,7 @@ module Amqp
       @java_pool.getChannel(ChannelHandler.new(channel_handler))
     end
 
-    class ChannelHandler < org.nodex.java.core.amqp.ChannelHandler
+    class ChannelHandler < org.vertx.java.core.amqp.ChannelHandler
 
       def initialize(channel_handler)
         super()

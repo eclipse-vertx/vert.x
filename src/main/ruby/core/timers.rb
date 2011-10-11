@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Nodex
+module Vertx
 
   # Sets a one-shot timer that will fire after a certain delay.
   # This method will accept either a Proc or a block.
@@ -20,9 +20,9 @@ module Nodex
   # @param [Proc] proc a proc representing the code that will be run after the delay
   # @param [Block] hndlr a block representing the code that will be run after the delay
   # @return [FixNum] the unique id of the timer
-  def Nodex.set_timer(delay, proc = nil, &hndlr)
+  def Vertx.set_timer(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.setTimer(delay, hndlr)
+    org.vertx.java.core.Vertx.instance.setTimer(delay, hndlr)
   end
 
   # Sets a periodic timer.
@@ -31,16 +31,16 @@ module Nodex
   # @param [Proc] proc a proc representing the code that will be run when the timer fires
   # @param [Block] hndlr a block representing the code that will be when the timer fires
   # @return [FixNum] the unique id of the timer
-  def Nodex.set_periodic(delay, proc = nil, &hndlr)
+  def Vertx.set_periodic(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.setPeriodic(delay, hndlr)
+    org.vertx.java.core.Vertx.instance.setPeriodic(delay, hndlr)
   end
 
   # Cancels a timer.
-  # @param [FixNum] id the id of the timer, as returned from {Nodex.set_timer} or {Nodex.set_periodic}
+  # @param [FixNum] id the id of the timer, as returned from {Vertx.set_timer} or {Vertx.set_periodic}
   # @return [Boolean] true if the timer was cancelled, false if it wasn't found.
-  def Nodex.cancel_timer(id)
-    org.nodex.java.core.Nodex.instance.cancelTimer(id)
+  def Vertx.cancel_timer(id)
+    org.vertx.java.core.Vertx.instance.cancelTimer(id)
   end
 
 end

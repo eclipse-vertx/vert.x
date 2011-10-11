@@ -12,32 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Nodex
+module Vertx
 
   # Registers a global event handler.
-  # The handler can be invoked by calling the {Nodex#send_to_handler} method from any event loop.
-  # The handler will always be called on the event loop that invoked the {Nodex#register_handler} method.
+  # The handler can be invoked by calling the {Vertx#send_to_handler} method from any event loop.
+  # The handler will always be called on the event loop that invoked the {Vertx#register_handler} method.
   # @param [Proc] proc a proc representing the handler
   # @param [Block] hndlr a block representing the handler
   # @return [FixNum] unique id of the handler
-  def Nodex.register_handler(proc = nil, &hndlr)
+  def Vertx.register_handler(proc = nil, &hndlr)
     hndlr = proc if proc
-    org.nodex.java.core.Nodex.instance.registerHandler(hndlr)
+    org.vertx.java.core.Vertx.instance.registerHandler(hndlr)
   end
 
   # Unregisters a global event handler.
   # @param [FixNum] handler_id the unique id of the handler to unregister.
   # @return [Boolean] true if the handler was successfully unregistered, false otherwise
-  def Nodex.unregister_handler(handler_id)
-    org.nodex.java.core.Nodex.instance.unregisterHandler(handler_id)
+  def Vertx.unregister_handler(handler_id)
+    org.vertx.java.core.Vertx.instance.unregisterHandler(handler_id)
   end
 
   # Send a message to a global handler. This can be called from any event loop.
   # The message will always be delivered on the event loop that originally registered the handler.
   # @return [Boolean] true if the message was successfully sent, or false if no such handler exists.
-  def Nodex.send_to_handler(handler_id, msg)
+  def Vertx.send_to_handler(handler_id, msg)
     msg = msg.copy if msg.is_a?(Buffer)
-    org.nodex.java.core.Nodex.instance.sendToHandler(handler_id, msg)
+    org.vertx.java.core.Vertx.instance.sendToHandler(handler_id, msg)
   end
 
 end

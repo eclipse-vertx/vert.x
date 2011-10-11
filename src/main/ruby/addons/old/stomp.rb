@@ -18,7 +18,7 @@ require "composition"
 
 module Stomp
   class StompClient
-    class ConnectCallback < org.nodex.java.core.stomp.StompConnectHandler
+    class ConnectCallback < org.vertx.java.core.stomp.StompConnectHandler
 
       def initialize(connect_block)
         super()
@@ -39,7 +39,7 @@ module Stomp
 
     def initialize(port, host, connect_block)
       super()
-      @java_client = org.nodex.java.core.stomp.StompClient.connect(port, host, ConnectCallback.new(connect_block))
+      @java_client = org.vertx.java.core.stomp.StompClient.connect(port, host, ConnectCallback.new(connect_block))
     end
 
 
@@ -86,7 +86,7 @@ module Stomp
       Completion.create_from_java_completion(java_completion)
     end
 
-    class MsgCallback < org.nodex.java.core.stomp.StompMsgCallback
+    class MsgCallback < org.vertx.java.core.stomp.StompMsgCallback
       def initialize(message_block)
         super()
         @message_block = message_block
@@ -97,7 +97,7 @@ module Stomp
       end
     end
 
-    class ReceiptCallback < org.nodex.java.core.Runnable
+    class ReceiptCallback < org.vertx.java.core.Runnable
       def initialize(receipt_block)
         super()
         @receipt_block = receipt_block

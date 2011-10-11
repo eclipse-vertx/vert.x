@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
+require "vertx"
 require "set"
-include Nodex
+include Vertx
 
-Nodex::go do
+Vertx::go do
   HttpServer.new.request_handler do |req|
     puts "Got request #{req.uri}"
     req.header_names.each { |header_name| puts "#{header_name} : #{req.header(header_name)}" }

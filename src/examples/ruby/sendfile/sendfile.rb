@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
-Nodex::go do
+Vertx::go do
   HttpServer.new.request_handler do |req|
     filename = "sendfile/" << (req.uri == "/" ? "index.html" : "." << req.uri)
     req.response.send_file(filename)

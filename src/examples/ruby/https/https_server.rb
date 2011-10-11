@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
-Nodex::go do
+Vertx::go do
   server = HttpServer.new
   server.ssl = true
   server.key_store_path = "server-keystore.jks"
@@ -23,7 +23,7 @@ Nodex::go do
 
   server.request_handler do |req|
     req.response.chunked = true
-    req.response.write_str("<html><body><h1>Hello from Node.x over HTTPS!</h1></body></html>", "UTF-8").end
+    req.response.write_str("<html><body><h1>Hello from vert.x over HTTPS!</h1></body></html>", "UTF-8").end
   end.listen(4443)
 end
 

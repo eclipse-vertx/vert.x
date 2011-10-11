@@ -14,10 +14,10 @@
   ~ limitations under the License.
   -->
 
-<project name="node.x.java.examples" default="compile" basedir=".">
+<project name="vert.x.java.examples" default="compile" basedir=".">
 
     <description>
-        Build script for node.x Java examples
+        Build script for vert.x Java examples
     </description>
 
     <property name="src" value="."/>

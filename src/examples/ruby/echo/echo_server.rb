@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
-Nodex::go do
+Vertx::go do
   NetServer.new.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
 end
 puts "hit enter to exit"

@@ -15,7 +15,7 @@
 require 'core/composition'
 require 'core/buffer'
 
-module Nodex
+module Vertx
 
   # Instances of this class maintain a pool of connections to a Redis Server and act as a factory for
   # {RedisConnection} instances via the {#connection} method.
@@ -30,7 +30,7 @@ module Nodex
 
     # Create a new RedisPool
     def initialize
-      @j_del = org.nodex.java.addons.redis.RedisPool.new
+      @j_del = org.vertx.java.addons.redis.RedisPool.new
     end
 
     # Set the port that the client will attempt to connect to on the server. If not set, the default value is 6379
@@ -561,11 +561,11 @@ module Nodex
     def z_inter_store(destination, num_keys, keys, weights = nil, aggregate_type = 'SUM')
       j_agg_type = case aggregate_type
                      when 'SUM'
-                       org.nodex.java.addons.redis.RedisConnection.AggregateType::SUM
+                       org.vertx.java.addons.redis.RedisConnection.AggregateType::SUM
                      when 'MIN'
-                       org.nodex.java.addons.redis.RedisConnection.AggregateType::MIN
+                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MIN
                      when 'MAX'
-                       org.nodex.java.addons.redis.RedisConnection.AggregateType::MAX
+                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MAX
                      else
                        raise "Legal aggregate_type values are SUM, MIN or MAX"
                      end
@@ -615,11 +615,11 @@ module Nodex
     def z_union_store(destination, num_keys, keys, weights = nil, aggregate_type = 'SUM')
       j_agg_type = case aggregate_type
                      when 'SUM'
-                       org.nodex.java.addons.redis.RedisConnection.AggregateType::SUM
+                       org.vertx.java.addons.redis.RedisConnection.AggregateType::SUM
                      when 'MIN'
-                       org.nodex.java.addons.redis.RedisConnection.AggregateType::MIN
+                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MIN
                      when 'MAX'
-                       org.nodex.java.addons.redis.RedisConnection.AggregateType::MAX
+                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MAX
                      else
                        raise "Legal aggregate_type values are SUM, MIN or MAX"
                      end
@@ -643,7 +643,7 @@ module Nodex
 
     # convert array of Ruby buffs to array of Java buffs
     def rbuff_arr_to_java(*buffs)
-      j_arr = Java::OrgNodexJavaCoreBuffer::Buffer[buffs.size].new
+      j_arr = Java::OrgVertxJavaCoreBuffer::Buffer[buffs.size].new
       for i in 0...buffs.size do
         j_arr[i] = buffs[i]._to_java_buffer
       end

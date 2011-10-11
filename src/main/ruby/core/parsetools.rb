@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Nodex
+module Vertx
 
   # A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
   # size records.
@@ -66,7 +66,7 @@ module Nodex
     # @return [RecordParser] a new RecordParser
     def RecordParser.new_delimited(delim, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(org.nodex.java.core.parsetools.RecordParser.newDelimited(delim, output_block))
+      RecordParser.new(org.vertx.java.core.parsetools.RecordParser.newDelimited(delim, output_block))
     end
 
     # Create a new RecordParser instance, initially in fixed size mode.
@@ -76,7 +76,7 @@ module Nodex
     # @return [RecordParser] a new RecordParser
     def RecordParser.new_fixed(size, proc = nil, &output_block)
       output_block = proc if proc
-      RecordParser.new(org.nodex.java.core.parsetools.RecordParser.newFixed(size, output_block))
+      RecordParser.new(org.vertx.java.core.parsetools.RecordParser.newFixed(size, output_block))
     end
 
     # Flip the parser into delimited mode. This method can be called multiple times with different values

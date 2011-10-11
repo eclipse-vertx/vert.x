@@ -1,9 +1,9 @@
-Node.x developers manual
+vert.x developers manual
 ------------------------
 
 Topics:
 
-1) Intro to node.x - what is it?
+1) Intro to vert.x - what is it?
 
 2) Creating TCP servers and clients
 
@@ -11,7 +11,7 @@ Topics:
 
 4) Websockets
 
-5) The node.x concurrency model
+5) The vert.x concurrency model
 
 6) Sharing data between event loops
 

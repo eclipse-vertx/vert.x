@@ -13,10 +13,10 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'utils'
 require 'set'
-include Nodex
+include Vertx
 
 class SharedDataTest < Test::Unit::TestCase
 

@@ -13,10 +13,10 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'addons/redis.rb'
 require 'utils'
-include Nodex
+include Vertx
 
 # We don't test everything since that is done at the Java level.
 # We try and test most types of methods though
@@ -35,7 +35,7 @@ class RedisTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go {
+    Vertx::go {
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
@@ -55,7 +55,7 @@ class RedisTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go {
+    Vertx::go {
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
@@ -81,7 +81,7 @@ class RedisTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go {
+    Vertx::go {
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new

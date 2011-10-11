@@ -14,12 +14,12 @@
 
 require 'core/shared_data'
 
-module Nodex
+module Vertx
 
   # A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands
   # as necessary to accomodate any bytes written to it.
   #
-  # Buffers are used in many places in node.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
+  # Buffers are used in many places in vert.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
   # {Websocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
   #
   # Buffer instances should always be created using the factory methods {Buffer.create} and {Buffer.create_from_str}.
@@ -53,14 +53,14 @@ module Nodex
     # Creates a new empty buffer. The {#length} of the buffer immediately after creation will be zero.
     # @param initial_size_hint [FixNum] is a hint to the system for how much memory to initially allocate to the buffer to prevent excessive automatic re-allocations as data is written to it.
     def Buffer.create(initial_size_hint)
-      Buffer.new(org.nodex.java.core.buffer.Buffer.create(initial_size_hint))
+      Buffer.new(org.vertx.java.core.buffer.Buffer.create(initial_size_hint))
     end
 
     # Create a new Buffer from a String
     # @param str [String] The String to encode into the Buffer
     # @param enc [String] Encoding to use. Defaults to "UTF-8"
     def Buffer.create_from_str(str, enc = "UTF-8")
-      Buffer.new(org.nodex.java.core.buffer.Buffer.create(str, enc))
+      Buffer.new(org.vertx.java.core.buffer.Buffer.create(str, enc))
     end
 
     # Return a String representation of the buffer.
