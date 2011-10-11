@@ -3,6 +3,7 @@
 ## What is vert.x?
 
 The next generation polyglot asynchronous application framework.
+(Formerly known as node.x)
 
 * Runs on the JVM.
 * Embraces the good bits of event driven frameworks like node.js without the bad bits. Then adds some even juicier bits.
