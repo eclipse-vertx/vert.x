@@ -14,8 +14,8 @@
 
 include Java
 require 'test/unit'
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
 class BufferTest < Test::Unit::TestCase
 
@@ -166,6 +166,6 @@ class BufferTest < Test::Unit::TestCase
 
 
   def create_buffer(len)
-    Buffer.new(org.nodex.tests.Utils.generate_random_buffer(len))
+    Buffer.new(org.vertx.tests.Utils.generate_random_buffer(len))
   end
 end

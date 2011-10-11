@@ -13,9 +13,9 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'utils'
-include Nodex
+include Vertx
 
 class RecordParserTest < Test::Unit::TestCase
 

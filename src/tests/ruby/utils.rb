@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'nodex'
+require 'vertx'
 include Java
-include Nodex
+include Vertx
 
 module Utils
   class Latch
@@ -32,11 +32,11 @@ module Utils
   end
 
   def Utils.gen_buffer(size)
-    j_buff = org.nodex.tests.Utils.generateRandomBuffer(size)
+    j_buff = org.vertx.tests.Utils.generateRandomBuffer(size)
     Buffer.new(j_buff)
   end
 
   def Utils.buffers_equal(buff1, buff2)
-    org.nodex.tests.Utils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
+    org.vertx.tests.Utils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end
 end

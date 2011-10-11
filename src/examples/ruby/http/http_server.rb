@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "nodex"
-include Nodex
+require "vertx"
+include Vertx
 
-Nodex::go do
+Vertx::go do
   HttpServer.new.request_handler do |req|
-    req.response.write_str_and_end("<html><body><h1>Hello from Node.x!</h1></body></html>")
+    req.response.write_str_and_end("<html><body><h1>Hello from vert.x!</h1></body></html>")
   end.listen(8080)
 end
 

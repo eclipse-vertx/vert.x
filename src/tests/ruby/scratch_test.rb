@@ -1,7 +1,7 @@
 require 'test/unit'
 
-require 'nodex'
-include Nodex
+require 'vertx'
+include Vertx
 
 class ScratchTest < Test::Unit::TestCase
 

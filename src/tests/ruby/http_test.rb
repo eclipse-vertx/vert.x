@@ -13,9 +13,9 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'utils'
-include Nodex
+include Vertx
 
 class HttpTest < Test::Unit::TestCase
 
@@ -59,7 +59,7 @@ class HttpTest < Test::Unit::TestCase
 
     latch1 = Utils::Latch.new(1)
 
-    Nodex::go {
+    Vertx::go {
       server = HttpServer.new
       if ssl
         server.ssl = true

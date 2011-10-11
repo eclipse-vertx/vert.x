@@ -19,7 +19,7 @@ require "composition"
 module Redis
   class RedisClient
 
-    class ConnectionCallback < org.nodex.java.core.redis.RedisConnectHandler
+    class ConnectionCallback < org.vertx.java.core.redis.RedisConnectHandler
       def initialize(connect_block)
         super()
         @connect_block = connect_block
@@ -33,7 +33,7 @@ module Redis
     end
 
     def RedisClient.create_client
-      RedisClient.new(org.nodex.java.core.redis.RedisClient.createClient)
+      RedisClient.new(org.vertx.java.core.redis.RedisClient.createClient)
     end
 
     def initialize(java_client)
@@ -50,7 +50,7 @@ module Redis
 
   class Connection
 
-    class OnCompleteCallback < org.nodex.java.core.Runnable
+    class OnCompleteCallback < org.vertx.java.core.Runnable
       def initialize(complete_block)
         super()
         @complete_block = complete_block
@@ -63,7 +63,7 @@ module Redis
 
     end
 
-    class ResultCallback < org.nodex.java.core.redis.ResultHandler
+    class ResultCallback < org.vertx.java.core.redis.ResultHandler
       def initialize(result_block)
         super()
         @result_block = result_block

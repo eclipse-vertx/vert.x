@@ -1,4 +1,4 @@
-Node.x Java Examples
+vert.x Java Examples
 ====================
 
 Prerequisites:
@@ -13,9 +13,9 @@ Prerequisites:
 
 2. Run an example by invoking:
 
-nodex-java -cp classes <example class name>
+vertx-java -cp classes <example class name>
 
-where <example class name> is, for example, org.nodex.java.examples.echo.EchoServer
+where <example class name> is, for example, org.vertx.java.examples.echo.EchoServer
 
 There now follows a description of all the available examples:
 
@@ -26,13 +26,13 @@ A simple echo server which echos back any sent to it
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.echo.EchoServer
+vertx-java -cp classes org.vertx.java.examples.echo.EchoServer
 
 Then either telnet localhost 8080 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client:
 
-nodex-java -cp classes org.nodex.java.examples.echo.EchoClient
+vertx-java -cp classes org.vertx.java.examples.echo.EchoClient
 
 Fanout Server
 =============
@@ -41,7 +41,7 @@ Fans out all data received on any one connection to all other connections.
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.fanout.FanoutServer
+vertx-java -cp classes org.vertx.java.examples.fanout.FanoutServer
 
 Then telnet localhost 8080 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
@@ -53,13 +53,13 @@ request and displays the response it receives.
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.http.ServerExample
+vertx-java -cp classes org.vertx.java.examples.http.ServerExample
 
 Then point your browser at http://localhost:8080
 
 Alternatively, you can also run the HTTP client:
 
-nodex-java -cp classes org.nodex.java.examples.http.ClientExample
+vertx-java -cp classes org.vertx.java.examples.http.ClientExample
 
 HTTPS
 =====
@@ -68,13 +68,13 @@ Like the HTTP example, but using HTTPS
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.https.ServerExample
+vertx-java -cp classes org.vertx.java.examples.https.ServerExample
 
 Then point your browser at http://localhost:4443
 
 Alternatively, you can also run the HTTPS client:
 
-nodex-java -cp classes org.nodex.java.examples.https.ClientExample
+vertx-java -cp classes org.vertx.java.examples.https.ClientExample
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's
 normal.
@@ -97,15 +97,15 @@ To run, open three consoles.
 
 In console 1, run the http server:
 
-nodex-java -cp classes org.nodex.java.examples.proxy.HttpServer
+vertx-java -cp classes org.vertx.java.examples.proxy.HttpServer
 
 In console 2, run the proxy server:
 
-nodex-java -cp classes org.nodex.java.examples.proxy.ProxyServer
+vertx-java -cp classes org.vertx.java.examples.proxy.ProxyServer
 
 In console 3, run the http client:
 
-nodex-java -cp classes org.nodex.java.examples.proxy.HttpClient
+vertx-java -cp classes org.vertx.java.examples.proxy.HttpClient
 
 PubSub
 ======
@@ -138,7 +138,7 @@ Where:
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.pubsub.PubSubServer
+vertx-java -cp classes org.vertx.java.examples.pubsub.PubSubServer
 
 Then open some more consoles and telnet localhost 8080, and experiment with the protocol.
 
@@ -152,7 +152,7 @@ The example contains three static pages: index.html, page1.html and page2.html w
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.sendfile.SendFileExample
+vertx-java -cp classes org.vertx.java.examples.sendfile.SendFileExample
 
 Then point your browser at http://localhost:8080 and click around
 
@@ -163,11 +163,11 @@ This is like the echo example, but this time using SSL.
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.ssl.SSLServer
+vertx-java -cp classes org.vertx.java.examples.ssl.SSLServer
 
 To run the client:
 
-nodex-java -cp classes org.nodex.java.examples.ssl.SSLClient
+vertx-java -cp classes org.vertx.java.examples.ssl.SSLClient
 
 Upload
 ======
@@ -177,11 +177,11 @@ HTTP request and streams the data to a file on disk.
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.upload.UploadServer
+vertx-java -cp classes org.vertx.java.examples.upload.UploadServer
 
 To run the client:
 
-nodex-java -cp classes org.nodex.java.examples.upload.UploadClient
+vertx-java -cp classes org.vertx.java.examples.upload.UploadClient
 
 Websockets
 ==========
@@ -191,7 +191,7 @@ to create a websocket to a server, and send and receive data from it.
 
 To run the server:
 
-nodex-java -cp classes org.nodex.java.examples.websockets.WebsocketsExample
+vertx-java -cp classes org.vertx.java.examples.websockets.WebsocketsExample
 
 Then point your browser at: http://localhost:8080
 
@@ -205,7 +205,7 @@ To run this example you must have a Redis server running on localhost.
 
 The, to run the example:
 
-nodex-java -cp classes org.nodex.java.examples.redis.RedisExample
+vertx-java -cp classes org.vertx.java.examples.redis.RedisExample
 
 Then point your browser at: http://localhost:8080 and hit refresh a few times
 

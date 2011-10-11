@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Nodex
+module Vertx
 
   # Provides asynchronous stream wrappers around STDOUT, STDIN and STDERR
   #
@@ -24,17 +24,17 @@ module Nodex
 
     # @return [ReadStream] a {ReadStream} wrapped around STDIN
     def StdIO.create_input_stream
-      StdIOReadStream.new(org.nodex.java.core.stdio.Stdio.create_input_stream)
+      StdIOReadStream.new(org.vertx.java.core.stdio.Stdio.create_input_stream)
     end
 
     # @return [WriteStream] a {WriteStream} wrapped around STDOUT
     def StdIO.create_output_stream
-      StdIOWriteStream.new(org.nodex.java.core.stdio.Stdio.create_output_stream)
+      StdIOWriteStream.new(org.vertx.java.core.stdio.Stdio.create_output_stream)
     end
 
     # @return [WriteStream] a {WriteStream} wrapped around STDERR
     def StdIO.create_error_stream
-      StdIOWriteStream.new(org.nodex.java.core.stdio.Stdio.create_error_stream)
+      StdIOWriteStream.new(org.vertx.java.core.stdio.Stdio.create_error_stream)
     end
 
     # @private

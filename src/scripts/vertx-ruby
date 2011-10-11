@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# This script lives on the vert.x install directory which should be on the users PATH
+# It is called like java e.g. vertx-java -cp "somepath" org.foo.MyMainClass
+
+# We need to figure out what this directory is relative to wherever this is called from. Remember this dir is on the path
+# so this script can be called from anywhere
+
+PRG="$0"
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+
+DIRNAME=`dirname "$PRG"`
+
+jruby -J-Djava.util.logging.config.file=$DIRNAME/../logging.properties -I$DIRNAME/../lib/java:$DIRNAME/../lib/ruby -rvert.x.jar -rnetty.jar -rhigh-scale-lib.jar "$@"

@@ -16,7 +16,7 @@ require 'core/streams'
 require 'core/ssl_support'
 require 'core/global_handlers'
 
-module Nodex
+module Vertx
 
   # Mixin module that provides all the common TCP params that can be set.
   #
@@ -82,7 +82,7 @@ module Nodex
 
     # Create a new NetServer
     def initialize
-      @j_del = org.nodex.java.core.net.NetServer.new
+      @j_del = org.vertx.java.core.net.NetServer.new
     end
 
     # Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.
@@ -135,7 +135,7 @@ module Nodex
 
     # Create a new NetClient
     def initialize
-      @j_del = org.nodex.java.core.net.NetClient.new
+      @j_del = org.vertx.java.core.net.NetClient.new
     end
 
     # Should the client trust ALL server certificates?
@@ -177,11 +177,11 @@ module Nodex
     # @private
     def initialize(j_socket)
       @j_del = j_socket
-      @write_handler_id = Nodex::register_handler { |buffer|
+      @write_handler_id = Vertx::register_handler { |buffer|
         write_buffer(buffer)
       }
       @j_del.closedHandler(Proc.new {
-        Nodex::unregister_handler(@write_handler_id)
+        Vertx::unregister_handler(@write_handler_id)
         @closed_handler.call if @closed_handler
       })
     end

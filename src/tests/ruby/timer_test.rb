@@ -13,9 +13,9 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'nodex'
+require 'vertx'
 require 'utils'
-include Nodex
+include Vertx
 
 class TimerTest < Test::Unit::TestCase
 
@@ -23,8 +23,8 @@ class TimerTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go {
-      Nodex::set_timer(10) { |timer_id|
+    Vertx::go {
+      Vertx::set_timer(10) { |timer_id|
         latch.countdown
       }
     }
@@ -38,12 +38,12 @@ class TimerTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Nodex::go {
+    Vertx::go {
       count = 0
-      Nodex::set_periodic(10) { |timer_id|
+      Vertx::set_periodic(10) { |timer_id|
         count += 1
         if count == fires
-          Nodex::cancel_timer(timer_id)
+          Vertx::cancel_timer(timer_id)
           latch.countdown
         elsif count > fires
           assert(false, 'Fired too many times')

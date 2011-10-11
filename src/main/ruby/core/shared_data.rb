@@ -14,14 +14,14 @@
 
 require 'delegate'
 
-module Nodex
+module Vertx
 
   # A mixin module which marks a class as immutable and therefore allows it to be stored in any shared data structure.
   # Use this at your own risk. You need to make sure your class really is
   # immutable before you mark it.
   # @author {http://tfox.org Tim Fox}
   module Immutable
-    include org.nodex.java.core.Immutable
+    include org.vertx.java.core.Immutable
   end
 
   # Sometimes it is desirable to share immutable data between different event loops, for example to implement a
@@ -48,7 +48,7 @@ module Nodex
     # @param [String] key. Get the hash with the key.
     # @return [Hash] the hash.
     def SharedData.get_hash(key)
-      map = org.nodex.java.core.shared.SharedData.getMap(key)
+      map = org.vertx.java.core.shared.SharedData.getMap(key)
       SharedHash.new(map)
     end
 
@@ -58,28 +58,28 @@ module Nodex
     # @param [String] key. Get the set with the key.
     # @return [SharedSet] the set.
     def SharedData.get_set(key)
-      set = org.nodex.java.core.shared.SharedData.getSet(key)
+      set = org.vertx.java.core.shared.SharedData.getSet(key)
       SharedSet.new(set)
     end
 
 #    def SharedData.get_counter(key)
-#      org.nodex.java.core.shared.SharedData.getCounter(key)
+#      org.vertx.java.core.shared.SharedData.getCounter(key)
 #    end
 
     # Remove the hash
     # @param [String] key. The key of the hash.
     def SharedData.remove_hash(key)
-      org.nodex.java.core.shared.SharedData.removeMap(key)
+      org.vertx.java.core.shared.SharedData.removeMap(key)
     end
 
     # Remove the set
     # @param [String] key. The key of the set.
     def SharedData.remove_set(key)
-      org.nodex.java.core.shared.SharedData.removeSet(key)
+      org.vertx.java.core.shared.SharedData.removeSet(key)
     end
 
 #    def SharedData.remove_counter(key)
-#      org.nodex.java.core.shared.SharedData.removeCounter(key)
+#      org.vertx.java.core.shared.SharedData.removeCounter(key)
 #    end
 
     # We need to copy certain objects because they're not immutable
