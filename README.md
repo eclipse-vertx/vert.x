@@ -12,7 +12,7 @@ The next generation polyglot asynchronous application framework.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
-* Incredibly simple concurrency model. Write your code as single threaded but watch it scale across multiple cores. No need to worry about concurrency.
+* Incredibly simple concurrency model. Write your code as single threaded but watch it scale across multiple cores. No need to worry about race conditions or locks.
 * Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, etc.
 * Efficiently serve static files from the filesystem bypassing userspace altogether.
 * Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
@@ -35,7 +35,7 @@ You can find the Road-map [here] (https://github.com/purplefox/vert.x/wiki/Road-
 
 ## What is the architecture?
 
-vert.x *core* is written in Java. We then provide a thin layer in each of the JVM languages we support which allows the API to be used in each of the supported languages.
+vert.x *core* is currently written in Java. We then provide a thin layer in each of the JVM languages we support which allows the API to be used in each of the supported languages.
 
 We do not expose the Java API directly in the other languages since we wish to retain the normal coding idioms for each supported language.
 
