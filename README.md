@@ -27,6 +27,10 @@ Take a look at some of these working Ruby examples to see the kind of things you
 
 [Java examples](https://github.com/purplefox/vert.x/tree/master/src/examples/java "Java examples")
 
+## API docs
+
+API docs in Java and Ruby are [here] (http://purplefox.github.com/vert.x/)
+
 ## What is the status of vert.x?
 
 The first binary release, vert.x 0.1, has been released. We aim to follow the mantra of "release early, release often"
