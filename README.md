@@ -48,7 +48,7 @@ Instructions for building vert.x from source are [here](https://github.com/purpl
 
 ## Installation and running the examples
 
-Instructions for installing and running vert.x are are [here] (https://github.com/purplefox/vert.x/wiki/Instructions-for-installing-and-running-vert.x)
+Instructions for installing and running vert.x are are [here] (https://github.com/purplefox/vert.x/wiki/Installation-and-running)
 
 ## Development and user discussions
 
