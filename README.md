@@ -52,7 +52,7 @@ Instructions for installing and running vert.x are are [here] (https://github.co
 
 ## Development and user discussions
 
-[vert.x dev Google Group](http://groups.google.com/group/nodex-dev "Node.x dev")
+[vert.x Google Group](http://groups.google.com/group/vertx)
 
 ## FAQ
 
@@ -60,7 +60,7 @@ FAQ [here] (https://github.com/purplefox/vert.x/wiki/FAQ)
 
 ## IRC
 
-There's an IRC channel at irc.freenode.net#nodex if you want to drop in to chat about any user or development topics
+There's an IRC channel at irc.freenode.net#vertx if you want to drop in to chat about any user or development topics
 
 ## Join us!!
 
