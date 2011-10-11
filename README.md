@@ -12,7 +12,7 @@ The next generation polyglot asynchronous application framework.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
-* Incredibly simple concurrency model. Write your code as single threaded but watch it scale across multiple cores. No need to worry about race conditions or locks.
+* Incredibly simple [concurrency model] (https://github.com/purplefox/vert.x/wiki/Concurrency-model). Write your code as single threaded but watch it scale across multiple cores. No need to worry about race conditions or locks.
 * Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, etc.
 * Efficiently serve static files from the filesystem bypassing userspace altogether.
 * Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
