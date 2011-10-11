@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Nodex::Deferred
+  
+    &mdash; Node.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (D)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Nodex.html" title="Nodex (module)">Nodex</a></span></span>
+     &raquo; 
+    <span class="title">Deferred</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Nodex::Deferred
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName"><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></li>
+          
+            <li class="next">Nodex::Deferred</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/composition.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+Represents something that hasn&#8217;t happened yet, but will occur when
+the <span class='object_link'><a href="#execute-instance_method" title="Nodex::Deferred#execute (method)">#execute</a></span> method is called. Once it has been executed it behaves
+identically to a <span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span>.
+</p>
+<p>
+Instances of Deferred can represent all kinds of deferred operations, e.g.
+copying a file or getting a value from a Redis server. Since the actual
+execution of the action is deferred until the execute method is called, it
+allows multiple instances of Deferred to be composed together into more
+complex control flows, e.g. using the
+orgorg.nodexorg.nodex.javaorg.nodex.java.coreorg.nodex.java.core.compositionorg.nodex.java.core.composition.Composer class.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><div id="subclasses">
+  <h2>Direct Known Subclasses</h2>
+  <p class="children"><span class='object_link'><a href="DeferredAction.html" title="Nodex::DeferredAction (class)">DeferredAction</a></span></p>
+</div>
+
+
+  
+  
+  
+  
+
+
+  
+  
+  
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#execute-instance_method" title="#execute (instance method)">- (Object) <strong>execute</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Execute the deferred operation.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Future.html#complete%3F-instance_method" title="Nodex::Future#complete? (method)">#complete?</a></span>, <span class='object_link'><a href="Future.html#exception-instance_method" title="Nodex::Future#exception (method)">#exception</a></span>, <span class='object_link'><a href="Future.html#failed%3F-instance_method" title="Nodex::Future#failed? (method)">#failed?</a></span>, <span class='object_link'><a href="Future.html#handler-instance_method" title="Nodex::Future#handler (method)">#handler</a></span>, <span class='object_link'><a href="Future.html#result-instance_method" title="Nodex::Future#result (method)">#result</a></span>, <span class='object_link'><a href="Future.html#succeeded%3F-instance_method" title="Nodex::Future#succeeded? (method)">#succeeded?</a></span></p>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="execute-instance_method">
+  
+    - (<tt>Object</tt>) <strong>execute</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Execute the deferred operation. If the Deferred has already been executed
+the call will be ignored. Once the deferred has been executed it behaves
+like a <span class='object_link'><a href="Future.html" title="Nodex::Future (class)">Future</a></span>.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+102
+103
+104
+105</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/composition.rb', line 102</span>
+
+<span class='def def kw'>def</span> <span class='execute identifier id'>execute</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;Cannot execute a Deferred which has been returned by a Composer&quot;</span> <span class='if if_mod kw'>if</span> <span class='@block_execution ivar id'>@block_execution</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='execute identifier id'>execute</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Tue Oct 11 15:13:32 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
