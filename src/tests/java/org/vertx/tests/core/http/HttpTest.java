@@ -254,7 +254,7 @@ public class HttpTest extends TestBase {
   }
 
   @Test
-  public void test100Continue() throws Exception {
+  public void test100ContinueDefault() throws Exception {
     final String host = "localhost";
     final int port = 8181;
 
@@ -269,6 +269,75 @@ public class HttpTest extends TestBase {
           final Buffer received = Buffer.create(0);
 
           public void handle(final HttpServerRequest req) {
+            req.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
+                received.appendBuffer(data);
+                if (received.length() == toSend.length()) {
+                  assert (Utils.buffersEqual(toSend, received));
+                  req.response.end();
+                }
+              }
+            });
+          }
+        }).listen(port, host);
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host);
+
+        final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            assert (200 == resp.statusCode);
+
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                server.close(new SimpleHandler() {
+                  public void handle() {
+                    client.close();
+                    latch.countDown();
+                  }
+                });
+              }
+            });
+          }
+        });
+
+        req.putHeader("Expect", "100-continue");
+        req.setChunked(true);
+
+        req.continueHandler(new SimpleHandler() {
+          public void handle() {
+            req.write(toSend);
+            req.end();
+          }
+        });
+
+        req.sendHead();
+      }
+    }.run();
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
+  }
+
+  @Test
+  public void test100ContinueHandled() throws Exception {
+    final String host = "localhost";
+    final int port = 8181;
+
+    final Buffer toSend = Utils.generateRandomBuffer(1000);
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    new VertxMain() {
+      public void go() throws Exception {
+
+        final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+          final Buffer received = Buffer.create(0);
+
+          public void handle(final HttpServerRequest req) {
+
+            req.response.putHeader("HTTP/1.1", "100 Continue");
+            req.response.setChunked(true);
+
             req.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
                 received.appendBuffer(data);
