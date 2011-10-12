@@ -43,6 +43,7 @@ class ServerConnection extends AbstractConnection {
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
+  private boolean responded = false;
   private final Queue<Object> pending = new LinkedList<>();
 
   ServerConnection(Channel channel, long contextID, Thread th) {
@@ -66,6 +67,10 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
+  public boolean isResponded(){
+      return responded;
+  }
+
   void handleMessage(Object msg) {
     if (paused || (msg instanceof HttpRequest && pendingResponse) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
@@ -84,6 +89,7 @@ class ServerConnection extends AbstractConnection {
 
   void responseComplete() {
     pendingResponse = false;
+    responded = true;
     checkNextTick();
   }
 
