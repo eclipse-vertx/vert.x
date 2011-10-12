@@ -2,6 +2,7 @@
 require 'rubygems'
 require 'json'
 require 'fileutils'
+require 'set'
 
 include FileUtils
 
@@ -9,17 +10,40 @@ module Vmm
 
   class Installer
 
+    ERR_VMM_ROOT_MISSING = 1
+    ERR_MODULE_DIR_MISSING = 2
+    ERR_DESCRIPTOR_MISSING = 3
+    ERR_INVALID_JSON = 4
+    ERR_NAME_MISSING = 5
+    ERR_VERSION_MISSING = 6
+    ERR_TYPE_MISSING = 7
+    ERR_INVALID_TYPE = 8
+    ERR_INVALID_NAME = 9
+    ERR_INVALID_VERSION = 10
+    ERR_DESCRIPTION_MISSING = 11
+    ERR_MAIN_SCRIPT_MISSING = 12
+    ERR_ALREADY_INSTALLED = 13
+    ERR_DEPENDENCIES_MISSING = 14
+    ERR_DEPENDENCY_VERSION_MISMATCH = 15
+
+    VALID_TYPES = Set.new ["java", "ruby"]
+
     def initialize(vmm_root)
-      @errors = []
       @vmm_root = vmm_root
+      @error_code = 0
     end
 
-    def errors
-      @errors
+    def error_code
+      @error_code
     end
 
-    def report_errors
-      errors.each { |error| puts "Error: #{error}" }
+    def error_msg
+      @error_msg
+    end
+
+    def set_err(error_code, err_msg)
+      @error_code = error_code
+      @error_msg = err_msg == nil ? lookup_msg(error_code) : err_msg
     end
 
     def install_from_dir(module_dir)
@@ -27,10 +51,12 @@ module Vmm
       puts "Installing module from directory #{module_dir}"
 
       if !check_dir(@vmm_root)
+        set_err(ERR_VMM_ROOT_MISSING, "vmm root directory #{@vmm_root} is missing")
         return
       end
 
       if !check_dir(module_dir)
+        set_err(ERR_MODULE_DIR_MISSING, "module directory #{module_dir} is missing")
         return
       end
 
@@ -41,32 +67,27 @@ module Vmm
       descriptor = load_module_descriptor(module_dir + "/")
       deps = {}
       if obtain_dependencies(descriptor, deps)
-        dest = module_location(descriptor["name"], descriptor["version"])
+        name = descriptor["name"]
+        version = descriptor["version"]
+        dest = module_location(name, version)
         if !File.exists? dest
           mkdir_p dest
           cp_r(module_dir + "/.", dest)
-          puts "Successfully installed module #{descriptor["name"]}"
+          puts "Successfully installed module #{name}:#{version}"
         else
-          @errors << "Module is already installed"
+          set_err(ERR_ALREADY_INSTALLED, "module #{name}:#{version} is already installed")
         end
       end
     end
 
     def check_dir(dir)
-      if !File.exists?(dir)
-        @errors << "#{dir} does not exist"
-      elsif !File.directory?(dir)
-        @errors << "#{dir} is not a directory"
-      else
-        return true
-      end
-      false
+      File.exists?(dir) && File.directory?(dir)
     end
 
     def validate_module(dir)
       descriptor_fname = dir + "/module.json"
       if !File.exists? descriptor_fname
-        @errors << "Module directory must contain a module.json file"
+        set_err(ERR_DESCRIPTOR_MISSING, "module descriptor module.json is missing")
         return
       end
 
@@ -76,7 +97,7 @@ module Vmm
       begin
         json = JSON.parse(contents)
       rescue
-        @errors << "module.json file is invalid JSON"
+        set_err(ERR_INVALID_JSON, "module.json contains invalid JSON")
         return
       end
 
@@ -85,39 +106,48 @@ module Vmm
 
       # Check mandatory fields
       if name == nil
-        err = "name"
+        @error_code = ERR_NAME_MISSING
+        field = "name"
       elsif json["description"] == nil
-        err = "description"
+        @error_code = ERR_DESCRIPTION_MISSING
+        field = "description"
       elsif version == nil
-        err = "version"
+        @error_code = ERR_VERSION_MISSING
+        field = "version"
       elsif json["type"] == nil
-        err = "type"
+        @error_code = ERR_TYPE_MISSING
+        field = "type"
       end
-      if err != nil
-        @errors << err + " field missing from module.json"
+      if @error_code != 0
+        @error_msg = "mandatory #{field} field missing from module.json"
         return
       end
 
       if !validate_name(name)
+        set_err(ERR_INVALID_NAME, "Module name #{name} is invalid")
         return
       end
 
       if !validate_version(version)
+        set_err(ERR_INVALID_VERSION, "Module version #{version} is invalid")
+        return
+      end
+
+      type = json["type"]
+      if !VALID_TYPES.member? type
+        set_err(ERR_INVALID_TYPE, "Invalid module type #{type}")
         return
       end
 
       main = json["main"]
       if main != nil
         # Check main exists
-        case json["type"]
+        case type
           when "ruby"
             if !File.exists? dir + "/" + main
-              @errors << "Main script #{main} must be at top level of module"
+              set_err(ERR_MAIN_SCRIPT_MISSING, "Main script #{main} referenced in module.json does mot exist in module")
               return
             end
-          else
-            @errors << "Invalid module type " + json["type"]
-            return
         end
       end
       true
@@ -133,7 +163,8 @@ module Vmm
           true
         else
           # More than one version of same module
-          @errors << "Dependency graph contains two versions of same module: #{name} versions: #{existing["version"]}, #{version}"
+          set_err(ERR_DEPENDENCY_VERSION_MISMATCH, "Dependency graph contains two versions of same module: " +
+                                                   "#{name} versions: #{existing["version"]}, #{version}")
           false
         end
       else
@@ -143,7 +174,7 @@ module Vmm
           json_deps.each do |name, version|
             json2 = get_module_descriptor(name, version)
             if json2 == nil
-              @errors << "dependency #{name}:#{version} is not installed."
+              set_err(ERR_DEPENDENCIES_MISSING, "dependency #{name}:#{version} is not installed")
               return false
             end
             if !obtain_dependencies(json2, deps)
