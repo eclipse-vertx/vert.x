@@ -1,0 +1,11 @@
+{
+  "name":"some-name",
+  "version":"0.1",
+  "type":"ruby",
+  "description":"some-description",
+  "keywords":["funky", "amazing"],
+  "main":"start.rb",
+  "dependencies":{"other-module-1":"v3.2", "other-module-2":"v1.2"}
+}
+
+
