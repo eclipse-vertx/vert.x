@@ -14,6 +14,9 @@
 
 require 'rubygems'
 require 'json'
+require 'fileutils'
+
+include FileUtils
 
 module Vmm
 
@@ -50,7 +53,7 @@ module Vmm
     end
 
     def install
-      puts "Installing package"
+      puts "Installing module"
       puts "argv length is #{ARGV.length}"
 
       if ARGV.length == 2
@@ -63,7 +66,7 @@ module Vmm
 
           json_fname = dir + "/module.json"
           if !File.exists? json_fname
-            puts "Package directory must contain a module.json file"
+            puts "Module directory must contain a module.json file"
           else
             file = File.open(json_fname, "rb")
             contents = file.read
@@ -75,9 +78,14 @@ module Vmm
               return
             end
 
-            if check_json(obj)
-              puts "module.json is well formed"
+            if check_module(obj, dir)
+              puts "module is well formed"
 
+              if check_vmm_dir
+                install_module(dir, obj)
+              end
+            else
+              puts "module not well formed"
             end
 
 
@@ -86,7 +94,58 @@ module Vmm
       end
     end
 
-    def check_json(json)
+    VMM_ROOT = "./vmm-root/"
+
+    def module_location(name, version)
+      VMM_ROOT + name + "/" + version + "/"
+    end
+
+    def module_installed?(name, version)
+      ml = module_location(name, version)
+      File.exists?(ml) && File.directory?(ml)
+    end
+
+    def check_vmm_dir
+      if !(File.exists?(VMM_ROOT) && File.directory?(VMM_ROOT))
+        puts "VMM root: #{VMM_ROOT} does not exist or is not a directory"
+        false
+      else
+        true
+      end
+    end
+
+    def verify_installed(name, version)
+
+    end
+
+    def install_module(dir, json)
+
+      deps_hash = json["dependencies"]
+      deps_hash.each do |name, version|
+
+      end
+
+      dest = module_location(json["name"], json["version"])
+      if File.exists? dest
+        puts "Module already installed"
+      else
+        mkdir_p dest
+        cp_r(dir + "/.", dest)
+        puts "Installed module #{json["name"]}"
+      end
+    end
+
+    def validate_version(version)
+
+    end
+
+    def validate_name(name)
+
+    end
+
+
+
+    def check_module(json, dir)
       # Check mandatory fields
       if json["name"] == nil
         err = "name"
@@ -101,7 +160,22 @@ module Vmm
         puts err + " field missing from module.json"
         false
       else
-        true
+        main = json["main"]
+        if main != nil
+          # Check main exists
+          case json["type"]
+            when "ruby"
+              if !File.exists? dir + "/" + main
+                puts "Main script #{main} must be at top level of module"
+                false
+              else
+                true
+              end
+            else
+              puts "Invalid module type " + json["type"]
+              false
+          end
+        end
       end
     end
 
