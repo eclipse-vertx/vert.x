@@ -20,20 +20,20 @@ include Vertx
 # TODO More thorough testing required
 class FileSystemTest < Test::Unit::TestCase
 
-  FileDir = "ruby-test-output"
+  FILEDIR = "ruby-test-output"
 
   def setup
     latch = Utils::Latch.new 1
     Vertx::go {
-      FileSystem::exists(FileDir).handler{ |exists|
+      FileSystem::exists(FILEDIR).handler{ |exists|
         if exists
-          FileSystem::delete_recursive(FileDir).handler{
-            FileSystem::mkdir(FileDir).handler {
+          FileSystem::delete_recursive(FILEDIR).handler{
+            FileSystem::mkdir(FILEDIR).handler {
               latch.countdown
             }
           }
         else
-          FileSystem::mkdir(FileDir).handler {
+          FileSystem::mkdir(FILEDIR).handler {
             latch.countdown
           }
         end
@@ -45,8 +45,8 @@ class FileSystemTest < Test::Unit::TestCase
   def teardown
     latch = Utils::Latch.new 1
     Vertx::go {
-      FileSystem::delete_recursive(FileDir).handler{
-        FileSystem::mkdir(FileDir).handler{
+      FileSystem::delete_recursive(FILEDIR).handler{
+        FileSystem::mkdir(FILEDIR).handler{
           latch.countdown
         }
       }
@@ -57,7 +57,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_stats
     latch = Utils::Latch.new 1
     Vertx::go {
-      filename = FileDir + "/test-file.txt"
+      filename = FILEDIR + "/test-file.txt"
       FileSystem::create_file(filename).handler{
         FileSystem::props(filename).handler{ |compl|
           assert(compl.succeeded?)
@@ -81,7 +81,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_async_file
     latch = Utils::Latch.new 1
     Vertx::go {
-      FileSystem::open(FileDir + "/somefile.txt").handler{ |compl|
+      FileSystem::open(FILEDIR + "/somefile.txt").handler{ |compl|
         assert(compl.succeeded?)
         file = compl.result
         num_chunks = 100;
@@ -122,7 +122,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def test_async_file_streams
     latch = Utils::Latch.new 1
-    filename = FileDir + "/somefile.txt"
+    filename = FILEDIR + "/somefile.txt"
     Vertx::go {
       FileSystem::open(filename).handler{ |compl|
         assert(compl.succeeded?)

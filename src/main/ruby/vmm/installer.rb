@@ -9,21 +9,24 @@ module Vmm
 
   class Installer
 
-    VMM_ROOT = "./vmm-root/"
-
-    def initialize
+    def initialize(vmm_root)
       @errors = []
+      @vmm_root = vmm_root
     end
 
     def errors
       @errors
     end
 
+    def report_errors
+      errors.each { |error| puts "Error: #{error}" }
+    end
+
     def install_from_dir(module_dir)
 
       puts "Installing module from directory #{module_dir}"
 
-      if !check_dir(VMM_ROOT)
+      if !check_dir(@vmm_root)
         return
       end
 
@@ -42,7 +45,7 @@ module Vmm
         if !File.exists? dest
           mkdir_p dest
           cp_r(module_dir + "/.", dest)
-          puts "Installed module #{descriptor["name"]}"
+          puts "Successfully installed module #{descriptor["name"]}"
         else
           @errors << "Module is already installed"
         end
@@ -110,15 +113,14 @@ module Vmm
           when "ruby"
             if !File.exists? dir + "/" + main
               @errors << "Main script #{main} must be at top level of module"
-              false
-            else
-              true
+              return
             end
           else
             @errors << "Invalid module type " + json["type"]
-            false
+            return
         end
       end
+      true
     end
 
     def obtain_dependencies(json, deps)
@@ -164,7 +166,7 @@ module Vmm
     end
 
     def module_location(name, version)
-      VMM_ROOT + name + "/" + version + "/"
+      @vmm_root + name + "/" + version + "/"
     end
 
     # Get module descriptor for installed pkg

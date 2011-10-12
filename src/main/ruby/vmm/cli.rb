@@ -18,6 +18,8 @@ module Vmm
 
   class CLI
 
+    VMM_ROOT = "./vmm-root/"
+
     def parse
       if ARGV.length == 0
         display_help
@@ -44,7 +46,7 @@ module Vmm
         display_help
       else
         module_dir = ARGV[1]
-        installer = Installer.new
+        installer = Installer.new(VMM_ROOT)
         installer.install_from_dir(module_dir)
         installer.errors.each { |error| puts "Error: #{error}" }
       end
