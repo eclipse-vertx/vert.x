@@ -541,6 +541,11 @@ module Vertx
       @j_del.uri
     end
 
+    # @return [Hash] The request parameters
+    def params
+      @j_del.getParams
+    end
+
     # @return [HttpServerResponse] The response. Each instance of this class has an {HttpServerResponse} instance attached to it. This is used
     # to send the response back to the client.
     def response
@@ -554,7 +559,7 @@ module Vertx
       @j_del.getHeader(key)
     end
 
-     # Get all the headers in the response.
+    # Get all the headers in the request.
     # If the response contains multiple headers with the same key, the values
     # will be concatenated together into a single header with the same key value, with each value separated by a comma,
     # as specified by {http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2}.
@@ -585,6 +590,10 @@ module Vertx
         end
       end
       @header_names
+    end
+
+    def _to_java_request
+      @j_del
     end
 
   end
@@ -762,6 +771,64 @@ module Vertx
     # Close the websocket
     def close
       @j_del.close
+    end
+
+  end
+
+  class RouteMatcher
+    def initialize
+      @j_del = org.vertx.java.core.http.RouteMatcher.new
+    end
+
+    # @private
+    def call(data)
+      input(data)
+    end
+
+    # This method is called to provide the matcher with data.
+    # @param [HttpServerRequest] request. Input request to the parser.
+    def input(request)
+      @j_del.handle(request._to_java_request)
+    end
+
+    def get(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.get(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    def put(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.put(pattern, hndlr)
+    end
+
+    def post(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.post(pattern, hndlr)
+    end
+
+    def delete(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.delete(pattern, hndlr)
+    end
+
+    def get_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.getWithRegEx(pattern, hndlr)
+    end
+
+    def put_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.putWithRegEx(pattern, hndlr)
+    end
+
+    def post_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.postWithRegEx(pattern, hndlr)
+    end
+
+    def delete_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.deleteWithRegEx(pattern, hndlr)
     end
 
   end
