@@ -15,6 +15,7 @@
 require 'rubygems'
 require 'vertx'
 require 'json'
+require 'fileutils'
 
 include Vertx
 
@@ -49,50 +50,60 @@ module VertxRepo
 
       matcher.put("/:reponame/:modulename/:version/") do |req|
 
+        puts "got a put"
+
         md = module_dir(req.params['reponame'], req.params['modulename'], req.params['version'])
 
         if !File.exists?(md)
 
+          #TODO use file system for this
+          mkdir_p md
+
+          puts "File does not exist"
+
           # Stream the body direct to file
 
           req.pause
+          puts "paused in ruby"
 
-          fname = md + "/foo.tar.gz"
+          arch_name = "foo.tar.gz"
+          fname = md + "/" + arch_name
 
           future = FileSystem::open(fname)
-          future.handler{
+          future.handler do
             if (future.succeeded?)
+              puts "Opened file for writing"
               file = future.result
-              pump = Pump.new(req, file)
-              pump.start
+              ws = file.write_stream
+              req.data_handler do |data|
+                puts "writing data"
+                ws.write_buffer(data)
+              end
+
               req.end_handler do
-                file.close{
-                  fnam_abs = File.absolute_path(fname)
-                  puts "absolute path is #{fnam_abs}"
+                puts "closing file"
+                file.close.handler do
+                  puts "file closed"
+                  dir_abs = File.expand_path(md)
+                  puts "absolute path is #{dir_abs}"
                   # Now unpack the file on the file system
-                  cmd = "tar -zxf #{fnam_abs}"
+                  # TODO this should be done using a core gzip stream
+                  # or using  background task
+                  cmd = "tar -zxf #{dir_abs}/#{arch_name} -C #{dir_abs}"
                   check = system(cmd)
                   puts "return value from system is #{check}"
-                }
-
+                  req.response.end
+                end
               end
+              req.resume
+              puts "resumed"
             else
               puts "Failed to open file #{future.exception}"
               req.response.status_code = 500;
               req.response.end
             end
 
-          }
-
-#          # Read the body
-#          buff = Buffer.create(0)
-#          req.data_handler{ |data| data.append_buffer(buff)}
-#          req.end_handler do
-#            file = File.new
-#            # Unpack it on the file system
-#
-#            cmd = "tar -zxf"
-#          end
+          end
 
         else
           # TODO update
@@ -106,7 +117,7 @@ module VertxRepo
     end
 
     def module_dir(repo_name, module_name, version)
-      "#{@repo_root}/#{module_name}/#{version}"
+      "#{@repo_root}/#{repo_name}/#{module_name}/#{version}"
     end
 
   end
