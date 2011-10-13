@@ -666,7 +666,7 @@ public class HttpTest extends TestBase {
             azzert(path.equals(req.path));
             azzert((path + paramsString).equals(req.uri));
             for (Map.Entry<String, String> param : params.entrySet()) {
-              azzert(req.getParam(param.getKey()).equals(param.getValue()));
+              azzert(req.getParams().get(param.getKey()).equals(param.getValue()));
             }
             //dumpHeaders(req.headers);
             assertHeaders(requestHeaders, req);

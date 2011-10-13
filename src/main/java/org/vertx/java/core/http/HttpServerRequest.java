@@ -25,6 +25,8 @@ import org.vertx.java.core.streams.ReadStream;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,12 +48,12 @@ import java.util.Set;
  */
 public class HttpServerRequest implements ReadStream {
 
-  private Map<String, List<String>> params;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
   private final ServerConnection conn;
   private final HttpRequest request;
+  private final Map<String, String> params;
   //Cache this for performance
   private Map<String, String> headers;
 
@@ -70,6 +72,16 @@ public class HttpServerRequest implements ReadStream {
     this.conn = conn;
     this.request = request;
     this.response = new HttpServerResponse(HttpHeaders.isKeepAlive(request), conn);
+    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
+    Map<String, List<String>> prms = queryStringDecoder.getParameters();
+    if (prms.isEmpty()) {
+      params = new HashMap<>();
+    } else {
+      params = new HashMap<>(prms.size());
+      for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
+        params.put(entry.getKey(), entry.getValue().get(0));
+      }
+    }
   }
 
   /**
@@ -125,20 +137,10 @@ public class HttpServerRequest implements ReadStream {
   }
 
   /**
-   * Return a specific parameter value from the query part of the URI given the parameter name {@code param}, or null
-   * if there is no such parameter.
+   * Returns a map of all the parameters in the request
    */
-  public String getParam(String param) {
-    if (params == null) {
-      QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
-      params = queryStringDecoder.getParameters();
-    }
-    List<String> list = params.get(param);
-    if (list != null) {
-      return list.get(0);
-    } else {
-      return null;
-    }
+  public Map<String, String> getParams() {
+    return params;
   }
 
   /**

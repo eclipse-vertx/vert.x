@@ -16,6 +16,7 @@ require 'vmm/installer'
 
 module Vmm
 
+  # @author {http://tfox.org Tim Fox}
   class CLI
 
     VMM_ROOT = "./vmm-root/"
