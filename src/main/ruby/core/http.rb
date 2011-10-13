@@ -798,37 +798,37 @@ module Vertx
 
     def put(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.put(pattern, hndlr)
+      @j_del.put(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def post(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.post(pattern, hndlr)
+      @j_del.post(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def delete(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.delete(pattern, hndlr)
+      @j_del.delete(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def get_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.getWithRegEx(pattern, hndlr)
+      @j_del.getWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def put_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.putWithRegEx(pattern, hndlr)
+      @j_del.putWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def post_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.postWithRegEx(pattern, hndlr)
+      @j_del.postWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
     def delete_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.deleteWithRegEx(pattern, hndlr)
+      @j_del.deleteWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
   end
