@@ -64,7 +64,7 @@
 
     <target name="compile-core" depends="init" description="compile the source for the core">
         <mkdir dir="${core-target}"/>
-        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on" includeantruntime="false"/>
+        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on" includeantruntime="false" target="1.7" source="1.7"/>
     </target>
 
     <target name="jar-core" depends="compile-core" description="generate the core jar">
