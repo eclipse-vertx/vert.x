@@ -20,6 +20,8 @@ import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Future;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,9 +79,12 @@ import java.util.List;
  */
 public class Composer {
 
+  private static final Logger log = Logger.getLogger(Composer.class);
+
   private List<WaitingBatch> batches = new ArrayList<>();
   private WaitingBatch currentBatch;
   private boolean executed;
+  private Handler<Exception> exceptionHandler;
 
   /**
    * Add a Deferred to be executed in parallel with any other Deferred instances added using this method since the
@@ -106,10 +111,11 @@ public class Composer {
         public void handle(Future<T> f) {
           if (f.succeeded()) {
             ret.setResult(f.result());
+            batch.complete();
           } else {
             ret.setException(f.exception());
+            handleException(f.exception());
           }
-          batch.complete();
         }
       });
       checkAll();
@@ -146,6 +152,16 @@ public class Composer {
     }
   }
 
+  /**
+   * Set an exception handler that will be called if any of the Deferreds in this Composer fail asynchronously, or if they
+   * fail to execute
+   * @param handler
+   */
+  public void exceptionHandler(Handler<Exception> handler) {
+    this.exceptionHandler = handler;
+  }
+
+
   private class WaitingBatch {
 
     List<Deferred<?>> futures = new ArrayList<>();
@@ -170,9 +186,22 @@ public class Composer {
       if (!batchExecuted) {
         batchExecuted = true;
         for (Deferred<?> future: futures) {
-          future.execute();
+          try {
+            future.execute();
+          } catch (Exception e) {
+            handleException(e);
+            break;
+          }
         }
       }
+    }
+  }
+
+  private void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(e);
+    } else {
+      log.error("Unhandled exception in composer", e);
     }
   }
 

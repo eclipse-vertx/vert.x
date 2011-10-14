@@ -24,6 +24,8 @@ module VertxRepo
   # @author {http://tfox.org Tim Fox}
   class RepoServer
 
+    @@logger = Logger.get_logger(self)
+
     def initialize(repo_root)
 
       @repo_root = repo_root
@@ -42,7 +44,6 @@ module VertxRepo
           file = File.new(md)
           json = JSON.parse(file.read)
           file.close
-          puts "Got json #{json}"
           req.response.put_header("Content-Type", "application/json").write_str(json).end
         end
 
@@ -52,58 +53,105 @@ module VertxRepo
 
         puts "got a put"
 
-        md = module_dir(req.params['reponame'], req.params['modulename'], req.params['version'])
+        repo_name = req.params['reponame']
+        module_name = req.params['modulename']
+        version = req.params['version']
+
+        md = module_dir(repo_name, module_name, version)
 
         if !File.exists?(md)
 
-          #TODO use file system for this
-          mkdir_p md
-
-          puts "File does not exist"
-
-          # Stream the body direct to file
-
+          # We pause the request, since we don't want to lose any data that arrives between now and when the data handler
+          # is set, which doesn't happen until the file we are streaming the upload to has opened
           req.pause
-          puts "paused in ruby"
 
-          arch_name = "foo.tar.gz"
-          fname = md + "/" + arch_name
+          comp = Composer.new
 
-          future = FileSystem::open(fname)
-          future.handler do
-            if (future.succeeded?)
-              puts "Opened file for writing"
-              file = future.result
-              ws = file.write_stream
-              req.data_handler do |data|
-                puts "writing data"
-                ws.write_buffer(data)
-              end
-
-              req.end_handler do
-                puts "closing file"
-                file.close.handler do
-                  puts "file closed"
-                  dir_abs = File.expand_path(md)
-                  puts "absolute path is #{dir_abs}"
-                  # Now unpack the file on the file system
-                  # TODO this should be done using a core gzip stream
-                  # or using  background task
-                  cmd = "tar -zxf #{dir_abs}/#{arch_name} -C #{dir_abs}"
-                  check = system(cmd)
-                  puts "return value from system is #{check}"
-                  req.response.end
-                end
-              end
-              req.resume
-              puts "resumed"
-            else
-              puts "Failed to open file #{future.exception}"
-              req.response.status_code = 500;
-              req.response.end
-            end
-
+          # The failure handler - this will get called if any step in the set of actions fails
+          comp.exception_handler do |e|
+            @@logger.error("Failed to process put", e)
+            req.response.status_code = 500
+            req.response.write_str_and_end(e.to_s)
           end
+
+          # We create the module directory
+          comp.series{ FileSystem::mkdir_with_parents(md) }
+
+          # We open the file we're going to stream the tarball to
+          arch_name = "#{module_name}-#{version}.tar.gz"
+          fname = "#{md}/#{arch_name}"
+          fut1 = comp.series{ FileSystem::open(fname) }
+
+          # Once the file is open, we can set the data and end handlers on the HTTP request
+          # When the end handler fires we signal this step is complet by setting the result
+          # So we can move on to the next step
+          comp.series(DeferredAction.new do |d|
+            ws = fut1.result.write_stream
+            req.data_handler { |data|  ws.write_buffer(data) }
+            req.end_handler { d.result = nil }
+            req.resume
+          end)
+
+          # The file has been streamed, so we can close it
+          comp.series do
+            DeferredAction.new do |d|
+              file = fut1.result
+              file.close.handler { d.result = nil }
+            end
+          end
+
+          # The tarball has been uploaded, let's create a dir to unpack it in
+          unpack_dir = "#{md}/unpack"
+          comp.series{ FileSystem::mkdir_with_parents(unpack_dir) }
+
+          # Now unpack it - we shell out to a system command that we run on the blocking pool for this
+          comp.series do
+            BlockingAction.new do
+              dir_abs = File.expand_path(md)
+              cmd = "tar -zxf #{dir_abs}/#{arch_name} -C #{unpack_dir}"
+              system(cmd)
+            end
+          end
+
+          ## Validate the tarball contains a single directory in which the actual module stuff lives
+          fut_list = comp.series{ FileSystem::read_dir(unpack_dir) }
+
+          comp.series{ raise "tarball must contain a single directory which contains the module" if fut_list.result.length != 1 }
+
+          dir_name = ''
+
+          fut_props = comp.series do
+            dir_name = fut_list.result[0]
+            FileSystem::props(dir_name)
+          end
+
+          comp.series{ raise "tarball file #{dir_name} is not a directory" if !fut_props.result.directory?}
+
+          # Read the module.json file into a string
+          fut_contents = comp.series { FileSystem::read_file_as_buffer("#{dir_name}/module.json") }
+
+          # And parse it to make sure it is actual JSON
+          fut_json = comp.series { JSON.parse(fut_contents.result.to_s) }
+
+          # Then we do some basic validation on the module.json fields
+          comp.series do
+            # Some basic validation
+            json = fut_json.result
+            raise "name field in module.json should be #{module_name}" if module_name != json["name"]
+            raise "version field in module.json should be #{version}" if version != json["version"]
+          end
+
+          # Now we copy module.json into the module directory
+          comp.series{ FileSystem::copy("#{dir_name}/module.json", "#{md}/module.json") }
+
+          # And we remove the temporary unpack directory
+          comp.series{ FileSystem::delete_recursive(unpack_dir) }
+
+          # And we're done!
+          comp.series{ req.response.end }
+
+          # Now execute the composer - nothing happens until we do this
+          comp.execute
 
         else
           # TODO update
