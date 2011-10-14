@@ -39,7 +39,10 @@ class RepoServerTest < Test::Unit::TestCase
 
   def test_1
 
-    json = create_descriptor("mymodule", "v0.1", "ruby", "main.rb", "desc", nil)
+    name = "acme-widget"
+    version = "v0.1"
+
+    json = create_descriptor(name, version, "ruby", "main.rb", "desc", nil)
     create_module_dir("module1", json, "main.rb")
     abs_dir = File.expand_path(TEST_OUTPUT)
     cmd = "tar -zcf #{abs_dir}/foo.tar.gz -C #{abs_dir} module1"
@@ -57,10 +60,9 @@ class RepoServerTest < Test::Unit::TestCase
       client = HttpClient.new
       client.port = 8080
       client.host = "localhost"
-      req = client.put("/default/acme-widget/v0.3/") do |resp|
+      req = client.put("/default/#{name}/#{version}/") do |resp|
         puts "Got response #{resp.status_code}"
         assert 200 == resp.status_code
-
         latch.countdown
       end
 

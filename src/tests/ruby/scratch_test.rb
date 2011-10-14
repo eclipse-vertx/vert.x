@@ -6,30 +6,25 @@ include Vertx
 class ScratchTest < Test::Unit::TestCase
 
   class Foo
+
+    def initialize(&blk)
+      @blk = blk
+    end
+
     def wibble
-      "wobbled"
+      @blk.call
+    end
+
+    def hello
+      puts "hello called"
     end
   end
 
   def test_foo
 
-    puts "starting test"
+    f = Foo.new { hello }
 
-    f1 = Foo.new
-    f2 = Foo.new
-
-    puts "f1: #{f1.wibble}"
-    puts "f2: #{f2.wibble}"
-
-    class << f2
-      Object.remove_method :wibble
-    end
-
-    puts "f1: #{f1.wibble}"
-    puts "f2: #{f2.wibble}"
-
-
-    raise "goo"
+    f.wibble
 
   end
 
