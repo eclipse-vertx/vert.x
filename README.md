@@ -14,8 +14,8 @@ The next generation polyglot asynchronous application framework.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
 * Incredibly simple [concurrency model] (https://github.com/purplefox/vert.x/wiki/Concurrency-model). Write your code as single threaded but watch it scale across multiple cores. No need to worry about race conditions or locks.
 * Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, etc.
-* Efficiently serve static files from the filesystem bypassing userspace altogether.
-* Provides an elegant api for composing asynchronous actions together. Glue together HTTP, AMQP, Redis or whatever in a few lines of code.
+* Efficiently serve static files from the filesystem bypassing user-space altogether.
+* Provides an elegant api for composing asynchronous actions together in a few lines of code.
 * Asynchronous plugins will be provided for a wide variety of other systems and protocols including AMQP, Redis, REST, Gemfire, MongoDB, STOMP, Twitter, SMTP, JDBC, Memcached, JMS, ZeroMQ, JDBC, web frameworks, etc
 * Module manager. Install modules from a public repository. Create your own applications and push them to the repo. Creates a market for an ecosystem of vert.x modules.
 
@@ -33,7 +33,7 @@ API docs in Java and Ruby are [here] (http://purplefox.github.com/vert.x/)
 
 ## What is the status of vert.x?
 
-The first binary release, vert.x 0.1, has been released. We aim to follow the mantra of "release early, release often"
+The first binary release, vert.x 0.1, has been released. We aim to follow the mantra of **release early, release often**
 
 You can find the Road-map [here] (https://github.com/purplefox/vert.x/wiki/Road-map)
 
@@ -69,4 +69,4 @@ There's an IRC channel at irc.freenode.net#vertx if you want to drop in to chat 
 
 ## Join us!!
 
-There is lots to do! We are looking for contributors - both individual and corporate. Ping me twitter:@timfox, or post on the nodex-dev google group.
+There is lots to do! We are looking for contributors - both individual and corporate. Ping @timfox on twitter, or post on the [vert.x Google Group](http://groups.google.com/group/vertx).
