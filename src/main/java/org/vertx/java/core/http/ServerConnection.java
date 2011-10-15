@@ -43,7 +43,7 @@ class ServerConnection extends AbstractConnection {
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
-  private boolean responded = false;
+  private boolean responded;
   private final Queue<Object> pending = new LinkedList<>();
 
   ServerConnection(Channel channel, long contextID, Thread th) {
@@ -111,6 +111,7 @@ class ServerConnection extends AbstractConnection {
     try {
       this.currentRequest = req;
       pendingResponse = true;
+
       if (requestHandler != null) {
         requestHandler.handle(req);
       }
@@ -133,6 +134,7 @@ class ServerConnection extends AbstractConnection {
       setContextID();
       currentRequest.handleEnd();
       currentRequest = null;
+      responded = false; // reset the responded state of serverConnectionObject
     } catch (Throwable t) {
       handleHandlerException(t);
     }
