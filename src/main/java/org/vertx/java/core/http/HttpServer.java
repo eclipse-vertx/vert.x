@@ -47,7 +47,11 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.ws.ietf07.Ietf07Handshake;
+import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameDecoder;
+import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameEncoder;
 import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetServerBase;
 
 import javax.net.ssl.SSLEngine;
@@ -79,6 +83,8 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServer extends NetServerBase {
+
+  private static final Logger log = Logger.getLogger(HttpServer.class);
 
   private Handler<HttpServerRequest> requestHandler;
   private Handler<Websocket> wsHandler;
@@ -327,29 +333,6 @@ public class HttpServer extends NetServerBase {
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
-    private void calcAndWriteWSHandshakeResponse(Channel ch, HttpRequest request, long c) {
-      String key1 = request.getHeader(SEC_WEBSOCKET_KEY1);
-      String key2 = request.getHeader(SEC_WEBSOCKET_KEY2);
-      ChannelBuffer output = WebsocketHandshakeHelper.calcResponse(key1, key2, c);
-      HttpResponse res = new DefaultHttpResponse(HTTP_1_1, new HttpResponseStatus(101,
-          "Web Socket Protocol Handshake"));
-      res.setContent(output);
-      res.addHeader(HttpHeaders.Names.CONTENT_LENGTH, res.getContent().readableBytes());
-      res.addHeader(SEC_WEBSOCKET_ORIGIN, request.getHeader(ORIGIN));
-      res.addHeader(SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request, request.getUri()));
-      String protocol = request.getHeader(SEC_WEBSOCKET_PROTOCOL);
-      if (protocol != null) {
-        res.addHeader(SEC_WEBSOCKET_PROTOCOL, protocol);
-      }
-      res.addHeader(HttpHeaders.Names.UPGRADE, WEBSOCKET);
-      res.addHeader(CONNECTION, HttpHeaders.Values.UPGRADE);
-
-      ChannelPipeline p = ch.getPipeline();
-      p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
-      ch.write(res);
-      p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
-    }
-
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       NioSocketChannel ch = (NioSocketChannel) e.getChannel();
@@ -368,17 +351,23 @@ public class HttpServer extends NetServerBase {
               WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
             // Websocket handshake
 
-            Websocket ws = new Websocket(request.getUri(), conn);
-            boolean containsKey1 = request.containsHeader(SEC_WEBSOCKET_KEY1);
-            boolean containsKey2 = request.containsHeader(SEC_WEBSOCKET_KEY2);
+            log.info("Got ws handshake");
 
-            if (containsKey1 && containsKey2) {
-              long c = request.getContent().readLong();
-              calcAndWriteWSHandshakeResponse(ch, request, c);
+            Ietf07Handshake shake = new Ietf07Handshake();
+            if (shake.matches(request)) {
+              log.info("Matches, sending back response");
+              HttpResponse resp = shake.generateResponse(request);
+              ChannelPipeline p = ch.getPipeline();
+              p.replace("decoder", "wsdecoder", new Ietf07WebSocketFrameDecoder());
+              ch.write(resp);
+              p.replace("encoder", "wsencoder", new Ietf07WebSocketFrameEncoder(true));
+              Websocket ws = new Websocket(request.getUri(), conn);
               conn.handleWebsocketConnect(ws);
             } else {
+              log.info("Doesn't match");
               ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
             }
+
           } else {
             conn.handleMessage(msg);
           }

@@ -16,10 +16,10 @@
 
 package org.vertx.java.core.http;
 
-import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -59,7 +59,7 @@ public class Websocket implements ReadStream, WriteStream {
    * Write {@code data} to the websocket as binary frame
    */
   public void writeBinaryFrame(Buffer data) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(0x80, data.getChannelBuffer());
+    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, data.getChannelBuffer());
     conn.write(frame);
   }
 

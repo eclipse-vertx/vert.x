@@ -93,6 +93,7 @@ need any synchronization.
 23) HTTP connection reconnection.
 24) Look at Redis cluster support in client
 25) Core JSON support
+26) Upgrade websockets support to hybi-10
 
 
 

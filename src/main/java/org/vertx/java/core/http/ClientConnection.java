@@ -16,26 +16,26 @@
 
 package org.vertx.java.core.http;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.ws.WebSocketFrame;
+import org.vertx.java.core.http.ws.ietf07.Ietf07Handshake;
+import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameDecoder;
+import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameEncoder;
+import org.vertx.java.core.logging.Logger;
 
+import java.io.IOException;
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 class ClientConnection extends AbstractConnection {
+
+  private static final Logger log = Logger.getLogger(ClientConnection.class);
 
   ClientConnection(HttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,
@@ -64,64 +64,35 @@ class ClientConnection extends AbstractConnection {
       throw new IllegalStateException("Already websocket");
     }
 
-    final String key1 = WebsocketHandshakeHelper.genWSkey();
-    final String key2 = WebsocketHandshakeHelper.genWSkey();
-    long c = new Random().nextLong();
+    try {
 
-    final Buffer out = new Buffer(WebsocketHandshakeHelper.calcResponse(key1, key2, c));
-    final ChannelBuffer buff = ChannelBuffers.buffer(8);
-    buff.writeLong(c);
+      final Ietf07Handshake shake = new Ietf07Handshake();
 
-    HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        if (resp.statusCode != 101 || !resp.statusMessage.equals("Web Socket Protocol Handshake")) {
-          handleException(new IllegalStateException("Invalid protocol handshake - invalid status: " + resp.statusCode
-              + "msg:" + resp.statusMessage));
-        } else if (!resp.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE)) {
-          //TODO - these exceptions need to be piped to the *Request* exception handler
-          handleException(new IllegalStateException("Invalid protocol handshake - no Connection header"));
-        } else {
-          final Buffer buff = Buffer.create(0);
-          resp.dataHandler(new Handler<Buffer>() {
-            public void handle(Buffer data) {
-              buff.appendBuffer(data);
+      HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+          try {
+            if (shake.isComplete(resp)) {
+              //We upgraded ok
+              ChannelPipeline p = channel.getPipeline();
+              p.replace("decoder", "wsdecoder", new Ietf07WebSocketFrameDecoder());
+              p.replace("encoder", "wsencoder", new Ietf07WebSocketFrameEncoder(true));
+              ws = new Websocket(uri, ClientConnection.this);
+              wsConnect.handle(ws);
             }
-          });
-          resp.endHandler(new SimpleHandler() {
-            public void handle() {
-              boolean matched = true;
-              if (buff.length() == out.length()) {
-                for (int i = 0; i < buff.length(); i++) {
-                  if (out.getByte(i) != buff.getByte(i)) {
-                    matched = false;
-                    break;
-                  }
-                }
-                if (matched) {
-                  //We upgraded ok
-                  ChannelPipeline p = channel.getPipeline();
-                  p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
-                  p.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
-                  ws = new Websocket(uri, ClientConnection.this);
-                  wsConnect.handle(ws);
-                  return;
-                }
-              }
-              handleException(new IllegalStateException("Invalid protocol handshake - wrong response"));
+            else {
+              throw new IOException("Websocket connection attempt failed");
             }
-          });
+          } catch (Exception e) {
+            handleException(e);
+          }
         }
-      }
-    }, contextID, Thread.currentThread());
-
-    setCurrentRequest(req);
-    req.setChunked(false);
-    req.putHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET).
-        putHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE).
-        putHeader(HttpHeaders.Names.ORIGIN, (ssl ? "http://" : "https://") + hostHeader).
-        putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, key1).
-        putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, key2);
-    req.sendDirect(this, new Buffer(buff));
+      }, contextID, Thread.currentThread());
+      shake.generateRequest(req, (ssl ? "http://" : "https://") + hostHeader);
+      setCurrentRequest(req);
+      req.sendDirect(this);
+    } catch (Exception e) {
+      handleException(e);
+    }
   }
 
   @Override
@@ -164,7 +135,6 @@ class ClientConnection extends AbstractConnection {
     } else {
       req = requests.poll();
     }
-
     if (req == null) {
       throw new IllegalStateException("No response handler");
     }
