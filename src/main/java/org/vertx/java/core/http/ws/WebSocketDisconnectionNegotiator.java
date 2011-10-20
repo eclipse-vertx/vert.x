@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.http.ws;
 
-
 import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -28,43 +27,43 @@ import org.jboss.netty.channel.MessageEvent;
 
 public class WebSocketDisconnectionNegotiator implements ChannelDownstreamHandler, ChannelUpstreamHandler {
 
-    @Override
-    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-        if (this.closeRequest != null) {
-            if (e instanceof MessageEvent) {
-                Object message = ((MessageEvent) e).getMessage();
-                if (message instanceof WebSocketFrame) {
-                    WebSocketFrame frame = (WebSocketFrame) message;
+  @Override
+  public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+    if (this.closeRequest != null) {
+      if (e instanceof MessageEvent) {
+        Object message = ((MessageEvent) e).getMessage();
+        if (message instanceof WebSocketFrame) {
+          WebSocketFrame frame = (WebSocketFrame) message;
 
-                    if (frame.getType() == WebSocketFrame.FrameType.CLOSE ) {
-                        ctx.sendDownstream( this.closeRequest );
-                        return;
-                    }
-                }
-            }
+          if (frame.getType() == WebSocketFrame.FrameType.CLOSE) {
+            ctx.sendDownstream(this.closeRequest);
+            return;
+          }
         }
-
-        ctx.sendUpstream( e );
+      }
     }
 
-    @Override
-    public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-        if (e instanceof ChannelStateEvent) {
-            ChannelState state = ((ChannelStateEvent)e).getState();
-            if ( state == ChannelState.OPEN && Boolean.FALSE.equals( ((ChannelStateEvent) e).getValue() )) {
-                closeRequested( ctx, (ChannelStateEvent) e );
-                return;
-            }
-        }
+    ctx.sendUpstream(e);
+  }
 
-        ctx.sendDownstream( e );
+  @Override
+  public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+    if (e instanceof ChannelStateEvent) {
+      ChannelState state = ((ChannelStateEvent) e).getState();
+      if (state == ChannelState.OPEN && Boolean.FALSE.equals(((ChannelStateEvent) e).getValue())) {
+        closeRequested(ctx, (ChannelStateEvent) e);
+        return;
+      }
     }
 
-    public void closeRequested(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        this.closeRequest = e;
-        DefaultWebSocketFrame closeFrame = new DefaultWebSocketFrame( WebSocketFrame.FrameType.CLOSE );
-        Channels.write(ctx.getChannel(), closeFrame);
-    }
+    ctx.sendDownstream(e);
+  }
 
-    private ChannelStateEvent closeRequest;
+  public void closeRequested(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    this.closeRequest = e;
+    DefaultWebSocketFrame closeFrame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE);
+    Channels.write(ctx.getChannel(), closeFrame);
+  }
+
+  private ChannelStateEvent closeRequest;
 }

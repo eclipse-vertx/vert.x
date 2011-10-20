@@ -35,27 +35,27 @@ import java.util.Map;
 
 /**
  * <p>Encapsulates a client-side HTTP request.</p>
- *
+ * <p/>
  * <p>Instances of this class are created by an {@link HttpClient} instance, via one of the methods corresponding to the
  * specific HTTP methods, or the generic {@link HttpClient#request} method</p>
- *
+ * <p/>
  * <p>Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
  * if required. Once you are ready to send the request, the {@link #end()} method must called.</p>
- *
+ * <p/>
  * <p>Nothing is sent until the request has been internally assigned an HTTP connection. The {@link HttpClient} instance
  * will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
  * sent before a connection is assigned will be queued internally and actually sent when an HTTP connection becomes
  * available from the pool.</p>
- *
+ * <p/>
  * <p>The headers of the request are actually sent either when the {@link #end()} method is called, or, when the first
  * part of the body is written, whichever occurs first.</p>
- *
+ * <p/>
  * <p>This class supports both chunked and non-chunked HTTP.</p>
- *
+ * <p/>
  * <p>This class can only be used from the event loop that created it.</p>
- *
+ * <p/>
  * <p>An example of using this class is as follows:</p>
- *
+ * <p/>
  * <pre>
  *
  * HttpClientRequest req = httpClient.post("/some-url", new EventHandler<HttpClientResponse>() {
@@ -117,6 +117,7 @@ public class HttpClientRequest implements WriteStream {
    * body of the request, the total size of that data must be set in the {@code Content-Length} header <b>before</b> any
    * data is written to the request body. If no data is written, then a {@code Content-Length} header with a value of {@code 0}
    * will be automatically inserted when the request is sent.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest setChunked(boolean chunked) {
@@ -131,6 +132,7 @@ public class HttpClientRequest implements WriteStream {
   /**
    * Inserts a header into the request. The {@link Object#toString()} method will be called on {@code value} to determine
    * the String value to actually use for the header value.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest putHeader(String key, Object value) {
@@ -143,6 +145,7 @@ public class HttpClientRequest implements WriteStream {
   /**
    * Inserts all the specified headers into the request. The {@link Object#toString()} method will be called on the header values {@code value} to determine
    * the String value to actually use for the header value.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
@@ -164,6 +167,7 @@ public class HttpClientRequest implements WriteStream {
 
   /**
    * Write a {@link Buffer} to the request body.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest write(Buffer chunk) {
@@ -173,6 +177,7 @@ public class HttpClientRequest implements WriteStream {
 
   /**
    * Write a {@link String} to the request body, encoded in UTF-8.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest write(String chunk) {
@@ -182,6 +187,7 @@ public class HttpClientRequest implements WriteStream {
 
   /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest write(String chunk, String enc) {
@@ -191,6 +197,7 @@ public class HttpClientRequest implements WriteStream {
 
   /**
    * Write a {@link Buffer} to the request body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
@@ -200,6 +207,7 @@ public class HttpClientRequest implements WriteStream {
 
   /**
    * Write a {@link String} to the request body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest write(String chunk, Handler<Void> doneHandler) {
@@ -210,6 +218,7 @@ public class HttpClientRequest implements WriteStream {
 
   /**
    * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
@@ -239,6 +248,7 @@ public class HttpClientRequest implements WriteStream {
    * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
+   *
    * @return {@code true} if the write queue is full, {@code false} otherwise
    */
   public boolean writeQueueFull() {
@@ -256,6 +266,7 @@ public class HttpClientRequest implements WriteStream {
    * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
    * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams.
+   *
    * @param handler
    */
   public void drainHandler(Handler<Void> handler) {
@@ -291,6 +302,7 @@ public class HttpClientRequest implements WriteStream {
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request. This is normally used
    * to implement HTTP 100-continue handling, see {@link #continueHandler(org.vertx.java.core.Handler)} for more information.
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpClientRequest sendHead() {

@@ -31,14 +31,14 @@ import java.util.Set;
 
 /**
  * <p>Encapsulates a server-side HTTP request.</p>
- *
+ * <p/>
  * <p>An instance of this class is created for each request that is handled by the server and is passed to the user via the
  * {@link org.vertx.java.core.Handler} instance registered with the {@link HttpServer} using the method
  * {@link HttpServer#requestHandler(org.vertx.java.core.Handler)}.<p>
- *
+ * <p/>
  * <p>On creation a new execution context is assigned to each instance and an event loop is allocated to it from one
  * of the available ones. The instance must only be called from that event loop.</p>
- *
+ * <p/>
  * <p>Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via the
  * {@code response} field.</p>
  *
@@ -146,6 +146,7 @@ public class HttpServerRequest implements ReadStream {
    * been read from the wire. If the request is chunked, then it will be called once for each HTTP chunk, otherwise it
    * will be called one or more times until the full request body has been received.<p>
    * If the request has no body it will not be called at all.
+   *
    * @param dataHandler
    */
   public void dataHandler(Handler<Buffer> dataHandler) {

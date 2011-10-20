@@ -25,12 +25,12 @@ import org.vertx.java.core.streams.WriteStream;
 
 /**
  * <p>Encapsulation of an HTML 5 Websocket</p>
- *
+ * <p/>
  * <p>Instances of this class are either created by an {@link HttpServer}
  * instance when a websocket handshake is accepted on the server, or are create by an {@link HttpClient}
  * instance when a client succeeds in a websocket handshake with a server. Once an instance has been obtained it can
  * be used to send or receive buffers of data from the connection, a bit like a TCP socket.</p>
- *
+ * <p/>
  * <p>Instances of this class can only be used from the event loop thread which created it.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -127,6 +127,7 @@ public class Websocket implements ReadStream, WriteStream {
    * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
+   *
    * @return {@code true} if the write queue is full, {@code false} otherwise
    */
   public boolean writeQueueFull() {
@@ -146,6 +147,7 @@ public class Websocket implements ReadStream, WriteStream {
    * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
    * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams.
+   *
    * @param handler
    */
   public void drainHandler(Handler<Void> handler) {

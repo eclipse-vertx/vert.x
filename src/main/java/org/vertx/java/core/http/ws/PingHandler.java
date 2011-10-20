@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.vertx.java.core.http.ws.ietf07;
+package org.vertx.java.core.http.ws;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -26,20 +26,16 @@ import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
 public class PingHandler extends SimpleChannelUpstreamHandler {
 
-    @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        if ( e.getMessage() instanceof WebSocketFrame) {
-            WebSocketFrame frame = (WebSocketFrame) e.getMessage();
-            
-            if ( frame.getType() == FrameType.PING ) {
-                ctx.getChannel().write(  new DefaultWebSocketFrame( FrameType.PONG, frame.getBinaryData() ) );
-                return;
-            }
-            
-        } 
-        super.messageReceived( ctx, e );
-    }
-    
-    
+  @Override
+  public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    if (e.getMessage() instanceof WebSocketFrame) {
+      WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
+      if (frame.getType() == FrameType.PING) {
+        ctx.getChannel().write(new DefaultWebSocketFrame(FrameType.PONG, frame.getBinaryData()));
+        return;
+      }
+    }
+    super.messageReceived(ctx, e);
+  }
 }

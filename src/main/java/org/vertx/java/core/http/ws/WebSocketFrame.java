@@ -26,62 +26,61 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
 public interface WebSocketFrame {
-    
-    /** List of all frame types.
-     * 
-     */
-    public enum FrameType {
-        CONTINUATION,
-        TEXT,
-        BINARY,
-        CLOSE,
-        PING,
-        PONG,
-    };
 
-    FrameType getType();
+  /**
+   * List of all frame types.
+   */
+  public enum FrameType {
+    CONTINUATION,
+    TEXT,
+    BINARY,
+    CLOSE,
+    PING,
+    PONG,
+  }
 
-    /**
-     * Returns {@code true} if and only if the content of this frame is a string
-     * encoded in UTF-8.
-     */
-    boolean isText();
+  ;
 
-    /**
-     * Returns {@code true} if and only if the content of this frame is an
-     * arbitrary binary data.
-     */
-    boolean isBinary();
+  FrameType getType();
 
-    /**
-     * Returns the content of this frame as-is, with no UTF-8 decoding.
-     */
-    ChannelBuffer getBinaryData();
+  /**
+   * Returns {@code true} if and only if the content of this frame is a string
+   * encoded in UTF-8.
+   */
+  boolean isText();
 
-    /**
-     * Converts the content of this frame into a UTF-8 string and returns the
-     * converted string.
-     */
-    String getTextData();
+  /**
+   * Returns {@code true} if and only if the content of this frame is an
+   * arbitrary binary data.
+   */
+  boolean isBinary();
 
-    /**
-     * Sets the type and the content of this frame.
-     *
-     * @param binaryData
-     *        the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
-     *        it must be encoded in UTF-8.
-     *
-     * @throws IllegalArgumentException
-     *         if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
-     *         in UTF-8
-     */
-    void setBinaryData(ChannelBuffer binaryData);
-    
-    void setTextData(String textData);
+  /**
+   * Returns the content of this frame as-is, with no UTF-8 decoding.
+   */
+  ChannelBuffer getBinaryData();
 
-    /**
-     * Returns the string representation of this frame.  Please note that this
-     * method is not identical to {@link #getTextData()}.
-     */
-    String toString();
+  /**
+   * Converts the content of this frame into a UTF-8 string and returns the
+   * converted string.
+   */
+  String getTextData();
+
+  /**
+   * Sets the type and the content of this frame.
+   *
+   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
+   *                   it must be encoded in UTF-8.
+   * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
+   *                                  in UTF-8
+   */
+  void setBinaryData(ChannelBuffer binaryData);
+
+  void setTextData(String textData);
+
+  /**
+   * Returns the string representation of this frame.  Please note that this
+   * method is not identical to {@link #getTextData()}.
+   */
+  String toString();
 }

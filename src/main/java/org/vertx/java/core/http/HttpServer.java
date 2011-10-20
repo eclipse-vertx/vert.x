@@ -17,7 +17,6 @@
 package org.vertx.java.core.http;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -41,15 +40,12 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.ws.ietf07.Ietf07Handshake;
-import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameDecoder;
-import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameEncoder;
+import org.vertx.java.core.http.ws.Handshake;
+import org.vertx.java.core.http.ws.WebSocketFrameDecoder;
+import org.vertx.java.core.http.ws.WebSocketFrameEncoder;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetServerBase;
@@ -62,12 +58,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ORIGIN;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY1;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY2;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_LOCATION;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_ORIGIN;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_PROTOCOL;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
@@ -75,9 +65,9 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * <p>An HTTP server.</p>
- *
+ * <p/>
  * <p>The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.</p>
- *
+ * <p/>
  * <p>An {@code HttpServer} instance can only be used from the event loop that created it.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -102,6 +92,7 @@ public class HttpServer extends NetServerBase {
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
    * instances of {@link HttpServerRequest} will be created and passed to this handler.
+   *
    * @return a reference to this, so methods can be chained.
    */
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
@@ -113,6 +104,7 @@ public class HttpServer extends NetServerBase {
   /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
    * new {@link Websocket} instance will be created and passed to the handler.
+   *
    * @return a reference to this, so methods can be chained.
    */
   public HttpServer websocketHandler(Handler<Websocket> wsHandler) {
@@ -123,6 +115,7 @@ public class HttpServer extends NetServerBase {
 
   /**
    * Tell the server to start listening on all interfaces and port {@code port}
+   *
    * @return a reference to this, so methods can be chained.
    */
   public HttpServer listen(int port) {
@@ -131,6 +124,7 @@ public class HttpServer extends NetServerBase {
 
   /**
    * Tell the server to start listening on port {@code port} and host / ip address given by {@code host}.
+   *
    * @return a reference to this, so methods can be chained.
    */
   public HttpServer listen(int port, String host) {
@@ -202,7 +196,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setSSL(boolean ssl) {
     checkThread();
-    return (HttpServer)super.setSSL(ssl);
+    return (HttpServer) super.setSSL(ssl);
   }
 
   /**
@@ -210,7 +204,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setKeyStorePath(String path) {
     checkThread();
-    return (HttpServer)super.setKeyStorePath(path);
+    return (HttpServer) super.setKeyStorePath(path);
   }
 
   /**
@@ -218,7 +212,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setKeyStorePassword(String pwd) {
     checkThread();
-    return (HttpServer)super.setKeyStorePassword(pwd);
+    return (HttpServer) super.setKeyStorePassword(pwd);
   }
 
   /**
@@ -226,7 +220,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setTrustStorePath(String path) {
     checkThread();
-    return (HttpServer)super.setTrustStorePath(path);
+    return (HttpServer) super.setTrustStorePath(path);
   }
 
   /**
@@ -234,7 +228,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setTrustStorePassword(String pwd) {
     checkThread();
-    return (HttpServer)super.setTrustStorePassword(pwd);
+    return (HttpServer) super.setTrustStorePassword(pwd);
   }
 
   /**
@@ -242,7 +236,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setClientAuthRequired(boolean required) {
     checkThread();
-    return (HttpServer)super.setClientAuthRequired(required);
+    return (HttpServer) super.setClientAuthRequired(required);
   }
 
   /**
@@ -250,7 +244,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setTcpNoDelay(boolean tcpNoDelay) {
     checkThread();
-    return (HttpServer)super.setTcpNoDelay(tcpNoDelay);
+    return (HttpServer) super.setTcpNoDelay(tcpNoDelay);
   }
 
   /**
@@ -258,7 +252,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setSendBufferSize(int size) {
     checkThread();
-    return (HttpServer)super.setSendBufferSize(size);
+    return (HttpServer) super.setSendBufferSize(size);
   }
 
   /**
@@ -266,7 +260,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setReceiveBufferSize(int size) {
     checkThread();
-    return (HttpServer)super.setReceiveBufferSize(size);
+    return (HttpServer) super.setReceiveBufferSize(size);
   }
 
   /**
@@ -274,7 +268,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setTCPKeepAlive(boolean keepAlive) {
     checkThread();
-    return (HttpServer)super.setTCPKeepAlive(keepAlive);
+    return (HttpServer) super.setTCPKeepAlive(keepAlive);
   }
 
   /**
@@ -282,7 +276,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setReuseAddress(boolean reuse) {
     checkThread();
-    return (HttpServer)super.setReuseAddress(reuse);
+    return (HttpServer) super.setReuseAddress(reuse);
   }
 
   /**
@@ -290,7 +284,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setSoLinger(boolean linger) {
     checkThread();
-    return (HttpServer)super.setSoLinger(linger);
+    return (HttpServer) super.setSoLinger(linger);
   }
 
   /**
@@ -298,7 +292,7 @@ public class HttpServer extends NetServerBase {
    */
   public HttpServer setTrafficClass(int trafficClass) {
     checkThread();
-    return (HttpServer)super.setTrafficClass(trafficClass);
+    return (HttpServer) super.setTrafficClass(trafficClass);
   }
 
   /**
@@ -353,14 +347,14 @@ public class HttpServer extends NetServerBase {
 
             log.info("Got ws handshake");
 
-            Ietf07Handshake shake = new Ietf07Handshake();
+            Handshake shake = new Handshake();
             if (shake.matches(request)) {
               log.info("Matches, sending back response");
               HttpResponse resp = shake.generateResponse(request);
               ChannelPipeline p = ch.getPipeline();
-              p.replace("decoder", "wsdecoder", new Ietf07WebSocketFrameDecoder());
+              p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
               ch.write(resp);
-              p.replace("encoder", "wsencoder", new Ietf07WebSocketFrameEncoder(true));
+              p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(true));
               Websocket ws = new Websocket(request.getUri(), conn);
               conn.handleWebsocketConnect(ws);
             } else {
