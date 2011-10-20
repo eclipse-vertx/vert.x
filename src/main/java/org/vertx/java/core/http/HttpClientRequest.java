@@ -450,12 +450,9 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  void sendDirect(ClientConnection conn, Buffer body) {
+  void sendDirect(ClientConnection conn) {
     this.conn = conn;
-    contentLength = body.length();
-    putHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
-    write(body);
-    writeEndChunk();
+    conn.write(request);
     completed = true;
   }
 
