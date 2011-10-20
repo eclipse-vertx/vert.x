@@ -44,13 +44,13 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * <p>Encapsulates a server-side HTTP response.</p>
- *
+ * <p/>
  * <p>An instance of this class is created and associated to every instance of {@link HttpServerRequest} that is created.<p>
- *
+ * <p/>
  * <p>It allows the developer to control the HTTP response that is sent back to the client for the corresponding HTTP
  * request. It contains methods that allow HTTP headers and trailers to be set, and for a body to be written out
  * to the response.</p>
- *
+ * <p/>
  * <p>It also allows a file to be streamed by the kernel directly from disk to the outgoing HTTP connection,
  * bypassing user space altogether (where supported by the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one from the file and written to the outgoing
@@ -88,7 +88,6 @@ public class HttpServerResponse implements WriteStream {
   /**
    * The HTTP status message of the response. If this is not specified a default value will be used depending on what
    * {@link #statusCode} has been set to.
-   *
    */
   public String statusMessage = null;
 
@@ -101,6 +100,7 @@ public class HttpServerResponse implements WriteStream {
    * data is written to the response body. If no data is written, then a {@code Content-Length} header with a value of {@code 0}
    * will be automatically inserted when the response is sent.<p>
    * An HTTP chunked response is typically used when you do not know the total size of the request body up front.
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse setChunked(boolean chunked) {
@@ -115,6 +115,7 @@ public class HttpServerResponse implements WriteStream {
   /**
    * Inserts a header into the response. The {@link Object#toString()} method will be called on {@code value} to determine
    * the String value to actually use for the header value.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse putHeader(String key, Object value) {
@@ -127,6 +128,7 @@ public class HttpServerResponse implements WriteStream {
   /**
    * Inserts all the specified headers into the response. The {@link Object#toString()} method will be called on the header values {@code value} to determine
    * the String value to actually use for the header value.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
@@ -142,6 +144,7 @@ public class HttpServerResponse implements WriteStream {
    * Inserts a trailer into the response. The {@link Object#toString()} method will be called on {@code value} to determine
    * the String value to actually use for the trailer value.<p>
    * Trailers are only sent if you are using a HTTP chunked response.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse putTrailer(String key, Object value) {
@@ -155,6 +158,7 @@ public class HttpServerResponse implements WriteStream {
    * Inserts all the specified trailers into the response. The {@link Object#toString()} method will be called on {@code value} to determine
    * the String value to actually use for the trailer value.<p>
    * Trailers are only sent if you are using a HTTP chunked response.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
@@ -184,6 +188,7 @@ public class HttpServerResponse implements WriteStream {
    * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
+   *
    * @return {@code true} if the write queue is full, {@code false} otherwise
    */
   public boolean writeQueueFull() {
@@ -197,6 +202,7 @@ public class HttpServerResponse implements WriteStream {
    * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
    * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams.
+   *
    * @param handler
    */
   public void drainHandler(Handler<Void> handler) {
@@ -224,6 +230,7 @@ public class HttpServerResponse implements WriteStream {
 
   /**
    * Write a {@link Buffer} to the response body.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse write(Buffer chunk) {
@@ -232,6 +239,7 @@ public class HttpServerResponse implements WriteStream {
 
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse write(String chunk, String enc) {
@@ -240,6 +248,7 @@ public class HttpServerResponse implements WriteStream {
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse write(String chunk) {
@@ -248,6 +257,7 @@ public class HttpServerResponse implements WriteStream {
 
   /**
    * Write a {@link Buffer} to the response body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler) {
@@ -256,6 +266,7 @@ public class HttpServerResponse implements WriteStream {
 
   /**
    * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler) {
@@ -264,6 +275,7 @@ public class HttpServerResponse implements WriteStream {
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse write(String chunk, Handler<Void> doneHandler) {
@@ -398,7 +410,7 @@ public class HttpServerResponse implements WriteStream {
   private void writeHead() {
     if (!headWritten) {
       HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
-                                  new HttpResponseStatus(statusCode, statusMessage);
+          new HttpResponseStatus(statusCode, statusMessage);
       response.setStatus(status);
       if (chunked) {
         response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);

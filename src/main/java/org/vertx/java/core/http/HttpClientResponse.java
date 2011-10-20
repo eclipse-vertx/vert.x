@@ -28,10 +28,10 @@ import java.util.Set;
 
 /**
  * <p>Encapsulates a client-side HTTP response.</p>
- *
+ * <p/>
  * <p>An instance of this class is provided to the user via an {@link org.vertx.java.core.Handler} class that was specified when one of the
  * HTTP method operations, or the generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)} method was called on an instance of {@link HttpClient}.</p>
- *
+ * <p/>
  * <p>Instances of this class can only be used from the event loop thread which created the corresponding {@link HttpClientRequest}</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -99,7 +99,6 @@ public class HttpClientResponse implements ReadStream {
    * Returns a map of all headers in the response, If the response contains multiple headers with the same key, the values
    * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
    * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
-   *
    */
   public Map<String, String> getHeaders() {
     if (headers == null) {
@@ -113,7 +112,6 @@ public class HttpClientResponse implements ReadStream {
    * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
    * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.<p>
    * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
-   *
    */
   public Map<String, String> getTrailers() {
     if (trailers == null) {
@@ -140,6 +138,7 @@ public class HttpClientResponse implements ReadStream {
    * been read from the wire. If the response is chunked, then it will be called once for each HTTP chunk, otherwise it
    * will be called one or more times until the full response body has been delivered.<p>
    * If the response has no body it will not be called at all.
+   *
    * @param dataHandler
    */
   public void dataHandler(Handler<Buffer> dataHandler) {

@@ -23,10 +23,10 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.ws.Handshake;
 import org.vertx.java.core.http.ws.WebSocketFrame;
-import org.vertx.java.core.http.ws.ietf07.Ietf07Handshake;
-import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameDecoder;
-import org.vertx.java.core.http.ws.ietf07.Ietf07WebSocketFrameEncoder;
+import org.vertx.java.core.http.ws.WebSocketFrameDecoder;
+import org.vertx.java.core.http.ws.WebSocketFrameEncoder;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.IOException;
@@ -66,7 +66,7 @@ class ClientConnection extends AbstractConnection {
 
     try {
 
-      final Ietf07Handshake shake = new Ietf07Handshake();
+      final Handshake shake = new Handshake();
 
       HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
         public void handle(HttpClientResponse resp) {
@@ -74,12 +74,11 @@ class ClientConnection extends AbstractConnection {
             if (shake.isComplete(resp)) {
               //We upgraded ok
               ChannelPipeline p = channel.getPipeline();
-              p.replace("decoder", "wsdecoder", new Ietf07WebSocketFrameDecoder());
-              p.replace("encoder", "wsencoder", new Ietf07WebSocketFrameEncoder(true));
+              p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
+              p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(true));
               ws = new Websocket(uri, ClientConnection.this);
               wsConnect.handle(ws);
-            }
-            else {
+            } else {
               throw new IOException("Websocket connection attempt failed");
             }
           } catch (Exception e) {

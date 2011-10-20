@@ -54,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>An asynchronous, pooling, HTTP 1.1 client</p>
- *
+ * <p/>
  * <p>An {@code HttpClient} maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
  * as pipelines for HTTP requests.</p>
  * <p>It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
@@ -97,6 +97,7 @@ public class HttpClient extends NetClientBase {
   /**
    * Set the maximum pool size to the value specified by {@code maxConnections}<p>
    * The client will maintain up to {@code maxConnections} HTTP connections in an internal pool<p>
+   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setMaxPoolSize(int maxConnections) {
@@ -118,6 +119,7 @@ public class HttpClient extends NetClientBase {
    * If {@code keepAlive} is {@code false} then a new connection will be created for each request and it won't ever go in the pool,
    * the connection will closed after the response has been received. Even with no keep alive, the client will not allow more
    * than {@link #getMaxPoolSize() getMaxPoolSize()} connections to be created at any one time. <p>
+   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setKeepAlive(boolean keepAlive) {
@@ -129,46 +131,47 @@ public class HttpClient extends NetClientBase {
    * {@inheritDoc}
    */
   public HttpClient setSSL(boolean ssl) {
-    return (HttpClient)super.setSSL(ssl);
+    return (HttpClient) super.setSSL(ssl);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setKeyStorePath(String path) {
-    return (HttpClient)super.setKeyStorePath(path);
+    return (HttpClient) super.setKeyStorePath(path);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setKeyStorePassword(String pwd) {
-    return (HttpClient)super.setKeyStorePassword(pwd);
+    return (HttpClient) super.setKeyStorePassword(pwd);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setTrustStorePath(String path) {
-    return (HttpClient)super.setTrustStorePath(path);
+    return (HttpClient) super.setTrustStorePath(path);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setTrustStorePassword(String pwd) {
-    return (HttpClient)super.setTrustStorePassword(pwd);
+    return (HttpClient) super.setTrustStorePassword(pwd);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setTrustAll(boolean trustAll) {
-    return (HttpClient)super.setTrustAll(trustAll);
+    return (HttpClient) super.setTrustAll(trustAll);
   }
 
   /**
    * Set the port that the client will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
+   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setPort(int port) {
@@ -178,6 +181,7 @@ public class HttpClient extends NetClientBase {
 
   /**
    * Set the host that the client will attempt to connect to, to {@code host}. The default value is {@code localhost}<p>
+   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setHost(String host) {
@@ -311,49 +315,49 @@ public class HttpClient extends NetClientBase {
    * {@inheritDoc}
    */
   public HttpClient setTcpNoDelay(boolean tcpNoDelay) {
-    return (HttpClient)super.setTcpNoDelay(tcpNoDelay);
+    return (HttpClient) super.setTcpNoDelay(tcpNoDelay);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setSendBufferSize(int size) {
-    return (HttpClient)super.setSendBufferSize(size);
+    return (HttpClient) super.setSendBufferSize(size);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setReceiveBufferSize(int size) {
-    return (HttpClient)super.setReceiveBufferSize(size);
+    return (HttpClient) super.setReceiveBufferSize(size);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setTCPKeepAlive(boolean keepAlive) {
-    return (HttpClient)super.setTCPKeepAlive(keepAlive);
+    return (HttpClient) super.setTCPKeepAlive(keepAlive);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setReuseAddress(boolean reuse) {
-    return (HttpClient)super.setReuseAddress(reuse);
+    return (HttpClient) super.setReuseAddress(reuse);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setSoLinger(boolean linger) {
-    return (HttpClient)super.setSoLinger(linger);
+    return (HttpClient) super.setSoLinger(linger);
   }
 
   /**
    * {@inheritDoc}
    */
   public HttpClient setTrafficClass(int trafficClass) {
-    return (HttpClient)super.setTrafficClass(trafficClass);
+    return (HttpClient) super.setTrafficClass(trafficClass);
   }
 
   void getConnection(Handler<ClientConnection> handler, long contextID) {
