@@ -352,8 +352,7 @@ public class HttpServer extends NetServerBase {
               p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
               ch.write(resp);
               p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(false));
-              Websocket ws = new Websocket(request.getUri(), conn);
-              conn.handleWebsocketConnect(ws);
+              conn.handleWebsocketConnect(request.getUri());
             } else {
               ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
             }

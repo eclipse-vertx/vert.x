@@ -147,10 +147,11 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWebsocketConnect(Websocket ws) {
+  void handleWebsocketConnect(String uri) {
     try {
       if (wsHandler != null) {
         setContextID();
+        Websocket ws = new Websocket(uri, this);
         wsHandler.handle(ws);
         this.ws = ws;
       }
@@ -172,6 +173,9 @@ class ServerConnection extends AbstractConnection {
 
   protected void handleClosed() {
     super.handleClosed();
+    if (ws != null) {
+      ws.handleClosed();
+    }
   }
 
   protected long getContextID() {
