@@ -69,7 +69,7 @@ public class HttpServerRequest implements ReadStream {
     this.query = theURI.getQuery();
     this.conn = conn;
     this.request = request;
-    this.response = new HttpServerResponse(HttpHeaders.isKeepAlive(request), conn);
+    this.response = new HttpServerResponse(HttpHeaders.isKeepAlive(request), HttpHeaders.is100ContinueExpected(request), conn);
   }
 
   /**

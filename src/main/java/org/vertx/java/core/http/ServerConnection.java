@@ -67,7 +67,13 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  public boolean isResponded(){
+  @Override
+  public ChannelFuture write(Object msg) {
+    responded = true;
+    return super.write(msg);
+  }
+
+  public boolean isResponded() {
       return responded;
   }
 
