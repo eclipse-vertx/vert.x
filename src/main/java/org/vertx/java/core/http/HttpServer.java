@@ -354,7 +354,7 @@ public class HttpServer extends NetServerBase {
               ChannelPipeline p = ch.getPipeline();
               p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
               ch.write(resp);
-              p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(true));
+              p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(false));
               Websocket ws = new Websocket(request.getUri(), conn);
               conn.handleWebsocketConnect(ws);
             } else {
