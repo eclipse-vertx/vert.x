@@ -739,6 +739,17 @@ module Vertx
     # @private
     def initialize(j_ws)
       @j_del = j_ws
+      @binary_handler_id = Vertx::register_handler { |buffer|
+        write_binary_frame(buffer)
+      }
+      @text_handler_id = Vertx::register_handler { |str|
+        write_text_frame(str)
+      }
+      @j_del.closedHandler(Proc.new {
+        Vertx::unregister_handler(@binary_handler_id)
+        Vertx::unregister_handler(@text_handler_id)
+        @closed_handler.call if @closed_handler
+      })
     end
 
     # @return [String] The uri the websocket was created on. When a websocket is first received on the server, the uri can be checked and
@@ -762,6 +773,32 @@ module Vertx
     # Close the websocket
     def close
       @j_del.close
+    end
+
+    # When a Websocket is created it automatically registers an event handler with the system, the ID of that
+    # handler is given by {#binary_handler_id}.
+    # Given this ID, a different event loop can send a binary frame to that event handler using {Vertx.send_to_handler} and
+    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # allows you to write data to other websockets which are owned by different event loops.
+    def binary_handler_id
+      @binary_handler_id
+    end
+
+    # When a Websocket is created it automatically registers an event handler with the system, the ID of that
+    # handler is given by {#text_handler_id}.
+    # Given this ID, a different event loop can send a text frame to that event handler using {Vertx.send_to_handler} and
+    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # allows you to write data to other websockets which are owned by different event loops.
+    def text_handler_id
+      @text_handler_id
+    end
+
+    # Set a closed handler on the websocket.
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def closed_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @closed_handler = hndlr;
     end
 
   end

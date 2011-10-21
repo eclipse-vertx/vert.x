@@ -175,6 +175,10 @@ class ClientConnection extends AbstractConnection {
 
   protected void handleClosed() {
     super.handleClosed();
+
+    if (ws != null) {
+      ws.handleClosed();
+    }
   }
 
   protected long getContextID() {

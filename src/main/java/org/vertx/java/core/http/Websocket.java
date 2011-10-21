@@ -17,6 +17,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.ws.WebSocketFrame;
@@ -42,11 +43,40 @@ public class Websocket implements ReadStream, WriteStream {
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
   private Handler<Exception> exceptionHandler;
+  private Handler<Void> closedHandler;
   private Handler<Void> endHandler;
+
+  /**
+   * When a {@code Websocket} is created it automatically registers an event handler with the system, the ID of that
+   * handler is given by {@code binaryHandlerID}.<p>
+   * Given this ID, a different event loop can send a binary frame to that event handler using {@link org.vertx.java.core.Vertx#sendToHandler} and
+   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+   * allows you to write data to other websockets which are owned by different event loops.
+   */
+  public final long binaryHandlerID;
+
+  /**
+   * When a {@code Websocket} is created it automatically registers an event handler with the system, the ID of that
+   * handler is given by {@code textHandlerID}.<p>
+   * Given this ID, a different event loop can send a text frame to that event handler using {@link org.vertx.java.core.Vertx#sendToHandler} and
+   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+   * allows you to write data to other websockets which are owned by different event loops.
+   */
+  public final long textHandlerID;
 
   Websocket(String uri, AbstractConnection conn) {
     this.uri = uri;
     this.conn = conn;
+    binaryHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
+        writeBinaryFrame(buff);
+      }
+    });
+    textHandlerID = Vertx.instance.registerHandler(new Handler<String>() {
+      public void handle(String str) {
+        writeTextFrame(str);
+      }
+    });
   }
 
   /**
@@ -91,6 +121,13 @@ public class Websocket implements ReadStream, WriteStream {
    */
   public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
+  }
+
+  /**
+   * Set a closed handler on the connection
+   */
+  public void closedHandler(Handler<Void> handler) {
+    this.closedHandler = handler;
   }
 
   /**
@@ -177,6 +214,23 @@ public class Websocket implements ReadStream, WriteStream {
   void handleException(Exception e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
+    }
+  }
+
+  void handleClosed() {
+    if (endHandler != null) {
+      try {
+        endHandler.handle(null);
+      } catch (Exception e) {
+        handleException(e);
+      }
+    }
+    if (closedHandler != null) {
+      try {
+        closedHandler.handle(null);
+      } catch (Exception e) {
+        handleException(e);
+      }
     }
   }
 }
