@@ -352,12 +352,13 @@ public class HttpServer extends NetServerBase {
             } else {
               ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
             }
-
+          } else if (HttpHeaders.is100ContinueExpected(request)) {
+            conn.handleMessage(msg);
+            if (!conn.isResponded()) {
+              conn.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+            }
           } else {
             conn.handleMessage(msg);
-            if (HttpHeaders.is100ContinueExpected(request) && !conn.isResponded()) {
-              ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
-            }
           }
         } else {
           conn.handleMessage(msg);
