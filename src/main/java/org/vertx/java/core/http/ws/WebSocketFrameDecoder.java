@@ -23,7 +23,10 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+
+import java.math.BigInteger;
 
 import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
@@ -52,10 +55,10 @@ public class WebSocketFrameDecoder extends ReplayingDecoder<VoidEnum> {
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, VoidEnum state) throws Exception {
 
-    byte finOpcode = buffer.readByte();
+    int finOpcode = buffer.readUnsignedByte();
 
-    boolean fin = ((finOpcode & 0x1) != 0);
-    int opcode = ((finOpcode >> 4) & 0x0F);
+    boolean fin = ((finOpcode & 0x80) != 0);
+    int opcode = (finOpcode & 0x0F);
 
     byte lengthMask = buffer.readByte();
 
@@ -91,8 +94,8 @@ public class WebSocketFrameDecoder extends ReplayingDecoder<VoidEnum> {
     ChannelBuffer data = ChannelBuffers.wrappedBuffer(payload);
 
     WebSocketFrame.FrameType frameType = decodeFrameType(opcode);
-    return new DefaultWebSocketFrame(frameType, data);
 
+    return new DefaultWebSocketFrame(frameType, data);
   }
 
   protected WebSocketFrame.FrameType decodeFrameType(int opcode) {

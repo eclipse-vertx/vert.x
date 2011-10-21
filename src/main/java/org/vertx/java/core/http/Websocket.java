@@ -163,7 +163,8 @@ public class Websocket implements ReadStream, WriteStream {
 
   void handleFrame(WebSocketFrame frame) {
     if (dataHandler != null) {
-      dataHandler.handle(new Buffer(frame.getBinaryData()));
+      Buffer buff = new Buffer(frame.getBinaryData());
+      dataHandler.handle(buff);
     }
   }
 

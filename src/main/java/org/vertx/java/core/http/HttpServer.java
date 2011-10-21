@@ -345,11 +345,8 @@ public class HttpServer extends NetServerBase {
               WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
             // Websocket handshake
 
-            log.info("Got ws handshake");
-
             Handshake shake = new Handshake();
             if (shake.matches(request)) {
-              log.info("Matches, sending back response");
               HttpResponse resp = shake.generateResponse(request);
               ChannelPipeline p = ch.getPipeline();
               p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
@@ -358,7 +355,6 @@ public class HttpServer extends NetServerBase {
               Websocket ws = new Websocket(request.getUri(), conn);
               conn.handleWebsocketConnect(ws);
             } else {
-              log.info("Doesn't match");
               ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
             }
 
