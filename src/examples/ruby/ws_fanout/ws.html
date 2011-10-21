@@ -21,7 +21,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
         "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<head><title>Web Socket Test</title></head>
+<head><title>Web Socket Demonstration</title></head>
 <body>
 <h1 id ="foo">
 
@@ -33,7 +33,7 @@
         socket = new WebSocket("ws://localhost:8080/myapp");
         socket.onmessage = function(event) {
             console.log('got data:' + event.data);
-            foo.innerHTML = event.data;
+            foo.innerHTML = foo.innerHTML + event.data;
         };
         socket.onopen = function(event) {
             console.log("Web Socket opened!");
@@ -45,13 +45,14 @@
         alert("Your browser does not support Websockets. (Use Chrome)");
     }
 
-    function send(message) {
-        console.log('sending message: ' + message);
+    function key_press(event) {
+        var charcode = event.charCode
+        var keychar = String.fromCharCode(charcode)
         if (!window.WebSocket) {
             return;
         }
         if (socket.readyState == WebSocket.OPEN) {
-            socket.send(message);
+            socket.send(keychar);
         } else {
             alert("The socket is not open.");
         }
@@ -61,7 +62,7 @@
 <br>
 <br>
 <form onsubmit="return false;">
-    <input style="font-size: 30px" type="text" name="message" value="" onkeyup="send(this.form.message.value)"/>
+    <input style="font-size: 30px" type="text" name="message" value="" onkeypress="key_press(event)"/>
 </form>
 </body>
 </html>
