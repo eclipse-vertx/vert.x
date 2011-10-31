@@ -209,6 +209,26 @@ vertx-java -cp classes org.vertx.java.examples.redis.RedisExample
 
 Then point your browser at: http://localhost:8080 and hit refresh a few times
 
+Route Match
+===========
+
+This example shows how a route matcher can be used with a vert.x HTTP server to allow REST-style resource based matching of URIS
+in the manner of express (JS) or Sinatra.
+
+To run the example:
+
+vertx-java -cp classes org.vertx.java.examples.routematch.RouteMatchExample
+
+Then point your browser at: http://localhost:8080.
+
+An index page will be served which contains some links to urls of the form:
+
+/details/<user>/<id>
+
+The server will extract the user and id from the uri and display it on the returned page
+
+
+
 
 
 
