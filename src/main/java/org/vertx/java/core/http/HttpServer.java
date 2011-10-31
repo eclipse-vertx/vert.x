@@ -337,6 +337,10 @@ public class HttpServer extends NetServerBase {
         if (msg instanceof HttpRequest) {
           HttpRequest request = (HttpRequest) msg;
 
+          if (HttpHeaders.is100ContinueExpected(request)) {
+            ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+          }
+
           if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
               WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
             // Websocket handshake
@@ -355,9 +359,6 @@ public class HttpServer extends NetServerBase {
 
           } else {
             conn.handleMessage(msg);
-            if (HttpHeaders.is100ContinueExpected(request) && !conn.isResponded()) {
-              ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
-            }
           }
         } else {
           conn.handleMessage(msg);

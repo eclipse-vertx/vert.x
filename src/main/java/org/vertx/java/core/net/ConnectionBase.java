@@ -175,7 +175,7 @@ public abstract class ConnectionBase {
 
   protected void handleHandlerException(Throwable t) {
     //We log errors otherwise they will get swallowed
-    log.error(t);
+    log.error("Unhandled exception", t);
   }
 
   protected boolean isSSL() {

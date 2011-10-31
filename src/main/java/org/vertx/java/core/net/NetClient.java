@@ -150,7 +150,7 @@ public class NetClient extends NetClientBase {
             if (t instanceof Exception && exceptionHandler != null) {
               exceptionHandler.handle((Exception) t);
             } else {
-              log.error(t);
+              log.error("Unhandled exception", t);
             }
           }
         }

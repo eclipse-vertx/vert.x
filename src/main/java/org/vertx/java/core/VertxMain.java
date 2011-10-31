@@ -35,7 +35,7 @@ public abstract class VertxMain {
         try {
           go();
         } catch (Throwable t) {
-          log.error(t);
+          log.error("Failed to run in event loop", t);
         }
       }
     });

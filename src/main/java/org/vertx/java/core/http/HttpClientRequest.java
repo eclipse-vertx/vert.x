@@ -381,7 +381,7 @@ public class HttpClientRequest implements WriteStream {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     } else {
-      log.error(e);
+      log.error("Unhandled exception", e);
     }
   }
 
@@ -398,7 +398,7 @@ public class HttpClientRequest implements WriteStream {
       if (t instanceof Exception) {
         handleException((Exception) t);
       } else {
-        log.error(t);
+        log.error("Unhandled exception", t);
       }
     }
   }

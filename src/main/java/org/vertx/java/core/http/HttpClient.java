@@ -429,7 +429,7 @@ public class HttpClient extends NetClientBase {
           if (t instanceof Exception && exceptionHandler != null) {
             exceptionHandler.handle((Exception) t);
           } else {
-            log.error(t);
+            log.error("Unhandled exception", t);
           }
         }
       }
@@ -474,7 +474,7 @@ public class HttpClient extends NetClientBase {
           }
         });
       } else {
-        log.error(t);
+        log.error("Unhandled exception", t);
       }
     }
 
