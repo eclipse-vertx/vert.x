@@ -635,9 +635,11 @@ module Vertx
     end
 
     # convert array of Java buffers to array of ruby buffs
-    def jbuff_arr_to_ruby(*buffs)
+    def jbuff_arr_to_ruby(buffs)
       rarr = []
-      buffs.each {|j_buff| rarr << Buffer.new(j_buff) }
+      for i in 0...buffs.length do
+        rarr << Buffer.new(buffs[i])
+      end
       rarr
     end
 

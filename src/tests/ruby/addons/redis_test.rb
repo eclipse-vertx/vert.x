@@ -31,6 +31,28 @@ class RedisTest < Test::Unit::TestCase
   VAL2 = Buffer.create("val2")
   VAL3 = Buffer.create("val3")
 
+  def setup
+    flush
+  end
+
+  def teardown
+    flush
+  end
+
+  def flush
+    latch = Utils::Latch.new 1
+    Vertx::go {
+      pool = RedisPool.new
+      conn = pool.connection
+
+      conn.flush_db.handler{
+        latch.countdown
+      }.execute
+    }
+    latch.await(5)
+  end
+
+
   def test_method_with_buffer_arg
 
     latch = Utils::Latch.new(1)
@@ -59,14 +81,14 @@ class RedisTest < Test::Unit::TestCase
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
-      comp.series(conn.r_push(KEY1, VAL1, VAL2, VAL3))
-      future1 = comp.series(conn.r_pop(KEY1))
-      future2 = comp.parallel(conn.r_pop(KEY1))
-      future3 = comp.parallel(conn.r_pop(KEY1))
+      comp.series(conn.r_push(KEY2, VAL1, VAL2, VAL3))
+      future1 = comp.series(conn.r_pop(KEY2))
+      future2 = comp.parallel(conn.r_pop(KEY2))
+      future3 = comp.parallel(conn.r_pop(KEY2))
       comp.series{
-        assert(Utils::buffers_equal(VAL1, future1.result))
+        assert(Utils::buffers_equal(VAL3, future1.result))
         assert(Utils::buffers_equal(VAL2, future2.result))
-        assert(Utils::buffers_equal(VAL3, future3.result))
+        assert(Utils::buffers_equal(VAL1, future3.result))
       }
       comp.series(conn.close_deferred)
       comp.series{latch.countdown}
@@ -85,8 +107,8 @@ class RedisTest < Test::Unit::TestCase
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
-      comp.series(conn.r_push(KEY1, VAL1, VAL2, VAL3))
-      future = comp.series(conn.l_range(KEY1, 0, -1))
+      comp.series(conn.r_push(KEY3, VAL1, VAL2, VAL3))
+      future = comp.series(conn.l_range(KEY3, 0, 2))
       comp.series{
         assert_buff_arrays_equals([VAL1, VAL2, VAL3], future.result)
       }
