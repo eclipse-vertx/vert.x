@@ -106,7 +106,6 @@ public class RouteMatcherTest extends TestBase {
             for (Map.Entry<String, String> entry: params.entrySet()) {
               assert(entry.getValue().equals(req.getParams().get(entry.getKey())));
             }
-            System.out.println("Handled ok");
             req.response.end();
           }
         };
