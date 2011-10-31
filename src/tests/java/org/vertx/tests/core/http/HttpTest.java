@@ -16,10 +16,11 @@
 
 package org.vertx.tests.core.http;
 
+import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxMain;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
@@ -29,7 +30,6 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
-import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -335,7 +335,8 @@ public class HttpTest extends TestBase {
 
           public void handle(final HttpServerRequest req) {
 
-            req.response.send100Continue();
+            req.response.putHeader("HTTP/1.1", "100 Continue");
+            req.response.setChunked(true);
 
             req.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
@@ -354,123 +355,6 @@ public class HttpTest extends TestBase {
         final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             assert (200 == resp.statusCode);
-
-            resp.endHandler(new SimpleHandler() {
-              public void handle() {
-                server.close(new SimpleHandler() {
-                  public void handle() {
-                    client.close();
-                    latch.countDown();
-                  }
-                });
-              }
-            });
-          }
-        });
-
-        req.putHeader("Expect", "100-continue");
-        req.setChunked(true);
-
-        req.continueHandler(new SimpleHandler() {
-          public void handle() {
-            req.write(toSend);
-            req.end();
-          }
-        });
-
-        req.sendHead();
-      }
-    }.run();
-
-    azzert(latch.await(5, TimeUnit.SECONDS));
-    throwAssertions();
-  }
-
-  @Test
-  public void test100ContinueSendOK() throws Exception {
-    final String host = "localhost";
-    final int port = 8181;
-
-    final Buffer toSend = Utils.generateRandomBuffer(1000);
-
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    new VertxMain() {
-      public void go() throws Exception {
-
-        final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
-          final Buffer received = Buffer.create(0);
-
-          public void handle(final HttpServerRequest req) {
-
-            req.response.statusCode = 200;
-            req.response.end();
-          }
-        }).listen(port, host);
-
-        final HttpClient client = new HttpClient().setPort(port).setHost(host);
-
-        final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
-          public void handle(HttpClientResponse resp) {
-            assert (200 == resp.statusCode);
-
-            resp.endHandler(new SimpleHandler() {
-              public void handle() {
-                server.close(new SimpleHandler() {
-                  public void handle() {
-                    client.close();
-                    latch.countDown();
-                  }
-                });
-              }
-            });
-          }
-        });
-
-        req.putHeader("Expect", "100-continue");
-        req.setChunked(true);
-
-        req.continueHandler(new SimpleHandler() {
-          public void handle() {
-            req.write(toSend);
-            req.end();
-          }
-        });
-
-        req.sendHead();
-      }
-    }.run();
-
-    azzert(latch.await(5, TimeUnit.SECONDS));
-    throwAssertions();
-  }
-
-  @Test
-  public void test100ContinueSendNotOK() throws Exception {
-    final String host = "localhost";
-    final int port = 8181;
-
-    final Buffer toSend = Utils.generateRandomBuffer(1000);
-
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    new VertxMain() {
-      public void go() throws Exception {
-
-        final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
-          final Buffer received = Buffer.create(0);
-
-          public void handle(final HttpServerRequest req) {
-            req.response.statusCode = 500;
-            req.response.end();
-          }
-        }).listen(port, host);
-
-        final HttpClient client = new HttpClient().setPort(port).setHost(host);
-
-        final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
-          public void handle(HttpClientResponse resp) {
-            assert (500 == resp.statusCode);
 
             resp.endHandler(new SimpleHandler() {
               public void handle() {

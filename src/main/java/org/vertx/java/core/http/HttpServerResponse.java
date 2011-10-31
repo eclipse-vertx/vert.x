@@ -61,7 +61,6 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class HttpServerResponse implements WriteStream {
 
   private final boolean keepAlive;
-  private final boolean continueExpected;
   private final ServerConnection conn;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
@@ -75,9 +74,8 @@ public class HttpServerResponse implements WriteStream {
   private long writtenBytes;
   private boolean chunked;
 
-  HttpServerResponse(boolean keepAlive, boolean continueExpected, ServerConnection conn) {
+  HttpServerResponse(boolean keepAlive, ServerConnection conn) {
     this.keepAlive = keepAlive;
-    this.continueExpected = continueExpected;
     this.conn = conn;
     this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
   }
@@ -411,11 +409,6 @@ public class HttpServerResponse implements WriteStream {
 
   private void writeHead() {
     if (!headWritten) {
-      if (continueExpected && !conn.isResponded()) {
-        if (statusCode >= 200 && statusCode < 300) {
-          send100Continue();
-        }
-      }
       HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
           new HttpResponseStatus(statusCode, statusMessage);
       response.setStatus(status);
@@ -445,11 +438,5 @@ public class HttpServerResponse implements WriteStream {
       conn.addFuture(doneHandler, writeFuture);
     }
     return this;
-  }
-
-  public void send100Continue() {
-    if (continueExpected) {
-      conn.write(new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.CONTINUE));
-    }
   }
 }
