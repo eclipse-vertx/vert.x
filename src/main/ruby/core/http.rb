@@ -804,6 +804,39 @@ module Vertx
 
   end
 
+  # This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
+  # to <a href="http://www.sinatrarb.com/">Sinatra</a> or <a href="http://expressjs.com/">Express</a>.
+  #
+  # RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using
+  # regular expressions for more complex matches. Any parameters extracted will be added to the requests parameters
+  # which will be available to you in your request handler.
+  #
+  # It's particularly useful when writing REST-ful web applications.
+  #
+  # To use a simple pattern to extract parameters simply prefix the parameter name in the pattern with a ':' (colon).
+  #
+  # For example:
+  #
+  # @example
+  #   rm = RouteMatcher.new
+  #
+  #   handler1 = ...
+  #
+  #   rm.get("/animals/:animal_name/:colour", handler1);
+  #
+  #
+  # In the above example, if a GET request with a uri of '/animals/dog/black' was received at the server, handler1
+  # would be called with request parameter 'animal' set to 'dog', and 'colour' set to 'black'.
+  #
+  # Different handlers can be specified for each of the HTTP verbs, GET, POST, PUT, DELETE etc.
+  #
+  # For more complex matches regular expressions can be used in the pattern. When regular expressions are used, the extracted
+  # parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.
+  #
+  # Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
+  # a particular request, the first matching one will be used.
+  #
+  # @author {http://tfox.org Tim Fox}
   class RouteMatcher
     def initialize
       @j_del = org.vertx.java.core.http.RouteMatcher.new
@@ -820,41 +853,73 @@ module Vertx
       @j_del.handle(request._to_java_request)
     end
 
+    # Specify a handler that will be called for a matching HTTP GET
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def get(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.get(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP PUT
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def put(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.put(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP POST
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def post(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.post(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP DELETE
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def delete(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.delete(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP GET
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def get_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.getWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP PUT
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def put_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.putWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP POST
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def post_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.postWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP DELETE
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
     def delete_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.deleteWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
