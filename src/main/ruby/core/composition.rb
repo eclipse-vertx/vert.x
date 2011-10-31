@@ -69,7 +69,8 @@ module Vertx
     # it will be called when the operation completes or fails, passing in a reference to self.
     def handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.handler{ |j_def| hndlr.call(self) }
+      this = self
+      @j_del.handler{ |j_def| hndlr.call(this) }
       self
     end
 
@@ -132,13 +133,14 @@ module Vertx
     # @private
     class InternalDeferred < org.vertx.java.core.DeferredAction
 
-      def initialize(hndlr)
+      def initialize(hndlr, d)
         super()
         @hndlr = hndlr
+        @d = d
       end
 
       def run
-        @hndlr.call
+        @hndlr.call(@d)
       end
     end
 
@@ -147,7 +149,7 @@ module Vertx
     # @param [block] A block representing the action to run when this is executed
     def initialize(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del = InternalDeferred.new(hndlr)
+      @j_del = InternalDeferred.new(hndlr, self)
       super(@j_del)
     end
 
@@ -162,6 +164,46 @@ module Vertx
     end
 
   end
+
+  # Sometimes it is necessary to perform operations in vert.x which are inherently blocking, e.g. talking to legacy
+  # blocking APIs or libraries. This class allows blocking operations to be executed cleanly in an asychronous
+  # environment.
+  #
+  # By creating an instance of this class with a Proc or a block which describes the blocking the operation,
+  # vert.x will perform the blocking operation on a thread from a
+  # background thread pool specially reserved for blocking operations. This means the event loop threads are not
+  # blocked and can continue to service other requests.
+  #
+  # It will rarely be necessary to use this class directly, it is normally used by libraries which wrap legacy
+  # blocking APIs into an asynchronous form suitable for a 100% asynchronous framework such as vert.x
+  #
+  # @author {http://tfox.org Tim Fox}
+  class BlockingAction < Deferred
+    # @private
+    class InternalDeferred < org.vertx.java.core.BlockingAction
+
+      def initialize(hndlr)
+        super()
+        @hndlr = hndlr
+      end
+
+      def action
+        @hndlr.call
+      end
+    end
+
+    # Create a new BlockingAction
+    # @param [Proc] A proc representing the action to run when this is executed
+    # @param [block] A block representing the action to run when this is executed
+    def initialize(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del = InternalDeferred.new(hndlr)
+      super(@j_del)
+    end
+
+
+  end
+
 
   # Composer allows asynchronous control flows to be defined.
   #
@@ -241,8 +283,23 @@ module Vertx
         @j_comp.series(deferred._to_j_del)
         deferred.block_execution
       elsif block != nil
-        j_def = TheAction.new(block)
-        @j_comp.series(j_def)
+        deff = DeferredAction.new do |d|
+          res = block.call
+          if res.is_a? Future
+            res.handler do |d2|
+              if res.succeeded?
+                d.result = res.result
+              else
+                d.exception = res.exception
+              end
+            end
+            res.execute if res.is_a? Deferred
+          else
+            # Set the result immediately
+            d.result = res
+          end
+        end
+        @j_comp.series(deff._to_j_del)
       end
     end
 
@@ -256,6 +313,15 @@ module Vertx
       @j_comp.execute
     end
 
+    # Set an exception handler that will be called if any of the Deferreds in this Composer fail asynchronously,
+    # or if they fail to execute
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def exception_handler(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_comp.exceptionHandler(hndlr)
+    end
+
     # @private
     def check_deferred(deferred)
       raise "Please specify an instance of Vertx::Deferred" if !deferred.is_a? Deferred
@@ -263,19 +329,6 @@ module Vertx
 
     private :check_deferred
 
-    # @private
-    class TheAction < org.vertx.java.core.SynchronousAction
-
-      def initialize(block)
-        super()
-        @block = block
-      end
-
-      def action
-        @block.call
-      end
-
-    end
   end
 
 end

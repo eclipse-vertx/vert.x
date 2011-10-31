@@ -25,6 +25,7 @@ require 'core/streams'
 require 'core/shared_data'
 require 'core/std_io'
 require 'core/composition'
+require 'core/logger'
 
 require 'addons/redis'
 
