@@ -16,11 +16,14 @@ require 'test/unit'
 require 'vertx'
 require 'utils'
 include Vertx
+include Utils
 
 class CompositionTest < Test::Unit::TestCase
 
   def test_blocks
     comp = Composer.new
+
+    latch = Latch.new(1)
 
     comp.series{
       puts "1 called"
