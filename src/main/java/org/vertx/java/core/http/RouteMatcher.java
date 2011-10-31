@@ -1,6 +1,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.logging.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,8 @@ import java.util.regex.Pattern;
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {
 
+  private static final Logger log = Logger.getLogger(RouteMatcher.class);
+
   private List<PatternBinding> getBindings = new CopyOnWriteArrayList<>();
   private List<PatternBinding> putBindings = new CopyOnWriteArrayList<>();
   private List<PatternBinding> postBindings = new CopyOnWriteArrayList<>();
@@ -25,7 +28,6 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   public void handle(HttpServerRequest request) {
     switch (request.method) {
       case "GET":
-        System.out.println("Routing a GET");
         route(request, getBindings);
         break;
       case "PUT":
@@ -113,7 +115,6 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
           }
         }
         request.getParams().putAll(params);
-        System.out.println("Routing it");
         binding.handler.handle(request);
         return;
       }
@@ -121,7 +122,6 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     // If we get here it wasn't routed
     request.response.statusCode = 404;
     request.response.end();
-    System.out.println("Not routed");
   }
 
   private static class PatternBinding {
