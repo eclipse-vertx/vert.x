@@ -17,8 +17,10 @@
 package org.vertx.java.core.http;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.vertx.java.core.Handler;
@@ -70,7 +72,6 @@ class ServerConnection extends AbstractConnection {
     if (paused || (msg instanceof HttpRequest && pendingResponse) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
-
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
@@ -213,10 +214,20 @@ class ServerConnection extends AbstractConnection {
       ChannelBuffer requestBody = request.getContent();
 
       if (requestBody.readable()) {
-        handleChunk(new Buffer(requestBody));
+        if (!paused) {
+          handleChunk(new Buffer(requestBody));
+        } else {
+          // We need to requeue it
+          pending.add(new DefaultHttpChunk(requestBody));
+        }
       }
       if (!request.isChunked()) {
-        handleEnd();
+        if (!paused) {
+          handleEnd();
+        } else {
+          // Requeue
+          pending.add(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+        }
       }
     } else if (msg instanceof HttpChunk) {
       HttpChunk chunk = (HttpChunk) msg;
@@ -224,9 +235,15 @@ class ServerConnection extends AbstractConnection {
         Buffer buff = new Buffer(chunk.getContent());
         handleChunk(buff);
       }
+
       //TODO chunk trailers
       if (chunk.isLast()) {
-        handleEnd();
+        if (!paused) {
+          handleEnd();
+        } else {
+          // Requeue
+          pending.add(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+        }
       }
     } else if (msg instanceof WebSocketFrame) {
       WebSocketFrame frame = (WebSocketFrame) msg;
