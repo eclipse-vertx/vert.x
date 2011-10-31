@@ -251,7 +251,7 @@ public class AsyncFile {
           if (exceptionHandler != null) {
             exceptionHandler.handle(e);
           } else {
-            log.error(e);
+            log.error("Unhandled exception", e);
           }
         }
       };
@@ -342,7 +342,7 @@ public class AsyncFile {
             checkContext();
             exceptionHandler.handle(e);
           } else {
-            log.error(e);
+            log.error("Unhandled exception", e);
           }
         }
 
@@ -435,7 +435,7 @@ public class AsyncFile {
             }
           });
         } else {
-          log.error(exc);
+          log.error("Error occurred", exc);
         }
       }
     });
@@ -495,7 +495,7 @@ public class AsyncFile {
             }
           });
         } else {
-          log.error(exc);
+          log.error("Error occurred", exc);
         }
       }
     });

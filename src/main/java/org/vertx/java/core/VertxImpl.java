@@ -136,7 +136,7 @@ class VertxImpl implements VertxInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-         log.error(t);
+         log.error("Failed to run on event loop", t);
         }
       }
     });

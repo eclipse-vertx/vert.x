@@ -114,7 +114,7 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
         try {
           doHandleReply();
         } catch (Exception e) {
-          log.error(e);
+          log.error("Failed to handle reply", e);
         }
       }
     });
