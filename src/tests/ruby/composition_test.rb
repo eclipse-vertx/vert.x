@@ -20,22 +20,20 @@ include Utils
 
 class CompositionTest < Test::Unit::TestCase
 
-  def test_blocks
+  def test_sync_blocks
     comp = Composer.new
 
-    latch = Latch.new(1)
+    latch = Latch.new(3)
 
     comp.series{
-      puts "1 called"
+      latch.countdown
     }
 
     comp.series{
-      puts "2 called"
+      latch.countdown
     }
 
     comp.series{
-      puts "3 called"
-
       latch.countdown
     }
 
@@ -43,70 +41,72 @@ class CompositionTest < Test::Unit::TestCase
 
   end
 
-  def test_deferreds
+  def test_with_futures
     comp = Composer.new
 
-    d1_executed = d2_executed = d3_executed = false
+    b1_executed = b2_executed = b3_executed = false
 
-    d1 = DeferredAction.new{
-      puts "1 called"
-      d1_executed = true
+    f1 = SimpleFuture.new
+    b1 = Proc.new{
+      b1_executed = true
+      f1
     }
 
-    d2 = DeferredAction.new{
-      puts "2 called"
-      d2_executed = true
+    f2 = SimpleFuture.new
+    b2 = Proc.new{
+      b2_executed = true
+      f2
     }
 
-    d3 = DeferredAction.new{
-      puts "3 called"
-
-      d3_executed = true
+    f3 = SimpleFuture.new
+    b3 = Proc.new{
+      b3_executed = true
+      f3
     }
 
-    comp.series(d1)
-    comp.series(d2)
-    comp.series(d3)
+    comp.series(b1)
+    comp.series(b2)
+    comp.series(b3)
 
     comp.execute
 
-    assert(d1_executed)
-    assert(!d2_executed)
-    assert(!d3_executed)
+    assert(b1_executed)
+    assert(!b2_executed)
+    assert(!b3_executed)
 
-    assert(!d1.complete?)
-    assert(!d2.complete?)
-    assert(!d3.complete?)
+    assert(!f1.complete?)
+    assert(!f2.complete?)
+    assert(!f3.complete?)
 
-    d1.result = nil
+    f1.result = nil
 
-    assert(d1_executed)
-    assert(d2_executed)
-    assert(!d3_executed)
+    assert(b1_executed)
+    assert(b2_executed)
+    assert(!b3_executed)
 
-    assert(d1.complete?)
-    assert(!d2.complete?)
-    assert(!d3.complete?)
+    assert(f1.complete?)
+    assert(!f2.complete?)
+    assert(!f3.complete?)
 
-    d2.result = nil
+    f2.result = nil
 
-    assert(d1_executed)
-    assert(d2_executed)
-    assert(d3_executed)
+    assert(b1_executed)
+    assert(b2_executed)
+    assert(b3_executed)
 
-    assert(d1.complete?)
-    assert(d2.complete?)
-    assert(!d3.complete?)
+    assert(f1.complete?)
+    assert(f2.complete?)
+    assert(!f3.complete?)
 
-    d3.result = nil
+    f3.result = nil
 
-    assert(d1_executed)
-    assert(d2_executed)
-    assert(d3_executed)
+    assert(b1_executed)
+    assert(b2_executed)
+    assert(b3_executed)
 
-    assert(d1.complete?)
-    assert(d2.complete?)
-    assert(d3.complete?)
+    assert(f1.complete?)
+    assert(f2.complete?)
+    assert(f3.complete?)
 
   end
 

@@ -125,13 +125,6 @@ module Vertx
       Future.new(@j_del.close)
     end
 
-    # Same as {#close} but the close does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def close_deferred
-      Deferred.new(@j_del.closeDeferred)
-    end
-
     # Set a handler which will receive messages when the connection is in subscribe mode.
     # The handler can be a Proc or a block
     def subscriber_handler(proc = nil, &hndlr)
@@ -140,422 +133,422 @@ module Vertx
     end
 
     def append(key, value)
-      Deferred.new(@j_del.append(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.append(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def bg_rewrite_aof
-      Deferred.new(@j_del.bgRewriteAOF)
+      Future.new(@j_del.bgRewriteAOF.execute)
     end
 
     def bg_save
-      Deferred.new(@j_del.bgSave)
+      Future.new(@j_del.bgSave.execute)
     end
 
     def b_l_pop(timeout, *keys)
-      Deferred.new(@j_del.bLPop(timeout, rbuff_arr_to_java(*keys))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.bLPop(timeout, rbuff_arr_to_java(*keys)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def b_r_pop(timeout, *keys)
-      Deferred.new(@j_del.bRPop(timeout, rbuff_arr_to_java(*keys))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.bRPop(timeout, rbuff_arr_to_java(*keys)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def b_r_pop_lpush(source, destination, timeout)
-      Deferred.new(@j_del.bRPopLPush(source._to_java_buffer, destination._to_java_buffer, timeout)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.bRPopLPush(source._to_java_buffer, destination._to_java_buffer, timeout).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def config_get(param)
-      Deferred.new(@j_del.configGet(param.to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.configGet(param.to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def config_set(param, value)
-      Deferred.new(@j_del.configSet(param.to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.configSet(param.to_java_buffer, value._to_java_buffer).execute)
     end
 
     def db_size
-      Deferred.new(@j_del.dbSize)
+      Future.new(@j_del.dbSize.execute)
     end
 
     def decr(key)
-      Deferred.new(@j_del.decr(key._to_java_buffer))
+      Future.new(@j_del.decr(key._to_java_buffer).execute)
     end
 
     def decr_by(key, decrement)
-      Deferred.new(@j_del.decrBy(key._to_java_buffer, decrement))
+      Future.new(@j_del.decrBy(key._to_java_buffer, decrement).execute)
     end
 
     def del(*keys)
-      Deferred.new(@j_del.del(rbuff_arr_to_java(*keys)))
+      Future.new(@j_del.del(rbuff_arr_to_java(*keys)).execute)
     end
 
     def discard
-      Deferred.new(@j_del.discard)
+      Future.new(@j_del.discard.execute)
     end
 
     def echo(message)
-      Deferred.new(@j_del.echo(message._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.echo(message._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def exec
-      Deferred.new(@j_del.exec)
+      Future.new(@j_del.exec.execute)
     end
 
     def exists(key)
-      Deferred.new(@j_del.exists(key._to_java_buffer))
+      Future.new(@j_del.exists(key._to_java_buffer).execute)
     end
 
     def expire(key, seconds)
-      Deferred.new(@j_del.expire(key._to_java_buffer, seconds))
+      Future.new(@j_del.expire(key._to_java_buffer, seconds).execute)
     end
 
     def expire_at(key, timeout)
-      Deferred.new(@j_del.expireAt(key._to_java_buffer, timeout))
+      Future.new(@j_del.expireAt(key._to_java_buffer, timeout).execute)
     end
 
     def flush_all
-      Deferred.new(@j_del.flushAll)
+      Future.new(@j_del.flushAll.execute)
     end
 
     def flush_db
-      Deferred.new(@j_del.flushDB)
+      Future.new(@j_del.flushDB.execute)
     end
 
     def get(key)
-      Deferred.new(@j_del.get(key._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.get(key._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def get_bit(key, offset)
-      Deferred.new(@j_del.getBit(key._to_java_buffer, offset))
+      Future.new(@j_del.getBit(key._to_java_buffer, offset).execute)
     end
 
     def get_range(key, range_start, range_end)
-      Deferred.new(@j_del.getRange(key._to_java_buffer, range_start, range_end)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.getRange(key._to_java_buffer, range_start, range_end).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def get_set(key, value)
-      Deferred.new(@j_del.getSet(key._to_java_buffer, value._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.getSet(key._to_java_buffer, value._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def h_del(key, *fields)
-      Deferred.new(@j_del.hDel(key._to_java_buffer, rbuff_arr_to_java(*fields)))
+      Future.new(@j_del.hDel(key._to_java_buffer, rbuff_arr_to_java(*fields)).execute)
     end
 
     def h_exists(key, field)
-      Deferred.new(@j_del.hExists(key._to_java_buffer, field._to_java_buffer))
+      Future.new(@j_del.hExists(key._to_java_buffer, field._to_java_buffer).execute)
     end
 
     def h_get(key, field)
-      Deferred.new(@j_del.hGet(key._to_java_buffer, field._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.hGet(key._to_java_buffer, field._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def h_get_all(key)
-      Deferred.new(@j_del.hGetAll(key._to_java_buffer)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.hGetAll(key._to_java_buffer).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def h_incr_by(key, field, increment)
-      Deferred.new(@j_del.hIncrBy(key._to_java_buffer, field._to_java_buffer, increment))
+      Future.new(@j_del.hIncrBy(key._to_java_buffer, field._to_java_buffer, increment).execute)
     end
 
     def h_keys(key)
-      Deferred.new(@j_del.hKeys(key._to_java_buffer)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.hKeys(key._to_java_buffer).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def h_len(key)
-      Deferred.new(@j_del.hLen(key._to_java_buffer))
+      Future.new(@j_del.hLen(key._to_java_buffer).execute)
     end
 
     def h_mget(key, *fields)
-      Deferred.new(@j_del.hmGet(key._to_java_buffer, rbuff_arr_to_java(*fields))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.hmGet(key._to_java_buffer, rbuff_arr_to_java(*fields)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def h_mset(key, hash)
-      Deferred.new(@j_del.hmSet(key._to_java_buffer, rbuff_hash_to_java(hash)))
+      Future.new(@j_del.hmSet(key._to_java_buffer, rbuff_hash_to_java(hash)).execute)
     end
 
     def h_set(key, field, value)
-      Deferred.new(@j_del.hSet(key._to_java_buffer, field._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.hSet(key._to_java_buffer, field._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def h_set_nx(key, field, value)
-      Deferred.new(@j_del.hSetNx(key._to_java_buffer, field._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.hSetNx(key._to_java_buffer, field._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def h_vals(key)
-      Deferred.new(@j_del.hVals(key._to_java_buffer)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.hVals(key._to_java_buffer).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def incr(key)
-      Deferred.new(@j_del.incr(key._to_java_buffer))
+      Future.new(@j_del.incr(key._to_java_buffer).execute)
     end
 
     def incr_by(key)
-      Deferred.new(@j_del.incrBy(key._to_java_buffer))
+      Future.new(@j_del.incrBy(key._to_java_buffer).execute)
     end
 
     def info
-      Deferred.new(@j_del.info) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.info.execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def keys(pattern)
-      Deferred.new(@j_del.keys(pattern._to_java_buffer)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.keys(pattern._to_java_buffer).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def last_save
-      Deferred.new(@j_del.lastSave)
+      Future.new(@j_del.lastSave.execute)
     end
 
     def l_index(key, index)
-      Deferred.new(@j_del.lIndex(key._to_java_buffer, index)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.lIndex(key._to_java_buffer, index).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def l_insert(key, before, pivot, value)
-      Deferred.new(@j_del.lIndex(key._to_java_buffer, index, before, pivot._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.lIndex(key._to_java_buffer, index, before, pivot._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def l_len(key)
-      Deferred.new(@j_del.lLen(key._to_java_buffer))
+      Future.new(@j_del.lLen(key._to_java_buffer).execute)
     end
 
     def l_pop(key)
-      Deferred.new(@j_del.lPop(key._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.lPop(key._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def l_push(key, value)
-      Deferred.new(@j_del.lPush(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.lPush(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def l_push_x(key, value)
-      Deferred.new(@j_del.lPushX(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.lPushX(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def l_range(key, range_start, range_stop)
-      Deferred.new(@j_del.lRange(key._to_java_buffer, range_start, range_stop)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.lRange(key._to_java_buffer, range_start, range_stop).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def l_rem(key, count, value)
-      Deferred.new(@j_del.lRem(key._to_java_buffer, count, value._to_java_buffer))
+      Future.new(@j_del.lRem(key._to_java_buffer, count, value._to_java_buffer).execute)
     end
 
     def l_set(key, index, value)
-      Deferred.new(@j_del.lSet(key._to_java_buffer, index, value._to_java_buffer))
+      Future.new(@j_del.lSet(key._to_java_buffer, index, value._to_java_buffer).execute)
     end
 
     def l_trim(key, range_start, range_stop)
-      Deferred.new(@j_del.l_trim(key._to_java_buffer, range_start, range_stop))
+      Future.new(@j_del.l_trim(key._to_java_buffer, range_start, range_stop).execute)
     end
 
     def mget(key, *fields)
-      Deferred.new(@j_del.mGet(key._to_java_buffer, rbuff_arr_to_java(*fields))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.mGet(key._to_java_buffer, rbuff_arr_to_java(*fields)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def move(key, db)
-      Deferred.new(@j_del.move(key._to_java_buffer, db._to_java_buffer))
+      Future.new(@j_del.move(key._to_java_buffer, db._to_java_buffer).execute)
     end
 
     def mset(hash)
-      Deferred.new(@j_del.mSet(rbuff_hash_to_java(hash)))
+      Future.new(@j_del.mSet(rbuff_hash_to_java(hash)).execute)
     end
 
     def mset_nx(hash)
-      Deferred.new(@j_del.mSetNx(rbuff_hash_to_java(hash)))
+      Future.new(@j_del.mSetNx(rbuff_hash_to_java(hash)).execute)
     end
 
     def multi
-      Deferred.new(@j_del.multi)
+      Future.new(@j_del.multi.execute)
     end
 
     def persist(key)
-      Deferred.new(@j_del.persist(key._to_java_buffer))
+      Future.new(@j_del.persist(key._to_java_buffer).execute)
     end
 
     def ping
-      Deferred.new(@j_del.ping)
+      Future.new(@j_del.ping.execute)
     end
 
     def psubscribe(*patterns)
-      Deferred.new(@j_del.psubscribe(rbuff_arr_to_java(*patterns)))
+      Future.new(@j_del.psubscribe(rbuff_arr_to_java(*patterns)).execute)
     end
 
     def publish(channel, message)
-      Deferred.new(@j_del.publish(channel._to_java_buffer, message._to_java_buffer))
+      Future.new(@j_del.publish(channel._to_java_buffer, message._to_java_buffer).execute)
     end
 
     def punsubscribe(*patterns)
-      Deferred.new(@j_del.punsubscribe(rbuff_arr_to_java(*patterns)))
+      Future.new(@j_del.punsubscribe(rbuff_arr_to_java(*patterns)).execute)
     end
 
     def random_key
-      Deferred.new(@j_del.ping) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.ping.execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def rename(key, new_key)
-      Deferred.new(@j_del.rename(key._to_java_buffer, new_key._to_java_buffer))
+      Future.new(@j_del.rename(key._to_java_buffer, new_key._to_java_buffer).execute)
     end
 
     def rename_nx(key, new_key)
-      Deferred.new(@j_del.renameNX(key._to_java_buffer, new_key._to_java_buffer))
+      Future.new(@j_del.renameNX(key._to_java_buffer, new_key._to_java_buffer).execute)
     end
 
     def r_pop(key)
-      Deferred.new(@j_del.rPop(key._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.rPop(key._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def r_pop_l_push(source, destination)
-      Deferred.new(@j_del.rPoplPush(source._to_java_buffer, destination._to_java_buffer)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.rPoplPush(source._to_java_buffer, destination._to_java_buffer).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def r_push(key, *values)
-      Deferred.new(@j_del.rPush(key._to_java_buffer, rbuff_arr_to_java(*values)))
+      Future.new(@j_del.rPush(key._to_java_buffer, rbuff_arr_to_java(*values)).execute)
     end
 
     def r_push_x(key, value)
-      Deferred.new(@j_del.rPushX(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.rPushX(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def s_add(key, *members)
-      Deferred.new(@j_del.sAdd(key._to_java_buffer, rbuff_arr_to_java(*members)))
+      Future.new(@j_del.sAdd(key._to_java_buffer, rbuff_arr_to_java(*members)).execute)
     end
 
     def save
-      Deferred.new(@j_del.save)
+      Future.new(@j_del.save.execute)
     end
 
     def s_card(key)
-      Deferred.new(@j_del.sCard(key._to_java_buffer))
+      Future.new(@j_del.sCard(key._to_java_buffer).execute)
     end
 
     def s_diff(key, *others)
-      Deferred.new(@j_del.sDiff(key._to_java_buffer, rbuff_arr_to_java(*others))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.sDiff(key._to_java_buffer, rbuff_arr_to_java(*others)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def s_diff_store(destination, key, *others)
-      Deferred.new(@j_del.sDiffStore(destination._to_java_buffer, key._to_java_buffer, rbuff_arr_to_java(*others)))
+      Future.new(@j_del.sDiffStore(destination._to_java_buffer, key._to_java_buffer, rbuff_arr_to_java(*others)).execute)
     end
 
     def select(index)
-      Deferred.new(@j_del.select(index))
+      Future.new(@j_del.select(index).execute)
     end
 
     def set(key, value)
-      Deferred.new(@j_del.set(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.set(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def set_bit(key, offset, value)
-      Deferred.new(@j_del.setBit(key._to_java_buffer, offset, value._to_java_buffer))
+      Future.new(@j_del.setBit(key._to_java_buffer, offset, value._to_java_buffer).execute)
     end
 
     def set_ex(key, seconds, value)
-      Deferred.new(@j_del.setEx(key._to_java_buffer, seconds, value._to_java_buffer))
+      Future.new(@j_del.setEx(key._to_java_buffer, seconds, value._to_java_buffer).execute)
     end
 
     def set_nx(key, value)
-      Deferred.new(@j_del.setNx(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.setNx(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def set_range(key, offset, value)
-      Deferred.new(@j_del.setRange(key._to_java_buffer, offset, value._to_java_buffer))
+      Future.new(@j_del.setRange(key._to_java_buffer, offset, value._to_java_buffer).execute)
     end
 
     def shutdown
-      Deferred.new(@j_del.shutdown)
+      Future.new(@j_del.shutdown.execute)
     end
 
     def s_inter(*keys)
-      Deferred.new(@j_del.sInter(rbuff_arr_to_java(*keys))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.sInter(rbuff_arr_to_java(*keys)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def s_inter_store(destination, *keys)
-      Deferred.new(@j_del.sInterStore(destination._to_java_buffer, rbuff_arr_to_java(*keys)))
+      Future.new(@j_del.sInterStore(destination._to_java_buffer, rbuff_arr_to_java(*keys)).execute)
     end
 
     def s_is_member(key, value)
-      Deferred.new(@j_del.setIsMember(key._to_java_buffer, value._to_java_buffer))
+      Future.new(@j_del.setIsMember(key._to_java_buffer, value._to_java_buffer).execute)
     end
 
     def slave_of(host, port)
-      Deferred.new(@j_del.slaveOf(host, port))
+      Future.new(@j_del.slaveOf(host, port).execute)
     end
 
     def s_members(key)
-      Deferred.new(@j_del.sMembers(key._to_java_buffer)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.sMembers(key._to_java_buffer).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def s_move(source, destination, member)
-      Deferred.new(@j_del.sMove(source._to_java_buffer, destination._to_java_buffer, member._to_java_buffer))
+      Future.new(@j_del.sMove(source._to_java_buffer, destination._to_java_buffer, member._to_java_buffer).execute)
     end
 
     def sort(key, pattern = nil, offset = -1, count = -1, get_patterns = nil, ascending = true,
              alpha = false, store_destination = nil)
-      Deferred.new(@j_del.sort(key._to_java_buffer, pattern = nil ? nil : pattern._to_java_buffer,
+      Future.new(@j_del.sort(key._to_java_buffer, pattern = nil ? nil : pattern._to_java_buffer,
                                offset, count, get_patterns = nil ? nil : rbuff_arr_to_java(get_patterns),
-                               ascending, alpha, store_destination = nil ? nil : store_destination._to_java_buffer))
+                               ascending, alpha, store_destination = nil ? nil : store_destination._to_java_buffer).execute)
     end
 
     def s_pop(key)
-      Deferred.new(@j_del.sPop(key._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.sPop(key._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def s_rand_member(key)
-      Deferred.new(@j_del.sRandMember(key._to_java_buffer)) { |j_buff| Buffer.new(j_buff)}
+      Future.new(@j_del.sRandMember(key._to_java_buffer).execute) { |j_buff| Buffer.new(j_buff)}
     end
 
     def s_rem(key, *members)
-      Deferred.new(@j_del.sRem(key._to_java_buffer, rbuff_arr_to_java(*members)))
+      Future.new(@j_del.sRem(key._to_java_buffer, rbuff_arr_to_java(*members)).execute)
     end
 
     def str_len(key)
-      Deferred.new(@j_del.strLen(key._to_java_buffer))
+      Future.new(@j_del.strLen(key._to_java_buffer).execute)
     end
 
     def subscribe(*channels)
-      Deferred.new(@j_del.subscribe(rbuff_arr_to_java(*channels)))
+      Future.new(@j_del.subscribe(rbuff_arr_to_java(*channels)).execute)
     end
 
     def s_union(*keys)
-      Deferred.new(@j_del.sUnion(rbuff_arr_to_java(*keys))) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.sUnion(rbuff_arr_to_java(*keys)).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def s_union_store(destination, *keys)
-      Deferred.new(@j_del.sUnionStore(destination._to_java_buffer, rbuff_arr_to_java(*keys)))
+      Future.new(@j_del.sUnionStore(destination._to_java_buffer, rbuff_arr_to_java(*keys)).execute)
     end
 
     def ttl(key)
-      Deferred.new(@j_del.ttl(key._to_java_buffer))
+      Future.new(@j_del.ttl(key._to_java_buffer).execute)
     end
 
     def type(key)
-      Deferred.new(@j_del.type(key._to_java_buffer))
+      Future.new(@j_del.type(key._to_java_buffer).execute)
     end
 
     def unsubscribe(*channels)
-      Deferred.new(@j_del.unsubscribe(rbuff_arr_to_java(*channels)))
+      Future.new(@j_del.unsubscribe(rbuff_arr_to_java(*channels)).execute)
     end
 
     def unwatch
-      Deferred.new(@j_del.unwatch)
+      Future.new(@j_del.unwatch.execute)
     end
 
     def watch(*keys)
-      Deferred.new(@j_del.watch(rbuff_arr_to_java(*keys)))
+      Future.new(@j_del.watch(rbuff_arr_to_java(*keys)).execute)
     end
 
     def z_add(key, hash)
-      Deferred.new(@j_del.zAdd(key._to_java_buffer, rbuff_hash_to_java(hash)))
+      Future.new(@j_del.zAdd(key._to_java_buffer, rbuff_hash_to_java(hash)).execute)
     end
 
     def z_add_member(key, score, member)
-      Deferred.new(@j_del.zAdd(key._to_java_buffer, score, member._to_java_buffer))
+      Future.new(@j_del.zAdd(key._to_java_buffer, score, member._to_java_buffer).execute)
     end
 
     def z_card(key)
-      Deferred.new(@j_del.zCard(key._to_java_buffer))
+      Future.new(@j_del.zCard(key._to_java_buffer).execute)
     end
 
     def z_count(key, min, max)
-      Deferred.new(@j_del.zCard(key._to_java_buffer, min, max))
+      Future.new(@j_del.zCard(key._to_java_buffer, min, max).execute)
     end
 
     def z_incr_by(key, increment, member)
-      Deferred.new(@j_del.zIncrBy(key._to_java_buffer, increment, member._to_java_buffer))
+      Future.new(@j_del.zIncrBy(key._to_java_buffer, increment, member._to_java_buffer).execute)
     end
 
     def z_inter_store(destination, num_keys, keys, weights = nil, aggregate_type = 'SUM')
@@ -569,47 +562,47 @@ module Vertx
                      else
                        raise "Legal aggregate_type values are SUM, MIN or MAX"
                      end
-      Deferred.new(@j_del.zInterStore(destination._to_java_buffer, num_keys, keys, weights, j_agg_type))
+      Future.new(@j_del.zInterStore(destination._to_java_buffer, num_keys, keys, weights, j_agg_type).execute)
     end
 
     def z_range(key, range_start, range_stop, with_scores = false)
-      Deferred.new(@j_del.zRange(key._to_java_buffer, range_start, range_stop, with_scores)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.zRange(key._to_java_buffer, range_start, range_stop, with_scores).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def z_range_by_score(key, min, max, with_scores = false, offset = -1, count = -1)
-      Deferred.new(@j_del.zRangeByScore(key._to_java_buffer, min, max, with_scores, offset, count)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.zRangeByScore(key._to_java_buffer, min, max, with_scores, offset, count).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def z_rank(key, member)
-      Deferred.new(@j_del.zRank(key._to_java_buffer, member._to_java_buffer))
+      Future.new(@j_del.zRank(key._to_java_buffer, member._to_java_buffer).execute)
     end
 
     def z_rem(key, *members)
-      Deferred.new(@j_del.zRem(key._to_java_buffer, rbuff_arr_to_java(*members)))
+      Future.new(@j_del.zRem(key._to_java_buffer, rbuff_arr_to_java(*members)).execute)
     end
 
     def z_rem_range_by_rank(key, range_start, range_stop)
-      Deferred.new(@j_del.zRemRangeByRank(key._to_java_buffer, range_start, range_stop))
+      Future.new(@j_del.zRemRangeByRank(key._to_java_buffer, range_start, range_stop).execute)
     end
 
     def z_rem_range_by_score(key, min, max)
-      Deferred.new(@j_del.zRemRangeByScore(key._to_java_buffer, min, max))
+      Future.new(@j_del.zRemRangeByScore(key._to_java_buffer, min, max).execute)
     end
 
     def z_rev_range(key, range_start, range_stop, with_scores = false)
-      Deferred.new(@j_del.zRevRange(key._to_java_buffer, range_start, range_stop, with_scores)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.zRevRange(key._to_java_buffer, range_start, range_stop, with_scores).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def z_rev_range_by_score(key, min, max, with_scores = false, offset = -1, count = -1)
-      Deferred.new(@j_del.zRevRangeByScore(key._to_java_buffer, min, max, with_scores, offset, count)) { |j_arr| jbuff_arr_to_ruby(j_arr) }
+      Future.new(@j_del.zRevRangeByScore(key._to_java_buffer, min, max, with_scores, offset, count).execute) { |j_arr| jbuff_arr_to_ruby(j_arr) }
     end
 
     def z_rev_rank(key, member)
-      Deferred.new(@j_del.zRevRank(key._to_java_buffer, member._to_java_buffer))
+      Future.new(@j_del.zRevRank(key._to_java_buffer, member._to_java_buffer).execute)
     end
 
     def z_score(key, member)
-      Deferred.new(@j_del.zScore(key._to_java_buffer, member._to_java_buffer))
+      Future.new(@j_del.zScore(key._to_java_buffer, member._to_java_buffer).execute)
     end
 
     def z_union_store(destination, num_keys, keys, weights = nil, aggregate_type = 'SUM')
@@ -623,7 +616,7 @@ module Vertx
                      else
                        raise "Legal aggregate_type values are SUM, MIN or MAX"
                      end
-      Deferred.new(@j_del.zUnionStore(destination._to_java_buffer, num_keys, keys, weights, j_agg_type))
+      Future.new(@j_del.zUnionStore(destination._to_java_buffer, num_keys, keys, weights, j_agg_type).execute)
     end
 
     private

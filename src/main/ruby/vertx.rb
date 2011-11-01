@@ -62,4 +62,31 @@ module Vertx
     TheMain.new(block).run
   end
 
+  # @private
+  class InternalAction < org.vertx.java.core.BlockingAction
+
+    # @private
+    def initialize(hndlr)
+      super()
+      @action = hndlr
+    end
+
+    def action
+      @action.call
+    end
+  end
+
+  # Sometimes it is necessary to perform operations in vert.x which are inherently blocking, e.g. talking to legacy
+  # blocking APIs or libraries. This method allows blocking operations to be executed cleanly in an asychronous
+  # environment.
+  # This method will execute the proc or block on a thread from a
+  # background thread pool specially reserved for blocking operations. This means the event loop threads are not
+  # blocked and can continue to service other requests.
+  def Vertx.run_blocking(proc = nil, &block)
+    block = proc if proc
+    ia = InternalAction.new(block)
+    ia.execute
+    Future.new(ia)
+  end
+
 end
