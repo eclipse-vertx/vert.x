@@ -62,4 +62,24 @@ module Vertx
     TheMain.new(block).run
   end
 
+  # @private
+  class InternalAction < org.vertx.java.core.BlockingAction
+
+    # @private
+    def initialize(hndlr)
+      super()
+      @action = hndlr
+    end
+
+    def action
+      @action.call
+    end
+  end
+
+  def Vertx.run_blocking(&hndlr)
+    ia = InternalAction.new(hndlr)
+    ia.execute
+    Future.new(ia)
+  end
+
 end
