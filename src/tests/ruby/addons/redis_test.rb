@@ -47,7 +47,7 @@ class RedisTest < Test::Unit::TestCase
 
       conn.flush_db.handler{
         latch.countdown
-      }.execute
+      }
     }
     latch.await(5)
   end
@@ -61,10 +61,10 @@ class RedisTest < Test::Unit::TestCase
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
-      comp.series(conn.set(KEY1, VAL1))
-      future1 = comp.series(conn.get(KEY1))
+      comp.series{conn.set(KEY1, VAL1)}
+      future1 = comp.series{conn.get(KEY1)}
       comp.series{ assert(Utils::buffers_equal(VAL1, future1.result)) }
-      comp.series(conn.close_deferred)
+      comp.series{conn.close}
       comp.series{latch.countdown}
       comp.execute
     }
@@ -81,16 +81,16 @@ class RedisTest < Test::Unit::TestCase
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
-      comp.series(conn.r_push(KEY2, VAL1, VAL2, VAL3))
-      future1 = comp.series(conn.r_pop(KEY2))
-      future2 = comp.parallel(conn.r_pop(KEY2))
-      future3 = comp.parallel(conn.r_pop(KEY2))
+      comp.series{conn.r_push(KEY2, VAL1, VAL2, VAL3)}
+      future1 = comp.series{conn.r_pop(KEY2)}
+      future2 = comp.parallel{conn.r_pop(KEY2)}
+      future3 = comp.parallel{conn.r_pop(KEY2)}
       comp.series{
         assert(Utils::buffers_equal(VAL3, future1.result))
         assert(Utils::buffers_equal(VAL2, future2.result))
         assert(Utils::buffers_equal(VAL1, future3.result))
       }
-      comp.series(conn.close_deferred)
+      comp.series{conn.close}
       comp.series{latch.countdown}
       comp.execute
     }
@@ -107,12 +107,12 @@ class RedisTest < Test::Unit::TestCase
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
-      comp.series(conn.r_push(KEY3, VAL1, VAL2, VAL3))
-      future = comp.series(conn.l_range(KEY3, 0, 2))
+      comp.series{conn.r_push(KEY3, VAL1, VAL2, VAL3)}
+      future = comp.series{conn.l_range(KEY3, 0, 2)}
       comp.series{
         assert_buff_arrays_equals([VAL1, VAL2, VAL3], future.result)
       }
-      comp.series(conn.close_deferred)
+      comp.series{conn.close}
       comp.series{latch.countdown}
       comp.execute
     }

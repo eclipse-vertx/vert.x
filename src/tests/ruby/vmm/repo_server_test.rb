@@ -46,9 +46,7 @@ class RepoServerTest < Test::Unit::TestCase
     create_module_dir("module1", json, "main.rb")
     abs_dir = File.expand_path(TEST_OUTPUT)
     cmd = "tar -zcf #{abs_dir}/foo.tar.gz -C #{abs_dir} module1"
-    puts "cmd is #{cmd}"
     check = system(cmd)
-    puts "result of tar is #{check}"
 
     latch = Utils::Latch.new(1)
 
@@ -70,17 +68,15 @@ class RepoServerTest < Test::Unit::TestCase
 
       FileSystem::open(TEST_OUTPUT + "/foo.tar.gz").handler do |future|
         if future.succeeded?
-          puts "succeeded in opening file"
           rs = future.result.read_stream
           pump = Pump.new(rs, req)
           pump.start
-          rs.end_handler { req.end; puts "sent file" }
+          rs.end_handler { req.end}
         end
       end
 
     end
 
-    puts "sleeping"
     assert latch.await(5)
 
   end

@@ -25,7 +25,7 @@ class FileSystemTest < Test::Unit::TestCase
   def setup
     latch = Utils::Latch.new 1
     Vertx::go {
-      FileSystem::exists(FILEDIR).handler{ |exists|
+      FileSystem::exists?(FILEDIR).handler{ |exists|
         if exists
           FileSystem::delete_recursive(FILEDIR).handler{
             FileSystem::mkdir(FILEDIR).handler {

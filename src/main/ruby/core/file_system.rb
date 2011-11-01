@@ -112,13 +112,6 @@ module Vertx
       Future.new(@j_file.close)
     end
 
-    # The same as {#close} but the close does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def close_deferred
-      Deferred.new(@j_file.closeDeferred)
-    end
-
     # Write a {Buffer} to the file, asynchronously.
     # When multiple writes are invoked on the same file
     # there are no guarantees as to order in which those writes actually occur.
@@ -129,13 +122,6 @@ module Vertx
     # @return [Future] a Future representing the future result of the action.
     def write(buffer, position)
       Future.new(@j_file.write(buffer._to_java_buffer, position))
-    end
-
-    # The same as {#write} but the write does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def write_deferred(buffer, position)
-      Deferred.new(@j_file.writeDeferred(buffer._to_java_buffer, position))
     end
 
     # Reads some data from a file into a buffer, asynchronously.
@@ -149,13 +135,6 @@ module Vertx
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {Buffer}.
     def read(buffer, offset, position, length, &hndlr)
       Future.new(@j_file.read(buffer._to_java_buffer, offset, position, length)){ |j_buff| Buffer.new(j_buff) }
-    end
-
-    # The same as {#read} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def read_deferred(buffer, offset, position, length, &hndlr)
-      Deferred.new(@j_file.readDeferred(buffer._to_java_buffer, offset, position, length)){ |j_buff| Buffer.new(j_buff) }
     end
 
     # @return [WriteStream] A write stream operating on the file.
@@ -177,13 +156,6 @@ module Vertx
     # @return [Future] a Future representing the future result of the action.
     def flush
       Future.new(@j_file.flush)
-    end
-
-    # The same as {#flush} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def flush_deferred
-      Deferred.new(@j_file.flushDeferred)
     end
 
     # @private
@@ -217,13 +189,6 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.copy(from, to))
     end
 
-    # The same as {FileSystem.copy} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.copy_deferred(from, to)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.copyDeferred(from, to))
-    end
-
     # Copy a file recursively, asynchronously. The copy will fail if from does not exist, or if to already exists and is not empty.
     # If the source is a directory all contents of the directory will be copied recursively, i.e. the entire directory
     # tree is copied.
@@ -234,13 +199,6 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.copy(from, to, true))
     end
 
-    # The same as {FileSystem.copy_recursive} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.copy_recursive_deferred(from, to)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.copyDeferred(from, to, true))
-    end
-
     # Move a file, asynchronously. The move will fail if from does not exist, or if to already exists.
     # @param [String] from Path of file to move
     # @param [String] to Path of file to move to
@@ -249,26 +207,12 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.move(from, to))
     end
 
-    # The same as {FileSystem.move} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.move_deferred(from, to)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.moveDeferred(from, to))
-    end
-
     # Truncate a file, asynchronously. The move will fail if path does not exist.
     # @param [String] path Path of file to truncate
     # @param [FixNum] len Length to truncate file to. Will fail if len < 0. If len > file size then will do nothing.
     # @return [Future] a Future representing the future result of the action.
     def FileSystem.truncate(path, len)
       Future.new(org.vertx.java.core.file.FileSystem.instance.truncate(path, len))
-    end
-
-    # The same as {FileSystem.truncate} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.truncate_deferred(path, len)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.truncateDeferred(path, len))
     end
 
     # Change the permissions on a file, asynchronously. If the file is directory then all contents will also have their permissions changed recursively.
@@ -282,25 +226,11 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.chmod(path, perms, dir_perms))
     end
 
-    # The same as {FileSystem.chmod} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.chmod_deferred(path, perms, dir_perms = nil)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.chmodDeferred(path, perms, dir_perms))
-    end
-
     # Get file properties for a file, asynchronously.
     # @param [String] path Path to file
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {FileProps}.
     def FileSystem.props(path)
       Future.new(org.vertx.java.core.file.FileSystem.instance.props(path)) { |j_props| FileProps.new(j_props) }
-    end
-
-    # The same as {FileSystem.props} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.props_deferred(path)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.propsDeferred(path)) { |j_props| FileProps.new(j_props) }
     end
 
     # Create a hard link, asynchronously..
@@ -311,26 +241,12 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.link(link, existing))
     end
 
-    # The same as {FileSystem.link} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.link_deferred(link, existing)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.linkDeferred(link, existing))
-    end
-
     # Create a symbolic link, asynchronously.
     # @param [String] link Path of the link to create.
     # @param [String] existing Path of where the link points to.
     # @return [Future] a Future representing the future result of the action.
     def FileSystem.sym_link(link, existing)
       Future.new(org.vertx.java.core.file.FileSystem.instance.symLink(link, existing))
-    end
-
-    # The same as {FileSystem.sym_link} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.sym_link_deferred(link, existing)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.symLinkDeferred(link, existing))
     end
 
     # Unlink a hard link.
@@ -340,25 +256,11 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.unlink(link))
     end
 
-    # The same as {FileSystem.unlink} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.unlink_deferred(link)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.unlinkDeferred(link))
-    end
-
     # Read a symbolic link, asynchronously. I.e. tells you where the symbolic link points.
     # @param [String] link Path of the link to read.
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is String..
     def FileSystem.read_sym_link(link)
       Future.new(org.vertx.java.core.file.FileSystem.instance.readSymLink(link))
-    end
-
-    # The same as {FileSystem.read_sym_link} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.read_sym_link_deferred(link)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.readSymLinkDeferred(link))
     end
 
     # Delete a file on the file system, asynchronously.
@@ -369,13 +271,6 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.delete(path))
     end
 
-    # The same as {FileSystem.delete} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.delete_deferred(path)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.deleteDeferred(path))
-    end
-
     # Delete a file on the file system recursively, asynchronously.
     # The delete will fail if the file does not exist. If the file is a directory the entire directory contents
     # will be deleted recursively.
@@ -383,13 +278,6 @@ module Vertx
     # @return [Future] a Future representing the future result of the action.
     def FileSystem.delete_recursive(path)
       Future.new(org.vertx.java.core.file.FileSystem.instance.delete(path, true))
-    end
-
-    # The same as {FileSystem.delete_recursive} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.delete_recursive_deferred(path)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.deleteDeferred(path, true))
     end
 
     # Create a directory, asynchronously.
@@ -402,13 +290,6 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.mkdir(path, perms))
     end
 
-    # The same as {FileSystem.mkdir} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.mkdir_deferred(path, perms = nil)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.mkdir(path, perms))
-    end
-
     # Create a directory, and create all it's parent directories if they do not already exist, asynchronously.
     # The create will fail if the directory already exists.
     # @param [String] path Path of the directory to create.
@@ -416,13 +297,6 @@ module Vertx
     # @return [Future] a Future representing the future result of the action.
     def FileSystem.mkdir_with_parents(path, perms = nil)
       Future.new(org.vertx.java.core.file.FileSystem.instance.mkdir(path, perms, true))
-    end
-
-    # The same as {FileSystem.mkdir_with_parents} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.mkdir_with_parents_deferred(path, perms = nil)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.mkdirDeferred(path, perms, true))
     end
 
     # Read a directory, i.e. list it's contents, asynchronously.
@@ -435,25 +309,11 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.readDir(path, filter))
     end
 
-    # The same as {FileSystem.read_dir} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.read_dir_deferred(path, filter = nil)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.readDirDeferred(path, filter))
-    end
-
     # Read the contents of an entire file as a {Buffer}, asynchronously.
     # @param [String] path Path of the file to read.
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {Buffer}.
     def FileSystem.read_file_as_buffer(path)
       Future.new(org.vertx.java.core.file.FileSystem.instance.readFile(path))
-    end
-
-    # The same as {FileSystem.read_file_as_buffer} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.read_file_as_buffer_deferred(path, encoding = "UTF-8")
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.readFileDeferred(path))
     end
 
     # Write a [Buffer] as the entire contents of a file, asynchronously.
@@ -462,13 +322,6 @@ module Vertx
     # @return [Future] a Future representing the future result of the action.
     def FileSystem.write_buffer_to_file(path, buffer)
       Future.new(org.vertx.java.core.file.FileSystem.instance.writeFile(path, buffer))
-    end
-
-    # The same as {FileSystem.write_buffer_to_file} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.write_buffer_to_file_deferred(path, buffer)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.writeFileAsBuffer(path, buffer))
     end
 
     def FileSystem.lock
@@ -499,13 +352,6 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.open(path, perms, read, write, create_new, flush)) { |j_file| AsyncFile.new(j_file)}
     end
 
-    # The same as {FileSystem.open} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.open_deferred(path, perms = nil, read = true, write = true, create_new = true, flush = false)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.openDeferred(path, perms, read, write, create_new, flush)) { |j_file| AsyncFile.new(j_file)}
-    end
-
     # Create a new empty file, asynchronously.
     # @param [String] path Path of the file to create.
     # @param [String] perms The file will be created with these permissions.
@@ -514,25 +360,11 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.createFile(path, perms))
     end
 
-    # The same as {FileSystem.create_file} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.create_file_deferred(path, perms = nil)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.createFileDeferred(path, perms))
-    end
-
     # Check if  a file exists, asynchronously.
     # @param [String] path Path of the file to check.
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is boolean.
-    def FileSystem.exists(path)
+    def FileSystem.exists?(path)
       Future.new(org.vertx.java.core.file.FileSystem.instance.exists(path))
-    end
-
-    # The same as {FileSystem.exists} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.exists_deferred(path)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.existsDeferred(path))
     end
 
     # Get properties for the file system, asynchronously.
@@ -542,11 +374,5 @@ module Vertx
       Future.new(org.vertx.java.core.file.FileSystem.instance.getFSProps(path)){ |j_props| FSProps.new(j_props)}
     end
 
-    # The same as {FileSystem.fs_props} but the action does not start until the {Deferred#execute} method
-    # is called on the Deferred instance returned by this method.
-    # @return [Deferred] a Deferred representing the as-yet unexecuted action.
-    def FileSystem.fs_props_deferred(path)
-      Deferred.new(org.vertx.java.core.file.FileSystem.instance.getFSPropsDeferred(path)){ |j_props| FSProps.new(j_props)}
-    end
   end
 end

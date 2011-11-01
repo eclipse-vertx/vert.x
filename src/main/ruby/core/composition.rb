@@ -17,6 +17,7 @@ module Vertx
   # Represents an operation that may or may not have completed yet.
   # It contains methods to determine it it has completed, failed or succeded, and allows a handler to
   # be set which will be called when the operation completes, or fails.
+  # Instances of this class are normally created by library code
   # @author {http://tfox.org Tim Fox}
   class Future
 
@@ -81,129 +82,26 @@ module Vertx
 
   end
 
-  # Represents something that hasn't happened yet, but will occur when the {#execute} method is called.
-  # Once it has been executed it behaves identically to a {Future}.
-  #
-  # Instances of Deferred can represent all kinds of deferred operations, e.g. copying a file or getting a value from
-  # a Redis server. Since the actual execution of the action is deferred until the execute method is called, it allows
-  # multiple instances of Deferred to be composed together into more complex control flows, e.g. using the {org.vertx.java.core.composition.Composer} class.
-  #
+  # A simple Future instance that you can use from inside blocks passed into {@link Composer.series} or {@link Composer.parallel}
   # @author {http://tfox.org Tim Fox}
-  class Deferred < Future
-
-    # @private
-    # For internal use only
-    def initialize(j_del, &result_converter)
-      super(j_del, &result_converter)
-      @j_del = j_del
-    end
-
-    # Execute the deferred operation. If the Deferred has already been executed the call will be ignored.
-    # Once the deferred has been executed it behaves like a {Future}.
-    def execute
-      raise "Cannot execute a Deferred which has been returned by a Composer" if @block_execution
-      @j_del.execute
-    end
-
-    # @private
-    def _to_j_del
-      @j_del
-    end
-
-    # @private
-    def block_execution
-      @block_execution = true
-      self
-    end
-
-  end
-
-  # DeferredAction is useful when you want to create your own Deferred actions.
-  #
-  # Normally, instances of Deferred are returned from vert.x modules to represent operations such as getting a key from
-  # a Redis server, or copying a file. However if you wish to create your own instances you can do this by creating an
-  # instance of this class specifying a block/Proc when creating it.
-  #
-  # The block/Proc will get called when the action is executed. Be sure to call {#result=} or {#exception=} when
-  # the action is complete.
-  #
-  # @author {http://tfox.org Tim Fox}
-  class DeferredAction < Deferred
-
-    # @private
-    class InternalDeferred < org.vertx.java.core.DeferredAction
-
-      def initialize(hndlr, d)
-        super()
-        @hndlr = hndlr
-        @d = d
-      end
-
-      def run
-        @hndlr.call(@d)
-      end
-    end
-
-    # Create a new DeferredAction
-    # @param [Proc] A proc representing the action to run when this is executed
-    # @param [block] A block representing the action to run when this is executed
-    def initialize(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_del = InternalDeferred.new(hndlr, self)
+  class SimpleFuture < Future
+    def initialize
+      @j_del = org.vertx.java.core.SimpleFuture.new
       super(@j_del)
     end
 
-    # Set the result. If the operation succeeded you must call this when the operation is complete
-    def result=(result)
-      @j_del.setResult(result)
+    # Set the result of the Future
+    # @param [] The result to set
+    def result=(res)
+      @j_del.setResult(res)
     end
 
-    # Set the exception. If the operation failed you must call this when the operation is complete
-    def exception=(exception)
-      @j_del.setException(exception)
+    # Set the Future as failed
+    # @param [] The exception
+    def exception=(ex)
+      @j_del.setException(ex)
     end
-
   end
-
-  # Sometimes it is necessary to perform operations in vert.x which are inherently blocking, e.g. talking to legacy
-  # blocking APIs or libraries. This class allows blocking operations to be executed cleanly in an asychronous
-  # environment.
-  #
-  # By creating an instance of this class with a Proc or a block which describes the blocking the operation,
-  # vert.x will perform the blocking operation on a thread from a
-  # background thread pool specially reserved for blocking operations. This means the event loop threads are not
-  # blocked and can continue to service other requests.
-  #
-  # It will rarely be necessary to use this class directly, it is normally used by libraries which wrap legacy
-  # blocking APIs into an asynchronous form suitable for a 100% asynchronous framework such as vert.x
-  #
-  # @author {http://tfox.org Tim Fox}
-  class BlockingAction < Deferred
-    # @private
-    class InternalDeferred < org.vertx.java.core.BlockingAction
-
-      def initialize(hndlr)
-        super()
-        @hndlr = hndlr
-      end
-
-      def action
-        @hndlr.call
-      end
-    end
-
-    # Create a new BlockingAction
-    # @param [Proc] A proc representing the action to run when this is executed
-    # @param [block] A block representing the action to run when this is executed
-    def initialize(proc = nil, &hndlr)
-      hndlr = proc if proc
-      @j_del = InternalDeferred.new(hndlr)
-      super(@j_del)
-    end
-
-
-  end
-
 
   # Composer allows asynchronous control flows to be defined.
   #
@@ -212,42 +110,32 @@ module Vertx
   # the next one, since an event loop thread must never block. By using Composer you can describe the execution order
   # of a sequence of actions in a quasi-direct way, even though when they execute it will all be asynchronous.
   #
-  # Each action to execute is represented by an instance of {Deferred}. A Deferred represents an action
-  # which is yet to be executed. Instances of Deferred can represent any asynchronous action, e.g. copying a file from A to B,
-  # or getting a key from a Redis server.
+  # Each action to execute is represented by a block or a Proc. You can think of these as "thunks".
+  # Each block or Proc can return a Future instance. If it does return a Future then the action represented by that
+  # block is not considered complete until that Future completes.
   #
   # An example of using this class is as follows:
   #
   # @example
-  #   # d1..dn are instances of Deferred, returned from other vert.x modules, e.g. {@link org.vertx.java.core.file.FileSystem}
   #
   #   comp = new Composer.new
-  #   comp.parallel(d1)
-  #   comp.parallel(d2)
-  #   comp.parallel(d3)
-  #   comp.series(d4)
-  #   comp.parallel(d5)
-  #   comp.series(d6)
-  #   comp.series(d7)
-  #   comp.parallel(d8)
-  #   comp.parallel(d9)
+  #   comp.parallel{ puts "copying" }
+  #   comp.parallel{ FileSystem::copy("from", "to")}
+  #   comp.series{ puts "copy complete" }
+  #   comp.parallel{ redis_connection.set("key1", "val1") }
+  #   comp.series{ puts "set value ok" }
+  #   future = comp.series{ redis_connection.get("key1") }
+  #   comp.series{ puts "value of key1 is #{future.result}" }
   #   comp.execute
   #
-  # In the above example, when {#execute} is invoked, d1, d2, and d3 will be executed. When d1, d2, and d3
-  # have all completed, then d4 and d5 will be executed. When d4 and d5 have completed d6 will be executed.
-  # When d6 has completed d7, d8 and d9 will be executed. All this will occur asynchronous with no thread blocking for
-  # anything to complete.
-  #
-  # Here is another example which uses the return values from actions in subsequent actions:
-  #
-  # @example
-  #   comp = Composer.new
-  #   future = comp.series(d1)
-  #   comp.series{ puts "Result of d1 is #{future.result}" }
-  #   comp.execute
-  #
-  # In the above example, when {#execute} is invoked d1 will be executed. When d1 completes the result of the action
-  # will be available in the {Future} future, and the second action will be executed which simply displays the result.
+  # In the above example, when {#execute} is invoked, "copying" will be printed and immediately the filesystem copy
+  # from "from" to "to" will start, since both these actions are declared to run in parallel.
+  # Some time later the copy will complete, and since the "copying" action completed immediately the next set of actions
+  # will be executed. This will result in "copy complet" being displayed and immediately the redis key "key" will be set
+  # to "val1". When the operation to set the redis key is complete, the next action will be executed and
+  # "set value ok" will be displayed. Once this is complete, the value of the key previously set is retrieved and
+  # the future result of getting it is represented by future.
+  # Some time later when the value is actually got, "value of key1 is val" is displayed.
   #
   # @author {http://tfox.org Tim Fox}
   class Composer
@@ -261,15 +149,10 @@ module Vertx
     # @param [Deferred] deferred - The [Deferred] to add. This can be nil if a block is specified instead.
     # @param [Block] block - An arbitrary block to execute with the same semantics of the [Deferred].
     # @return [Future] A Future representing the future result of the Deferred.
-    def parallel(deferred = nil, &block)
-      if deferred != nil
-        check_deferred(deferred)
-        @j_comp.parallel(deferred._to_j_del)
-        deferred.block_execution
-      elsif block != nil
-        j_def = TheAction.new(block)
-        @j_comp.parallel(j_def)
-      end
+    def parallel(proc = nil, &block)
+      block = proc if proc
+      deff = create_def(block)
+      @j_comp.parallel(deff)
     end
 
     # Adds a Deferred that will be executed after any other Deferred instances that were added to this Composer have
@@ -277,30 +160,10 @@ module Vertx
     # @param [Deferred] deferred - The [Deferred] to add. This can be nil if a block is specified instead.
     # @param [Block] block - An arbitrary block to execute with the same semantics of the [Deferred].
     # @return [Future] A Future representing the future result of the Deferred.
-    def series(deferred = nil, &block)
-      if deferred != nil
-        check_deferred(deferred)
-        @j_comp.series(deferred._to_j_del)
-        deferred.block_execution
-      elsif block != nil
-        deff = DeferredAction.new do |d|
-          res = block.call
-          if res.is_a? Future
-            res.handler do |d2|
-              if res.succeeded?
-                d.result = res.result
-              else
-                d.exception = res.exception
-              end
-            end
-            res.execute if res.is_a? Deferred
-          else
-            # Set the result immediately
-            d.result = res
-          end
-        end
-        @j_comp.series(deff._to_j_del)
-      end
+    def series(proc = nil, &block)
+      block = proc if proc
+      deff = create_def(block)
+      @j_comp.series(deff)
     end
 
     # Start executing any Deferred instances added to this composer. Any instances added with {#parallel} will
@@ -322,12 +185,46 @@ module Vertx
       @j_comp.exceptionHandler(hndlr)
     end
 
+    private
+
     # @private
-    def check_deferred(deferred)
-      raise "Please specify an instance of Vertx::Deferred" if !deferred.is_a? Deferred
+    class Deff < org.vertx.java.core.DeferredAction
+
+      def initialize(&blk)
+        @blk = blk
+      end
+
+      def run
+        @blk.call(self)
+      end
+
+      def result=(res)
+        setResult(res)
+      end
+
+      def exception=(ex)
+        setException(ex)
+      end
     end
 
-    private :check_deferred
+    def create_def(block)
+      Deff.new do |d|
+        res = block.call
+        if res.is_a? Future
+          res.handler do |d2|
+            if res.succeeded?
+              d.setResult(res.result)
+            else
+              d.setException(res.exception)
+            end
+          end
+        else
+          # we treat it like a synchronous action
+          d.setResult(res)
+        end
+      end
+    end
+
 
   end
 
