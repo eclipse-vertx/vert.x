@@ -17,7 +17,6 @@ The next generation polyglot asynchronous application framework.
 * Efficiently serve static files from the filesystem bypassing user-space altogether.
 * Provides an elegant api for composing asynchronous actions together in a few lines of code.
 * Asynchronous plugins will be provided for a wide variety of other systems and protocols including AMQP, Redis, REST, Gemfire, MongoDB, STOMP, Twitter, SMTP, JDBC, Memcached, JMS, ZeroMQ, JDBC, web frameworks, etc
-* Module manager. Install modules from a public repository. Create your own applications and push them to the repo. Creates a market for an ecosystem of vert.x modules.
 
 ## Jump to the examples
 
