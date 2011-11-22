@@ -19,6 +19,7 @@ package org.vertx.java.core.internal;
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxApp;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -55,4 +56,8 @@ public interface VertxInternal extends Vertx {
   NioWorker getWorkerForContextID(long contextID);
 
   int getCoreThreadPoolSize();
+
+  void startApp(Class<? extends VertxApp> appClass, int instances);
+
+  void stopApp(Class appClass, int instances);
 }

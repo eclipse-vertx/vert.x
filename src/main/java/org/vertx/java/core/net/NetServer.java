@@ -35,6 +35,7 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
@@ -47,6 +48,7 @@ import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,10 +65,13 @@ public class NetServer extends NetServerBase {
 
   private static final Logger log = Logger.getLogger(NetServer.class);
 
+  private static final Map<ServerID, NetServer> servers = new HashMap<>();
+
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
+  private ServerID id;
 
   /**
    * Create a new NetServer instance.
@@ -199,6 +204,30 @@ public class NetServer extends NetServerBase {
     return listen(port, "0.0.0.0");
   }
 
+  private synchronized NetServer getSharedServer(ServerID id) {
+    synchronized (servers) {
+      NetServer shared = servers.get(id);
+
+      if (shared == null) {
+        shared = this;
+        servers.put(id, this);
+      } else {
+        checkConfigs(shared, this);
+      }
+
+      return shared;
+    }
+  }
+
+  private void checkConfigs(NetServer server1, NetServer server2) {
+    //TODO check configs are the same
+  }
+
+  private NetServer actualServer;
+
+  private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
+  private HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
@@ -214,53 +243,65 @@ public class NetServer extends NetServerBase {
     }
     listening = true;
 
-    serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
+    synchronized (servers) {
+      id = new ServerID(port, host);
+      NetServer shared = servers.get(id);
+      if (shared == null) {
+        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
-    ChannelFactory factory =
-        new NioServerSocketChannelFactory(
-            VertxInternal.instance.getAcceptorPool(),
-            VertxInternal.instance.getWorkerPool());
-    ServerBootstrap bootstrap = new ServerBootstrap(factory);
+        ChannelFactory factory =
+            new NioServerSocketChannelFactory(
+                VertxInternal.instance.getAcceptorPool(),
+                availableWorkers);
+        ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
-    checkSSL();
+        checkSSL();
 
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() {
-        ChannelPipeline pipeline = Channels.pipeline();
-        if (ssl) {
-          SSLEngine engine = context.createSSLEngine();
-          engine.setUseClientMode(false);
-          switch (clientAuth) {
-            case REQUEST: {
-              engine.setWantClientAuth(true);
-              break;
+        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+          public ChannelPipeline getPipeline() {
+            ChannelPipeline pipeline = Channels.pipeline();
+            if (ssl) {
+              SSLEngine engine = context.createSSLEngine();
+              engine.setUseClientMode(false);
+              switch (clientAuth) {
+                case REQUEST: {
+                  engine.setWantClientAuth(true);
+                  break;
+                }
+                case REQUIRED: {
+                  engine.setNeedClientAuth(true);
+                  break;
+                }
+                case NONE: {
+                  engine.setNeedClientAuth(false);
+                  break;
+                }
+              }
+              pipeline.addLast("ssl", new SslHandler(engine));
             }
-            case REQUIRED: {
-              engine.setNeedClientAuth(true);
-              break;
-            }
-            case NONE: {
-              engine.setNeedClientAuth(false);
-              break;
-            }
+            pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
+            pipeline.addLast("handler", new ServerHandler());
+            return pipeline;
           }
-          pipeline.addLast("ssl", new SslHandler(engine));
+        });
+
+        bootstrap.setOptions(connectionOptions);
+
+        try {
+          //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
+          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+          serverChannelGroup.add(serverChannel);
+          log.info("Net server listening on " + host + ":" + port);
+        } catch (UnknownHostException e) {
+          e.printStackTrace();
         }
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
-        pipeline.addLast("handler", new ServerHandler());
-        return pipeline;
+        servers.put(id, this);
+        actualServer = this;
+      } else {
+        // Server already exists with that host/port - we will use that
+        actualServer = shared;
       }
-    });
-
-    bootstrap.setOptions(connectionOptions);
-
-    try {
-      //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
-      Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
-      serverChannelGroup.add(serverChannel);
-      log.info("Net server listening on " + host + ":" + port);
-    } catch (UnknownHostException e) {
-      e.printStackTrace();
+      actualServer.handlerManager.addHandler(connectHandler);
     }
 
     return this;
@@ -279,6 +320,14 @@ public class NetServer extends NetServerBase {
    */
   public void close(final Handler<Void> done) {
     checkThread();
+
+    if (actualServer != this) {
+      listening = false;
+      if (actualServer != null) {
+        actualServer.handlerManager.removeHandler(connectHandler);
+      }
+      return;
+    }
 
     long cid = Vertx.instance.getContextID();
 
@@ -299,6 +348,9 @@ public class NetServer extends NetServerBase {
           Runnable runner = new Runnable() {
             public void run() {
               listening = false;
+              if (id != null) {
+                servers.remove(id);
+              }
               done.handle(null);
             }
           };
@@ -312,14 +364,24 @@ public class NetServer extends NetServerBase {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final long contextID = VertxInternal.instance.associateContextWithWorker(ch.getWorker());
-      runOnCorrectThread(ch, new Runnable() {
+      NioWorker worker = ch.getWorker();
+
+      //Choose a handler
+      final HandlerHolder handler = handlerManager.chooseHandler(worker);
+
+      if (handler == null) {
+        //Ignore
+        return;
+      }
+
+      VertxInternal.instance.executeOnContext(handler.contextID, new Runnable() {
         public void run() {
-          VertxInternal.instance.setContextID(contextID);
-          NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
+          VertxInternal.instance.setContextID(handler.contextID);
+          NetSocket sock = new NetSocket(ch, handler.contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-          connectHandler.handle(sock);
+          handler.handler.handle(sock);
         }
       });
     }
@@ -330,7 +392,7 @@ public class NetServer extends NetServerBase {
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        runOnCorrectThread(ch, new Runnable() {
+        VertxInternal.instance.executeOnContext(sock.getContextID(), new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -343,10 +405,9 @@ public class NetServer extends NetServerBase {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       if (sock != null) {
-        runOnCorrectThread(ch, new Runnable() {
+        VertxInternal.instance.executeOnContext(sock.getContextID(), new Runnable() {
           public void run() {
             sock.handleClosed();
-            VertxInternal.instance.destroyContext(sock.getContextID());
           }
         });
       }
@@ -367,7 +428,7 @@ public class NetServer extends NetServerBase {
       ch.close();
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        runOnCorrectThread(ch, new Runnable() {
+        VertxInternal.instance.executeOnContext(sock.getContextID(), new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
           }
