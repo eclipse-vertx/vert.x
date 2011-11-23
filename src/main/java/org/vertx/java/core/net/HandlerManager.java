@@ -4,6 +4,7 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HandlerManager<T> {
+
+  private static final Logger log = Logger.getLogger(HandlerManager.class);
 
   private final NetServerWorkerPool availableWorkers;
   private Map<NioWorker, Handlers> handlerMap = new ConcurrentHashMap<>();
