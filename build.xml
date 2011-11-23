@@ -34,7 +34,10 @@
 
     <property name="test-lib" value="src/tests/resources/jars"/>
     <property name="tests-target" value="${target}/tests/classes"/>
-    <property name="tests-src" value="src/tests"/>
+    <property name="tests-src" value="src/tests/java"/>
+
+    <property name="test-apps-target" value="${target}/test-apps/classes"/>
+    <property name="test-apps-src" value="src/tests/resources/testapps/java"/>
 
     <property name="javadoc-dir" value="docs/java/api"/>
     <property name="rubydoc-dir" value="docs/ruby/api"/>
@@ -80,10 +83,15 @@
         <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
     </target>
 
+    <target name="compile-test-apps" depends="jar-core">
+        <mkdir dir="${test-apps-target}"/>
+        <javac srcdir="${test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
+    </target>
+
     <target name="tests" depends="java-tests, ruby-tests">
     </target>
 
-    <target name="java-tests" depends="compile-tests">
+    <target name="java-tests" depends="compile-tests, compile-test-apps">
         <testng classpathref="test-classpath">
             <!-- <testng classpathref="test-classpath" methods="org.vertx.tests.core.net.NetTest.*"> -->
             <sysproperty key="java.util.logging.config.file" value="${resources-dir}/logging.properties"/>
@@ -168,6 +176,10 @@
         <exec executable="cp">
             <arg value="src/scripts/vertx-ruby"/>
             <arg value="${dist-build}/bin/vertx-ruby"/>
+        </exec>
+        <exec executable="cp">
+            <arg value="src/scripts/vertx-start"/>
+            <arg value="${dist-build}/bin/vertx-start"/>
         </exec>
 
         <copy todir="${dist-build}/examples">

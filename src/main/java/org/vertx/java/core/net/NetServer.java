@@ -277,6 +277,7 @@ public class NetServer extends NetServerBase {
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
+        checkConfigs(actualServer, this);
         actualServer = shared;
       }
       actualServer.handlerManager.addHandler(connectHandler);
@@ -324,8 +325,9 @@ public class NetServer extends NetServerBase {
 
     VertxInternal.instance.setContextID(contextID);
 
+    ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
-      serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
+      fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
           executeCloseDone(done);
         }
@@ -333,7 +335,7 @@ public class NetServer extends NetServerBase {
     }
   }
 
-  private void checkConfigs(NetServer server1, NetServer server2) {
+  private void checkConfigs(NetServer currentServer, NetServer newServer) {
     //TODO check configs are the same
   }
 

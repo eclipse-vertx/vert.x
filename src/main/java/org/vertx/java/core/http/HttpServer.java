@@ -362,8 +362,9 @@ public class HttpServer extends NetServerBase {
     for (ServerConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
+    ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
-      serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
+      fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
           executeCloseDone(done);
         }
@@ -467,12 +468,13 @@ public class HttpServer extends NetServerBase {
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.remove(ch);
-      VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
-        public void run() {
-          conn.handleClosed();
-        }
-      });
-
+      if (conn != null) {
+        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
+          public void run() {
+            conn.handleClosed();
+          }
+        });
+      }
     }
 
     @Override
