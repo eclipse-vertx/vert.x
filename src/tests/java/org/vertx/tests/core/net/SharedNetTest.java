@@ -20,7 +20,6 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
@@ -30,13 +29,9 @@ import org.vertx.java.core.shared.SharedData;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
-import java.io.File;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -57,7 +52,6 @@ public class SharedNetTest extends TestBase {
 
     final Set<Long> serverHandlers = SharedData.getSet("servers");
     final Set<Integer> connectedServers = SharedData.getSet("connected");
-
 
     for (int i = 0; i < serverLoops; i++) {
       Vertx.instance.go(new Runnable() {
@@ -157,6 +151,9 @@ public class SharedNetTest extends TestBase {
 
     azzert(serverCloseLatch.await(5, TimeUnit.SECONDS));
     azzert(connectedServers.size() == serverLoops * serversPerLoop);
+
+    SharedData.removeSet("servers");
+    SharedData.removeSet("connected");
 
     throwAssertions();
   }

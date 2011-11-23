@@ -34,7 +34,6 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
