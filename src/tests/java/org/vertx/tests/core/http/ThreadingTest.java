@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.tests.core.net;
+package org.vertx.tests.core.http;
 
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
@@ -45,121 +45,114 @@ public class ThreadingTest extends TestBase {
 
   private static final Logger log = Logger.getLogger(ThreadingTest.class);
 
+
   @Test
-  // Test that handlers are executed with the correct context
-  public void testNetHandlers() throws Exception {
-    final int dataLength = 10;
-    final int connections = 50;
-    final int serverLoops = 5;
-    final int serversPerLoop = 3;
-    final CountDownLatch serverCloseLatch = new CountDownLatch(serverLoops * serversPerLoop);
-    final CountDownLatch listenLatch = new CountDownLatch(serverLoops * serversPerLoop);
+  public void testHTTPHandlers() throws Exception {
+    final String host = "localhost";
+    final int port = 8181;
+    final int numRequests = 50;
+    //final CountDownLatch requestLatch = new CountDownLatch(numRequests);
+    final int serversPerLoop = 2;
+    final int numServerLoops = 5;
+    final CountDownLatch serverCloseLatch = new CountDownLatch(numServerLoops * serversPerLoop);
+    final Set<Integer> connectedServers = SharedData.getSet("servers");
+    final CountDownLatch serversListening = new CountDownLatch(serversPerLoop * numServerLoops);
+    final Set<Long> servers = SharedData.getSet("serverHandlers");
 
-    final Set<Long> serverHandlers = SharedData.getSet("servers");
-
-    for (int i = 0; i < serverLoops; i++) {
+    for (int i = 0; i < numServerLoops; i++) {
       Vertx.instance.go(new Runnable() {
         public void run() {
           final ContextChecker checker = new ContextChecker();
-
           for (int j = 0; j < serversPerLoop; j++) {
-            final NetServer server = new NetServer();
-
-            final long actorID = Vertx.instance.registerHandler(new Handler<String>() {
-              public void handle(String msg) {
+            final HttpServer server = new HttpServer();
+            long actorID = Vertx.instance.registerHandler(new Handler<String>() {
+              public void handle(String s) {
                 checker.check();
                 server.close(new SimpleHandler() {
                   public void handle() {
-                    checker.check();
+                    log.info("closed server");
                     serverCloseLatch.countDown();
                   }
                 });
               }
             });
-
-            serverHandlers.add(actorID);
-
-            server.connectHandler(new Handler<NetSocket>() {
-              public void handle(final NetSocket sock) {
-
+            servers.add(actorID);
+            server.requestHandler(new Handler<HttpServerRequest>() {
+              public void handle(final HttpServerRequest req) {
                 checker.check();
-
-                sock.dataHandler(new Handler<Buffer>() {
+                connectedServers.add(System.identityHashCode(server));
+                req.dataHandler(new Handler<Buffer>() {
                   public void handle(Buffer data) {
                     checker.check();
-                    sock.write(data);    // Send it back to client
                   }
                 });
-                sock.closedHandler(new SimpleHandler() {
+                req.endHandler(new SimpleHandler() {
                   public void handle() {
                     checker.check();
+                    req.response.end("bar");
                   }
                 });
               }
-            }).listen(8181);
-
-            listenLatch.countDown();
+            }).listen(port, host);
+            serversListening.countDown();
           }
+
         }
       });
     }
 
-    listenLatch.await(5, TimeUnit.SECONDS);
+    azzert(serversListening.await(5, TimeUnit.SECONDS));
 
     Vertx.instance.go(new Runnable() {
       public void run() {
-        final NetClient client = new NetClient();
-
-        final ContextChecker checker = new ContextChecker();
 
         final long actorID = Vertx.instance.registerHandler(new Handler<String>() {
-          int count;
-          public void handle(String msg) {
-            checker.check();
+          int count = 0;
+          public void handle(String s) {
             count++;
-            if (count == connections) {
-              //All client connections closed - now tell the servers to shutdown
-              client.close();
-              for (Long sactorID: serverHandlers) {
-                Vertx.instance.sendToHandler(sactorID, "foo");
+            if (count == numRequests) {
+              for (long id: servers) {
+                log.info("Sending msg to server");
+                Vertx.instance.sendToHandler(id, "foo");
               }
             }
           }
         });
 
-        for (int i = 0; i < connections; i++) {
 
-          client.connect(8181, new Handler<NetSocket>() {
-            public void handle(final NetSocket sock) {
-              final Buffer buff = Buffer.create(0);
-              sock.dataHandler(new Handler<Buffer>() {
+        final ContextChecker checker = new ContextChecker();
+        for (int i = 0; i < numRequests; i++) {
+          final HttpClient client = new HttpClient().setPort(port).setHost(host);
+          HttpClientRequest request = client.put("someurl", new Handler<HttpClientResponse>() {
+            public void handle(HttpClientResponse resp) {
+              checker.check();
+              resp.dataHandler(new Handler<Buffer>() {
                 public void handle(Buffer data) {
                   checker.check();
-                  buff.appendBuffer(data);
-                  if (buff.length() == dataLength) {
-                    sock.close();
-                  }
                 }
               });
-              sock.closedHandler(new SimpleHandler() {
+              resp.endHandler(new SimpleHandler() {
                 public void handle() {
                   checker.check();
-                  Vertx.instance.sendToHandler(actorID, "foo");
+                  client.close();
+                  //requestLatch.countDown();
+                  Vertx.instance.sendToHandler(actorID, "bar");
                 }
               });
-              Buffer sendBuff = Utils.generateRandomBuffer(dataLength);
-              sock.write(sendBuff);
             }
           });
+          request.end("foo");
         }
       }
     });
 
-    assert serverCloseLatch.await(5, TimeUnit.SECONDS);
+    azzert(serverCloseLatch.await(5, TimeUnit.SECONDS));
+    log.info("connected servers " + connectedServers.size());
+    azzert(connectedServers.size() == serversPerLoop * numServerLoops);
     SharedData.removeSet("servers");
+    SharedData.removeSet("serverHandlers");
 
     throwAssertions();
   }
-
 
 }
