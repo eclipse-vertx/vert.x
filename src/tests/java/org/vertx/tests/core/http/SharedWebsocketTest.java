@@ -20,15 +20,18 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.Websocket;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shared.SharedData;
+import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,9 +39,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SharedHttpTest extends TestBase {
+public class SharedWebsocketTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(SharedHttpTest.class);
+  private static final Logger log = Logger.getLogger(SharedWebsocketTest.class);
 
   @Test
   public void testHandlerDistribution() throws Exception {
@@ -61,12 +64,10 @@ public class SharedHttpTest extends TestBase {
 
           for (int j = 0; j < serversPerLoop; j++) {
             final HttpServer server = new HttpServer();
-            server.requestHandler(new Handler<HttpServerRequest>() {
+            server.websocketHandler(new Handler<Websocket>() {
 
-              public void handle(final HttpServerRequest req) {
+              public void handle(final Websocket ws) {
                 connectedServers.add(System.identityHashCode(server));
-                req.response.end();
-                //Vertx.instance.sendToHandler(actorID, "foo");
               }
             }).listen(port, host);
 
@@ -108,12 +109,12 @@ public class SharedHttpTest extends TestBase {
 
         for (int i = 0; i < numRequests; i++) {
           final HttpClient client = new HttpClient().setPort(port).setHost(host);
-          client.getNow("someurl", new Handler<HttpClientResponse>() {
-            public void handle(HttpClientResponse resp) {
-              Vertx.instance.sendToHandler(actorID, "quux");
+          client.connectWebsocket("someuri", new Handler<Websocket>() {
+            public void handle(Websocket ws) {
+              Vertx.instance.sendToHandler(actorID, "bar");
+              client.close();
             }
           });
-          client.close();
         }
       }
     });
@@ -126,6 +127,4 @@ public class SharedHttpTest extends TestBase {
 
     throwAssertions();
   }
-
-
 }
