@@ -22,7 +22,6 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -31,32 +30,34 @@ import org.vertx.java.core.shared.SharedData;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
-import java.util.Map;
+import java.io.File;
+import java.util.Arrays;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ThreadingTest extends TestBase {
+public class SharedNetTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(ThreadingTest.class);
+  private static final Logger log = Logger.getLogger(SharedNetTest.class);
+
 
   @Test
-  // Test that handlers are executed with the correct context
-  public void testNetHandlers() throws Exception {
+  public void testConnectionDistribution() throws Exception {
     final int dataLength = 10;
     final int connections = 50;
-    //final CountDownLatch clientCloseLatch = new CountDownLatch(connections);
     final int serverLoops = 5;
     final int serversPerLoop = 3;
     final CountDownLatch serverCloseLatch = new CountDownLatch(serverLoops * serversPerLoop);
     final CountDownLatch listenLatch = new CountDownLatch(serverLoops * serversPerLoop);
 
     final Set<Long> serverHandlers = SharedData.getSet("servers");
+    final Set<Integer> connectedServers = SharedData.getSet("connected");
+
 
     for (int i = 0; i < serverLoops; i++) {
       Vertx.instance.go(new Runnable() {
@@ -91,11 +92,9 @@ public class ThreadingTest extends TestBase {
                     sock.write(data);    // Send it back to client
                   }
                 });
-                sock.closedHandler(new SimpleHandler() {
-                  public void handle() {
-                    checker.check();
-                  }
-                });
+
+                connectedServers.add(System.identityHashCode(server));
+
               }
             }).listen(8181);
 
@@ -156,7 +155,8 @@ public class ThreadingTest extends TestBase {
       }
     });
 
-    assert serverCloseLatch.await(5, TimeUnit.SECONDS);
+    azzert(serverCloseLatch.await(5, TimeUnit.SECONDS));
+    azzert(connectedServers.size() == serverLoops * serversPerLoop);
 
     throwAssertions();
   }

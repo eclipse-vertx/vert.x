@@ -72,6 +72,9 @@ public class NetServer extends NetServerBase {
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private ServerID id;
+  private NetServer actualServer;
+  private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
+  private HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
   /**
    * Create a new NetServer instance.
@@ -204,30 +207,6 @@ public class NetServer extends NetServerBase {
     return listen(port, "0.0.0.0");
   }
 
-  private synchronized NetServer getSharedServer(ServerID id) {
-    synchronized (servers) {
-      NetServer shared = servers.get(id);
-
-      if (shared == null) {
-        shared = this;
-        servers.put(id, this);
-      } else {
-        checkConfigs(shared, this);
-      }
-
-      return shared;
-    }
-  }
-
-  private void checkConfigs(NetServer server1, NetServer server2) {
-    //TODO check configs are the same
-  }
-
-  private NetServer actualServer;
-
-  private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
-  private HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
-
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
@@ -321,15 +300,21 @@ public class NetServer extends NetServerBase {
   public void close(final Handler<Void> done) {
     checkThread();
 
-    if (actualServer != this) {
-      listening = false;
-      if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler);
+    if (!listening) return;
+
+    listening = false;
+
+    if (actualServer != null && actualServer != this) {
+      actualServer.handlerManager.removeHandler(connectHandler);
+      if (done != null) {
+        executeCloseDone(done);
       }
       return;
     }
 
-    long cid = Vertx.instance.getContextID();
+    if (id != null) {
+      servers.remove(id);
+    }
 
     for (NetSocket sock : socketMap.values()) {
       sock.internalClose();
@@ -338,26 +323,27 @@ public class NetServer extends NetServerBase {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    VertxInternal.instance.setContextID(cid);
+    VertxInternal.instance.setContextID(contextID);
 
     if (done != null) {
-      final Long contextID = Vertx.instance.getContextID();
       serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-
-          Runnable runner = new Runnable() {
-            public void run() {
-              listening = false;
-              if (id != null) {
-                servers.remove(id);
-              }
-              done.handle(null);
-            }
-          };
-          VertxInternal.instance.executeOnContext(contextID, runner);
+          executeCloseDone(done);
         }
       });
     }
+  }
+
+  private void checkConfigs(NetServer server1, NetServer server2) {
+    //TODO check configs are the same
+  }
+
+  private void executeCloseDone(final Handler<Void> done) {
+    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+      public void run() {
+        done.handle(null);
+      }
+    });
   }
 
   private class ServerHandler extends SimpleChannelHandler {
