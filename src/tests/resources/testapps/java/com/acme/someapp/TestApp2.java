@@ -1,7 +1,7 @@
 package com.acme.someapp;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxApp;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 

@@ -18,7 +18,7 @@ package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -27,17 +27,12 @@ import org.vertx.java.core.shared.SharedData;
 
 import java.util.Set;
 
-public class PubSubServer extends VertxMain {
+public class PubSubServer implements VertxApp {
 
-  public static void main(String[] args) throws Exception {
-    new PubSubServer().run();
+  private NetServer server;
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
-
-  public void go() throws Exception {
-    new NetServer().connectHandler(new Handler<NetSocket>() {
+  public void start() {
+    server = new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
           public void handle(Buffer frame) {
@@ -58,5 +53,9 @@ public class PubSubServer extends VertxMain {
         }));
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

@@ -17,20 +17,16 @@
 package org.vertx.java.examples.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-public class ServerExample extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new ServerExample().run();
+public class ServerExample implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpServer server;
 
-  public void go() throws Exception {
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+  public void start() {
+    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
@@ -41,5 +37,9 @@ public class ServerExample extends VertxMain {
                      end("<html><body><h1>Hello from vert.x!</h1></body></html>");
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

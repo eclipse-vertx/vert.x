@@ -20,8 +20,8 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -47,8 +47,8 @@ public class NetTest extends TestBase {
     final AtomicInteger totalConnectCount = new AtomicInteger(0);
 
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final NetServer server = new NetServer();
 
@@ -85,7 +85,7 @@ public class NetTest extends TestBase {
           });
         }
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
 
@@ -150,8 +150,8 @@ public class NetTest extends TestBase {
     final int numSends = 10;
     final int sendSize = 100;
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final NetServer server = new NetServer();
 
@@ -189,7 +189,7 @@ public class NetTest extends TestBase {
           }
         });
       }
-    }.run();
+    });
 
 
     azzert(latch.await(5, TimeUnit.SECONDS));
@@ -214,8 +214,8 @@ public class NetTest extends TestBase {
     final File file = setupFile(path, content);
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
         Handler<NetSocket> sender = new Handler<NetSocket>() {
           public void handle(final NetSocket sock) {
             String fileName = "./" + path;
@@ -256,7 +256,7 @@ public class NetTest extends TestBase {
         server.connectHandler(serverHandler).listen(8181);
         new NetClient().connect(8181, clientHandler);
       }
-    }.run();
+    });
 
     assert latch.await(5, TimeUnit.SECONDS);
     throwAssertions();
@@ -288,8 +288,8 @@ public class NetTest extends TestBase {
     final int numSends = 10;
     final int sendSize = 100;
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final NetServer server = new NetServer();
 
@@ -350,7 +350,7 @@ public class NetTest extends TestBase {
         server.connectHandler(serverHandler).listen(8181);
         new NetClient().connect(8181, clientHandler);
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -365,8 +365,8 @@ public class NetTest extends TestBase {
     final CountDownLatch clientCloseLatch = new CountDownLatch(1);
     final CountDownLatch serverCloseLatch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final NetServer server = new NetServer();
 
@@ -414,7 +414,7 @@ public class NetTest extends TestBase {
           });
         }
       }
-    }.run();
+    });
 
     azzert(serverCloseLatch.await(5, TimeUnit.SECONDS));
     azzert(clientCloseLatch.await(5, TimeUnit.SECONDS));

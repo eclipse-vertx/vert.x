@@ -21,6 +21,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -54,7 +55,7 @@ public class SharedNetTest extends TestBase {
     final Set<Integer> connectedServers = SharedData.getSet("connected");
 
     for (int i = 0; i < serverLoops; i++) {
-      Vertx.instance.go(new Runnable() {
+      VertxInternal.instance.go(new Runnable() {
         public void run() {
           final ContextChecker checker = new ContextChecker();
 
@@ -100,7 +101,7 @@ public class SharedNetTest extends TestBase {
 
     listenLatch.await(5, TimeUnit.SECONDS);
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
         final NetClient client = new NetClient();
 

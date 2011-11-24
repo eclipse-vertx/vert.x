@@ -269,7 +269,7 @@ public class NetServer extends NetServerBase {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
           Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           serverChannelGroup.add(serverChannel);
-          log.info("Net server listening on " + host + ":" + port);
+          log.trace("Net server listening on " + host + ":" + port);
         } catch (UnknownHostException e) {
           e.printStackTrace();
         }

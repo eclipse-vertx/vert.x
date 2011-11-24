@@ -21,11 +21,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -58,7 +54,7 @@ public class ThreadingTest extends TestBase {
     final Set<Long> serverHandlers = SharedData.getSet("servers");
 
     for (int i = 0; i < serverLoops; i++) {
-      Vertx.instance.go(new Runnable() {
+      VertxInternal.instance.go(new Runnable() {
         public void run() {
           final ContextChecker checker = new ContextChecker();
 
@@ -106,7 +102,7 @@ public class ThreadingTest extends TestBase {
 
     listenLatch.await(5, TimeUnit.SECONDS);
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
         final NetClient client = new NetClient();
 

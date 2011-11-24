@@ -41,13 +41,13 @@ public class HandlerManager<T> {
       handlers = new Handlers();
       handlerMap.put(worker, handlers);
     }
-    handlers.addHandler(new HandlerHolder<T>(Vertx.instance.getContextID(), handler));
+    handlers.addHandler(new HandlerHolder<>(Vertx.instance.getContextID(), handler));
   }
 
   public synchronized void removeHandler(Handler<T> handler) {
     NioWorker worker = VertxInternal.instance.getWorkerForContextID(Vertx.instance.getContextID());
     Handlers handlers = handlerMap.get(worker);
-    if (!handlers.removeHandler(new HandlerHolder<T>(Vertx.instance.getContextID(), handler))) {
+    if (!handlers.removeHandler(new HandlerHolder<>(Vertx.instance.getContextID(), handler))) {
       throw new IllegalStateException("Can't find handler");
     }
     if (handlers.isEmpty()) {

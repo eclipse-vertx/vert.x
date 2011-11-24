@@ -17,22 +17,17 @@
 package org.vertx.java.examples.ssl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
-public class SSLClient extends VertxMain {
+public class SSLClient implements VertxApp {
 
-  public static void main(String[] args) throws Exception {
-    new SSLClient().run();
+  private NetClient client;
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
-
-  public void go() throws Exception {
-    new NetClient().setSSL(true).setTrustAll(true).connect(4443, "localhost", new Handler<NetSocket>() {
+  public void start() {
+    client = new NetClient().setSSL(true).setTrustAll(true).connect(4443, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         socket.dataHandler(new Handler<Buffer>() {
@@ -49,5 +44,9 @@ public class SSLClient extends VertxMain {
         }
       }
     });
+  }
+
+  public void stop() {
+    client.close();
   }
 }

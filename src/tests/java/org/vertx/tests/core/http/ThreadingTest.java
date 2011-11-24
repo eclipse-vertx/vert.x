@@ -26,12 +26,9 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shared.SharedData;
-import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
 import java.util.Set;
@@ -59,7 +56,7 @@ public class ThreadingTest extends TestBase {
     final Set<Long> servers = SharedData.getSet("serverHandlers");
 
     for (int i = 0; i < numServerLoops; i++) {
-      Vertx.instance.go(new Runnable() {
+      VertxInternal.instance.go(new Runnable() {
         public void run() {
           final ContextChecker checker = new ContextChecker();
           for (int j = 0; j < serversPerLoop; j++) {
@@ -102,7 +99,7 @@ public class ThreadingTest extends TestBase {
 
     azzert(serversListening.await(5, TimeUnit.SECONDS));
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
 
         final long actorID = Vertx.instance.registerHandler(new Handler<String>() {
