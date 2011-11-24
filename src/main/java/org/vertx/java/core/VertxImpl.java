@@ -25,7 +25,6 @@ import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shared.SharedUtils;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -57,7 +56,6 @@ class VertxImpl implements VertxInternal {
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong contextIDSeq = new AtomicLong(10); // Start at 10 for easier debugging
   private final AtomicLong actorSeq = new AtomicLong(10); // Start at 10 for easier debugging
-
 
   // Public API ------------------------------------------------
 
@@ -137,7 +135,7 @@ class VertxImpl implements VertxInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-         log.error("Failed to run on event loop", t);
+          log.error("Failed to run on event loop", t);
         }
       }
     });
@@ -259,31 +257,6 @@ class VertxImpl implements VertxInternal {
 
   public long setTimer(long delay, final Handler<Long> handler) {
     return setTimeout(delay, false, handler);
-  }
-
-  private Map<Class, List<VertxApp>> appInstances = new ConcurrentHashMap<>();
-
-  public void startApp(Class<? extends VertxApp> appClass, int instances) {
-    //TODO - load app on own classloader
-
-    try {
-      for (int i = 0; i < instances; i++) {
-        final VertxApp app = appClass.newInstance();
-        go(new Runnable() {
-          public void run() {
-            app.start();
-          }
-        });
-      }
-
-    } catch (Exception e) {
-      log.error("Failed to deploy application", e);
-      throw new RuntimeException("Failed to deploy application" + appClass);
-    }
-  }
-
-  public void stopApp(Class appClass, int instances) {
-    //TODO
   }
 
   VertxImpl() {

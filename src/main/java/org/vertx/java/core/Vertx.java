@@ -78,10 +78,4 @@ public interface Vertx {
    * Call the specified event handler asynchronously on the next "tick" of the event loop.
    */
   void nextTick(Handler<Void> handler);
-
-  /**
-   * Run the specified Runnable inside an event loop. An event loop will be picked by the system from all available
-   * loops.
-   */
-  void go(Runnable runnable);
 }

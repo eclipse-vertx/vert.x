@@ -17,28 +17,18 @@
 package org.vertx.java.examples.sendfile;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-/**
- * User: tim
- * Date: 12/08/11
- * Time: 09:04
- */
-public class SendFileExample extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new SendFileExample().run();
-
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+public class SendFileExample implements VertxApp {
 
   private static final String webroot = "sendfile/";
 
-  public void go() throws Exception {
-    //Here is the web server!
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+  private HttpServer server;
+
+  public void start() {
+    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (req.path.equals("/")) {
           req.response.sendFile(webroot + "index.html");
@@ -49,5 +39,9 @@ public class SendFileExample extends VertxMain {
       }
     }).listen(8080);
 
+  }
+
+  public void stop() {
+    server.close();
   }
 }

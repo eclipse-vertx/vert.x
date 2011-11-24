@@ -20,16 +20,12 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.Websocket;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shared.SharedData;
-import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
 import java.util.Set;
@@ -55,10 +51,8 @@ public class SharedWebsocketTest extends TestBase {
     final CountDownLatch serverCloseLatch = new CountDownLatch(serversPerLoop * numServerLoops);
     final Set<Long> servers = SharedData.getSet("srvrs");
 
-
     for (int i = 0; i < numServerLoops; i++) {
-      Vertx.instance.go(new Runnable() {
-
+      VertxInternal.instance.go(new Runnable() {
 
         public void run() {
 
@@ -84,14 +78,13 @@ public class SharedWebsocketTest extends TestBase {
             servers.add(actorID);
             serversListening.countDown();
           }
-
         }
       });
     }
 
     azzert(serversListening.await(5, TimeUnit.SECONDS));
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
 
         final long actorID = Vertx.instance.registerHandler(new Handler<String>() {

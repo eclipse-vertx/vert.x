@@ -24,11 +24,11 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shared.SharedData;
 import org.vertx.tests.core.TestBase;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -52,10 +52,8 @@ public class SharedHttpTest extends TestBase {
     final CountDownLatch serverCloseLatch = new CountDownLatch(serversPerLoop * numServerLoops);
     final Set<Long> servers = SharedData.getSet("srvrs");
 
-
     for (int i = 0; i < numServerLoops; i++) {
-      Vertx.instance.go(new Runnable() {
-
+      VertxInternal.instance.go(new Runnable() {
 
         public void run() {
 
@@ -90,7 +88,7 @@ public class SharedHttpTest extends TestBase {
 
     azzert(serversListening.await(5, TimeUnit.SECONDS));
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
 
         final long actorID = Vertx.instance.registerHandler(new Handler<String>() {

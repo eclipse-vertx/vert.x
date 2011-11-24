@@ -24,6 +24,7 @@ import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.tests.core.TestBase;
 
@@ -45,7 +46,7 @@ public class RedisReconnectTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
         RedisPool pool = new RedisPool();
 
@@ -89,7 +90,7 @@ public class RedisReconnectTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    Vertx.instance.go(new Runnable() {
+    VertxInternal.instance.go(new Runnable() {
       public void run() {
         final RedisPool pool = new RedisPool();
 

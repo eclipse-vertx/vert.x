@@ -20,7 +20,7 @@ import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpServer;
@@ -29,17 +29,13 @@ import org.vertx.java.core.streams.Pump;
 
 import java.util.UUID;
 
-public class UploadServer extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new UploadServer().run();
+public class UploadServer implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpServer server;
 
-  public void go() throws Exception {
+  public void start() {
 
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
         // We first pause the request so we don't receive any data between now and when the file is opened
@@ -73,5 +69,9 @@ public class UploadServer extends VertxMain {
         });
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

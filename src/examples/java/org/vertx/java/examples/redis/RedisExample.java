@@ -21,25 +21,21 @@ import org.vertx.java.addons.redis.RedisPool;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-public class RedisExample extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new RedisExample().run();
+public class RedisExample implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpServer server;
 
-  public void go() throws Exception {
+  public void start() {
 
     final RedisPool pool = new RedisPool();
     final Buffer key = Buffer.create("my_count");
 
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         if (req.uri.equals("/")) {
           final RedisConnection conn = pool.connection();
@@ -58,5 +54,9 @@ public class RedisExample extends VertxMain {
         }
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

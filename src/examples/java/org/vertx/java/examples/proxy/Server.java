@@ -18,20 +18,17 @@ package org.vertx.java.examples.proxy;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-public class HttpServer extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new HttpServer().run();
+public class Server implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpServer server;
 
-  public void go() throws Exception {
-    new org.vertx.java.core.http.HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+  public void start() {
+    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
@@ -55,5 +52,9 @@ public class HttpServer extends VertxMain {
         });
       }
     }).listen(8282);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

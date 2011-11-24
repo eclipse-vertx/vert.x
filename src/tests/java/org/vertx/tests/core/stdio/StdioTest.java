@@ -19,14 +19,15 @@ package org.vertx.tests.core.stdio;
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.stdio.InStream;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -42,10 +43,15 @@ public class StdioTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
         String foo = Utils.randomAlphaString(1000);
-        byte[] bytes = foo.getBytes("UTF-8");
+        byte[] bytes;
+        try {
+          bytes = foo.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          bytes = null;
+        }
         final Buffer buffin = Buffer.create(bytes);
         InputStream is = new ByteArrayInputStream(bytes);
 
@@ -55,7 +61,7 @@ public class StdioTest extends TestBase {
 
         in.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-           received.appendBuffer(data);
+            received.appendBuffer(data);
           }
         });
 
@@ -67,7 +73,7 @@ public class StdioTest extends TestBase {
         });
 
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
 

@@ -170,16 +170,8 @@
         <mkdir dir="${dist-build}/bin"/>
 
         <exec executable="cp">
-            <arg value="src/scripts/vertx-java"/>
-            <arg value="${dist-build}/bin/vertx-java"/>
-        </exec>
-        <exec executable="cp">
-            <arg value="src/scripts/vertx-ruby"/>
-            <arg value="${dist-build}/bin/vertx-ruby"/>
-        </exec>
-        <exec executable="cp">
-            <arg value="src/scripts/vertx-start"/>
-            <arg value="${dist-build}/bin/vertx-start"/>
+            <arg value="src/scripts/vertx"/>
+            <arg value="${dist-build}/bin/vertx"/>
         </exec>
 
         <copy todir="${dist-build}/examples">

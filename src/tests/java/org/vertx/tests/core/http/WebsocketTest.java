@@ -19,11 +19,11 @@ package org.vertx.tests.core.http;
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.Websocket;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
@@ -55,10 +55,8 @@ public class WebsocketTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-
-
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
 
@@ -110,7 +108,7 @@ public class WebsocketTest extends TestBase {
           }
         });
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();

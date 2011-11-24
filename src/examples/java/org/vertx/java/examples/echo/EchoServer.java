@@ -17,22 +17,17 @@
 package org.vertx.java.examples.echo;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
-public class EchoServer extends VertxMain {
+public class EchoServer implements VertxApp {
 
-  public static void main(String[] args) throws Exception {
-    new EchoServer().run();
+  private NetServer server;
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
-
-  public void go() throws Exception {
-    new NetServer().connectHandler(new Handler<NetSocket>() {
+  public void start() {
+    server = new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
@@ -41,5 +36,9 @@ public class EchoServer extends VertxMain {
         });
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }
