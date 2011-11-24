@@ -51,7 +51,7 @@ class RepoServerTest < Test::Unit::TestCase
     latch = Utils::Latch.new(1)
 
 
-    Vertx::go do
+    Vertx::internal_go do
 
       server = RepoServer.new(REPO_DIR)
 

@@ -38,28 +38,10 @@ require 'addons/redis'
 module Vertx
 
   # @private
-  class TheMain < org.vertx.java.core.VertxMain
-
-    def initialize(block)
-      super()
-      @block = block
-    end
-
-    def go
-      @block.call
-    end
-
-  end
-
-  # Runs a block in an event loop. The event loop will be chosen from all available loops by the system.
-  # Most vert.x operations have to be run in an event loop, so this method is usually used at the beginning of your
-  # script to start things running.
-  # This method will accept either a Proc or a block.
-  # @param [Proc] proc a Proc to run
-  # @param [Block] block a block to run.
-  def Vertx.go(proc = nil, &block)
+  # !! This method is for internal use only - do not call from user code.
+  def Vertx.internal_go(proc = nil, &block)
     block = proc if proc
-    TheMain.new(block).run
+    org.vertx.java.core.internal.VertxInternal.instance.go(block)
   end
 
   # @private

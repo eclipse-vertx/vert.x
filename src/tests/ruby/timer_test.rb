@@ -23,7 +23,7 @@ class TimerTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
       Vertx::set_timer(10) { |timer_id|
         latch.countdown
       }
@@ -38,7 +38,7 @@ class TimerTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
       count = 0
       Vertx::set_periodic(10) { |timer_id|
         count += 1
