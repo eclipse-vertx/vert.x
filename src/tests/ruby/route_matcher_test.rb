@@ -38,7 +38,7 @@ class RouteMatcherTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
 
       handler = Proc.new do |req|
 
