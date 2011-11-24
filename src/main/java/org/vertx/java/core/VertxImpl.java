@@ -119,6 +119,7 @@ class VertxImpl implements VertxInternal {
       });
       return true;
     } else {
+      log.info("Failed to find holder for actorid:" + handlerID);
       return false;
     }
   }
