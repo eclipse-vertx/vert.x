@@ -48,7 +48,7 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 
   private boolean isSystemClass(String name) {
     return (name.startsWith("org.vertx.") || name.startsWith("java.") || name.startsWith("javax.") ||
-           name.startsWith("com.sun."));
+           name.startsWith("com.sun.") || name.startsWith("org.jruby."));
   }
 
   @Override
@@ -67,7 +67,7 @@ public class ParentLastURLClassLoader extends URLClassLoader {
     if (getParent() != null) {
       parentUrls = getParent().getResources(name);
     }
-    final List<URL> urls = new ArrayList<URL>();
+    final List<URL> urls = new ArrayList<>();
     if (localUrls != null) {
       while (localUrls.hasMoreElements()) {
         urls.add(localUrls.nextElement());

@@ -16,7 +16,7 @@ require "vertx"
 include Vertx
 
 # Inspired from Sinatra / Express
-Vertx::go do
+Vertx::internal_go do
 
   rm = RouteMatcher.new
 

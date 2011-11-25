@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   NetServer.new.connect_handler do |socket|
     parser = RecordParser.new_delimited("\n") do |line|
       line = line.to_s.rstrip

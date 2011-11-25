@@ -111,6 +111,7 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
     this.reply = reply;
     VertxInternal.instance.executeOnContext(contextID, new Runnable() {
       public void run() {
+        VertxInternal.instance.setContextID(contextID);
         try {
           doHandleReply();
         } catch (Exception e) {

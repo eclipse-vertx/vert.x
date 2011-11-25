@@ -25,6 +25,10 @@ public class HandlerManager<T> {
     this.availableWorkers = availableWorkers;
   }
 
+  public synchronized boolean hasHandlers() {
+    return availableWorkers.workerCount() > 0;
+  }
+
   public synchronized HandlerHolder<T> chooseHandler(NioWorker worker) {
     Handlers handlers = handlerMap.get(worker);
     if (handlers == null) {
@@ -34,20 +38,22 @@ public class HandlerManager<T> {
   }
 
   public synchronized void addHandler(Handler<T> handler) {
-    NioWorker worker = VertxInternal.instance.getWorkerForContextID(Vertx.instance.getContextID());
+    long contextID = Vertx.instance.getContextID();
+    NioWorker worker = VertxInternal.instance.getWorkerForContextID(contextID);
     availableWorkers.addWorker(worker);
     Handlers handlers = handlerMap.get(worker);
     if (handlers == null) {
       handlers = new Handlers();
       handlerMap.put(worker, handlers);
     }
-    handlers.addHandler(new HandlerHolder<>(Vertx.instance.getContextID(), handler));
+    handlers.addHandler(new HandlerHolder<>(contextID, handler));
   }
 
   public synchronized void removeHandler(Handler<T> handler) {
-    NioWorker worker = VertxInternal.instance.getWorkerForContextID(Vertx.instance.getContextID());
+    long contextID = Vertx.instance.getContextID();
+    NioWorker worker = VertxInternal.instance.getWorkerForContextID(contextID);
     Handlers handlers = handlerMap.get(worker);
-    if (!handlers.removeHandler(new HandlerHolder<>(Vertx.instance.getContextID(), handler))) {
+    if (!handlers.removeHandler(new HandlerHolder<>(contextID, handler))) {
       throw new IllegalStateException("Can't find handler");
     }
     if (handlers.isEmpty()) {

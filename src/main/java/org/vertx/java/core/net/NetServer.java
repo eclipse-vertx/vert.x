@@ -39,6 +39,7 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -301,17 +302,29 @@ public class NetServer extends NetServerBase {
     checkThread();
 
     if (!listening) return;
-
     listening = false;
 
-    if (actualServer != null && actualServer != this) {
-      actualServer.handlerManager.removeHandler(connectHandler);
-      if (done != null) {
-        executeCloseDone(done);
-      }
-      return;
-    }
+    synchronized (servers) {
 
+      actualServer.handlerManager.removeHandler(connectHandler);
+      if (actualServer.handlerManager.hasHandlers()) {
+        // The actual server still has handlers so we don't actually close it
+        if (done != null) {
+          executeCloseDone(done);
+        }
+      } else {
+        // No Handlers left so close the actual server
+        VertxInternal.instance.executeOnContext(actualServer.contextID, new Runnable() {
+          public void run() {
+            actualServer.actualClose(done);
+          }
+        });
+
+      }
+    }
+  }
+
+  private void actualClose(final Handler<Void> done) {
     if (id != null) {
       servers.remove(id);
     }
@@ -342,6 +355,7 @@ public class NetServer extends NetServerBase {
   private void executeCloseDone(final Handler<Void> done) {
     VertxInternal.instance.executeOnContext(contextID, new Runnable() {
       public void run() {
+        VertxInternal.instance.setContextID(contextID);
         done.handle(null);
       }
     });

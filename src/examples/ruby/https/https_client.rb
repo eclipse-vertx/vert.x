@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   client = HttpClient.new
   client.ssl = true
   client.port = 4443

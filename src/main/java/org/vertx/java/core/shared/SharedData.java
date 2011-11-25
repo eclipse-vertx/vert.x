@@ -17,6 +17,7 @@
 package org.vertx.java.core.shared;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
+import org.vertx.java.core.logging.Logger;
 
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,9 @@ import java.util.concurrent.ConcurrentMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SharedData {
+
+  private static final Logger log = Logger.getLogger(SharedData.class);
+
 
   private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new NonBlockingHashMap<>();
   private static ConcurrentMap<Object, SharedSet<?>> sets = new NonBlockingHashMap<>();

@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   pool = RedisPool.new
   key = Buffer.create("my_count")
   HttpServer.new.request_handler do |req|

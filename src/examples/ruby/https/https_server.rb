@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   server = HttpServer.new
   server.ssl = true
   server.key_store_path = "server-keystore.jks"

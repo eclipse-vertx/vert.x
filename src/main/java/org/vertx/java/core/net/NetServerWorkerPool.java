@@ -2,6 +2,7 @@ package org.vertx.java.core.net;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import org.vertx.java.core.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,8 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServerWorkerPool extends NioWorkerPool {
+
+  private static final Logger log = Logger.getLogger(NetServerWorkerPool.class);
 
   public NetServerWorkerPool() {
     super(0, null);
@@ -51,9 +54,11 @@ public class NetServerWorkerPool extends NioWorkerPool {
     if (holder != null) {
       holder.count--;
       if (holder.count == 0) {
-        workers.remove(worker);
+        workers.remove(holder);
       }
       checkPos();
+    } else {
+      throw new IllegalStateException("Can't find worker to remove");
     }
   }
 

@@ -61,6 +61,7 @@ public class SocketDeployer {
   public void stop() {
     VertxInternal.instance.executeOnContext(serverContextID, new Runnable() {
       public void run() {
+        VertxInternal.instance.setContextID(serverContextID);
         server.close();
         server = null;
       }
@@ -73,7 +74,8 @@ public class SocketDeployer {
 
   private void parseDeploy(NetSocket socket, String line) {
     String[] parts = line.trim().split(" ");
-    if (parts.length == 6 && parts[1].equalsIgnoreCase("java")) {
+    if (parts.length == 6) {
+      String type = parts[1];
       String name = parts[2];
       String mainClass = parts[3];
       String urlString = parts[4];
@@ -81,23 +83,49 @@ public class SocketDeployer {
       try {
         int instances = Integer.parseInt(sinstances);
         String[] urlParts;
-        if (urlString.contains("|")) {
-          urlParts = urlString.split("|");
+        log.info("urlstring is:" + urlString);
+        if (urlString.contains(":")) {
+          urlParts = urlString.split(":");
         } else {
           urlParts = new String[] { urlString };
         }
         URL[] urls = new URL[urlParts.length];
         int index = 0;
+        log.info("There are " + urlParts.length + " parts");
+
+        int c = 0;
+        for (String urlPart: urlParts) {
+          log.info("part " + c + ":" + urlPart);
+        }
+
+
         for (String urlPart: urlParts) {
           try {
-            URL url = new URL(urlPart);
+            log.info("url part is " + urlPart);
+            if (!urlPart.endsWith(".jar") && !urlPart.endsWith(".zip") && !urlPart.endsWith("/")) {
+              //It's a directory - need to add trailing slash
+              urlPart += "/";
+            }
+            URL url = new URL("file://" + urlPart);
             urls[index++] = url;
           } catch (MalformedURLException e) {
-            log.error("Malformed URL");
+            sendError("Malformed URL", socket);
             return;
           }
         }
-        String error = appManager.deploy(name, AppType.JAVA, urls, mainClass, instances);
+        AppType appType;
+        switch (type) {
+          case "java":
+            appType = AppType.JAVA;
+            break;
+          case "ruby":
+            appType = AppType.RUBY;
+            break;
+          default:
+            sendError("Invalid type " + type, socket);
+            return;
+        }
+        String error = appManager.deploy(name, appType, urls, mainClass, instances);
         if (error != null) {
           log.error(error);
           sendError(error, socket);
