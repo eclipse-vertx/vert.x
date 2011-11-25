@@ -147,6 +147,7 @@
                 <include name="high-scale-lib.jar"/>
                 <!-- <include name="jruby.jar"/> -->
                 <include name="js.jar"/>
+                <include name="groovy-all-1.8.1.jar"/>
             </fileset>
         </copy>
 
