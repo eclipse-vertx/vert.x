@@ -15,21 +15,20 @@
 require "vertx"
 include Vertx
 
-Vertx::internal_go do
-  client = NetClient.new
-  client.ssl = true
-  client.trust_all = true
-  client.connect(4443, "localhost") do |socket|
-    socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
-    (1..10).each do |i|
-      str = "hello #{i}\n"
-      puts "Echo client sending #{str}"
-      socket.write_buffer(Buffer.create_from_str(str))
-    end
+@client = NetClient.new
+@client.ssl = true
+@client.trust_all = true
+@client.connect(4443, "localhost") do |socket|
+  socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
+  (1..10).each do |i|
+    str = "hello #{i}\n"
+    puts "Echo client sending #{str}"
+    socket.write_buffer(Buffer.create_from_str(str))
   end
 end
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @client.close
+end
 
 

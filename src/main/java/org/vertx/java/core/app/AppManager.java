@@ -1,12 +1,9 @@
 package org.vertx.java.core.app;
 
-import org.jruby.embed.ScriptingContainer;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,67 +71,73 @@ public class AppManager {
 
     if (appMeta.containsKey(appName)) {
       return "There is already a deployed application with name: " + appName;
-    } else {
-      for (int i = 0; i < instances; i++) {
-
-        ClassLoader cl = new ParentLastURLClassLoader(urls, getClass().getClassLoader());
-        try {
-
-          final VertxApp app;
-
-          if (type == AppType.RUBY) {
-            if (System.getProperty("jruby.home") == null) {
-              return "In order to deploy Ruby applications you must set JRUBY_HOME to point at the base of your JRuby install";
-            }
-            app = new JRubyApp(main, cl);
-          } else if (type == AppType.JAVA) {
-            Class clazz = cl.loadClass(main);
-            try {
-              app = (VertxApp)clazz.newInstance();
-            } catch (Exception e) {
-              return "Failed to instantiate class: " + clazz;
-            }
-          } else {
-            throw new IllegalArgumentException("Unsupported language: " + type);
-          }
-
-          if (type == AppType.JAVA) {
-            //Sanity check - make sure each instance of class has its own classloader - this might not be true if
-            //the class got loaded from the parent classpath, so we fail if this occurs
-
-            //We only need to do this for Java since with JRuby the JRuby container ensures isolation (each
-            //application instance is run in its own container
-
-            List<AppHolder> list = apps.get(appName);
-            if (list != null) {
-              for (AppHolder holder: list) {
-                if (holder.app.getClass().getClassLoader() == app.getClass().getClassLoader()) {
-                  throw new IllegalStateException("There is already an instance of the app with the same classloader." +
-                      " Check that application classes aren't on the server classpath.");
-                }
-              }
-            }
-          }
-
-          VertxInternal.instance.go(new Runnable() {
-            public void run() {
-              try {
-                app.start();
-              } catch (Exception e) {
-                log.error("Unhandled exception in application start", e);
-              }
-              addApp(appName, app);
-            }
-          });
-
-        } catch (ClassNotFoundException e) {
-          return "Cannot find class: " + main;
-        }
-      }
-      appMeta.put(appName, new AppMetaData(urls, main));
-      log.info("Started " + instances + " instances ok");
-      return null;
     }
+
+    for (int i = 0; i < instances; i++) {
+
+      ClassLoader cl = new ParentLastURLClassLoader(urls, getClass().getClassLoader());
+      final VertxApp app;
+
+      switch (type) {
+        case JAVA:
+          Class clazz;
+          try {
+            clazz = cl.loadClass(main);
+          } catch (ClassNotFoundException e) {
+            return "Cannot find class: " + main;
+          }
+          try {
+            app = (VertxApp)clazz.newInstance();
+          } catch (Exception e) {
+            return "Failed to instantiate class: " + clazz;
+          }
+
+          //Sanity check - make sure each instance of class has its own classloader - this might not be true if
+          //the class got loaded from the parent classpath, so we fail if this occurs
+
+          //We only need to do this for Java since with JRuby the JRuby container ensures isolation (each
+          //application instance is run in its own container
+
+          List<AppHolder> list = apps.get(appName);
+          if (list != null) {
+            for (AppHolder holder: list) {
+              if (holder.app.getClass().getClassLoader() == app.getClass().getClassLoader()) {
+                throw new IllegalStateException("There is already an instance of the app with the same classloader." +
+                    " Check that application classes aren't on the server classpath.");
+              }
+            }
+          }
+
+          break;
+        case RUBY:
+          if (System.getProperty("jruby.home") == null) {
+            return "In order to deploy Ruby applications you must set JRUBY_HOME to point at the base of your JRuby install";
+          }
+          app = new JRubyApp(main, cl);
+          break;
+        case JS:
+          app = new RhinoApp(main, cl);
+          break;
+        default:
+          throw new IllegalArgumentException("Unsupported type: " + type);
+      }
+
+      // Launch the app instance
+
+      VertxInternal.instance.go(new Runnable() {
+        public void run() {
+          try {
+            app.start();
+          } catch (Exception e) {
+            log.error("Unhandled exception in application start", e);
+          }
+          addApp(appName, app);
+        }
+      });
+    }
+    appMeta.put(appName, new AppMetaData(urls, main));
+    log.info("Started " + instances + " instances ok");
+    return null;
   }
 
   public synchronized String undeploy(String name) {

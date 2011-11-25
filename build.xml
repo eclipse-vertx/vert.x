@@ -146,6 +146,7 @@
                 <include name="netty.jar"/>
                 <include name="high-scale-lib.jar"/>
                 <!-- <include name="jruby.jar"/> -->
+                <include name="js.jar"/>
             </fileset>
         </copy>
 
