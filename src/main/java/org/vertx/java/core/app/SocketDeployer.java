@@ -124,6 +124,9 @@ public class SocketDeployer {
           case "js":
             appType = AppType.JS;
             break;
+          case "groovy":
+            appType = AppType.GROOVY;
+            break;
           default:
             sendError("Invalid type " + type, socket);
             return;

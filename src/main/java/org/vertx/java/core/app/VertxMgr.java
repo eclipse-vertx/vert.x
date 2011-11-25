@@ -66,6 +66,10 @@ public class VertxMgr {
         if (flag != null) {
           type = "js";
         }
+        flag = args.map.get("-groovy");
+        if (flag != null) {
+          type = "groovy";
+        }
 
         String name = args.map.get("-name");
         if (name == null) {

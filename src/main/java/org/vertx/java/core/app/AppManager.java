@@ -1,9 +1,12 @@
 package org.vertx.java.core.app;
 
+import groovy.lang.GroovyClassLoader;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,6 +120,20 @@ public class AppManager {
           break;
         case JS:
           app = new RhinoApp(main, cl);
+          break;
+        case GROOVY:
+          InputStream is = cl.getResourceAsStream(main);
+          GroovyClassLoader gcl = new GroovyClassLoader(cl);
+          clazz = gcl.parseClass(is);
+          try {
+            is.close();
+          } catch (IOException ignore) {
+          }
+          try {
+            app = (VertxApp)clazz.newInstance();
+          } catch (Exception e) {
+            return "Failed to instantiate class: " + clazz;
+          }
           break;
         default:
           throw new IllegalArgumentException("Unsupported type: " + type);
