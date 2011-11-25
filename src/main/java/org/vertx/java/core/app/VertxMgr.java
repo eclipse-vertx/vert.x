@@ -62,7 +62,10 @@ public class VertxMgr {
         if (flag != null) {
           type = "ruby";
         }
-
+        flag = args.map.get("-js");
+        if (flag != null) {
+          type = "js";
+        }
 
         String name = args.map.get("-name");
         if (name == null) {

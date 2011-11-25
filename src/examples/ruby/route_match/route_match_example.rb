@@ -16,18 +16,16 @@ require "vertx"
 include Vertx
 
 # Inspired from Sinatra / Express
-Vertx::internal_go do
+rm = RouteMatcher.new
 
-  rm = RouteMatcher.new
+# Extract the params from the uri
+rm.get('/details/:user/:id') { |req| req.response.end("User: #{req.params['user']} ID: #{req.params['id']}") }
 
-  # Extract the params from the uri
-  rm.get('/details/:user/:id') { |req| req.response.end("User: #{req.params['user']} ID: #{req.params['id']}") }
+# Catch all - serve the index page
+rm.get('.*') { |req| req.response.send_file("route_match/index.html")}
 
-  # Catch all - serve the index page
-  rm.get('.*') { |req| req.response.send_file("route_match/index.html")}
+@server = HttpServer.new.request_handler(rm).listen(8080)
 
-  HttpServer.new.request_handler(rm).listen(8080)
+def vertx_stop
+  @server.close
 end
-
-puts "hit enter to exit"
-STDIN.gets

@@ -15,18 +15,17 @@
 require "vertx"
 include Vertx
 
-Vertx::internal_go do
-  conns = SharedData::get_set("conns")
-  HttpServer.new.websocket_handler do |ws|
-    conns.add(ws.text_handler_id)
-    ws.data_handler do |data|
-      conns.each { |handler_id| Vertx::send_to_handler(handler_id, data.to_s) }
-    end
-    ws.closed_handler { conns.delete(ws.write_handler_id) }
-  end.request_handler do |req|
-    req.response.send_file("ws_fanout/ws.html") if req.uri == "/"
-  end.listen(8080)
-end
+conns = SharedData::get_set("conns")
+@server = HttpServer.new.websocket_handler do |ws|
+  conns.add(ws.text_handler_id)
+  ws.data_handler do |data|
+    conns.each { |handler_id| Vertx::send_to_handler(handler_id, data.to_s) }
+  end
+  ws.closed_handler { conns.delete(ws.write_handler_id) }
+end.request_handler do |req|
+  req.response.send_file("ws_fanout/ws.html") if req.uri == "/"
+end.listen(8080)
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @server.close
+end

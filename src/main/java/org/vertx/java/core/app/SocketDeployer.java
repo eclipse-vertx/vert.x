@@ -121,6 +121,9 @@ public class SocketDeployer {
           case "ruby":
             appType = AppType.RUBY;
             break;
+          case "js":
+            appType = AppType.JS;
+            break;
           default:
             sendError("Invalid type " + type, socket);
             return;

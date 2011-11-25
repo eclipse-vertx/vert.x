@@ -15,20 +15,19 @@
 require "vertx"
 include Vertx
 
-Vertx::internal_go do
-  client = HttpClient.new
-  client.port = 8080
-  client.host = "localhost"
-  req = client.put("/someurl") do |resp|
-    puts "Got response #{resp.status_code}"
-    resp.data_handler { |buffer| puts "Got data #{buffer}" }
-  end
-  req.chunked = true
-  for i in 0..9
-    req.write_str("client-data-chunk-#{i}")
-  end
-  req.end
+@client = HttpClient.new
+@client.port = 8080
+@client.host = "localhost"
+req = client.put("/someurl") do |resp|
+  puts "Got response #{resp.status_code}"
+  resp.data_handler { |buffer| puts "Got data #{buffer}" }
 end
+req.chunked = true
+for i in 0..9
+  req.write_str("client-data-chunk-#{i}")
+end
+req.end
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @client.close
+end

@@ -15,23 +15,22 @@
 require "vertx"
 include Vertx
 
-Vertx::internal_go do
-  pool = RedisPool.new
-  key = Buffer.create("my_count")
-  HttpServer.new.request_handler do |req|
-    if req.uri == "/"
-      conn = pool.connection
-      conn.incr(key).handler{ |future|
-        req.response.put_header("Content-Type", "text/html; charset=UTF-8").
-            write_str_and_end("<html><body><h1>Hit count is #{future.result}</h1></body></html>")
-        conn.close
-      }.execute
-    else
-      req.response.status_code = 404
-      req.response.end
-    end
-  end.listen(8080)
-end
+pool = RedisPool.new
+key = Buffer.create("my_count")
+@server = HttpServer.new.request_handler do |req|
+  if req.uri == "/"
+    conn = pool.connection
+    conn.incr(key).handler{ |future|
+      req.response.put_header("Content-Type", "text/html; charset=UTF-8").
+          write_str_and_end("<html><body><h1>Hit count is #{future.result}</h1></body></html>")
+      conn.close
+    }.execute
+  else
+    req.response.status_code = 404
+    req.response.end
+  end
+end.listen(8080)
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @server.close
+end

@@ -15,11 +15,10 @@
 require "vertx"
 include Vertx
 
-Vertx::internal_go do
-  HttpServer.new.request_handler do |req|
-    req.response.write_str_and_end("<html><body><h1>Hello from vert.x!</h1></body></html>")
-  end.listen(8080)
-end
+@server = HttpServer.new.request_handler do |req|
+  req.response.write_str_and_end("<html><body><h1>Hello from vert.x!</h1></body></html>")
+end.listen(8080)
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @server.close
+end
