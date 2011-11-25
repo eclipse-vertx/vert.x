@@ -16,7 +16,7 @@ require "vertx"
 require "set"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   HttpServer.new.request_handler do |req|
     puts "Got request #{req.uri}"
     req.header_names.each { |header_name| puts "#{header_name} : #{req.header(header_name)}" }

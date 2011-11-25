@@ -16,7 +16,7 @@ require "vertx"
 require "set"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   HttpServer.new.request_handler do |req|
     req.pause
     filename = (0...9).map { ('A'..'Z').to_a[rand(26)] }.join

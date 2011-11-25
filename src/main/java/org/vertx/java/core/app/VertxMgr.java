@@ -57,6 +57,13 @@ public class VertxMgr {
         instances is optional, defaults to number of cores on server
          */
 
+        String type = "java";
+        String flag = args.map.get("-ruby");
+        if (flag != null) {
+          type = "ruby";
+        }
+
+
         String name = args.map.get("-name");
         if (name == null) {
           name = "app-" + UUID.randomUUID().toString();
@@ -99,23 +106,27 @@ public class VertxMgr {
         StringBuffer urls = new StringBuffer();
         for (String part: parts) {
           File f = new File(part);
-          try {
-            URL url = f.toURI().toURL();
-            urls.append(url.toString());
-          } catch (MalformedURLException e) {
-            System.err.println("Invalid classpath: " + cp);
-            return;
-          }
+          urls.append(f.getAbsolutePath());
+//          try {
+//            #URL url = f.toURI().toURL();
+//            #urls.append(url.toString());
+//
+//          } catch (MalformedURLException e) {
+//            System.err.println("Invalid classpath: " + cp);
+//            return;
+//          }
           if (index != parts.length - 1) {
-            urls.append("|");
+            urls.append(':');
           }
           index++;
         }
 
         System.out.println("Deploying application name: " + name + " instances: " + instances);
-        String command = "deploy java " + name + " "  + main + " " + urls.toString() + " " + instances + "\n";
+        String command = "deploy " + type + " " + name + " "  + main + " " + urls.toString() + " " + instances + "\n";
         String res = sendCommand(port, command, true);
         System.out.println(res);
+
+        System.out.println("Command:" + command);
 
 
       } else if (sargs[0].equalsIgnoreCase("undeploy")) {

@@ -15,11 +15,17 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
-  NetServer.new.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }.listen(8080)
+@server = NetServer.new.connect_handler { |socket|
+  puts "connected on #{java.lang.System.identityHashCode(self)}"
+  socket.data_handler { |data|
+    socket.write_buffer(data)
+  }
+}.listen(8080)
+
+def vertx_stop
+  @server.close
 end
-puts "hit enter to exit"
-STDIN.gets
+
 
 
 

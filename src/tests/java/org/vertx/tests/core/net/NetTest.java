@@ -22,6 +22,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -38,6 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetTest extends TestBase {
+
+  private static final Logger log = Logger.getLogger(NetTest.class);
 
   @Test
   public void testConnect() throws Exception {
@@ -372,6 +375,7 @@ public class NetTest extends TestBase {
 
         final long actorId = Vertx.instance.registerHandler(new Handler<String>() {
           public void handle(String msg) {
+            log.info("**closing on server");
             server.close(new SimpleHandler() {
               public void handle() {
                 serverCloseLatch.countDown();

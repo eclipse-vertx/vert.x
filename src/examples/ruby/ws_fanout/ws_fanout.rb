@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   conns = SharedData::get_set("conns")
   HttpServer.new.websocket_handler do |ws|
     conns.add(ws.text_handler_id)

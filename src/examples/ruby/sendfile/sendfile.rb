@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   HttpServer.new.request_handler do |req|
     filename = "sendfile/" << (req.uri == "/" ? "index.html" : "." << req.uri)
     req.response.send_file(filename)

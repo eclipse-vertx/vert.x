@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   HttpServer.new.websocket_handler do |ws|
     ws.close if ws.uri != "/myapp"
     ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }

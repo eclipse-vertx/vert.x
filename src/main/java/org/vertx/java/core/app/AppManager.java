@@ -1,9 +1,12 @@
 package org.vertx.java.core.app;
 
+import org.jruby.embed.ScriptingContainer;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,61 +72,58 @@ public class AppManager {
     log.info("Deploying application name : " + appName + " type: " + type + " main class: " + main +
              " instances: " + instances);
 
-//    String[] parts = classpath.split(":");
-//    URL[] urls = new URL[parts.length];
-//    try {
-//      int index = 0;
-//      for (String part: parts) {
-//        File f = new File(part);
-//        part = "file://" + f.getAbsolutePath();
-//        if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
-//          part += "/";
-//        }
-//        URL url = new URL(part);
-//        log.info("url part is: " + part);
-//        urls[index++] = url;
-//      }
-//    } catch (MalformedURLException e) {
-//      return "Invalid classpath: " + classpath;
-//    }
-
     if (appMeta.containsKey(appName)) {
       return "There is already a deployed application with name: " + appName;
     } else {
       for (int i = 0; i < instances; i++) {
-        //Each instance has its own classloader for isolation
+
         ClassLoader cl = new ParentLastURLClassLoader(urls, getClass().getClassLoader());
         try {
-          Class clazz = cl.loadClass(main);
 
           final VertxApp app;
-          try {
-            app = (VertxApp)clazz.newInstance();
-          } catch (Exception e) {
-            return "Failed to instantiate class: " + clazz;
+
+          if (type == AppType.RUBY) {
+            if (System.getProperty("jruby.home") == null) {
+              return "In order to deploy Ruby applications you must set JRUBY_HOME to point at the base of your JRuby install";
+            }
+            app = new JRubyApp(main, cl);
+          } else if (type == AppType.JAVA) {
+            Class clazz = cl.loadClass(main);
+            try {
+              app = (VertxApp)clazz.newInstance();
+            } catch (Exception e) {
+              return "Failed to instantiate class: " + clazz;
+            }
+          } else {
+            throw new IllegalArgumentException("Unsupported language: " + type);
           }
 
-          //Sanity check - make sure each instance of class has its own classloader - this might not be true if
-          //the class got loaded from the parent classpath, so we fail if this occurs
+          if (type == AppType.JAVA) {
+            //Sanity check - make sure each instance of class has its own classloader - this might not be true if
+            //the class got loaded from the parent classpath, so we fail if this occurs
 
-          List<AppHolder> list = apps.get(appName);
-          if (list != null) {
-            for (AppHolder holder: list) {
-              if (holder.app.getClass().getClassLoader() == app.getClass().getClassLoader()) {
-                throw new IllegalStateException("There is already an instance of the app with the same classloader." +
-                    " Check that application classes aren't on the server classpath.");
+            //We only need to do this for Java since with JRuby the JRuby container ensures isolation (each
+            //application instance is run in its own container
+
+            List<AppHolder> list = apps.get(appName);
+            if (list != null) {
+              for (AppHolder holder: list) {
+                if (holder.app.getClass().getClassLoader() == app.getClass().getClassLoader()) {
+                  throw new IllegalStateException("There is already an instance of the app with the same classloader." +
+                      " Check that application classes aren't on the server classpath.");
+                }
               }
             }
           }
 
           VertxInternal.instance.go(new Runnable() {
             public void run() {
-              addApp(appName, app);
               try {
                 app.start();
               } catch (Exception e) {
                 log.error("Unhandled exception in application start", e);
               }
+              addApp(appName, app);
             }
           });
 
@@ -138,13 +138,19 @@ public class AppManager {
   }
 
   public synchronized String undeploy(String name) {
+    if (appMeta.get(name) == null) {
+      return "There is no deployed app with name " + name;
+    }
     log.info("Undeploying all instances of application: " + name);
     List<AppHolder> list = apps.get(name);
+    log.info("There are " + list.size());
     for (final AppHolder holder: list) {
       VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
         public void run() {
+          VertxInternal.instance.setContextID(holder.contextID);
           try {
             holder.app.stop();
+            log.info("Stopped app");
           } catch (Exception e) {
             log.error("Unhandled exception in application stop", e);
           }

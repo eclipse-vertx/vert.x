@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
+Vertx::internal_go do
   client = NetClient.new
   client.ssl = true
   client.trust_all = true

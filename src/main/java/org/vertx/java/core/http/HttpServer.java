@@ -375,6 +375,7 @@ public class HttpServer extends NetServerBase {
   private void executeCloseDone(final Handler<Void> done) {
     VertxInternal.instance.executeOnContext(contextID, new Runnable() {
       public void run() {
+        VertxInternal.instance.setContextID(contextID);
         done.handle(null);
       }
     });

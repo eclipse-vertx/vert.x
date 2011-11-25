@@ -419,6 +419,7 @@ public class AsyncFile {
           // It's been fully written
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
+              VertxInternal.instance.setContextID(contextID);
               writesOutstanding -= buff.limit();
               deferred.setResult(null);
             }
@@ -431,6 +432,7 @@ public class AsyncFile {
           final Exception e = (Exception) exc;
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
+              VertxInternal.instance.setContextID(contextID);
               deferred.setException(e);
             }
           });

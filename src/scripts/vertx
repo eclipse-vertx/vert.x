@@ -15,6 +15,8 @@ done
 
 DIRNAME=`dirname "$PRG"`
 
-CLASSPATH=$DIRNAME/../lib/java/vert.x.jar:$DIRNAME/../lib/java/netty.jar:$DIRNAME/../lib/java/high-scale-lib.jar
+CLASSPATH=$DIRNAME/../lib/java/vert.x.jar:$DIRNAME/../lib/java/netty.jar:$DIRNAME/../lib/java/high-scale-lib.jar:\
+$DIRNAME/../lib/java/jruby.jar:$DIRNAME/../lib/ruby:$JRUBY_HOME/lib/jruby.jar
 
-java -Djava.util.logging.config.file=$DIRNAME/../logging.properties -cp $CLASSPATH org.vertx.java.core.app.VertxMgr "$@"
+java -Djava.util.logging.config.file=$DIRNAME/../logging.properties -Djruby.home=$JRUBY_HOME\
+ -cp $CLASSPATH org.vertx.java.core.app.VertxMgr "$@"
