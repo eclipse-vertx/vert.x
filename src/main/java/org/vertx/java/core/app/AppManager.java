@@ -1,12 +1,14 @@
 package org.vertx.java.core.app;
 
-import groovy.lang.GroovyClassLoader;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.app.cli.SocketDeployer;
+import org.vertx.java.core.app.groovy.GroovyAppFactory;
+import org.vertx.java.core.app.java.JavaAppFactory;
+import org.vertx.java.core.app.jruby.JRubyAppFactory;
+import org.vertx.java.core.app.rhino.RhinoAppFactory;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +43,10 @@ public class AppManager {
     start(true);
   }
 
+  public void startNoBlock() {
+    start(false);
+  }
+
   private void start(boolean block) {
 
     deployer.start();
@@ -62,7 +68,8 @@ public class AppManager {
     stopLatch.countDown();
   }
 
-  public synchronized String deploy(final String appName, final AppType type, URL[] urls, String main, int instances) {
+  public synchronized String deploy(final AppType type, final String appName, String main, URL[] urls, int instances)
+    throws Exception {
 
     if (instances == -1) {
       // Default to number of cores
@@ -73,71 +80,30 @@ public class AppManager {
              " instances: " + instances);
 
     if (appMeta.containsKey(appName)) {
-      return "There is already a deployed application with name: " + appName;
+      throw new IllegalStateException("There is already a deployed application with name: " + appName);
     }
 
     for (int i = 0; i < instances; i++) {
 
-      ClassLoader cl = new ParentLastURLClassLoader(urls, getClass().getClassLoader());
-      final VertxApp app;
-
+      AppFactory appFactory;
       switch (type) {
         case JAVA:
-          Class clazz;
-          try {
-            clazz = cl.loadClass(main);
-          } catch (ClassNotFoundException e) {
-            return "Cannot find class: " + main;
-          }
-          try {
-            app = (VertxApp)clazz.newInstance();
-          } catch (Exception e) {
-            return "Failed to instantiate class: " + clazz;
-          }
-
-          //Sanity check - make sure each instance of class has its own classloader - this might not be true if
-          //the class got loaded from the parent classpath, so we fail if this occurs
-
-          //We only need to do this for Java since with JRuby the JRuby container ensures isolation (each
-          //application instance is run in its own container
-
-          List<AppHolder> list = apps.get(appName);
-          if (list != null) {
-            for (AppHolder holder: list) {
-              if (holder.app.getClass().getClassLoader() == app.getClass().getClassLoader()) {
-                throw new IllegalStateException("There is already an instance of the app with the same classloader." +
-                    " Check that application classes aren't on the server classpath.");
-              }
-            }
-          }
-
+          appFactory = new JavaAppFactory();
           break;
         case RUBY:
-          if (System.getProperty("jruby.home") == null) {
-            return "In order to deploy Ruby applications you must set JRUBY_HOME to point at the base of your JRuby install";
-          }
-          app = new JRubyApp(main, cl);
+          appFactory = new JRubyAppFactory();
           break;
         case JS:
-          app = new RhinoApp(main, cl);
+          appFactory = new RhinoAppFactory();
           break;
         case GROOVY:
-          InputStream is = cl.getResourceAsStream(main);
-          GroovyClassLoader gcl = new GroovyClassLoader(cl);
-          clazz = gcl.parseClass(is);
-          try {
-            is.close();
-          } catch (IOException ignore) {
-          }
-          try {
-            app = (VertxApp)clazz.newInstance();
-          } catch (Exception e) {
-            return "Failed to instantiate class: " + clazz;
-          }
+          appFactory = new GroovyAppFactory();
           break;
         default:
           throw new IllegalArgumentException("Unsupported type: " + type);
       }
+
+      final VertxApp app = appFactory.createApp(main, urls, getClass().getClassLoader());
 
       // Launch the app instance
 
