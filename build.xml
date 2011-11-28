@@ -37,7 +37,7 @@
     <property name="tests-src" value="src/tests/java"/>
 
     <property name="test-apps-target" value="${target}/test-apps/classes"/>
-    <property name="test-apps-src" value="src/tests/resources/testapps/java"/>
+    <property name="java-test-apps-src" value="src/tests/resources/testapps/java"/>
 
     <property name="javadoc-dir" value="docs/java/api"/>
     <property name="rubydoc-dir" value="docs/ruby/api"/>
@@ -86,7 +86,7 @@
 
     <target name="compile-test-apps" depends="jar-core">
         <mkdir dir="${test-apps-target}"/>
-        <javac srcdir="${test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
+        <javac srcdir="${java-test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
     </target>
 
     <target name="tests" depends="java-tests, ruby-tests">

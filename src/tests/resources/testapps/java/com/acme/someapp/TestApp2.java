@@ -26,7 +26,6 @@ public class TestApp2 implements VertxApp {
 
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        //System.out.println("Got request: " + req.uri + " in " + TestApp2.this);
         req.response.end(String.valueOf(instanceCount.get()));
       }
     }).listen(8080, "localhost");
