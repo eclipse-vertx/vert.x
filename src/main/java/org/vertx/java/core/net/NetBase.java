@@ -65,6 +65,10 @@ public abstract class NetBase {
     if (Thread.currentThread() != th) {
       throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
+
+    if (Vertx.instance.getContextID() != contextID) {
+      throw new IllegalStateException("Invoked with wrong contextID");
+    }
   }
 
   protected enum ClientAuth {

@@ -15,23 +15,22 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
-  client = HttpClient.new
-  client.port = 8080
-  client.host = "localhost"
-  req = client.put("/someurl") { |resp| puts "Response #{resp.status_code}" }
-  filename = "upload/upload.txt"
-  FileSystem::props(filename).handler do |compl|
-    size = compl.result.size
-    req.put_header("Content-Length", size)
-    FileSystem::open(filename).handler do |compl|
-      rs = compl.result.read_stream
-      pump = Pump.new(rs, req)
-      rs.end_handler { req.end }
-      pump.start
-    end
+@client = HttpClient.new
+@client.port = 8080
+@client.host = "localhost"
+req = @client.put("/someurl") { |resp| puts "Response #{resp.status_code}" }
+filename = "upload/upload.txt"
+FileSystem::props(filename).handler do |compl|
+  size = compl.result.size
+  req.put_header("Content-Length", size)
+  FileSystem::open(filename).handler do |compl|
+    rs = compl.result.read_stream
+    pump = Pump.new(rs, req)
+    rs.end_handler { req.end }
+    pump.start
   end
 end
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @client.close
+end

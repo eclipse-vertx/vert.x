@@ -15,18 +15,17 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
-  conns = SharedData::get_set("conns")
-  NetServer.new.connect_handler do |socket|
-    conns.add(socket.write_handler_id)
-    socket.data_handler do |data|
-      conns.each { |actor_id| Vertx::send_to_handler(actor_id, data) }
-    end
-    socket.closed_handler { conns.delete(socket.write_handler_id) }
-  end.listen(8080)
-end
+conns = SharedData::get_set("conns")
+@server = NetServer.new.connect_handler do |socket|
+  conns.add(socket.write_handler_id)
+  socket.data_handler do |data|
+    conns.each { |actor_id| Vertx::send_to_handler(actor_id, data) }
+  end
+  socket.closed_handler { conns.delete(socket.write_handler_id) }
+end.listen(8080)
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @server.close
+end
 
 

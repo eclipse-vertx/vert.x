@@ -28,12 +28,15 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ws.WebSocketFrame;
+import org.vertx.java.core.logging.Logger;
 
 import java.io.File;
 import java.util.LinkedList;
 import java.util.Queue;
 
 class ServerConnection extends AbstractConnection {
+
+  private static final Logger log = Logger.getLogger(ServerConnection.class);
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 

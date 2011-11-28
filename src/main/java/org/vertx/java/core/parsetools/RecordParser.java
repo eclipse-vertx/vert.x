@@ -56,9 +56,13 @@ public class RecordParser implements Handler<Buffer> {
   private boolean delimited;
   private byte[] delim;
   private int recordSize;
-  private final Handler<Buffer> output;
+  private Handler<Buffer> output;
 
   private RecordParser(Handler<Buffer> output) {
+    this.output = output;
+  }
+
+  public void setOutput(Handler<Buffer> output) {
     this.output = output;
   }
 

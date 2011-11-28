@@ -54,9 +54,8 @@ class VertxImpl implements VertxInternal {
       TimeUnit.MILLISECONDS);
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
-  private final AtomicLong contextIDSeq = new AtomicLong(0);
-  private final AtomicLong actorSeq = new AtomicLong(0);
-
+  private final AtomicLong contextIDSeq = new AtomicLong(10); // Start at 10 for easier debugging
+  private final AtomicLong actorSeq = new AtomicLong(10); // Start at 10 for easier debugging
 
   // Public API ------------------------------------------------
 
@@ -120,6 +119,7 @@ class VertxImpl implements VertxInternal {
       });
       return true;
     } else {
+      log.info("Failed to find holder for actorid:" + handlerID);
       return false;
     }
   }
@@ -136,7 +136,7 @@ class VertxImpl implements VertxInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-         log.error("Failed to run on event loop", t);
+          log.error("Failed to run on event loop", t);
         }
       }
     });
@@ -259,7 +259,6 @@ class VertxImpl implements VertxInternal {
   public long setTimer(long delay, final Handler<Long> handler) {
     return setTimeout(delay, false, handler);
   }
-
 
   VertxImpl() {
     timer.start();

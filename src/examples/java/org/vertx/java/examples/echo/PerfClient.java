@@ -19,48 +19,47 @@ package org.vertx.java.examples.echo;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
-public class PerfClient extends VertxMain {
+public class PerfClient implements VertxApp {
 
-  public static void main(String[] args) throws Exception {
-    new EchoClient().run();
+  private NetClient client;
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
+  public void start() {
+    client = new NetClient().connect(8080, "localhost", new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+
+        final int packetSize = 32 * 1024;
+        final long batch = 1024 * 1024 * 100;
+
+        socket.dataHandler(new Handler<Buffer>() {
+          int bytesReceived = 0;
+          long beginning = System.currentTimeMillis();
+          long totalBytes = 0;
+          public void handle(Buffer buffer) {
+            bytesReceived += buffer.length();
+
+            if (bytesReceived > batch) {
+              long end = System.currentTimeMillis();
+              totalBytes += bytesReceived;
+              double totRate = 1000 * (double)totalBytes / (end - beginning);
+              System.out.println("tot rate: bytes / sec " + totRate);
+            }
+          }
+        });
+
+        Buffer buff = Buffer.create(new byte[packetSize]);
+
+        sendData(socket, buff);
+      }
+    });
   }
 
-   public void go() throws Exception {
-      new NetClient().connect(8080, "localhost", new Handler<NetSocket>() {
-        public void handle(NetSocket socket) {
-
-          final int packetSize = 32 * 1024;
-          final long batch = 1024 * 1024 * 100;
-
-          socket.dataHandler(new Handler<Buffer>() {
-            int bytesReceived = 0;
-            long beginning = System.currentTimeMillis();
-            long totalBytes = 0;
-            public void handle(Buffer buffer) {
-              bytesReceived += buffer.length();
-
-              if (bytesReceived > batch) {
-                long end = System.currentTimeMillis();
-                totalBytes += bytesReceived;
-                double totRate = 1000 * (double)totalBytes / (end - beginning);
-                System.out.println("tot rate: bytes / sec " + totRate);
-              }
-            }
-          });
-
-          Buffer buff = Buffer.create(new byte[packetSize]);
-
-          sendData(socket, buff);
-        }
-      });
+  public void stop() {
+    client.close();
   }
 
   private void sendData(final NetSocket socket, final Buffer buff) {

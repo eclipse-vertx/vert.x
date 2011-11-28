@@ -17,21 +17,16 @@
 package org.vertx.java.examples.ssl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
-public class SSLServer extends VertxMain {
+public class SSLServer implements VertxApp {
 
-  public static void main(String[] args) throws Exception {
-    new SSLServer().run();
+  private NetServer server;
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
-
-  public void go() throws Exception {
+  public void start() {
     new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         socket.dataHandler(new Handler<Buffer>() {
@@ -41,5 +36,9 @@ public class SSLServer extends VertxMain {
         });
       }
     }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(4443);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

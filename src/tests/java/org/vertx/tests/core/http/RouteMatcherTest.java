@@ -19,21 +19,17 @@ package org.vertx.tests.core.http;
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -95,16 +91,16 @@ public class RouteMatcherTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         RouteMatcher matcher = new RouteMatcher();
 
         Handler<HttpServerRequest> handler = new Handler<HttpServerRequest>() {
           public void handle(HttpServerRequest req) {
-            assert(req.getParams().size() == params.size());
-            for (Map.Entry<String, String> entry: params.entrySet()) {
-              assert(entry.getValue().equals(req.getParams().get(entry.getKey())));
+            assert (req.getParams().size() == params.size());
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+              assert (entry.getValue().equals(req.getParams().get(entry.getKey())));
             }
             req.response.end();
           }
@@ -133,7 +129,7 @@ public class RouteMatcherTest extends TestBase {
 
         req.end();
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();

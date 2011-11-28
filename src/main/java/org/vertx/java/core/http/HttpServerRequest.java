@@ -25,7 +25,6 @@ import org.vertx.java.core.streams.ReadStream;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

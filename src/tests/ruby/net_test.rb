@@ -23,7 +23,7 @@ class NetTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new 1
 
-    Vertx::go {
+    Vertx::internal_go {
       server = NetServer.new.connect_handler { |socket|
         socket.data_handler { |data|
           socket.write_buffer(data) # Just echo it back
@@ -75,7 +75,7 @@ class NetTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new 1
 
-    Vertx::go {
+    Vertx::internal_go {
 
         # Let's do full SSL with client auth
 
@@ -156,7 +156,7 @@ class NetTest < Test::Unit::TestCase
   def test_methods
     latch = Utils::Latch.new 1
 
-    Vertx::go {
+    Vertx::internal_go {
       server = NetServer.new
 
       server.ssl=true

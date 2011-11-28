@@ -20,152 +20,142 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.shared.SharedData;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ThreadingTest extends TestBase {
 
+  private static final Logger log = Logger.getLogger(ThreadingTest.class);
+
   @Test
-  // Test that all handlers for a connection are executed with same context
+  // Test that handlers are executed with the correct context
   public void testNetHandlers() throws Exception {
-    final int dataLength = 10000;
-    final CountDownLatch clientCloseLatch = new CountDownLatch(1);
-    final CountDownLatch serverCloseLatch = new CountDownLatch(1);
+    final int dataLength = 10;
+    final int connections = 50;
+    final int serverLoops = 5;
+    final int serversPerLoop = 3;
+    final CountDownLatch serverCloseLatch = new CountDownLatch(serverLoops * serversPerLoop);
+    final CountDownLatch listenLatch = new CountDownLatch(serverLoops * serversPerLoop);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    final Set<Long> serverHandlers = SharedData.getSet("servers");
 
-        final NetServer server = new NetServer();
+    for (int i = 0; i < serverLoops; i++) {
+      VertxInternal.instance.go(new Runnable() {
+        public void run() {
+          final ContextChecker checker = new ContextChecker();
 
-        final long actorId = Vertx.instance.registerHandler(new Handler<String>() {
+          for (int j = 0; j < serversPerLoop; j++) {
+            final NetServer server = new NetServer();
+
+            final long actorID = Vertx.instance.registerHandler(new Handler<String>() {
+              public void handle(String msg) {
+                checker.check();
+                server.close(new SimpleHandler() {
+                  public void handle() {
+                    checker.check();
+                    serverCloseLatch.countDown();
+                  }
+                });
+              }
+            });
+
+            serverHandlers.add(actorID);
+
+            server.connectHandler(new Handler<NetSocket>() {
+              public void handle(final NetSocket sock) {
+
+                checker.check();
+
+                sock.dataHandler(new Handler<Buffer>() {
+                  public void handle(Buffer data) {
+                    checker.check();
+                    sock.write(data);    // Send it back to client
+                  }
+                });
+                sock.closedHandler(new SimpleHandler() {
+                  public void handle() {
+                    checker.check();
+                  }
+                });
+              }
+            }).listen(8181);
+
+            listenLatch.countDown();
+          }
+        }
+      });
+    }
+
+    listenLatch.await(5, TimeUnit.SECONDS);
+
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
+        final NetClient client = new NetClient();
+
+        final ContextChecker checker = new ContextChecker();
+
+        final long actorID = Vertx.instance.registerHandler(new Handler<String>() {
+          int count;
           public void handle(String msg) {
-            server.close(new SimpleHandler() {
-              public void handle() {
-                serverCloseLatch.countDown();
+            checker.check();
+            count++;
+            if (count == connections) {
+              //All client connections closed - now tell the servers to shutdown
+              client.close();
+              for (Long sactorID: serverHandlers) {
+                Vertx.instance.sendToHandler(sactorID, "foo");
               }
-            });
-          }
-        });
-
-        server.connectHandler(new Handler<NetSocket>() {
-          public void handle(final NetSocket sock) {
-            final ContextChecker checker = new ContextChecker();
-            sock.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer data) {
-                checker.check();
-                sock.write(data);    // Send it back to client
-              }
-            });
-            sock.closedHandler(new SimpleHandler() {
-              public void handle() {
-                checker.check();
-                Vertx.instance.sendToHandler(actorId, "foo");
-              }
-            });
-          }
-        }).listen(8181);
-
-        NetClient client = new NetClient();
-
-        client.connect(8181, new Handler<NetSocket>() {
-          public void handle(final NetSocket sock) {
-            final ContextChecker checker = new ContextChecker();
-            final Buffer buff = Buffer.create(0);
-            sock.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer data) {
-                checker.check();
-                buff.appendBuffer(data);
-                if (buff.length() == dataLength) {
-                  sock.close();
-                }
-              }
-            });
-            sock.closedHandler(new SimpleHandler() {
-              public void handle() {
-                checker.check();
-                clientCloseLatch.countDown();
-              }
-            });
-            Buffer sendBuff = Utils.generateRandomBuffer(dataLength);
-            sock.write(sendBuff);
-          }
-        });
-      }
-    }.run();
-
-    assert serverCloseLatch.await(5, TimeUnit.SECONDS);
-    assert clientCloseLatch.await(5, TimeUnit.SECONDS);
-
-    throwAssertions();
-  }
-
-  @Test
-  /* Test that event loops are shared across available connections */
-  public void testMultipleEventLoops() throws Exception {
-    final int loops = VertxInternal.instance.getCoreThreadPoolSize();
-    final int connections = 100;
-    final Map<Thread, Object> threads = new ConcurrentHashMap<>();
-    final CountDownLatch clientConnectLatch = new CountDownLatch(loops);
-    final AtomicInteger serverConnectCount = new AtomicInteger(0);
-    final CountDownLatch serverConnectLatch = new CountDownLatch(1);
-
-    new VertxMain() {
-      public void go() throws Exception {
-
-        final NetServer server = new NetServer();
-
-        final long actorId = Vertx.instance.registerHandler(new Handler<String>() {
-          public void handle(String msg) {
-            server.close(new SimpleHandler() {
-              public void handle() {
-                serverConnectLatch.countDown();
-              }
-            });
-          }
-        });
-
-        server.connectHandler(new Handler<NetSocket>() {
-          public void handle(NetSocket sock) {
-            threads.put(Thread.currentThread(), "foo");
-            if (serverConnectCount.incrementAndGet() == connections) {
-              Vertx.instance.sendToHandler(actorId, "foo");
             }
           }
-        }).listen(8181);
-
-
-        NetClient client = new NetClient();
+        });
 
         for (int i = 0; i < connections; i++) {
+
           client.connect(8181, new Handler<NetSocket>() {
-            public void handle(NetSocket sock) {
-              clientConnectLatch.countDown();
-              sock.close();
+            public void handle(final NetSocket sock) {
+              final Buffer buff = Buffer.create(0);
+              sock.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer data) {
+                  checker.check();
+                  buff.appendBuffer(data);
+                  if (buff.length() == dataLength) {
+                    sock.close();
+                  }
+                }
+              });
+              sock.closedHandler(new SimpleHandler() {
+                public void handle() {
+                  checker.check();
+                  Vertx.instance.sendToHandler(actorID, "foo");
+                }
+              });
+              Buffer sendBuff = Utils.generateRandomBuffer(dataLength);
+              sock.write(sendBuff);
             }
           });
         }
       }
-    }.run();
+    });
 
-    assert serverConnectLatch.await(5, TimeUnit.SECONDS);
-    assert clientConnectLatch.await(5, TimeUnit.SECONDS);
-    assert loops == threads.size();
+    assert serverCloseLatch.await(5, TimeUnit.SECONDS);
+    SharedData.removeSet("servers");
 
     throwAssertions();
   }
+
+
 }

@@ -59,7 +59,7 @@ class HttpTest < Test::Unit::TestCase
 
     latch1 = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
       server = HttpServer.new
       if ssl
         server.ssl = true

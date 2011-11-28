@@ -19,7 +19,7 @@ package org.vertx.tests.core;
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.internal.VertxInternal;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -54,9 +54,8 @@ public class TimerTest extends TestBase {
   public void testOneOff() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
-
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
         final Thread th = Thread.currentThread();
         final long contextID = Vertx.instance.getContextID();
 
@@ -68,7 +67,7 @@ public class TimerTest extends TestBase {
           }
         });
       }
-    }.run();
+    });
 
     azzert(endLatch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -82,8 +81,8 @@ public class TimerTest extends TestBase {
 
     final long delay = 100;
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final Thread th = Thread.currentThread();
         final long contextID = Vertx.instance.getContextID();
@@ -105,7 +104,7 @@ public class TimerTest extends TestBase {
           }
         });
       }
-    }.run();
+    });
 
     azzert(endLatch.await(5, TimeUnit.SECONDS));
 
@@ -123,8 +122,8 @@ public class TimerTest extends TestBase {
   public void testTimings() throws Exception {
     final CountDownLatch endLatch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final Thread th = Thread.currentThread();
         final long contextID = Vertx.instance.getContextID();
@@ -141,7 +140,7 @@ public class TimerTest extends TestBase {
           }
         });
       }
-    }.run();
+    });
 
     azzert(endLatch.await(5, TimeUnit.SECONDS));
     throwAssertions();

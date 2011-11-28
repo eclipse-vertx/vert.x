@@ -33,7 +33,7 @@ class ActorTest < Test::Unit::TestCase
     msg1 = "hello from outer"
     msg2 = "hello from actor1"
 
-    Vertx::go {
+    Vertx::internal_go {
       id1 = Vertx::register_handler { |msg|
         assert(msg1 == msg)
         id2 = shared_hash[key2]
@@ -43,7 +43,7 @@ class ActorTest < Test::Unit::TestCase
       latch1.countdown
     }
 
-    Vertx::go {
+    Vertx::internal_go {
       id2 = Vertx::register_handler { |msg|
         assert(msg2 == msg)
         Vertx::unregister_handler(id2)
@@ -55,7 +55,7 @@ class ActorTest < Test::Unit::TestCase
 
     assert(latch1.await(5))
 
-    Vertx::go {
+    Vertx::internal_go {
       id1 = shared_hash[key1]
       Vertx::send_to_handler(id1, msg1)
     }

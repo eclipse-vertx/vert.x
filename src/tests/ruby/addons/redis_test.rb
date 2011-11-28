@@ -41,7 +41,7 @@ class RedisTest < Test::Unit::TestCase
 
   def flush
     latch = Utils::Latch.new 1
-    Vertx::go {
+    Vertx::internal_go {
       pool = RedisPool.new
       conn = pool.connection
 
@@ -57,7 +57,7 @@ class RedisTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
@@ -77,7 +77,7 @@ class RedisTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
@@ -103,7 +103,7 @@ class RedisTest < Test::Unit::TestCase
 
     latch = Utils::Latch.new(1)
 
-    Vertx::go {
+    Vertx::internal_go {
       pool = RedisPool.new
       conn = pool.connection
       comp = Composer.new
