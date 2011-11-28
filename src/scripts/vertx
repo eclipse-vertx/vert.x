@@ -19,4 +19,4 @@ CLASSPATH=$DIRNAME/../lib/java/vert.x.jar:$DIRNAME/../lib/java/netty.jar:$DIRNAM
 $DIRNAME/../lib/java/js.jar:$DIRNAME/../lib/java/groovy-all-1.8.1.jar:$DIRNAME/../lib/ruby:$JRUBY_HOME/lib/jruby.jar
 
 java -Djava.util.logging.config.file=$DIRNAME/../logging.properties -Djruby.home=$JRUBY_HOME\
- -cp $CLASSPATH org.vertx.java.core.app.VertxMgr "$@"
+ -cp $CLASSPATH org.vertx.java.core.app.cli.VertxMgr "$@"
