@@ -48,12 +48,17 @@ import org.vertx.java.core.http.ws.WebSocketFrameDecoder;
 import org.vertx.java.core.http.ws.WebSocketFrameEncoder;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.net.HandlerHolder;
+import org.vertx.java.core.net.HandlerManager;
 import org.vertx.java.core.net.NetServerBase;
+import org.vertx.java.core.net.NetServerWorkerPool;
+import org.vertx.java.core.net.ServerID;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,9 +70,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * <p>An HTTP server.</p>
- * <p/>
  * <p>The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.</p>
- * <p/>
  * <p>An {@code HttpServer} instance can only be used from the event loop that created it.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -76,11 +79,19 @@ public class HttpServer extends NetServerBase {
 
   private static final Logger log = Logger.getLogger(HttpServer.class);
 
+  private static final Map<ServerID, HttpServer> servers = new HashMap<>();
+
   private Handler<HttpServerRequest> requestHandler;
   private Handler<Websocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
+
+  private ServerID id;
+  private HttpServer actualServer;
+  private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
+  private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
+  private HandlerManager<Websocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
   /**
    * Create an {@code HttpServer}
@@ -139,54 +150,71 @@ public class HttpServer extends NetServerBase {
 
     listening = true;
 
-    serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
-    ChannelFactory factory =
-        new NioServerSocketChannelFactory(
-            VertxInternal.instance.getAcceptorPool(),
-            VertxInternal.instance.getWorkerPool());
-    ServerBootstrap bootstrap = new ServerBootstrap(factory);
-    bootstrap.setOptions(connectionOptions);
+    synchronized (servers) {
+      id = new ServerID(port, host);
+      HttpServer shared = servers.get(id);
+      if (shared == null) {
+        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
+        ChannelFactory factory =
+            new NioServerSocketChannelFactory(
+                VertxInternal.instance.getAcceptorPool(),
+                availableWorkers);
+        ServerBootstrap bootstrap = new ServerBootstrap(factory);
+        bootstrap.setOptions(connectionOptions);
 
-    checkSSL();
+        checkSSL();
 
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() {
-        ChannelPipeline pipeline = Channels.pipeline();
+        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+          public ChannelPipeline getPipeline() {
+            ChannelPipeline pipeline = Channels.pipeline();
 
-        if (ssl) {
-          SSLEngine engine = context.createSSLEngine();
-          engine.setUseClientMode(false);
-          switch (clientAuth) {
-            case REQUEST: {
-              engine.setWantClientAuth(true);
-              break;
+            if (ssl) {
+              SSLEngine engine = context.createSSLEngine();
+              engine.setUseClientMode(false);
+              switch (clientAuth) {
+                case REQUEST: {
+                  engine.setWantClientAuth(true);
+                  break;
+                }
+                case REQUIRED: {
+                  engine.setNeedClientAuth(true);
+                  break;
+                }
+                case NONE: {
+                  engine.setNeedClientAuth(false);
+                  break;
+                }
+              }
+              pipeline.addLast("ssl", new SslHandler(engine));
             }
-            case REQUIRED: {
-              engine.setNeedClientAuth(true);
-              break;
-            }
-            case NONE: {
-              engine.setNeedClientAuth(false);
-              break;
-            }
+
+            pipeline.addLast("decoder", new HttpRequestDecoder());
+            pipeline.addLast("encoder", new HttpResponseEncoder());
+
+            pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+            pipeline.addLast("handler", new ServerHandler());
+            return pipeline;
           }
-          pipeline.addLast("ssl", new SslHandler(engine));
+        });
+
+        try {
+          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+          serverChannelGroup.add(serverChannel);
+        } catch (UnknownHostException e) {
+          e.printStackTrace();
         }
-
-        pipeline.addLast("decoder", new HttpRequestDecoder());
-        pipeline.addLast("encoder", new HttpResponseEncoder());
-
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-        pipeline.addLast("handler", new ServerHandler());
-        return pipeline;
+        servers.put(id, this);
+        actualServer = this;
+      } else {
+        // Server already exists with that host/port - we will use that
+        actualServer = shared;
       }
-    });
-
-    try {
-      Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
-      serverChannelGroup.add(serverChannel);
-    } catch (UnknownHostException e) {
-      e.printStackTrace();
+      if (requestHandler != null) {
+        actualServer.reqHandlerManager.addHandler(requestHandler);
+      }
+      if (wsHandler != null) {
+        actualServer.wsHandlerManager.addHandler(wsHandler);
+      }
     }
     return this;
   }
@@ -307,22 +335,50 @@ public class HttpServer extends NetServerBase {
    * Close the server. Any open HTTP connections will be closed. {@code doneHandler} will be called when the close
    * is complete.
    */
-  public void close(final Handler<Void> doneHandler) {
+  public void close(final Handler<Void> done) {
     checkThread();
+
+    if (!listening) return;
+
+    listening = false;
+
+    if (actualServer != null && actualServer != this) {
+      if (requestHandler != null) {
+        actualServer.reqHandlerManager.removeHandler(requestHandler);
+      }
+      if (wsHandler != null) {
+        actualServer.wsHandlerManager.removeHandler(wsHandler);
+      }
+      if (done != null) {
+        executeCloseDone(done);
+      }
+      return;
+    }
+
+    if (id != null) {
+      servers.remove(id);
+    }
+
     for (ServerConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
-    if (doneHandler != null) {
-      serverChannelGroup.close().addListener(new ChannelGroupFutureListener() {
+    ChannelGroupFuture fut = serverChannelGroup.close();
+    if (done != null) {
+      fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
-            public void run() {
-              doneHandler.handle(null);
-            }
-          });
+          executeCloseDone(done);
         }
       });
     }
+  }
+
+  private void executeCloseDone(final Handler<Void> done) {
+    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+      public void run() {
+        VertxInternal.instance.setContextID(contextID);
+        done.handle(null);
+      }
+    });
   }
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
@@ -331,36 +387,56 @@ public class HttpServer extends NetServerBase {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       Object msg = e.getMessage();
-      ServerConnection conn = connectionMap.get(ch);
+      if (msg instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) msg;
 
-      if (conn != null) {
-        if (msg instanceof HttpRequest) {
-          HttpRequest request = (HttpRequest) msg;
+        if (HttpHeaders.is100ContinueExpected(request)) {
+          ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+        }
 
-          if (HttpHeaders.is100ContinueExpected(request)) {
-            ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
-          }
+        if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
+            WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
+          // Websocket handshake
 
-          if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
-              WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
-            // Websocket handshake
+          Handshake shake = new Handshake();
+          if (shake.matches(request)) {
+            HttpResponse resp = shake.generateResponse(request);
+            ChannelPipeline p = ch.getPipeline();
+            p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
+            ch.write(resp);
+            p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(false));
 
-            Handshake shake = new Handshake();
-            if (shake.matches(request)) {
-              HttpResponse resp = shake.generateResponse(request);
-              ChannelPipeline p = ch.getPipeline();
-              p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
-              ch.write(resp);
-              p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(false));
+            HandlerHolder<Websocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
+            if (wsHandler != null) {
+              ServerConnection conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
+              conn.wsHandler(wsHandler.handler);
               conn.handleWebsocketConnect(request.getUri());
-            } else {
-              ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
+              connectionMap.put(ch, conn);
             }
 
           } else {
+            ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
+          }
+
+        } else {
+          //HTTP request or chunk
+          ServerConnection conn = connectionMap.get(ch);
+          if (conn == null) {
+            HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
+            if (reqHandler != null) {
+              conn = new ServerConnection(ch, reqHandler.contextID, ch.getWorker().getThread());
+              conn.requestHandler(reqHandler.handler);
+              connectionMap.put(ch, conn);
+            }
+          }
+          if (conn != null) {
             conn.handleMessage(msg);
           }
-        } else {
+        }
+      } else {
+        //Websocket frame
+        ServerConnection conn = connectionMap.get(ch);
+        if (conn != null) {
           conn.handleMessage(msg);
         }
       }
@@ -374,7 +450,7 @@ public class HttpServer extends NetServerBase {
       ch.close();
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
-        runOnCorrectThread(ch, new Runnable() {
+        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
           public void run() {
             conn.handleException((Exception) t);
           }
@@ -386,29 +462,20 @@ public class HttpServer extends NetServerBase {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final long contextID = VertxInternal.instance.associateContextWithWorker(ch.getWorker());
-      runOnCorrectThread(ch, new Runnable() {
-        public void run() {
-          final ServerConnection conn = new ServerConnection(ch, contextID, Thread.currentThread());
-          conn.requestHandler(requestHandler);
-          conn.wsHandler(wsHandler);
-          connectionMap.put(ch, conn);
-        }
-      });
+      //NOOP
     }
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.remove(ch);
-      runOnCorrectThread(ch, new Runnable() {
-        public void run() {
-          conn.handleClosed();
-          VertxInternal.instance.destroyContext(conn.getContextID());
-        }
-      });
-
+      if (conn != null) {
+        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
+          public void run() {
+            conn.handleClosed();
+          }
+        });
+      }
     }
 
     @Override
@@ -417,7 +484,7 @@ public class HttpServer extends NetServerBase {
       final ServerConnection conn = connectionMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        runOnCorrectThread(ch, new Runnable() {
+        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
           public void run() {
             conn.handleInterestedOpsChanged();
           }
@@ -425,8 +492,8 @@ public class HttpServer extends NetServerBase {
       }
     }
 
-    private String getWebSocketLocation(HttpRequest req, String path) {
-      return "ws://" + req.getHeader(HttpHeaders.Names.HOST) + path;
-    }
+//    private String getWebSocketLocation(HttpRequest req, String path) {
+//      return "ws://" + req.getHeader(HttpHeaders.Names.HOST) + path;
+//    }
   }
 }

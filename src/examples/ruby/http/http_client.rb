@@ -15,17 +15,16 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
-  client = HttpClient.new
-  client.port = 8080
-  client.host = "localhost"
-  client.get_now("/") do |resp|
-    puts "Got response #{resp.status_code}"
-    resp.data_handler do |buffer|
-      puts "Got data #{buffer}"
-    end
+@client = HttpClient.new
+@client.port = 8080
+@client.host = "localhost"
+@client.get_now("/") do |resp|
+  puts "Got response #{resp.status_code}"
+  resp.data_handler do |buffer|
+    puts "Got data #{buffer}"
   end
 end
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @client.close
+end

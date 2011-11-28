@@ -18,7 +18,7 @@ package org.vertx.java.examples.proxy;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
@@ -26,19 +26,16 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-public class ProxyServer extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new ProxyServer().run();
+public class ProxyServer implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpClient client;
+  private HttpServer server;
 
-  public void go() throws Exception {
+  public void start()  {
 
-    final HttpClient client = new HttpClient().setHost("localhost").setPort(8282);
+    client = new HttpClient().setHost("localhost").setPort(8282);
 
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         System.out.println("Proxying request: " + req.uri);
         final HttpClientRequest cReq = client.request(req.method, req.uri, new Handler<HttpClientResponse>() {
@@ -75,5 +72,10 @@ public class ProxyServer extends VertxMain {
         });
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    client.close();
+    server.close();
   }
 }

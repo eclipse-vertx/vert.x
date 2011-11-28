@@ -21,6 +21,7 @@ import org.vertx.java.core.ConnectionPool;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.internal.VertxInternal;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +48,7 @@ public class ConnectionPoolTest extends TestBase {
 
     for (int i = 0; i < numLoops; i++) {
       loops[i] = new Looper();
-      Vertx.instance.go(loops[i]);
+      VertxInternal.instance.go(loops[i]);
     }
 
 //    Thread.sleep(10000);

@@ -24,7 +24,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def setup
     latch = Utils::Latch.new 1
-    Vertx::go {
+    Vertx::internal_go {
       FileSystem::exists?(FILEDIR).handler{ |exists|
         if exists
           FileSystem::delete_recursive(FILEDIR).handler{
@@ -44,7 +44,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def teardown
     latch = Utils::Latch.new 1
-    Vertx::go {
+    Vertx::internal_go {
       FileSystem::delete_recursive(FILEDIR).handler{
         FileSystem::mkdir(FILEDIR).handler{
           latch.countdown
@@ -56,7 +56,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def test_stats
     latch = Utils::Latch.new 1
-    Vertx::go {
+    Vertx::internal_go {
       filename = FILEDIR + "/test-file.txt"
       FileSystem::create_file(filename).handler{
         FileSystem::props(filename).handler{ |compl|
@@ -80,7 +80,7 @@ class FileSystemTest < Test::Unit::TestCase
 
   def test_async_file
     latch = Utils::Latch.new 1
-    Vertx::go {
+    Vertx::internal_go {
       FileSystem::open(FILEDIR + "/somefile.txt").handler{ |compl|
         assert(compl.succeeded?)
         file = compl.result
@@ -123,7 +123,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_async_file_streams
     latch = Utils::Latch.new 1
     filename = FILEDIR + "/somefile.txt"
-    Vertx::go {
+    Vertx::internal_go {
       FileSystem::open(filename).handler{ |compl|
         assert(compl.succeeded?)
         file = compl.result

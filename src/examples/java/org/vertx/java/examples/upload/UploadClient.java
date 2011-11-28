@@ -20,9 +20,10 @@ import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.streams.Pump;
@@ -30,22 +31,15 @@ import org.vertx.java.core.streams.Pump;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-/**
- * User: tim
- * Date: 25/08/11
- * Time: 11:30
- */
-public class UploadClient extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new UploadClient().run();
+public class UploadClient implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpClient client;
 
-  public void go() throws Exception {
+  public void start() throws Exception {
 
-    final HttpClientRequest req = new org.vertx.java.core.http.HttpClient().setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
+    client = new HttpClient().setPort(8080).setHost("localhost");
+
+    final HttpClientRequest req = client.put("/some-url", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
         System.out.println("File uploaded " + response.statusCode);
       }
@@ -87,5 +81,9 @@ public class UploadClient extends VertxMain {
       }
     });
 
+  }
+
+  public void stop() {
+    client.close();
   }
 }

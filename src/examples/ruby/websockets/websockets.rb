@@ -15,14 +15,13 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
-  HttpServer.new.websocket_handler do |ws|
-    ws.close if ws.uri != "/myapp"
-    ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
-  end.request_handler do |req|
-    req.response.send_file("websockets/ws.html") if req.uri == "/"
-  end.listen(8080)
-end
+@server = HttpServer.new.websocket_handler do |ws|
+  ws.close if ws.uri != "/myapp"
+  ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
+end.request_handler do |req|
+  req.response.send_file("websockets/ws.html") if req.uri == "/"
+end.listen(8080)
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @server.close
+end

@@ -55,4 +55,6 @@ public interface VertxInternal extends Vertx {
   NioWorker getWorkerForContextID(long contextID);
 
   int getCoreThreadPoolSize();
+
+  void go(Runnable runnable);
 }

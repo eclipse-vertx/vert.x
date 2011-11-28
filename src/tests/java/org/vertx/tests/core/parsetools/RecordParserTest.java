@@ -102,7 +102,6 @@ public class RecordParserTest {
         }
       }
     }
-    ;
 
     MyHandler out = new MyHandler();
     Buffer[] expected = new Buffer[lines];

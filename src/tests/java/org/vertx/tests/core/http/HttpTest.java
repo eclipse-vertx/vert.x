@@ -20,13 +20,13 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
@@ -115,8 +115,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           int count;
@@ -190,7 +190,7 @@ public class HttpTest extends TestBase {
         }
 
       }
-    }.run();
+    });
     azzert(latch.await(10, TimeUnit.SECONDS));
     throwAssertions();
   }
@@ -207,8 +207,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           public void handle(HttpServerRequest req) {
@@ -247,7 +247,7 @@ public class HttpTest extends TestBase {
 
         client.close();
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -262,8 +262,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
@@ -312,7 +312,7 @@ public class HttpTest extends TestBase {
 
         req.sendHead();
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -327,8 +327,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
@@ -381,7 +381,7 @@ public class HttpTest extends TestBase {
 
         req.sendHead();
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -405,8 +405,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
@@ -434,6 +434,7 @@ public class HttpTest extends TestBase {
 
         final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           final Buffer received = Buffer.create(0);
+
           public void handle(HttpClientResponse resp) {
             assert (200 == resp.statusCode);
             resp.dataHandler(new Handler<Buffer>() {
@@ -461,7 +462,7 @@ public class HttpTest extends TestBase {
           req.end(toSend);
         }
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -483,8 +484,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
@@ -527,7 +528,7 @@ public class HttpTest extends TestBase {
         }
         req.end();
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -549,8 +550,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           final Buffer received = Buffer.create(0);
@@ -607,7 +608,7 @@ public class HttpTest extends TestBase {
         req.end();
 
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();
@@ -635,8 +636,8 @@ public class HttpTest extends TestBase {
 
     for (int j = 0; j < numContexts; j++) {
       final int thePort = port + j;
-      new VertxMain() {
-        public void go() throws Exception {
+      VertxInternal.instance.go(new Runnable() {
+        public void run() {
 
           final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
             public void handle(HttpServerRequest req) {
@@ -667,7 +668,7 @@ public class HttpTest extends TestBase {
             req.end();
           }
         }
-      }.run();
+      });
     }
 
     azzert(latch.await(5, TimeUnit.SECONDS));
@@ -727,8 +728,8 @@ public class HttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
         final HttpServer server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
           public void handle(final HttpServerRequest req) {
             azzert((method.equals("GETNOW") ? "GET" : method).equals(req.method), method + ":" + req.method);
@@ -819,7 +820,7 @@ public class HttpTest extends TestBase {
         }
         client.close();
       }
-    }.run();
+    });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
     throwAssertions();

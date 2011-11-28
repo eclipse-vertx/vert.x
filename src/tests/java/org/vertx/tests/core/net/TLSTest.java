@@ -20,8 +20,8 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -71,8 +71,8 @@ public class TLSTest extends TestBase {
     final Buffer receivedBuff = Buffer.create(0);
     final AtomicReference<Exception> excRef = new AtomicReference<Exception>();
 
-    new VertxMain() {
-      public void go() throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
 
         final NetServer server = new NetServer();
 
@@ -152,7 +152,7 @@ public class TLSTest extends TestBase {
 
         client.connect(4043, clientHandler);
       }
-    }.run();
+    });
 
     if (shouldPass) {
       azzert(latch.await(5, TimeUnit.SECONDS));

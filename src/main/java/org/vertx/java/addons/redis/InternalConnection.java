@@ -194,6 +194,7 @@ public class InternalConnection implements Handler<RedisReply>{
     }
 
     public void run() {
+      VertxInternal.instance.setContextID(contextID);
       switch (reply.type) {
         case INTEGER: {
           // unsubscribe or subscribe
@@ -239,6 +240,7 @@ public class InternalConnection implements Handler<RedisReply>{
     }
 
     public void run() {
+      VertxInternal.instance.setContextID(contextID);
 
       currentReplyHandler = this;
 

@@ -46,12 +46,14 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
           final T result = action();
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
+              VertxInternal.instance.setContextID(contextID);
               setResult(result);
             }
           });
         } catch (final Exception e) {
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
+              VertxInternal.instance.setContextID(contextID);
               setException(e);
             }
           });

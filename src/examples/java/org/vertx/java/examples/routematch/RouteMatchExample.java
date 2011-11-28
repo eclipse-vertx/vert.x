@@ -16,26 +16,17 @@
 
 package org.vertx.java.examples.routematch;
 
-import org.vertx.java.addons.redis.RedisConnection;
-import org.vertx.java.addons.redis.RedisPool;
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 
-public class RouteMatchExample extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new RouteMatchExample().run();
+public class RouteMatchExample implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpServer server;
 
-  public void go() throws Exception {
+  public void start() {
 
     RouteMatcher rm = new RouteMatcher();
 
@@ -52,6 +43,10 @@ public class RouteMatchExample extends VertxMain {
       }
     });
 
-    new HttpServer().requestHandler(rm).listen(8080);
+    server = new HttpServer().requestHandler(rm).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

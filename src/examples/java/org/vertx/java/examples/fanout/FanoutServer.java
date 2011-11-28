@@ -19,7 +19,7 @@ package org.vertx.java.examples.fanout;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -27,22 +27,22 @@ import org.vertx.java.core.shared.SharedData;
 
 import java.util.Set;
 
-public class FanoutServer extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new FanoutServer().run();
+public class FanoutServer implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private NetServer server;
 
-  public void go() throws Exception {
+  public void start()  {
     final Set<Long> connections = SharedData.getSet("conns");
 
-    new NetServer().connectHandler(new Handler<NetSocket>() {
+    System.out.println("connections is " + System.identityHashCode(connections));
+
+    server = new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         connections.add(socket.writeHandlerID);
+        System.out.println("Got a connection on app " + System.identityHashCode(FanoutServer.this));
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
+            System.out.println("Fanning out to " + connections.size() + " connections");
             for (Long actorID : connections) {
               Vertx.instance.sendToHandler(actorID, buffer);
             }
@@ -55,5 +55,9 @@ public class FanoutServer extends VertxMain {
         });
       }
     }).listen(8080);
+  }
+
+  public void stop() {
+    server.close();
   }
 }

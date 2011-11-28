@@ -15,12 +15,11 @@
 require "vertx"
 include Vertx
 
-Vertx::go do
-  HttpServer.new.request_handler do |req|
-    filename = "sendfile/" << (req.uri == "/" ? "index.html" : "." << req.uri)
-    req.response.send_file(filename)
-  end.listen(8080)
-end
+@server = HttpServer.new.request_handler do |req|
+  filename = "sendfile/" << (req.uri == "/" ? "index.html" : "." << req.uri)
+  req.response.send_file(filename)
+end.listen(8080)
 
-puts "hit enter to exit"
-STDIN.gets
+def vertx_stop
+  @server.close
+end

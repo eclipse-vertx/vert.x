@@ -16,25 +16,24 @@ require "vertx"
 require "set"
 include Vertx
 
-Vertx::go do
-  HttpServer.new.request_handler do |req|
-    puts "Got request #{req.uri}"
-    req.header_names.each { |header_name| puts "#{header_name} : #{req.header(header_name)}" }
+@server = HttpServer.new.request_handler do |req|
+  puts "Got request #{req.uri}"
+  req.header_names.each { |header_name| puts "#{header_name} : #{req.header(header_name)}" }
 
-    req.data_handler { |data| puts "Got data #{data}" }
+  req.data_handler { |data| puts "Got data #{data}" }
 
-    req.end_handler do
-      # Now send back a response
-      req.response.chunked = true
+  req.end_handler do
+    # Now send back a response
+    req.response.chunked = true
 
-      for i in 0..9
-        req.response.write_str("server-data-chunk-#{i}")
-      end
-
-      req.response.end
+    for i in 0..9
+      req.response.write_str("server-data-chunk-#{i}")
     end
-  end.listen(8282)
-end
 
-puts "hit enter to exit"
-STDIN.gets
+    req.response.end
+  end
+end.listen(8282)
+
+def vertx_stop
+  @server.close
+end

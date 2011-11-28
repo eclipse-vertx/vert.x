@@ -34,7 +34,10 @@
 
     <property name="test-lib" value="src/tests/resources/jars"/>
     <property name="tests-target" value="${target}/tests/classes"/>
-    <property name="tests-src" value="src/tests"/>
+    <property name="tests-src" value="src/tests/java"/>
+
+    <property name="test-apps-target" value="${target}/test-apps/classes"/>
+    <property name="java-test-apps-src" value="src/tests/resources/testapps/java"/>
 
     <property name="javadoc-dir" value="docs/java/api"/>
     <property name="rubydoc-dir" value="docs/ruby/api"/>
@@ -51,6 +54,7 @@
             <include name="*.jar"/>
         </fileset>
         <pathelement location="${tests-target}"/>
+        <pathelement location="${test-apps-target}"/>
         <pathelement location="target/vert.x.jar"/>
     </path>
 
@@ -80,10 +84,15 @@
         <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
     </target>
 
+    <target name="compile-test-apps" depends="jar-core">
+        <mkdir dir="${test-apps-target}"/>
+        <javac srcdir="${java-test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
+    </target>
+
     <target name="tests" depends="java-tests, ruby-tests">
     </target>
 
-    <target name="java-tests" depends="compile-tests">
+    <target name="java-tests" depends="compile-tests, compile-test-apps">
         <testng classpathref="test-classpath">
             <!-- <testng classpathref="test-classpath" methods="org.vertx.tests.core.net.NetTest.*"> -->
             <sysproperty key="java.util.logging.config.file" value="${resources-dir}/logging.properties"/>
@@ -124,7 +133,9 @@
         <exec executable="yardoc"/>
     </target>
 
-    <target name="dist" depends="clean, jar-core, javadoc, yardoc">
+    <target name="dist" depends="clean, jar-core">
+
+    <!-- <target name="dist" depends="clean, jar-core, javadoc, yardoc"> -->
         <mkdir dir="${dist-build}"/>
 
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
@@ -135,6 +146,9 @@
             <fileset dir="${core-lib}">
                 <include name="netty.jar"/>
                 <include name="high-scale-lib.jar"/>
+                <!-- <include name="jruby.jar"/> -->
+                <include name="js.jar"/>
+                <include name="groovy-all-1.8.1.jar"/>
             </fileset>
         </copy>
 
@@ -150,6 +164,7 @@
             </fileset>
         </copy>
 
+        <!--
         <copy todir="${dist-build}/${javadoc-dir}">
             <fileset dir="${target}/${javadoc-dir}"/>
         </copy>
@@ -157,17 +172,14 @@
         <copy todir="${dist-build}/${rubydoc-dir}">
             <fileset dir="${target}/${rubydoc-dir}"/>
         </copy>
+        -->
 
         <!-- We need to use exec since the ant copy task does not preserve file permissions -->
         <mkdir dir="${dist-build}/bin"/>
 
         <exec executable="cp">
-            <arg value="src/scripts/vertx-java"/>
-            <arg value="${dist-build}/bin/vertx-java"/>
-        </exec>
-        <exec executable="cp">
-            <arg value="src/scripts/vertx-ruby"/>
-            <arg value="${dist-build}/bin/vertx-ruby"/>
+            <arg value="src/scripts/vertx"/>
+            <arg value="${dist-build}/bin/vertx"/>
         </exec>
 
         <copy todir="${dist-build}/examples">

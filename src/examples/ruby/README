@@ -5,15 +5,37 @@ Prerequisites:
 
 1) The bin directory from the distro must be on your PATH - this should have been done as part of the install procedure.
 
-2) JRuby must be installed and the bin directory on your PATH as per the JRuby installation instructions
+2) JRuby must be installed and the JRUBY_HOME environment variable should be pointing at the root of your JRUBY installation.
 
 3) JDK/JRE 1.7.0+ must be installed and the JDK/JRE bin directory must be on your PATH
 
-Run an example by invoking:
+1. Start a vertx instance:
 
-vertx-ruby <example ruby script>
+vertx start
 
-where <example ruby script> is, for example, echo/echo_server.rb
+The vert.x instance will then listen on port 25571 for request to deploy / undeploy applications
+
+If you want to start more than one vertx instance on the same machine you can specify different ports for them
+to listen on, e.g.:
+
+vertx start -port 22572
+vertx start -port 22573
+
+3. Deploy an example:
+
+(for full help on deploying just type vertx deploy from the command line)
+
+(from this directory)
+
+vertx deploy -ruby -main <example script name> -cp .
+
+where <example script name> is, for example, echo/echo_server.rb
+
+For some examples it might make sense to run, say, the client and server in different vert.x instances. To
+do this, just start multiple vert.x instances on different ports (see 2) above), and then specify the port when
+deploying, e.g.:
+
+vertx deploy -ruby -main <example script name> -cp . -port <port>
 
 There now follows a description of all the available examples:
 
@@ -24,13 +46,13 @@ A simple echo server which echos back any sent to it
 
 To run the server:
 
-vertx-ruby echo/echo_server.rb
+vertx deploy -ruby -main echo/echo_server.rb -cp .
 
 Then either telnet localhost 8080 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client:
 
-vertx-ruby echo/echo_client.rb
+vertx deploy -ruby -main echo/echo_client.rb -cp .
 
 Fanout Server
 =============
@@ -39,7 +61,7 @@ Fans out all data received on any one connection to all other connections.
 
 To run the server:
 
-vertx-ruby fanout/fanout_server.rb
+vertx deploy -ruby -main fanout/fanout_server.rb -cp .
 
 Then telnet localhost 8080 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
@@ -51,13 +73,13 @@ request and displays the response it receives.
 
 To run the server:
 
-vertx-ruby http/http_server.rb
+vertx deploy -ruby -main http/http_server.rb -cp .
 
 Then point your browser at http://localhost:8080
 
 Alternatively, you can also run the HTTP client:
 
-vertx-ruby http/http_client.rb
+vertx deploy -ruby -main http/http_client.rb -cp .
 
 HTTPS
 =====
@@ -66,13 +88,13 @@ Like the HTTP example, but using HTTPS
 
 To run the server:
 
-vertx-ruby https/https_server.rb
+vertx deploy -ruby -main https/https_server.rb -cp .
 
 Then point your browser at http://localhost:4443
 
 Alternatively, you can also run the HTTPS client:
 
-vertx-ruby https/https_client.rb
+vertx deploy -ruby -main https/https_client.rb -cp .
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's
 normal.
@@ -81,6 +103,7 @@ Proxy
 =====
 
 A very simple HTTP proxy which simply proxies requests/response from a client to a server and back again.
+(It probably makes sense to run this using different vert.x instances listening on different ports)
 
 It includes
 
@@ -91,19 +114,17 @@ response it receives
 
 c) A proxy server which simply sits in the middle proxying requests and responses between client and server
 
-To run, open three consoles.
+Run the http server:
 
-In console 1, run the http server:
+vertx deploy -ruby -main proxy/http_server.rb -cp .
 
-vertx-ruby proxy/http_server.rb
+Run the proxy server:
 
-In console 2, run the proxy server:
+vertx deploy -ruby -main proxy/proxy_server.rb -cp .
 
-vertx-ruby proxy/proxy_server.rb
+Run the http client:
 
-In console 3, run the http client:
-
-vertx-ruby proxy/http_client.rb
+vertx deploy -ruby -main proxy/http_client.rb -cp .
 
 PubSub
 ======
@@ -136,7 +157,7 @@ Where:
 
 To run the server:
 
-vertx-ruby pubsub/pubsub_server.rb
+vertx deploy -ruby -main pubsub/pubsub_server.rb -cp .
 
 Then open some more consoles and telnet localhost 8080, and experiment with the protocol.
 
@@ -150,7 +171,7 @@ The example contains three static pages: index.html, page1.html and page2.html w
 
 To run the server:
 
-vertx-ruby sendfile/sendfile.rb
+vertx deploy -ruby -main sendfile/sendfile.rb -cp .
 
 Then point your browser at http://localhost:8080 and click around
 
@@ -161,11 +182,11 @@ This is like the echo example, but this time using SSL.
 
 To run the server:
 
-vertx-ruby ssl/ssl_server.rb
+vertx deploy -ruby -main ssl/ssl_server.rb -cp .
 
 To run the client:
 
-vertx-ruby ssl/ssl_client.rb
+vertx deploy -ruby -main ssl/ssl_client.rb -cp .
 
 Upload
 ======
@@ -175,11 +196,11 @@ HTTP request and streams the data to a file on disk.
 
 To run the server:
 
-vertx-ruby upload/upload_server.rb
+vertx deploy -ruby -main upload/upload_server.rb -cp .
 
 To run the client:
 
-vertx-ruby upload/upload_client.rb
+vertx deploy -ruby -main upload/upload_client.rb -cp .
 
 Websockets
 ==========
@@ -189,7 +210,7 @@ to create a websocket to a server, and send and receive data from it.
 
 To run the server:
 
-vertx-ruby websockets/websockets.rb
+vertx deploy -ruby -main websockets/websockets.rb -cp .
 
 Then point your browser at: http://localhost:8080
 
@@ -203,7 +224,7 @@ To run this example you must have a Redis server running on localhost.
 
 The, to run the example:
 
-vertx-ruby redis/RedisExample
+vertx deploy -ruby -main redis/redis_example.rb -cp .
 
 Then point your browser at: http://localhost:8080 and hit refresh a few times
 
@@ -215,7 +236,7 @@ in the manner of express (JS) or Sinatra.
 
 To run the example:
 
-vertx-ruby route_match/route_match_example.rb
+vertx deploy -ruby -main route_match/route_match_example.rb -cp .
 
 Then point your browser at: http://localhost:8080.
 

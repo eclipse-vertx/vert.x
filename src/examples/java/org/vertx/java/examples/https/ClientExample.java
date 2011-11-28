@@ -17,26 +17,18 @@
 package org.vertx.java.examples.https;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxMain;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 
-/**
- * User: tim
- * Date: 12/08/11
- * Time: 11:44
- */
-public class ClientExample extends VertxMain {
-  public static void main(String[] args) throws Exception {
-    new ClientExample().run();
+public class ClientExample implements VertxApp {
 
-    System.out.println("Hit enter to exit");
-    System.in.read();
-  }
+  private HttpClient client;
 
-  public void go() throws Exception {
-    new HttpClient().setSSL(true).setTrustAll(true).setPort(4443).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
+  public void start() {
+    client = new HttpClient();
+    client.setSSL(true).setTrustAll(true).setPort(4443).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
         response.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
@@ -45,5 +37,9 @@ public class ClientExample extends VertxMain {
         });
       }
     });
+  }
+
+  public void stop() {
+    client.close();
   }
 }
