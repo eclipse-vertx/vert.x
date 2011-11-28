@@ -32,7 +32,6 @@ public abstract class VertxCommand implements Serializable {
       oos.writeObject(this);
       oos.flush();
       byte[] bytes = baos.toByteArray();
-      log.info("sending size is " + bytes.length);
       Buffer buff = Buffer.create(4 + bytes.length);
       buff.appendInt(bytes.length);
       buff.appendBytes(bytes);

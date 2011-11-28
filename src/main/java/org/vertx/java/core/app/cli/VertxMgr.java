@@ -183,11 +183,12 @@ public class VertxMgr {
 
   private void displayDeploySyntax() {
     System.out.println("Deploy an application");
-    System.out.println("vertx deploy -[java|ruby|groovy|js] -name <name> -main <main> -instances <instances> -port <port>");
+    System.out.println("vertx deploy -[java|ruby|groovy|js] -name <name> -main <main> -cp <classpath> -instances <instances> -port <port>");
     System.out.println("");
     System.out.println("-[java|ruby|groovy|js] depending on the language of the application");
     System.out.println("<name> - unique name of the application. If this ommitted the server will generate a name");
     System.out.println("<main> - main class or script for the application");
+    System.out.println("<classpath> - classpath to use");
     System.out.println("<instances> - number of instances of the application to start. Must be > 0 or -1.");
     System.out.println("              if -1 then instances will be default to number of cores on the server");
     System.out.println("<port> - the port to connect to the server at. Defaults to 25571");
