@@ -12,10 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TestApp1 implements VertxApp {
 
- // private static AtomicLong instanceCount = new AtomicLong(0);
-
   public TestApp1() {
-    //instanceCount.incrementAndGet();
   }
 
   private HttpServer server;
@@ -26,7 +23,6 @@ public class TestApp1 implements VertxApp {
 
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        //System.out.println("Got request: " + req.uri + " in " + TestApp1.this);
         req.response.end(String.valueOf(System.identityHashCode(TestApp1.this)));
       }
     }).listen(8080, "localhost");
@@ -36,7 +32,6 @@ public class TestApp1 implements VertxApp {
   @Override
   public void stop() {
     System.out.println("Stopping app");
-
     server.close();
   }
 }

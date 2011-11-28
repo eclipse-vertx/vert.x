@@ -41,7 +41,7 @@ public class AppManagerTest extends TestBase {
   public void testRequestsDistributedJava() throws Exception {
 
     int instances = 4;
-    List<String> results = doTest("com.acme.someapp.TestApp1", instances, 10);
+    List<String> results = doTest(AppType.JAVA, "com.acme.someapp.TestApp1", instances, 10);
     Set<String> set = new HashSet<>();
     for (String res: results) {
       set.add(res);
@@ -53,7 +53,7 @@ public class AppManagerTest extends TestBase {
   public void testIsolationJava() throws Exception {
 
     int instances = 4;
-    List<String> results = doTest("com.acme.someapp.TestApp2", instances, 10);
+    List<String> results = doTest(AppType.JAVA, "com.acme.someapp.TestApp2", instances, 10);
     Set<String> set = new HashSet<>();
     //Each instance should have its own static counter
     for (String res: results) {
@@ -61,25 +61,36 @@ public class AppManagerTest extends TestBase {
     }
   }
 
-  private List<String> doTest(final String main, final int instances, final int requests) throws Exception {
+
+  private List<String> doTest(AppType appType, final String main, final int instances, final int requests) throws Exception {
     AppManager mgr = new AppManager(SocketDeployer.DEFAULT_PORT);
     mgr.startNoBlock();
 
     Thread.sleep(100);
 
-    //We need to get the URL to the root directory of where the classes are so we can use that URL
-    //in another classloader to load the classes
-    String classFile = main.replace('.', '/') + ".class";
-    URL url = getClass().getClassLoader().getResource(classFile);
-    String surl = url.toString();
-    String surlroot = surl.substring(0, surl.length() - classFile.length());
-    url = new URL(surlroot);
+    URL url = null;
+    if (appType == AppType.JAVA) {
+      //We need to get the URL to the root directory of where the classes are so we can use that URL
+      //in another classloader to load the classes
+      String classFile = main.replace('.', '/') + ".class";
+      url = getClass().getClassLoader().getResource(classFile);
+      String surl = url.toString();
+      String surlroot = surl.substring(0, surl.length() - classFile.length());
+      url = new URL(surlroot);
+    }
+//    else if (appType == AppType.RUBY) {
+//      url = getClass().getClassLoader().getResource(main);
+//      String surl = url.toString();
+//      String surlroot = surl.substring(0, surl.length() - main.length());
+//      url = new URL(surlroot);
+//      log.info("url is " + url);
+//    }
 
     final List<String> ret = new ArrayList<>();
 
     final CountDownLatch latch = new CountDownLatch(requests);
 
-    DeployCommand cmd = new DeployCommand(AppType.JAVA, "myapp", main, new URL[] {url}, instances);
+    DeployCommand cmd = new DeployCommand(appType, "myapp", main, new URL[] {url}, instances);
 
     sendCommand(cmd);
 
