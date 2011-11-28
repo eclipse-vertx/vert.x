@@ -13,9 +13,8 @@ The next generation polyglot asynchronous application framework.
 * Enables you to create network servers or clients incredibly easily.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
 * Incredibly simple [concurrency model] (https://github.com/purplefox/vert.x/wiki/Concurrency-model). Write your code as single threaded but watch it scale across multiple cores. No need to worry about race conditions or locks.
-* Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, etc.
+* Understands multiple network protocols out of the box including: TCP, SSL, HTTP, HTTPS, Websockets.
 * Efficiently serve static files from the filesystem bypassing user-space altogether.
-* Provides an elegant api for composing asynchronous actions together in a few lines of code.
 * Simple Sinatra/Express style resource based web routing.
 
 ## Jump to the examples
