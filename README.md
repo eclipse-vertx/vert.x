@@ -6,9 +6,9 @@ The next generation polyglot asynchronous application framework.
 (Formerly known as node.x)
 
 * Runs on the JVM.
-* Embraces the good bits of event driven frameworks like node.js without the bad bits. Then adds some even juicier bits.
+* Embraces the good bits of event driven frameworks like node.js then adds some even juicier bits.
 * Everything is non-blocking.
-* Polyglot. vert.x will be usable from multiple languages: Ruby, Groovy, Java, JavaScript, Python, Clojure, Scala. Write your code in the language *you* choose. Leverage the power of vert.x from that language.
+* Polyglot. vert.x will be usable from multiple languages: Ruby, Groovy, Java, JavaScript, Python, Clojure, Scala. Currently we support Java and Ruby. Write your code in the language *you* choose. Leverage the power of vert.x from that language.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
@@ -16,7 +16,7 @@ The next generation polyglot asynchronous application framework.
 * Understands multiple network protocols out of the box including: TCP, SSL, UDP, HTTP, HTTPS, Websockets, etc.
 * Efficiently serve static files from the filesystem bypassing user-space altogether.
 * Provides an elegant api for composing asynchronous actions together in a few lines of code.
-* Asynchronous plugins will be provided for a wide variety of other systems and protocols including AMQP, Redis, REST, Gemfire, MongoDB, STOMP, Twitter, SMTP, JDBC, Memcached, JMS, ZeroMQ, JDBC, web frameworks, etc
+* Simple Sinatra/Express style resource based web routing.
 
 ## Jump to the examples
 
@@ -32,7 +32,7 @@ API docs in Java and Ruby are [here] (http://purplefox.github.com/vert.x/)
 
 ## What is the status of vert.x?
 
-The first binary release, vert.x 0.1, has been released. We aim to follow the mantra of **release early, release often**
+The first binary release, vert.x 0.1, has been released.
 
 You can find the Road-map [here] (https://github.com/purplefox/vert.x/wiki/Road-map)
 
