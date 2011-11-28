@@ -1,5 +1,7 @@
 package org.vertx.java.core.app;
 
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.cli.SocketDeployer;
 import org.vertx.java.core.app.groovy.GroovyAppFactory;
@@ -63,8 +65,8 @@ public class AppManager {
     }
   }
 
-  public void stop() {
-    deployer.stop();
+  public void stop(Handler<Void> doneHandler) {
+    deployer.stop(doneHandler);
     stopLatch.countDown();
   }
 
@@ -127,16 +129,14 @@ public class AppManager {
     if (appMeta.get(name) == null) {
       return "There is no deployed app with name " + name;
     }
-    log.info("Undeploying all instances of application: " + name);
     List<AppHolder> list = apps.get(name);
-    log.info("There are " + list.size());
+    log.info("Undeploying " + list.size() + " instances of application: " + name);
     for (final AppHolder holder: list) {
       VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
         public void run() {
           VertxInternal.instance.setContextID(holder.contextID);
           try {
             holder.app.stop();
-            log.info("Stopped app");
           } catch (Exception e) {
             log.error("Unhandled exception in application stop", e);
           }

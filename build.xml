@@ -54,6 +54,7 @@
             <include name="*.jar"/>
         </fileset>
         <pathelement location="${tests-target}"/>
+        <pathelement location="${test-apps-target}"/>
         <pathelement location="target/vert.x.jar"/>
     </path>
 

@@ -8,7 +8,7 @@ import org.vertx.java.core.app.AppManager;
 public class StopCommand extends VertxCommand {
 
   public void execute(AppManager appMgr) {
-    appMgr.stop();
+    appMgr.stop(null);
   }
 
   @Override

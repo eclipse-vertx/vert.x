@@ -39,18 +39,12 @@ public class SocketDeployer {
             Handler<Buffer> handler = new Handler<Buffer>() {
               int size = -1;
               public void handle(Buffer buff) {
-                log.info("got buff, size " + size);
-
-                log.info("buffer length is " + buff.length());
                 if (size == -1) {
                   size = buff.getInt(0);
-                  log.info("act size is " + size);
                   parser.fixedSizeMode(size);
                 } else {
-
                   try {
                     VertxCommand cmd = VertxCommand.read(buff);
-                    log.info("created vertxcommand " + cmd);
                     cmd.execute(appManager);
                     socket.write("OK\n");
                   } catch (Exception e) {
@@ -70,11 +64,15 @@ public class SocketDeployer {
     });
   }
 
-  public void stop() {
+  public void stop(final Handler<Void> doneHandler) {
     VertxInternal.instance.executeOnContext(serverContextID, new Runnable() {
       public void run() {
         VertxInternal.instance.setContextID(serverContextID);
-        server.close();
+        if (doneHandler != null) {
+          server.close(doneHandler);
+        } else {
+          server.close();
+        }
         server = null;
       }
     });

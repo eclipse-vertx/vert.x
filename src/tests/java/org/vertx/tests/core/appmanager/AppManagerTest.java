@@ -21,6 +21,7 @@ import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.tests.core.TestBase;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,21 +37,8 @@ public class AppManagerTest extends TestBase {
 
   private static final Logger log = Logger.getLogger(AppManagerTest.class);
 
-//  @Test
-//  public void test1() throws Exception {
-//    AppManager am = new AppManager(SocketDeployer.DEFAULT_PORT);
-//
-//    String error = am.deploy("some-app", AppType.JAVA, null, "com.acme.someapp.TestApp1", 4);
-//
-//    if (error != null) {
-//      log.error(error);
-//    }
-//
-//    Thread.sleep(1000000);
-//  }
-
   @Test
-  public void testRequestsDistributed() throws Exception {
+  public void testRequestsDistributedJava() throws Exception {
 
     int instances = 4;
     List<String> results = doTest("com.acme.someapp.TestApp1", instances, 10);
@@ -61,37 +49,41 @@ public class AppManagerTest extends TestBase {
     azzert(set.size() == instances);
   }
 
-//  @Test
-//  public void testIsolation() throws Exception {
-//
-//    int instances = 4;
-//    List<String> results = doTest("com.acme.someapp.TestApp2", instances, 10);
-//    Set<String> set = new HashSet<>();
-//    //Each instance should have its own static counter
-//    for (String res: results) {
-//      azzert(Integer.parseInt(res) == 1);
-//    }
-//  }
+  @Test
+  public void testIsolationJava() throws Exception {
 
-  private List<String> doTest(final String mainClass, final int instances, final int requests) throws Exception {
+    int instances = 4;
+    List<String> results = doTest("com.acme.someapp.TestApp2", instances, 10);
+    Set<String> set = new HashSet<>();
+    //Each instance should have its own static counter
+    for (String res: results) {
+      azzert(Integer.parseInt(res) == 1);
+    }
+  }
+
+  private List<String> doTest(final String main, final int instances, final int requests) throws Exception {
     AppManager mgr = new AppManager(SocketDeployer.DEFAULT_PORT);
     mgr.startNoBlock();
 
     Thread.sleep(100);
 
-    File f = new File(".");
-    System.out.println("current dir is " + f.getCanonicalPath());
-
-    final String testClassesRoot = f.getCanonicalPath() + "/target/test-apps/classes/";
-    URL url = new URL("file://" + testClassesRoot);
+    //We need to get the URL to the root directory of where the classes are so we can use that URL
+    //in another classloader to load the classes
+    String classFile = main.replace('.', '/') + ".class";
+    URL url = getClass().getClassLoader().getResource(classFile);
+    String surl = url.toString();
+    String surlroot = surl.substring(0, surl.length() - classFile.length());
+    url = new URL(surlroot);
 
     final List<String> ret = new ArrayList<>();
 
     final CountDownLatch latch = new CountDownLatch(requests);
 
-    DeployCommand cmd = new DeployCommand(AppType.JAVA, "myapp", mainClass, new URL[] {url}, instances);
+    DeployCommand cmd = new DeployCommand(AppType.JAVA, "myapp", main, new URL[] {url}, instances);
 
     sendCommand(cmd);
+
+    Thread.sleep(200);
 
     VertxInternal.instance.go(new Runnable() {
       public void run() {
@@ -108,7 +100,6 @@ public class AppManagerTest extends TestBase {
               response.endHandler(new SimpleHandler() {
                 public void handle() {
                   String result = buff.toString();
-                  //System.out.println("Got result: " + result);
                   synchronized (ret) {
                     ret.add(result);
                   }
@@ -126,16 +117,13 @@ public class AppManagerTest extends TestBase {
 
     sendCommand(new UndeployCommand("myapp"));
 
-    //Thread.sleep(500); // This is hacky - but we need to ensure any servers started by the app are shut down
-
     final CountDownLatch stopLatch = new CountDownLatch(1);
-//    mgr.stop(new SimpleHandler() {
-//      public void handle() {
-//        stopLatch.countDown();
-//      }
-//    });
-    mgr.stop();
-    //azzert(stopLatch.await(5, TimeUnit.SECONDS));
+    mgr.stop(new SimpleHandler() {
+      public void handle() {
+        stopLatch.countDown();
+      }
+    });
+    azzert(stopLatch.await(5, TimeUnit.SECONDS));
 
     return ret;
   }
@@ -151,12 +139,10 @@ public class AppManagerTest extends TestBase {
               public void handle(Buffer buff) {
                 String line = buff.toString();
                 azzert(line.equals("OK"));
-                log.info("Got command response");
                 client.close();
                 latch.countDown();
               }
             }));
-            log.info("sending command");
             command.write(socket, null);
           }
         });
