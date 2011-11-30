@@ -16,11 +16,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Set up several handlers for same name
+ *
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class EventBusTest extends TestBase {
 
   private static final Logger log = Logger.getLogger(EventBusTest.class);
+
+  class TestEventBus extends EventBus {
+
+    TestEventBus(ServerID serverID, ClusterManager clusterManager) {
+      super(serverID, clusterManager);
+    }
+  }
 
   @Test
   public void test1() throws Exception {
@@ -38,7 +48,7 @@ public class EventBusTest extends TestBase {
         for (int i = 0; i < numHandlers; i++) {
           ServerID id = new ServerID(basePort++, "localhost");
           ClusterManager cm = createClusterManager();
-          eb = new EventBus(id, cm);
+          eb = new TestEventBus(id, cm);
           eb.registerHandler(subName, new Handler<Message>() {
             public void handle(Message msg) {
               //log.info("handler1 got msg");
@@ -55,6 +65,7 @@ public class EventBusTest extends TestBase {
     });
 
     azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
 
   }
 
