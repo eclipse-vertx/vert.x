@@ -27,15 +27,8 @@ public class AppManager {
 
   private Map<String, AppMetaData> appMeta = new HashMap<>();
   private Map<String, List<AppHolder>> apps = new HashMap();
-
   private CountDownLatch stopLatch = new CountDownLatch(1);
   private SocketDeployer deployer;
-
-  public static void main(String[] sargs) {
-    Args args = new Args(sargs);
-    AppManager mgr = new AppManager(args.getPort());
-    mgr.start();
-  }
 
   public AppManager(int port) {
     deployer = new SocketDeployer(this, port);

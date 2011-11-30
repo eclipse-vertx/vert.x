@@ -34,7 +34,7 @@ public class VertxMgr {
   private VertxMgr(String[] sargs) {
     Args args = new Args(sargs);
 
-    int port = args.getPort();
+    int port = args.getInt("-port");
     port = port == -1 ? SocketDeployer.DEFAULT_PORT: port;
 
     if (sargs.length == 0) {

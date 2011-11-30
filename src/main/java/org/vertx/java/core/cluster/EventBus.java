@@ -7,6 +7,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.cluster.spi.AsyncMultiMap;
 import org.vertx.java.core.cluster.spi.ClusterManager;
+import org.vertx.java.core.cluster.spi.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
@@ -27,13 +28,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * TODO - make the ServerID implement DataSerializable for Hazelcast
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class EventBus {
 
   private static final Logger log = Logger.getLogger(EventBus.class);
+
+  public static EventBus instance;
+
+  public static void initialize(ServerID serverID, ClusterManager clusterManager) {
+    if (instance != null) {
+      throw new IllegalStateException("Cannot call initialize more than once");
+    }
+    instance = new EventBus(serverID, new HazelcastClusterManager());
+  }
 
   private ServerID serverID;
   private NetServer server;
@@ -42,7 +51,7 @@ public class EventBus {
   private ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
   private Map<String, ReceiptHandlerHolder> receiptHandlerHolders = new ConcurrentHashMap<>();
 
-  public EventBus(ServerID serverID, ClusterManager clusterManager) {
+  protected EventBus(ServerID serverID, ClusterManager clusterManager) {
     this.serverID = serverID;
     subs = clusterManager.getMultiMap("subs");
     server = new NetServer().connectHandler(new Handler<NetSocket>() {
