@@ -1,11 +1,13 @@
 package org.vertx.java.core.net;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerID {
-  private final int port;
-  private final String host;
+public class ServerID implements Serializable {
+  public final int port;
+  public final String host;
 
   public ServerID(int port, String host) {
     this.port = port;

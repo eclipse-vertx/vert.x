@@ -134,7 +134,7 @@ public class HttpServer extends NetServerBase {
   }
 
   /**
-   * Tell the server to start listening on port {@code port} and host / ip address given by {@code host}.
+   * Tell the server to start listening on port {@code port} and host / ip subName given by {@code host}.
    *
    * @return a reference to this, so methods can be chained.
    */

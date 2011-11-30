@@ -209,7 +209,7 @@ public class NetServer extends NetServerBase {
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
-   * be a host name or an IP address.
+   * be a host name or an IP subName.
    * @return a reference to this so multiple method calls can be chained together
    */
   public NetServer listen(int port, String host) {
