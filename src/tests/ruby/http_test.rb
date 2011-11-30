@@ -63,9 +63,9 @@ class HttpTest < Test::Unit::TestCase
       server = HttpServer.new
       if ssl
         server.ssl = true
-        server.key_store_path = '../resources/keystores/server-keystore.jks'
+        server.key_store_path = '../keystores/server-keystore.jks'
         server.key_store_password = 'wibble'
-        server.trust_store_path = '../resources/keystores/server-truststore.jks'
+        server.trust_store_path = '../keystores/server-truststore.jks'
         server.trust_store_password = 'wibble'
         server.client_auth_required = true
       end
@@ -92,9 +92,9 @@ class HttpTest < Test::Unit::TestCase
       client.port = 8080;
       if ssl
         client.ssl = true
-        client.key_store_path = '../resources/keystores/client-keystore.jks'
+        client.key_store_path = '../keystores/client-keystore.jks'
         client.key_store_password = 'wibble'
-        client.trust_store_path = '../resources/keystores/client-truststore.jks'
+        client.trust_store_path = '../keystores/client-truststore.jks'
         client.trust_store_password = 'wibble'
       end
 

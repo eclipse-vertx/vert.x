@@ -40,7 +40,7 @@ module Vertx
     end
 
     # Set the host or ip addresss that the client will attempt to connect to on the server. If not set, the default value is localhost
-    # @param host [String] The host or ip address
+    # @param host [String] The host or ip subName
     def host=(host)
       @j_del.setHost(host)
     end

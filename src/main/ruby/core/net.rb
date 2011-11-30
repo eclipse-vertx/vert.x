@@ -46,8 +46,8 @@ module Vertx
       @j_del.setTCPKeepAlive(val)
     end
 
-    # Set the TCP reuse address setting.
-    # @param [Boolean] val. If true, then TCP reuse address will be enabled.
+    # Set the TCP reuse subName setting.
+    # @param [Boolean] val. If true, then TCP reuse subName will be enabled.
     # @return [] A reference to self so invocations can be chained
     def reuse_address=(val)
       @j_del.setReuseAddress(val)
@@ -109,7 +109,7 @@ module Vertx
 
     # Instruct the server to listen for incoming connections.
     # @param [FixNum] port. The port to listen on.
-    # @param [FixNum] host. The host name or ip address to listen on.
+    # @param [FixNum] host. The host name or ip subName to listen on.
     # @return [NetServer] A reference to self so invocations can be chained
     def listen(port, host = "0.0.0.0")
       @j_del.listen(port, host)
@@ -151,7 +151,7 @@ module Vertx
     # Attempt to open a connection to a server. The connection is opened asynchronously and the result returned in the
     # handler.
     # @param [FixNum] port. The port to connect to.
-    # @param [String] host. The host or ip address to connect to.
+    # @param [String] host. The host or ip subName to connect to.
     # @param [Proc] proc A proc to be used as the handler
     # @param [Block] hndlr A block to be used as the handler
     # @return [NetClient] A reference to self so invocations can be chained

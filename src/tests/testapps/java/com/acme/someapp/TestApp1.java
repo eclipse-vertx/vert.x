@@ -5,8 +5,6 @@ import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
