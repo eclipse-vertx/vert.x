@@ -3,11 +3,11 @@ package org.vertx.java.core.cluster;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleFuture;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.cluster.spi.AsyncMultiMap;
 import org.vertx.java.core.cluster.spi.ClusterManager;
-import org.vertx.java.core.cluster.spi.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
@@ -18,7 +18,6 @@ import org.vertx.java.core.parsetools.RecordParser;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class EventBus {
     if (instance != null) {
       throw new IllegalStateException("Cannot call initialize more than once");
     }
-    instance = new EventBus(serverID, new HazelcastClusterManager());
+    instance = new EventBus(serverID, clusterManager);
   }
 
   private ServerID serverID;
@@ -60,18 +59,13 @@ public class EventBus {
         Handler<Buffer> handler = new Handler<Buffer>() {
           int size = -1;
           public void handle(Buffer buff) {
-            log.info("Received buffer from socket, length " + buff.length());
             if (size == -1) {
               size = buff.getInt(0);
-              log.info("size is " + size);
               parser.fixedSizeMode(size);
             } else {
               Sendable received = Sendable.read(buff);
-              log.info("Received a sendable " + received);
               if (received.type() == Sendable.TYPE_MESSAGE) {
-                log.info("Received message from socket");
                 Message msg = (Message)received;
-                msg.bus = EventBus.this;
                 receiveMessage(msg);
               } else {
                 Ack ack = (Ack)received;
@@ -88,34 +82,33 @@ public class EventBus {
     }).listen(serverID.port, serverID.host);
   }
 
-  public void close() {
-    server.close();
+  public void close(Handler<Void> doneHandler) {
+    server.close(doneHandler);
   }
 
   public void send(final Message message, final Handler<Void> receiptHandler) {
     message.messageID = UUID.randomUUID().toString();
     message.sender = serverID;
-
-    log.info("Sending message");
+    if (receiptHandler != null) {
+      message.requiresAck = true;
+    }
 
     subs.get(message.subName, new CompletionHandler<Collection<ServerID>>() {
       public void handle(Future<Collection<ServerID>> event) {
         Collection<ServerID> serverIDs = event.result();
         if (event.succeeded()) {
-          log.info("got serverids " + serverIDs);
           if (serverIDs != null) {
             if (receiptHandler != null) {
               receiptHandlerHolders.put(message.messageID, new ReceiptHandlerHolder(receiptHandler, serverIDs.size()));
             }
             for (ServerID serverID : serverIDs) {
-              log.info("Sending to " + serverID);
               if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
                 send(serverID, message);
               }
             }
           }
           //also send locally
-          receiveMessage(message);
+          receiveMessage(message.copy());
         } else {
           log.error("Failed to send message", event.exception());
         }
@@ -127,7 +120,7 @@ public class EventBus {
     send(message, null);
   }
 
-  public void registerHandler(String subName, Handler<Message> handler) {
+  public void registerHandler(String subName, Handler<Message> handler, CompletionHandler<Void> doneHandler) {
     Set<HandlerHolder> set = handlers.get(subName);
     if (set == null) {
       set = new HashSet<>();
@@ -135,15 +128,29 @@ public class EventBus {
       if (prevSet != null) {
         set = prevSet;
       }
-      subs.put(subName, serverID, new CompletionHandler<Void>() {
-        public void handle(Future<Void> event) {
-          if (event.failed()) {
-            log.error("Failed to remove entry", event.exception());
+      if (doneHandler == null) {
+        doneHandler = new CompletionHandler<Void>() {
+          public void handle(Future<Void> event) {
+            if (event.failed()) {
+              log.error("Failed to remove entry", event.exception());
+            }
           }
-        }
-      });
+        };
+      }
+      subs.put(subName, serverID, doneHandler);
+      set.add(new HandlerHolder(handler));
+    } else {
+      set.add(new HandlerHolder(handler));
+      if (doneHandler != null) {
+        SimpleFuture<Void> f = new SimpleFuture<>();
+        f.setResult(null);
+        doneHandler.handle(f);
+      }
     }
-    set.add(new HandlerHolder(handler));
+  }
+
+  public void registerHandler(String subName, Handler<Message> handler) {
+    registerHandler(subName, handler, null);
   }
 
   public void unregisterHandler(String subName, Handler<Message> handler) {
@@ -158,8 +165,12 @@ public class EventBus {
   }
 
   void acknowledge(ServerID sender, String messageID) {
-    //TODO don't bother sending if sender doesn't require an ack
-    send(sender, new Ack(messageID));
+    Ack ack = new Ack(messageID);
+    if (sender.equals(this.serverID)) {
+      handleAck(ack);
+    } else {
+      send(sender, ack);
+    }
   }
 
   private void handleAck(Ack ack) {
@@ -178,7 +189,6 @@ public class EventBus {
     //Once we connect we send them.
     ConnectionHolder holder = connections.get(serverID);
     if (holder == null) {
-      log.info("Sending to " + serverID + " no connection yet so creating one");
       NetClient client = new NetClient();
       holder = new ConnectionHolder(client);
       ConnectionHolder prevHolder = connections.putIfAbsent(serverID, holder);
@@ -189,11 +199,9 @@ public class EventBus {
       final ConnectionHolder fholder = holder;
       client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
         public void handle(NetSocket socket) {
-          log.info("Connected!");
           fholder.socket = socket;
           for (Sendable sendable : fholder.pending) {
             sendable.write(socket);
-            log.info("wrote sendable");
           }
           fholder.connected = true;
         }
@@ -209,7 +217,7 @@ public class EventBus {
       });
     } else {
       if (holder.connected) {
-        //message.write(socket);
+        sendable.write(holder.socket);
       } else {
         holder.pending.add(sendable);
       }
@@ -228,6 +236,7 @@ public class EventBus {
 
   // Called when a message is incoming
   private void receiveMessage(final Message msg) {
+    msg.bus = this;
     Set<HandlerHolder> set = handlers.get(msg.subName);
     if (set != null) {
       for (final HandlerHolder holder: set) {

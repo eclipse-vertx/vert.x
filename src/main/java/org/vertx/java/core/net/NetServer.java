@@ -39,7 +39,6 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -418,8 +417,10 @@ public class NetServer extends NetServerBase {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       NetSocket sock = socketMap.get(ch);
-      ChannelBuffer buff = (ChannelBuffer) e.getMessage();
-      sock.handleDataReceived(new Buffer(buff.slice()));
+      if (sock != null) {
+        ChannelBuffer buff = (ChannelBuffer) e.getMessage();
+        sock.handleDataReceived(new Buffer(buff.slice()));
+      }
     }
 
     @Override

@@ -53,8 +53,8 @@
         </asymmetric-encryption>
     </network>
     <executor-service>
-        <core-pool-size>16</core-pool-size>
-        <max-pool-size>64</max-pool-size>
+        <core-pool-size>1</core-pool-size>
+        <max-pool-size>20</max-pool-size>
         <keep-alive-seconds>60</keep-alive-seconds>
     </executor-service>
     <map name="subs">
@@ -116,5 +116,48 @@
             hz.LATEST_UPDATE ; entry with the latest update wins.
         -->
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
+
+        <near-cache>
+            <!--
+                Maximum number of seconds for each entry to stay in the near cache. Entries that are
+                older than <time-to-live-seconds> will get automatically evicted from the near cache.
+                Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+            -->
+            <time-to-live-seconds>0</time-to-live-seconds>
+
+            <!--
+                Maximum number of seconds each entry can stay in the near cache as untouched (not-read).
+                Entries that are not read (touched) more than <max-idle-seconds> value will get removed
+                from the near cache.
+                Any integer between 0 and Integer.MAX_VALUE. 0 means
+                Integer.MAX_VALUE. Default is 0.
+            -->
+            <max-idle-seconds>60</max-idle-seconds>
+
+            <!--
+                Valid values are:
+                NONE (no extra eviction, <time-to-live-seconds> may still apply),
+                LRU  (Least Recently Used),
+                LFU  (Least Frequently Used).
+                NONE is the default.
+                Regardless of the eviction policy used, <time-to-live-seconds> will still apply.
+            -->
+            <eviction-policy>LRU</eviction-policy>
+
+            <!--
+                Maximum size of the near cache. When max size is reached,
+                cache is evicted based on the policy defined.
+                Any integer between 0 and Integer.MAX_VALUE. 0 means
+                Integer.MAX_VALUE. Default is 0.
+            -->
+            <max-size>5000</max-size>
+
+            <!--
+                Should the cached entries get evicted if the entries are changed (updated or removed).
+                true of false. Default is true.
+            -->
+            <invalidate-on-change>true</invalidate-on-change>
+
+        </near-cache>
     </map>
 </hazelcast>

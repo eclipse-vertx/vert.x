@@ -16,6 +16,7 @@ public class Message extends Sendable {
   public String messageID;
   public final String subName;
   ServerID sender;
+  boolean requiresAck;
   public final Buffer buff;
   EventBus bus;
 
@@ -49,6 +50,10 @@ public class Message extends Sendable {
 
     sender = new ServerID(port, host);
 
+    byte bra = readBuff.getByte(pos);
+    requiresAck = bra == (byte)1;
+    pos += 1;
+
     int buffLength = readBuff.getInt(pos);
     pos += 4;
     byte[] payload = readBuff.getBytes(pos, pos + buffLength);
@@ -56,11 +61,13 @@ public class Message extends Sendable {
   }
 
   public void acknowledge() {
-    bus.acknowledge(sender, messageID);
+    if (bus != null && requiresAck) {
+      bus.acknowledge(sender, messageID);
+    }
   }
 
   void write(NetSocket socket) {
-    int length = 1 + 6 * 4 + subName.length() + buff.length() + messageID.length() + sender.host.length();
+    int length = 1 + 6 * 4 + subName.length() + 1 + buff.length() + messageID.length() + sender.host.length();
     Buffer totBuff = Buffer.create(length);
     totBuff.appendInt(0);
     totBuff.appendByte(Sendable.TYPE_MESSAGE);
@@ -68,9 +75,9 @@ public class Message extends Sendable {
     writeString(totBuff, subName);
     totBuff.appendInt(sender.port);
     writeString(totBuff, sender.host);
+    totBuff.appendByte((byte)(requiresAck ? 1 : 0));
     totBuff.appendInt(buff.length());
     totBuff.appendBuffer(buff);
-    log.info("Estimated length: " + length + " actual length: " + totBuff.length());
     totBuff.setInt(0, totBuff.length() - 4);
     socket.write(totBuff);
   }
@@ -79,4 +86,12 @@ public class Message extends Sendable {
     return Sendable.TYPE_MESSAGE;
   }
 
+
+  Message copy() {
+    Message msg = new Message(subName, buff.copy());
+    msg.messageID = this.messageID;
+    msg.sender = this.sender;
+    msg.requiresAck = this.requiresAck;
+    return msg;
+  }
 }

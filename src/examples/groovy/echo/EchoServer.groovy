@@ -1,5 +1,5 @@
+import java.util.concurrent.atomic.AtomicLong
 import org.vertx.java.core.app.VertxApp
-import java.util.concurrent.atomic.AtomicLong;
 
 class EchoServer implements VertxApp {
 

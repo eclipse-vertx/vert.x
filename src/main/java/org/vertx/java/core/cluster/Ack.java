@@ -2,12 +2,15 @@ package org.vertx.java.core.cluster;
 
 import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Ack extends Sendable {
+
+  private static final Logger log = Logger.getLogger(Ack.class);
 
   final String messageID;
 
@@ -16,17 +19,19 @@ public class Ack extends Sendable {
   }
 
   Ack(Buffer readBuff) {
-    int messageIDLength = readBuff.getInt(0);
-    byte[] messageIDBytes = readBuff.getBytes(4, 4 + messageIDLength);
+    int messageIDLength = readBuff.getInt(1);
+    byte[] messageIDBytes = readBuff.getBytes(5, 5 + messageIDLength);
     messageID = new String(messageIDBytes, CharsetUtil.UTF_8);
   }
 
   void write(NetSocket socket) {
-    int length = 1 + 4 + messageID.length();
+    int length = 1 + 4 + 4 + messageID.length();
     Buffer totBuff = Buffer.create(length);
     totBuff.appendInt(0);
     totBuff.appendByte(Sendable.TYPE_ACK);
     writeString(totBuff, messageID);
+    totBuff.setInt(0, totBuff.length() - 4);
+    socket.write(totBuff);
   }
 
   byte type() {

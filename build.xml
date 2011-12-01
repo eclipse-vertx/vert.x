@@ -144,7 +144,10 @@
 
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
 
-        <copy file="conf/logging.properties" todir="${dist-build}"/>
+        <mkdir dir="${dist-build}/conf"/>
+
+        <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
+        <copy file="conf/hazelcast.xml" todir="${dist-build}/conf"/>
 
         <copy todir="${dist-build}/lib/java">
             <fileset dir="${core-lib}">
