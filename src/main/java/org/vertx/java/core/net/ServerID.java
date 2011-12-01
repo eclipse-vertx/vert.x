@@ -56,4 +56,8 @@ public class ServerID implements Serializable, DataSerializable {
     port = dataInput.readInt();
     host = dataInput.readUTF();
   }
+
+  public String toString() {
+    return host + ":" + port;
+  }
 }

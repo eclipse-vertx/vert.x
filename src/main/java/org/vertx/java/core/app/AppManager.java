@@ -1,7 +1,6 @@
 package org.vertx.java.core.app;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.cli.SocketDeployer;
 import org.vertx.java.core.app.groovy.GroovyAppFactory;

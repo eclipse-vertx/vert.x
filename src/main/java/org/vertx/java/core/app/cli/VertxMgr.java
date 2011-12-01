@@ -6,10 +6,13 @@ import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.app.Args;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.cluster.EventBus;
+import org.vertx.java.core.cluster.spi.ClusterManager;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
 import java.io.File;
@@ -34,18 +37,17 @@ public class VertxMgr {
   private VertxMgr(String[] sargs) {
     Args args = new Args(sargs);
 
-    int port = args.getInt("-port");
-    port = port == -1 ? SocketDeployer.DEFAULT_PORT: port;
-
     if (sargs.length == 0) {
       displayHelp();
     } else {
 
+      int port = args.getInt("-port");
+      port = port == -1 ? SocketDeployer.DEFAULT_PORT: port;
+
       VertxCommand cmd = null;
 
       if (sargs[0].equalsIgnoreCase("start")) {
-        System.out.println("Started vert.x server");
-        new AppManager(port).start();
+        startServer(args);
       } else if (sargs[0].equalsIgnoreCase("stop")) {
         cmd = new StopCommand();
         System.out.println("Stopped vert.x server");
@@ -153,53 +155,104 @@ public class VertxMgr {
     }
   }
 
+  private void startServer(Args args) {
+    boolean clustered = false;
+    if (args.map.get("-cluster") != null) {
+      clustered = true;
+      int clusterPort = args.getInt("-cluster-port");
+      if (clusterPort == -1) {
+        clusterPort = 25500;
+      }
+      String clusterHost = args.map.get("-cluster-host");
+      if (clusterHost == null) {
+        clusterHost = "0.0.0.0";
+      }
+      String clusterProviderClass = args.map.get("-cluster-provider");
+      if (clusterProviderClass == null) {
+        clusterProviderClass = "org.vertx.java.core.cluster.spi.hazelcast.HazelcastClusterManager";
+      }
+      final Class clusterProvider;
+      try {
+        clusterProvider= Class.forName(clusterProviderClass);
+      } catch (ClassNotFoundException e) {
+        System.err.println("Cannot find class " + clusterProviderClass);
+        return;
+      }
+      final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
+      final CountDownLatch latch = new CountDownLatch(1);
+      VertxInternal.instance.go(new Runnable() {
+        public void run() {
+          ClusterManager mgr;
+          try {
+            mgr = (ClusterManager)clusterProvider.newInstance();
+          } catch (Exception e) {
+            e.printStackTrace(System.err);
+            System.err.println("Failed to instantiate cluster provider");
+            return;
+          }
+          EventBus.initialize(clusterServerID, mgr);
+          latch.countDown();
+        }
+      });
+      try {
+        latch.await();
+      } catch (InterruptedException ignore) {
+      }
+    }
+    System.out.println("vert.x server started" + (clustered ? " in clustered mode" : ""));
+    AppManager mgr = new AppManager(args.getInt("-deploy-port"));
+    mgr.start();
+  }
+
+
   private void displayHelp() {
-    System.out.println("vertx command help");
-    System.out.println("------------------");
-    System.out.println("");
+    System.out.println("vertx command help\n------------------\n");
     displayStartSyntax();
-    System.out.println("------------------");
-    System.out.println("");
+    System.out.println("------------------\n");
     displayStopSyntax();
-    System.out.println("------------------");
-    System.out.println("");
+    System.out.println("------------------\n");
     displayDeploySyntax();
-    System.out.println("------------------");
-    System.out.println("");
+    System.out.println("------------------\n");
     displayUndeploySyntax();
   }
 
   private void displayStopSyntax() {
-    System.out.println("Stop a vert.x server");
-    System.out.println("vertx stop -port <port>");
-    System.out.println("<port> - the port to connect to the server at. Defaults to 25571");
+    String msg =
+    "Stop a vert.x server:\n\n" +
+    "vertx stop -port <port>\n" +
+    "<port> - the port to connect to the server at. Defaults to 25571";
+    System.out.println(msg);
   }
 
   private void displayStartSyntax() {
-    System.out.println("Start a vert.x server");
-    System.out.println("vertx start -port <port>");
-    System.out.println("<port> - the port the server will listen at. Defaults to 25571");
+    String msg =
+    "Start a vert.x server:\n\n" +
+    "vertx start -port <port>\n" +
+    "<port> - the port the server will listen at. Defaults to 25571";
+    System.out.println(msg);
   }
 
   private void displayDeploySyntax() {
-    System.out.println("Deploy an application");
-    System.out.println("vertx deploy -[java|ruby|groovy|js] -name <name> -main <main> -cp <classpath> -instances <instances> -port <port>");
-    System.out.println("");
-    System.out.println("-[java|ruby|groovy|js] depending on the language of the application");
-    System.out.println("<name> - unique name of the application. If this ommitted the server will generate a name");
-    System.out.println("<main> - main class or script for the application");
-    System.out.println("<classpath> - classpath to use");
-    System.out.println("<instances> - number of instances of the application to start. Must be > 0 or -1.");
-    System.out.println("              if -1 then instances will be default to number of cores on the server");
-    System.out.println("<port> - the port to connect to the server at. Defaults to 25571");
+    String msg =
+    "Deploy an application:\n\n" +
+    "vertx deploy -[java|ruby|groovy|js] -name <name> -main <main> -cp <classpath> -instances <instances> -port <port>\n" +
+    "-[java|ruby|groovy|js] depending on the language of the application\n" +
+    "<name> - unique name of the application. If this ommitted the server will generate a name\n" +
+    "<main> - main class or script for the application\n" +
+    "<classpath> - classpath to use\n" +
+    "<instances> - number of instances of the application to start. Must be > 0 or -1.\n" +
+    "              if -1 then instances will be default to number of cores on the server\n" +
+    "<port> - the port to connect to the server at. Defaults to 25571";
+    System.out.println(msg);
   }
 
   private void displayUndeploySyntax() {
-    System.out.println("Undeploy an application");
-    System.out.println("vertx undeploy -name <name> -port <port>");
-    System.out.println("");
-    System.out.println("<name> - unique name of the application.");
-    System.out.println("<port> - the port to connect to the server at. Defaults to 25571");
+    String msg =
+    "Undeploy an application:\n\n" +
+    "vertx undeploy -name <name> -port <port>\n" +
+    "<name> - unique name of the application.\n" +
+    "<port> - the port to connect to the server at. Defaults to 25571\n";
+    System.out.println(msg);
   }
 
   private String sendCommand(final int port, final VertxCommand command) {

@@ -3,10 +3,7 @@ package org.vertx.java.core.cluster.spi.hazelcast;
 import org.vertx.java.core.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Deferred;
-import org.vertx.java.core.Future;
-import org.vertx.java.core.cluster.EventBus;
 import org.vertx.java.core.cluster.spi.AsyncMultiMap;
-import org.vertx.java.core.net.ServerID;
 
 import java.util.Collection;
 

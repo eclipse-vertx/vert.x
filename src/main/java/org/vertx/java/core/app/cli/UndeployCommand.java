@@ -2,8 +2,6 @@ package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.app.AppManager;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
