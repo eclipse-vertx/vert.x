@@ -26,6 +26,7 @@ require 'core/shared_data'
 require 'core/std_io'
 require 'core/composition'
 require 'core/logger'
+require 'core/event_bus'
 
 require 'addons/redis'
 

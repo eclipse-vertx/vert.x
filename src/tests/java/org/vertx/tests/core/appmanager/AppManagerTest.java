@@ -15,13 +15,10 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.tests.core.TestBase;
 
-import java.io.File;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;

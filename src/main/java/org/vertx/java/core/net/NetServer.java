@@ -39,7 +39,7 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -65,6 +65,11 @@ public class NetServer extends NetServerBase {
 
   private static final Logger log = Logger.getLogger(NetServer.class);
 
+  //For debug only
+  public static int numServers() {
+    return servers.size();
+  }
+
   private static final Map<ServerID, NetServer> servers = new HashMap<>();
 
   private Map<Channel, NetSocket> socketMap = new ConcurrentHashMap();
@@ -75,6 +80,7 @@ public class NetServer extends NetServerBase {
   private NetServer actualServer;
   private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+
 
   /**
    * Create a new NetServer instance.
@@ -307,24 +313,22 @@ public class NetServer extends NetServerBase {
     synchronized (servers) {
 
       actualServer.handlerManager.removeHandler(connectHandler);
+
       if (actualServer.handlerManager.hasHandlers()) {
         // The actual server still has handlers so we don't actually close it
         if (done != null) {
-          executeCloseDone(done);
+          executeCloseDone(contextID, done);
         }
       } else {
         // No Handlers left so close the actual server
-        VertxInternal.instance.executeOnContext(actualServer.contextID, new Runnable() {
-          public void run() {
-            actualServer.actualClose(done);
-          }
-        });
-
+        // The done handler needs to be executed on the context that calls close, NOT the context
+        // of the actual server
+        actualServer.actualClose(contextID, done);
       }
     }
   }
 
-  private void actualClose(final Handler<Void> done) {
+  private void actualClose(final long closeContextID, final Handler<Void> done) {
     if (id != null) {
       servers.remove(id);
     }
@@ -336,13 +340,13 @@ public class NetServer extends NetServerBase {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    VertxInternal.instance.setContextID(contextID);
+    VertxInternal.instance.setContextID(closeContextID);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
       fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          executeCloseDone(done);
+          executeCloseDone(closeContextID, done);
         }
       });
     }
@@ -352,10 +356,10 @@ public class NetServer extends NetServerBase {
     //TODO check configs are the same
   }
 
-  private void executeCloseDone(final Handler<Void> done) {
-    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+  private void executeCloseDone(final long closeContextID, final Handler<Void> done) {
+    VertxInternal.instance.executeOnContext(closeContextID, new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(contextID);
+        VertxInternal.instance.setContextID(closeContextID);
         done.handle(null);
       }
     });
@@ -418,8 +422,10 @@ public class NetServer extends NetServerBase {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
       NetSocket sock = socketMap.get(ch);
-      ChannelBuffer buff = (ChannelBuffer) e.getMessage();
-      sock.handleDataReceived(new Buffer(buff.slice()));
+      if (sock != null) {
+        ChannelBuffer buff = (ChannelBuffer) e.getMessage();
+        sock.handleDataReceived(new Buffer(buff.slice()));
+      }
     }
 
     @Override
