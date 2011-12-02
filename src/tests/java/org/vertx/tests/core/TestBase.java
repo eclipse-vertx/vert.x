@@ -16,6 +16,7 @@
 
 package org.vertx.tests.core;
 
+import com.hazelcast.core.Hazelcast;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.vertx.java.core.Vertx;
@@ -44,6 +45,7 @@ public class TestBase {
 
   @AfterClass
   public void tearDown() {
+
     if (NetServer.numServers() != 0) {
       throw new IllegalStateException("There should be no NetServer instances at end of test");
     }

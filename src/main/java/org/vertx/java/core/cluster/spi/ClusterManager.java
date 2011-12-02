@@ -5,4 +5,6 @@ package org.vertx.java.core.cluster.spi;
  */
 public interface ClusterManager {
   AsyncMultiMap getMultiMap(String name);
+
+  void close();
 }
