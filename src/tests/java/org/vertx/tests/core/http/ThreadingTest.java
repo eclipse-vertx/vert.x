@@ -48,7 +48,7 @@ public class ThreadingTest extends TestBase {
     final String host = "localhost";
     final int port = 8181;
     final int numRequests = 50;
-    final int serversPerLoop = 2;
+    final int serversPerLoop = 3;
     final int numServerLoops = 5;
     final CountDownLatch serverCloseLatch = new CountDownLatch(numServerLoops * serversPerLoop);
     final Set<Integer> connectedServers = SharedData.getSet("servers");

@@ -45,7 +45,7 @@ public class ThreadingTest extends TestBase {
   // Test that handlers are executed with the correct context
   public void testNetHandlers() throws Exception {
     final int dataLength = 10;
-    final int connections = 50;
+    final int connections = 100;
     final int serverLoops = 5;
     final int serversPerLoop = 3;
     final CountDownLatch serverCloseLatch = new CountDownLatch(serverLoops * serversPerLoop);

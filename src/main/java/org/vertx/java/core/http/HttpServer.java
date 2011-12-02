@@ -52,6 +52,7 @@ import org.vertx.java.core.net.HandlerHolder;
 import org.vertx.java.core.net.HandlerManager;
 import org.vertx.java.core.net.NetServerBase;
 import org.vertx.java.core.net.NetServerWorkerPool;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 
 import javax.net.ssl.SSLEngine;
@@ -78,6 +79,11 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class HttpServer extends NetServerBase {
 
   private static final Logger log = Logger.getLogger(HttpServer.class);
+
+  //For debug only
+  public static int numServers() {
+    return servers.size();
+  }
 
   private static final Map<ServerID, HttpServer> servers = new HashMap<>();
 
@@ -134,7 +140,7 @@ public class HttpServer extends NetServerBase {
   }
 
   /**
-   * Tell the server to start listening on port {@code port} and host / ip subName given by {@code host}.
+   * Tell the server to start listening on port {@code port} and host / ip address given by {@code host}.
    *
    * @return a reference to this, so methods can be chained.
    */
@@ -339,22 +345,32 @@ public class HttpServer extends NetServerBase {
     checkThread();
 
     if (!listening) return;
-
     listening = false;
 
-    if (actualServer != null && actualServer != this) {
+    synchronized (servers) {
+
       if (requestHandler != null) {
         actualServer.reqHandlerManager.removeHandler(requestHandler);
       }
       if (wsHandler != null) {
         actualServer.wsHandlerManager.removeHandler(wsHandler);
       }
-      if (done != null) {
-        executeCloseDone(done);
-      }
-      return;
-    }
 
+      if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
+        // The actual server still has handlers so we don't actually close it
+        if (done != null) {
+          executeCloseDone(contextID, done);
+        }
+      } else {
+        // No Handlers left so close the actual server
+        // The done handler needs to be executed on the context that calls close, NOT the context
+        // of the actual server
+        actualServer.actualClose(contextID, done);
+      }
+    }
+  }
+
+  private void actualClose(final long closeContextID, final Handler<Void> done) {
     if (id != null) {
       servers.remove(id);
     }
@@ -362,20 +378,26 @@ public class HttpServer extends NetServerBase {
     for (ServerConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
+
+    // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
+    // which can cause context id for the thread to change!
+
+    VertxInternal.instance.setContextID(closeContextID);
+
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
       fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          executeCloseDone(done);
+          executeCloseDone(closeContextID, done);
         }
       });
     }
   }
 
-  private void executeCloseDone(final Handler<Void> done) {
-    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+  private void executeCloseDone(final long closeContextID, final Handler<Void> done) {
+    VertxInternal.instance.executeOnContext(closeContextID, new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(contextID);
+        VertxInternal.instance.setContextID(closeContextID);
         done.handle(null);
       }
     });
@@ -491,9 +513,5 @@ public class HttpServer extends NetServerBase {
         });
       }
     }
-
-//    private String getWebSocketLocation(HttpRequest req, String path) {
-//      return "ws://" + req.getHeader(HttpHeaders.Names.HOST) + path;
-//    }
   }
 }

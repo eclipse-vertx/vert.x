@@ -98,10 +98,8 @@
 
     <target name="java-tests" depends="compile-tests, compile-test-apps">
         <testng classpathref="test-classpath">
-            <!-- <testng classpathref="test-classpath" methods="org.vertx.tests.core.net.NetTest.*"> -->
             <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
             <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
-            <!-- <classfileset dir="${tests-target}" includes="**/RedisReconnectTest.class"/> -->
         </testng>
     </target>
 

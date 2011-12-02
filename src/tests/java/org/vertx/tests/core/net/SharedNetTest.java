@@ -45,9 +45,9 @@ public class SharedNetTest extends TestBase {
   @Test
   public void testConnectionDistribution() throws Exception {
     final int dataLength = 10;
-    final int connections = 50;
-    final int serverLoops = 5;
-    final int serversPerLoop = 3;
+    final int connections = 10;
+    final int serverLoops = 1;
+    final int serversPerLoop = 2;
     final CountDownLatch serverCloseLatch = new CountDownLatch(serverLoops * serversPerLoop);
     final CountDownLatch listenLatch = new CountDownLatch(serverLoops * serversPerLoop);
 
@@ -69,6 +69,7 @@ public class SharedNetTest extends TestBase {
                   public void handle() {
                     checker.check();
                     serverCloseLatch.countDown();
+                  //  log.info("closed server");
                   }
                 });
               }

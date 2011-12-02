@@ -39,8 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * setNumServers()
  *
- * addHandler(serverNum, subName)
- * addSender(serverNum, numMessages, subName)
+ * addHandler(serverNum, address)
+ * addSender(serverNum, numMessages, address)
  *
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -53,10 +53,14 @@ public class EventBusTest extends TestBase {
     TestEventBus(ServerID serverID, ClusterManager clusterManager) {
       super(serverID, clusterManager);
     }
+
+    public void close(Handler<Void> done) {
+      super.close(done);
+    }
   }
 
   private int numBuses = 3;
-  private List<EventBus> buses = new ArrayList<>();
+  private List<TestEventBus> buses = new ArrayList<>();
   private List<TestHandler> handlers = new ArrayList<>();
   private MessageCounter messageCounter;
   private List<Method> methodsList = new ArrayList<>();
@@ -117,7 +121,7 @@ public class EventBusTest extends TestBase {
           }
         }
       };
-      for (EventBus bus: buses) {
+      for (TestEventBus bus: buses) {
         bus.close(cumulativeHandler);
       }
     }
@@ -212,11 +216,11 @@ public class EventBusTest extends TestBase {
     handlersToAdd.add(handler);
   }
 
-  private void sendMessage(final Handler<Void> done, int pos, String subName) {
-    sendMessage(done, pos, subName, false);
+  private void sendMessage(final Handler<Void> done, int pos, String address) {
+    sendMessage(done, pos, address, false);
   }
 
-  private void sendMessage(final Handler<Void> done, final int pos, final String subName, final boolean ack) {
+  private void sendMessage(final Handler<Void> done, final int pos, final String address, final boolean ack) {
     CompletionHandler<Void> handler = new CompletionHandler<Void>() {
       AtomicInteger count = new AtomicInteger(handlersToAdd.size());
       public void handle(Future<Void> event) {
@@ -225,7 +229,7 @@ public class EventBusTest extends TestBase {
             // Actually send the message
 
             Buffer buff = Utils.generateRandomBuffer(1000);
-            Message msg = new Message(subName, buff);
+            Message msg = new Message(address, buff);
             EventBus bus = buses.get(pos);
             if (ack) {
               Handler<Void> dHandler = new SimpleHandler() {
@@ -263,12 +267,12 @@ public class EventBusTest extends TestBase {
     messageCounter.doneHandler(new SimpleHandler() {
       public void handle() {
         for (TestHandler handler: handlers) {
-          if (handler.subName.equals(msg.subName)) {
+          if (handler.subName.equals(msg.address)) {
             azzert(handler.message != null);
             azzert(handler.message.messageID.equals(msg.messageID), "Expected " + msg.messageID + " Actual: " + handler.message.messageID);
-            azzert(handler.message.subName.equals(msg.subName));
-            azzert(Utils.buffersEqual(msg.buff, handler.message.buff));
-            azzert(msg.buff != handler.message.buff); // Should be copied
+            azzert(handler.message.address.equals(msg.address));
+            azzert(Utils.buffersEqual(msg.body, handler.message.body));
+            azzert(msg.body != handler.message.body); // Should be copied
             azzert(msg != handler.message);
           }
         }
