@@ -20,4 +20,8 @@ public class HazelcastClusterManager implements ClusterManager {
     com.hazelcast.core.MultiMap map = Hazelcast.getMultiMap("subs");
     return new HazelcastAsyncMultiMap(map);
   }
+
+  public void close() {
+    Hazelcast.shutdownAll();
+  }
 }

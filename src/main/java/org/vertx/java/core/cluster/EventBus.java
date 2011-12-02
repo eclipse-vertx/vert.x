@@ -61,11 +61,11 @@ public class EventBus {
    */
   public static EventBus instance;
 
-  public static void initialize(ServerID serverID, ClusterManager clusterManager) {
+  public static void initialize(EventBus bus) {
     if (instance != null) {
       throw new IllegalStateException("Cannot call initialize more than once");
     }
-    instance = new EventBus(serverID, clusterManager);
+    instance = bus;
   }
 
   private ServerID serverID;

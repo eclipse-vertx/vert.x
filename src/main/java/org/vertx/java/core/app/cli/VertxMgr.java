@@ -190,7 +190,9 @@ public class VertxMgr {
             System.err.println("Failed to instantiate cluster provider");
             return;
           }
-          EventBus.initialize(clusterServerID, mgr);
+          EventBus bus = new EventBus(clusterServerID, mgr) {
+          };
+          EventBus.initialize(bus);
           latch.countDown();
         }
       });

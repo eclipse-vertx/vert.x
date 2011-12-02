@@ -1,5 +1,7 @@
 package org.vertx.tests.core.eventbus;
 
+import com.hazelcast.core.Hazelcast;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
@@ -67,6 +69,12 @@ public class EventBusTest extends TestBase {
   private Iterator<Method> iter;
   private ContextChecker checker;
   private List<TestHandler> handlersToAdd = new ArrayList<>();
+
+  @AfterClass
+  public void tearDown() {
+    super.tearDown();
+    Hazelcast.shutdownAll();
+  }
 
   @Test
   public void test() throws Exception {
