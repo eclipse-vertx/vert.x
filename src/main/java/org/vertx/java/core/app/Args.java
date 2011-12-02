@@ -33,18 +33,18 @@ public class Args {
     }
   }
 
-  public int getPort() {
-    String sport = map.get("-port");
-    int port;
-    if (sport != null) {
+  public int getInt(String argName) {
+    String arg = map.get(argName);
+    int val;
+    if (arg != null) {
       try {
-        port = Integer.parseInt(sport.trim());
+        val = Integer.parseInt(arg.trim());
       } catch (NumberFormatException e) {
-        throw new IllegalArgumentException("Invalid port: " + sport);
+        throw new IllegalArgumentException("Invalid " + argName + ": " + arg);
       }
     } else {
-      port = -1;
+      val = -1;
     }
-    return port;
+    return val;
   }
 }

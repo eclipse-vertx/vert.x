@@ -123,11 +123,11 @@ public class TLSTest extends TestBase {
         server.connectHandler(serverHandler).setSSL(true);
 
         if (serverTrust) {
-          server.setTrustStorePath("./src/tests/resources/keystores/server-truststore.jks").setTrustStorePassword
+          server.setTrustStorePath("./src/tests/keystores/server-truststore.jks").setTrustStorePassword
               ("wibble");
         }
         if (serverCert) {
-          server.setKeyStorePath("./src/tests/resources/keystores/server-keystore.jks").setKeyStorePassword("wibble");
+          server.setKeyStorePath("./src/tests/keystores/server-keystore.jks").setKeyStorePassword("wibble");
         }
         if (requireClientAuth) {
           server.setClientAuthRequired(true);
@@ -142,11 +142,11 @@ public class TLSTest extends TestBase {
         }
 
         if (clientTrust) {
-          client.setTrustStorePath("./src/tests/resources/keystores/client-truststore.jks")
+          client.setTrustStorePath("./src/tests/keystores/client-truststore.jks")
               .setTrustStorePassword("wibble");
         }
         if (clientCert) {
-          client.setKeyStorePath("./src/tests/resources/keystores/client-keystore.jks")
+          client.setKeyStorePath("./src/tests/keystores/client-keystore.jks")
               .setKeyStorePassword("wibble");
         }
 

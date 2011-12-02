@@ -3,7 +3,6 @@ package org.vertx.java.core.app.jruby;
 import org.vertx.java.core.app.AppFactory;
 import org.vertx.java.core.app.ParentLastURLClassLoader;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.app.jruby.JRubyApp;
 
 import java.net.URL;
 

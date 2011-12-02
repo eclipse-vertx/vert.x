@@ -2,12 +2,7 @@ package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.NetSocket;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.URL;
 
 /**

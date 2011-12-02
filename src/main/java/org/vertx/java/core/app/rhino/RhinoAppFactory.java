@@ -3,7 +3,6 @@ package org.vertx.java.core.app.rhino;
 import org.vertx.java.core.app.AppFactory;
 import org.vertx.java.core.app.ParentLastURLClassLoader;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.app.rhino.RhinoApp;
 
 import java.net.URL;
 

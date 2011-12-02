@@ -93,7 +93,7 @@ need any synchronization.
 23) HTTP connection reconnection.
 24) Look at Redis cluster support in client
 25) Core JSON support
-26) Websockets connection close protocol
+27) The way event bus is started and shutdown is pretty ugly at the moment
 
 
 
