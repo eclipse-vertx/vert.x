@@ -53,7 +53,7 @@ module Vertx
 
     # Instruct the server to listen for incoming connections.
     # @param [FixNum] port. The port to listen on.
-    # @param [FixNum] host. The host name or ip subName to listen on.
+    # @param [FixNum] host. The host name or ip address to listen on.
     def listen(port, host = "0.0.0.0")
       @j_del.listen(port, host)
       self
@@ -141,8 +141,8 @@ module Vertx
       self
     end
 
-    # Set the host name or ip subName that the client will attempt to connect to on the server on.
-    # @param [String] host. The host name or ip subName to connect to.
+    # Set the host name or ip address that the client will attempt to connect to on the server on.
+    # @param [String] host. The host name or ip address to connect to.
     def host=(val)
       @j_del.setHost(val)
       self

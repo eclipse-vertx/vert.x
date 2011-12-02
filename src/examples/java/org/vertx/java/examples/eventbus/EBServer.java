@@ -32,7 +32,7 @@ public class EBServer implements VertxApp {
 
     EventBus.instance.registerHandler("test-sub", new Handler<Message>() {
       public void handle(Message message) {
-        System.out.println("Got message: " + message.buff.toString());
+        System.out.println("Got message: " + message.body.toString());
       }
     });
 

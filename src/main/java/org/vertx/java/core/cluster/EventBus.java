@@ -27,6 +27,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * <p>This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
+ * It is very useful for otherwise isolated vert.x application instances to communicate with each other.</p>
+ *
+ * <p>Messages sent over the event bus are represented by instances of the  {@link Message} class.</p>
+ *
+ * <p>The event bus implements a distributed publish / subscribe network.</p>
+ *
+ * <p>Messages are sent to an address which is simply an arbitrary String.
+ * There can be multiple handlers can be registered against that address.
+ * Any handlers with a matching name will receive the message irrespective of what vert.x application instance and
+ * what vert.x instance they are located in.</p>
+ *
+ * <p>All messages sent over the bus are transient. On event of failure of all or part of the event bus messages
+ * may be lost. Applications should be coded to cope with lost messages, e.g. by resending them, and making application
+ * services idempotent.</p>
+ *
+ * <p>The order of messages received by any specific handler from a specific sender should match the order of messages
+ * sent from that sender.</p>
+ *
+ * <p>When sending a message, a receipt can be request. If so, when the message has been received by all registered
+ * matching handlers and the {@link Message#acknowledge} method has been called on each received message the receipt
+ * handler will be called.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -34,6 +56,9 @@ public class EventBus {
 
   private static final Logger log = Logger.getLogger(EventBus.class);
 
+  /**
+   * The event bus instance. Use this to obtain an instance of the event bus from within application code.
+   */
   public static EventBus instance;
 
   public static void initialize(ServerID serverID, ClusterManager clusterManager) {
@@ -82,10 +107,12 @@ public class EventBus {
     }).listen(serverID.port, serverID.host);
   }
 
-  public void close(Handler<Void> doneHandler) {
-    server.close(doneHandler);
-  }
-
+  /**
+   * Send a message on the event bus
+   * @param message The message
+   * @param receiptHandler An optional receipt handler. If specified then when the message has reached all registered
+   * handlers and each one has called {@link Message#acknowledge} then the handler will be called
+   */
   public void send(final Message message, final Handler<Void> receiptHandler) {
     message.messageID = UUID.randomUUID().toString();
     message.sender = serverID;
@@ -93,7 +120,7 @@ public class EventBus {
       message.requiresAck = true;
     }
 
-    subs.get(message.subName, new CompletionHandler<Collection<ServerID>>() {
+    subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
       public void handle(Future<Collection<ServerID>> event) {
         Collection<ServerID> serverIDs = event.result();
         if (event.succeeded()) {
@@ -116,20 +143,32 @@ public class EventBus {
     });
   }
 
+  /**
+   * Send a message on the event bus
+   * @param message
+   */
   public void send(final Message message) {
     send(message, null);
   }
 
-  public void registerHandler(String subName, Handler<Message> handler, CompletionHandler<Void> doneHandler) {
-    Set<HandlerHolder> set = handlers.get(subName);
+  /**
+   * Register a handler.
+   * @param address The address to register for. Any messages sent to that address will be
+   * received by the handler. A single handler can be registered against many addresses.
+   * @param handler The handler
+   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
+  public void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
+    Set<HandlerHolder> set = handlers.get(address);
     if (set == null) {
       set = new HashSet<>();
-      Set<HandlerHolder> prevSet = handlers.putIfAbsent(subName, set);
+      Set<HandlerHolder> prevSet = handlers.putIfAbsent(address, set);
       if (prevSet != null) {
         set = prevSet;
       }
-      if (doneHandler == null) {
-        doneHandler = new CompletionHandler<Void>() {
+      if (completionHandler == null) {
+        completionHandler = new CompletionHandler<Void>() {
           public void handle(Future<Void> event) {
             if (event.failed()) {
               log.error("Failed to remove entry", event.exception());
@@ -137,31 +176,45 @@ public class EventBus {
           }
         };
       }
-      subs.put(subName, serverID, doneHandler);
+      subs.put(address, serverID, completionHandler);
       set.add(new HandlerHolder(handler));
     } else {
       set.add(new HandlerHolder(handler));
-      if (doneHandler != null) {
+      if (completionHandler != null) {
         SimpleFuture<Void> f = new SimpleFuture<>();
         f.setResult(null);
-        doneHandler.handle(f);
+        completionHandler.handle(f);
       }
     }
   }
 
-  public void registerHandler(String subName, Handler<Message> handler) {
-    registerHandler(subName, handler, null);
+  /**
+   * Registers handler
+   *
+   * The same as {@link #registerHandler(String, Handler, CompletionHandler)} with a null completionHandler
+   */
+  public void registerHandler(String address, Handler<Message> handler) {
+    registerHandler(address, handler, null);
   }
 
-  public void unregisterHandler(String subName, Handler<Message> handler) {
-    Set<HandlerHolder> set = handlers.get(subName);
+  /**
+   * Unregisters a handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   */
+  public void unregisterHandler(String address, Handler<Message> handler) {
+    Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
       set.remove(new HandlerHolder(handler));
       if (set.isEmpty()) {
-        handlers.remove(subName);
-        removeSub(subName, serverID);
+        handlers.remove(address);
+        removeSub(address, serverID);
       }
     }
+  }
+
+  protected void close(Handler<Void> doneHandler) {
+    server.close(doneHandler);
   }
 
   void acknowledge(ServerID sender, String messageID) {
@@ -211,7 +264,7 @@ public class EventBus {
           log.info("Cluster connection failed. Removing it from map");
           connections.remove(serverID);
           if (sendable.type() == Sendable.TYPE_MESSAGE) {
-            removeSub(((Message)sendable).subName, serverID);
+            removeSub(((Message)sendable).address, serverID);
           }
         }
       });
@@ -237,7 +290,7 @@ public class EventBus {
   // Called when a message is incoming
   private void receiveMessage(final Message msg) {
     msg.bus = this;
-    Set<HandlerHolder> set = handlers.get(msg.subName);
+    Set<HandlerHolder> set = handlers.get(msg.address);
     if (set != null) {
       for (final HandlerHolder holder: set) {
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {

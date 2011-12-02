@@ -44,6 +44,14 @@ public class TestBase {
 
   @AfterClass
   public void tearDown() {
+    if (NetServer.numServers() != 0) {
+      throw new IllegalStateException("There should be no NetServer instances at end of test");
+    }
+
+    if (HttpServer.numServers() != 0) {
+      throw new IllegalStateException("There should be no NetServer instances at end of test");
+    }
+
     log.debug("*** STOPPING TEST " + this.getClass().getName());
   }
 
