@@ -16,6 +16,7 @@ The next generation polyglot asynchronous application framework.
 * Understands multiple network protocols out of the box including: TCP, SSL, HTTP, HTTPS, Websockets.
 * Efficiently serve static files from the filesystem bypassing user-space altogether.
 * Simple Sinatra/Express style resource based web routing.
+* Distributed event bus. Multiple vert.x instances work together seamlessly to provide a distributed event bus
 
 ## Jump to the examples
 
