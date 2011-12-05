@@ -16,48 +16,44 @@
 
 package org.vertx.groovy.core.net
 
-public class NetServer {
+import org.vertx.java.core.Handler
 
-  def jServer
+class NetServer {
+
+  private jServer
 
   NetServer() {
     jServer = new org.vertx.java.core.net.NetServer()
   }
 
   def connectHandler(hndlr) {
-    // Wrap the Groovy closure in a an anonymous class so the java core can call it
-    def gHandler = new org.vertx.java.core.Handler() {
-      void handle(jSocket) {
-        hndlr.call(new NetSocket(jSocket))
-      }
-    }
-    jServer.connectHandler(gHandler)
+    jServer.connectHandler({ hndlr.call(new NetSocket(it)) } as Handler)
   }
 
   def listen(int port) {
     jServer.listen(port)
   }
 
-  class NetSocket {
+}
 
-    def jSocket
+class NetSocket {
 
-    NetSocket(jSocket) {
-      this.jSocket = jSocket
-    }
+  private jSocket
 
-    def dataHandler(hndlr) {
-      // Wrap the Groovy closure in a an anonymous class so the java core can call it
-      def gHandler = new org.vertx.java.core.Handler() {
-        void handle(jBuffer) {
-          hndlr.call(jBuffer)
-        }
-      }
-      jSocket.dataHandler(gHandler)
-    }
-
-    def write(buff) {
-      jSocket.write(buff)
-    }
+  NetSocket(jSocket) {
+    this.jSocket = jSocket
   }
+
+  def dataHandler(hndlr) {
+    jSocket.dataHandler(hndlr as Handler)
+  }
+
+  def write(buff) {
+    jSocket.write(buff)
+  }
+
+  def leftShift(buff) {
+    write(buff)
+  }
+
 }
