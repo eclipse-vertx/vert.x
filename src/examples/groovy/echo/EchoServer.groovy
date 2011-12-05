@@ -1,16 +1,20 @@
+import org.vertx.groovy.core.net.NetServer
 import java.util.concurrent.atomic.AtomicLong
-import org.vertx.java.core.app.VertxApp
 
 class EchoServer implements VertxApp {
 
-  static AtomicLong counter = new AtomicLong(0)
+  def server
 
   void start() {
-    println "in groovy start " + counter.incrementAndGet()
+    server = new NetServer().connectHandler { socket ->
+      socket.dataHandler { buffer ->
+        socket.write buffer
+      }
+    }.listen(8080)
   }
 
   void stop() {
-    println "in groovy stop"
+    server.close()
   }
 
 }
