@@ -36,7 +36,7 @@ import org.vertx.java.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Websocket implements ReadStream, WriteStream {
+public class WebSocket implements ReadStream, WriteStream {
 
   private final AbstractConnection conn;
 
@@ -64,7 +64,7 @@ public class Websocket implements ReadStream, WriteStream {
    */
   public final long textHandlerID;
 
-  Websocket(String uri, AbstractConnection conn) {
+  WebSocket(String uri, AbstractConnection conn) {
     this.uri = uri;
     this.conn = conn;
     binaryHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {

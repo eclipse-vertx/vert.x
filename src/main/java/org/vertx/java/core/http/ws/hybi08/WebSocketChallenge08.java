@@ -14,8 +14,9 @@
  * under the License.
  */
 
-package org.vertx.java.core.http.ws;
+package org.vertx.java.core.http.ws.hybi08;
 
+import org.vertx.java.core.http.ws.Base64;
 import org.vertx.java.core.logging.Logger;
 
 import java.security.MessageDigest;
@@ -23,16 +24,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
 
-public class WebSocketChallenge {
+public class WebSocketChallenge08 {
 
-  private static Logger log = Logger.getLogger(WebSocketChallenge.class);
+  private static Logger log = Logger.getLogger(WebSocketChallenge08.class);
 
   public static final String GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
   public static final String SHA1 = "SHA1";
 
   private byte[] rawNonce;
 
-  public WebSocketChallenge() throws NoSuchAlgorithmException {
+  public WebSocketChallenge08() throws NoSuchAlgorithmException {
     generateNonce();
   }
 

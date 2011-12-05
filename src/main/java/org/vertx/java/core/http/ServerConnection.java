@@ -41,10 +41,10 @@ class ServerConnection extends AbstractConnection {
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
   private Handler<HttpServerRequest> requestHandler;
-  private Handler<Websocket> wsHandler;
+  private Handler<WebSocket> wsHandler;
   private HttpServerRequest currentRequest;
   private boolean pendingResponse;
-  private Websocket ws;
+  private WebSocket ws;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
@@ -95,7 +95,7 @@ class ServerConnection extends AbstractConnection {
     this.requestHandler = handler;
   }
 
-  void wsHandler(Handler<Websocket> handler) {
+  void wsHandler(Handler<WebSocket> handler) {
     this.wsHandler = handler;
   }
 
@@ -156,7 +156,7 @@ class ServerConnection extends AbstractConnection {
     try {
       if (wsHandler != null) {
         setContextID();
-        Websocket ws = new Websocket(uri, this);
+        WebSocket ws = new WebSocket(uri, this);
         wsHandler.handle(ws);
         this.ws = ws;
       }

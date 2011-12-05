@@ -39,8 +39,6 @@ public interface WebSocketFrame {
     PONG,
   }
 
-  ;
-
   FrameType getType();
 
   /**

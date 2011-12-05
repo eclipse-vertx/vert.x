@@ -22,8 +22,10 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.Websocket;
+import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 
@@ -35,19 +37,45 @@ import java.util.concurrent.TimeUnit;
  */
 public class WebsocketTest extends TestBase {
 
+  private static final Logger log = Logger.getLogger(WebsocketTest.class);
+
   @Test
-  public void testWSBinary() throws Exception {
-    testWS(true);
+  public void testWSBinaryHybi00() throws Exception {
+    testWS(true, WebSocketVersion.HYBI_00);
     throwAssertions();
   }
 
   @Test
-  public void testWSString() throws Exception {
-    testWS(false);
+  public void testWSStringHybi00() throws Exception {
+    testWS(false, WebSocketVersion.HYBI_00);
     throwAssertions();
   }
 
-  private void testWS(final boolean binary) throws Exception {
+  @Test
+  public void testWSBinaryHybi08() throws Exception {
+    testWS(true, WebSocketVersion.HYBI_08);
+    throwAssertions();
+  }
+
+  @Test
+  public void testWSStringHybi08() throws Exception {
+    testWS(false, WebSocketVersion.HYBI_08);
+    throwAssertions();
+  }
+
+  @Test
+  public void testWSBinaryHybi17() throws Exception {
+    testWS(true, WebSocketVersion.HYBI_17);
+    throwAssertions();
+  }
+
+  @Test
+  public void testWSStringHybi17() throws Exception {
+    testWS(false, WebSocketVersion.HYBI_17);
+    throwAssertions();
+  }
+
+  private void testWS(final boolean binary, final WebSocketVersion version) throws Exception {
     final String host = "localhost";
     final boolean keepAlive = true;
     final String path = "/some/path";
@@ -60,8 +88,8 @@ public class WebsocketTest extends TestBase {
 
         final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
 
-        final HttpServer server = new HttpServer().websocketHandler(new Handler<Websocket>() {
-          public void handle(final Websocket ws) {
+        final HttpServer server = new HttpServer().websocketHandler(new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
             azzert(path.equals(ws.uri));
             ws.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
@@ -75,9 +103,8 @@ public class WebsocketTest extends TestBase {
         final int bsize = 100;
         final int sends = 10;
 
-        client.connectWebsocket(path, new Handler<Websocket>() {
-          public void handle(final Websocket ws) {
-
+        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
             final Buffer received = Buffer.create(0);
             ws.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {

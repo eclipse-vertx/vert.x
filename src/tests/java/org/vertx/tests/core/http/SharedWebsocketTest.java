@@ -22,7 +22,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.Websocket;
+import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shared.SharedData;
@@ -58,9 +58,9 @@ public class SharedWebsocketTest extends TestBase {
 
           for (int j = 0; j < serversPerLoop; j++) {
             final HttpServer server = new HttpServer();
-            server.websocketHandler(new Handler<Websocket>() {
+            server.websocketHandler(new Handler<WebSocket>() {
 
-              public void handle(final Websocket ws) {
+              public void handle(final WebSocket ws) {
                 connectedServers.add(System.identityHashCode(server));
               }
             }).listen(port, host);
@@ -102,8 +102,8 @@ public class SharedWebsocketTest extends TestBase {
 
         for (int i = 0; i < numRequests; i++) {
           final HttpClient client = new HttpClient().setPort(port).setHost(host);
-          client.connectWebsocket("someuri", new Handler<Websocket>() {
-            public void handle(Websocket ws) {
+          client.connectWebsocket("someuri", new Handler<WebSocket>() {
+            public void handle(WebSocket ws) {
               Vertx.instance.sendToHandler(actorID, "bar");
               client.close();
             }
