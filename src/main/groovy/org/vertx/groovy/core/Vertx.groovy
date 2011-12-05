@@ -18,14 +18,10 @@ package org.vertx.groovy.core
 
 class Vertx {
 
-  static def j_instance = org.vertx.java.core.Vertx.instance
+  static j_instance = org.vertx.java.core.Vertx.instance
 
-  static def go(closure) {
-    j_instance.go(new java.lang.Runnable() {
-      public void run() {
-        closure.call()
-      }
-    })
+  static go(closure) {
+    j_instance.go closure
   }
 
 }
