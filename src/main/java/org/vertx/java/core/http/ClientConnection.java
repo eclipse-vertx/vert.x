@@ -21,15 +21,17 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ws.Handshake;
 import org.vertx.java.core.http.ws.WebSocketFrame;
-import org.vertx.java.core.http.ws.WebSocketFrameDecoder;
-import org.vertx.java.core.http.ws.WebSocketFrameEncoder;
+import org.vertx.java.core.http.ws.hybi00.Handshake00;
+import org.vertx.java.core.http.ws.hybi08.Handshake08;
+import org.vertx.java.core.http.ws.hybi17.Handshake17;
 import org.vertx.java.core.logging.Logger;
 
-import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -56,39 +58,53 @@ class ClientConnection extends AbstractConnection {
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequest> requests = new ConcurrentLinkedQueue();
   private volatile HttpClientResponse currentResponse;
-  private Websocket ws;
+  private WebSocket ws;
 
   void toWebSocket(final String uri,
-                   final Handler<Websocket> wsConnect) {
+                   final Handler<WebSocket> wsConnect,
+                   final WebSocketVersion wsVersion) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
 
     try {
 
-      final Handshake shake = new Handshake();
+      final Handshake shake;
+      if (wsVersion == WebSocketVersion.HYBI_00) {
+        shake = new Handshake00();
+      } else if (wsVersion == WebSocketVersion.HYBI_08) {
+        shake = new Handshake08();
+      } else if (wsVersion == WebSocketVersion.HYBI_17) {
+        shake = new Handshake17();
+      } else {
+        throw new IllegalArgumentException("Invalid version");
+      }
 
+      // Create a raw request
       HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
         public void handle(HttpClientResponse resp) {
           try {
-            if (shake.isComplete(resp)) {
-              //We upgraded ok
-              ChannelPipeline p = channel.getPipeline();
-              p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
-              p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(true));
-              ws = new Websocket(uri, ClientConnection.this);
-              wsConnect.handle(ws);
-            } else {
-              throw new IOException("Websocket connection attempt failed");
-            }
+            shake.onComplete(resp, new CompletionHandler<Void>() {
+              public void handle(Future<Void> fut) {
+                if (fut.succeeded()) {
+                  //We upgraded ok
+                  ChannelPipeline p = channel.getPipeline();
+                  p.replace("decoder", "wsdecoder", shake.getDecoder());
+                  p.replace("encoder", "wsencoder", shake.getEncoder(false));
+                  ws = new WebSocket(uri, ClientConnection.this);
+                  wsConnect.handle(ws);
+                } else {
+                  handleException(fut.exception());
+                }
+              }
+            });
           } catch (Exception e) {
             handleException(e);
           }
         }
-      }, contextID, Thread.currentThread());
-      shake.generateRequest(req, (ssl ? "http://" : "https://") + hostHeader);
-      setCurrentRequest(req);
-      req.sendDirect(this);
+      }, contextID, Thread.currentThread(), this);
+      shake.fillInRequest(req, (ssl ? "http://" : "https://") + hostHeader);
+      req.end();
     } catch (Exception e) {
       handleException(e);
     }

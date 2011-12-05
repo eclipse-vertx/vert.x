@@ -44,15 +44,15 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.ws.Handshake;
-import org.vertx.java.core.http.ws.WebSocketFrameDecoder;
-import org.vertx.java.core.http.ws.WebSocketFrameEncoder;
+import org.vertx.java.core.http.ws.hybi00.Handshake00;
+import org.vertx.java.core.http.ws.hybi08.Handshake08;
+import org.vertx.java.core.http.ws.hybi17.Handshake17;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.HandlerHolder;
 import org.vertx.java.core.net.HandlerManager;
 import org.vertx.java.core.net.NetServerBase;
 import org.vertx.java.core.net.NetServerWorkerPool;
-import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 
 import javax.net.ssl.SSLEngine;
@@ -88,7 +88,7 @@ public class HttpServer extends NetServerBase {
   private static final Map<ServerID, HttpServer> servers = new HashMap<>();
 
   private Handler<HttpServerRequest> requestHandler;
-  private Handler<Websocket> wsHandler;
+  private Handler<WebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -97,7 +97,7 @@ public class HttpServer extends NetServerBase {
   private HttpServer actualServer;
   private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
-  private HandlerManager<Websocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private HandlerManager<WebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
   /**
    * Create an {@code HttpServer}
@@ -120,11 +120,11 @@ public class HttpServer extends NetServerBase {
 
   /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
-   * new {@link Websocket} instance will be created and passed to the handler.
+   * new {@link WebSocket} instance will be created and passed to the handler.
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer websocketHandler(Handler<Websocket> wsHandler) {
+  public HttpServer websocketHandler(Handler<WebSocket> wsHandler) {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
@@ -418,28 +418,33 @@ public class HttpServer extends NetServerBase {
 
         if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
             WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
-          // Websocket handshake
 
-          Handshake shake = new Handshake();
-          if (shake.matches(request)) {
-            HttpResponse resp = shake.generateResponse(request);
-            ChannelPipeline p = ch.getPipeline();
-            p.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
-            ch.write(resp);
-            p.replace("encoder", "wsencoder", new WebSocketFrameEncoder(false));
-
-            HandlerHolder<Websocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
-            if (wsHandler != null) {
-              ServerConnection conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
-              conn.wsHandler(wsHandler.handler);
-              conn.handleWebsocketConnect(request.getUri());
-              connectionMap.put(ch, conn);
-            }
-
+          Handshake shake;
+          if (Handshake17.matches(request)) {
+            shake = new Handshake17();
+          } else if (Handshake08.matches(request)) {
+            shake = new Handshake08();
+          } else if (Handshake00.matches(request)) {
+            shake = new Handshake00();
           } else {
+            log.error("Unrecognised websockets handshake");
             ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
+            return;
           }
 
+          HttpResponse resp = shake.generateResponse(request);
+          ChannelPipeline p = ch.getPipeline();
+          p.replace("decoder", "wsdecoder", shake.getDecoder());
+          ch.write(resp);
+          p.replace("encoder", "wsencoder", shake.getEncoder(true));
+
+          HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
+          if (wsHandler != null) {
+            ServerConnection conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
+            conn.wsHandler(wsHandler.handler);
+            conn.handleWebsocketConnect(request.getUri());
+            connectionMap.put(ch, conn);
+          }
         } else {
           //HTTP request or chunk
           ServerConnection conn = connectionMap.get(ch);

@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.vertx.java.core.http.ws;
+package org.vertx.java.core.http.ws.hybi08;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -23,17 +23,18 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
+import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.logging.Logger;
 
 import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
-public class WebSocketFrameDecoder extends ReplayingDecoder<VoidEnum> {
+public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
 
   public static final int DEFAULT_MAX_FRAME_SIZE = 16384;
 
   private final int maxFrameSize;
 
-  public WebSocketFrameDecoder() {
+  WebSocketFrameDecoder08() {
     this(DEFAULT_MAX_FRAME_SIZE);
   }
 
@@ -45,7 +46,7 @@ public class WebSocketFrameDecoder extends ReplayingDecoder<VoidEnum> {
    *
    * @param maxFrameSize the maximum frame size to decode
    */
-  public WebSocketFrameDecoder(int maxFrameSize) {
+  WebSocketFrameDecoder08(int maxFrameSize) {
     this.maxFrameSize = maxFrameSize;
   }
 
@@ -90,12 +91,12 @@ public class WebSocketFrameDecoder extends ReplayingDecoder<VoidEnum> {
 
     ChannelBuffer data = ChannelBuffers.wrappedBuffer(payload);
 
-    WebSocketFrame.FrameType frameType = decodeFrameType(opcode);
+    FrameType frameType = decodeFrameType(opcode);
 
     return new DefaultWebSocketFrame(frameType, data);
   }
 
-  protected WebSocketFrame.FrameType decodeFrameType(int opcode) {
+  protected FrameType decodeFrameType(int opcode) {
     switch (opcode) {
       case 0x0:
         return FrameType.CONTINUATION;
@@ -114,6 +115,6 @@ public class WebSocketFrameDecoder extends ReplayingDecoder<VoidEnum> {
     return null;
   }
 
-  private static final Logger log = Logger.getLogger(WebSocketFrameDecoder.class);
+  private static final Logger log = Logger.getLogger(WebSocketFrameDecoder08.class);
 
 }

@@ -14,13 +14,14 @@
  * under the License.
  */
 
-package org.vertx.java.core.http.ws;
+package org.vertx.java.core.http.ws.hybi08;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
 
 import java.nio.ByteOrder;
@@ -28,9 +29,9 @@ import java.security.SecureRandom;
 
 import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
-public class WebSocketFrameEncoder extends OneToOneEncoder {
+public class WebSocketFrameEncoder08 extends OneToOneEncoder {
 
-  public WebSocketFrameEncoder(boolean shouldMask) {
+  public WebSocketFrameEncoder08(boolean shouldMask) {
     if (shouldMask) {
       this.random = new SecureRandom();
     }
@@ -127,7 +128,7 @@ public class WebSocketFrameEncoder extends OneToOneEncoder {
     return (this.random != null);
   }
 
-  private static Logger log = Logger.getLogger(WebSocketFrameEncoder.class);
+  private static Logger log = Logger.getLogger(WebSocketFrameEncoder08.class);
   private SecureRandom random;
 
 }

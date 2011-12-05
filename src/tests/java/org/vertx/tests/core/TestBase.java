@@ -16,7 +16,6 @@
 
 package org.vertx.tests.core;
 
-import com.hazelcast.core.Hazelcast;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.vertx.java.core.Vertx;

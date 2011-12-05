@@ -81,12 +81,30 @@ public class HttpClientRequest implements WriteStream {
   HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,
                     final long contextID, final Thread th) {
+    this(client, method, uri, respHandler, contextID, th, false);
+  }
+
+  // Raw request - used by websockets
+  // Raw requests won't have any headers set automatically, like Content-Length and Connection
+  HttpClientRequest(final HttpClient client, final String method, final String uri,
+                    final Handler<HttpClientResponse> respHandler,
+                    final long contextID, final Thread th,
+                    final ClientConnection conn) {
+    this(client, method, uri, respHandler, contextID, th, true);
+    this.conn = conn;
+    conn.setCurrentRequest(this);
+  }
+
+  private HttpClientRequest(final HttpClient client, final String method, final String uri,
+                    final Handler<HttpClientResponse> respHandler,
+                    final long contextID, final Thread th, final boolean raw) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.chunked = false;
     this.respHandler = respHandler;
     this.contextID = contextID;
     this.th = th;
+    this.raw = raw;
   }
 
   private final HttpClient client;
@@ -94,6 +112,7 @@ public class HttpClientRequest implements WriteStream {
   private final Handler<HttpClientResponse> respHandler;
   private Handler<Void> continueHandler;
   private final long contextID;
+  private final boolean raw;
   final Thread th;
 
   private boolean chunked;
@@ -462,19 +481,16 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  void sendDirect(ClientConnection conn) {
-    this.conn = conn;
-    conn.write(request);
-    completed = true;
-  }
-
   private void writeHead() {
-    request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
     request.setChunked(chunked);
-    if (chunked) {
-      request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-    } else if (contentLength == 0) {
-      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
+    if (!raw) {
+      request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
+
+      if (chunked) {
+        request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+      } else if (contentLength == 0) {
+        request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
+      }
     }
     conn.write(request);
   }
@@ -482,7 +498,7 @@ public class HttpClientRequest implements WriteStream {
   private HttpClientRequest write(ChannelBuffer buff, Handler<Void> doneHandler) {
     written += buff.readableBytes();
 
-    if (!chunked && written > contentLength) {
+    if (!raw && !chunked && written > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
           + "Current written: " + written + " Current Content-Length: " + contentLength);

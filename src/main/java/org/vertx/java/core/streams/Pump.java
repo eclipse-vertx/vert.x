@@ -31,7 +31,7 @@ import org.vertx.java.core.buffer.Buffer;
  * called, which results in the pump resuming the {@link ReadStream}.</p>
  * <p>This class can be used to pump from any {@link ReadStream} to any {@link WriteStream},
  * e.g. from an {@link org.vertx.java.core.http.HttpServerRequest} to an {@link org.vertx.java.core.file.AsyncFile},
- * or from {@link org.vertx.java.core.net.NetSocket} to a {@link org.vertx.java.core.http.Websocket}.</p>
+ * or from {@link org.vertx.java.core.net.NetSocket} to a {@link org.vertx.java.core.http.WebSocket}.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

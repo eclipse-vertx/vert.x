@@ -58,7 +58,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>An {@code HttpClient} maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
  * as pipelines for HTTP requests.</p>
  * <p>It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
- * used as a factory for HTML5 {@link Websocket websockets}.</p>
+ * used as a factory for HTML5 {@link WebSocket websockets}.</p>
  * <p>The client is thread-safe and can be safely shared my different event loops.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -191,12 +191,22 @@ public class HttpClient extends NetClientBase {
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
+   * This version of the method defaults to the Hybi-10 version of the websockets protocol
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
-  public void connectWebsocket(final String uri, final Handler<Websocket> wsConnect) {
+  public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
+    connectWebsocket(uri, WebSocketVersion.HYBI_17, wsConnect);
+  }
+
+  /**
+   * Attempt to connect an HTML5 websocket to the specified URI<p>
+   * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
+   * The connect is done asynchronously and {@code wsConnect} is called back with the result
+   */
+  public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
-        conn.toWebSocket(uri, wsConnect);
+        conn.toWebSocket(uri, wsConnect, wsVersion);
       }
     }, Vertx.instance.getContextID());
   }
@@ -485,12 +495,10 @@ public class HttpClient extends NetClientBase {
       ClientConnection conn = connectionMap.get(ch);
       Object msg = e.getMessage();
       if (msg instanceof HttpResponse) {
-
         HttpResponse response = (HttpResponse) msg;
 
         conn.handleResponse(response);
         ChannelBuffer content = response.getContent();
-
         if (content.readable()) {
           conn.handleResponseChunk(new Buffer(content));
         }

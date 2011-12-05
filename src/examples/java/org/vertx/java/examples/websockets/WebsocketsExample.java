@@ -21,15 +21,15 @@ import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.Websocket;
+import org.vertx.java.core.http.WebSocket;
 
 public class WebsocketsExample implements VertxApp {
 
   private HttpServer server;
 
   public void start() {
-    server = new HttpServer().websocketHandler(new Handler<Websocket>() {
-      public void handle(final Websocket ws) {
+    server = new HttpServer().websocketHandler(new Handler<WebSocket>() {
+      public void handle(final WebSocket ws) {
         if (ws.uri.equals("/myapp")) {
           ws.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer data) {
