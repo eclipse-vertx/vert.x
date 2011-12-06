@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core.net
+package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
 
-class NetServer {
+class WebSocket {
 
-  private jServer
+  @Delegate org.vertx.java.core.http.WebSocket wrappedSocket
 
-  NetServer() {
-    jServer = new org.vertx.java.core.net.NetServer()
+  WebSocket(webSocket) {
+    this.wrappedSocket = webSocket
   }
 
-  def connectHandler(hndlr) {
-    jServer.connectHandler(wrapHandler(hndlr))
+  def getUri() { return wrappedSocket.uri }
+
+  def dataHandler(Closure hndlr) {
+    wrappedSocket.dataHandler(hndlr as Handler)
   }
 
-  def listen(int port) {
-    jServer.listen(port)
+  def endHandler(Closure hndlr) {
+    wrappedSocket.endHandler(hndlr as Handler)
   }
 
-  protected wrapHandler(hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
+  def exceptionHandler(Closure hndlr) {
+    wrappedSocket.exceptionHandler(hndlr as Handler)
   }
 
+  def closedHandler(Closure hndlr) {
+    wrappedSocket.closedHandler(hndlr as Handler)
+  }
 }
