@@ -60,7 +60,6 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class HttpServerResponse implements WriteStream {
 
-  private final boolean keepAlive;
   private final ServerConnection conn;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
@@ -70,12 +69,12 @@ public class HttpServerResponse implements WriteStream {
   private boolean written;
   private Handler<Void> drainHandler;
   private Handler<Exception> exceptionHandler;
+  private Handler<Void> closeHandler;
   private long contentLength;
   private long writtenBytes;
   private boolean chunked;
 
-  HttpServerResponse(boolean keepAlive, ServerConnection conn) {
-    this.keepAlive = keepAlive;
+  HttpServerResponse(ServerConnection conn) {
     this.conn = conn;
     this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
   }
@@ -222,6 +221,16 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
+   * Set a close handler for the response. This will be called if the underlying connection closes before the response
+   * is complete.
+   * @param handler
+   */
+  public void closeHandler(Handler<Void> handler) {
+    checkWritten();
+    this.closeHandler = handler;
+  }
+
+  /**
    * Write a {@link Buffer} to the response body.
    */
   public void writeBuffer(Buffer chunk) {
@@ -283,38 +292,67 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the default encoding
+   * Same as {@link #end(String, boolean)} called with closeConnection = false
    */
   public void end(String chunk) {
-    end(Buffer.create(chunk));
+    end(chunk, false);
+  }
+
+  /**
+   * Same as {@link #end(Buffer)} but writes a String with the default encoding
+   */
+  public void end(String chunk, boolean closeConnection) {
+    end(Buffer.create(chunk), closeConnection);
+  }
+
+  /**
+   * Same as {@link #end(String, String, boolean)} called with closeConnection = false
+   */
+  public void end(String chunk, String enc) {
+    end(chunk, enc, false);
   }
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    */
-  public void end(String chunk, String enc) {
-    end(Buffer.create(chunk, enc));
+  public void end(String chunk, String enc, boolean closeConnection) {
+    end(Buffer.create(chunk, enc), closeConnection);
+  }
+
+  /**
+   * Same as {@link #end(Buffer, boolean)} called with closeConnection = false
+   */
+  public void end(Buffer chunk) {
+    end(chunk, false);
   }
 
   /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
+   * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
-  public void end(Buffer chunk) {
+  public void end(Buffer chunk, boolean closeConnection) {
     if (!chunked && contentLength == 0) {
       contentLength = chunk.length();
       response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
     }
     write(chunk);
-    end();
+    end(closeConnection);
+  }
+
+  /**
+   * Like {@link #end(boolean)} called with closeConnection = false
+   */
+  public void end() {
+    end(false);
   }
 
   /**
    * Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.<p>
-   * Once the response has ended, it cannot be used any more, and if keep alive is true the underlying connection will
-   * be closed.
+   * Once the response has ended, it cannot be used any more.
+   * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
-  public void end() {
+  public void end(boolean closeConnection) {
     checkWritten();
     writeHead();
     if (chunked) {
@@ -325,10 +363,6 @@ public class HttpServerResponse implements WriteStream {
         nettyChunk = trailer;
       }
       writeFuture = conn.write(nettyChunk);
-    }
-    // Close the non-keep-alive connection after the write operation is done.
-    if (!keepAlive) {
-      writeFuture.addListener(ChannelFutureListener.CLOSE);
     }
     written = true;
     conn.responseComplete();
@@ -366,10 +400,6 @@ public class HttpServerResponse implements WriteStream {
       writeFuture = conn.sendFile(file);
     }
 
-    // Close the non-keep-alive connection after the write operation is done.
-    if (!keepAlive) {
-      writeFuture.addListener(ChannelFutureListener.CLOSE);
-    }
     headWritten = written = true;
     conn.responseComplete();
 
@@ -385,6 +415,12 @@ public class HttpServerResponse implements WriteStream {
   void handleException(Exception e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
+    }
+  }
+
+  void handleClosed() {
+    if (closeHandler != null) {
+      closeHandler.handle(null);
     }
   }
 
