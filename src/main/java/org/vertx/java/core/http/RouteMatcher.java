@@ -56,6 +56,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   private List<PatternBinding> putBindings = new CopyOnWriteArrayList<>();
   private List<PatternBinding> postBindings = new CopyOnWriteArrayList<>();
   private List<PatternBinding> deleteBindings = new CopyOnWriteArrayList<>();
+  private List<PatternBinding> optionsBindings = new CopyOnWriteArrayList<>();
 
   @Override
   public void handle(HttpServerRequest request) {
@@ -71,6 +72,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
         break;
       case "DELETE":
         route(request, deleteBindings);
+        break;
+      case "OPTIONS":
+        route(request, optionsBindings);
         break;
     }
   }
@@ -112,6 +116,15 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   /**
+   * Specify a handler that will be called for a matching HTTP OPTIONS
+   * @param pattern The simple pattern
+   * @param handler The handler to call
+   */
+  public void options(String pattern, Handler<HttpServerRequest> handler) {
+    addPattern(pattern, handler, optionsBindings);
+  }
+
+  /**
    * Specify a handler that will be called for a matching HTTP GET
    * @param regex A regular expression
    * @param handler The handler to call
@@ -145,6 +158,15 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    */
   public void deleteWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, deleteBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP OPTIONS
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void optionsWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, optionsBindings);
   }
 
   private void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
