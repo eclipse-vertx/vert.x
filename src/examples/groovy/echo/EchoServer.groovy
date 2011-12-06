@@ -1,5 +1,7 @@
+package echo
+
 import org.vertx.groovy.core.net.NetServer
-import java.util.concurrent.atomic.AtomicLong
+import org.vertx.java.core.app.VertxApp
 
 class EchoServer implements VertxApp {
 
