@@ -43,7 +43,7 @@ class ServerConnection extends AbstractConnection {
   private Handler<HttpServerRequest> requestHandler;
   private Handler<WebSocket> wsHandler;
   private HttpServerRequest currentRequest;
-  private boolean pendingResponse;
+  private HttpServerResponse pendingResponse;
   private WebSocket ws;
   private boolean channelPaused;
   private boolean paused;
@@ -72,7 +72,7 @@ class ServerConnection extends AbstractConnection {
   }
 
   void handleMessage(Object msg) {
-    if (paused || (msg instanceof HttpRequest && pendingResponse) || !pending.isEmpty()) {
+    if (paused || (msg instanceof HttpRequest && pendingResponse != null) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
@@ -87,7 +87,7 @@ class ServerConnection extends AbstractConnection {
   }
 
   void responseComplete() {
-    pendingResponse = false;
+    pendingResponse = null;
     checkNextTick();
   }
 
@@ -108,7 +108,7 @@ class ServerConnection extends AbstractConnection {
     setContextID();
     try {
       this.currentRequest = req;
-      pendingResponse = true;
+      pendingResponse = req.response;
 
       if (requestHandler != null) {
         requestHandler.handle(req);
@@ -181,6 +181,9 @@ class ServerConnection extends AbstractConnection {
     if (ws != null) {
       ws.handleClosed();
     }
+    if (pendingResponse != null) {
+      pendingResponse.handleClosed();
+    }
   }
 
   protected long getContextID() {
@@ -191,6 +194,9 @@ class ServerConnection extends AbstractConnection {
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);
+    }
+    if (pendingResponse != null) {
+      pendingResponse.handleException(e);
     }
     if (ws != null) {
       ws.handleException(e);
@@ -258,7 +264,7 @@ class ServerConnection extends AbstractConnection {
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!sentCheck && !pending.isEmpty() && !paused && (!pendingResponse || pending.peek() instanceof HttpChunk)) {
+    if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpChunk)) {
       sentCheck = true;
       Vertx.instance.nextTick(new SimpleHandler() {
         public void handle() {

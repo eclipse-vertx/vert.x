@@ -135,7 +135,7 @@
         <exec executable="yardoc"/>
     </target>
 
-    <target name="dist" depends="clean, jar-core, javadoc, yardoc">
+    <target name="dist" depends="clean, jar-core">
         <mkdir dir="${dist-build}"/>
 
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
