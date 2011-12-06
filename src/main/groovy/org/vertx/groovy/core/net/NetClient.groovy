@@ -18,20 +18,14 @@ package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
 
-class NetServer {
+class NetClient extends org.vertx.java.core.net.NetClient {
 
-  private jServer
-
-  NetServer() {
-    jServer = new org.vertx.java.core.net.NetServer()
+  def connect(int port, Closure hndlr) {
+    super.connect(port, wrapHandler(hndlr))
   }
 
-  def connectHandler(hndlr) {
-    jServer.connectHandler(wrapHandler(hndlr))
-  }
-
-  def listen(int port) {
-    jServer.listen(port)
+  def connect(int port, String host, Closure hndlr) {
+    this.connect(port, host, wrapHandler(hndlr))
   }
 
   protected wrapHandler(hndlr) {

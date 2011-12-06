@@ -18,24 +18,29 @@ package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
 
-class NetServer {
+class NetSocket {
 
-  private jServer
+  private jSocket
 
-  NetServer() {
-    jServer = new org.vertx.java.core.net.NetServer()
+  NetSocket(jSocket) {
+    this.jSocket = jSocket
   }
 
-  def connectHandler(hndlr) {
-    jServer.connectHandler(wrapHandler(hndlr))
+  def dataHandler(hndlr) {
+    jSocket.dataHandler(hndlr as Handler)
   }
 
-  def listen(int port) {
-    jServer.listen(port)
+  def write(buff) {
+    jSocket.write(buff)
   }
 
-  protected wrapHandler(hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
+  /**
+   * Alias for {@link #write} so that we can use the left shift operator
+   * in Groovy, just as we do with other writables.
+   */
+  def leftShift(buff) {
+    write(buff)
   }
 
 }
+
