@@ -1,11 +1,9 @@
 package org.vertx.java.core.sockjs;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.internal.VertxInternal;
@@ -15,9 +13,7 @@ import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -28,140 +24,14 @@ public class SockJSServer {
 
   private static final String DEFAULT_SOCK_JS_URL = "http://cdn.sockjs.org/sockjs-0.1.min.js";
 
+  //TODO heartbeat
+
   private final String iframeHTML;
 
   private RouteMatcher rm = new RouteMatcher();
 
   //TODO use shared set for this so scales better
-  private final Map<String, XHRPollingSocket> xhrPollingSockets = new HashMap<>();
-
-  private class XHRPollingSocket implements SockJSSocket {
-    final Queue<String> messages = new LinkedList<>();
-    HttpServerResponse currentResp;
-    Handler<Buffer> dataHandler;
-    boolean closed;
-
-    public void write(Buffer buffer) {
-      messages.add(buffer.toString());
-    }
-
-    public void dataHandler(Handler<Buffer> handler) {
-      this.dataHandler = handler;
-    }
-
-    public void close() {
-      closed = true;
-    }
-
-    void handlePollRequest(HttpServerRequest req) {
-      if (currentResp != null) {
-        //Can't have more than one request waiting
-        req.response.end("c[2010,\"Another connection still open\"]\n");
-      } else {
-        if (!closed) {
-          currentResp = req.response;
-          if (!messages.isEmpty()) {
-            writePendingMessagesToPollResponse(req.response, messages);
-            currentResp = null;
-          }
-        } else {
-          log.info("Closed so sending back go away");
-          req.response.end("c[3000,\"Go away!\"]\n");
-        }
-      }
-    }
-
-    void handleSend(final HttpServerRequest req) {
-      req.bodyHandler(new Handler<Buffer>() {
-        public void handle(Buffer buff) {
-          String msgs = buff.toString();
-          log.info("Got msg on xhr_send:" + msgs);
-
-          //Sock-JS client will never only ever send Strings in a JSON array so we can do some cheap parsing
-          //without having to use a JSON lib
-
-          if (msgs.equals("")) {
-            req.response.statusCode = 500;
-            req.response.end("Payload expected.");
-            return;
-          }
-
-          //TODO can be optimised
-          if (!(msgs.startsWith("[\"") && msgs.endsWith("\"]"))) {
-            //Invalid
-            req.response.statusCode = 500;
-            req.response.end("Broken JSON encoding.");
-            return;
-          }
-
-          String[] split = msgs.split("\"");
-          String[] parts = new String[(split.length - 1) / 2];
-          for (int i = 1; i < split.length - 1; i += 2) {
-            parts[(i - 1) / 2] = split[i];
-          }
-
-          req.response.putHeader("Content-Type", "text/plain");
-          setCookies(req);
-          setCORS(req.response, "*");
-          req.response.statusCode = 204;
-          req.response.end();
-
-          handleMessages(parts);
-        }
-      });
-    }
-
-    void handleMessages(String[] messages) {
-      if (dataHandler != null) {
-        for (String msg: messages) {
-          dataHandler.handle(Buffer.create(msg));
-        }
-      }
-    }
-
-    void writePendingMessagesToPollResponse(HttpServerResponse response, Queue<String> messages) {
-      response.setChunked(false);
-      StringBuffer resp = new StringBuffer();
-      resp.append("a[");
-      int count = 0;
-      int size = messages.size();
-      for (String msg : messages) {
-        resp.append('"').append(msg).append('"');
-        if (++count != size) {
-          resp.append(',');
-        }
-      }
-      resp.append("]\n");
-      response.end(resp.toString(), true);
-      messages.clear();
-    }
-  }
-
-  private void setCookies(HttpServerRequest req) {
-    String cookies = req.getHeader("Cookie");
-    String jsessionID = "dummy";
-    //Preserve existing JSESSIONID, if any
-    if (cookies != null) {
-      String[] parts;
-      if (cookies.contains(";")) {
-        parts = cookies.split(";");
-      } else {
-        parts = new String[] {cookies};
-      }
-      for (String part: parts) {
-        if (part.startsWith("JSESSIONID")) {
-          jsessionID = part.substring(11);
-          break;
-        }
-      }
-    }
-    req.response.putHeader("Set-Cookie", "JSESSIONID=" + jsessionID + ";path=/");
-  }
-
-  private void setCORS(HttpServerResponse resp, String origin) {
-    resp.putHeader("Access-Control-Allow-Origin", origin);
-    resp.putHeader("Access-Control-Allow-Credentials", "true");
-  }
+  private final Map<String, Session> sessions = new HashMap<>();
 
   public void installApp(final String appName, final boolean websocketsEnabled, String basePath,
                          final Handler<SockJSSocket> sockHandler) {
@@ -183,96 +53,20 @@ public class SockJSServer {
 
     Handler<HttpServerRequest> iframeHandler = createIFrameHandler();
 
-    // The following regex can probably be combined into one, but my neckbeard is not bushy enough for that
-
     // Request exactly for iframe.html
     rm.getWithRegEx(basePath + "\\/iframe\\.html", iframeHandler);
 
     // Versioned
     rm.getWithRegEx(basePath + "\\/iframe-[^\\/]*\\.html", iframeHandler);
 
-    // With arbitrary query string on the end
-    rm.getWithRegEx(basePath + "\\/iframe-[^\\/]*\\.html\\?.*", iframeHandler);
+    // Transports
 
-    // xhr-polling
-
-    String xhrRE = basePath + "\\/([^\\/\\.]+)\\/([^\\/\\.]+)\\/xhr";
-
-    Handler<HttpServerRequest> xhrOptionsHandler = new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        req.response.putHeader("Cache-Control", "public,max-age=31536000");
-        long oneYearSeconds = 365 * 24 * 60 * 60;
-        long oneYearms = oneYearSeconds * 1000;
-        String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYearms));
-        req.response.putHeader("Expires", expires);
-        req.response.putHeader("Allow", "OPTIONS, POST");
-        req.response.putHeader("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
-
-        String origin = req.getHeader("Origin");
-        if (origin == null) {
-          origin = "*";
-        }
-        // CORS shit
-        setCORS(req.response, origin);
-
-        // Cookies shit
-        setCookies(req);
-
-        req.response.statusCode = 204;
-        req.response.end();
-      }
-    };
-
-    rm.optionsWithRegEx(xhrRE, xhrOptionsHandler);
-
-    rm.postWithRegEx(xhrRE, new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        String serverID = req.getParams().get("param0");
-        String sessionID = req.getParams().get("param1");
-        log.info("xhr post, serverID is " + serverID + " sessonID is " + sessionID);
-        XHRPollingSocket session = xhrPollingSockets.get(sessionID);
-        if (session == null) {
-          log.info("new session");
-          session = new XHRPollingSocket();
-          xhrPollingSockets.put(sessionID, session);
-          sockHandler.handle(session);
-          req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
-          setCookies(req);
-          setCORS(req.response, "*");
-          req.response.end("o\n");
-        } else {
-          log.info("existing session");
-          session.handlePollRequest(req);
-        }
-      }
-    });
-
-    //TODO timeout after seconds if not have "receiving connection"
-
-    //TODO heartbeat
-
-    String xhrSendRE = basePath + "\\/([^\\/\\.]+)\\/([^\\/\\.]+)\\/xhr_send";
-
-    rm.optionsWithRegEx(xhrSendRE, xhrOptionsHandler);
-
-    rm.postWithRegEx(xhrSendRE, new Handler<HttpServerRequest>() {
-      public void handle(final HttpServerRequest req) {
-        String serverID = req.getParams().get("param0");
-        String sessionID = req.getParams().get("param1");
-        log.info("xhr_send post, serverID is " + serverID + " sessonID is " + sessionID);
-        final XHRPollingSocket session = xhrPollingSockets.get(sessionID);
-        if (session != null) {
-          session.handleSend(req);
-        } else {
-          log.info("Unknown session, sending 404");
-          req.response.statusCode = 404;
-          setCookies(req);
-          req.response.end();
-        }
-      }
-    });
+    new XHRTransport(sessions).init(rm, basePath, sockHandler);
+    new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
+    new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
 
     // Catch all for any other requests on this app
+
     rm.getWithRegEx(basePath + "\\/.+", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.statusCode = 404;
@@ -333,7 +127,6 @@ public class SockJSServer {
         });
         server.installApp("close", true, "/close", new Handler<SockJSSocket>() {
           public void handle(final SockJSSocket sock) {
-            log.info("Socket openened in close app, closing it immediately");
             sock.close();
           }
         });
@@ -386,7 +179,6 @@ public class SockJSServer {
   }
 
   private void handleWebSocketConnect(WebSocket ws) {
-
   }
 
   private static final String IFRAME_TEMPLATE =
@@ -406,17 +198,5 @@ public class SockJSServer {
     "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
     "</body>\n" +
     "</html>";
-
-  private interface SockJSSocket {
-
-    void write(Buffer buffer);
-
-    void dataHandler(Handler<Buffer> handler);
-
-    void close();
-  }
-
-
-
 }
 
