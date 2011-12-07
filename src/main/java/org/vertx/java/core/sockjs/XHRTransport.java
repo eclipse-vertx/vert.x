@@ -177,15 +177,14 @@ class XHRTransport extends BaseTransport {
     });
   }
 
-  class XHRPollingTCConn implements TransportConnection {
-
+  abstract class BaseXHRConn implements TransportConnection {
     final HttpServerResponse resp;
 
-    XHRPollingTCConn(HttpServerResponse resp) {
+    BaseXHRConn(HttpServerResponse resp) {
       this.resp = resp;
     }
 
-    public void write(Session session) {
+    StringBuffer writeMessages(Session session) {
       StringBuffer sb = new StringBuffer();
       sb.append("a[");
       int count = 0;
@@ -198,34 +197,33 @@ class XHRTransport extends BaseTransport {
       }
       sb.append("]");
       sb.append("\n");
+      return sb;
+    }
+  }
+
+  class XHRPollingTCConn extends BaseXHRConn {
+
+    XHRPollingTCConn(HttpServerResponse resp) {
+      super(resp);
+    }
+
+    public void write(Session session) {
+      StringBuffer sb = writeMessages(session);
       //End the response and close the HTTP connection
       resp.end(sb.toString(), true);
       session.tcConn = null;
     }
   }
 
-  class XHRStreamingTCConn implements TransportConnection {
-
-    final HttpServerResponse resp;
+  class XHRStreamingTCConn extends BaseXHRConn {
 
     XHRStreamingTCConn(HttpServerResponse resp) {
-      this.resp = resp;
+      super(resp);
     }
 
     public void write(Session session) {
-      StringBuffer sb = new StringBuffer();
-      sb.append("a[");
-      int count = 0;
-      int size = session.messages.size();
-      for (String msg : session.messages) {
-        sb.append('"').append(msg).append('"');
-        if (++count != size) {
-          sb.append(',');
-        }
-      }
-      sb.append("]");
-      sb.append("\n");
-      resp.write(resp.toString());
+      StringBuffer sb = writeMessages(session);
+      resp.write(sb.toString());
     }
   }
 }
