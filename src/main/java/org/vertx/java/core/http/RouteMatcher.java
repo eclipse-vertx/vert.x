@@ -194,6 +194,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   private void route(HttpServerRequest request, List<PatternBinding> bindings) {
+
+    log.info("Routing " + request.path);
+
     for (PatternBinding binding: bindings) {
       Matcher m = binding.pattern.matcher(request.path);
       if (m.matches()) {

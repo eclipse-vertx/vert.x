@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.http;
 
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;

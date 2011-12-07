@@ -19,7 +19,6 @@ package org.vertx.java.core.http;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
