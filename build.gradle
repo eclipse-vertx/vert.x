@@ -100,5 +100,7 @@ task tarDist(type: Tar) {
   compression = org.gradle.api.tasks.bundling.Compression.GZIP
 }
 
+task wrapper(type: Wrapper)
+
 
 
