@@ -38,6 +38,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -434,10 +435,7 @@ public class HttpServer extends NetServerBase {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       Object msg = e.getMessage();
-
-
-      log.info("Got msg " + msg);
-
+      ServerConnection conn = connectionMap.get(ch);
       if (msg instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) msg;
 
@@ -447,13 +445,10 @@ public class HttpServer extends NetServerBase {
 
         if (WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
 
-          log.info("Got ws upgrade");
-
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
           String connectionHeader = request.getHeader(CONNECTION);
-          log.info("connection header is " + connectionHeader);
           if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
             sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
             return;
@@ -477,8 +472,6 @@ public class HttpServer extends NetServerBase {
             return;
           }
 
-          log.info("shake is " + shake.getClass().getName());
-
           HandlerHolder<WebSocket> firstHandler = null;
 
           while (true) {
@@ -495,15 +488,13 @@ public class HttpServer extends NetServerBase {
             }
             WebSocketHandler wsh = (WebSocketHandler)wsHandler.handler;
             if (wsh.accept(theURI.getPath())) {
-              log.info("accepted");
-              ServerConnection conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
+              conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
               conn.wsHandler(wsHandler.handler);
               connectionMap.put(ch, conn);
               HttpResponse resp = shake.generateResponse(request);
               ChannelPipeline p = ch.getPipeline();
               p.replace("decoder", "wsdecoder", shake.getDecoder());
               ch.write(resp);
-              log.info("Wrote response");
               p.replace("encoder", "wsencoder", shake.getEncoder(true));
               WebSocket ws = new WebSocket(conn);
               conn.handleWebsocketConnect(ws);
@@ -516,17 +507,16 @@ public class HttpServer extends NetServerBase {
           }
           ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
         } else {
-          //HTTP request or chunk
-          ServerConnection conn = connectionMap.get(ch);
+          //HTTP request
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
               conn = new ServerConnection(ch, reqHandler.contextID, ch.getWorker().getThread());
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
+              conn.handleMessage(msg);
             }
-          }
-          if (conn != null) {
+          } else {
             conn.handleMessage(msg);
           }
         }
@@ -536,7 +526,6 @@ public class HttpServer extends NetServerBase {
         switch (wsFrame.getType()) {
           case BINARY:
           case TEXT:
-            ServerConnection conn = connectionMap.get(ch);
             if (conn != null) {
               conn.handleMessage(msg);
             }
@@ -544,6 +533,10 @@ public class HttpServer extends NetServerBase {
           case CLOSE:
             //Echo back close frame
             ch.write(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
+        }
+      } else if (msg instanceof HttpChunk) {
+        if (conn != null) {
+          conn.handleMessage(msg);
         }
       } else {
         throw new IllegalStateException("Invalid message " + msg);

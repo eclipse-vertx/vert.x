@@ -105,8 +105,6 @@ public class Handshake00 implements Handshake {
     String key2 = request.getHeader(Names.SEC_WEBSOCKET_KEY2);
     byte[] key3 = new byte[8];
 
-    log.info("generating handshake response " + request.getContent().readableBytes());;
-
     request.getContent().readBytes(key3);
 
     byte[] solution = WebSocketChallenge00.solve(key1, key2, key3);

@@ -205,7 +205,6 @@ public class SockJSServer {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
-                log.info("Got data in echo in server " + buff);
                 sock.write(buff);
               }
             });
