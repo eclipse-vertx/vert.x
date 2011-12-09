@@ -64,8 +64,7 @@ public class WebSocket implements ReadStream, WriteStream {
    */
   public final long textHandlerID;
 
-  WebSocket(String uri, AbstractConnection conn) {
-    this.uri = uri;
+  WebSocket(AbstractConnection conn) {
     this.conn = conn;
     binaryHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {
       public void handle(Buffer buff) {
@@ -78,12 +77,6 @@ public class WebSocket implements ReadStream, WriteStream {
       }
     });
   }
-
-  /**
-   * The uri the websocket was created on. When a websocket is first received on the server, the uri can be checked and
-   * the websocket can be closed if you want to restrict which uris you wish to accept websockets on.
-   */
-  public final String uri;
 
   /**
    * Write {@code data} to the websocket as binary frame

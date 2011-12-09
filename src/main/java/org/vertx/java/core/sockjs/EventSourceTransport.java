@@ -20,11 +20,11 @@ class EventSourceTransport extends BaseTransport {
   }
 
   void init(RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
-    String eventSourceRE = basePath + COMMON_PATH_ELEMENT + "eventsource";
+    String eventSourceRE = basePath + COMMON_PATH_ELEMENT_RE + "eventsource";
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        String sessionID = req.getParams().get("param1");
+        String sessionID = req.getParams().get("param0");
         Session session = sessions.get(sessionID);
         if (session == null) {
           session = new Session();
@@ -38,7 +38,6 @@ class EventSourceTransport extends BaseTransport {
           req.response.write("data: o\r\n\r\n");
           session.tcConn = new EventSourceTcConn(req.response);
         } else {
-          log.info("existing session");
           //TODO??
         }
       }

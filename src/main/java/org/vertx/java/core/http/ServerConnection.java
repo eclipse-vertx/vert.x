@@ -31,6 +31,7 @@ import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -152,11 +153,10 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWebsocketConnect(String uri) {
+  void handleWebsocketConnect(WebSocket ws) {
     try {
       if (wsHandler != null) {
         setContextID();
-        WebSocket ws = new WebSocket(uri, this);
         wsHandler.handle(ws);
         this.ws = ws;
       }
@@ -202,6 +202,17 @@ class ServerConnection extends AbstractConnection {
       ws.handleException(e);
     }
   }
+
+  @Override
+  protected void handleHandlerException(Throwable t) {
+    //On HTTP server we want to swallow Connection reset by peer exceptions since this is normal if the client
+    //closes the HTTP connection
+
+    if (!(t instanceof IOException && t.getMessage().equals("Connection reset by peer"))) {
+      super.handleHandlerException(t);
+    }
+  }
+
 
   protected void addFuture(Handler<Void> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);

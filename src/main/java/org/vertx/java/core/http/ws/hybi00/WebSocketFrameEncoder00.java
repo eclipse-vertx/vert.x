@@ -25,8 +25,8 @@ public class WebSocketFrameEncoder00 extends OneToOneEncoder {
       switch (frameType) {
         case CLOSE: {
           ChannelBuffer encoded = channel.getConfig().getBufferFactory().getBuffer(2);
-          encoded.writeByte(0x80);
           encoded.writeByte(0xFF);
+          encoded.writeByte(0x00);
           return encoded;
         }
         case TEXT: {

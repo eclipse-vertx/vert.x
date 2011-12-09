@@ -23,6 +23,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketHandler;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -88,15 +89,20 @@ public class WebsocketTest extends TestBase {
 
         final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
 
-        final HttpServer server = new HttpServer().websocketHandler(new Handler<WebSocket>() {
+        final HttpServer server = new HttpServer().websocketHandler(new WebSocketHandler() {
           public void handle(final WebSocket ws) {
-            azzert(path.equals(ws.uri));
+
             ws.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
                 //Echo it back
                 ws.writeBuffer(data);
               }
             });
+          }
+
+          public boolean accept(String p) {
+            azzert(path.equals(p));
+            return true;
           }
         }).listen(port, host);
 

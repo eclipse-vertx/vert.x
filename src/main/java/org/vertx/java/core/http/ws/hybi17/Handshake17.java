@@ -65,7 +65,7 @@ public class Handshake17 extends Handshake08 {
   public HttpResponse generateResponse(HttpRequest request) throws Exception {
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
     response.addHeader(Names.UPGRADE, "WebSocket");
-
+    response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     String origin = request.getHeader(Names.ORIGIN);
     if (origin != null) {
       response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
