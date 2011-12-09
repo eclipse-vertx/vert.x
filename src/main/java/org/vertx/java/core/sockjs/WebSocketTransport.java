@@ -32,10 +32,8 @@ class WebSocketTransport extends BaseTransport {
         match.ws.writeTextFrame("o");
         sockHandler.handle(newSession);
         if (!newSession.closed) {
-          //log.info("added data handler");
           match.ws.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer data) {
-              log.info("Got ws buffer: " + data);
               if (!newSession.closed) {
                 String msgs = data.toString();
                 if (msgs.equals("")) {
