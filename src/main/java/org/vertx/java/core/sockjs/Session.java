@@ -1,6 +1,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Immutable;
 import org.vertx.java.core.buffer.Buffer;
 
 import java.util.LinkedList;
@@ -9,7 +10,7 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Session implements SockJSSocket {
+public class Session implements SockJSSocket, Immutable {
 
   final Queue<String> messages = new LinkedList<>();
   TransportConnection tcConn;
