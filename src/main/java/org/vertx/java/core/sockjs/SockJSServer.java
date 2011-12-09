@@ -51,7 +51,13 @@ public class SockJSServer {
     Thread.sleep(1000000);
   }
 
-  public SockJSServer(HttpServer httpServer, String libraryURL) {
+  //TODO all these params
+
+  public SockJSServer(HttpServer httpServer, String libraryURL,
+                      int responseLimit,
+                      boolean insertJSESSSIONID,
+                      long heartbeatPeriod,
+                      long disconnectDelay) {
     if (libraryURL != null) {
       this.libraryURL = libraryURL;
     }
@@ -69,7 +75,7 @@ public class SockJSServer {
     });
   }
 
-  public void installApp(Set<Transports> disabledTransports, String basePath,
+  public void installApp(Set<Transport> disabledTransports, String basePath,
                          final Handler<SockJSSocket> sockHandler) {
 
     if (basePath == null || basePath.equals("") || basePath.endsWith("/")) {
@@ -78,15 +84,15 @@ public class SockJSServer {
 
     log.info("Installing app: " + basePath);
 
-    Set<Transports> enabledTransports = new HashSet<>();
-    enabledTransports.add(Transports.EVENT_SOURCE);
-    enabledTransports.add(Transports.HTML_FILE);
-    enabledTransports.add(Transports.JSON_P);
-    enabledTransports.add(Transports.WEBSOCKETS);
-    enabledTransports.add(Transports.XHR);
+    Set<Transport> enabledTransports = new HashSet<>();
+    enabledTransports.add(Transport.EVENT_SOURCE);
+    enabledTransports.add(Transport.HTML_FILE);
+    enabledTransports.add(Transport.JSON_P);
+    enabledTransports.add(Transport.WEBSOCKETS);
+    enabledTransports.add(Transport.XHR);
 
     if (disabledTransports != null) {
-      for (Transports tr: disabledTransports) {
+      for (Transport tr: disabledTransports) {
         enabledTransports.remove(tr);
       }
     }
@@ -116,19 +122,19 @@ public class SockJSServer {
 
     // Transports
 
-    if (enabledTransports.contains(Transports.XHR)) {
+    if (enabledTransports.contains(Transport.XHR)) {
       new XHRTransport(sessions).init(rm, basePath, sockHandler);
     }
-    if (enabledTransports.contains(Transports.EVENT_SOURCE)) {
+    if (enabledTransports.contains(Transport.EVENT_SOURCE)) {
       new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
     }
-    if (enabledTransports.contains(Transports.HTML_FILE)) {
+    if (enabledTransports.contains(Transport.HTML_FILE)) {
       new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
     }
-    if (enabledTransports.contains(Transports.JSON_P)) {
+    if (enabledTransports.contains(Transport.JSON_P)) {
       new JSONPTransport(sessions).init(rm, basePath, sockHandler);
     }
-    if (enabledTransports.contains(Transports.WEBSOCKETS)) {
+    if (enabledTransports.contains(Transport.WEBSOCKETS)) {
       new WebSocketTransport(sessions).init(wsMatcher, rm, basePath, sockHandler);
     }
 
@@ -259,8 +265,8 @@ public class SockJSServer {
         sock.close();
       }
     });
-    Set<Transports> disabled = new HashSet<>();
-    disabled.add(Transports.WEBSOCKETS);
+    Set<Transport> disabled = new HashSet<>();
+    disabled.add(Transport.WEBSOCKETS);
     installApp(disabled, "/disabled_websocket_echo", new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
