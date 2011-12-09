@@ -17,6 +17,8 @@
 package org.vertx.java.core.http;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -34,16 +36,21 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.ws.Handshake;
+import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.http.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.ws.hybi17.Handshake17;
@@ -58,7 +65,10 @@ import org.vertx.java.core.net.ServerID;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,7 +76,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
@@ -88,7 +99,7 @@ public class HttpServer extends NetServerBase {
   private static final Map<ServerID, HttpServer> servers = new HashMap<>();
 
   private Handler<HttpServerRequest> requestHandler;
-  private Handler<WebSocket> wsHandler;
+  private WebSocketHandler wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -124,7 +135,7 @@ public class HttpServer extends NetServerBase {
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer websocketHandler(Handler<WebSocket> wsHandler) {
+  public HttpServer websocketHandler(WebSocketHandler wsHandler) {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
@@ -405,10 +416,28 @@ public class HttpServer extends NetServerBase {
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
+    private void sendError(String err, HttpResponseStatus status, Channel ch) {
+      HttpResponse resp = new DefaultHttpResponse(HTTP_1_1, status);
+      resp.setChunked(false);
+      if (err != null) {
+        ChannelBuffer buff = ChannelBuffers.copiedBuffer(err.getBytes(Charset.forName("UTF-8")));
+        resp.setHeader("Content-Length", err.length());
+        resp.setContent(buff);
+      } else {
+        resp.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
+        //resp.setContent(ChannelBuffers.EMPTY_BUFFER);
+      }
+      ch.write(resp);
+    }
+
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       Object msg = e.getMessage();
+
+
+      log.info("Got msg " + msg);
+
       if (msg instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) msg;
 
@@ -416,8 +445,24 @@ public class HttpServer extends NetServerBase {
           ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        if (HttpHeaders.Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) &&
-            WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
+        if (WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
+
+          log.info("Got ws upgrade");
+
+          // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
+          // it doesn't send a normal 'Connection: Upgrade' header. Instead it
+          // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+          String connectionHeader = request.getHeader(CONNECTION);
+          log.info("connection header is " + connectionHeader);
+          if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
+            sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
+            return;
+          }
+
+          if (request.getMethod() != HttpMethod.GET) {
+            sendError(null, METHOD_NOT_ALLOWED, ch);
+            return;
+          }
 
           Handshake shake;
           if (Handshake17.matches(request)) {
@@ -428,23 +473,48 @@ public class HttpServer extends NetServerBase {
             shake = new Handshake00();
           } else {
             log.error("Unrecognised websockets handshake");
-            ch.write(new DefaultHttpResponse(HTTP_1_1, FORBIDDEN));
+            ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
             return;
           }
 
-          HttpResponse resp = shake.generateResponse(request);
-          ChannelPipeline p = ch.getPipeline();
-          p.replace("decoder", "wsdecoder", shake.getDecoder());
-          ch.write(resp);
-          p.replace("encoder", "wsencoder", shake.getEncoder(true));
+          log.info("shake is " + shake.getClass().getName());
 
-          HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
-          if (wsHandler != null) {
-            ServerConnection conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
-            conn.wsHandler(wsHandler.handler);
-            conn.handleWebsocketConnect(request.getUri());
-            connectionMap.put(ch, conn);
+          HandlerHolder<WebSocket> firstHandler = null;
+
+          while (true) {
+            HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
+            if (wsHandler == null || firstHandler == wsHandler) {
+              break;
+            }
+
+            URI theURI;
+            try {
+              theURI = new URI(request.getUri());
+            } catch (URISyntaxException e2) {
+              throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+            }
+            WebSocketHandler wsh = (WebSocketHandler)wsHandler.handler;
+            if (wsh.accept(theURI.getPath())) {
+              log.info("accepted");
+              ServerConnection conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
+              conn.wsHandler(wsHandler.handler);
+              connectionMap.put(ch, conn);
+              HttpResponse resp = shake.generateResponse(request);
+              ChannelPipeline p = ch.getPipeline();
+              p.replace("decoder", "wsdecoder", shake.getDecoder());
+              ch.write(resp);
+              log.info("Wrote response");
+              p.replace("encoder", "wsencoder", shake.getEncoder(true));
+              WebSocket ws = new WebSocket(conn);
+              conn.handleWebsocketConnect(ws);
+              return;
+            }
+
+            if (firstHandler == null) {
+              firstHandler = wsHandler;
+            }
           }
+          ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
         } else {
           //HTTP request or chunk
           ServerConnection conn = connectionMap.get(ch);
@@ -460,12 +530,23 @@ public class HttpServer extends NetServerBase {
             conn.handleMessage(msg);
           }
         }
-      } else {
+      } else if (msg instanceof WebSocketFrame) {
         //Websocket frame
-        ServerConnection conn = connectionMap.get(ch);
-        if (conn != null) {
-          conn.handleMessage(msg);
+        WebSocketFrame wsFrame = (WebSocketFrame)msg;
+        switch (wsFrame.getType()) {
+          case BINARY:
+          case TEXT:
+            ServerConnection conn = connectionMap.get(ch);
+            if (conn != null) {
+              conn.handleMessage(msg);
+            }
+            break;
+          case CLOSE:
+            //Echo back close frame
+            ch.write(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
         }
+      } else {
+        throw new IllegalStateException("Invalid message " + msg);
       }
     }
 

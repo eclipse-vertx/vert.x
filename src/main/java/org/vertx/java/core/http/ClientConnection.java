@@ -91,7 +91,7 @@ class ClientConnection extends AbstractConnection {
                   ChannelPipeline p = channel.getPipeline();
                   p.replace("decoder", "wsdecoder", shake.getDecoder());
                   p.replace("encoder", "wsencoder", shake.getEncoder(false));
-                  ws = new WebSocket(uri, ClientConnection.this);
+                  ws = new WebSocket(ClientConnection.this);
                   wsConnect.handle(ws);
                 } else {
                   handleException(fut.exception());

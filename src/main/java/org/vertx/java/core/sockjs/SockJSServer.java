@@ -1,18 +1,24 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketMatcher;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +35,8 @@ public class SockJSServer {
   private final String iframeHTML;
 
   private RouteMatcher rm = new RouteMatcher();
+
+  private WebSocketMatcher wsMatcher = new WebSocketMatcher();
 
   //TODO use shared set for this so scales better
   private final Map<String, Session> sessions = new HashMap<>();
@@ -59,11 +67,20 @@ public class SockJSServer {
     // Versioned
     rm.getWithRegEx(basePath + "\\/iframe-[^\\/]*\\.html", iframeHandler);
 
+    // Chunking test
+    rm.postWithRegEx(basePath + "\\/chunking_test", createChunkingTestHandler());
+    rm.optionsWithRegEx(basePath + "\\/chunking_test", BaseTransport.createCORSOptionsHandler("OPTIONS, POST"));
+
     // Transports
 
     new XHRTransport(sessions).init(rm, basePath, sockHandler);
     new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
     new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
+    new JSONPTransport(sessions).init(rm, basePath, sockHandler);
+
+    if (websocketsEnabled) {
+      new WebSocketTransport(sessions).init(wsMatcher, rm, basePath, sockHandler);
+    }
 
     // Catch all for any other requests on this app
 
@@ -73,7 +90,76 @@ public class SockJSServer {
         req.response.end();
       }
     });
+
   }
+
+  private Handler<HttpServerRequest> createChunkingTestHandler() {
+    return new Handler<HttpServerRequest>() {
+
+      class TimeoutInfo {
+        final long timeout;
+        final Buffer buff;
+
+        TimeoutInfo(long timeout, Buffer buff) {
+          this.timeout = timeout;
+          this.buff = buff;
+        }
+      }
+
+      List<TimeoutInfo> timeouts = new ArrayList<>();
+
+      private void setTimeout(long delay, final Buffer buff) {
+        timeouts.add(new TimeoutInfo(delay, buff));
+      }
+
+      private void runTimeouts(HttpServerResponse response) {
+        final Iterator<TimeoutInfo> iter = timeouts.iterator();
+        nextTimeout(iter, response);
+      }
+
+      private void nextTimeout(final Iterator<TimeoutInfo> iter, final HttpServerResponse response) {
+        if (iter.hasNext()) {
+          final TimeoutInfo timeout = iter.next();
+          Vertx.instance.setTimer(timeout.timeout, new Handler<Long>() {
+            public void handle(Long id) {
+              response.write(timeout.buff);
+              nextTimeout(iter, response);
+            }
+          });
+        } else {
+          timeouts.clear();
+        }
+      }
+
+      public void handle(HttpServerRequest req) {
+        req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
+        BaseTransport.setCORS(req.response, "*");
+        req.response.setChunked(true);
+
+        Buffer h = Buffer.create(2);
+        h.appendString("h\n");
+
+        Buffer hs = Buffer.create(2050);
+        for (int i = 0; i < 2048; i++) {
+          hs.appendByte((byte)' ');
+        }
+        hs.appendString("h\n");
+
+        setTimeout(0, h);
+        setTimeout(1, hs);
+        setTimeout(5, h);
+        setTimeout(25, h);
+        setTimeout(125, h);
+        setTimeout(625, h);
+        setTimeout(3125, h);
+
+        runTimeouts(req.response);
+
+      }
+    };
+  }
+
+
 
   private Handler<HttpServerRequest> createIFrameHandler() {
     return new Handler<HttpServerRequest>() {
@@ -84,7 +170,6 @@ public class SockJSServer {
             req.response.statusCode = 304;
             req.response.end();
           } else {
-            log.info("serving iframe.html, path: " + req.path);
             req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
             req.response.putHeader("Cache-Control", "public,max-age=31536000");
             long oneYear = 365 * 24 * 60 * 60 * 1000;
@@ -120,6 +205,7 @@ public class SockJSServer {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
+                log.info("Got data in echo in server " + buff);
                 sock.write(buff);
               }
             });
@@ -130,7 +216,7 @@ public class SockJSServer {
             sock.close();
           }
         });
-        server.installApp("disabled_websocket_echo", true, "/disabled_websocket_echo", new Handler<SockJSSocket>() {
+        server.installApp("disabled_websocket_echo", false, "/disabled_websocket_echo", new Handler<SockJSSocket>() {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
@@ -152,34 +238,20 @@ public class SockJSServer {
 
   public void start() {
     HttpServer server = new HttpServer();
-    setHTTPHandler(server);
-    server.websocketHandler(new WSHandler());
-    server.listen(8080);
-  }
-
-  private void setHTTPHandler(HttpServer server) {
-
     // Catch all - serve a 404
     rm.get(".*", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        log.info("Main catch all matched " + req.path);
         req.response.statusCode = 404;
         req.response.end();
       }
     });
-
     server.requestHandler(rm);
+
+    server.websocketHandler(wsMatcher);
+
+    server.listen(8080);
   }
 
-  class WSHandler implements Handler<WebSocket> {
-
-    public void handle(WebSocket ws) {
-      handleWebSocketConnect(ws);
-    }
-  }
-
-  private void handleWebSocketConnect(WebSocket ws) {
-  }
 
   private static final String IFRAME_TEMPLATE =
     "<!DOCTYPE html>\n" +

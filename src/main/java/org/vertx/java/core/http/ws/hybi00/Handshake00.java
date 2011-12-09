@@ -86,7 +86,8 @@ public class Handshake00 implements Handshake {
   public HttpResponse generateResponse(HttpRequest request) throws Exception {
 
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-00"));
-
+    response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
+    response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
     String origin = request.getHeader(Names.ORIGIN);
     if (origin != null) {
       response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, request.getHeader(Names.ORIGIN));
@@ -103,6 +104,9 @@ public class Handshake00 implements Handshake {
     String key1 = request.getHeader(Names.SEC_WEBSOCKET_KEY1);
     String key2 = request.getHeader(Names.SEC_WEBSOCKET_KEY2);
     byte[] key3 = new byte[8];
+
+    log.info("generating handshake response " + request.getContent().readableBytes());;
+
     request.getContent().readBytes(key3);
 
     byte[] solution = WebSocketChallenge00.solve(key1, key2, key3);

@@ -47,11 +47,11 @@ class HtmlFileTransport extends BaseTransport {
   }
 
   void init(RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
-    String htmlFileRE = basePath + COMMON_PATH_ELEMENT + "htmlfile";
+    String htmlFileRE = basePath + COMMON_PATH_ELEMENT_RE + "htmlfile";
 
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        String sessionID = req.getParams().get("param1");
+        String sessionID = req.getParams().get("param0");
         Session session = sessions.get(sessionID);
         if (session == null) {
           req.response.setChunked(true);
@@ -75,7 +75,7 @@ class HtmlFileTransport extends BaseTransport {
           req.response.write("<script>\np(\"o\");\n</script>\r\n");
           session.tcConn = new HtmlFileTcConn(req.response);
         } else {
-          log.info("existing session");
+          //TODO?
         }
       }
     });

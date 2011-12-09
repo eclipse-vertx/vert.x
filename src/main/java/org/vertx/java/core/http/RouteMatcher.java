@@ -3,6 +3,7 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,11 +53,11 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
 
   private static final Logger log = Logger.getLogger(RouteMatcher.class);
 
-  private List<PatternBinding> getBindings = new CopyOnWriteArrayList<>();
-  private List<PatternBinding> putBindings = new CopyOnWriteArrayList<>();
-  private List<PatternBinding> postBindings = new CopyOnWriteArrayList<>();
-  private List<PatternBinding> deleteBindings = new CopyOnWriteArrayList<>();
-  private List<PatternBinding> optionsBindings = new CopyOnWriteArrayList<>();
+  private List<PatternBinding> getBindings = new ArrayList<>();
+  private List<PatternBinding> putBindings = new ArrayList<>();
+  private List<PatternBinding> postBindings = new ArrayList<>();
+  private List<PatternBinding> deleteBindings = new ArrayList<>();
+  private List<PatternBinding> optionsBindings = new ArrayList<>();
 
   @Override
   public void handle(HttpServerRequest request) {
@@ -125,6 +126,19 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   /**
+   * Specify a handler that will be called for all HTTP methods
+   * @param pattern The simple pattern
+   * @param handler The handler to call
+   */
+  public void all(String pattern, Handler<HttpServerRequest> handler) {
+    addPattern(pattern, handler, getBindings);
+    addPattern(pattern, handler, putBindings);
+    addPattern(pattern, handler, postBindings);
+    addPattern(pattern, handler, deleteBindings);
+    addPattern(pattern, handler, optionsBindings);
+  }
+
+  /**
    * Specify a handler that will be called for a matching HTTP GET
    * @param regex A regular expression
    * @param handler The handler to call
@@ -161,6 +175,19 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   /**
+   * Specify a handler that will be called for all HTTP methods
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void allWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, getBindings);
+    addRegEx(regex, handler, putBindings);
+    addRegEx(regex, handler, postBindings);
+    addRegEx(regex, handler, deleteBindings);
+    addRegEx(regex, handler, optionsBindings);
+  }
+
+  /**
    * Specify a handler that will be called for a matching HTTP OPTIONS
    * @param regex A regular expression
    * @param handler The handler to call
@@ -194,9 +221,6 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   private void route(HttpServerRequest request, List<PatternBinding> bindings) {
-
-    log.info("Routing " + request.path);
-
     for (PatternBinding binding: bindings) {
       Matcher m = binding.pattern.matcher(request.path);
       if (m.matches()) {

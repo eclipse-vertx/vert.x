@@ -23,6 +23,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketHandler;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shared.SharedData;
@@ -58,10 +59,14 @@ public class SharedWebsocketTest extends TestBase {
 
           for (int j = 0; j < serversPerLoop; j++) {
             final HttpServer server = new HttpServer();
-            server.websocketHandler(new Handler<WebSocket>() {
+            server.websocketHandler(new WebSocketHandler() {
 
               public void handle(final WebSocket ws) {
                 connectedServers.add(System.identityHashCode(server));
+              }
+
+              public boolean accept(String path) {
+                return true;
               }
             }).listen(port, host);
 
