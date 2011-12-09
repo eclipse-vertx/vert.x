@@ -7,19 +7,20 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
-import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketMatcher;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.shared.SharedData;
 
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -28,24 +29,66 @@ public class SockJSServer {
 
   private static final Logger log = Logger.getLogger(SockJSServer.class);
 
-  private static final String DEFAULT_SOCK_JS_URL = "http://cdn.sockjs.org/sockjs-0.1.min.js";
+  private static final String DEFAULT_LIBRARY_URL = "http://cdn.sockjs.org/sockjs-0.1.min.js";
 
   //TODO heartbeat
 
   private final String iframeHTML;
-
   private RouteMatcher rm = new RouteMatcher();
-
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
+  private final Map<String, Session> sessions = SharedData.getMap("sockjs_sessions");
+  private String libraryURL = DEFAULT_LIBRARY_URL;
 
-  //TODO use shared set for this so scales better
-  private final Map<String, Session> sessions = new HashMap<>();
+  public static void main(String[] args) throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
+        HttpServer httpServer = new HttpServer();
+        new SockJSServer(httpServer, null);
+        httpServer.listen(8080);
+      }
+    });
 
-  public void installApp(final String appName, final boolean websocketsEnabled, String basePath,
+    Thread.sleep(1000000);
+  }
+
+  public SockJSServer(HttpServer httpServer, String libraryURL) {
+    if (libraryURL != null) {
+      this.libraryURL = libraryURL;
+    }
+    iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}", this.libraryURL);
+
+    httpServer.requestHandler(rm);
+    httpServer.websocketHandler(wsMatcher);
+    installDefaultApps();
+    // Catch all - serve a 404
+    rm.get(".*", new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.statusCode = 404;
+        req.response.end();
+      }
+    });
+  }
+
+  public void installApp(Set<Transports> disabledTransports, String basePath,
                          final Handler<SockJSSocket> sockHandler) {
 
     if (basePath == null || basePath.equals("") || basePath.endsWith("/")) {
       throw new IllegalArgumentException("Invalid base path: " + basePath);
+    }
+
+    log.info("Installing app: " + basePath);
+
+    Set<Transports> enabledTransports = new HashSet<>();
+    enabledTransports.add(Transports.EVENT_SOURCE);
+    enabledTransports.add(Transports.HTML_FILE);
+    enabledTransports.add(Transports.JSON_P);
+    enabledTransports.add(Transports.WEBSOCKETS);
+    enabledTransports.add(Transports.XHR);
+
+    if (disabledTransports != null) {
+      for (Transports tr: disabledTransports) {
+        enabledTransports.remove(tr);
+      }
     }
 
     // Base handler for app
@@ -73,12 +116,19 @@ public class SockJSServer {
 
     // Transports
 
-    new XHRTransport(sessions).init(rm, basePath, sockHandler);
-    new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
-    new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
-    new JSONPTransport(sessions).init(rm, basePath, sockHandler);
-
-    if (websocketsEnabled) {
+    if (enabledTransports.contains(Transports.XHR)) {
+      new XHRTransport(sessions).init(rm, basePath, sockHandler);
+    }
+    if (enabledTransports.contains(Transports.EVENT_SOURCE)) {
+      new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
+    }
+    if (enabledTransports.contains(Transports.HTML_FILE)) {
+      new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
+    }
+    if (enabledTransports.contains(Transports.JSON_P)) {
+      new JSONPTransport(sessions).init(rm, basePath, sockHandler);
+    }
+    if (enabledTransports.contains(Transports.WEBSOCKETS)) {
       new WebSocketTransport(sessions).init(wsMatcher, rm, basePath, sockHandler);
     }
 
@@ -159,8 +209,6 @@ public class SockJSServer {
     };
   }
 
-
-
   private Handler<HttpServerRequest> createIFrameHandler() {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -195,62 +243,34 @@ public class SockJSServer {
     return sb.toString();
   }
 
-  public static void main(String[] args) throws Exception {
-    log.info("Starting sock-js server");
-
-    VertxInternal.instance.go(new Runnable() {
-      public void run() {
-        SockJSServer server = new SockJSServer();
-        server.installApp("echo", true, "/echo", new Handler<SockJSSocket>() {
-          public void handle(final SockJSSocket sock) {
-            sock.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer buff) {
-                sock.write(buff);
-              }
-            });
+  private void installDefaultApps() {
+    // Install the default apps
+    installApp(null, "/echo", new Handler<SockJSSocket>() {
+      public void handle(final SockJSSocket sock) {
+        sock.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer buff) {
+            sock.write(buff);
           }
         });
-        server.installApp("close", true, "/close", new Handler<SockJSSocket>() {
-          public void handle(final SockJSSocket sock) {
-            sock.close();
-          }
-        });
-        server.installApp("disabled_websocket_echo", false, "/disabled_websocket_echo", new Handler<SockJSSocket>() {
-          public void handle(final SockJSSocket sock) {
-            sock.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer buff) {
-                sock.write(buff);
-              }
-            });
-          }
-        });
-        server.start();
       }
     });
-
-    Thread.sleep(1000000);
-  }
-
-  public SockJSServer() {
-    iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}", DEFAULT_SOCK_JS_URL);
-  }
-
-  public void start() {
-    HttpServer server = new HttpServer();
-    // Catch all - serve a 404
-    rm.get(".*", new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        req.response.statusCode = 404;
-        req.response.end();
+    installApp(null, "/close", new Handler<SockJSSocket>() {
+      public void handle(final SockJSSocket sock) {
+        sock.close();
       }
     });
-    server.requestHandler(rm);
-
-    server.websocketHandler(wsMatcher);
-
-    server.listen(8080);
+    Set<Transports> disabled = new HashSet<>();
+    disabled.add(Transports.WEBSOCKETS);
+    installApp(disabled, "/disabled_websocket_echo", new Handler<SockJSSocket>() {
+      public void handle(final SockJSSocket sock) {
+        sock.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer buff) {
+            sock.write(buff);
+          }
+        });
+      }
+    });
   }
-
 
   private static final String IFRAME_TEMPLATE =
     "<!DOCTYPE html>\n" +
