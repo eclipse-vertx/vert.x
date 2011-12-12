@@ -29,6 +29,11 @@ public class SockJSServer {
 
   private static final Logger log = Logger.getLogger(SockJSServer.class);
 
+  //TODO optional setting of JSESSIONID and server prefix
+  //TODO there are errors in console after running python tests - investigate
+  //TODO test timeouts and heartbeat
+  //Add python test to test suite
+
   private final String iframeHTML;
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
