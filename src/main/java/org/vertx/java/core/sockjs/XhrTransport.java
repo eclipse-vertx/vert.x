@@ -15,8 +15,6 @@ class XhrTransport extends BaseTransport {
 
   //TODO xhr timeout after seconds if not have "receiving connection"
 
-  //TODO xhr streaming - close request if more than 128K sent
-
   private static final Logger log = Logger.getLogger(XhrTransport.class);
 
   private static final Buffer H_BLOCK;
@@ -34,7 +32,8 @@ class XhrTransport extends BaseTransport {
     super(sessions);
   }
 
-  void init(RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
+  void init(RouteMatcher rm, String basePath, ServerConfig config,
+            final Handler<SockJSSocket> sockHandler) {
 
     String xhrBase = basePath + COMMON_PATH_ELEMENT_RE;
     String xhrRE = xhrBase + "xhr";
@@ -45,29 +44,8 @@ class XhrTransport extends BaseTransport {
     rm.optionsWithRegEx(xhrRE, xhrOptionsHandler);
     rm.optionsWithRegEx(xhrStreamRE, xhrOptionsHandler);
 
-    class XhrHandler implements Handler<HttpServerRequest> {
-
-      boolean streaming;
-
-      XhrHandler(boolean streaming) {
-        this.streaming = streaming;
-      }
-
-      public void handle(HttpServerRequest req) {
-        String sessionID = req.getParams().get("param0");
-        Session session = sessions.get(sessionID);
-        if (session == null) {
-          session = new Session(sockHandler);
-          sessions.put(sessionID, session);
-        }
-        log.info("Registering xhr for session " + sessionID);
-        session.register(streaming? new XhrStreamingListener(req, session) : new XhrPollingListener(req, session));
-      }
-    }
-
-    rm.postWithRegEx(xhrRE, new XhrHandler(false));
-
-    rm.postWithRegEx(xhrStreamRE, new XhrHandler(true));
+    registerHandler(rm, sockHandler, xhrRE, false, config);
+    registerHandler(rm, sockHandler, xhrStreamRE, true, config);
 
     String xhrSendRE = basePath + COMMON_PATH_ELEMENT_RE + "xhr_send";
 
@@ -84,6 +62,17 @@ class XhrTransport extends BaseTransport {
           setCookies(req);
           req.response.end();
         }
+      }
+    });
+  }
+
+  private void registerHandler(RouteMatcher rm, final Handler<SockJSSocket> sockHandler, String re,
+                               final boolean streaming, final ServerConfig config) {
+    rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        String sessionID = req.getParams().get("param0");
+        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
+        session.register(streaming? new XhrStreamingListener(config.getMaxBytesStreaming(), req, session) : new XhrPollingListener(req, session));
       }
     });
   }
@@ -119,7 +108,7 @@ class XhrTransport extends BaseTransport {
     });
   }
 
-  private abstract class BaseXhrListener implements TransportListener {
+  private static abstract class BaseXhrListener implements TransportListener {
     final HttpServerRequest req;
     final Session session;
 
@@ -130,7 +119,7 @@ class XhrTransport extends BaseTransport {
       this.session = session;
     }
 
-    public void sendFrame(StringBuffer payload) {
+    public void sendFrame(String payload) {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
         setCookies(req);
@@ -141,32 +130,44 @@ class XhrTransport extends BaseTransport {
     }
   }
 
-  private class XhrPollingListener extends BaseXhrListener {
+  private static class XhrPollingListener extends BaseXhrListener {
 
     XhrPollingListener(HttpServerRequest req, Session session) {
       super(req, session);
     }
 
-    public void sendFrame(StringBuffer payload) {
+    public void sendFrame(String payload) {
       super.sendFrame(payload);
-      req.response.end(payload.append("\n").toString(), true);
+      req.response.end(payload + "\n", true);
       session.resetListener();
     }
   }
 
-  private class XhrStreamingListener extends BaseXhrListener {
+  private static class XhrStreamingListener extends BaseXhrListener {
 
-    XhrStreamingListener(HttpServerRequest req, Session session) {
+    int bytesSent;
+    int maxBytesStreaming;
+
+    XhrStreamingListener(int maxBytesStreaming, HttpServerRequest req, Session session) {
       super(req, session);
+      this.maxBytesStreaming = maxBytesStreaming;
     }
 
-    public void sendFrame(StringBuffer payload) {
+    public void sendFrame(String payload) {
       boolean hr = headersWritten;
       super.sendFrame(payload);
       if (!hr) {
         req.response.write(H_BLOCK);
       }
-      req.response.write(payload.append("\n").toString());
+      String spayload = payload + "\n";
+      Buffer buff = Buffer.create(spayload);
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        session.resetListener();
+        req.response.end(true);
+      }
     }
   }
 }

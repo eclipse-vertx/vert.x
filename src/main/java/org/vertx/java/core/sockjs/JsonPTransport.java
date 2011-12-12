@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonPTransport extends BaseTransport {
+class JsonPTransport extends BaseTransport {
 
   private static final Logger log = Logger.getLogger(JsonPTransport.class);
 
@@ -21,7 +21,8 @@ public class JsonPTransport extends BaseTransport {
     super(sessions);
   }
 
-  void init(RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
+  void init(RouteMatcher rm, String basePath, final ServerConfig config,
+            final Handler<SockJSSocket> sockHandler) {
     String jsonpRE = basePath + COMMON_PATH_ELEMENT_RE + "jsonp";
 
     rm.getWithRegEx(jsonpRE, new Handler<HttpServerRequest>() {
@@ -38,11 +39,7 @@ public class JsonPTransport extends BaseTransport {
         }
 
         String sessionID = req.getParams().get("param0");
-        Session session = sessions.get(sessionID);
-        if (session == null) {
-          session = new Session(sockHandler);
-          sessions.put(sessionID, session);
-        }
+        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
         session.register(new JsonPListener(req, session, callback));
       }
     });
@@ -116,7 +113,7 @@ public class JsonPTransport extends BaseTransport {
     });
   }
 
-  private class JsonPListener implements TransportListener {
+  private static class JsonPListener implements TransportListener {
 
     final HttpServerRequest req;
     final Session session;
@@ -129,7 +126,7 @@ public class JsonPTransport extends BaseTransport {
       this.callback = callback;
     }
 
-    public void sendFrame(StringBuffer payload) {
+    public void sendFrame(String payload) {
 
       if (!headersWritten) {
         req.response.setChunked(true);
@@ -139,11 +136,10 @@ public class JsonPTransport extends BaseTransport {
         headersWritten = true;
       }
 
-      String sp = payload.toString();
-      sp = sp.replace("\"", "\\\"");
+      payload = payload.replace("\"", "\\\"");
       StringBuffer sb = new StringBuffer();
       sb.append(callback).append("(\"");
-      sb.append(sp);
+      sb.append(payload);
       sb.append("\");\r\n");
 
       //End the response and close the HTTP connection

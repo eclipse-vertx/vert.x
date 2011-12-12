@@ -3,7 +3,7 @@ package org.vertx.java.core.sockjs;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface TransportListener {
+interface TransportListener {
 
-  void sendFrame(StringBuffer payload);
+  void sendFrame(String payload);
 }

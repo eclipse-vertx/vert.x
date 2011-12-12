@@ -2,16 +2,18 @@ package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Immutable;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Session implements SockJSSocket, Immutable {
+class Session implements SockJSSocket, Immutable {
 
   private static final Logger log = Logger.getLogger(Session.class);
 
@@ -20,10 +22,21 @@ public class Session implements SockJSSocket, Immutable {
   private Handler<Buffer> dataHandler;
   private boolean closed;
   private boolean openWritten;
+  private final long timeout;
+  private final long heartbeatPeriod;
   private final Handler<SockJSSocket> sockHandler;
+  private final Handler<Void> timeoutHandler;
+  private long heartbeatID = -1;
 
-  public Session(Handler<SockJSSocket> sockHandler) {
+  Session(long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+    this(-1, heartbeatPeriod, sockHandler, null);
+  }
+
+  Session(long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler,  Handler<Void> timeoutHandler) {
+    this.timeout = timeout;
+    this.heartbeatPeriod = heartbeatPeriod;
     this.sockHandler = sockHandler;
+    this.timeoutHandler = timeoutHandler;
   }
 
   public void write(Buffer buffer) {
@@ -47,6 +60,20 @@ public class Session implements SockJSSocket, Immutable {
 
   void resetListener() {
     listener = null;
+
+    if (timeout != -1) {
+      Vertx.instance.setTimer(timeout, new Handler<Long>() {
+        public void handle(Long id) {
+          if (listener == null) {
+            timeoutHandler.handle(null);
+          }
+        }
+      });
+    }
+
+    if (heartbeatID != -1) {
+      Vertx.instance.cancelTimer(heartbeatID);
+    }
   }
 
   void writePendingMessagesToPollResponse() {
@@ -61,7 +88,7 @@ public class Session implements SockJSSocket, Immutable {
       }
     }
     sb.append("]");
-    listener.sendFrame(sb);
+    listener.sendFrame(sb.toString());
 
     messages.clear();
   }
@@ -74,47 +101,55 @@ public class Session implements SockJSSocket, Immutable {
     }
   }
 
-  void writeClosed(TransportListener list) {
-    writeClosed(list, 3000, "Go away!");
+  void writeClosed(TransportListener lst) {
+    writeClosed(lst, 3000, "Go away!");
   }
 
-  void writeClosed(TransportListener list, int code, String msg) {
+  void writeClosed(TransportListener lst, int code, String msg) {
 
     StringBuffer sb = new StringBuffer("c[");
     sb.append(String.valueOf(code)).append(",\"");
     sb.append(msg).append("\"]");
 
-    list.sendFrame(sb);
+    lst.sendFrame(sb.toString());
   }
 
-  void writeOpen(TransportListener list) {
+  void writeOpen(TransportListener lst) {
     StringBuffer sb = new StringBuffer("o");
-    list.sendFrame(sb);
+    lst.sendFrame(sb.toString());
     openWritten = true;
   }
 
-  void register(TransportListener list) {
+  void register(final TransportListener lst) {
 
     if (this.listener != null) {
-      writeClosed(list, 2010, "Another connection still open");
+      writeClosed(lst, 2010, "Another connection still open");
     } else {
 
-      this.listener = list;
+      this.listener = lst;
 
       if (!openWritten) {
-        writeOpen(list);
+        writeOpen(lst);
         sockHandler.handle(this);
       }
 
       if (closed) {
         // Could have already been closed by the user
-        writeClosed(list);
+        writeClosed(lst);
         this.listener = null;
       } else {
 
         if (!messages.isEmpty()) {
           writePendingMessagesToPollResponse();
         }
+
+        // Start a heartbeat
+
+        heartbeatID = Vertx.instance.setPeriodic(heartbeatPeriod, new Handler<Long>() {
+          public void handle(Long id) {
+            lst.sendFrame("h");
+          }
+        });
       }
     }
   }

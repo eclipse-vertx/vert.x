@@ -29,40 +29,28 @@ public class SockJSServer {
 
   private static final Logger log = Logger.getLogger(SockJSServer.class);
 
-  private static final String DEFAULT_LIBRARY_URL = "http://cdn.sockjs.org/sockjs-0.1.min.js";
-
-  //TODO heartbeat
-
   private final String iframeHTML;
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions = SharedData.getMap("sockjs_sessions");
-  private String libraryURL = DEFAULT_LIBRARY_URL;
+  private ServerConfig config;
 
+  // For debug only
   public static void main(String[] args) throws Exception {
     VertxInternal.instance.go(new Runnable() {
       public void run() {
         HttpServer httpServer = new HttpServer();
-        new SockJSServer(httpServer, null, -1, true, -1, -1);
+        new SockJSServer(httpServer, new ServerConfig());
         httpServer.listen(8080);
       }
     });
 
-    Thread.sleep(1000000);
+    Thread.sleep(Long.MAX_VALUE);
   }
 
-  //TODO all these params
-
-  public SockJSServer(HttpServer httpServer, String libraryURL,
-                      int responseLimit,
-                      boolean insertJSESSSIONID,
-                      long heartbeatPeriod,
-                      long disconnectDelay) {
-    if (libraryURL != null) {
-      this.libraryURL = libraryURL;
-    }
-    iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}", this.libraryURL);
-
+  public SockJSServer(HttpServer httpServer, ServerConfig config) {
+    this.config = config;
+    iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}", config.getLibraryURL());
     httpServer.requestHandler(rm);
     httpServer.websocketHandler(wsMatcher);
     installDefaultApps();
@@ -123,19 +111,19 @@ public class SockJSServer {
     // Transports
 
     if (enabledTransports.contains(Transport.XHR)) {
-      new XhrTransport(sessions).init(rm, basePath, sockHandler);
+      new XhrTransport(sessions).init(rm, basePath, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.EVENT_SOURCE)) {
-      new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
+      new EventSourceTransport(sessions).init(rm, basePath,  config, sockHandler);
     }
     if (enabledTransports.contains(Transport.HTML_FILE)) {
-      new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
+      new HtmlFileTransport(sessions).init(rm, basePath, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.JSON_P)) {
-      new JsonPTransport(sessions).init(rm, basePath, sockHandler);
+      new JsonPTransport(sessions).init(rm, basePath, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.WEBSOCKETS)) {
-      new WebSocketTransport(sessions).init(wsMatcher, rm, basePath, sockHandler);
+      new WebSocketTransport(sessions).init(wsMatcher, rm, basePath, config, sockHandler);
     }
 
     // Catch all for any other requests on this app

@@ -45,7 +45,8 @@ class HtmlFileTransport extends BaseTransport {
     super(sessions);
   }
 
-  void init(RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
+  void init(RouteMatcher rm, String basePath, final ServerConfig config,
+            final Handler<SockJSSocket> sockHandler) {
     String htmlFileRE = basePath + COMMON_PATH_ELEMENT_RE + "htmlfile";
 
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
@@ -62,18 +63,13 @@ class HtmlFileTransport extends BaseTransport {
         }
 
         String sessionID = req.getParams().get("param0");
-        Session session = sessions.get(sessionID);
-        if (session == null) {
-          session = new Session(sockHandler);
-          sessions.put(sessionID, session);
-
-        }
+        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
         session.register(new HtmlFileListener(req, callback));
       }
     });
   }
 
-  private class HtmlFileListener implements TransportListener {
+  private static class HtmlFileListener implements TransportListener {
 
     final HttpServerRequest req;
     final String callback;
@@ -84,7 +80,7 @@ class HtmlFileTransport extends BaseTransport {
       this.callback = callback;
     }
 
-    public void sendFrame(StringBuffer payload) {
+    public void sendFrame(String payload) {
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
         req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
@@ -94,11 +90,10 @@ class HtmlFileTransport extends BaseTransport {
         req.response.write(htmlFile);
         headersWritten = true;
       }
-      String sp = payload.toString();
-      sp = sp.replace("\"", "\\\"");
+      payload = payload.replace("\"", "\\\"");
       StringBuffer sb = new StringBuffer();
       sb.append("<script>\np(\"");
-      sb.append(sp);
+      sb.append(payload);
       sb.append("\");\n</script>\r\n");
       req.response.write(sb.toString());
     }

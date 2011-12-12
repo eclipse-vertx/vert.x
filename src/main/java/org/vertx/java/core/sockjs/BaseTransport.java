@@ -1,6 +1,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BaseTransport {
+class BaseTransport {
 
   protected final Map<String, Session> sessions;
 
@@ -31,6 +32,20 @@ public class BaseTransport {
       parts[(i - 1) / 2] = split[i];
     }
     return parts;
+  }
+
+  protected Session getSession(final long timeout, final long heartbeatPeriod, final String sessionID,
+                               Handler<SockJSSocket> sockHandler) {
+    Session session = sessions.get(sessionID);
+    if (session == null) {
+      session = new Session(timeout, heartbeatPeriod, sockHandler, new SimpleHandler() {
+        public void handle() {
+          sessions.remove(sessionID);
+        }
+      });
+      sessions.put(sessionID, session);
+    }
+    return session;
   }
 
   protected boolean checkJSON(String str, HttpServerResponse response) {
