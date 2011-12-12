@@ -18,23 +18,20 @@ class EventSourceTransport extends BaseTransport {
     super(sessions);
   }
 
-  void init(RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
+  void init(RouteMatcher rm, String basePath, final ServerConfig config,
+            final Handler<SockJSSocket> sockHandler) {
     String eventSourceRE = basePath + COMMON_PATH_ELEMENT_RE + "eventsource";
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         String sessionID = req.getParams().get("param0");
-        Session session = sessions.get(sessionID);
-        if (session == null) {
-          session = new Session(sockHandler);
-          sessions.put(sessionID, session);
-        }
+        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
         session.register(new EventSourceListener(req));
       }
     });
   }
 
-  private class EventSourceListener implements TransportListener {
+  private static class EventSourceListener implements TransportListener {
 
     final HttpServerRequest req;
 
@@ -44,7 +41,7 @@ class EventSourceTransport extends BaseTransport {
       this.req = req;
     }
 
-    public void sendFrame(StringBuffer payload) {
+    public void sendFrame(String payload) {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
         req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");

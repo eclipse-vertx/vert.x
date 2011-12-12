@@ -21,14 +21,15 @@ class WebSocketTransport extends BaseTransport {
     super(sessions);
   }
 
-  void init(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, final Handler<SockJSSocket> sockHandler) {
+  void init(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, final ServerConfig config,
+            final Handler<SockJSSocket> sockHandler) {
     String wsRE = basePath + COMMON_PATH_ELEMENT_RE + "websocket";
 
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
 
-        final Session session = new Session(sockHandler);
+        final Session session = new Session(config.getHeartbeatPeriod(), sockHandler);
         session.register(new WebSocketListener(match.ws, session));
 
         match.ws.dataHandler(new Handler<Buffer>() {
@@ -64,7 +65,7 @@ class WebSocketTransport extends BaseTransport {
     });
   }
 
-  private class WebSocketListener implements TransportListener {
+  private static class WebSocketListener implements TransportListener {
 
     final WebSocket ws;
     final Session session;
@@ -74,8 +75,8 @@ class WebSocketTransport extends BaseTransport {
       this.session = session;
     }
 
-    public void sendFrame(StringBuffer payload) {
-      ws.writeTextFrame(payload.toString());
+    public void sendFrame(String payload) {
+      ws.writeTextFrame(payload);
     }
   }
 }
