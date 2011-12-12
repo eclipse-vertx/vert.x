@@ -59,7 +59,6 @@ class BaseTransport {
     }
   }
 
-
   static void setCookies(HttpServerRequest req) {
     String cookies = req.getHeader("Cookie");
     String jsessionID = "dummy";
