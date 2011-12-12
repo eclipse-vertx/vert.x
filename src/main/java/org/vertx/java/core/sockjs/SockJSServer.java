@@ -43,7 +43,7 @@ public class SockJSServer {
     VertxInternal.instance.go(new Runnable() {
       public void run() {
         HttpServer httpServer = new HttpServer();
-        new SockJSServer(httpServer, null);
+        new SockJSServer(httpServer, null, -1, true, -1, -1);
         httpServer.listen(8080);
       }
     });
@@ -123,7 +123,7 @@ public class SockJSServer {
     // Transports
 
     if (enabledTransports.contains(Transport.XHR)) {
-      new XHRTransport(sessions).init(rm, basePath, sockHandler);
+      new XhrTransport(sessions).init(rm, basePath, sockHandler);
     }
     if (enabledTransports.contains(Transport.EVENT_SOURCE)) {
       new EventSourceTransport(sessions).init(rm, basePath, sockHandler);
@@ -132,7 +132,7 @@ public class SockJSServer {
       new HtmlFileTransport(sessions).init(rm, basePath, sockHandler);
     }
     if (enabledTransports.contains(Transport.JSON_P)) {
-      new JSONPTransport(sessions).init(rm, basePath, sockHandler);
+      new JsonPTransport(sessions).init(rm, basePath, sockHandler);
     }
     if (enabledTransports.contains(Transport.WEBSOCKETS)) {
       new WebSocketTransport(sessions).init(wsMatcher, rm, basePath, sockHandler);

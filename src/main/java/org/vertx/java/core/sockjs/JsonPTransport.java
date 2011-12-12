@@ -3,7 +3,6 @@ package org.vertx.java.core.sockjs;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
 
@@ -14,11 +13,11 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JSONPTransport extends BaseTransport {
+public class JsonPTransport extends BaseTransport {
 
-  private static final Logger log = Logger.getLogger(JSONPTransport.class);
+  private static final Logger log = Logger.getLogger(JsonPTransport.class);
 
-  JSONPTransport(Map<String, Session> sessions) {
+  JsonPTransport(Map<String, Session> sessions) {
     super(sessions);
   }
 
@@ -27,43 +26,24 @@ public class JSONPTransport extends BaseTransport {
 
     rm.getWithRegEx(jsonpRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        String cbParam = req.getParams().get("callback");
-        if (cbParam == null) {
-          cbParam = req.getParams().get("c");
-          if (cbParam == null) {
+
+        String callback = req.getParams().get("callback");
+        if (callback == null) {
+          callback = req.getParams().get("c");
+          if (callback == null) {
             req.response.statusCode = 500;
             req.response.end("\"callback\" parameter required\n");
             return;
           }
         }
+
         String sessionID = req.getParams().get("param0");
         Session session = sessions.get(sessionID);
         if (session == null) {
-          req.response.setChunked(true);
-
-          session = new Session();
+          session = new Session(sockHandler);
           sessions.put(sessionID, session);
-          sockHandler.handle(session);
-          req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
-          req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-          setCookies(req);
-          req.response.write(cbParam + "(\"o\");\r\n");
-        } else {
-          req.response.setChunked(true);
-          if (session.tcConn != null) {
-            //Can't have more than one request waiting
-            req.response.end("c[2010,\"Another connection still open\"]\n");
-          } else {
-            if (!session.closed) {
-              session.tcConn = new JSONPTcConn(req.response, cbParam);
-              if (!session.messages.isEmpty()) {
-                session.writePendingMessagesToPollResponse();
-              }
-            } else {
-              req.response.end("c[3000,\"Go away!\"]\n");
-            }
-          }
         }
+        session.register(new JsonPListener(req, session, callback));
       }
     });
 
@@ -122,19 +102,11 @@ public class JSONPTransport extends BaseTransport {
         //Sock-JS client will only ever send Strings in a JSON array so we can do some cheap parsing
         //without having to use a JSON lib
 
-        //TODO can be optimised
-        if (!(body.startsWith("[\"") && body.endsWith("\"]"))) {
-          //Invalid
-          req.response.statusCode = 500;
-          req.response.end("Broken JSON encoding.");
+        if (!checkJSON(body, req.response)) {
           return;
         }
 
-        String[] split = body.split("\"");
-        String[] parts = new String[(split.length - 1) / 2];
-        for (int i = 1; i < split.length - 1; i += 2) {
-          parts[(i - 1) / 2] = split[i];
-        }
+        String[] parts = parseMessageString(body);
 
         setCookies(req);
         req.response.end("ok");
@@ -144,35 +116,42 @@ public class JSONPTransport extends BaseTransport {
     });
   }
 
-  class JSONPTcConn implements TransportConnection {
+  private class JsonPListener implements TransportListener {
 
-    final HttpServerResponse resp;
+    final HttpServerRequest req;
+    final Session session;
     final String callback;
+    boolean headersWritten;
 
-    JSONPTcConn(HttpServerResponse resp, String callback) {
-      this.resp = resp;
+    JsonPListener(HttpServerRequest req, Session session, String callback) {
+      this.req = req;
+      this.session = session;
       this.callback = callback;
     }
 
-    public void write(Session session) {
-      StringBuffer sb = new StringBuffer();
-      sb.append(callback).append("(\"a[");
-      int count = 0;
-      int size = session.messages.size();
-      for (String msg : session.messages) {
-        sb.append("\\\"").append(msg).append("\\\"");
-        if (++count != size) {
-          sb.append(',');
-        }
+    public void sendFrame(StringBuffer payload) {
+
+      if (!headersWritten) {
+        req.response.setChunked(true);
+        req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
+        req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        setCookies(req);
+        headersWritten = true;
       }
-      sb.append("]\");\r\n");
+
+      String sp = payload.toString();
+      sp = sp.replace("\"", "\\\"");
+      StringBuffer sb = new StringBuffer();
+      sb.append(callback).append("(\"");
+      sb.append(sp);
+      sb.append("\");\r\n");
 
       //End the response and close the HTTP connection
 
-      resp.write(sb.toString());
+      req.response.write(sb.toString());
 
-      resp.end(true);
-      session.tcConn = null;
+      req.response.end(true);
+      session.resetListener();
     }
   }
 }

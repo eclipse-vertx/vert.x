@@ -3,25 +3,21 @@ package org.vertx.java.core.sockjs;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class XHRTransport extends BaseTransport {
+class XhrTransport extends BaseTransport {
 
   //TODO xhr timeout after seconds if not have "receiving connection"
 
   //TODO xhr streaming - close request if more than 128K sent
 
-
-  private static final Logger log = Logger.getLogger(XHRTransport.class);
+  private static final Logger log = Logger.getLogger(XhrTransport.class);
 
   private static final Buffer H_BLOCK;
 
@@ -34,7 +30,7 @@ class XHRTransport extends BaseTransport {
     H_BLOCK = Buffer.create(bytes);
   }
 
-  XHRTransport(Map<String, Session> sessions) {
+  XhrTransport(Map<String, Session> sessions) {
     super(sessions);
   }
 
@@ -61,44 +57,11 @@ class XHRTransport extends BaseTransport {
         String sessionID = req.getParams().get("param0");
         Session session = sessions.get(sessionID);
         if (session == null) {
-          session = new Session();
+          session = new Session(sockHandler);
           sessions.put(sessionID, session);
-          sockHandler.handle(session);
-          req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
-          setCookies(req);
-          setCORS(req.response, "*");
-          req.response.setChunked(true);
-          if (streaming) {
-            req.response.write(H_BLOCK);
-            req.response.write("o\n");
-            session.tcConn = new XHRStreamingTCConn(req.response);
-            if (session.closed) {
-              req.response.end("c[3000,\"Go away!\"]\n");
-            }
-          } else {
-            req.response.end("o\n");
-          }
-        } else {
-          req.response.setChunked(true);
-          if (session.tcConn != null) {
-            //Can't have more than one request waiting
-            if (streaming) {
-              req.response.write(H_BLOCK);
-              req.response.end("c[3000,\"Go away!\"]\n");
-            } else {
-              req.response.end("c[2010,\"Another connection still open\"]\n");
-            }
-          } else {
-            if (!session.closed) {
-              session.tcConn = streaming? new XHRStreamingTCConn(req.response) : new XHRPollingTCConn(req.response);
-              if (!session.messages.isEmpty()) {
-                session.writePendingMessagesToPollResponse();
-              }
-            } else {
-              req.response.end("c[3000,\"Go away!\"]\n");
-            }
-          }
         }
+        log.info("Registering xhr for session " + sessionID);
+        session.register(streaming? new XhrStreamingListener(req, session) : new XhrPollingListener(req, session));
       }
     }
 
@@ -132,7 +95,6 @@ class XHRTransport extends BaseTransport {
       public void handle(Buffer buff) {
         String msgs = buff.toString();
 
-
         if (msgs.equals("")) {
           req.response.statusCode = 500;
           req.response.end("Payload expected.");
@@ -140,10 +102,7 @@ class XHRTransport extends BaseTransport {
         }
 
         //TODO can be optimised
-        if (!(msgs.startsWith("[\"") && msgs.endsWith("\"]"))) {
-          //Invalid
-          req.response.statusCode = 500;
-          req.response.end("Broken JSON encoding.");
+        if (!checkJSON(msgs, req.response)) {
           return;
         }
 
@@ -160,53 +119,54 @@ class XHRTransport extends BaseTransport {
     });
   }
 
-  abstract class BaseXHRConn implements TransportConnection {
-    final HttpServerResponse resp;
+  private abstract class BaseXhrListener implements TransportListener {
+    final HttpServerRequest req;
+    final Session session;
 
-    BaseXHRConn(HttpServerResponse resp) {
-      this.resp = resp;
+    boolean headersWritten;
+
+    BaseXhrListener(HttpServerRequest req, Session session) {
+      this.req = req;
+      this.session = session;
     }
 
-    StringBuffer writeMessages(Session session) {
-      StringBuffer sb = new StringBuffer();
-      sb.append("a[");
-      int count = 0;
-      int size = session.messages.size();
-      for (String msg : session.messages) {
-        sb.append('"').append(msg).append('"');
-        if (++count != size) {
-          sb.append(',');
-        }
+    public void sendFrame(StringBuffer payload) {
+      if (!headersWritten) {
+        req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
+        setCookies(req);
+        setCORS(req.response, "*");
+        req.response.setChunked(true);
+        headersWritten = true;
       }
-      sb.append("]");
-      sb.append("\n");
-      return sb;
     }
   }
 
-  class XHRPollingTCConn extends BaseXHRConn {
+  private class XhrPollingListener extends BaseXhrListener {
 
-    XHRPollingTCConn(HttpServerResponse resp) {
-      super(resp);
+    XhrPollingListener(HttpServerRequest req, Session session) {
+      super(req, session);
     }
 
-    public void write(Session session) {
-      StringBuffer sb = writeMessages(session);
-      //End the response and close the HTTP connection
-      resp.end(sb.toString(), true);
-      session.tcConn = null;
+    public void sendFrame(StringBuffer payload) {
+      super.sendFrame(payload);
+      req.response.end(payload.append("\n").toString(), true);
+      session.resetListener();
     }
   }
 
-  class XHRStreamingTCConn extends BaseXHRConn {
+  private class XhrStreamingListener extends BaseXhrListener {
 
-    XHRStreamingTCConn(HttpServerResponse resp) {
-      super(resp);
+    XhrStreamingListener(HttpServerRequest req, Session session) {
+      super(req, session);
     }
 
-    public void write(Session session) {
-      StringBuffer sb = writeMessages(session);
-      resp.write(sb.toString());
+    public void sendFrame(StringBuffer payload) {
+      boolean hr = headersWritten;
+      super.sendFrame(payload);
+      if (!hr) {
+        req.response.write(H_BLOCK);
+      }
+      req.response.write(payload.append("\n").toString());
     }
   }
 }
