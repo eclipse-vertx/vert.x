@@ -3,7 +3,6 @@ package org.vertx.java.core.sockjs;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketMatcher;
@@ -28,30 +27,25 @@ class WebSocketTransport extends BaseTransport {
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
-        final Session newSession = new Session();
-        match.ws.writeTextFrame("o");
-        sockHandler.handle(newSession);
-        if (!newSession.closed) {
-          match.ws.dataHandler(new Handler<Buffer>() {
-            public void handle(Buffer data) {
-              if (!newSession.closed) {
-                String msgs = data.toString();
-                if (msgs.equals("")) {
-                  //Ignore empty frames
-                } else if (msgs.startsWith("[\"") && msgs.endsWith("\"]")) {
-                  newSession.handleMessages(parseMessageString(msgs));
-                } else {
-                  //Invalid JSON - we close the connection
-                  match.ws.close();
-                }
+
+        final Session session = new Session(sockHandler);
+        session.register(new WebSocketListener(match.ws, session));
+
+        match.ws.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            if (!session.isClosed()) {
+              String msgs = data.toString();
+              if (msgs.equals("")) {
+                //Ignore empty frames
+              } else if (msgs.startsWith("[\"") && msgs.endsWith("\"]")) {
+                session.handleMessages(parseMessageString(msgs));
+              } else {
+                //Invalid JSON - we close the connection
+                match.ws.close();
               }
             }
-          });
-          newSession.tcConn = new WebSocketTcConn(match.ws);
-        } else {
-          match.ws.writeTextFrame("c[3000,\"Go away!\"]");
-          //TODO should we close the actual websocket??
-        }
+          }
+        });
       }
     });
 
@@ -70,30 +64,18 @@ class WebSocketTransport extends BaseTransport {
     });
   }
 
-  class WebSocketTcConn implements TransportConnection {
+  private class WebSocketListener implements TransportListener {
 
     final WebSocket ws;
+    final Session session;
 
-    WebSocketTcConn(WebSocket ws) {
+    WebSocketListener(WebSocket ws, Session session) {
       this.ws = ws;
+      this.session = session;
     }
 
-    public void write(Session session) {
-      if (session.closed) {
-        throw new IllegalStateException("Session is closed");
-      }
-      StringBuffer sb = new StringBuffer();
-      sb.append("a[");
-      int count = 0;
-      int size = session.messages.size();
-      for (String msg : session.messages) {
-        sb.append("\"").append(msg).append("\"");
-        if (++count != size) {
-          sb.append(',');
-        }
-      }
-      sb.append("]");
-      ws.writeTextFrame(sb.toString());
+    public void sendFrame(StringBuffer payload) {
+      ws.writeTextFrame(payload.toString());
     }
   }
 }

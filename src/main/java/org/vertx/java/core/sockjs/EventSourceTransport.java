@@ -2,7 +2,6 @@ package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
 
@@ -27,46 +26,39 @@ class EventSourceTransport extends BaseTransport {
         String sessionID = req.getParams().get("param0");
         Session session = sessions.get(sessionID);
         if (session == null) {
-          session = new Session();
+          session = new Session(sockHandler);
           sessions.put(sessionID, session);
-          sockHandler.handle(session);
-          req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
-          req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-          setCookies(req);
-          req.response.setChunked(true);
-          req.response.write("\r\n");;
-          req.response.write("data: o\r\n\r\n");
-          session.tcConn = new EventSourceTcConn(req.response);
-        } else {
-          //TODO??
         }
+        session.register(new EventSourceListener(req));
       }
     });
   }
 
-  class EventSourceTcConn implements TransportConnection {
+  private class EventSourceListener implements TransportListener {
 
-    final HttpServerResponse resp;
+    final HttpServerRequest req;
 
-    EventSourceTcConn(HttpServerResponse resp) {
-      this.resp = resp;
+    boolean headersWritten;
+
+    EventSourceListener(HttpServerRequest req) {
+      this.req = req;
     }
 
-    public void write(Session session) {
+    public void sendFrame(StringBuffer payload) {
+      if (!headersWritten) {
+        req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
+        req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        setCookies(req);
+        req.response.setChunked(true);
+        req.response.write("\r\n");
+        headersWritten = true;
+      }
       StringBuffer sb = new StringBuffer();
       sb.append("data: ");
-      sb.append("a[");
-      int count = 0;
-      int size = session.messages.size();
-      for (String msg : session.messages) {
-        sb.append('"').append(msg).append('"');
-        if (++count != size) {
-          sb.append(',');
-        }
-      }
-      sb.append("]");
+      sb.append(payload);
       sb.append("\r\n\r\n");
-      resp.write(sb.toString());
+      req.response.write(sb.toString());
     }
+
   }
 }

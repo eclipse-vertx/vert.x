@@ -33,6 +33,17 @@ public class BaseTransport {
     return parts;
   }
 
+  protected boolean checkJSON(String str, HttpServerResponse response) {
+    if (!(str.startsWith("[\"") && str.endsWith("\"]"))) {
+      //Invalid
+      response.statusCode = 500;
+      response.end("Broken JSON encoding.");
+      return false;
+    } else {
+      return true;
+    }
+  }
+
 
   static void setCookies(HttpServerRequest req) {
     String cookies = req.getHeader("Cookie");

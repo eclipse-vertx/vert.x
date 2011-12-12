@@ -2,7 +2,6 @@ package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
 
@@ -51,59 +50,57 @@ class HtmlFileTransport extends BaseTransport {
 
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+
+        String callback = req.getParams().get("callback");
+        if (callback == null) {
+          callback = req.getParams().get("c");
+          if (callback == null) {
+            req.response.statusCode = 500;
+            req.response.end("\"callback\" parameter required\n");
+            return;
+          }
+        }
+
         String sessionID = req.getParams().get("param0");
         Session session = sessions.get(sessionID);
         if (session == null) {
-          req.response.setChunked(true);
-          String cbParam = req.getParams().get("callback");
-          if (cbParam == null) {
-            cbParam = req.getParams().get("c");
-            if (cbParam == null) {
-              req.response.statusCode = 500;
-              req.response.end("\"callback\" parameter required\n");
-              return;
-            }
-          }
-          String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", cbParam);
-          session = new Session();
+          session = new Session(sockHandler);
           sessions.put(sessionID, session);
-          sockHandler.handle(session);
-          req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
-          req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-          setCookies(req);
-          req.response.write(htmlFile);
-          req.response.write("<script>\np(\"o\");\n</script>\r\n");
-          session.tcConn = new HtmlFileTcConn(req.response);
-        } else {
-          //TODO?
+
         }
+        session.register(new HtmlFileListener(req, callback));
       }
     });
   }
 
-  class HtmlFileTcConn implements TransportConnection {
+  private class HtmlFileListener implements TransportListener {
 
-    final HttpServerResponse resp;
+    final HttpServerRequest req;
+    final String callback;
+    boolean headersWritten;
 
-    HtmlFileTcConn(HttpServerResponse resp) {
-      this.resp = resp;
+    HtmlFileListener(HttpServerRequest req, String callback) {
+      this.req = req;
+      this.callback = callback;
     }
 
-    public void write(Session session) {
+    public void sendFrame(StringBuffer payload) {
+      if (!headersWritten) {
+        String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
+        req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
+        req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        req.response.setChunked(true);
+        setCookies(req);
+        req.response.write(htmlFile);
+        headersWritten = true;
+      }
+      String sp = payload.toString();
+      sp = sp.replace("\"", "\\\"");
       StringBuffer sb = new StringBuffer();
       sb.append("<script>\np(\"");
-      sb.append("a[");
-      int count = 0;
-      int size = session.messages.size();
-      for (String msg : session.messages) {
-        sb.append("\\\"").append(msg).append("\\\"");
-        if (++count != size) {
-          sb.append(',');
-        }
-      }
-      sb.append("]");
+      sb.append(sp);
       sb.append("\");\n</script>\r\n");
-      resp.write(sb.toString());
+      req.response.write(sb.toString());
     }
   }
 }
