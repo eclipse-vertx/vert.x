@@ -1,4 +1,3 @@
-
 apply plugin: 'java'
 
 version = '0.1'
@@ -10,25 +9,20 @@ dependencies {
 }
 
 sourceSets {
-  java {
-    resources.srcDir file('src/main/java')
+  main {
+    java {
+      resources.srcDirs = [file('src/main/java')]
+    }
   }
+
   test {
-    java.srcDirs file('src/tests/java'), file('src/tests/testapps/java')
-    resources.srcDir file('src/tests/java')
+    java.srcDirs = [file('src/tests/java'), file('src/tests/testapps/java')]
+    resources.srcDirs = [file('src/tests/java')]
   }
 }
 
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
-
-compileJava {
-//  options.fork executable: "/Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/bin/javac"
-}
-
-compileTestJava {
-//  options.fork executable: "/Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/bin/javac"
-}
 
 jar {
   version = ''
@@ -36,7 +30,6 @@ jar {
 
 test {
   useTestNG()
-//  executable = '/Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/bin/java'
   include "**/*Test.class"
   exclude "**/redis/*.class"
   systemProperty "java.util.logging.config.file", "conf/logging.properties"
