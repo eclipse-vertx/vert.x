@@ -15,11 +15,13 @@ import java.util.Map;
 class BaseTransport {
 
   protected final Map<String, Session> sessions;
+  protected AppConfig config;
 
   protected static final String COMMON_PATH_ELEMENT_RE = "\\/[^\\/\\.]+\\/([^\\/\\.]+)\\/";
 
-  public BaseTransport(Map<String, Session> sessions) {
+  public BaseTransport(Map<String, Session> sessions, AppConfig config) {
     this.sessions = sessions;
+    this.config = config;
   }
 
   protected String[] parseMessageString(String msgs) {
@@ -59,25 +61,29 @@ class BaseTransport {
     }
   }
 
-  static void setCookies(HttpServerRequest req) {
+  static void setJSESSIONID(AppConfig config, HttpServerRequest req) {
     String cookies = req.getHeader("Cookie");
-    String jsessionID = "dummy";
-    //Preserve existing JSESSIONID, if any
-    if (cookies != null) {
-      String[] parts;
-      if (cookies.contains(";")) {
-        parts = cookies.split(";");
-      } else {
-        parts = new String[] {cookies};
-      }
-      for (String part: parts) {
-        if (part.startsWith("JSESSIONID")) {
-          jsessionID = part.substring(11);
-          break;
+    if (config.isInsertJSESSIONID()) {
+      //Preserve existing JSESSIONID, if any
+      if (cookies != null) {
+        String[] parts;
+        if (cookies.contains(";")) {
+          parts = cookies.split(";");
+        } else {
+          parts = new String[] {cookies};
+        }
+        for (String part: parts) {
+          if (part.startsWith("JSESSIONID")) {
+            cookies = part + "; path=/";
+            break;
+          }
         }
       }
+      if (cookies == null) {
+        cookies = "JSESSIONID=dummy; path=/";
+      }
+      req.response.putHeader("Set-Cookie", cookies);
     }
-    req.response.putHeader("Set-Cookie", "JSESSIONID=" + jsessionID + ";path=/");
   }
 
   static void setCORS(HttpServerResponse resp, String origin) {
@@ -85,7 +91,7 @@ class BaseTransport {
     resp.putHeader("Access-Control-Allow-Credentials", "true");
   }
 
-  static Handler<HttpServerRequest> createCORSOptionsHandler(final String methods) {
+  static Handler<HttpServerRequest> createCORSOptionsHandler(final AppConfig config, final String methods) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.putHeader("Cache-Control", "public,max-age=31536000");
@@ -100,7 +106,7 @@ class BaseTransport {
           origin = "*";
         }
         setCORS(req.response, origin);
-        setCookies(req);
+        setJSESSIONID(config, req);
         req.response.statusCode = 204;
         req.response.end();
       }

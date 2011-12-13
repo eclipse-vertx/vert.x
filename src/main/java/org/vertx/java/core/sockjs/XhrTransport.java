@@ -13,8 +13,6 @@ import java.util.Map;
  */
 class XhrTransport extends BaseTransport {
 
-  //TODO xhr timeout after seconds if not have "receiving connection"
-
   private static final Logger log = Logger.getLogger(XhrTransport.class);
 
   private static final Buffer H_BLOCK;
@@ -28,18 +26,16 @@ class XhrTransport extends BaseTransport {
     H_BLOCK = Buffer.create(bytes);
   }
 
-  XhrTransport(Map<String, Session> sessions) {
-    super(sessions);
-  }
-
-  void init(RouteMatcher rm, String basePath, ServerConfig config,
+  XhrTransport(RouteMatcher rm, String basePath, final Map<String, Session> sessions, final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {
+
+    super(sessions, config);
 
     String xhrBase = basePath + COMMON_PATH_ELEMENT_RE;
     String xhrRE = xhrBase + "xhr";
     String xhrStreamRE = xhrBase + "xhr_streaming";
 
-    Handler<HttpServerRequest> xhrOptionsHandler = createCORSOptionsHandler("OPTIONS, POST");
+    Handler<HttpServerRequest> xhrOptionsHandler = createCORSOptionsHandler(config, "OPTIONS, POST");
 
     rm.optionsWithRegEx(xhrRE, xhrOptionsHandler);
     rm.optionsWithRegEx(xhrStreamRE, xhrOptionsHandler);
@@ -53,13 +49,16 @@ class XhrTransport extends BaseTransport {
 
     rm.postWithRegEx(xhrSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+
         String sessionID = req.getParams().get("param0");
+
         final Session session = sessions.get(sessionID);
+
         if (session != null) {
           handleSend(req, session);
         } else {
           req.response.statusCode = 404;
-          setCookies(req);
+          setJSESSIONID(config, req);
           req.response.end();
         }
       }
@@ -67,18 +66,18 @@ class XhrTransport extends BaseTransport {
   }
 
   private void registerHandler(RouteMatcher rm, final Handler<SockJSSocket> sockHandler, String re,
-                               final boolean streaming, final ServerConfig config) {
+                               final boolean streaming, final AppConfig config) {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         String sessionID = req.getParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
+
         session.register(streaming? new XhrStreamingListener(config.getMaxBytesStreaming(), req, session) : new XhrPollingListener(req, session));
       }
     });
   }
 
   private void handleSend(final HttpServerRequest req, final Session session) {
-    req.response.setChunked(true);
 
     req.bodyHandler(new Handler<Buffer>() {
       public void handle(Buffer buff) {
@@ -98,7 +97,7 @@ class XhrTransport extends BaseTransport {
         String[] parts = parseMessageString(msgs);
 
         req.response.putHeader("Content-Type", "text/plain");
-        setCookies(req);
+        setJSESSIONID(config, req);
         setCORS(req.response, "*");
         req.response.statusCode = 204;
         req.response.end();
@@ -108,7 +107,7 @@ class XhrTransport extends BaseTransport {
     });
   }
 
-  private static abstract class BaseXhrListener implements TransportListener {
+  private abstract class BaseXhrListener implements TransportListener {
     final HttpServerRequest req;
     final Session session;
 
@@ -122,7 +121,7 @@ class XhrTransport extends BaseTransport {
     public void sendFrame(String payload) {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
-        setCookies(req);
+        setJSESSIONID(config, req);
         setCORS(req.response, "*");
         req.response.setChunked(true);
         headersWritten = true;
@@ -130,7 +129,7 @@ class XhrTransport extends BaseTransport {
     }
   }
 
-  private static class XhrPollingListener extends BaseXhrListener {
+  private class XhrPollingListener extends BaseXhrListener {
 
     XhrPollingListener(HttpServerRequest req, Session session) {
       super(req, session);
@@ -143,7 +142,7 @@ class XhrTransport extends BaseTransport {
     }
   }
 
-  private static class XhrStreamingListener extends BaseXhrListener {
+  private class XhrStreamingListener extends BaseXhrListener {
 
     int bytesSent;
     int maxBytesStreaming;

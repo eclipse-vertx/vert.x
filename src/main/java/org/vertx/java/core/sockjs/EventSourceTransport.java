@@ -14,12 +14,10 @@ class EventSourceTransport extends BaseTransport {
 
   private static final Logger log = Logger.getLogger(EventSourceTransport.class);
 
-  EventSourceTransport(Map<String, Session> sessions) {
-    super(sessions);
-  }
-
-  void init(RouteMatcher rm, String basePath, final ServerConfig config,
+  EventSourceTransport(RouteMatcher rm, String basePath, Map<String, Session> sessions, final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {
+    super(sessions, config);
+
     String eventSourceRE = basePath + COMMON_PATH_ELEMENT_RE + "eventsource";
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
@@ -31,7 +29,7 @@ class EventSourceTransport extends BaseTransport {
     });
   }
 
-  private static class EventSourceListener implements TransportListener {
+  private class EventSourceListener implements TransportListener {
 
     final HttpServerRequest req;
 
@@ -45,12 +43,12 @@ class EventSourceTransport extends BaseTransport {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
         req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-        setCookies(req);
+        setJSESSIONID(config, req);
         req.response.setChunked(true);
         req.response.write("\r\n");
         headersWritten = true;
       }
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       sb.append("data: ");
       sb.append(payload);
       sb.append("\r\n\r\n");

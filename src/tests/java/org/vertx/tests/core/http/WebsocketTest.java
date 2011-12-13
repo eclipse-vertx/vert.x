@@ -76,6 +76,25 @@ public class WebsocketTest extends TestBase {
     throwAssertions();
   }
 
+  @Test
+  public void testWriteFromConnectHybi00() throws Exception {
+    testWriteFromConnectHandler(WebSocketVersion.HYBI_00);
+    throwAssertions();
+  }
+
+  @Test
+  public void testWriteFromConnectHybi08() throws Exception {
+    testWriteFromConnectHandler(WebSocketVersion.HYBI_08);
+    throwAssertions();
+  }
+
+  @Test
+  public void testWriteFromConnectHybi17() throws Exception {
+    testWriteFromConnectHandler(WebSocketVersion.HYBI_17);
+    throwAssertions();
+  }
+
+
   private void testWS(final boolean binary, final WebSocketVersion version) throws Exception {
     final String host = "localhost";
     final boolean keepAlive = true;
@@ -138,6 +157,70 @@ public class WebsocketTest extends TestBase {
                 sent.appendBuffer(Buffer.create(str, "UTF-8"));
               }
             }
+          }
+        });
+      }
+    });
+
+    azzert(latch.await(5, TimeUnit.SECONDS));
+    throwAssertions();
+  }
+
+  private void testWriteFromConnectHandler(final WebSocketVersion version) throws Exception {
+    final String host = "localhost";
+    final boolean keepAlive = true;
+    final String path = "/some/path";
+    final int port = 8181;
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    final Buffer buff = Buffer.create(Utils.randomAlphaString(10));
+
+    log.info("buffer is:" + buff);
+
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
+
+        final HttpClient client = new HttpClient().setPort(port).setHost(host).setKeepAlive(keepAlive).setMaxPoolSize(5);
+
+        final HttpServer server = new HttpServer().websocketHandler(new WebSocketHandler() {
+          public void handle(final WebSocket ws) {
+
+//            Vertx.instance.setTimer(100, new Handler<Long>() {
+//              public void handle(Long id) {
+            ws.writeBinaryFrame(buff);
+//              }
+//            });
+          }
+
+          public boolean accept(String p) {
+            azzert(path.equals(p));
+            return true;
+          }
+        }).listen(port, host);
+
+        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
+            final Buffer received = Buffer.create(0);
+            ws.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
+                log.info("received buff: " + data.length());
+                received.appendBuffer(data);
+                if (received.length() == buff.length()) {
+                  azzert(Utils.buffersEqual(buff, received));
+                  log.info("buffers equal");
+                  ws.close();
+                  server.close(new SimpleHandler() {
+                    public void handle() {
+                      client.close();
+                      latch.countDown();
+                    }
+                  });
+                }
+              }
+            });
+
+            //ws.writeBinaryFrame(buff);
           }
         });
       }
