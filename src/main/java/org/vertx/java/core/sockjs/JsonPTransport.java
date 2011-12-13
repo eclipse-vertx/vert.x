@@ -17,12 +17,10 @@ class JsonPTransport extends BaseTransport {
 
   private static final Logger log = Logger.getLogger(JsonPTransport.class);
 
-  JsonPTransport(Map<String, Session> sessions) {
-    super(sessions);
-  }
-
-  void init(RouteMatcher rm, String basePath, final ServerConfig config,
+  JsonPTransport(RouteMatcher rm, String basePath, final Map<String, Session> sessions, final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {
+    super(sessions, config);
+
     String jsonpRE = basePath + COMMON_PATH_ELEMENT_RE + "jsonp";
 
     rm.getWithRegEx(jsonpRE, new Handler<HttpServerRequest>() {
@@ -54,7 +52,7 @@ class JsonPTransport extends BaseTransport {
           handleSend(req, session);
         } else {
           req.response.statusCode = 404;
-          setCookies(req);
+          setJSESSIONID(config, req);
           req.response.end();
         }
       }
@@ -62,8 +60,6 @@ class JsonPTransport extends BaseTransport {
   }
 
   private void handleSend(final HttpServerRequest req, final Session session) {
-    req.response.setChunked(true);
-
     req.bodyHandler(new Handler<Buffer>() {
 
       public void handle(Buffer buff) {
@@ -105,7 +101,7 @@ class JsonPTransport extends BaseTransport {
 
         String[] parts = parseMessageString(body);
 
-        setCookies(req);
+        setJSESSIONID(config, req);
         req.response.end("ok");
 
         session.handleMessages(parts);
@@ -113,7 +109,7 @@ class JsonPTransport extends BaseTransport {
     });
   }
 
-  private static class JsonPListener implements TransportListener {
+  private class JsonPListener implements TransportListener {
 
     final HttpServerRequest req;
     final Session session;
@@ -132,12 +128,12 @@ class JsonPTransport extends BaseTransport {
         req.response.setChunked(true);
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
         req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-        setCookies(req);
+        setJSESSIONID(config, req);
         headersWritten = true;
       }
 
       payload = payload.replace("\"", "\\\"");
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       sb.append(callback).append("(\"");
       sb.append(payload);
       sb.append("\");\r\n");

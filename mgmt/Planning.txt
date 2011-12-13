@@ -94,6 +94,15 @@ need any synchronization.
 24) Look at Redis cluster support in client
 25) Core JSON support
 27) The way event bus is started and shutdown is pretty ugly at the moment
+28) Cleanup package config and core vs optional dependencies
+29) Event bus should be paritioned into "application groups" for isolation.
+30) DHT
+31) JSON API for Event bus
+32) Event bus: change acknowledge to reply and use same mechanism for sending messages, cache sender in local cache and
+lookup there first
+33) Add vertx-run script for starting vert.x app without starting server first
+34) Think about combining distributed event bus and in vm event bus (register_handler/send_to_handler)
+35) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
 
 
 

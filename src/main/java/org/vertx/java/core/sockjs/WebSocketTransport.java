@@ -17,12 +17,10 @@ class WebSocketTransport extends BaseTransport {
 
   private static final Logger log = Logger.getLogger(WebSocketTransport.class);
 
-  WebSocketTransport(Map<String, Session> sessions) {
-    super(sessions);
-  }
-
-  void init(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, final ServerConfig config,
+  WebSocketTransport(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, Map<String, Session> sessions,
+                     final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {
+    super(sessions, config);
     String wsRE = basePath + COMMON_PATH_ELEMENT_RE + "websocket";
 
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
@@ -52,6 +50,7 @@ class WebSocketTransport extends BaseTransport {
 
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
+        log.info("sending back 400");
         request.response.statusCode = 400;
         request.response.end("Can \"Upgrade\" only to \"WebSocket\".");
       }
@@ -75,7 +74,7 @@ class WebSocketTransport extends BaseTransport {
       this.session = session;
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(final String payload) {
       ws.writeTextFrame(payload);
     }
   }

@@ -75,7 +75,8 @@ public class Handshake08 implements Handshake {
   }
 
   public HttpResponse generateResponse(HttpRequest request) throws Exception {
-    HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
+    HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
+        new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
     response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
 
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");

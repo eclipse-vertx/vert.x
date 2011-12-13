@@ -41,12 +41,9 @@ class HtmlFileTransport extends BaseTransport {
     HTML_FILE_TEMPLATE = sb.toString();
   }
 
-  HtmlFileTransport(Map<String, Session> sessions) {
-    super(sessions);
-  }
-
-  void init(RouteMatcher rm, String basePath, final ServerConfig config,
+  HtmlFileTransport(RouteMatcher rm, String basePath, Map<String, Session> sessions, final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {
+    super(sessions, config);
     String htmlFileRE = basePath + COMMON_PATH_ELEMENT_RE + "htmlfile";
 
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
@@ -69,7 +66,7 @@ class HtmlFileTransport extends BaseTransport {
     });
   }
 
-  private static class HtmlFileListener implements TransportListener {
+  private class HtmlFileListener implements TransportListener {
 
     final HttpServerRequest req;
     final String callback;
@@ -86,12 +83,12 @@ class HtmlFileTransport extends BaseTransport {
         req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
         req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         req.response.setChunked(true);
-        setCookies(req);
+        setJSESSIONID(config, req);
         req.response.write(htmlFile);
         headersWritten = true;
       }
       payload = payload.replace("\"", "\\\"");
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       sb.append("<script>\np(\"");
       sb.append(payload);
       sb.append("\");\n</script>\r\n");

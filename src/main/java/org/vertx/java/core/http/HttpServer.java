@@ -131,6 +131,14 @@ public class HttpServer extends NetServerBase {
   }
 
   /**
+   * Get the request handler
+   * @return The request handler
+   */
+  public Handler<HttpServerRequest> requestHandler() {
+    return requestHandler;
+  }
+
+  /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
    * new {@link WebSocket} instance will be created and passed to the handler.
    *
@@ -140,6 +148,14 @@ public class HttpServer extends NetServerBase {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
+  }
+
+  /**
+   * Get the websocket handler
+   * @return The websocket handler
+   */
+  public WebSocketHandler websocketHandler() {
+    return wsHandler;
   }
 
   /**
@@ -496,6 +512,7 @@ public class HttpServer extends NetServerBase {
               p.replace("decoder", "wsdecoder", shake.getDecoder());
               ch.write(resp);
               p.replace("encoder", "wsencoder", shake.getEncoder(true));
+
               WebSocket ws = new WebSocket(conn);
               conn.handleWebsocketConnect(ws);
               return;

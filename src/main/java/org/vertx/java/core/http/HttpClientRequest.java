@@ -496,6 +496,7 @@ public class HttpClientRequest implements WriteStream {
   }
 
   private HttpClientRequest write(ChannelBuffer buff, Handler<Void> doneHandler) {
+
     written += buff.readableBytes();
 
     if (!raw && !chunked && written > contentLength) {
@@ -505,11 +506,11 @@ public class HttpClientRequest implements WriteStream {
     }
 
     if (conn == null) {
-      connect();
       if (pendingChunks == null) {
         pendingChunks = new LinkedList<>();
       }
       pendingChunks.add(new PendingChunk(buff, doneHandler));
+      connect();
     } else {
       if (!headWritten) {
         writeHead();

@@ -35,7 +35,6 @@ import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.ConnectionPool;
 import org.vertx.java.core.Handler;
@@ -402,7 +401,7 @@ public class HttpClient extends NetClientBase {
             pipeline.addLast("ssl", new SslHandler(engine));
           }
           pipeline.addLast("encoder", new HttpRequestEncoder());
-          pipeline.addLast("decoder", new HttpResponseDecoder());
+          pipeline.addLast("decoder", new SwitchingHttpResponseDecoder());
           pipeline.addLast("handler", new ClientHandler());
           return pipeline;
         }
