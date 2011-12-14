@@ -54,6 +54,8 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, VoidEnum state) throws Exception {
 
+    log.info("ws decoding");
+
     int finOpcode = buffer.readUnsignedByte();
 
     boolean fin = ((finOpcode & 0x80) != 0);

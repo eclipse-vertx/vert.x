@@ -71,7 +71,6 @@ public class Handshake00 implements Handshake {
     req.putHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     req.putHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
     req.putHeader(HttpHeaders.Names.HOST, hostHeader);
-    req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_PROTOCOL, "stomp");
 
     req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, this.challenge.getKey1String());
     req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, this.challenge.getKey2String());

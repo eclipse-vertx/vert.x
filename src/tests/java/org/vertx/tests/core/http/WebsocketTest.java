@@ -174,7 +174,7 @@ public class WebsocketTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    final Buffer buff = Buffer.create(Utils.randomAlphaString(10));
+    final Buffer buff = Buffer.create("AAA");
 
     log.info("buffer is:" + buff);
 
@@ -226,7 +226,7 @@ public class WebsocketTest extends TestBase {
       }
     });
 
-    azzert(latch.await(5, TimeUnit.SECONDS));
+    azzert(latch.await(100000, TimeUnit.SECONDS));
     throwAssertions();
   }
 }

@@ -50,7 +50,6 @@ class WebSocketTransport extends BaseTransport {
 
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        log.info("sending back 400");
         request.response.statusCode = 400;
         request.response.end("Can \"Upgrade\" only to \"WebSocket\".");
       }

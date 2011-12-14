@@ -82,13 +82,8 @@ class ClientConnection extends AbstractConnection {
 
       final ChannelPipeline p = channel.getPipeline();
       SwitchingHttpResponseDecoder decoder = (SwitchingHttpResponseDecoder)p.get("decoder");
-      // This runnable will run immediately after the next response is received
-      decoder.setSwitch(new Runnable() {
-        public void run() {
-          p.replace("decoder", "wsdecoder", shake.getDecoder());
-          p.replace("encoder", "wsencoder", shake.getEncoder(false));
-        }
-      });
+
+      decoder.setSwitch("wsdecoder", shake.getDecoder());
 
       // Create a raw request
       HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
@@ -98,6 +93,7 @@ class ClientConnection extends AbstractConnection {
               public void handle(Future<Void> fut) {
                 if (fut.succeeded()) {
                   //We upgraded ok
+                  p.replace("encoder", "wsencoder", shake.getEncoder(false));
                   ws = new WebSocket(ClientConnection.this);
                   wsConnect.handle(ws);
                 } else {
