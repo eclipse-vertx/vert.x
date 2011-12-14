@@ -128,12 +128,12 @@ public class TimerTest extends TestBase {
         final Thread th = Thread.currentThread();
         final long contextID = Vertx.instance.getContextID();
         final long start = System.nanoTime();
-        final long delay = 100;
+        final long delay = 500;
         Vertx.instance.setTimer(delay, new Handler<Long>() {
           public void handle(Long timerID) {
             long dur = (System.nanoTime() - start) / 1000000;
             azzert(dur >= delay);
-            azzert(dur < delay * 1.25); // 25% margin of error
+            azzert(dur < delay * 1.5); // 50% margin of error
             azzert(th == Thread.currentThread());
             azzert(contextID == Vertx.instance.getContextID());
             endLatch.countDown();

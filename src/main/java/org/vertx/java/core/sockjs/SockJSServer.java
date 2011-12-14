@@ -155,7 +155,6 @@ public class SockJSServer {
     if (enabledTransports.contains(Transport.WEBSOCKETS)) {
       new WebSocketTransport(wsMatcher, rm, prefix, sessions, config, sockHandler);
     }
-
     // Catch all for any other requests on this app
 
     rm.getWithRegEx(prefix + "\\/.+", new Handler<HttpServerRequest>() {
@@ -236,6 +235,7 @@ public class SockJSServer {
   private Handler<HttpServerRequest> createIFrameHandler(final String iframeHTML) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
+
         try {
           String etag = getMD5String(iframeHTML);
           if (etag.equals(req.getHeader("if-none-match"))) {

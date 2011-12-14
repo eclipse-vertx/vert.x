@@ -15,16 +15,16 @@
 require "vertx"
 include Vertx
 
-@server = HttpServer.new.websocket_handler do |param|
-  if param.is_a? String
-    true # Accept the websocket (The string is the uri)
-  else
-    ws = param
-    ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
-  end
-end.request_handler do |req|
-  req.response.send_file("websockets/ws.html") if req.uri == "/"
-end.listen(8080)
+@server = HttpServer.new
+sjs_server = SockJSServer.new(@server)
+
+# The handler for the SockJS app
+sjs_server.install_app({"prefix" => "/testapp"}) { |sock| sock.data_handler{ |buff| sock.write_buffer(buff) } }
+
+# Also serve the index page
+@server.request_handler { |req| req.response.send_file("sockjs/index.html") if req.uri == "/"}
+
+@server.listen(8080)
 
 def vertx_stop
   @server.close

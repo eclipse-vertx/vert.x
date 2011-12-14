@@ -488,7 +488,7 @@ public class HttpServer extends NetServerBase {
             return;
           }
 
-          HandlerHolder<WebSocket> firstHandler = null;
+           HandlerHolder<WebSocket> firstHandler = null;
 
           while (true) {
             HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
