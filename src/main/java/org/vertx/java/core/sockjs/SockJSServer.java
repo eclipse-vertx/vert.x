@@ -59,26 +59,9 @@ public class SockJSServer {
 
   private static final Logger log = Logger.getLogger(SockJSServer.class);
 
-  //TODO javadoc
-  //TODO Basic tests
-  //TODO Add python test to test suite
-
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions = SharedData.getMap("sockjs_sessions");
-
-  // For debug only
-  public static void main(String[] args) throws Exception {
-    VertxInternal.instance.go(new Runnable() {
-      public void run() {
-        HttpServer httpServer = new HttpServer();
-        new SockJSServer(httpServer);
-        httpServer.listen(8080);
-      }
-    });
-
-    Thread.sleep(Long.MAX_VALUE);
-  }
 
   /**
    * Create a new SockJSServer.
@@ -330,5 +313,19 @@ public class SockJSServer {
           "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
           "</body>\n" +
           "</html>";
+
+  // For debug only
+  public static void main(String[] args) throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
+        HttpServer httpServer = new HttpServer();
+        new SockJSServer(httpServer);
+        httpServer.listen(8080);
+      }
+    });
+
+    Thread.sleep(Long.MAX_VALUE);
+  }
+
 }
 
