@@ -73,10 +73,7 @@ public class SockJSTest extends TestBase {
             ws.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
 
-                log.info("received data: " + data);
-
                 received.appendBuffer(data);
-                log.info("received is now: " + received);
                 if (received.length() == buffRec.length()) {
 
                   azzert(Utils.buffersEqual(buffRec, received));
@@ -92,7 +89,7 @@ public class SockJSTest extends TestBase {
               }
             });
 
-            //ws.writeTextFrame(strSend);
+            ws.writeTextFrame(strSend);
           }
         });
       }

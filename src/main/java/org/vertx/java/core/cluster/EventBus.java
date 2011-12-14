@@ -261,7 +261,7 @@ public class EventBus {
       });
       client.exceptionHandler(new Handler<Exception>() {
         public void handle(Exception e) {
-          log.info("Cluster connection failed. Removing it from map");
+          log.debug("Cluster connection failed. Removing it from map");
           connections.remove(serverID);
           if (sendable.type() == Sendable.TYPE_MESSAGE) {
             removeSub(((Message)sendable).address, serverID);
