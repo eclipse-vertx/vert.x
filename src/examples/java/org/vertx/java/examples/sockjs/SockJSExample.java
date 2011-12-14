@@ -39,10 +39,8 @@ public class SockJSExample implements VertxApp {
 
     sockServer.installApp(new AppConfig().setPrefix("/testapp"), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
-        log.info("sockjsexample open socket");
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            log.info("sockjsexample got data");
             sock.writeBuffer(data); // Echo it back
           }
         });
