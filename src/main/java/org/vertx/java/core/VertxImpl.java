@@ -27,6 +27,7 @@ import org.vertx.java.core.shared.SharedUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,6 +57,7 @@ class VertxImpl implements VertxInternal {
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong contextIDSeq = new AtomicLong(10); // Start at 10 for easier debugging
   private final AtomicLong actorSeq = new AtomicLong(10); // Start at 10 for easier debugging
+  private CountDownLatch stopLatch = new CountDownLatch(1);
 
   // Public API ------------------------------------------------
 
@@ -139,6 +141,22 @@ class VertxImpl implements VertxInternal {
         }
       }
     });
+  }
+
+  public void block() {
+    while (true) {
+      try {
+        stopLatch.await();
+        break;
+      } catch (InterruptedException e) {
+        //Ignore
+      }
+    }
+  }
+
+  public void exit() {
+    //TODO disallow if running in server mode
+    stopLatch.countDown();
   }
 
   // Internal API -----------------------------------------------------------------------------------------

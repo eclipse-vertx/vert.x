@@ -48,95 +48,18 @@ public class VertxMgr {
 
       if (sargs[0].equalsIgnoreCase("start")) {
         startServer(args);
+      } else if (sargs[0].equalsIgnoreCase("run")) {
+        runApplication(args);
       } else if (sargs[0].equalsIgnoreCase("stop")) {
         cmd = new StopCommand();
         System.out.println("Stopped vert.x server");
       } else if (sargs[0].equalsIgnoreCase("deploy")) {
-        /*
-        Deploy syntax:
-
-        deploy -<java|ruby|groovy|js> -name <name> -main <main> -cp <classpath> -instances <instances>
-
-        type is mandatory
-        name is optional, system will generate one if not provided
-        main is mandatory
-        cp is mandatory
-        instances is optional, defaults to number of cores on server
-         */
-
-        AppType type = AppType.JAVA;
-        String flag = args.map.get("-ruby");
-        if (flag != null) {
-          type  = AppType.RUBY;
-        }
-        flag = args.map.get("-js");
-        if (flag != null) {
-          type = AppType.JS;
-        }
-        flag = args.map.get("-groovy");
-        if (flag != null) {
-          type = AppType.GROOVY;
-        }
-
-        String name = args.map.get("-name");
-        if (name == null) {
-          name = "app-" + UUID.randomUUID().toString();
-        }
-
-        String main = args.map.get("-main");
-        String cp = args.map.get("-cp");
-
-        if (main == null || cp == null) {
-          displayDeploySyntax();
+        DeployCommand dc = createDeployCommand(args, "deploy");
+        if (dc == null) {
           return;
         }
-
-        String sinstances = args.map.get("-instances");
-        int instances;
-        if (sinstances != null) {
-          try {
-            instances = Integer.parseInt(sinstances);
-
-            if (instances != -1 && instances < 1) {
-              System.err.println("Invalid number of instances");
-              displayDeploySyntax();
-              return;
-            }
-          } catch (NumberFormatException e) {
-            displayDeploySyntax();
-            return;
-          }
-        } else {
-          instances = -1;
-        }
-
-        String[] parts;
-        if (cp.contains(":")) {
-          parts = cp.split(":");
-        } else {
-          parts = new String[] { cp };
-        }
-        int index = 0;
-        URL[] urls = new URL[parts.length];
-        for (String part: parts) {
-          File file = new File(part);
-          part = file.getAbsolutePath();
-          if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
-            //It's a directory - need to add trailing slash
-            part += "/";
-          }
-          URL url;
-          try {
-            url = new URL("file://" + part);
-          } catch (MalformedURLException e) {
-            System.err.println("Invalid directory/jar: " + part);
-            return;
-          }
-          urls[index++] = url;
-        }
-        cmd = new DeployCommand(type, name, main, urls, instances);
-        System.out.println("Deploying application name: " + name + " instances: " + instances);
-
+        System.out.println("Deploying application name: " + dc.name + " instances: " + dc.instances);
+        cmd = dc;
       } else if (sargs[0].equalsIgnoreCase("undeploy")) {
         String name = args.map.get("-name");
         if (name == null) {
@@ -155,10 +78,122 @@ public class VertxMgr {
     }
   }
 
+  private void runApplication(Args args) {
+    if (startCluster(args)) {
+      AppManager mgr = new AppManager();
+      DeployCommand dc = createDeployCommand(args, "run");
+      if (dc != null) {
+        try {
+          mgr.deploy(dc.type, dc.name, dc.main, dc.urls, dc.instances);
+          VertxInternal.instance.block();
+        } catch (Exception e) {
+          System.err.println("Failed to deploy application");
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
   private void startServer(Args args) {
-    boolean clustered = false;
+    if (startCluster(args)) {
+      System.out.println("vert.x server started");
+      AppManager mgr = new AppManager();
+      SocketDeployer sd = new SocketDeployer(mgr, args.getInt("-deploy-port"));
+      sd.start();
+      VertxInternal.instance.block();
+    }
+  }
+
+  private DeployCommand createDeployCommand(Args args, String command) {
+    /*
+    Deploy syntax:
+
+    deploy -<java|ruby|groovy|js> -name <name> -main <main> -cp <classpath> -instances <instances>
+
+    type is mandatory
+    name is optional, system will generate one if not provided
+    main is mandatory
+    cp is mandatory
+    instances is optional, defaults to number of cores on server
+     */
+
+    AppType type = AppType.JAVA;
+    String flag = args.map.get("-ruby");
+    if (flag != null) {
+      type  = AppType.RUBY;
+    }
+    flag = args.map.get("-js");
+    if (flag != null) {
+      type = AppType.JS;
+    }
+    flag = args.map.get("-groovy");
+    if (flag != null) {
+      type = AppType.GROOVY;
+    }
+
+    String name = args.map.get("-name");
+    if (name == null) {
+      name = "app-" + UUID.randomUUID().toString();
+    }
+
+    String main = args.map.get("-main");
+    String cp = args.map.get("-cp");
+
+    if (main == null || cp == null) {
+      displayDeploySyntax(command);
+      return null;
+    }
+
+    String sinstances = args.map.get("-instances");
+    int instances;
+    if (sinstances != null) {
+      try {
+        instances = Integer.parseInt(sinstances);
+
+        if (instances != -1 && instances < 1) {
+          System.err.println("Invalid number of instances");
+          displayDeploySyntax(command);
+          return null;
+        }
+      } catch (NumberFormatException e) {
+        displayDeploySyntax(command);
+        return null;
+      }
+    } else {
+      instances = -1;
+    }
+
+    String[] parts;
+    if (cp.contains(":")) {
+      parts = cp.split(":");
+    } else {
+      parts = new String[] { cp };
+    }
+    int index = 0;
+    URL[] urls = new URL[parts.length];
+    for (String part: parts) {
+      File file = new File(part);
+      part = file.getAbsolutePath();
+      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
+        //It's a directory - need to add trailing slash
+        part += "/";
+      }
+      URL url;
+      try {
+        url = new URL("file://" + part);
+      } catch (MalformedURLException e) {
+        System.err.println("Invalid directory/jar: " + part);
+        return null;
+      }
+      urls[index++] = url;
+    }
+    return new DeployCommand(type, name, main, urls, instances);
+  }
+
+
+  private boolean startCluster(Args args) {
     if (args.map.get("-cluster") != null) {
-      clustered = true;
+      System.out.println("Starting clustering");
       int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
         clusterPort = 25500;
@@ -176,7 +211,7 @@ public class VertxMgr {
         clusterProvider= Class.forName(clusterProviderClass);
       } catch (ClassNotFoundException e) {
         System.err.println("Cannot find class " + clusterProviderClass);
-        return;
+        return false;
       }
       final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
       final CountDownLatch latch = new CountDownLatch(1);
@@ -201,9 +236,7 @@ public class VertxMgr {
       } catch (InterruptedException ignore) {
       }
     }
-    System.out.println("vert.x server started" + (clustered ? " in clustered mode" : ""));
-    AppManager mgr = new AppManager(args.getInt("-deploy-port"));
-    mgr.start();
+    return true;
   }
 
 
@@ -213,7 +246,9 @@ public class VertxMgr {
     System.out.println("------------------\n");
     displayStopSyntax();
     System.out.println("------------------\n");
-    displayDeploySyntax();
+    displayDeploySyntax("run");
+    System.out.println("------------------\n");
+    displayDeploySyntax("deploy");
     System.out.println("------------------\n");
     displayUndeploySyntax();
   }
@@ -234,10 +269,10 @@ public class VertxMgr {
     System.out.println(msg);
   }
 
-  private void displayDeploySyntax() {
+  private void displayDeploySyntax(String command) {
     String msg =
     "Deploy an application:\n\n" +
-    "vertx deploy -[java|ruby|groovy|js] -name <name> -main <main> -cp <classpath> -instances <instances> -port <port>\n" +
+    "vertx " + command + " -[java|ruby|groovy|js] -name <name> -main <main> -cp <classpath> -instances <instances> -port <port>\n" +
     "-[java|ruby|groovy|js] depending on the language of the application\n" +
     "<name> - unique name of the application. If this ommitted the server will generate a name\n" +
     "<main> - main class or script for the application\n" +

@@ -57,4 +57,9 @@ public interface VertxInternal extends Vertx {
   int getCoreThreadPoolSize();
 
   void go(Runnable runnable);
+
+  /**
+   * Stop the JVM from exiting, since all event loops are daemons
+   */
+  void block();
 }

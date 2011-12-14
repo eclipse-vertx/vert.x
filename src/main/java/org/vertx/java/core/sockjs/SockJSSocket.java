@@ -1,7 +1,5 @@
 package org.vertx.java.core.sockjs;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 

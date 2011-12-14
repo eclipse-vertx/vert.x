@@ -1,4 +1,4 @@
-import java.util.concurrent.*
+import java.util.concurrent.Executors
 
 def n = 5000
 def c = { new URL("http://localhost:8080/").text }
