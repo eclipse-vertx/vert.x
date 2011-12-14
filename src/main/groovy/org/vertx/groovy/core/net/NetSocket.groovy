@@ -14,14 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core
+package org.vertx.groovy.core.net
 
-class Vertx {
+import org.vertx.java.core.Handler
 
-  static j_instance = org.vertx.java.core.Vertx.instance
+class NetSocket {
 
-  static go(closure) {
-    j_instance.go closure
+  private jSocket
+
+  NetSocket(jSocket) {
+    this.jSocket = jSocket
+  }
+
+  def dataHandler(hndlr) {
+    jSocket.dataHandler(hndlr as Handler)
+  }
+
+  def write(buff) {
+    jSocket.write(buff)
+  }
+
+  /**
+   * Alias for {@link #write} so that we can use the left shift operator
+   * in Groovy, just as we do with other writables.
+   */
+  def leftShift(buff) {
+    write(buff)
   }
 
 }
+
