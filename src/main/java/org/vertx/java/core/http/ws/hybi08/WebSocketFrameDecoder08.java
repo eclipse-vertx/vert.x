@@ -23,7 +23,6 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.logging.Logger;
 

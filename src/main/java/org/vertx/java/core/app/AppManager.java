@@ -2,7 +2,6 @@ package org.vertx.java.core.app;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.app.cli.SocketDeployer;
 import org.vertx.java.core.app.groovy.GroovyAppFactory;
 import org.vertx.java.core.app.java.JavaAppFactory;
 import org.vertx.java.core.app.jruby.JRubyAppFactory;
@@ -26,41 +25,6 @@ public class AppManager {
 
   private Map<String, AppMetaData> appMeta = new HashMap<>();
   private Map<String, List<AppHolder>> apps = new HashMap();
-  private CountDownLatch stopLatch = new CountDownLatch(1);
-  private SocketDeployer deployer;
-
-  public AppManager(int port) {
-    deployer = new SocketDeployer(this, port);
-  }
-
-  public void start() {
-    start(true);
-  }
-
-  public void startNoBlock() {
-    start(false);
-  }
-
-  private void start(boolean block) {
-
-    deployer.start();
-
-    if (block) {
-      while (true) {
-        try {
-          stopLatch.await();
-          break;
-        } catch (InterruptedException e) {
-          //Ignore
-        }
-      }
-    }
-  }
-
-  public void stop(Handler<Void> doneHandler) {
-    deployer.stop(doneHandler);
-    stopLatch.countDown();
-  }
 
   public synchronized String deploy(final AppType type, final String appName, String main, URL[] urls, int instances)
     throws Exception {

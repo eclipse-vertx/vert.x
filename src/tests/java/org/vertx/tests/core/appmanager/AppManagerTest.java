@@ -60,8 +60,9 @@ public class AppManagerTest extends TestBase {
 
 
   private List<String> doTest(AppType appType, final String main, final int instances, final int requests) throws Exception {
-    AppManager mgr = new AppManager(SocketDeployer.DEFAULT_PORT);
-    mgr.startNoBlock();
+    AppManager mgr = new AppManager();
+    SocketDeployer sd = new SocketDeployer(mgr, SocketDeployer.DEFAULT_PORT);
+    sd.start();
 
     Thread.sleep(100);
 
@@ -126,7 +127,7 @@ public class AppManagerTest extends TestBase {
     sendCommand(new UndeployCommand("myapp"));
 
     final CountDownLatch stopLatch = new CountDownLatch(1);
-    mgr.stop(new SimpleHandler() {
+    sd.stop(new SimpleHandler() {
       public void handle() {
         stopLatch.countDown();
       }

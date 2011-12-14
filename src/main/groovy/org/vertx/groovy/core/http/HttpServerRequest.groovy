@@ -16,8 +16,6 @@
 
 package org.vertx.groovy.core.http
 
-import org.vertx.java.core.http.ServerConnection
-
 class HttpServerRequest  {
 
   @Delegate org.vertx.java.core.http.HttpServerRequest wrappedRequest

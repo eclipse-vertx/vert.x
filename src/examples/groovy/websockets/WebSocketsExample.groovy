@@ -17,7 +17,6 @@
 package websockets
 
 import org.vertx.groovy.core.http.HttpServer
-import org.vertx.java.core.Handler
 import org.vertx.java.core.app.VertxApp
 
 class WebSocketsExample implements VertxApp {
