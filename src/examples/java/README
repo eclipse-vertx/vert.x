@@ -250,6 +250,18 @@ An index page will be served which contains some links to urls of the form:
 
 The server will extract the user and id from the uri and display it on the returned page
 
+SockJS
+======
+
+A simple example demonstrating SockJS connections from a browser. The example serves a simple page which has some JavaScript in it
+to create a SockJS connection to a server, and send and receive data from it.
+
+To run the server:
+
+vertx deploy -main org.vertx.java.examples.sockjs.SockJSExample -cp classes
+
+Then point your browser at: http://localhost:8080
+
 
 
 
