@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core
+package org.vertx.groovy.core.net
 
-class Vertx {
+import org.vertx.java.core.Handler
 
-  static j_instance = org.vertx.java.core.Vertx.instance
+class NetClient extends org.vertx.java.core.net.NetClient {
 
-  static go(closure) {
-    j_instance.go closure
+  def connect(int port, Closure hndlr) {
+    super.connect(port, wrapHandler(hndlr))
+  }
+
+  def connect(int port, String host, Closure hndlr) {
+    this.connect(port, host, wrapHandler(hndlr))
+  }
+
+  protected wrapHandler(hndlr) {
+    return {hndlr.call(new NetSocket(it))} as Handler
   }
 
 }

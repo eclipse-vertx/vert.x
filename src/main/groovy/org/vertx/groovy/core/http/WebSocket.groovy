@@ -14,14 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core
+package org.vertx.groovy.core.http
 
-class Vertx {
+import org.vertx.java.core.Handler
 
-  static j_instance = org.vertx.java.core.Vertx.instance
+class WebSocket {
 
-  static go(closure) {
-    j_instance.go closure
+  @Delegate org.vertx.java.core.http.WebSocket wrappedSocket
+
+  WebSocket(webSocket) {
+    this.wrappedSocket = webSocket
   }
 
+  def getUri() { return wrappedSocket.uri }
+
+  def dataHandler(Closure hndlr) {
+    wrappedSocket.dataHandler(hndlr as Handler)
+  }
+
+  def endHandler(Closure hndlr) {
+    wrappedSocket.endHandler(hndlr as Handler)
+  }
+
+  def exceptionHandler(Closure hndlr) {
+    wrappedSocket.exceptionHandler(hndlr as Handler)
+  }
+
+  def closedHandler(Closure hndlr) {
+    wrappedSocket.closedHandler(hndlr as Handler)
+  }
 }

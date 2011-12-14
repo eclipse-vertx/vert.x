@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core.net
+package websockets
 
+import org.vertx.groovy.core.http.HttpServer
 import org.vertx.java.core.Handler
+import org.vertx.java.core.app.VertxApp
 
-class NetServer {
+class WebSocketsExample implements VertxApp {
 
-  private jServer
+  def server
 
-  NetServer() {
-    jServer = new org.vertx.java.core.net.NetServer()
+  void start() {
+    server = new HttpServer().websocketHandler { ws ->
+      if (ws.uri == "/myapp") {
+        ws.dataHandler { data ->
+          ws.writeTextFrame(data.toString())
+        }
+      } else {
+        // Reject it
+        ws.close()
+      }
+    }.requestHandler { req ->
+      if (req.uri == "/") req.response.sendFile("websockets/ws.html") // Serve the html
+    }.listen(8080)
   }
 
-  def connectHandler(hndlr) {
-    jServer.connectHandler(wrapHandler(hndlr))
-  }
-
-  def listen(int port) {
-    jServer.listen(port)
-  }
-
-  protected wrapHandler(hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
+  void stop() {
+    server.close()
   }
 
 }
