@@ -47,7 +47,14 @@ module Vertx
     # @param [Block] hndlr A block to be used as the handler
     def websocket_handler(proc = nil, &hndlr)
       hndlr = proc if proc
-      @j_del.websocketHandler { |ws| hndlr.call(Websocket.new(ws)) }
+      @j_del.websocketHandler do |param|
+        if param.is_a? String
+          hndlr.call(param)
+        else
+          hndlr.call(Websocket.new(param))
+        end
+      end
+
       self
     end
 
@@ -71,6 +78,11 @@ module Vertx
     # Close the server. The handler will be called when the close is complete.
     def close(&hndlr)
       @j_del.close(hndlr)
+    end
+
+    # @private
+    def _to_java_server
+      @j_del
     end
   end
 

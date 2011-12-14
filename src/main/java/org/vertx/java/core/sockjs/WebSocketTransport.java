@@ -36,7 +36,8 @@ class WebSocketTransport extends BaseTransport {
               String msgs = data.toString();
               if (msgs.equals("")) {
                 //Ignore empty frames
-              } else if (msgs.startsWith("[\"") && msgs.endsWith("\"]")) {
+              } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||
+                         (msgs.startsWith("\"") && msgs.endsWith("\""))) {
                 session.handleMessages(parseMessageString(msgs));
               } else {
                 //Invalid JSON - we close the connection
