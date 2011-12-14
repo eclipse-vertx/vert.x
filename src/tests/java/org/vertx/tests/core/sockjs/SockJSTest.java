@@ -57,7 +57,7 @@ public class SockJSTest extends TestBase {
 
         final HttpClient client = new HttpClient().setPort(8080);
 
-        client.connectWebsocket("/app/path/serverid/sessionid/websocket", new Handler<WebSocket>() {
+        client.connectWebsocket("/app/path/serverid/sessionid1/websocket", new Handler<WebSocket>() {
 
           public void handle(WebSocket ws) {
 
@@ -129,7 +129,11 @@ public class SockJSTest extends TestBase {
 
         final HttpClient client = new HttpClient().setPort(8080).setMaxPoolSize(2);
 
-        HttpClientRequest req = client.post("/app/path/serverid/sessionid/xhr", new Handler<HttpClientResponse>() {
+        String strSend = "[\"" + Utils.randomAlphaString(1000) + "\"]";
+        String strRec = "a" + strSend + "\n";
+        final Buffer buffRec = Buffer.create(strRec);
+
+        HttpClientRequest req = client.post("/app/path/serverid/sessionid2/xhr", new Handler<HttpClientResponse>() {
 
           public void handle(HttpClientResponse resp) {
 
@@ -143,52 +147,47 @@ public class SockJSTest extends TestBase {
             resp.endHandler(new SimpleHandler() {
               public void handle() {
                 azzert(Utils.buffersEqual(Buffer.create("o\n"), buff));
+
+                client.post("/app/path/serverid/sessionid2/xhr", new Handler<HttpClientResponse>() {
+
+                  public void handle(HttpClientResponse resp) {
+
+                    final Buffer buff = Buffer.create(0);
+
+                    resp.dataHandler(new Handler<Buffer>() {
+                      public void handle(Buffer data) {
+                        buff.appendBuffer(data);
+                      }
+                    });
+
+                    resp.endHandler(new SimpleHandler() {
+                      public void handle() {
+                        azzert(Utils.buffersEqual(buffRec, buff));
+
+                        client.close();
+
+                        server.close(new SimpleHandler() {
+                          public void handle() {
+                            latch.countDown();
+                          }
+                        });
+                      }
+                    });
+
+                  }
+                }).end();
               }
             });
           }
         });
         req.end();
 
-        String strSend = "[\"" + Utils.randomAlphaString(1000) + "\"]";
-        String strRec = "a" + strSend + "\n";
-        final Buffer buffRec = Buffer.create(strRec);
-
-        client.post("/app/path/serverid/sessionid/xhr", new Handler<HttpClientResponse>() {
-
-          public void handle(HttpClientResponse resp) {
-
-            final Buffer buff = Buffer.create(0);
-
-            resp.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer data) {
-                buff.appendBuffer(data);
-              }
-            });
-
-            resp.endHandler(new SimpleHandler() {
-              public void handle() {
-                azzert(Utils.buffersEqual(buffRec, buff));
-
-                client.close();
-
-                server.close(new SimpleHandler() {
-                  public void handle() {
-                    latch.countDown();
-                  }
-                });
-              }
-            });
-
-          }
-        }).end();
-
-        req = client.post("/app/path/serverid/sessionid/xhr_send", new Handler<HttpClientResponse>() {
+        req = client.post("/app/path/serverid/sessionid2/xhr_send", new Handler<HttpClientResponse>() {
 
           public void handle(HttpClientResponse resp) {
             azzert(204 == resp.statusCode);
           }
         });
-
 
         req.end(strSend);
 
