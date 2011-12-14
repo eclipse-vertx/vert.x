@@ -14,28 +14,37 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core.net
+package org.vertx.groovy.core.http
 
-import org.vertx.java.core.Handler
+class HttpServerResponse {
 
-class NetServer {
+  @Delegate org.vertx.java.core.http.HttpServerResponse wrappedResponse
 
-  private jServer
-
-  NetServer() {
-    jServer = new org.vertx.java.core.net.NetServer()
+  HttpServerResponse(response) {
+    this.wrappedResponse = response
   }
 
-  def connectHandler(hndlr) {
-    jServer.connectHandler(wrapHandler(hndlr))
+  def getStatusCode() {
+    return wrappedResponse.statusCode
   }
 
-  def listen(int port) {
-    jServer.listen(port)
+  void setStatusCode(int code) {
+    wrappedResponse.statusCode = code
   }
 
-  protected wrapHandler(hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
+  def getStatusMessage() {
+    return wrappedResponse.statusMessage
   }
 
+  void setStatusMessage(String msg) {
+    wrappedResponse.statusMessage = msg
+  }
+
+  def putAt(String header, value) {
+    wrappedResponse.putHeader(header, value)
+  }
+
+  def leftShift(buff) {
+    wrappedResponse.write(buff)
+  }
 }
