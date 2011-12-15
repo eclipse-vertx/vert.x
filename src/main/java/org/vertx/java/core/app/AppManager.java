@@ -1,5 +1,7 @@
 package org.vertx.java.core.app;
 
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.groovy.GroovyAppFactory;
 import org.vertx.java.core.app.java.JavaAppFactory;
@@ -11,8 +13,10 @@ import org.vertx.java.core.logging.Logger;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -79,13 +83,22 @@ public class AppManager {
     return null;
   }
 
-  public synchronized void undeployAll() {
-    for (String name: appMeta.keySet()) {
-      undeploy(name);
+  public synchronized void undeployAll(final Handler<Void> doneHandler) {
+    Handler<Void> aggHandler = new SimpleHandler() {
+      int count = appMeta.size();
+      public void handle() {
+        if (--count == 0) {
+          doneHandler.handle(null); // All undeployed
+        }
+      }
+    };
+    Set<String> names = new HashSet<>(appMeta.keySet()); // Avoid comod exception
+    for (String name: names) {
+      undeploy(name, aggHandler);
     }
   }
 
-  public synchronized String undeploy(String name) {
+  public synchronized String undeploy(String name, final Handler<Void> doneHandler) {
     if (appMeta.get(name) == null) {
       return "There is no deployed app with name " + name;
     }
@@ -99,6 +112,9 @@ public class AppManager {
             holder.app.stop();
           } catch (Exception e) {
             log.error("Unhandled exception in application stop", e);
+          }
+          if (doneHandler != null) {
+            doneHandler.handle(null);
           }
         }
       });

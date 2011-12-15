@@ -37,7 +37,10 @@ public class JRubyApp implements VertxApp {
   }
 
   public void stop() throws Exception {
-    // TODO check if methods exists before calling it
-    container.callMethod(receiver, "vertx_stop");
+    try {
+      container.callMethod(receiver, "vertx_stop");
+    } catch (Exception e) {
+      log.error("Failed to call vertx_stop", e);
+    }
   }
 }
