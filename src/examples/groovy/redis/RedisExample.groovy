@@ -19,36 +19,30 @@ package redis
 import org.vertx.groovy.core.http.HttpServer
 import org.vertx.java.addons.redis.RedisPool
 import org.vertx.java.core.CompletionHandler
-import org.vertx.java.core.app.VertxApp
 import org.vertx.java.core.buffer.Buffer
 
-class RedisExample implements VertxApp {
+final pool = new RedisPool()
+final key = Buffer.create("my_count")
 
-  private server
-
-  void start() {
-    final pool = new RedisPool()
-    final key = Buffer.create("my_count")
-
-    server = new HttpServer().requestHandler { req ->
-      final redisConn = pool.connection()
-      if (req.uri.equals("/")) {
-        redisConn.incr(key).handler({ future ->
-          def content = Buffer.create("<html><body><h1>Hit count is ${future.result()}</h1></body></html>")
-          req.response["Content-Type"] = "text/html; charset=UTF-8"
-          req.response["Content-Length"] = content.length().toString()
-          req.response << content
-          req.response.end()
-          redisConn.close();
-        } as CompletionHandler).execute()
-      } else {
-        req.response.statusCode = 404
-        req.response.end()
-      }
-    }.listen(8080)
+server = new HttpServer().requestHandler { req ->
+  final redisConn = pool.connection()
+  if (req.uri.equals("/")) {
+    redisConn.incr(key).handler({ future ->
+      def content = Buffer.create("<html><body><h1>Hit count is ${future.result()}</h1></body></html>")
+      req.response["Content-Type"] = "text/html; charset=UTF-8"
+      req.response["Content-Length"] = content.length().toString()
+      req.response << content
+      req.response.end()
+      redisConn.close();
+    } as CompletionHandler).execute()
+  } else {
+    req.response.statusCode = 404
+    req.response.end()
   }
+}.listen(8080)
 
-  void stop() {
-    server.close()
-  }
+
+void vertxStop() {
+  server.close()
 }
+

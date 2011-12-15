@@ -17,29 +17,21 @@
 package websockets
 
 import org.vertx.groovy.core.http.HttpServer
-import org.vertx.java.core.app.VertxApp
 
-class WebSocketsExample implements VertxApp {
-
-  def server
-
-  void start() {
-    server = new HttpServer().websocketHandler { ws ->
-      if (ws.uri == "/myapp") {
-        ws.dataHandler { data ->
-          ws.writeTextFrame(data.toString())
-        }
-      } else {
-        // Reject it
-        ws.close()
-      }
-    }.requestHandler { req ->
-      if (req.uri == "/") req.response.sendFile("websockets/ws.html") // Serve the html
-    }.listen(8080)
+server = new HttpServer().websocketHandler { ws ->
+  if (ws.uri == "/myapp") {
+    ws.dataHandler { data ->
+      ws.writeTextFrame(data.toString())
+    }
+  } else {
+    // Reject it
+    ws.close()
   }
+}.requestHandler { req ->
+  if (req.uri == "/") req.response.sendFile("websockets/ws.html") // Serve the html
+}.listen(8080)
 
-  void stop() {
-    server.close()
-  }
-
+void vertxStop() {
+  server.close()
 }
+

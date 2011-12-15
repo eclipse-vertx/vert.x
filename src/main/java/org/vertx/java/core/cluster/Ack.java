@@ -1,10 +1,5 @@
 package org.vertx.java.core.cluster;
 
-import org.jboss.netty.util.CharsetUtil;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.net.NetSocket;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
