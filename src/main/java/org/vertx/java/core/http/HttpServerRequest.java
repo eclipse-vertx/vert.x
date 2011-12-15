@@ -45,7 +45,7 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerRequest implements ReadStream {
+public class HttpServerRequest extends HttpReadStreamBase {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -152,27 +152,6 @@ public class HttpServerRequest implements ReadStream {
    */
   public void dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
-  }
-
-  /**
-   * Convenience method for receiving the entire request body in one piece. This saves the user having to manually
-   * set a data and end handler and append the chunks of the body until the whole body received.
-   * Don't use this if your request body is large - you could potentially run out of RAM.
-   *
-   * @param bodyHandler This handler will be called after all the body has been received
-   */
-  public void bodyHandler(final Handler<Buffer> bodyHandler) {
-    final Buffer body = Buffer.create(0);
-    dataHandler(new Handler<Buffer>() {
-      public void handle(Buffer buff) {
-        body.appendBuffer(buff);
-      }
-    });
-    endHandler(new SimpleHandler() {
-      public void handle() {
-        bodyHandler.handle(body);
-      }
-    });
   }
 
   /**

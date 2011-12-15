@@ -109,6 +109,7 @@ network)
 38) Redo website
 39) Rewrite readme
 40) Update wiki on vertx run
+41) Add bodyHandler to HttpClientResponse, also maybe move this functionality out, since useful in net too?? Implement in Ruby too
 
 
 
