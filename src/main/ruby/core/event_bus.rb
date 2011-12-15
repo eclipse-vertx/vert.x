@@ -58,7 +58,7 @@ module Vertx
     # @param address [String] The address to register for. Any messages sent to that address will be
     # received by the handler. A single handler can be registered against many addresses.
     # @param message_hndlr [Block] The handler
-    # @return [FixNum] id of the handler which can be used in {#unregister_handler}
+    # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
     def EventBus.register_handler(address, &message_hndlr)
       internal = InternalHandler.new(address, message_hndlr)
       org.vertx.java.core.cluster.EventBus.instance.registerHandler(address, internal)
@@ -68,7 +68,7 @@ module Vertx
     end
 
     # Unregisters a handler
-    # @param handler_id [FixNum] The id of the handler to unregister. Returned from {#register_handler}
+    # @param handler_id [FixNum] The id of the handler to unregister. Returned from {EventBus.register_handler}
     def EventBus.unregister_handler(handler_id)
       handler = @@handler_map.remove(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler

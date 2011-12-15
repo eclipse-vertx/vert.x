@@ -38,10 +38,10 @@ module Vertx
   # For more detailed information on SockJS, see their website.
   #
   # On the server side, you interact using instances of {SockJSSocket} - this allows you to send data to the
-  # client or receive data via the {SockJSSocket#dataHandler}.
+  # client or receive data via the {ReadStream#data_handler}.
   #
   # You can register multiple applications with the same SockJSServer, each using different path prefixes, each
-  # application will have its own handler, and configuration as described by {AppConfig}.
+  # application will have its own handler, and configuration is described in a Hash.
   #
   # @author {http://tfox.org Tim Fox}
   class SockJSServer
@@ -81,7 +81,7 @@ module Vertx
   end
 
   # You interact with SockJS clients through instances of SockJS socket.
-  # The API is very similar to {WebSocket}. It implements both
+  # The API is very similar to {Websocket}. It implements both
   # {ReadStream} and {WriteStream} so it can be used with {Pump} to enable
   # flow control.
   #
