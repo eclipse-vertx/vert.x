@@ -33,9 +33,8 @@ module Vertx
   # The order of messages received by any specific handler from a specific sender will match the order of messages
   # sent from that sender.
   #
-  # When sending a message, a receipt can be request. If so, when the message has been received by all registered
-  # matching handlers and the {Message#acknowledge} method has been called on each received message the receipt
-  # handler will be called.
+  # When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
+  # has been received.
   #
   # @author {http://tfox.org Tim Fox}
   class EventBus
@@ -45,11 +44,11 @@ module Vertx
 
     # Send a message on the event bus
     # @param message [Message] The message to send
-    # @param receipt_handler [Block] Optional receipt handler. If specified then when the message has reached all registered
-    # handlers and each one has called {Message#acknowledge} then the handler will be called
-    def EventBus.send(message, &receipt_handler)
-      if receipt_handler != nil
-        org.vertx.java.core.cluster.EventBus.instance.send(message._to_java_message, receipt_handler)
+    # @param reply_handler [Block] replyHandler An optional reply handler.
+    # It will be called when the reply from a receiver is received.
+    def EventBus.send(message, &reply_handler)
+      if reply_handler != nil
+        org.vertx.java.core.cluster.EventBus.instance.send(message._to_java_message, reply_handler)
       else
         org.vertx.java.core.cluster.EventBus.instance.send(message._to_java_message)
       end
@@ -122,11 +121,14 @@ module Vertx
       @j_del = nil
     end
 
-    # Acknowledge receipt of this message. If the message was sent specifying a receipt handler, that handler will be
-    # called when all receivers have called acknowledge. If the message wasn't sent specifying a receipt handler
+    # Reply to this message. If the message was sent specifying a receipt handler, that handler will be
+    # called when it has received a reply. If the message wasn't sent specifying a receipt handler
     # this method does nothing.
-    def acknowledge
-      @j_del.acknowledge if @j_del
+    # Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
+    # of the original message.
+    # @param [Buffer] Buffer representing body of the reply
+    def reply(buff = nil)
+      @j_del.reply if @j_del
     end
 
     # @private

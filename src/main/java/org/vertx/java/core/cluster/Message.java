@@ -15,6 +15,10 @@ public class Message extends Sendable {
 
   private static final Logger log = Logger.getLogger(Message.class);
 
+  ServerID sender;
+  boolean requiresReply;
+  EventBus bus;
+
   /**
    * The unique id of the message - this is filled in by the event bus when the message is sent
    */
@@ -30,10 +34,6 @@ public class Message extends Sendable {
    */
   public final Buffer body;
 
-  ServerID sender;
-  boolean requiresAck;
-  EventBus bus;
-
   /**
    * Create a new Message
    * @param address The address to send the message to
@@ -45,14 +45,26 @@ public class Message extends Sendable {
   }
 
   /**
-   * Acknowledge receipt of this message. If the message was sent specifying a receipt handler, that handler will be
-   * called when all receivers have called acknowledge. If the message wasn't sent specifying a receipt handler
+   * Reply to this message. If the message was sent specifying a receipt handler, that handler will be
+   * called when it has received a reply. If the message wasn't sent specifying a receipt handler
    * this method does nothing.
+   * Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
+   * of the original message.
    */
-  public void acknowledge() {
-    if (bus != null && requiresAck) {
-      bus.acknowledge(sender, messageID);
+  public void reply(Buffer body) {
+    if (bus != null && requiresReply) {
+      if (body == null) {
+        body = Buffer.create(0);
+      }
+      bus.send(new Message(messageID, body));
     }
+  }
+
+  /**
+   * Same as {@link #reply(Buffer)} but with an empty buffer
+   */
+  public void reply() {
+    reply(null);
   }
 
   Message(Buffer readBuff) {
@@ -81,7 +93,7 @@ public class Message extends Sendable {
     sender = new ServerID(port, host);
 
     byte bra = readBuff.getByte(pos);
-    requiresAck = bra == (byte)1;
+    requiresReply = bra == (byte)1;
     pos += 1;
 
     int buffLength = readBuff.getInt(pos);
@@ -99,7 +111,7 @@ public class Message extends Sendable {
     writeString(totBuff, address);
     totBuff.appendInt(sender.port);
     writeString(totBuff, sender.host);
-    totBuff.appendByte((byte)(requiresAck ? 1 : 0));
+    totBuff.appendByte((byte)(requiresReply ? 1 : 0));
     totBuff.appendInt(body.length());
     totBuff.appendBuffer(body);
     totBuff.setInt(0, totBuff.length() - 4);
@@ -114,7 +126,7 @@ public class Message extends Sendable {
     Message msg = new Message(address, body.copy());
     msg.messageID = this.messageID;
     msg.sender = this.sender;
-    msg.requiresAck = this.requiresAck;
+    msg.requiresReply = this.requiresReply;
     return msg;
   }
 }

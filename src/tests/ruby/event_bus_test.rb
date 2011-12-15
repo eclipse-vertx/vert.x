@@ -65,7 +65,7 @@ class EventBusTest < Test::Unit::TestCase
       id = EventBus.register_handler(address) do |msg|
         assert body == msg.body.to_s
         puts "message id is #{msg.message_id}"
-        msg.acknowledge
+        msg.reply
         latch.countdown
       end
 

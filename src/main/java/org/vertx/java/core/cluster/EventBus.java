@@ -46,9 +46,8 @@ import java.util.concurrent.ConcurrentMap;
  * <p>The order of messages received by any specific handler from a specific sender should match the order of messages
  * sent from that sender.</p>
  *
- * <p>When sending a message, a receipt can be request. If so, when the message has been received by all registered
- * matching handlers and the {@link Message#acknowledge} method has been called on each received message the receipt
- * handler will be called.</p>
+ * <p>When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
+ * has been received.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -73,7 +72,7 @@ public class EventBus {
   private AsyncMultiMap<String, ServerID> subs;  // Multimap name -> Collection<node ids>
   private ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
-  private Map<String, ReceiptHandlerHolder> receiptHandlerHolders = new ConcurrentHashMap<>();
+  private Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
 
   protected EventBus(ServerID serverID, ClusterManager clusterManager) {
     this.serverID = serverID;
@@ -92,9 +91,6 @@ public class EventBus {
               if (received.type() == Sendable.TYPE_MESSAGE) {
                 Message msg = (Message)received;
                 receiveMessage(msg);
-              } else {
-                Ack ack = (Ack)received;
-                handleAck(ack);
               }
               parser.fixedSizeMode(4);
               size = -1;
@@ -110,37 +106,49 @@ public class EventBus {
   /**
    * Send a message on the event bus
    * @param message The message
-   * @param receiptHandler An optional receipt handler. If specified then when the message has reached all registered
-   * handlers and each one has called {@link Message#acknowledge} then the handler will be called
+   * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
    */
-  public void send(final Message message, final Handler<Void> receiptHandler) {
+  public void send(final Message message, final Handler<Message> replyHandler) {
     message.messageID = UUID.randomUUID().toString();
     message.sender = serverID;
-    if (receiptHandler != null) {
-      message.requiresAck = true;
+    if (replyHandler != null) {
+      message.requiresReply = true;
     }
 
-    subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
-      public void handle(Future<Collection<ServerID>> event) {
-        Collection<ServerID> serverIDs = event.result();
-        if (event.succeeded()) {
-          if (serverIDs != null) {
-            if (receiptHandler != null) {
-              receiptHandlerHolders.put(message.messageID, new ReceiptHandlerHolder(receiptHandler, serverIDs.size()));
-            }
-            for (ServerID serverID : serverIDs) {
-              if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
-                send(serverID, message);
+    // First check if sender is in response address cache - it will be if it's a response
+    ServerID serverID = replyAddressCache.remove(message.address);
+    if (serverID != null) {
+      // Yes, it's a response to a particular server
+      if (!serverID.equals(this.serverID)) {
+        send(serverID, message);
+      } else {
+        receiveMessage(message.copy());
+      }
+    } else {
+      subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
+        public void handle(Future<Collection<ServerID>> event) {
+          Collection<ServerID> serverIDs = event.result();
+          if (event.succeeded()) {
+            if (serverIDs != null) {
+              if (replyHandler != null) {
+                // For request-response we use the unique message id also for the unique address of the
+                // automatically generated response handler
+                registerHandler(message.messageID, replyHandler, null, true);
+              }
+              for (ServerID serverID : serverIDs) {
+                if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
+                  send(serverID, message);
+                }
               }
             }
+            //also send locally
+            receiveMessage(message.copy());
+          } else {
+            log.error("Failed to send message", event.exception());
           }
-          //also send locally
-          receiveMessage(message.copy());
-        } else {
-          log.error("Failed to send message", event.exception());
         }
-      }
-    });
+      });
+    }
   }
 
   /**
@@ -160,32 +168,7 @@ public class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
-    Set<HandlerHolder> set = handlers.get(address);
-    if (set == null) {
-      set = new HashSet<>();
-      Set<HandlerHolder> prevSet = handlers.putIfAbsent(address, set);
-      if (prevSet != null) {
-        set = prevSet;
-      }
-      if (completionHandler == null) {
-        completionHandler = new CompletionHandler<Void>() {
-          public void handle(Future<Void> event) {
-            if (event.failed()) {
-              log.error("Failed to remove entry", event.exception());
-            }
-          }
-        };
-      }
-      subs.put(address, serverID, completionHandler);
-      set.add(new HandlerHolder(handler));
-    } else {
-      set.add(new HandlerHolder(handler));
-      if (completionHandler != null) {
-        SimpleFuture<Void> f = new SimpleFuture<>();
-        f.setResult(null);
-        completionHandler.handle(f);
-      }
-    }
+    this.registerHandler(address, handler, completionHandler, false);
   }
 
   /**
@@ -205,7 +188,7 @@ public class EventBus {
   public void unregisterHandler(String address, Handler<Message> handler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
-      set.remove(new HandlerHolder(handler));
+      set.remove(new HandlerHolder(handler, false));
       if (set.isEmpty()) {
         handlers.remove(address);
         removeSub(address, serverID);
@@ -217,21 +200,35 @@ public class EventBus {
     server.close(doneHandler);
   }
 
-  void acknowledge(ServerID sender, String messageID) {
-    Ack ack = new Ack(messageID);
-    if (sender.equals(this.serverID)) {
-      handleAck(ack);
+  private void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler,
+                               boolean replyHandler) {
+    Set<HandlerHolder> set = handlers.get(address);
+    if (set == null) {
+      set = new HashSet<>();
+      Set<HandlerHolder> prevSet = handlers.putIfAbsent(address, set);
+      if (prevSet != null) {
+        set = prevSet;
+      }
+      if (completionHandler == null) {
+        completionHandler = new CompletionHandler<Void>() {
+          public void handle(Future<Void> event) {
+            if (event.failed()) {
+              log.error("Failed to remove entry", event.exception());
+            }
+          }
+        };
+      }
+      if (!replyHandler) {
+        // Propagate the information
+        subs.put(address, serverID, completionHandler);
+      }
+      set.add(new HandlerHolder(handler, replyHandler));
     } else {
-      send(sender, ack);
-    }
-  }
-
-  private void handleAck(Ack ack) {
-    ReceiptHandlerHolder receiptHandlerHolder = receiptHandlerHolders.get(ack.messageID);
-    if (receiptHandlerHolder != null) {
-      if (--receiptHandlerHolder.count == 0) {
-        receiptHandlerHolder.receiptHandler.handle(null);
-        receiptHandlerHolders.remove(ack.messageID);
+      set.add(new HandlerHolder(handler, replyHandler));
+      if (completionHandler != null) {
+        SimpleFuture<Void> f = new SimpleFuture<>();
+        f.setResult(null);
+        completionHandler.handle(f);
       }
     }
   }
@@ -289,10 +286,17 @@ public class EventBus {
 
   // Called when a message is incoming
   private void receiveMessage(final Message msg) {
+    if (msg.requiresReply) {
+      replyAddressCache.put(msg.messageID, msg.sender);
+    }
     msg.bus = this;
     Set<HandlerHolder> set = handlers.get(msg.address);
     if (set != null) {
+      boolean replyHandler = false;
       for (final HandlerHolder holder: set) {
+        if (holder.replyHandler) {
+          replyHandler = true;
+        }
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {
             VertxInternal.instance.setContextID(holder.contextID);
@@ -300,16 +304,21 @@ public class EventBus {
           }
         });
       }
+      if (replyHandler) {
+        handlers.remove(msg.address);
+      }
     }
   }
 
   private class HandlerHolder {
     final long contextID;
     final Handler<Message> handler;
+    final boolean replyHandler;
 
-    private HandlerHolder(Handler<Message> handler) {
+    private HandlerHolder(Handler<Message> handler, boolean replyHandler) {
       this.contextID = Vertx.instance.getContextID();
       this.handler = handler;
+      this.replyHandler = replyHandler;
     }
 
     @Override
@@ -322,16 +331,6 @@ public class EventBus {
     @Override
     public int hashCode() {
       return handler.hashCode();
-    }
-  }
-
-  private class ReceiptHandlerHolder {
-    int count;
-    final Handler<Void> receiptHandler;
-
-    private ReceiptHandlerHolder(Handler<Void> receiptHandler, int count) {
-      this.receiptHandler = receiptHandler;
-      this.count = count;
     }
   }
 
