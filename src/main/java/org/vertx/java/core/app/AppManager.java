@@ -81,6 +81,12 @@ public class AppManager {
     return null;
   }
 
+  public synchronized void undeployAll() {
+    for (String name: appMeta.keySet()) {
+      undeploy(name);
+    }
+  }
+
   public synchronized String undeploy(String name) {
     if (appMeta.get(name) == null) {
       return "There is no deployed app with name " + name;

@@ -155,9 +155,32 @@ class VertxImpl implements VertxInternal {
   }
 
   public void exit() {
+    VertxInternal.appManager.undeployAll();
     //TODO disallow if running in server mode
     stopLatch.countDown();
   }
+
+  public long setPeriodic(long delay, final Handler<Long> handler) {
+    return setTimeout(delay, true, handler);
+  }
+
+  public long setTimer(long delay, final Handler<Long> handler) {
+    return setTimeout(delay, false, handler);
+  }
+
+  public void nextTick(final Handler<Void> handler) {
+    Long contextID = getContextID();
+    if (contextID == null) {
+      throw new IllegalStateException("No context id");
+    }
+    executeOnContext(contextID, new Runnable() {
+      public void run() {
+        handler.handle(null);
+      }
+    }, false);
+  }
+
+
 
   // Internal API -----------------------------------------------------------------------------------------
 
@@ -242,18 +265,6 @@ class VertxImpl implements VertxInternal {
     executeOnContext(contextID, runnable, true);
   }
 
-  public void nextTick(final Handler<Void> handler) {
-    Long contextID = getContextID();
-    if (contextID == null) {
-      throw new IllegalStateException("No context id");
-    }
-    executeOnContext(contextID, new Runnable() {
-      public void run() {
-        handler.handle(null);
-      }
-    }, false);
-  }
-
   private void executeOnContext(long contextID, Runnable runnable, boolean sameThreadOptimise) {
     NioWorker worker = workerMap.get(contextID);
     if (worker != null) {
@@ -267,14 +278,6 @@ class VertxImpl implements VertxInternal {
     } else {
       throw new IllegalStateException("Context is not registered " + contextID + " has it been destroyed?");
     }
-  }
-
-  public long setPeriodic(long delay, final Handler<Long> handler) {
-    return setTimeout(delay, true, handler);
-  }
-
-  public long setTimer(long delay, final Handler<Long> handler) {
-    return setTimeout(delay, false, handler);
   }
 
   VertxImpl() {

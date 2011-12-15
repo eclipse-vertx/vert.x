@@ -17,6 +17,7 @@
 package org.vertx.java.examples.echo;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
@@ -31,6 +32,8 @@ public class EchoClient implements VertxApp {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
+
+            Vertx.instance.exit();
           }
         });
 

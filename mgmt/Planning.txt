@@ -105,8 +105,10 @@ lookup there first
 35) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
 (We could even define a wire format gossip protocol to distribute topology to non JVM members, they could then join the
 network)
-36) App manager should undeploy when vertx.exit is called
 37) Groovy vertx app should be script like JS/Ruby
+38) Redo website
+39) Rewrite readme
+40) Update wiki on vertx run
 
 
 

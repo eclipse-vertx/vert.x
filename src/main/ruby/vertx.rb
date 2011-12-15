@@ -73,4 +73,10 @@ module Vertx
     Future.new(ia)
   end
 
+  # Cause vert.x to exit. Any stop methods of running vert.x applications will be called first
+  # Cannot be called if vert.x is running in server mode.
+  def Vertx.exit
+    org.vertx.java.core.Vertx.instance.exit
+  end
+
 end
