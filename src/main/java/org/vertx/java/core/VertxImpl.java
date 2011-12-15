@@ -155,9 +155,12 @@ class VertxImpl implements VertxInternal {
   }
 
   public void exit() {
-    VertxInternal.appManager.undeployAll();
     //TODO disallow if running in server mode
-    stopLatch.countDown();
+    VertxInternal.appManager.undeployAll(new SimpleHandler() {
+      public void handle() {
+        stopLatch.countDown();
+      }
+    });
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {

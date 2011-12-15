@@ -14,10 +14,9 @@ public class UndeployCommand extends VertxCommand {
   }
 
   public UndeployCommand() {
-
   }
 
   public void execute(AppManager appMgr) throws Exception {
-    appMgr.undeploy(name);
+    appMgr.undeploy(name, null);
   }
 }
