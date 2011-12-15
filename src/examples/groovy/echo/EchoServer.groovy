@@ -1,22 +1,19 @@
 package echo
 
 import org.vertx.groovy.core.net.NetServer
-import org.vertx.java.core.app.VertxApp
 
-class EchoServer implements VertxApp {
+println "Starting server"
 
-  def server
-
-  void start() {
-    server = new NetServer().connectHandler { socket ->
-      socket.dataHandler { buffer ->
-        socket.write buffer
-      }
-    }.listen(8080)
+server = new NetServer().connectHandler { socket ->
+  socket.dataHandler { buffer ->
+    socket.write buffer
   }
+}.listen(8080)
 
-  void stop() {
-    server.close()
-  }
 
+void vertxStop() {
+  println "vertxStop called"
+  server.close()
 }
+
+

@@ -1,6 +1,5 @@
 package org.vertx.java.core.app;
 
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.groovy.GroovyAppFactory;
 import org.vertx.java.core.app.java.JavaAppFactory;
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
