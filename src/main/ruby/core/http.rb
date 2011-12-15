@@ -520,6 +520,11 @@ module Vertx
       @trailer_names
     end
 
+    # Set a handler to receive the entire body in one go - do not use this for large bodies
+    def body_handler(&hndlr)
+      @j_del.bodyHandler(hndlr)
+    end
+
   end
 
   # Encapsulates a server-side HTTP request.
@@ -602,6 +607,11 @@ module Vertx
         end
       end
       @header_names
+    end
+
+    # Set a handler to receive the entire body in one go - do not use this for large bodies
+    def body_handler(&hndlr)
+      @j_del.bodyHandler(hndlr)
     end
 
     def _to_java_request

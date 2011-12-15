@@ -36,7 +36,7 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientResponse implements ReadStream {
+public class HttpClientResponse extends HttpReadStreamBase {
 
   private final ClientConnection conn;
   private final Thread th;
