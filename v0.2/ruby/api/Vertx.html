@@ -1,0 +1,1005 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Module: Vertx
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="_index.html">Index (V)</a> &raquo; 
+    
+    
+    <span class="title">Vertx</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Module: Vertx
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r1 last">Defined in:</dt>
+    <dd class="r1 last">src/main/ruby/vertx.rb<span class="defines">,<br />
+  src/main/ruby/core/net.rb,<br /> src/main/ruby/core/http.rb,<br /> src/main/ruby/core/buffer.rb,<br /> src/main/ruby/core/timers.rb,<br /> src/main/ruby/core/std_io.rb,<br /> src/main/ruby/core/logger.rb,<br /> src/main/ruby/core/sock_js.rb,<br /> src/main/ruby/core/streams.rb,<br /> src/main/ruby/core/event_bus.rb,<br /> src/main/ruby/core/parsetools.rb,<br /> src/main/ruby/core/shared_data.rb,<br /> src/main/ruby/core/file_system.rb,<br /> src/main/ruby/core/composition.rb,<br /> src/main/ruby/core/ssl_support.rb,<br /> src/main/ruby/core/global_handlers.rb</span>
+</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+Copyright 2011 the original author or authors.
+</p>
+<p>
+Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+you may not use this file except in compliance with the License. You may
+obtain a copy of the License at
+</p>
+<pre class="code">
+     <span class='http identifier id'>http</span><span class='symbol val'>:/</span><span class='regexp val'>/www.apache.org/</span><span class='licenses identifier id'>licenses</span><span class='div op'>/</span><span class='LICENSE constant id'>LICENSE</span><span class='minus op'>-</span><span class='float val'>2.0</span>
+</pre>
+<p>
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+   
+    
+      <strong class="modules">Modules:</strong> <span class='object_link'><a href="Vertx/Immutable.html" title="Vertx::Immutable (module)">Immutable</a></span>, <span class='object_link'><a href="Vertx/ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span>, <span class='object_link'><a href="Vertx/SSLSupport.html" title="Vertx::SSLSupport (module)">SSLSupport</a></span>, <span class='object_link'><a href="Vertx/TCPSupport.html" title="Vertx::TCPSupport (module)">TCPSupport</a></span>, <span class='object_link'><a href="Vertx/WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span>
+    
+   
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Vertx/AsyncFile.html" title="Vertx::AsyncFile (class)">AsyncFile</a></span>, <span class='object_link'><a href="Vertx/Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span>, <span class='object_link'><a href="Vertx/Composer.html" title="Vertx::Composer (class)">Composer</a></span>, <span class='object_link'><a href="Vertx/EventBus.html" title="Vertx::EventBus (class)">EventBus</a></span>, <span class='object_link'><a href="Vertx/FSProps.html" title="Vertx::FSProps (class)">FSProps</a></span>, <span class='object_link'><a href="Vertx/FileProps.html" title="Vertx::FileProps (class)">FileProps</a></span>, <span class='object_link'><a href="Vertx/FileSystem.html" title="Vertx::FileSystem (class)">FileSystem</a></span>, <span class='object_link'><a href="Vertx/Future.html" title="Vertx::Future (class)">Future</a></span>, <span class='object_link'><a href="Vertx/HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span>, <span class='object_link'><a href="Vertx/HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span>, <span class='object_link'><a href="Vertx/HttpClientResponse.html" title="Vertx::HttpClientResponse (class)">HttpClientResponse</a></span>, <span class='object_link'><a href="Vertx/HttpServer.html" title="Vertx::HttpServer (class)">HttpServer</a></span>, <span class='object_link'><a href="Vertx/HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span>, <span class='object_link'><a href="Vertx/HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span>, <span class='object_link'><a href="Vertx/Logger.html" title="Vertx::Logger (class)">Logger</a></span>, <span class='object_link'><a href="Vertx/Message.html" title="Vertx::Message (class)">Message</a></span>, <span class='object_link'><a href="Vertx/NetClient.html" title="Vertx::NetClient (class)">NetClient</a></span>, <span class='object_link'><a href="Vertx/NetServer.html" title="Vertx::NetServer (class)">NetServer</a></span>, <span class='object_link'><a href="Vertx/NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span>, <span class='object_link'><a href="Vertx/Pump.html" title="Vertx::Pump (class)">Pump</a></span>, <span class='object_link'><a href="Vertx/RecordParser.html" title="Vertx::RecordParser (class)">RecordParser</a></span>, <span class='object_link'><a href="Vertx/RouteMatcher.html" title="Vertx::RouteMatcher (class)">RouteMatcher</a></span>, <span class='object_link'><a href="Vertx/SharedData.html" title="Vertx::SharedData (class)">SharedData</a></span>, <span class='object_link'><a href="Vertx/SharedSet.html" title="Vertx::SharedSet (class)">SharedSet</a></span>, <span class='object_link'><a href="Vertx/SimpleFuture.html" title="Vertx::SimpleFuture (class)">SimpleFuture</a></span>, <span class='object_link'><a href="Vertx/SockJSServer.html" title="Vertx::SockJSServer (class)">SockJSServer</a></span>, <span class='object_link'><a href="Vertx/SockJSSocket.html" title="Vertx::SockJSSocket (class)">SockJSSocket</a></span>, <span class='object_link'><a href="Vertx/StdIO.html" title="Vertx::StdIO (class)">StdIO</a></span>, <span class='object_link'><a href="Vertx/Websocket.html" title="Vertx::Websocket (class)">Websocket</a></span>
+    
+  
+</p>
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#cancel_timer-class_method" title="cancel_timer (class method)">+ (Boolean) <strong>cancel_timer</strong>(id) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Cancels a timer.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#exit-class_method" title="exit (class method)">+ (Object) <strong>exit</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Cause vert.x to exit.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#register_handler-class_method" title="register_handler (class method)">+ (FixNum) <strong>register_handler</strong>(proc = nil, &amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Registers a global event handler.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#run_blocking-class_method" title="run_blocking (class method)">+ (Object) <strong>run_blocking</strong>(proc = nil, &amp;block) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Sometimes it is necessary to perform operations in vert.x which are
+inherently blocking, e.g.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#send_to_handler-class_method" title="send_to_handler (class method)">+ (Boolean) <strong>send_to_handler</strong>(handler_id, msg) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Send a message to a global handler.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#set_periodic-class_method" title="set_periodic (class method)">+ (FixNum) <strong>set_periodic</strong>(delay, proc = nil, &amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Sets a periodic timer.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#set_timer-class_method" title="set_timer (class method)">+ (FixNum) <strong>set_timer</strong>(delay, proc = nil, &amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Sets a one-shot timer that will fire after a certain delay.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#unregister_handler-class_method" title="unregister_handler (class method)">+ (Boolean) <strong>unregister_handler</strong>(handler_id) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Unregisters a global event handler.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="cancel_timer-class_method">
+  
+    + (<tt>Boolean</tt>) <strong>cancel_timer</strong>(id) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Cancels a timer.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>id</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the id of the timer, as returned from <span class='object_link'><a href="#set_timer-class_method" title="Vertx.set_timer (method)">set_timer</a></span> or
+<span class='object_link'><a href="#set_periodic-class_method" title="Vertx.set_periodic (method)">set_periodic</a></span>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+true if the timer was cancelled, false if it wasn&#8217;t found.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+42
+43
+44</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 42</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='cancel_timer identifier id'>cancel_timer</span><span class='lparen token'>(</span><span class='id identifier id'>id</span><span class='rparen token'>)</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='cancelTimer identifier id'>cancelTimer</span><span class='lparen token'>(</span><span class='id identifier id'>id</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="exit-class_method">
+  
+    + (<tt>Object</tt>) <strong>exit</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Cause vert.x to exit. Any stop methods of running vert.x applications will
+be called first Cannot be called if vert.x is running in server mode.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+78
+79
+80</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/vertx.rb', line 78</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='exit identifier id'>exit</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='exit identifier id'>exit</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="register_handler-class_method">
+  
+    + (<tt>FixNum</tt>) <strong>register_handler</strong>(proc = nil, &amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Registers a global event handler. The handler can be invoked by calling the
+#send_to_handler method from any event loop. The handler will always
+be called on the event loop that invoked the #register_handler
+method.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>proc</span>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a proc representing the handler
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>hndlr</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a block representing the handler
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+unique id of the handler
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+23
+24
+25
+26</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/global_handlers.rb', line 23</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='register_handler identifier id'>register_handler</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="run_blocking-class_method">
+  
+    + (<tt>Object</tt>) <strong>run_blocking</strong>(proc = nil, &amp;block) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Sometimes it is necessary to perform operations in vert.x which are
+inherently blocking, e.g. talking to legacy blocking APIs or libraries.
+This method allows blocking operations to be executed cleanly in an
+asychronous environment. This method will execute the proc or block on a
+thread from a background thread pool specially reserved for blocking
+operations. This means the event loop threads are not blocked and can
+continue to service other requests.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+69
+70
+71
+72
+73
+74</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/vertx.rb', line 69</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='run_blocking identifier id'>run_blocking</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+  <span class='block identifier id'>block</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='ia identifier id'>ia</span> <span class='assign token'>=</span> <span class='InternalAction constant id'>InternalAction</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+  <span class='ia identifier id'>ia</span><span class='dot token'>.</span><span class='execute identifier id'>execute</span>
+  <span class='Future constant id'>Future</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='ia identifier id'>ia</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="send_to_handler-class_method">
+  
+    + (<tt>Boolean</tt>) <strong>send_to_handler</strong>(handler_id, msg) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Send a message to a global handler. This can be called from any event loop.
+The message will always be delivered on the event loop that originally
+registered the handler.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+true if the message was successfully sent, or false if no such handler
+exists.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+38
+39
+40
+41</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/global_handlers.rb', line 38</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='send_to_handler identifier id'>send_to_handler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='comma token'>,</span> <span class='msg identifier id'>msg</span><span class='rparen token'>)</span>
+  <span class='msg identifier id'>msg</span> <span class='assign token'>=</span> <span class='msg identifier id'>msg</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span> <span class='if if_mod kw'>if</span> <span class='msg identifier id'>msg</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span><span class='lparen token'>(</span><span class='Buffer constant id'>Buffer</span><span class='rparen token'>)</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='sendToHandler identifier id'>sendToHandler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='comma token'>,</span> <span class='msg identifier id'>msg</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="set_periodic-class_method">
+  
+    + (<tt>FixNum</tt>) <strong>set_periodic</strong>(delay, proc = nil, &amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Sets a periodic timer. This method will accept either a Proc or a block.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>delay</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the period of the timer, in milliseconds
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>proc</span>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a proc representing the code that will be run when the timer fires
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>hndlr</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a block representing the code that will be when the timer fires
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the unique id of the timer
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+34
+35
+36
+37</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 34</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='set_periodic identifier id'>set_periodic</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='setPeriodic identifier id'>setPeriodic</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="set_timer-class_method">
+  
+    + (<tt>FixNum</tt>) <strong>set_timer</strong>(delay, proc = nil, &amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Sets a one-shot timer that will fire after a certain delay. This method
+will accept either a Proc or a block.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>delay</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the delay, in milliseconds
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>proc</span>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a proc representing the code that will be run after the delay
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>hndlr</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a block representing the code that will be run after the delay
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the unique id of the timer
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+23
+24
+25
+26</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 23</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='set_timer identifier id'>set_timer</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='setTimer identifier id'>setTimer</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="unregister_handler-class_method">
+  
+    + (<tt>Boolean</tt>) <strong>unregister_handler</strong>(handler_id) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Unregisters a global event handler.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>handler_id</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the unique id of the handler to unregister.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+true if the handler was successfully unregistered, false otherwise
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+31
+32
+33</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/global_handlers.rb', line 31</span>
+
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='unregister_handler identifier id'>unregister_handler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Thu Dec 15 18:49:00 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>

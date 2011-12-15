@@ -1,0 +1,773 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Vertx::Logger
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (L)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
+     &raquo; 
+    <span class="title">Logger</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Vertx::Logger
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Vertx::Logger</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/logger.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div>
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#get_logger-class_method" title="get_logger (class method)">+ (Object) <strong>get_logger</strong>(clazz) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+    </ul>
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#debug_enabled%3F-instance_method" title="#debug_enabled? (instance method)">- (Boolean) <strong>debug_enabled?</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#error-instance_method" title="#error (instance method)">- (Object) <strong>error</strong>(msg, ex = nil) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#fatal-instance_method" title="#fatal (instance method)">- (Object) <strong>fatal</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#info-instance_method" title="#info (instance method)">- (Object) <strong>info</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#info_enabled%3F-instance_method" title="#info_enabled? (instance method)">- (Boolean) <strong>info_enabled?</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">- (Logger) <strong>initialize</strong>(j_del) </a>
+    
+
+    
+  </span>
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+A new instance of Logger.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#trace-instance_method" title="#trace (instance method)">- (Object) <strong>trace</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#trace_enabled%3F-instance_method" title="#trace_enabled? (instance method)">- (Boolean) <strong>trace_enabled?</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#warn-instance_method" title="#warn (instance method)">- (Object) <strong>warn</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <p class="signature first" id="initialize-instance_method">
+  
+    - (<tt><span class='object_link'><a href="" title="Vertx::Logger (class)">Logger</a></span></tt>) <strong>initialize</strong>(j_del) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+A new instance of Logger
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+26
+27
+28</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 26</span>
+
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='j_del identifier id'>j_del</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='j_del identifier id'>j_del</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="get_logger-class_method">
+  
+    + (<tt>Object</tt>) <strong>get_logger</strong>(clazz) 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+21
+22
+23
+24</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 21</span>
+
+<span class='def def kw'>def</span> <span class='Logger constant id'>Logger</span><span class='dot token'>.</span><span class='get_logger identifier id'>get_logger</span><span class='lparen token'>(</span><span class='clazz identifier id'>clazz</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;Please provide a class to get_logger method&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='clazz identifier id'>clazz</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='Class constant id'>Class</span>
+  <span class='Logger constant id'>Logger</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='logging identifier id'>logging</span><span class='dot token'>.</span><span class='Logger constant id'>Logger</span><span class='dot token'>.</span><span class='getLogger identifier id'>getLogger</span><span class='lparen token'>(</span><span class='clazz identifier id'>clazz</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="debug_enabled?-instance_method">
+  
+    - (<tt>Boolean</tt>) <strong>debug_enabled?</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+34
+35
+36</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 34</span>
+
+<span class='def def kw'>def</span> <span class='debug_enabled? fid id'>debug_enabled?</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='debugEnabled identifier id'>debugEnabled</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="error-instance_method">
+  
+    - (<tt>Object</tt>) <strong>error</strong>(msg, ex = nil) 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 46</span>
+
+<span class='def def kw'>def</span> <span class='error identifier id'>error</span><span class='lparen token'>(</span><span class='msg identifier id'>msg</span><span class='comma token'>,</span> <span class='ex identifier id'>ex</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
+
+  <span class='if if kw'>if</span> <span class='ex identifier id'>ex</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
+    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='error identifier id'>error</span><span class='lparen token'>(</span><span class='msg identifier id'>msg</span><span class='rparen token'>)</span>
+  <span class='elsif elsif kw'>elsif</span> <span class='ex identifier id'>ex</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='java identifier id'>java</span><span class='dot token'>.</span><span class='lang identifier id'>lang</span><span class='dot token'>.</span><span class='Throwable constant id'>Throwable</span>
+    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='error identifier id'>error</span><span class='lparen token'>(</span><span class='msg identifier id'>msg</span><span class='comma token'>,</span> <span class='ex identifier id'>ex</span><span class='rparen token'>)</span>
+  <span class='elsif elsif kw'>elsif</span> <span class='ex identifier id'>ex</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='Exception constant id'>Exception</span>
+    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='error identifier id'>error</span><span class='lparen token'>(</span><span class='obj identifier id'>obj</span><span class='dot token'>.</span><span class='message identifier id'>message</span><span class='rparen token'>)</span>
+    <span class='trace identifier id'>trace</span> <span class='assign token'>=</span> <span class='string val'>''</span>
+    <span class='obj identifier id'>obj</span><span class='dot token'>.</span><span class='backtrace identifier id'>backtrace</span><span class='dot token'>.</span><span class='each identifier id'>each</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='line identifier id'>line</span><span class='bitor op'>|</span> <span class='trace identifier id'>trace</span> <span class='lshft op'>&lt;&lt;</span> <span class='line identifier id'>line</span> <span class='lshft op'>&lt;&lt;</span> <span class='string val'>&quot;\n&quot;</span> <span class='rbrace token'>}</span>
+    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='error identifier id'>error</span><span class='lparen token'>(</span><span class='trace identifier id'>trace</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="fatal-instance_method">
+  
+    - (<tt>Object</tt>) <strong>fatal</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+42
+43
+44</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 42</span>
+
+<span class='def def kw'>def</span> <span class='fatal identifier id'>fatal</span>
+
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="info-instance_method">
+  
+    - (<tt>Object</tt>) <strong>info</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+65
+66
+67</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 65</span>
+
+<span class='def def kw'>def</span> <span class='info identifier id'>info</span>
+
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="info_enabled?-instance_method">
+  
+    - (<tt>Boolean</tt>) <strong>info_enabled?</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+30
+31
+32</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 30</span>
+
+<span class='def def kw'>def</span> <span class='info_enabled? fid id'>info_enabled?</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='infoEnabled identifier id'>infoEnabled</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="trace-instance_method">
+  
+    - (<tt>Object</tt>) <strong>trace</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+69
+70
+71</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 69</span>
+
+<span class='def def kw'>def</span> <span class='trace identifier id'>trace</span>
+
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="trace_enabled?-instance_method">
+  
+    - (<tt>Boolean</tt>) <strong>trace_enabled?</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+38
+39
+40</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 38</span>
+
+<span class='def def kw'>def</span> <span class='trace_enabled? fid id'>trace_enabled?</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='traceEnabled identifier id'>traceEnabled</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="warn-instance_method">
+  
+    - (<tt>Object</tt>) <strong>warn</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+61
+62
+63</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 61</span>
+
+<span class='def def kw'>def</span> <span class='warn identifier id'>warn</span>
+
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Thu Dec 15 18:49:02 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>

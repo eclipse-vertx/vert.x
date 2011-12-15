@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  File: README
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="_index.html" title="Index">Index</a> &raquo; 
+    <span class="title">File: README</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><div id='filecontents'><h1>vert.x</h1>
+
+<h2>What is vert.x?</h2>
+
+<p>The next generation polyglot asynchronous application framework.
+(Formerly known as node.x)</p>
+
+<ul>
+<li>Runs on the JVM.</li>
+<li>Embraces the good bits of event driven frameworks like node.js then adds some even juicier bits.</li>
+<li>Everything is non-blocking.</li>
+<li>Polyglot. vert.x will be usable from multiple languages: Ruby, Groovy, Java, JavaScript, Python, Clojure, Scala. Currently we support Java and Ruby and have partial Groovy support. Write your code in the language <em>you</em> choose. Leverage the power of vert.x from that language.</li>
+<li>Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.</li>
+<li>Enables you to create network servers or clients incredibly easily.</li>
+<li>True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.</li>
+<li>Incredibly simple [concurrency model] (<a href="https://github.com/purplefox/vert.x/wiki/Concurrency-model">https://github.com/purplefox/vert.x/wiki/Concurrency-model</a>). Write your code as single threaded but watch it scale across multiple cores. No need to worry about race conditions or locks.</li>
+<li>Understands multiple network protocols out of the box including: TCP, SSL, HTTP, HTTPS, Websockets.</li>
+<li>Efficiently serve static files from the filesystem bypassing user-space altogether.</li>
+<li>Simple Sinatra/Express style resource based web routing.</li>
+<li>Distributed event bus. Multiple vert.x instances work together seamlessly to provide a distributed event bus</li>
+<li>SockJS support</li>
+</ul>
+
+
+<h2>Jump to the examples</h2>
+
+<p>Take a look at some of these working Ruby examples to see the kind of things you can do with vert.x</p>
+
+<p><a href="https://github.com/purplefox/vert.x/tree/master/src/examples/ruby" title="Ruby examples">Ruby examples</a></p>
+
+<p><a href="https://github.com/purplefox/vert.x/tree/master/src/examples/java" title="Java examples">Java examples</a></p>
+
+<h2>API docs</h2>
+
+<p>API docs in Java and Ruby are [here] (<a href="http://purplefox.github.com/vert.x/">http://purplefox.github.com/vert.x/</a>)</p>
+
+<h2>What is the status of vert.x?</h2>
+
+<p>The second binary release, vert.x 0.2, has been released.</p>
+
+<p>You can find the Road-map [here] (<a href="https://github.com/purplefox/vert.x/wiki/Road-map">https://github.com/purplefox/vert.x/wiki/Road-map</a>)</p>
+
+<h2>What is the architecture?</h2>
+
+<p>vert.x <em>core</em> is currently written in Java. We then provide a thin layer in each of the JVM languages we support which allows the API to be used in each of the supported languages.</p>
+
+<p>We do not expose the Java API directly in the other languages since we wish to retain the normal coding idioms for each supported language.</p>
+
+<p>We don't leak Java stuff to other languages through the API.</p>
+
+<p>vert.x internally uses <a href="https://github.com/netty/netty" title="Netty">Netty</a> for much of the asynchronous IO.</p>
+
+<h2>Building from source</h2>
+
+<p>Instructions for building vert.x from source are <a href="https://github.com/purplefox/vert.x/wiki/Build-instructions">here</a></p>
+
+<h2>Installation and running the examples</h2>
+
+<p>Instructions for installing and running vert.x are are [here] (<a href="https://github.com/purplefox/vert.x/wiki/Installation-and-running">https://github.com/purplefox/vert.x/wiki/Installation-and-running</a>)</p>
+
+<h2>Development and user discussions</h2>
+
+<p><a href="http://groups.google.com/group/vertx">vert.x Google Group</a></p>
+
+<h2>FAQ</h2>
+
+<p>FAQ [here] (<a href="https://github.com/purplefox/vert.x/wiki/FAQ">https://github.com/purplefox/vert.x/wiki/FAQ</a>)</p>
+
+<h2>IRC</h2>
+
+<p>There's an IRC channel at irc.freenode.net#vertx if you want to drop in to chat about any user or development topics</p>
+
+<h2>Join us!!</h2>
+
+<p>There is lots to do! We are looking for contributors - both individual and corporate. Ping @timfox on twitter, or post on the <a href="http://groups.google.com/group/vertx">vert.x Google Group</a>.</p>
+</div></div>
+    
+    <div id="footer">
+  Generated on Thu Dec 15 18:48:59 2011 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
