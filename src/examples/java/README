@@ -11,34 +11,15 @@ Prerequisites:
 
 1. Compile the java classes by invoking ant from this directory
 
-2. Start a vertx instance:
+2. Deploy an example:
 
-vertx start
-
-The instance will then listen on port 25571 for request to deploy / undeploy applications
-
-If you want to start more than one vertx instance on the same machine you can specify different ports for them
-to listen on, e.g.:
-
-vertx start -port 22572
-vertx start -port 22573
-
-3. Deploy an example:
-
-(for full help on deploying just type vertx deploy from the command line)
+(for full help on deploying just type vertx from the command line)
 
 (from this directory)
 
-vertx deploy -main <example class name> -cp classes
+vertx run  -main <example main class name> -cp classes
 
-where <example class name> is, for example, org.vertx.java.examples.echo.EchoServer
-
-For some examples it might make sense to run, say, the client and server in different vert.x instances. To
-do this, just start multiple vert.x instances on different ports (see 2) above), and then specify the port when
-deploying, e.g.:
-
-vertx deploy -main <example class name> -cp classes -port <port>
-
+where <example main class name> is, for example, org.vertx.java.examples.echo.EchoServer
 
 There now follows a description of all the available examples:
 
@@ -49,13 +30,13 @@ A simple echo server which echos back any sent to it
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.echo.EchoServer -cp classes
+vertx run -main org.vertx.java.examples.echo.EchoServer -cp classes
 
 Then either telnet localhost 8080 and notice how text entered via telnet is echoed back
 
-Instead of telnet you can also run a simple echo client:
+Instead of telnet you can also run a simple echo client in a different console:
 
-vertx deploy -main org.vertx.java.examples.echo.EchoClient -cp classes
+vertx run -main org.vertx.java.examples.echo.EchoClient -cp classes
 
 Fanout Server
 =============
@@ -64,7 +45,7 @@ Fans out all data received on any one connection to all other connections.
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.fanout.FanoutServer -cp classes
+vertx run -main org.vertx.java.examples.fanout.FanoutServer -cp classes
 
 Then telnet localhost 8080 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
@@ -76,13 +57,13 @@ request and displays the response it receives.
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.http.ServerExample -cp classes
+vertx run -main org.vertx.java.examples.http.ServerExample -cp classes
 
 Then point your browser at http://localhost:8080
 
-Alternatively, you can also run the HTTP client:
+Alternatively, you can also run the HTTP client in a different console:
 
-vertx deploy -main org.vertx.java.examples.http.ClientExample -cp classes
+vertx run -main org.vertx.java.examples.http.ClientExample -cp classes
 
 HTTPS
 =====
@@ -91,13 +72,13 @@ Like the HTTP example, but using HTTPS
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.https.ServerExample -cp classes
+vertx run -main org.vertx.java.examples.https.ServerExample -cp classes
 
 Then point your browser at http://localhost:4443
 
-Alternatively, you can also run the HTTPS client:
+Alternatively, you can also run the HTTPS client in a different console:
 
-vertx deploy -main org.vertx.java.examples.https.ClientExample -cp classes
+vertx run -main org.vertx.java.examples.https.ClientExample -cp classes
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's
 normal.
@@ -116,19 +97,19 @@ response it receives
 
 c) A proxy server which simply sits in the middle proxying requests and responses between client and server
 
-To run (you probably want to do this with three vert.x instances running on different ports).
+Do each part in a different console:
 
 To run the http server:
 
-vertx deploy -main org.vertx.java.examples.proxy.Server -cp classes
+vertx run -main org.vertx.java.examples.proxy.Server -cp classes
 
 Run the proxy server:
 
-vertx deploy -main org.vertx.java.examples.proxy.ProxyServer -cp classes
+vertx run -main org.vertx.java.examples.proxy.ProxyServer -cp classes
 
 Run the http client:
 
-vertx deploy -main org.vertx.java.examples.proxy.Client -cp classes
+vertx run -main org.vertx.java.examples.proxy.Client -cp classes
 
 PubSub
 ======
@@ -161,7 +142,7 @@ Where:
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.pubsub.PubSubServer -cp classes
+vertx run -main org.vertx.java.examples.pubsub.PubSubServer -cp classes
 
 Then open some more consoles and telnet localhost 8080, and experiment with the protocol.
 
@@ -175,7 +156,7 @@ The example contains three static pages: index.html, page1.html and page2.html w
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.sendfile.SendFileExample -cp classes
+vertx run -main org.vertx.java.examples.sendfile.SendFileExample -cp classes
 
 Then point your browser at http://localhost:8080 and click around
 
@@ -186,11 +167,11 @@ This is like the echo example, but this time using SSL.
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.ssl.SSLServer -cp classes
+vertx run -main org.vertx.java.examples.ssl.SSLServer -cp classes
 
-To run the client:
+To run the client in a different console:
 
-vertx deploy -main org.vertx.java.examples.ssl.SSLClient -cp classes
+vertx run -main org.vertx.java.examples.ssl.SSLClient -cp classes
 
 Upload
 ======
@@ -200,11 +181,11 @@ HTTP request and streams the data to a file on disk.
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.upload.UploadServer -cp classes
+vertx run -main org.vertx.java.examples.upload.UploadServer -cp classes
 
-To run the client:
+To run the client in a different console:
 
-vertx deploy -main org.vertx.java.examples.upload.UploadClient -cp classes
+vertx run -main org.vertx.java.examples.upload.UploadClient -cp classes
 
 Websockets
 ==========
@@ -214,7 +195,7 @@ to create a websocket to a server, and send and receive data from it.
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.websockets.WebsocketsExample -cp classes
+vertx run -main org.vertx.java.examples.websockets.WebsocketsExample -cp classes
 
 Then point your browser at: http://localhost:8080
 
@@ -228,7 +209,7 @@ To run this example you must have a Redis server running on localhost.
 
 The, to run the example:
 
-vertx deploy -main org.vertx.java.examples.redis.RedisExample -cp classes
+vertx run -main org.vertx.java.examples.redis.RedisExample -cp classes
 
 Then point your browser at: http://localhost:8080 and hit refresh a few times
 
@@ -240,7 +221,7 @@ in the manner of express (JS) or Sinatra.
 
 To run the example:
 
-vertx deploy -main org.vertx.java.examples.routeMatch.RouteMatchExample -cp classes
+vertx run -main org.vertx.java.examples.routeMatch.RouteMatchExample -cp classes
 
 Then point your browser at: http://localhost:8080.
 
@@ -258,7 +239,7 @@ to create a SockJS connection to a server, and send and receive data from it.
 
 To run the server:
 
-vertx deploy -main org.vertx.java.examples.sockjs.SockJSExample -cp classes
+vertx run -main org.vertx.java.examples.sockjs.SockJSExample -cp classes
 
 Then point your browser at: http://localhost:8080
 
