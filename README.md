@@ -8,7 +8,7 @@ The next generation polyglot asynchronous application framework.
 * Runs on the JVM.
 * Embraces the good bits of event driven frameworks like node.js then adds some even juicier bits.
 * Everything is non-blocking.
-* Polyglot. vert.x will be usable from multiple languages: Ruby, Groovy, Java, JavaScript, Python, Clojure, Scala. Currently we support Java and Ruby. Write your code in the language *you* choose. Leverage the power of vert.x from that language.
+* Polyglot. vert.x will be usable from multiple languages: Ruby, Groovy, Java, JavaScript, Python, Clojure, Scala. Currently we support Java and Ruby and have partial Groovy support. Write your code in the language *you* choose. Leverage the power of vert.x from that language.
 * Goes with the recent developments with InvokeDynamic in Java 7 and bets on the JVM being the future premier runtime for dynamic languages.
 * Enables you to create network servers or clients incredibly easily.
 * True scalability. Unlike other well-known event-driven frameworks, you can have more than one event loop per process. No more spinning up 32 instances just to utilise the cores on your server.
@@ -17,6 +17,7 @@ The next generation polyglot asynchronous application framework.
 * Efficiently serve static files from the filesystem bypassing user-space altogether.
 * Simple Sinatra/Express style resource based web routing.
 * Distributed event bus. Multiple vert.x instances work together seamlessly to provide a distributed event bus
+* SockJS support
 
 ## Jump to the examples
 
@@ -32,7 +33,7 @@ API docs in Java and Ruby are [here] (http://purplefox.github.com/vert.x/)
 
 ## What is the status of vert.x?
 
-The first binary release, vert.x 0.1, has been released.
+The second binary release, vert.x 0.2, has been released.
 
 You can find the Road-map [here] (https://github.com/purplefox/vert.x/wiki/Road-map)
 
