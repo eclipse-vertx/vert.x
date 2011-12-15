@@ -80,7 +80,7 @@ public class VertxMgr {
 
   private void runApplication(Args args) {
     if (startCluster(args)) {
-      AppManager mgr = new AppManager();
+      AppManager mgr = VertxInternal.appManager;
       DeployCommand dc = createDeployCommand(args, "run");
       if (dc != null) {
         try {
@@ -97,7 +97,7 @@ public class VertxMgr {
   private void startServer(Args args) {
     if (startCluster(args)) {
       System.out.println("vert.x server started");
-      AppManager mgr = new AppManager();
+      AppManager mgr = VertxInternal.appManager;
       SocketDeployer sd = new SocketDeployer(mgr, args.getInt("-deploy-port"));
       sd.start();
       VertxInternal.instance.block();
