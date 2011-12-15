@@ -70,6 +70,8 @@ public class EventBusTest extends TestBase {
   private ContextChecker checker;
   private List<TestHandler> handlersToAdd = new ArrayList<>();
 
+  private static final Buffer REPLY_BUFF = Buffer.create("this is a reply");
+
   @AfterClass
   public void tearDown() {
     super.tearDown();
@@ -228,7 +230,7 @@ public class EventBusTest extends TestBase {
     sendMessage(done, pos, address, false);
   }
 
-  private void sendMessage(final Handler<Void> done, final int pos, final String address, final boolean ack) {
+  private void sendMessage(final Handler<Void> done, final int pos, final String address, final boolean reply) {
     CompletionHandler<Void> handler = new CompletionHandler<Void>() {
       AtomicInteger count = new AtomicInteger(handlersToAdd.size());
       public void handle(Future<Void> event) {
@@ -239,18 +241,32 @@ public class EventBusTest extends TestBase {
             Buffer buff = Utils.generateRandomBuffer(1000);
             Message msg = new Message(address, buff);
             EventBus bus = buses.get(pos);
-            if (ack) {
-              Handler<Void> dHandler = new SimpleHandler() {
+
+            if (reply) {
+
+              class AggregateHandler extends SimpleHandler {
                 int count;
-                public void handle() {
+                protected void handle() {
                   if (++count == 2) {
-                    // Must wait for for it to be called twice
+                    //Both messages have been received and reply has returned
+                    //so done handler can be called
                     done.handle(null);
                   }
                 }
+              }
+
+              final Handler<Void> aggHandler = new AggregateHandler();
+
+              Handler<Message> replyHandler = new Handler<Message>() {
+                public void handle(Message message) {
+                  azzert(Utils.buffersEqual(REPLY_BUFF, message.body));
+                  aggHandler.handle(null);
+                }
               };
-              bus.send(msg, dHandler);
-              assertReceived(dHandler, msg);
+
+              bus.send(msg, replyHandler);
+
+              assertReceived(aggHandler, msg);
             } else {
               bus.send(msg);
               assertReceived(done, msg);
@@ -330,7 +346,7 @@ public class EventBusTest extends TestBase {
       checker.check();
       this.message = msg;
       messageCounter.onReceived();
-      msg.acknowledge();
+      msg.reply(REPLY_BUFF);
     }
   }
 }

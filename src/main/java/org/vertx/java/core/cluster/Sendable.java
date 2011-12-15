@@ -21,8 +21,6 @@ public abstract class Sendable {
     switch (type) {
       case TYPE_MESSAGE:
         return new Message(buff);
-      case TYPE_ACK:
-        return new Ack(buff);
       default:
         throw new IllegalStateException("Invalid type " + type);
     }
