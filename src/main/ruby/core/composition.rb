@@ -82,7 +82,7 @@ module Vertx
 
   end
 
-  # A simple Future instance that you can use from inside blocks passed into {@link Composer.series} or {@link Composer.parallel}
+  # A simple Future instance that you can use from inside blocks passed into {Composer#series} or {Composer#parallel}
   # @author {http://tfox.org Tim Fox}
   class SimpleFuture < Future
     def initialize
@@ -143,43 +143,22 @@ module Vertx
       @j_comp = org.vertx.java.core.composition.Composer.new
     end
 
-    # Add a {Deferred} or a block to be executed in parallel with any other Deferred instances added using this method since the
-    # last time (if any) the {#series} method was invoked. All such Deferred instances will be executed only
-    # when there are no more Deferred instances that have not yet completed and were added before the last call to {#series}.
-    # @param [Deferred] deferred - The [Deferred] to add. This can be nil if a block is specified instead.
-    # @param [Block] block - An arbitrary block to execute with the same semantics of the [Deferred].
-    # @return [Future] A Future representing the future result of the Deferred.
     def parallel(proc = nil, &block)
       block = proc if proc
       deff = create_def(block)
       @j_comp.parallel(deff)
     end
 
-    # Adds a Deferred that will be executed after any other Deferred instances that were added to this Composer have
-    # completed.
-    # @param [Deferred] deferred - The [Deferred] to add. This can be nil if a block is specified instead.
-    # @param [Block] block - An arbitrary block to execute with the same semantics of the [Deferred].
-    # @return [Future] A Future representing the future result of the Deferred.
     def series(proc = nil, &block)
       block = proc if proc
       deff = create_def(block)
       @j_comp.series(deff)
     end
 
-    # Start executing any Deferred instances added to this composer. Any instances added with {#parallel} will
-    # be executed immediately until the first instance added with {#series} is encountered. Once all of those
-    # instances have completed then, the next "batch" of Deferred instances starting from instance added with {#series}
-    # up until the next instance added with {#series} will be executed. Once all of those have completed the next batch
-    # up until the next {#series} will be executed. This process continues until all Deferred instances have been
-    # executed.
     def execute
       @j_comp.execute
     end
 
-    # Set an exception handler that will be called if any of the Deferreds in this Composer fail asynchronously,
-    # or if they fail to execute
-    # @param [Proc] proc A proc to be used as the handler
-    # @param [Block] hndlr A block to be used as the handler
     def exception_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_comp.exceptionHandler(hndlr)
