@@ -8,36 +8,38 @@ Core modules
 ============
 
 Net - done
-UDP
-DNS
-STDIO - done
-Buffer - done
-Composition - partially done
-Shared data - done
-Vertx (including Timers, registering handlers) - done
-FileSystem - done
-ParseTools - done
-Http - done
-Module manager
+HTTP (incl websockets)
+UDP ??
+DNS ??
+STDIO
+Buffer
+Composition
+Shared data
+Vertx (including Timers, registering handlers)
+FileSystem
+ParseTools
+SockJS
+App Manager
+Sinatra/Express REST style routing
+Event bus
 
-Add on modules
-==============
+Add on modules ideas
+====================
+Module manager
 AMQP
-Redis - done
+Redis
 STOMP
 SMTP
 JDBC
 MongoDB
 Memcached
 Spawn
-REST
 Twitter
 FB
 Google+
 Supervisors
 Remote Actors
-Socket-IO
-Sock-JS
+Socket-IO ?
 Web framework
 JNDI
 JMS
@@ -45,19 +47,23 @@ SCTP
 PGM
 ZeroMQ
 Gemfire
-Distributed events (hook.io style)
 Webmachine style
 
 Supported Languages
 ===================
 
+Initially:
+
 Java
-JRuby                                                        7
-Clojure
+Ruby
 Groovy
-Groovy++
-JavaScript (Rhino/Nashorn?)
-Jython
+JavaScript (Initially Rhino, then hopefully moving to DynJS as it matures)
+
+
+Going ahead:
+                                                      7
+Clojure
+Python
 Scala
 
 
@@ -68,16 +74,12 @@ TODO
 3) SSL exceptions aren't very nice
 4) StartTLS
 5) endHandler handlers not currently being called - check this
-6) Websocket close protocol
 7) Synchronous versions of filesystem ops ??
 8) Filesystem lock + watch
-9) Javadoc
-10) Ruby doc
 12) Netty needs to implement event loop
 13) HTTP server side 100-continue handling
 15) Netty should build timers into event loop
 19) Make Java vertx methods static ??
-20) Package manager and deployment
 21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.
 
@@ -92,17 +94,19 @@ it will go into a pending list, like with HttpClientRequest
 need any synchronization.
 23) HTTP connection reconnection.
 24) Look at Redis cluster support in client
-25) Core JSON support
-27) The way event bus is started and shutdown is pretty ugly at the moment
+25) Core JSON support - wrap Jackson?
 28) Cleanup package config and core vs optional dependencies
 29) Event bus should be paritioned into "application groups" for isolation.
 30) DHT
 31) JSON API for Event bus
 32) Event bus: change acknowledge to reply and use same mechanism for sending messages, cache sender in local cache and
 lookup there first
-33) Add vertx-run script for starting vert.x app without starting server first
 34) Think about combining distributed event bus and in vm event bus (register_handler/send_to_handler)
 35) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
+(We could even define a wire format gossip protocol to distribute topology to non JVM members, they could then join the
+network)
+36) App manager should undeploy when vertx.exit is called
+37) Groovy vertx app should be script like JS/Ruby
 
 
 
