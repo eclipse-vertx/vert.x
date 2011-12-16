@@ -48,9 +48,9 @@ module Vertx
     # It will be called when the reply from a receiver is received.
     def EventBus.send(message, &reply_handler)
       if reply_handler != nil
-        org.vertx.java.core.cluster.EventBus.instance.send(message._to_java_message, reply_handler)
+        org.vertx.java.core.eventbus.EventBus.instance.send(message._to_java_message, reply_handler)
       else
-        org.vertx.java.core.cluster.EventBus.instance.send(message._to_java_message)
+        org.vertx.java.core.eventbus.EventBus.instance.send(message._to_java_message)
       end
     end
 
@@ -61,7 +61,7 @@ module Vertx
     # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
     def EventBus.register_handler(address, &message_hndlr)
       internal = InternalHandler.new(address, message_hndlr)
-      org.vertx.java.core.cluster.EventBus.instance.registerHandler(address, internal)
+      org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
       id = @@handler_seq.incrementAndGet
       @@handler_map.put(id, internal)
       id
@@ -72,7 +72,7 @@ module Vertx
     def EventBus.unregister_handler(handler_id)
       handler = @@handler_map.remove(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.core.cluster.EventBus.instance.unregisterHandler(handler.address, handler)
+      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler.address, handler)
     end
 
     # @private
@@ -141,7 +141,7 @@ module Vertx
 
     # @private
     def _to_java_message
-      org.vertx.java.core.cluster.Message.new(@address, @body._to_java_buffer)
+      org.vertx.java.core.eventbus.Message.new(@address, @body._to_java_buffer)
     end
 
   end

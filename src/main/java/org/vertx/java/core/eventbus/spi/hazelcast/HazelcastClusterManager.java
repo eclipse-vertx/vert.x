@@ -1,8 +1,8 @@
-package org.vertx.java.core.cluster.spi.hazelcast;
+package org.vertx.java.core.eventbus.spi.hazelcast;
 
 import com.hazelcast.core.Hazelcast;
-import org.vertx.java.core.cluster.spi.AsyncMultiMap;
-import org.vertx.java.core.cluster.spi.ClusterManager;
+import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
+import org.vertx.java.core.eventbus.spi.ClusterManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

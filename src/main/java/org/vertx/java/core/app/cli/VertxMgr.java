@@ -6,8 +6,8 @@ import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.app.Args;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.cluster.EventBus;
-import org.vertx.java.core.cluster.spi.ClusterManager;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
@@ -192,19 +192,19 @@ public class VertxMgr {
 
 
   private boolean startCluster(Args args) {
-    if (args.map.get("-cluster") != null) {
+    if (args.map.get("-eventbus") != null) {
       System.out.println("Starting clustering");
-      int clusterPort = args.getInt("-cluster-port");
+      int clusterPort = args.getInt("-eventbus-port");
       if (clusterPort == -1) {
         clusterPort = 25500;
       }
-      String clusterHost = args.map.get("-cluster-host");
+      String clusterHost = args.map.get("-eventbus-host");
       if (clusterHost == null) {
         clusterHost = "0.0.0.0";
       }
-      String clusterProviderClass = args.map.get("-cluster-provider");
+      String clusterProviderClass = args.map.get("-eventbus-provider");
       if (clusterProviderClass == null) {
-        clusterProviderClass = "org.vertx.java.core.cluster.spi.hazelcast.HazelcastClusterManager";
+        clusterProviderClass = "org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager";
       }
       final Class clusterProvider;
       try {
@@ -222,7 +222,7 @@ public class VertxMgr {
             mgr = (ClusterManager)clusterProvider.newInstance();
           } catch (Exception e) {
             e.printStackTrace(System.err);
-            System.err.println("Failed to instantiate cluster provider");
+            System.err.println("Failed to instantiate eventbus provider");
             return;
           }
           EventBus bus = new EventBus(clusterServerID, mgr) {

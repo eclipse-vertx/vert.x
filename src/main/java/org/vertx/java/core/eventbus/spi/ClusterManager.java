@@ -1,4 +1,4 @@
-package org.vertx.java.core.cluster.spi;
+package org.vertx.java.core.eventbus.spi;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

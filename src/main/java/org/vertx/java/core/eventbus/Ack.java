@@ -1,4 +1,4 @@
-package org.vertx.java.core.cluster;
+package org.vertx.java.core.eventbus;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

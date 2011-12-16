@@ -1,4 +1,4 @@
-package org.vertx.java.core.cluster.spi;
+package org.vertx.java.core.eventbus.spi;
 
 import org.vertx.java.core.CompletionHandler;
 
