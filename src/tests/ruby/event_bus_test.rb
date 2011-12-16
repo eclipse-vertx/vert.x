@@ -20,7 +20,7 @@ include Vertx
 # Just some basic tests - most testing is done at the Java layer
 class EventBusTest < Test::Unit::TestCase
 
-  class TestEventBus < org.vertx.java.core.cluster.EventBus
+  class TestEventBus < org.vertx.java.core.eventbus.EventBus
     def initialize(server_id, cluster_manager)
       super(server_id, cluster_manager)
     end
@@ -35,9 +35,9 @@ class EventBusTest < Test::Unit::TestCase
     latch = Utils::Latch.new(1)
     Vertx::internal_go {
       @c_id = org.vertx.java.core.Vertx.instance.getContextID
-      @cm = org.vertx.java.core.cluster.spi.hazelcast.HazelcastClusterManager.new
+      @cm = org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager.new
       @eb = TestEventBus.new(serverID, @cm)
-      org.vertx.java.core.cluster.EventBus.initialize(@eb)
+      org.vertx.java.core.eventbus.EventBus.initialize(@eb)
       latch.countdown
     }
     latch.await(5)

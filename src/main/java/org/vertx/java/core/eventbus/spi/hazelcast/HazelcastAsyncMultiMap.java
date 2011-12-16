@@ -1,9 +1,9 @@
-package org.vertx.java.core.cluster.spi.hazelcast;
+package org.vertx.java.core.eventbus.spi.hazelcast;
 
 import org.vertx.java.core.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Deferred;
-import org.vertx.java.core.cluster.spi.AsyncMultiMap;
+import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
 
 import java.util.Collection;
 

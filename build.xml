@@ -128,7 +128,7 @@
     <target name="javadoc" depends="compile-core">
         <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
                 classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}"
-                packagenames="org.vertx.java.core,org.vertx.java.core.buffer,org.vertx.java.core.composition,org.vertx.java.core.file,org.vertx.java.core.http,org.vertx.java.core.logging,org.vertx.java.core.net,org.vertx.java.core.parsetools,org.vertx.java.core.shared,org.vertx.java.core.sockjs,org.vertx.java.core.stdio,org.vertx.java.core.streams">
+                packagenames="org.vertx.java.core,org.vertx.java.core.buffer,org.vertx.java.core.composition,org.vertx.java.core.file,org.vertx.java.core.http,org.vertx.java.core.logging,org.vertx.java.core.net,org.vertx.java.core.parsetools,org.vertx.java.core.shared,org.vertx.java.core.sockjs,org.vertx.java.core.stdio,org.vertx.java.core.streams,org.vertx.java.core.eventbus">
             <!-- <fileset dir="${core-src}" defaultexcludes="yes">
                 <include name="org/vertx/java/core/**"/>
             </fileset>

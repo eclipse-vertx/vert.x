@@ -8,10 +8,10 @@ import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.cluster.EventBus;
-import org.vertx.java.core.cluster.Message;
-import org.vertx.java.core.cluster.spi.ClusterManager;
-import org.vertx.java.core.cluster.spi.hazelcast.HazelcastClusterManager;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.spi.ClusterManager;
+import org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.ServerID;
@@ -279,7 +279,7 @@ public class EventBusTest extends TestBase {
       }
     };
 
-    // We need to wait for the handlers to be added and propagated across the cluster before sending, otherwise
+    // We need to wait for the handlers to be added and propagated across the eventbus before sending, otherwise
     // race conditions may ensue
     for (TestHandler msgHandler: handlersToAdd) {
       buses.get(msgHandler.pos).registerHandler(msgHandler.subName, msgHandler, handler);

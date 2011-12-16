@@ -1,4 +1,4 @@
-package org.vertx.java.core.cluster;
+package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
@@ -6,8 +6,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleFuture;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.cluster.spi.AsyncMultiMap;
-import org.vertx.java.core.cluster.spi.ClusterManager;
+import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
+import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
