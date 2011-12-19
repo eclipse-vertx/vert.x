@@ -125,7 +125,7 @@ module Vertx
 
   # NetClient is an asynchronous factory for TCP or SSL connections.
   #
-  # Multiple connections to different servers can be made using the same instance. Instances of this class can be shared by different
+  # Multiple connections to different servers can be made using the same instance. Instances of this class can be shareddata by different
   # event loops.
   #
   # @author {http://tfox.org Tim Fox}

@@ -46,10 +46,18 @@ public class TestBase {
   public void tearDown() {
 
     if (NetServer.numServers() != 0) {
+
+      log.info("************************************************************************************************* " +
+          "netservers!!! " + NetServer.numServers() + " "+ this.getClass().getName());
+
       throw new IllegalStateException("There should be no NetServer instances at end of test");
     }
 
     if (HttpServer.numServers() != 0) {
+
+      log.info("************************************************************************************************** " +
+          "httpservers!!! "+ HttpServer.numServers() + " " + this.getClass().getName());
+
       throw new IllegalStateException("There should be no NetServer instances at end of test");
     }
 

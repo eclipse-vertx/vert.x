@@ -3,7 +3,7 @@ package org.vertx.java.core.net;
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class HandlerManager<T> {
     if (handlers.isEmpty()) {
       handlerMap.remove(worker);
     }
-    //Available workers does it's own reference counting -since workers can be shared across different HandlerManagers
+    //Available workers does it's own reference counting -since workers can be shareddata across different HandlerManagers
     availableWorkers.removeWorker(worker);
   }
 

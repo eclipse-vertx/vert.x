@@ -20,13 +20,13 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shared.SharedData;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 

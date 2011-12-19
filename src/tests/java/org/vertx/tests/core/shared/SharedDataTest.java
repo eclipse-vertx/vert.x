@@ -19,7 +19,7 @@ package org.vertx.tests.core.shared;
 import org.testng.annotations.Test;
 import org.vertx.java.core.Immutable;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.shared.SharedData;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 

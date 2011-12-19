@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.internal;
+package org.vertx.java.core;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.app.AppManager;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -27,15 +25,13 @@ import java.util.concurrent.ExecutorService;
 /**
  * This class provides services for vert.x core internal use only
  * It is not part of the public API and should not be used by
- * developers using vert.x
+ * developers creating vert.x applications
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface VertxInternal extends Vertx {
 
   static VertxInternal instance = (VertxInternal) Vertx.instance;
-
-  static AppManager appManager = new AppManager();
 
   NioWorkerPool getWorkerPool();
 
@@ -60,9 +56,4 @@ public interface VertxInternal extends Vertx {
   int getCoreThreadPoolSize();
 
   void go(Runnable runnable);
-
-  /**
-   * Stop the JVM from exiting, since all event loops are daemons
-   */
-  void block();
 }

@@ -17,8 +17,8 @@
 package org.vertx.java.core.stdio;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.streams.ReadStream;
 
 import java.io.IOException;

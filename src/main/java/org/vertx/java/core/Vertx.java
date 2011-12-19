@@ -78,10 +78,4 @@ public interface Vertx {
    * Call the specified event handler asynchronously on the next "tick" of the event loop.
    */
   void nextTick(Handler<Void> handler);
-
-  /**
-   *  Cause vert.x to exit. Any stop methods of running vert.x applications will be called first
-   *  Cannot be called if vert.x is running in server mode.
-    */
-  void exit();
 }

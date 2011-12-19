@@ -18,8 +18,8 @@ package org.vertx.tests.core;
 
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.internal.VertxInternal;
-import org.vertx.java.core.shared.SharedData;
+import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.shareddata.SharedData;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;

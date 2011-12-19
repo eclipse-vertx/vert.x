@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shared;
+package org.vertx.java.core.shareddata;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 import org.vertx.java.core.logging.Logger;
@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * <p>Sometimes it is desirable to share immutable data between different event loops, for example to implement a
  * cache of data.</p>
- * <p>This class allows instances of shared data structures to be looked up and used from different event loops.</p>
+ * <p>This class allows instances of shareddata data structures to be looked up and used from different event loops.</p>
  * <p>The data structures themselves will only allow certain data types to be stored into them. This shields the
  * user
- * from worrying about any thread safety issues might occur if mutable objects were shared between event loops.</p>
- * <p>The following types can be stored in a shared data structure:</p>
+ * from worrying about any thread safety issues might occur if mutable objects were shareddata between event loops.</p>
+ * <p>The following types can be stored in a shareddata data structure:</p>
  * <pre>
  *   {@link String}
  *   {@link Integer}
@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
  *   {@link org.vertx.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.
  *   {@link org.vertx.java.core.Immutable} - if you mark your own class as {@code Immutable} you will be able to
- *   store it in a shared data structure. Use this at your own risk. You need to make sure your class really is
+ *   store it in a shareddata data structure. Use this at your own risk. You need to make sure your class really is
  *   immutable before you mark it.
  * </pre>
  *

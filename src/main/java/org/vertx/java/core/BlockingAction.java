@@ -16,7 +16,6 @@
 
 package org.vertx.java.core;
 
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
 /**

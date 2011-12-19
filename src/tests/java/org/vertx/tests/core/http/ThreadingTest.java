@@ -20,15 +20,15 @@ import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.shared.SharedData;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.tests.core.TestBase;
 
 import java.util.Set;

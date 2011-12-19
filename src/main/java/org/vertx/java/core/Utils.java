@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shared;
+package org.vertx.java.core;
 
-import org.vertx.java.core.Immutable;
 import org.vertx.java.core.buffer.Buffer;
 
 import java.math.BigDecimal;
 
-/**
- * User: tim
- * Date: 12/08/11
- * Time: 15:03
+/*
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SharedUtils {
-  public static <T> T checkObject(T obj) {
+public class Utils {
+  public static <T> T chekShareableObject(T obj) {
     if (obj instanceof Immutable ||
         obj instanceof String ||
         obj instanceof Integer ||
@@ -50,7 +47,7 @@ public class SharedUtils {
       //Copy it
       return (T) ((Buffer) obj).copy();
     } else {
-      throw new IllegalArgumentException("Invalid type for shared data structure: " + obj.getClass().getName());
+      throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
     }
   }
 }
