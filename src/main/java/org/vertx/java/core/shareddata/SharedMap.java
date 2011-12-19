@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shared;
+package org.vertx.java.core.shareddata;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
+import org.vertx.java.core.Utils;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -29,8 +30,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   private final ConcurrentMap<K, V> map = new NonBlockingHashMap<>();
 
   public V putIfAbsent(K k, V v) {
-    k = SharedUtils.checkObject(k);
-    v = SharedUtils.checkObject(v);
+    k = Utils.chekShareableObject(k);
+    v = Utils.chekShareableObject(v);
     return map.putIfAbsent(k, v);
   }
 
@@ -39,14 +40,14 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public boolean replace(K k, V v, V v1) {
-    k = SharedUtils.checkObject(k);
-    v1 = SharedUtils.checkObject(v1);
+    k = Utils.chekShareableObject(k);
+    v1 = Utils.chekShareableObject(v1);
     return map.replace(k, v, v1);
   }
 
   public V replace(K k, V v) {
-    k = SharedUtils.checkObject(k);
-    v = SharedUtils.checkObject(v);
+    k = Utils.chekShareableObject(k);
+    v = Utils.chekShareableObject(v);
     return map.replace(k, v);
   }
 
@@ -71,8 +72,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public V put(K k, V v) {
-    k = SharedUtils.checkObject(k);
-    v = SharedUtils.checkObject(v);
+    k = Utils.chekShareableObject(k);
+    v = Utils.chekShareableObject(v);
     return map.put(k, v);
   }
 
@@ -82,8 +83,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
   public void putAll(Map<? extends K, ? extends V> map) {
     for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-      K k = SharedUtils.checkObject(entry.getKey());
-      V v = SharedUtils.checkObject(entry.getValue());
+      K k = Utils.chekShareableObject(entry.getKey());
+      V v = Utils.chekShareableObject(entry.getValue());
       this.map.put(k, v);
     }
   }
@@ -136,7 +137,7 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
     public V setValue(V value) {
       V old = internalEntry.getValue();
-      value = SharedUtils.checkObject(value);
+      value = Utils.chekShareableObject(value);
       internalEntry.setValue(value);
       return old;
     }

@@ -11,8 +11,7 @@ import java.net.URL;
  */
 public class JavaAppFactory implements AppFactory {
 
-  public VertxApp createApp(String main, URL[] urls, ClassLoader parentCL) throws Exception {
-    ClassLoader cl = new ParentLastURLClassLoader(urls, parentCL);
+  public VertxApp createApp(String main, ClassLoader cl) throws Exception {
 
     Class clazz = cl.loadClass(main);
 
@@ -22,7 +21,7 @@ public class JavaAppFactory implements AppFactory {
     // This might happen if it's been put on the server classpath
     ClassLoader system = ClassLoader.getSystemClassLoader();
     ClassLoader appCL = clazz.getClassLoader();
-    if (appCL == parentCL || (system != null && appCL == system)) {
+    if (appCL == cl.getParent() || (system != null && appCL == system)) {
       throw new IllegalStateException("Do not add application classes to the vert.x classpath");
     }
 

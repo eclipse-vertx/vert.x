@@ -2,13 +2,13 @@ package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.app.Args;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
@@ -80,12 +80,12 @@ public class VertxMgr {
 
   private void runApplication(Args args) {
     if (startCluster(args)) {
-      AppManager mgr = VertxInternal.appManager;
+      AppManager mgr = AppManager.instance;
       DeployCommand dc = createDeployCommand(args, "run");
       if (dc != null) {
         try {
           mgr.deploy(dc.type, dc.name, dc.main, dc.urls, dc.instances);
-          VertxInternal.instance.block();
+          mgr.block();
         } catch (Exception e) {
           System.err.println("Failed to deploy application");
           e.printStackTrace();
@@ -97,10 +97,10 @@ public class VertxMgr {
   private void startServer(Args args) {
     if (startCluster(args)) {
       System.out.println("vert.x server started");
-      AppManager mgr = VertxInternal.appManager;
+      AppManager mgr = AppManager.instance;
       SocketDeployer sd = new SocketDeployer(mgr, args.getInt("-deploy-port"));
       sd.start();
-      VertxInternal.instance.block();
+      mgr.block();
     }
   }
 
@@ -334,4 +334,5 @@ public class VertxMgr {
 
     return result.get();
   }
+
 }

@@ -23,8 +23,8 @@ import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.tests.core.TestBase;
 

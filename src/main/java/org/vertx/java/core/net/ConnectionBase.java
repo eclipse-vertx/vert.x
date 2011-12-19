@@ -25,7 +25,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;

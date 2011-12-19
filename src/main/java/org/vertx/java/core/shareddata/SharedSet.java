@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shared;
+package org.vertx.java.core.shareddata;
 
 import org.cliffc.high_scale_lib.NonBlockingHashSet;
+import org.vertx.java.core.Utils;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -51,7 +52,7 @@ class SharedSet<E> implements Set<E> {
   }
 
   public boolean add(E e) {
-    e = SharedUtils.checkObject(e);
+    e = Utils.chekShareableObject(e);
     return set.add(e);
   }
 
@@ -65,7 +66,7 @@ class SharedSet<E> implements Set<E> {
 
   public boolean addAll(Collection<? extends E> es) {
     for (E e : es) {
-      e = SharedUtils.checkObject(e);
+      e = Utils.chekShareableObject(e);
       set.add(e);
     }
     return true;

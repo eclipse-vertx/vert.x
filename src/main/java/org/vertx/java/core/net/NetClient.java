@@ -36,8 +36,8 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * <p>NetClient is an asynchronous factory for TCP or SSL connections</p>
  *
- * <p>Multiple connections to different servers can be made using the same instance. Instances of this class can be shared by different
+ * <p>Multiple connections to different servers can be made using the same instance. Instances of this class can be shareddata by different
  * event loops.</p>
  *
  * <p>This client supports a configurable number of connection attempts and a configurable delay between attempts.</p>

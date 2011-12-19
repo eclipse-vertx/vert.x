@@ -20,8 +20,8 @@ import org.vertx.java.core.ConnectionPool;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
 

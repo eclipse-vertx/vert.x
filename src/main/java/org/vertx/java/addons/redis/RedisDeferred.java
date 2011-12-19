@@ -19,8 +19,8 @@ package org.vertx.java.addons.redis;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
 /**

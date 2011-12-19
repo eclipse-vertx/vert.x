@@ -18,10 +18,10 @@ package org.vertx.java.core;
 
 /**
  * <p>This is a marker interface which, if implement by a class, allows instances of that class to be stored
- * in {@link org.vertx.java.core.shared.SharedData} structures.</p>
+ * in {@link org.vertx.java.core.shareddata.SharedData} structures.</p>
  *
  * <p>Use this with caution, only mark classes with {@code Immutable} if you really know they are safe to be used
- * concurrently by multiple threads. The shared data structures only take certain types for a reason - to stop you
+ * concurrently by multiple threads. The shareddata data structures only take certain types for a reason - to stop you
  * having to worry about concurrency.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>

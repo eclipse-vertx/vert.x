@@ -25,9 +25,9 @@ import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleAction;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.composition.Composer;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.tests.Utils;
 import org.vertx.tests.core.TestBase;
 

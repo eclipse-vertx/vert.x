@@ -3,11 +3,11 @@ package org.vertx.java.core.app;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.groovy.GroovyAppFactory;
 import org.vertx.java.core.app.java.JavaAppFactory;
 import org.vertx.java.core.app.jruby.JRubyAppFactory;
 import org.vertx.java.core.app.rhino.RhinoAppFactory;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 
 import java.net.URL;
@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -25,8 +26,29 @@ public class AppManager {
 
   private static final Logger log = Logger.getLogger(AppManager.class);
 
+  public static AppManager instance = new AppManager();
+
   private Map<String, AppMetaData> appMeta = new HashMap<>();
   private Map<String, List<AppHolder>> apps = new HashMap();
+  private CountDownLatch stopLatch = new CountDownLatch(1);
+
+  private AppManager() {
+  }
+
+  public void block() {
+    while (true) {
+      try {
+        stopLatch.await();
+        break;
+      } catch (InterruptedException e) {
+        //Ignore
+      }
+    }
+  }
+
+  public void unblock() {
+    stopLatch.countDown();
+  }
 
   public synchronized String deploy(final AppType type, final String appName, String main, URL[] urls, int instances)
     throws Exception {
@@ -63,7 +85,8 @@ public class AppManager {
           throw new IllegalArgumentException("Unsupported type: " + type);
       }
 
-      final VertxApp app = appFactory.createApp(main, urls, getClass().getClassLoader());
+      final VertxApp app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
+          .getClassLoader()));
 
       // Launch the app instance
 
@@ -84,17 +107,21 @@ public class AppManager {
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
-    Handler<Void> aggHandler = new SimpleHandler() {
-      int count = appMeta.size();
-      public void handle() {
-        if (--count == 0) {
-          doneHandler.handle(null); // All undeployed
+    if (appMeta.isEmpty()) {
+      doneHandler.handle(null);
+    } else {
+      Handler<Void> aggHandler = new SimpleHandler() {
+        int count = appMeta.size();
+        public void handle() {
+          if (--count == 0) {
+            doneHandler.handle(null); // All undeployed
+          }
         }
+      };
+      Set<String> names = new HashSet<>(appMeta.keySet()); // Avoid comod exception
+      for (String name: names) {
+        undeploy(name, aggHandler);
       }
-    };
-    Set<String> names = new HashSet<>(appMeta.keySet()); // Avoid comod exception
-    for (String name: names) {
-      undeploy(name, aggHandler);
     }
   }
 
@@ -121,7 +148,6 @@ public class AppManager {
     }
     appMeta.remove(name);
     apps.remove(name);
-    log.info("Undeployed ok");
     return null;
   }
 

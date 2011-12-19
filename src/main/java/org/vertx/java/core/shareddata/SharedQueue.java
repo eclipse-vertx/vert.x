@@ -14,35 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shared;
+package org.vertx.java.core.shareddata;
 
-import org.cliffc.high_scale_lib.ConcurrentAutoTable;
+import org.vertx.java.core.Utils;
 
-public class SharedCounter {
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-  private final ConcurrentAutoTable counter = new ConcurrentAutoTable();
+/*
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class SharedQueue<T> {
+  private final Queue<T> queue = new ConcurrentLinkedQueue<>();
 
-  public void add(long amount) {
-    counter.add(amount);
+  public void add(T t) {
+    t = Utils.chekShareableObject(t);
+    queue.add(t);
   }
 
-  public void subtract(long amount) {
-    counter.add(-amount);
+  public void clear() {
+    queue.clear();
   }
 
-  public void increment() {
-    counter.increment();
+  public T poll() {
+    return queue.poll();
   }
 
-  public void decrement() {
-    counter.decrement();
-  }
-
-  public void set(long value) {
-    counter.set(value);
-  }
-
-  public long get() {
-    return counter.get();
+  public Object peek() {
+    return queue.peek();
   }
 }

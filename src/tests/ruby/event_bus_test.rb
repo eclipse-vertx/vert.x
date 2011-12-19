@@ -45,8 +45,8 @@ class EventBusTest < Test::Unit::TestCase
 
   def teardown
     latch = Utils::Latch.new(1)
-    org.vertx.java.core.internal.VertxInternal.instance.executeOnContext(@c_id) {
-      org.vertx.java.core.internal.VertxInternal.instance.setContextID(@c_id)
+    org.vertx.java.core.VertxInternal.instance.executeOnContext(@c_id) {
+      org.vertx.java.core.VertxInternal.instance.setContextID(@c_id)
       @eb.close { latch.countdown }
       @cm.close
     }

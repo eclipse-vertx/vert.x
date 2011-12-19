@@ -21,13 +21,10 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.shared.SharedUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +54,7 @@ class VertxImpl implements VertxInternal {
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong contextIDSeq = new AtomicLong(10); // Start at 10 for easier debugging
   private final AtomicLong actorSeq = new AtomicLong(10); // Start at 10 for easier debugging
-  private CountDownLatch stopLatch = new CountDownLatch(1);
+
 
   // Public API ------------------------------------------------
 
@@ -109,7 +106,7 @@ class VertxImpl implements VertxInternal {
   }
 
   public <T> boolean sendToHandler(long handlerID, T message) {
-    final T msg = SharedUtils.checkObject(message);
+    final T msg = Utils.chekShareableObject(message);
     final ActorHolder holder = actors.get(handlerID);
     if (holder != null) {
       final Handler<T> actor = (Handler<T>) holder.actor; // FIXME - unchecked cast
@@ -143,24 +140,9 @@ class VertxImpl implements VertxInternal {
     });
   }
 
-  public void block() {
-    while (true) {
-      try {
-        stopLatch.await();
-        break;
-      } catch (InterruptedException e) {
-        //Ignore
-      }
-    }
-  }
 
   public void exit() {
     //TODO disallow if running in server mode
-    VertxInternal.appManager.undeployAll(new SimpleHandler() {
-      public void handle() {
-        stopLatch.countDown();
-      }
-    });
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {

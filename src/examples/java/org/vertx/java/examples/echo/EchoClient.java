@@ -32,8 +32,6 @@ public class EchoClient implements VertxApp {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
-
-            Vertx.instance.exit();
           }
         });
 

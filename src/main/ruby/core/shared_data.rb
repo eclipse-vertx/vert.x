@@ -16,7 +16,7 @@ require 'delegate'
 
 module Vertx
 
-  # A mixin module which marks a class as immutable and therefore allows it to be stored in any shared data structure.
+  # A mixin module which marks a class as immutable and therefore allows it to be stored in any shareddata data structure.
   # Use this at your own risk. You need to make sure your class really is
   # immutable before you mark it.
   # @author {http://tfox.org Tim Fox}
@@ -27,11 +27,11 @@ module Vertx
   # Sometimes it is desirable to share immutable data between different event loops, for example to implement a
   # cache of data.
   #
-  # This class allows instances of shared data structures to be looked up and used from different event loops.
+  # This class allows instances of shareddata data structures to be looked up and used from different event loops.
   # The data structures themselves will only allow certain data types to be stored into them. This shields the
-  # user from worrying about any thread safety issues might occur if mutable objects were shared between event loops.
+  # user from worrying about any thread safety issues might occur if mutable objects were shareddata between event loops.
   #
-  # The following types can be stored in a shared data structure:
+  # The following types can be stored in a shareddata data structure:
   #
   #   String
   #   FixNum
@@ -48,7 +48,7 @@ module Vertx
     # @param [String] key. Get the hash with the key.
     # @return [Hash] the hash.
     def SharedData.get_hash(key)
-      map = org.vertx.java.core.shared.SharedData.getMap(key)
+      map = org.vertx.java.core.shareddata.SharedData.getMap(key)
       SharedHash.new(map)
     end
 
@@ -58,28 +58,28 @@ module Vertx
     # @param [String] key. Get the set with the key.
     # @return [SharedSet] the set.
     def SharedData.get_set(key)
-      set = org.vertx.java.core.shared.SharedData.getSet(key)
+      set = org.vertx.java.core.shareddata.SharedData.getSet(key)
       SharedSet.new(set)
     end
 
 #    def SharedData.get_counter(key)
-#      org.vertx.java.core.shared.SharedData.getCounter(key)
+#      org.vertx.java.core.shareddata.SharedData.getCounter(key)
 #    end
 
     # Remove the hash
     # @param [String] key. The key of the hash.
     def SharedData.remove_hash(key)
-      org.vertx.java.core.shared.SharedData.removeMap(key)
+      org.vertx.java.core.shareddata.SharedData.removeMap(key)
     end
 
     # Remove the set
     # @param [String] key. The key of the set.
     def SharedData.remove_set(key)
-      org.vertx.java.core.shared.SharedData.removeSet(key)
+      org.vertx.java.core.shareddata.SharedData.removeSet(key)
     end
 
 #    def SharedData.remove_counter(key)
-#      org.vertx.java.core.shared.SharedData.removeCounter(key)
+#      org.vertx.java.core.shareddata.SharedData.removeCounter(key)
 #    end
 
     # We need to copy certain objects because they're not immutable

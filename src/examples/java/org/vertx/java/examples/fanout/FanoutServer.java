@@ -23,7 +23,7 @@ import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shared.SharedData;
+import org.vertx.java.core.shareddata.SharedData;
 
 import java.util.Set;
 

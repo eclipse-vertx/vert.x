@@ -3,6 +3,7 @@ package org.vertx.tests.core.appmanager;
 import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.app.cli.DeployCommand;
@@ -12,7 +13,6 @@ import org.vertx.java.core.app.cli.VertxCommand;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
@@ -44,6 +44,8 @@ public class AppManagerTest extends TestBase {
       set.add(res);
     }
     azzert(set.size() == instances);
+
+    Thread.sleep(500); // A little time to let the HTTP servers in the test apps to close
   }
 
   @Test
@@ -51,16 +53,17 @@ public class AppManagerTest extends TestBase {
 
     int instances = 4;
     List<String> results = doTest(AppType.JAVA, "com.acme.someapp.TestApp2", instances, 10);
-    Set<String> set = new HashSet<>();
     //Each instance should have its own static counter
     for (String res: results) {
       azzert(Integer.parseInt(res) == 1);
     }
+
+    Thread.sleep(500); // A little time to let the HTTP servers in the test apps to close
   }
 
 
   private List<String> doTest(AppType appType, final String main, final int instances, final int requests) throws Exception {
-    AppManager mgr = new AppManager();
+    final AppManager mgr = AppManager.instance;
     SocketDeployer sd = new SocketDeployer(mgr, SocketDeployer.DEFAULT_PORT);
     sd.start();
 

@@ -43,7 +43,7 @@ module Vertx
   # !! This method is for internal use only - do not call from user code.
   def Vertx.internal_go(proc = nil, &block)
     block = proc if proc
-    org.vertx.java.core.internal.VertxInternal.instance.go(block)
+    org.vertx.java.core.VertxInternal.instance.go(block)
   end
 
   # @private

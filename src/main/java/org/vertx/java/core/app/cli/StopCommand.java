@@ -1,7 +1,6 @@
 package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.app.AppManager;
-import org.vertx.java.core.internal.VertxInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -9,7 +8,7 @@ import org.vertx.java.core.internal.VertxInternal;
 public class StopCommand extends VertxCommand {
 
   public void execute(AppManager appMgr) {
-    VertxInternal.instance.exit();
+    appMgr.unblock();
   }
 
   @Override

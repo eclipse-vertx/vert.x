@@ -21,7 +21,7 @@ import org.vertx.java.core.ConnectionPool;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.internal.VertxInternal;
+import org.vertx.java.core.VertxInternal;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

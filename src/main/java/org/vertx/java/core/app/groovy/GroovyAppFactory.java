@@ -18,8 +18,7 @@ public class GroovyAppFactory implements AppFactory {
 
   private static final Logger log = Logger.getLogger(GroovyAppFactory.class);
 
-  public VertxApp createApp(String main, URL[] urls, ClassLoader parentCL) throws Exception {
-    ClassLoader cl = new ParentLastURLClassLoader(urls, parentCL);
+  public VertxApp createApp(String main, ClassLoader cl) throws Exception {
 
     InputStream is = cl.getResourceAsStream(main);
     GroovyClassLoader gcl = new GroovyClassLoader(cl);

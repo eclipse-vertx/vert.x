@@ -2,6 +2,7 @@ package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -9,9 +10,8 @@ import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocketHandler;
 import org.vertx.java.core.http.WebSocketMatcher;
-import org.vertx.java.core.internal.VertxInternal;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.shared.SharedData;
+import org.vertx.java.core.shareddata.SharedData;
 
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
