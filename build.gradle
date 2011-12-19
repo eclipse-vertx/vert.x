@@ -1,0 +1,99 @@
+apply plugin: 'java'
+
+version = '0.1'
+
+dependencies {
+  compile fileTree('lib/core').matching { include '*.jar' }
+  compile fileTree('lib/opt').matching { include '*.jar' }
+  testCompile fileTree('lib/tests').matching { include '*.jar' }
+}
+
+sourceSets {
+  main {
+    java {
+      resources.srcDirs = [file('src/main/java')]
+    }
+  }
+
+  test {
+    java.srcDirs = [file('src/tests/java'), file('src/tests/testapps/java')]
+    resources.srcDirs = [file('src/tests/java')]
+  }
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
+
+jar {
+  version = ''
+}
+
+test {
+  useTestNG()
+  include "**/*Test.class"
+  exclude "**/redis/*.class"
+  systemProperty "java.util.logging.config.file", "conf/logging.properties"
+}
+
+task rubyTests(type: Exec, dependsOn: testClasses) {
+  group = 'verification'
+  workingDir = file('src/tests/ruby')
+  executable = file('src/tests/ruby/run_tests.sh')
+}
+
+distSpec = copySpec {
+  into('lib/java') {
+    from jar, configurations.compile
+  }
+  into('lib/ruby') {
+    from 'src/main/ruby'
+    include '**/*.rb'
+  }
+  into('lib/groovy') {
+    from 'src/main/groovy'
+    include '**/*.groovy'
+  }
+  into('conf') {
+    from "conf/logging.properties", "conf/hazelcast.xml"
+  }
+  into('docs/java/api') {
+    from javadoc
+  }
+  into('bin') {
+    from 'src/scripts/vertx'
+    fileMode = 0755
+  }
+  into('examples') {
+    from 'src/examples'
+  }
+
+  from 'LICENSE.txt', "README.md", "rel-notes/release-notes-${version}.txt"
+}
+
+// todo yardoc
+
+task dist(type: Zip) {
+  description = 'Builds the distribution.'
+  group = 'build'
+  into("$project.name-$version") {
+    with distSpec
+  }
+  // todo add ruby-doc
+}
+
+task install(type: Sync) {
+  with distSpec
+  into '/Users/hans/java/vertx'
+}
+
+task tarDist(type: Tar) {
+  into("$project.name-$version") {
+    with distSpec
+  }
+  compression = org.gradle.api.tasks.bundling.Compression.GZIP
+}
+
+task wrapper(type: Wrapper)
+
+
+
