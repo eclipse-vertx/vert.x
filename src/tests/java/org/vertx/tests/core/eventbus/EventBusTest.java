@@ -264,12 +264,14 @@ public class EventBusTest extends TestBase {
                 }
               };
 
+              assertReceived(aggHandler, msg);
+
               bus.send(msg, replyHandler);
 
-              assertReceived(aggHandler, msg);
             } else {
-              bus.send(msg);
               assertReceived(done, msg);
+
+              bus.send(msg);
             }
           }
         } else {

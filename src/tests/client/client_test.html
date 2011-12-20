@@ -14,22 +14,33 @@
 <script type="text/javascript">
    var eb = new VertxBus("http://localhost:8080/sockjs-bridge");
    eb.onopen = function() {
-       console.log('open');
+     console.log('event bus open');
    };
    eb.onclose = function() {
-       console.log('close');
+     console.log('event bus closed');
    };
 
    function send(address, message) {
      console.log("sending message to address " + address + " msg: " + message);
-     eb.send(address, message);
+     eb.send(address, message, function(data) {
+       console.log("Got reply: " + data);
+     });
    }
 
    function subscribe(address) {
      console.log("subscribing to address " + address)
-     eb.registerHandler(address, function(msg) {
-        alert("received message: " + msg);
+     eb.registerHandler(address, function(msg, replyTo) {
+        console.log("received message: " + msg + " reply to: " + replyTo);
+        if (replyTo) {
+          console.log("calling replyto");
+          replyTo("this is a reply");
+        }
      });
+   }
+
+   function closeConn() {
+     console.log("closing connection");
+     eb.close();
    }
 
 </script>
@@ -47,6 +58,12 @@
 <form onsubmit="return false;">
     <input type="text" name="address" value="someaddress" />
     <input type="button" value="Subscribe" onclick="subscribe(this.form.address.value)"/>
+</form>
+
+<h2>Close</h2><br><br>
+
+<form onsubmit="return false;">
+    <input type="button" value="Close connection" onclick="closeConn()"/>
 </form>
 
 
