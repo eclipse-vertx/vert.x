@@ -99,12 +99,10 @@ class JsonPTransport extends BaseTransport {
           return;
         }
 
-        String[] parts = parseMessageString(body);
-
         setJSESSIONID(config, req);
         req.response.end("ok");
 
-        session.handleMessages(parts);
+        session.handleMessages(body);
       }
     });
   }

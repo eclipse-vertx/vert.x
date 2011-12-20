@@ -9,6 +9,8 @@ import org.vertx.java.core.logging.Logger;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -25,23 +27,6 @@ class BaseTransport {
   public BaseTransport(Map<String, Session> sessions, AppConfig config) {
     this.sessions = sessions;
     this.config = config;
-  }
-
-  protected String[] parseMessageString(String msgs) {
-    //Sock-JS client will only ever send Strings in a JSON array or as a JSON string so we can do some cheap parsing
-    //without having to use a JSON lib
-    String[] parts;
-    if (!msgs.startsWith("\"")) {
-      String[] split = msgs.split("\"");
-      parts = new String[(split.length - 1) / 2];
-      for (int i = 1; i < split.length - 1; i += 2) {
-        parts[(i - 1) / 2] = split[i];
-      }
-    } else {
-      String msg = msgs.substring(1, msgs.length() - 1);
-      parts = new String[] {msg};
-    }
-    return parts;
   }
 
   protected Session getSession(final long timeout, final long heartbeatPeriod, final String sessionID,
