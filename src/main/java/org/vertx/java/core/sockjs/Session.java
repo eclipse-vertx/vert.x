@@ -8,6 +8,8 @@ import org.vertx.java.core.logging.Logger;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -32,7 +34,8 @@ class Session implements SockJSSocket, Immutable {
   private int messagesSize;
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
-
+  private Pattern unescaper = Pattern.compile("\\\\\"");
+  private Pattern escaper = Pattern.compile("\"");
 
   Session(long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
     this(-1, heartbeatPeriod, sockHandler, null);
@@ -140,7 +143,7 @@ class Session implements SockJSSocket, Immutable {
     int size = pendingWrites.size();
     for (String msg : pendingWrites) {
       messagesSize -= msg.length();
-      sb.append('"').append(msg).append('"');
+      sb.append('"').append(escape(msg)).append('"');
       if (++count != size) {
         sb.append(',');
       }
@@ -155,37 +158,6 @@ class Session implements SockJSSocket, Immutable {
       drainHandler = null;
       dh.handle(null);
     }
-  }
-
-  void handleMessages(String[] messages) {
-    if (dataHandler != null) {
-      for (String msg : messages) {
-        if (!paused) {
-          dataHandler.handle(Buffer.create(msg));
-        } else {
-          pendingReads.add(msg);
-        }
-      }
-    }
-  }
-
-  void writeClosed(TransportListener lst) {
-    writeClosed(lst, 3000, "Go away!");
-  }
-
-  void writeClosed(TransportListener lst, int code, String msg) {
-
-    StringBuilder sb = new StringBuilder("c[");
-    sb.append(String.valueOf(code)).append(",\"");
-    sb.append(msg).append("\"]");
-
-    lst.sendFrame(sb.toString());
-  }
-
-  void writeOpen(TransportListener lst) {
-    StringBuilder sb = new StringBuilder("o");
-    lst.sendFrame(sb.toString());
-    openWritten = true;
   }
 
   void register(final TransportListener lst) {
@@ -220,5 +192,65 @@ class Session implements SockJSSocket, Immutable {
       }
     }
   }
+
+  private String[] parseMessageString(String msgs) {
+    //Sock-JS client will only ever send Strings in a JSON array or as a JSON string so we can do some cheap parsing
+    //without having to use a JSON lib
+    String[] parts;
+    if (!msgs.startsWith("\"")) {
+      String[] split = msgs.split("\"");
+      parts = new String[(split.length - 1) / 2];
+      for (int i = 1; i < split.length - 1; i += 2) {
+        parts[(i - 1) / 2] = unescape(split[i]);
+      }
+    } else {
+      String msg = msgs.substring(1, msgs.length() - 1);
+      parts = new String[] {unescape(msg)};
+    }
+    return parts;
+  }
+
+  void handleMessages(String messages) {
+    String[] msgArr = parseMessageString(messages);
+    if (dataHandler != null) {
+      for (String msg : msgArr) {
+        if (!paused) {
+          dataHandler.handle(Buffer.create(msg));
+        } else {
+          pendingReads.add(msg);
+        }
+      }
+    }
+  }
+
+  private void writeClosed(TransportListener lst) {
+    writeClosed(lst, 3000, "Go away!");
+  }
+
+  private void writeClosed(TransportListener lst, int code, String msg) {
+
+    StringBuilder sb = new StringBuilder("c[");
+    sb.append(String.valueOf(code)).append(",\"");
+    sb.append(msg).append("\"]");
+
+    lst.sendFrame(sb.toString());
+  }
+
+  private void writeOpen(TransportListener lst) {
+    StringBuilder sb = new StringBuilder("o");
+    lst.sendFrame(sb.toString());
+    openWritten = true;
+  }
+
+  private String escape(String str) {
+    Matcher matcher = escaper.matcher(str);
+    return matcher.replaceAll("\\\\\"");
+  }
+
+  private String unescape(String str) {
+    Matcher matcher = unescaper.matcher(str);
+    return matcher.replaceAll("\"");
+  }
+
 
 }

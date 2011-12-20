@@ -94,15 +94,13 @@ class XhrTransport extends BaseTransport {
           return;
         }
 
-        String[] parts = parseMessageString(msgs);
-
         req.response.putHeader("Content-Type", "text/plain");
         setJSESSIONID(config, req);
         setCORS(req.response, "*");
         req.response.statusCode = 204;
         req.response.end();
 
-        session.handleMessages(parts);
+        session.handleMessages(msgs);
       }
     });
   }
