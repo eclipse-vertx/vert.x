@@ -1,10 +1,8 @@
-package org.vertx.java.core.eventbus.sockjsbridge;
+package org.vertx.java.core.eventbus;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
@@ -14,21 +12,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * <p>A SockJSBridge extends the vert.x event bus to client side JavaScript</p>
+ *
+ * <p>When a SockJSBridge is running, you use the vert.x client side JavaScript event bus API to
+ * register and unregister handlers and send messages in much the same way you do using the server side
+ * event bus API. See vertxbus.js for more information.</p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SockJSBridge {
 
   private static final Logger log = Logger.getLogger(SockJSBridge.class);
 
-  private final SockJSServer sjsServer;
-
   private EventBus eb = EventBus.instance;
 
-  public SockJSBridge(SockJSServer sjsServer) {
-    this.sjsServer = sjsServer;
+  /**
+   * Create a new SockJSBridge
+   * @param sjsServer The SockJS server to use
+   * @param config Sock JS application config to use
+   */
+  public SockJSBridge(SockJSServer sjsServer, AppConfig config) {
     final ObjectMapper mapper = new ObjectMapper();
-
-    AppConfig config = new AppConfig().setPrefix("/sockjs-bridge");
 
     sjsServer.installApp(config, new Handler<SockJSSocket>() {
 
@@ -38,17 +42,29 @@ public class SockJSBridge {
 
           Map<String, Handler<Message>> handlers = new HashMap<>();
 
-          private void handleSend(String address, String body) {
-            eb.send(new Message(address, Buffer.create(body)));
+          private void handleSend(String address, String body, final String messageID, final String replyAddress) {
+            Handler<Message> replyHandler;
+            if (replyAddress != null) {
+              replyHandler = new Handler<Message>() {
+                public void handle(Message message) {
+                  message.address = replyAddress;
+                  deliverMessage(message);
+                }
+              };
+            } else {
+              replyHandler = null;
+            }
+            eb.send(new Message(messageID, address, Buffer.create(body)), replyHandler);
+          }
+
+          private void deliverMessage(Message msg) {
+            sock.writeBuffer(Buffer.create(msg.toJSONString()));
           }
 
           private void handleRegister(String address) {
             Handler<Message> handler = new Handler<Message>() {
               public void handle(Message msg) {
-                StringBuilder sb = new StringBuilder("{\"address\":\"");
-                sb.append(msg.address).append("\",");
-                sb.append("\"body\":\"").append(msg.body.toString()).append("\"}");
-                sock.writeBuffer(Buffer.create(sb.toString()));
+                deliverMessage(msg);
               }
             };
 
@@ -63,9 +79,7 @@ public class SockJSBridge {
             }
           }
 
-          public void handle(Buffer data) {
-
-            log.info("Incoming message " + data.toString());
+          public void handle(Buffer data)  {
 
             Map<String, Object> msg;
             try {
@@ -90,7 +104,9 @@ public class SockJSBridge {
                 if (body == null) {
                   throw new IllegalStateException("body must be specified for message");
                 }
-                handleSend(address, body);
+                String replyAddress = (String)msg.get("replyAddress");
+                String messageID = (String)msg.get("messageID");
+                handleSend(address, body, messageID, replyAddress);
                 break;
               case "register":
                 handleRegister(address);

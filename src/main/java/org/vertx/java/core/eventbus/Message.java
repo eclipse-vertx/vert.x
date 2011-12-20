@@ -16,7 +16,7 @@ public class Message extends Sendable {
   private static final Logger log = Logger.getLogger(Message.class);
 
   ServerID sender;
-  boolean requiresReply;
+  String replyAddress;
   EventBus bus;
 
   /**
@@ -35,13 +35,25 @@ public class Message extends Sendable {
   public final Buffer body;
 
   /**
-   * Create a new Message
+   * Create a new Message without specifying messageID - this will be filled in by the system
    * @param address The address to send the message to
    * @param body
    */
   public Message(String address, Buffer body) {
     this.address = address;
     this.body = body;
+  }
+
+  /**
+   * Create a new Message specifying message ID
+   * @param messageID ID of the message
+   * @param address The address to send the message to
+   * @param body
+   */
+  public Message(String messageID, String address, Buffer body) {
+    this.address = address;
+    this.body = body;
+    this.messageID = messageID;
   }
 
   /**
@@ -52,11 +64,11 @@ public class Message extends Sendable {
    * of the original message.
    */
   public void reply(Buffer body) {
-    if (bus != null && requiresReply) {
+    if (bus != null && replyAddress != null) {
       if (body == null) {
         body = Buffer.create(0);
       }
-      bus.send(new Message(messageID, body));
+      bus.send(new Message(replyAddress, body));
     }
   }
 
@@ -65,6 +77,18 @@ public class Message extends Sendable {
    */
   public void reply() {
     reply(null);
+  }
+
+  String toJSONString() {
+    StringBuilder sb = new StringBuilder("{\"address\":\"");
+    sb.append(address).append("\",");
+    sb.append("\"body\":\"").append(body.toString()).append("\",");
+    sb.append("\"messageID\":\"").append(messageID).append("\"");
+    if (replyAddress != null) {
+      sb.append(",\"replyAddress\":\"").append(replyAddress).append("\"");
+    }
+    sb.append("}");
+    return sb.toString();
   }
 
   Message(Buffer readBuff) {
@@ -92,9 +116,15 @@ public class Message extends Sendable {
 
     sender = new ServerID(port, host);
 
-    byte bra = readBuff.getByte(pos);
-    requiresReply = bra == (byte)1;
-    pos += 1;
+    int replyAddressLength = readBuff.getInt(pos);
+    pos += 4;
+    if (replyAddressLength > 0) {
+      byte[] replyAddressBytes = readBuff.getBytes(pos, pos + replyAddressLength);
+      pos += replyAddressLength;
+      replyAddress = new String(replyAddressBytes, CharsetUtil.UTF_8);
+    } else {
+      replyAddress = null;
+    }
 
     int buffLength = readBuff.getInt(pos);
     pos += 4;
@@ -103,7 +133,8 @@ public class Message extends Sendable {
   }
 
   void write(NetSocket socket) {
-    int length = 1 + 6 * 4 + address.length() + 1 + body.length() + messageID.length() + sender.host.length();
+    int length = 1 + 6 * 4 + address.length() + 1 + body.length() + messageID.length() + sender.host.length() +
+        4 + (replyAddress == null ? 0 : replyAddress.length());
     Buffer totBuff = Buffer.create(length);
     totBuff.appendInt(0);
     totBuff.appendByte(Sendable.TYPE_MESSAGE);
@@ -111,7 +142,11 @@ public class Message extends Sendable {
     writeString(totBuff, address);
     totBuff.appendInt(sender.port);
     writeString(totBuff, sender.host);
-    totBuff.appendByte((byte)(requiresReply ? 1 : 0));
+    if (replyAddress != null) {
+      writeString(totBuff, replyAddress);
+    } else {
+      totBuff.appendInt(0);
+    }
     totBuff.appendInt(body.length());
     totBuff.appendBuffer(body);
     totBuff.setInt(0, totBuff.length() - 4);
@@ -126,7 +161,7 @@ public class Message extends Sendable {
     Message msg = new Message(address, body.copy());
     msg.messageID = this.messageID;
     msg.sender = this.sender;
-    msg.requiresReply = this.requiresReply;
+    msg.replyAddress = this.replyAddress;
     return msg;
   }
 }

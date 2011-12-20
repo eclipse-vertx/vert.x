@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title></title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+    <script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
+    <!-- In real life you'd get this from a CDN -->
+    <script src="http://localhost:8080/vertxbus.js"></script>
+</head>
+<body>
+
+<form onsubmit="return false;">
+    Address:<input type="text" id="sendAddress" value="someaddress" />
+    Message:<input type="text" id="sendMessage" value="Hello, World!"/>
+    <input type="button" id="sendButton" value="Send message"/>
+</form>
+
+<br><br><br>
+
+Sent messages:<br><br>
+<div id="sent">
+</div>
+
+<br><br>
+
+<form onsubmit="return false;">
+    Address:<input type="text" id="subscribeAddress" value="someaddress" />
+    <input type="button" id="subscribeButton" value="Subscribe"/>
+</form>
+
+<br><br><br>
+
+Subscriptions:<br><br>
+<div id="subscribed">
+</div>
+
+<br><br><br>
+
+Received messages:<br><br>
+<div id="received">
+</div>
+
+<br><br><br>
+
+<form onsubmit="return false;">
+    <input type="button" id="closeButton" value="Close connection"/>
+</form>
+
+<script type="text/javascript">
+
+   var eb = new VertxBus("http://localhost:8080/eventbus");
+
+   eb.onopen = function() {
+     console.log('event bus open');
+   };
+
+   eb.onclose = function() {
+     console.log('event bus closed');
+   };
+
+   function send(address, message) {
+     eb.send(address, message);
+     $('#sent').append($("<code>").text("Address:" + address + " Message:" + message));
+     $('#sent').append($("</code><br>"));
+   }
+
+   function subscribe(address) {
+     eb.registerHandler(address, function(msg, replyTo) {
+        $('#received').append("Address:" + address + " Message:" + msg + "<br>");
+     });
+     $('#subscribed').append($("<code>").text("Address:" + address));
+     $('#subscribed').append($("</code><br>"));
+   }
+
+   function closeConn() {
+     console.log("closing connection");
+     eb.close();
+   }
+
+   $("#sendButton").click(function() {
+     send($("#sendAddress").val(), $("#sendMessage").val());
+   });
+
+   $("#subscribeButton").click(function() {
+     subscribe($("#subscribeAddress").val());
+   });
+
+   $("#closeButton").click(function() {
+     closeConn();
+   });
+
+</script>
+
+
+</body>
+</html>
