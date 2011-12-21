@@ -65,7 +65,7 @@ var VertxBus = function(url, options) {
     }
     checkOpen();
     var handlers = handlerMap[address];
-    if (handlers == undefined) {
+    if (!handlers) {
       handlers = [handler];
       handlerMap[address] = handlers;
       // First handler for this address so we should register the connection
@@ -83,7 +83,7 @@ var VertxBus = function(url, options) {
     }
     checkOpen();
     var handlers = handlerMap[address];
-    if (handlers != undefined) {
+    if (handlers) {
       var idx = handlers.indexOf(handler);
       if (idx != -1) handlers.splice(idx, 1);
       if (handlers.length == 0) {

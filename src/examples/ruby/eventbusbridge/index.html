@@ -1,24 +1,24 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
+    "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title></title>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-    <script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
-    <!-- In real life you'd get this from a CDN -->
-    <script src="http://localhost:8080/vertxbus.js"></script>
+  <title></title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+  <script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
+  <!-- In real life you'd get this from a CDN -->
+  <script src="http://localhost:8080/vertxbus.js"></script>
 </head>
 <style>
   .box {
     background-color: #F0F0F0;
-    border:5px solid blue;
+    border: 5px solid blue;
     width: 400px;
     height: 300px;
   }
 
   .innerbox {
     overflow: auto;
-    border:5px solid blue;
+    border: 5px solid blue;
     border-left: 0px;
     border-right: 0px;
   }
@@ -33,13 +33,14 @@
 <div id="send" class="box" style="position:absolute;left:0px;top:0px">
 
   <form onsubmit="return false;">
-      Address:<input type="text" id="sendAddress" value="someaddress" /><br>
-      Message:<input type="text" id="sendMessage" value="Hello, World!"/>
-      <input type="button" id="sendButton" value="Send message"/>
+    Address:<input type="text" id="sendAddress" value="someaddress"/><br>
+    Message:<input type="text" id="sendMessage" value="Hello, World!"/>
+    <input type="button" id="sendButton" value="Send message"/>
   </form>
 
   <br>
   Sent messages:<br>
+
   <div id="sent" class="innerbox" style="width: 400px; height: 205px;">
   </div>
 </div>
@@ -47,12 +48,13 @@
 <div id="subscribe" class="box" style="position:absolute;left:450px;top:0px">
 
   <form onsubmit="return false;">
-      Address:<input type="text" id="subscribeAddress" value="someaddress" />
-      <input type="button" id="subscribeButton" value="Subscribe"/>
+    Address:<input type="text" id="subscribeAddress" value="someaddress"/>
+    <input type="button" id="subscribeButton" value="Subscribe"/>
   </form>
 
   <br>
   Subscriptions:<br>
+
   <div id="subscribed" class="innerbox" style="width: 400px; height: 230px;">
   </div>
 </div>
@@ -62,6 +64,7 @@
 <div id="receive" class="box" style="position:absolute;left:0px;top:350px">
 
   Received messages:<br>
+
   <div id="received" class="innerbox" style="width: 400px; height: 275px;">
   </div>
 
@@ -70,74 +73,70 @@
 <div id="status" class="box" style="position:absolute;left:450px;top:350px">
   <input type="button" id="connectButton" value="Open connection"/><br>
   <input type="button" id="closeButton" value="Close connection"/><br>
-  Connection Status:&nbsp;<div id="status_info">Not connected</div>
+  Connection Status:&nbsp;
+  <div id="status_info">Not connected</div>
 </div>
-
 
 <script type="text/javascript">
 
-   var eb = null;
+  var eb = null;
 
-   function send(address, message) {
-     if (eb) {
-       eb.send(address, message);
-       $('#sent').append($("<code>").text("Address:" + address + " Message:" + message));
-       $('#sent').append($("</code><br>"));
-     }
-   }
+  function send(address,  message) {
+    if (eb) {
+      eb.send(address, message);
+      $('#sent').append($("<code>").text("Address:" + address + " Message:" + message));
+      $('#sent').append($("</code><br>"));
+    }
+  }
 
-   function subscribe(address) {
-     if (eb) {
-       eb.registerHandler(address, function(msg, replyTo) {
-          $('#received').append("Address:" + address + " Message:" + msg + "<br>");
-       });
-       $('#subscribed').append($("<code>").text("Address:" + address));
-       $('#subscribed').append($("</code><br>"));
-     }
-   }
+  function subscribe(address) {
+    if (eb) {
+      eb.registerHandler(address, function(msg, replyTo) {
+        $('#received').append("Address:" + address + " Message:" + msg + "<br>");
+      });
+      $('#subscribed').append($("<code>").text("Address:" + address));
+      $('#subscribed').append($("</code><br>"));
+    }
+  }
 
-   function closeConn() {
-     if (eb) {
-       console.log("closing connection");
-       eb.close();
-     }
-   }
+  function closeConn() {
+    if (eb) {
+      eb.close();
+    }
+  }
 
-   function openConn() {
-     if (!eb) {
-       eb = new VertxBus("http://localhost:8080/eventbus");
+  function openConn() {
+    if (!eb) {
+      eb = new VertxBus("http://localhost:8080/eventbus");
 
-       eb.onopen = function() {
-         console.log('event bus open');
-         $("#status_info").text("Connected");
-       };
+      eb.onopen = function() {
+        $("#status_info").text("Connected");
+      };
 
-       eb.onclose = function() {
-         console.log('event bus closed');
-         $("#status_info").text("Not connected");
-         eb = null;
-       };
-     }
-   }
+      eb.onclose = function() {
+        $("#status_info").text("Not connected");
+        eb = null;
+      };
+    }
+  }
 
-   $("#sendButton").click(function() {
-     send($("#sendAddress").val(), $("#sendMessage").val());
-   });
+  $("#sendButton").click(function() {
+    send($("#sendAddress").val(), $("#sendMessage").val());
+  });
 
-   $("#subscribeButton").click(function() {
-     subscribe($("#subscribeAddress").val());
-   });
+  $("#subscribeButton").click(function() {
+    subscribe($("#subscribeAddress").val());
+  });
 
-   $("#closeButton").click(function() {
-     closeConn();
-   });
+  $("#closeButton").click(function() {
+    closeConn();
+  });
 
-   $("#connectButton").click(function() {
-     openConn();
-   });
+  $("#connectButton").click(function() {
+    openConn();
+  });
 
 </script>
-
 
 </body>
 </html>
