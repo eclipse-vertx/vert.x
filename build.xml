@@ -202,6 +202,7 @@
         </copy>
 
         <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
+        <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
 
         <copy file="LICENSE.txt" todir="${dist-build}"/>
         <copy file="README.md" todir="${dist-build}"/>

@@ -106,7 +106,7 @@ network)
 38) Redo website
 39) Rewrite readme
 41) bodyHandler helper method in Net module too?
-42) Bridge between SockJS and event bus - Event bus client side JS API
+42) Currently apps not undeployed when server stops or vertxrun is CTRL-C
 
 
 
