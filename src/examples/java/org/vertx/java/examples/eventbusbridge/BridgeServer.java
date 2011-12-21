@@ -2,7 +2,7 @@ package org.vertx.java.examples.eventbusbridge;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.SockJSBridge;
+import org.vertx.java.core.eventbus.SockJSBridgeHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.sockjs.AppConfig;
@@ -18,7 +18,7 @@ public class BridgeServer implements VertxApp {
   public void start() throws Exception {
     server = new HttpServer();
     SockJSServer sjsServer = new SockJSServer(server);
-    new SockJSBridge(sjsServer, new AppConfig().setPrefix("/eventbus"));
+    sjsServer.installApp(new AppConfig().setPrefix("/eventbus"), new SockJSBridgeHandler());
 
     // Also serve the static resources. In real life this would probably be done by a CDN
     server.requestHandler(new Handler<HttpServerRequest>() {

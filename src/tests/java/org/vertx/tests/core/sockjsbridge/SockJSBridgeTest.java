@@ -1,15 +1,6 @@
 package org.vertx.tests.core.sockjsbridge;
 
 import org.testng.annotations.Test;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.SockJSBridge;
-import org.vertx.java.core.eventbus.spi.ClusterManager;
-import org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.internal.VertxInternal;
-import org.vertx.java.core.net.ServerID;
-import org.vertx.java.core.sockjs.AppConfig;
-import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.tests.core.TestBase;
 
 /**
