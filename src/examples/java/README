@@ -243,6 +243,27 @@ vertx run -main org.vertx.java.examples.sockjs.SockJSExample -cp classes
 
 Then point your browser at: http://localhost:8080
 
+Eventbus Bridge
+===============
+
+This example shows how the vert.x event bus can extend to client side JavaScript.
+
+To run the server:
+
+vertx run -main org.vertx.java.examples.eventbusbridge.BridgeServer -cp classes
+
+The example shows a simple publish / subscribe client side JavaScript application that uses the vert.x event bus.
+
+Using the application you can subscribe to one or more "addresses", then send messages to those addresses.
+
+To run it, open one or more browsers and point them to http://localhost:8080.
+
+Try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
+
+
+
+
+
 
 
 

@@ -192,17 +192,17 @@ public class VertxMgr {
 
 
   private boolean startCluster(Args args) {
-    if (args.map.get("-eventbus") != null) {
+    if (args.map.get("-cluster") != null) {
       System.out.println("Starting clustering");
-      int clusterPort = args.getInt("-eventbus-port");
+      int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
         clusterPort = 25500;
       }
-      String clusterHost = args.map.get("-eventbus-host");
+      String clusterHost = args.map.get("-cluster-host");
       if (clusterHost == null) {
         clusterHost = "0.0.0.0";
       }
-      String clusterProviderClass = args.map.get("-eventbus-provider");
+      String clusterProviderClass = args.map.get("-cluster-provider");
       if (clusterProviderClass == null) {
         clusterProviderClass = "org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager";
       }
@@ -225,8 +225,7 @@ public class VertxMgr {
             System.err.println("Failed to instantiate eventbus provider");
             return;
           }
-          EventBus bus = new EventBus(clusterServerID, mgr) {
-          };
+          EventBus bus = new EventBus(clusterServerID, mgr) {};
           EventBus.initialize(bus);
           latch.countDown();
         }
@@ -235,6 +234,18 @@ public class VertxMgr {
         latch.await();
       } catch (InterruptedException ignore) {
       }
+    } else {
+      // This is ugly - tidy it up!
+      final CountDownLatch latch = new CountDownLatch(1);
+      VertxInternal.instance.go(new Runnable() {
+        public void run() {
+          // Start non clustered event bus
+          ServerID defaultServerID = new ServerID(2550, "localhost");
+          EventBus bus = new EventBus(defaultServerID) {};
+          EventBus.initialize(bus);
+          latch.countDown();
+        }
+      });
     }
     return true;
   }

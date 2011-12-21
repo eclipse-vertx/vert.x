@@ -67,17 +67,33 @@ public class EventBus {
     instance = bus;
   }
 
-  private ServerID serverID;
-  private NetServer server;
-  private AsyncMultiMap<String, ServerID> subs;  // Multimap name -> Collection<node ids>
-  private ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
-  private ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
-  private Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
+  private final ServerID serverID;
+  private final NetServer server;
+  private final AsyncMultiMap<String, ServerID> subs;  // Multimap name -> Collection<node ids>
+  private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
+  private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
 
+  /*
+  Non clustered event bus
+   */
+  protected EventBus(ServerID serverID) {
+    this.serverID = serverID;
+    this.subs = null;
+    this.server = setServer();
+  }
+
+  /*
+  Clustered event bus
+   */
   protected EventBus(ServerID serverID, ClusterManager clusterManager) {
     this.serverID = serverID;
     subs = clusterManager.getMultiMap("subs");
-    server = new NetServer().connectHandler(new Handler<NetSocket>() {
+    this.server = setServer();
+  }
+
+  private NetServer setServer() {
+    return new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
         Handler<Buffer> handler = new Handler<Buffer>() {
@@ -109,10 +125,13 @@ public class EventBus {
    * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
    */
   public void send(final Message message, final Handler<Message> replyHandler) {
-    message.messageID = UUID.randomUUID().toString();
+    if (message.messageID == null) {
+      message.messageID = UUID.randomUUID().toString();
+    }
     message.sender = serverID;
     if (replyHandler != null) {
-      message.requiresReply = true;
+      message.replyAddress = UUID.randomUUID().toString();
+      registerHandler(message.replyAddress, replyHandler, null, true);
     }
 
     // First check if sender is in response address cache - it will be if it's a response
@@ -125,29 +144,26 @@ public class EventBus {
         receiveMessage(message.copy());
       }
     } else {
-      subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
-        public void handle(Future<Collection<ServerID>> event) {
-          Collection<ServerID> serverIDs = event.result();
-          if (event.succeeded()) {
-            if (serverIDs != null) {
-              if (replyHandler != null) {
-                // For request-response we use the unique message id also for the unique address of the
-                // automatically generated response handler
-                registerHandler(message.messageID, replyHandler, null, true);
-              }
-              for (ServerID serverID : serverIDs) {
-                if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
-                  send(serverID, message);
+      if (subs != null) {
+        subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
+          public void handle(Future<Collection<ServerID>> event) {
+            Collection<ServerID> serverIDs = event.result();
+            if (event.succeeded()) {
+              if (serverIDs != null) {
+                for (ServerID serverID : serverIDs) {
+                  if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
+                    send(serverID, message);
+                  }
                 }
               }
+            } else {
+              log.error("Failed to send message", event.exception());
             }
-            //also send locally
-            receiveMessage(message.copy());
-          } else {
-            log.error("Failed to send message", event.exception());
           }
-        }
-      });
+        });
+      }
+      //also send locally
+      receiveMessage(message.copy());
     }
   }
 
@@ -191,7 +207,9 @@ public class EventBus {
       set.remove(new HandlerHolder(handler, false));
       if (set.isEmpty()) {
         handlers.remove(address);
-        removeSub(address, serverID);
+        if (subs != null) {
+          removeSub(address, serverID);
+        }
       }
     }
   }
@@ -218,7 +236,7 @@ public class EventBus {
           }
         };
       }
-      if (!replyHandler) {
+      if (subs != null && !replyHandler) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
       }
@@ -260,7 +278,7 @@ public class EventBus {
         public void handle(Exception e) {
           log.debug("Cluster connection failed. Removing it from map");
           connections.remove(serverID);
-          if (sendable.type() == Sendable.TYPE_MESSAGE) {
+          if (subs != null && sendable.type() == Sendable.TYPE_MESSAGE) {
             removeSub(((Message)sendable).address, serverID);
           }
         }
@@ -286,8 +304,8 @@ public class EventBus {
 
   // Called when a message is incoming
   private void receiveMessage(final Message msg) {
-    if (msg.requiresReply) {
-      replyAddressCache.put(msg.messageID, msg.sender);
+    if (msg.replyAddress != null) {
+      replyAddressCache.put(msg.replyAddress, msg.sender);
     }
     msg.bus = this;
     Set<HandlerHolder> set = handlers.get(msg.address);

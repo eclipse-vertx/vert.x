@@ -54,8 +54,11 @@ module Vertx
 
     # Install an application
     # @param config [Hash] Configuration for the application
+    # @param proc [Proc] Proc representing the handler
     # @param hndlr [Block] Handler to call when a new {SockJSSocket is created}
-    def install_app(config, &hndlr)
+    def install_app(config, proc = nil, &hndlr)
+      hndlr = proc if proc
+
       j_config = org.vertx.java.core.sockjs.AppConfig.new
 
       prefix = config["prefix"]
@@ -112,6 +115,32 @@ module Vertx
       @handler_id
     end
 
+    # @private
+    def _to_java_socket
+      @j_del
+    end
+
+  end
+
+  # A SockJSBridgeHandler plugs into a SockJS server and translates data received via SockJS into operations
+  # to send messages and register and unregister handlers on the vert.x event bus.
+  #
+  # When used in conjunction with the vert.x client side JavaScript event bus api (vertxbus.js) this effectively
+  # extends the reach of the vert.x event bus from vert.x server side applications to the browser as well. This
+  # enables a truly transparent single event bus where client side JavaScript applications can play on the same
+  # bus as server side application instances and services.
+  #
+  # @author {http://tfox.org Tim Fox}
+  class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
+    def initialize
+      super
+    end
+
+    # Call this handler - pretend to be a Proc
+    def call(sock)
+      # This is inefficient since we convert to a Ruby SockJSSocket and back again to a Java one
+      handle(sock._to_java_socket)
+    end
   end
 
 end
