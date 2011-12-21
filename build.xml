@@ -128,11 +128,7 @@
     <target name="javadoc" depends="compile-core">
         <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
                 classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}"
-                packagenames="org.vertx.java.core,org.vertx.java.core.buffer,org.vertx.java.core.composition,org.vertx.java.core.file,org.vertx.java.core.http,org.vertx.java.core.logging,org.vertx.java.core.net,org.vertx.java.core.parsetools,org.vertx.java.core.shareddata,org.vertx.java.core.sockjs,org.vertx.java.core.stdio,org.vertx.java.core.streams,org.vertx.java.core.eventbus">
-            <!-- <fileset dir="${core-src}" defaultexcludes="yes">
-                <include name="org/vertx/java/core/**"/>
-            </fileset>
-            -->
+                packagenames="org.vertx.java.core,org.vertx.java.core.buffer,org.vertx.java.core.composition,org.vertx.java.core.file,org.vertx.java.core.http,org.vertx.java.core.logging,org.vertx.java.core.net,org.vertx.java.core.parsetools,org.vertx.java.core.shared,org.vertx.java.core.sockjs,org.vertx.java.core.stdio,org.vertx.java.core.streams,org.vertx.java.core.eventbus">
             <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
         </javadoc>
     </target>
@@ -146,7 +142,7 @@
         <exec executable="yardoc"/>
     </target>
 
-    <target name="dist" depends="clean, jar-core, javadoc, yardoc">
+    <target name="dist" depends="clean, jar-core">
         <mkdir dir="${dist-build}"/>
 
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
@@ -160,6 +156,7 @@
             <fileset dir="${core-lib}">
                 <include name="netty.jar"/>
                 <include name="high-scale-lib.jar"/>
+                <include name="jackson-all-1.9.2.jar"/>
                 <!-- <include name="jruby.jar"/> -->
             </fileset>
             <fileset dir="${opt-lib}">
@@ -182,6 +179,7 @@
             </fileset>
         </copy>
 
+        <!--
         <copy todir="${dist-build}/${javadoc-dir}">
             <fileset dir="${target}/${javadoc-dir}"/>
         </copy>
@@ -189,6 +187,7 @@
         <copy todir="${dist-build}/${rubydoc-dir}">
             <fileset dir="${target}/${rubydoc-dir}"/>
         </copy>
+        -->
 
         <!-- We need to use exec since the ant copy task does not preserve file permissions -->
         <mkdir dir="${dist-build}/bin"/>
@@ -201,6 +200,9 @@
         <copy todir="${dist-build}/examples">
             <fileset dir="src/examples"/>
         </copy>
+
+        <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
+        <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
 
         <copy file="LICENSE.txt" todir="${dist-build}"/>
         <copy file="README.md" todir="${dist-build}"/>
