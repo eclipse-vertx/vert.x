@@ -57,6 +57,10 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   private List<PatternBinding> postBindings = new ArrayList<>();
   private List<PatternBinding> deleteBindings = new ArrayList<>();
   private List<PatternBinding> optionsBindings = new ArrayList<>();
+  private List<PatternBinding> headBindings = new ArrayList<>();
+  private List<PatternBinding> traceBindings = new ArrayList<>();
+  private List<PatternBinding> connectBindings = new ArrayList<>();
+  private List<PatternBinding> patchBindings = new ArrayList<>();
 
   @Override
   public void handle(HttpServerRequest request) {
@@ -76,6 +80,16 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
       case "OPTIONS":
         route(request, optionsBindings);
         break;
+      case "HEAD":
+        route(request, headBindings);
+        break;
+      case "TRACE":
+        route(request, traceBindings);
+        break;
+      case "PATCH":
+        route(request, patchBindings);
+        break;
+
     }
   }
 
@@ -125,6 +139,42 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   /**
+   * Specify a handler that will be called for a matching HTTP HEAD
+   * @param pattern The simple pattern
+   * @param handler The handler to call
+   */
+  public void head(String pattern, Handler<HttpServerRequest> handler) {
+    addPattern(pattern, handler, headBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP TRACE
+   * @param pattern The simple pattern
+   * @param handler The handler to call
+   */
+  public void trace(String pattern, Handler<HttpServerRequest> handler) {
+    addPattern(pattern, handler, traceBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP CONNECT
+   * @param pattern The simple pattern
+   * @param handler The handler to call
+   */
+  public void connect(String pattern, Handler<HttpServerRequest> handler) {
+    addPattern(pattern, handler, connectBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP PATCH
+   * @param pattern The simple pattern
+   * @param handler The handler to call
+   */
+  public void patch(String pattern, Handler<HttpServerRequest> handler) {
+    addPattern(pattern, handler, patchBindings);
+  }
+
+  /**
    * Specify a handler that will be called for all HTTP methods
    * @param pattern The simple pattern
    * @param handler The handler to call
@@ -135,6 +185,10 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     addPattern(pattern, handler, postBindings);
     addPattern(pattern, handler, deleteBindings);
     addPattern(pattern, handler, optionsBindings);
+    addPattern(pattern, handler, headBindings);
+    addPattern(pattern, handler, traceBindings);
+    addPattern(pattern, handler, connectBindings);
+    addPattern(pattern, handler, patchBindings);
   }
 
   /**
@@ -174,6 +228,51 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
 
   /**
+   * Specify a handler that will be called for a matching HTTP OPTIONS
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void optionsWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, optionsBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP HEAD
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void headWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, headBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP TRACE
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void traceWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, traceBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP CONNECT
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void connectWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, connectBindings);
+  }
+
+  /**
+   * Specify a handler that will be called for a matching HTTP PATCH
+   * @param regex A regular expression
+   * @param handler The handler to call
+   */
+  public void patchWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+    addRegEx(regex, handler, patchBindings);
+  }
+
+  /**
    * Specify a handler that will be called for all HTTP methods
    * @param regex A regular expression
    * @param handler The handler to call
@@ -184,16 +283,12 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     addRegEx(regex, handler, postBindings);
     addRegEx(regex, handler, deleteBindings);
     addRegEx(regex, handler, optionsBindings);
+    addRegEx(regex, handler, headBindings);
+    addRegEx(regex, handler, traceBindings);
+    addRegEx(regex, handler, connectBindings);
+    addRegEx(regex, handler, patchBindings);
   }
 
-  /**
-   * Specify a handler that will be called for a matching HTTP OPTIONS
-   * @param regex A regular expression
-   * @param handler The handler to call
-   */
-  public void optionsWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, optionsBindings);
-  }
 
   private void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
     // We need to search for any :<token name> tokens in the String and replace them with named capture groups
