@@ -1,5 +1,7 @@
 package org.vertx.java.core.sockjs;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Immutable;
 import org.vertx.java.core.Vertx;
@@ -14,7 +16,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Session implements SockJSSocket, Immutable {
+class Session extends SockJSSocket implements Immutable {
 
   private static final Logger log = Logger.getLogger(Session.class);
 
@@ -34,8 +36,7 @@ class Session implements SockJSSocket, Immutable {
   private int messagesSize;
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
-  private Pattern unescaper = Pattern.compile("\\\\\"");
-  private Pattern escaper = Pattern.compile("\"");
+  private ObjectMapper mapper = new ObjectMapper();
 
   Session(long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
     this(-1, heartbeatPeriod, sockHandler, null);
@@ -138,18 +139,16 @@ class Session implements SockJSSocket, Immutable {
 
   void writePendingMessages() {
 
-    StringBuilder sb = new StringBuilder("a[");
-    int count = 0;
-    int size = pendingWrites.size();
-    for (String msg : pendingWrites) {
-      messagesSize -= msg.length();
-      sb.append('"').append(escape(msg)).append('"');
-      if (++count != size) {
-        sb.append(',');
-      }
+    String json;
+    try {
+      json = mapper.writeValueAsString(pendingWrites.toArray());
+    } catch (Exception e) {
+      // Should never happen
+      log.error("Failed to stringify JSON", e);
+      return;
     }
-    sb.append("]");
-    listener.sendFrame(sb.toString());
+
+    listener.sendFrame("a" + json);
 
     pendingWrites.clear();
 
@@ -194,32 +193,40 @@ class Session implements SockJSSocket, Immutable {
   }
 
   private String[] parseMessageString(String msgs) {
-    //Sock-JS client will only ever send Strings in a JSON array or as a JSON string so we can do some cheap parsing
-    //without having to use a JSON lib
+
     String[] parts;
-    if (!msgs.startsWith("\"")) {
-      String[] split = msgs.split("\"");
-      parts = new String[(split.length - 1) / 2];
-      for (int i = 1; i < split.length - 1; i += 2) {
-        parts[(i - 1) / 2] = unescape(split[i]);
+    try {
+      if (msgs.startsWith("[")) {
+        //JSON array
+        parts = mapper.readValue(msgs, String[].class);
+      } else {
+        //JSON string
+        String str = mapper.readValue(msgs, String.class);
+        parts = new String[] { str };
       }
-    } else {
-      String msg = msgs.substring(1, msgs.length() - 1);
-      parts = new String[] {unescape(msg)};
+    } catch (Exception e) {
+      // Invalid JSON
+      return null;
     }
+
     return parts;
   }
 
-  void handleMessages(String messages) {
+  boolean handleMessages(String messages) {
     String[] msgArr = parseMessageString(messages);
-    if (dataHandler != null) {
-      for (String msg : msgArr) {
-        if (!paused) {
-          dataHandler.handle(Buffer.create(msg));
-        } else {
-          pendingReads.add(msg);
+    if (msgArr == null) {
+      return false;
+    } else {
+      if (dataHandler != null) {
+        for (String msg : msgArr) {
+          if (!paused) {
+            dataHandler.handle(Buffer.create(msg));
+          } else {
+            pendingReads.add(msg);
+          }
         }
       }
+      return true;
     }
   }
 
@@ -241,16 +248,5 @@ class Session implements SockJSSocket, Immutable {
     lst.sendFrame(sb.toString());
     openWritten = true;
   }
-
-  private String escape(String str) {
-    Matcher matcher = escaper.matcher(str);
-    return matcher.replaceAll("\\\\\"");
-  }
-
-  private String unescape(String str) {
-    Matcher matcher = unescaper.matcher(str);
-    return matcher.replaceAll("\"");
-  }
-
 
 }

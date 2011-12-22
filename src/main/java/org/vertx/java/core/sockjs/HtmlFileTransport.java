@@ -1,6 +1,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.StringEscapeUtils;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
@@ -87,7 +88,7 @@ class HtmlFileTransport extends BaseTransport {
         req.response.write(htmlFile);
         headersWritten = true;
       }
-      payload = payload.replace("\"", "\\\"");
+      payload = escapeForJavaScript(payload);
       StringBuilder sb = new StringBuilder();
       sb.append("<script>\np(\"");
       sb.append(payload);

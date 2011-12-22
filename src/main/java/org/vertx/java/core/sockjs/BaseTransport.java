@@ -1,7 +1,9 @@
 package org.vertx.java.core.sockjs;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.StringEscapeUtils;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
@@ -19,6 +21,7 @@ class BaseTransport {
 
   protected final Map<String, Session> sessions;
   protected AppConfig config;
+  private ObjectMapper mapper = new ObjectMapper();
 
   protected static final String COMMON_PATH_ELEMENT_RE = "\\/[^\\/\\.]+\\/([^\\/\\.]+)\\/";
 
@@ -41,15 +44,19 @@ class BaseTransport {
     return session;
   }
 
-  protected boolean checkJSON(String str, HttpServerResponse response) {
-    if (!(str.startsWith("[\"") && str.endsWith("\"]"))) {
-      //Invalid
-      response.statusCode = 500;
-      response.end("Broken JSON encoding.");
-      return false;
-    } else {
-      return true;
+  protected void sendInvalidJSON(HttpServerResponse response) {
+    response.statusCode = 500;
+    response.end("Broken JSON encoding.");
+  }
+
+  protected String escapeForJavaScript(String str) {
+    try {
+       str = StringEscapeUtils.escapeJavaScript(str);
+    } catch (Exception e) {
+      log.error("Failed to escape", e);
+      str = null;
     }
+    return str;
   }
 
   static void setJSESSIONID(AppConfig config, HttpServerRequest req) {
@@ -77,9 +84,13 @@ class BaseTransport {
     }
   }
 
-  static void setCORS(HttpServerResponse resp, String origin) {
-    resp.putHeader("Access-Control-Allow-Origin", origin);
-    resp.putHeader("Access-Control-Allow-Credentials", "true");
+  static void setCORS(HttpServerRequest req) {
+    String origin = req.getHeader("Origin");
+    if (origin == null) {
+      origin = "*";
+    }
+    req.response.putHeader("Access-Control-Allow-Origin", origin);
+    req.response.putHeader("Access-Control-Allow-Credentials", "true");
   }
 
   static Handler<HttpServerRequest> createCORSOptionsHandler(final AppConfig config, final String methods) {
@@ -92,11 +103,7 @@ class BaseTransport {
         req.response.putHeader("Expires", expires);
         req.response.putHeader("Allow", methods);
         req.response.putHeader("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
-        String origin = req.getHeader("Origin");
-        if (origin == null) {
-          origin = "*";
-        }
-        setCORS(req.response, origin);
+        setCORS(req);
         setJSESSIONID(config, req);
         req.response.statusCode = 204;
         req.response.end();

@@ -1,5 +1,8 @@
 package org.vertx.java.core.sockjs;
 
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -13,7 +16,18 @@ import org.vertx.java.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface SockJSSocket extends ReadStream, WriteStream {
+public abstract class SockJSSocket implements ReadStream, WriteStream {
 
-  void close();
+  public abstract void close();
+
+  public final long writeHandlerID;
+
+  SockJSSocket() {
+    this.writeHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
+        writeBuffer(buff);
+      }
+    });
+  }
+
 }

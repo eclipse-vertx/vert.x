@@ -30,7 +30,7 @@ import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
 public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
 
-  public static final int DEFAULT_MAX_FRAME_SIZE = 16384;
+  public static final int DEFAULT_MAX_FRAME_SIZE = 128 * 1024;
 
   private final int maxFrameSize;
 

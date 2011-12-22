@@ -89,18 +89,15 @@ class XhrTransport extends BaseTransport {
           return;
         }
 
-        //TODO can be optimised
-        if (!checkJSON(msgs, req.response)) {
-          return;
+        if (!session.handleMessages(msgs)) {
+          sendInvalidJSON(req.response);
+        } else {
+          req.response.putHeader("Content-Type", "text/plain");
+          setJSESSIONID(config, req);
+          setCORS(req);
+          req.response.statusCode = 204;
+          req.response.end();
         }
-
-        req.response.putHeader("Content-Type", "text/plain");
-        setJSESSIONID(config, req);
-        setCORS(req.response, "*");
-        req.response.statusCode = 204;
-        req.response.end();
-
-        session.handleMessages(msgs);
       }
     });
   }
@@ -120,7 +117,7 @@ class XhrTransport extends BaseTransport {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
-        setCORS(req.response, "*");
+        setCORS(req);
         req.response.setChunked(true);
         headersWritten = true;
       }
