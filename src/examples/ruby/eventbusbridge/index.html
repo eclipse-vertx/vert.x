@@ -120,20 +120,22 @@
     }
   }
 
-  $("#sendButton").click(function() {
-    send($("#sendAddress").val(), $("#sendMessage").val());
-  });
+  $(document).ready(function() {
+    $("#sendButton").click(function() {
+      send($("#sendAddress").val(), $("#sendMessage").val());
+    });
 
-  $("#subscribeButton").click(function() {
-    subscribe($("#subscribeAddress").val());
-  });
+    $("#subscribeButton").click(function() {
+      subscribe($("#subscribeAddress").val());
+    });
 
-  $("#closeButton").click(function() {
-    closeConn();
-  });
+    $("#closeButton").click(function() {
+      closeConn();
+    });
 
-  $("#connectButton").click(function() {
-    openConn();
+    $("#connectButton").click(function() {
+      openConn();
+    });
   });
 
 </script>

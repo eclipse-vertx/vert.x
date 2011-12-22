@@ -92,17 +92,12 @@ class JsonPTransport extends BaseTransport {
           body = body.substring(2);
         }
 
-        //Sock-JS client will only ever send Strings in a JSON array so we can do some cheap parsing
-        //without having to use a JSON lib
-
-        if (!checkJSON(body, req.response)) {
-          return;
+        if (!session.handleMessages(body)) {
+          sendInvalidJSON(req.response);
+        } else {
+          setJSESSIONID(config, req);
+          req.response.end("ok");
         }
-
-        setJSESSIONID(config, req);
-        req.response.end("ok");
-
-        session.handleMessages(body);
       }
     });
   }
@@ -120,6 +115,7 @@ class JsonPTransport extends BaseTransport {
       this.callback = callback;
     }
 
+
     public void sendFrame(String payload) {
 
       if (!headersWritten) {
@@ -130,7 +126,8 @@ class JsonPTransport extends BaseTransport {
         headersWritten = true;
       }
 
-      payload = payload.replace("\"", "\\\"");
+      payload = escapeForJavaScript(payload);
+
       StringBuilder sb = new StringBuilder();
       sb.append(callback).append("(\"");
       sb.append(payload);

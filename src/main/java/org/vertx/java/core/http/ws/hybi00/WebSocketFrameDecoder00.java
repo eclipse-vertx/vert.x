@@ -19,7 +19,7 @@ public class WebSocketFrameDecoder00 extends ReplayingDecoder<VoidEnum> {
 
   private static final Logger log = Logger.getLogger(WebSocketFrameDecoder00.class);
 
-  public static final int DEFAULT_MAX_FRAME_SIZE = 16384;
+  public static final int DEFAULT_MAX_FRAME_SIZE = 128 * 1024;
 
   private final int maxFrameSize;
 

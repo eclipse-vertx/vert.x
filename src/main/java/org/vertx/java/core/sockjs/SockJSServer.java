@@ -1,6 +1,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
@@ -74,7 +75,6 @@ public class SockJSServer {
 
     httpServer.requestHandler(rm);
     httpServer.websocketHandler(wsMatcher);
-    installDefaultApps();
 
     // Preserve any previous handlers as the default handlers, if the requests don't match any app URLs they
     // will be called
@@ -179,24 +179,22 @@ public class SockJSServer {
         }
       }
 
-      List<TimeoutInfo> timeouts = new ArrayList<>();
-
-      private void setTimeout(long delay, final Buffer buff) {
+      private void setTimeout(List<TimeoutInfo> timeouts, long delay, final Buffer buff) {
         timeouts.add(new TimeoutInfo(delay, buff));
       }
 
-      private void runTimeouts(HttpServerResponse response) {
+      private void runTimeouts(List<TimeoutInfo> timeouts, HttpServerResponse response) {
         final Iterator<TimeoutInfo> iter = timeouts.iterator();
-        nextTimeout(iter, response);
+        nextTimeout(timeouts, iter, response);
       }
 
-      private void nextTimeout(final Iterator<TimeoutInfo> iter, final HttpServerResponse response) {
+      private void nextTimeout(final List<TimeoutInfo> timeouts, final Iterator<TimeoutInfo> iter, final HttpServerResponse response) {
         if (iter.hasNext()) {
           final TimeoutInfo timeout = iter.next();
           Vertx.instance.setTimer(timeout.timeout, new Handler<Long>() {
             public void handle(Long id) {
               response.write(timeout.buff);
-              nextTimeout(iter, response);
+              nextTimeout(timeouts, iter, response);
             }
           });
         } else {
@@ -206,7 +204,8 @@ public class SockJSServer {
 
       public void handle(HttpServerRequest req) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
-        BaseTransport.setCORS(req.response, "*");
+
+        BaseTransport.setCORS(req);
         req.response.setChunked(true);
 
         Buffer h = Buffer.create(2);
@@ -218,15 +217,17 @@ public class SockJSServer {
         }
         hs.appendString("h\n");
 
-        setTimeout(0, h);
-        setTimeout(1, hs);
-        setTimeout(5, h);
-        setTimeout(25, h);
-        setTimeout(125, h);
-        setTimeout(625, h);
-        setTimeout(3125, h);
+        List<TimeoutInfo> timeouts = new ArrayList<>();
 
-        runTimeouts(req.response);
+        setTimeout(timeouts, 0, h);
+        setTimeout(timeouts,1, hs);
+        setTimeout(timeouts,5, h);
+        setTimeout(timeouts,25, h);
+        setTimeout(timeouts,125, h);
+        setTimeout(timeouts,625, h);
+        setTimeout(timeouts,3125, h);
+
+        runTimeouts(timeouts, req.response);
 
       }
     };
@@ -267,7 +268,43 @@ public class SockJSServer {
     return sb.toString();
   }
 
-  private void installDefaultApps() {
+
+  private static final String IFRAME_TEMPLATE =
+      "<!DOCTYPE html>\n" +
+          "<html>\n" +
+          "<head>\n" +
+          "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
+          "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
+          "  <script>\n" +
+          "    document.domain = document.domain;\n" +
+          "    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
+          "  </script>\n" +
+          "  <script src=\"{{ sockjs_url }}\"></script>\n" +
+          "</head>\n" +
+          "<body>\n" +
+          "  <h2>Don't panic!</h2>\n" +
+          "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
+          "</body>\n" +
+          "</html>";
+
+  // For debug only
+  public static void main(String[] args) throws Exception {
+    VertxInternal.instance.go(new Runnable() {
+      public void run() {
+        HttpServer httpServer = new HttpServer();
+        SockJSServer sjsServer = new SockJSServer(httpServer);
+        sjsServer.installTestApplications();
+        httpServer.listen(8080);
+      }
+    });
+
+    Thread.sleep(Long.MAX_VALUE);
+  }
+
+  /*
+  These applications are required by the SockJS protocol and QUnit tests
+   */
+  public void installTestApplications() {
     installApp(new AppConfig().setPrefix("/echo"), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
@@ -294,37 +331,59 @@ public class SockJSServer {
             });
           }
         });
-  }
-
-  private static final String IFRAME_TEMPLATE =
-      "<!DOCTYPE html>\n" +
-          "<html>\n" +
-          "<head>\n" +
-          "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
-          "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-          "  <script>\n" +
-          "    document.domain = document.domain;\n" +
-          "    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
-          "  </script>\n" +
-          "  <script src=\"{{ sockjs_url }}\"></script>\n" +
-          "</head>\n" +
-          "<body>\n" +
-          "  <h2>Don't panic!</h2>\n" +
-          "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
-          "</body>\n" +
-          "</html>";
-
-  // For debug only
-  public static void main(String[] args) throws Exception {
-    VertxInternal.instance.go(new Runnable() {
-      public void run() {
-        HttpServer httpServer = new HttpServer();
-        new SockJSServer(httpServer);
-        httpServer.listen(8080);
+    installApp(new AppConfig().setPrefix("/ticker"), new Handler<SockJSSocket>() {
+      public void handle(final SockJSSocket sock) {
+        final long timerID = Vertx.instance.setPeriodic(1000, new Handler<Long>() {
+          public void handle(Long id) {
+            sock.writeBuffer(Buffer.create("tick!"));
+          }
+        });
+        sock.endHandler(new SimpleHandler() {
+          public void handle() {
+            Vertx.instance.cancelTimer(timerID);
+          }
+        });
+      }
+    });
+    installApp(new AppConfig().setPrefix("/amplify"), new Handler<SockJSSocket>() {
+      long timerID;
+      public void handle(final SockJSSocket sock) {
+        sock.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            String str = data.toString();
+            int n = Integer.valueOf(str);
+            if (n < 0 || n > 19) {
+              n = 1;
+            }
+            int num = (int)Math.pow(2, n);
+            Buffer buff = Buffer.create(num);
+            for (int i = 0; i < num; i++) {
+              buff.appendByte((byte)'x');
+            }
+            sock.writeBuffer(buff);
+          }
+        });
+      }
+    });
+    installApp(new AppConfig().setPrefix("/broadcast"), new Handler<SockJSSocket>() {
+      final Set<Long> connections = SharedData.getSet("conns");
+      public void handle(final SockJSSocket sock) {
+        connections.add(sock.writeHandlerID);
+        sock.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            for (Long actorID : connections) {
+              Vertx.instance.sendToHandler(actorID, buffer);
+            }
+          }
+        });
+        sock.endHandler(new SimpleHandler() {
+          public void handle() {
+            connections.remove(sock.writeHandlerID);
+          }
+        });
       }
     });
 
-    Thread.sleep(Long.MAX_VALUE);
   }
 
 }

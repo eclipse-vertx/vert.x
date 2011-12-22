@@ -34,6 +34,7 @@ class WebSocketTransport extends BaseTransport {
           public void handle(Buffer data) {
             if (!session.isClosed()) {
               String msgs = data.toString();
+
               if (msgs.equals("")) {
                 //Ignore empty frames
               } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||

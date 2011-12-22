@@ -142,7 +142,7 @@
         <exec executable="yardoc"/>
     </target>
 
-    <target name="dist" depends="clean, jar-core">
+    <target name="dist" depends="clean, jar-core, javadoc, yardoc">
         <mkdir dir="${dist-build}"/>
 
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
@@ -179,7 +179,6 @@
             </fileset>
         </copy>
 
-        <!--
         <copy todir="${dist-build}/${javadoc-dir}">
             <fileset dir="${target}/${javadoc-dir}"/>
         </copy>
@@ -187,7 +186,6 @@
         <copy todir="${dist-build}/${rubydoc-dir}">
             <fileset dir="${target}/${rubydoc-dir}"/>
         </copy>
-        -->
 
         <!-- We need to use exec since the ant copy task does not preserve file permissions -->
         <mkdir dir="${dist-build}/bin"/>
