@@ -43,49 +43,73 @@ public class RouteMatcherTest extends TestBase {
 
   @Test
   public void testRouteWithPattern() throws Exception {
+    testRouteWithPattern("GET");
+    testRouteWithPattern("PUT");
+    testRouteWithPattern("POST");
+    testRouteWithPattern("DELETE");
+    testRouteWithPattern("HEAD");
+    testRouteWithPattern("OPTIONS");
+    testRouteWithPattern("TRACE");
+    testRouteWithPattern("PATCH");
+  }
+
+  private void testRouteWithPattern(String method) throws Exception {
     Map<String, String> params = new HashMap<>();
 
     params.put("name", "foo");
     params.put("version", "v0.1");
-    testRoute(false, "/:name/:version", params, "/foo/v0.1");
+    testRoute(false, "/:name/:version", params, method, "/foo/v0.1");
 
     params.clear();
     params.put("name", "foo");
     params.put("version", "v0.1");
-    testRoute(false, "modules/:name/:version", params, "modules/foo/v0.1");
+    testRoute(false, "modules/:name/:version", params, method, "modules/foo/v0.1");
 
     params.clear();
     params.put("name", "foo");
     params.put("version", "v0.1");
-    testRoute(false, "modules/:name/:version/", params, "modules/foo/v0.1/");
+    testRoute(false, "modules/:name/:version/", params, method, "modules/foo/v0.1/");
 
     params.clear();
     params.put("name", "foo");
     params.put("version", "v0.1");
-    testRoute(false, "modules/:name/:version/whatever", params, "modules/foo/v0.1/whatever");
+    testRoute(false, "modules/:name/:version/whatever", params, method, "modules/foo/v0.1/whatever");
 
     params.clear();
     params.put("name", "foo");
     params.put("version", "v0.1");
-    testRoute(false, "modules/:name/blah/:version/whatever", params, "modules/foo/blah/v0.1/whatever");
+    testRoute(false, "modules/:name/blah/:version/whatever", params, method, "modules/foo/blah/v0.1/whatever");
 
     params.clear();
     params.put("name", "foo");
-    testRoute(false, "/:name/", params, "/foo/");
+    testRoute(false, "/:name/", params, method, "/foo/");
 
   }
 
   @Test
   public void testRouteWithRegEx() throws Exception {
+    testRouteWithRegEx("GET");
+    testRouteWithRegEx("PUT");
+    testRouteWithRegEx("POST");
+    testRouteWithRegEx("DELETE");
+    testRouteWithRegEx("HEAD");
+    testRouteWithRegEx("OPTIONS");
+    testRouteWithRegEx("TRACE");
+    testRouteWithRegEx("PATCH");
+  }
+
+
+  private void testRouteWithRegEx(String method) throws Exception {
     Map<String, String> params = new HashMap<>();
     params.put("param0", "foo");
     params.put("param1", "v0.1");
     String regex = "\\/([^\\/]+)\\/([^\\/]+)";
-    testRoute(true, regex, params, "/foo/v0.1");
+    testRoute(true, regex, params, method, "/foo/v0.1");
   }
 
 
-  private void testRoute(final boolean regex, final String pattern, final Map<String, String> params, final String uri) throws Exception {
+  private void testRoute(final boolean regex, final String pattern, final Map<String, String> params,
+                         final String method, final String uri) throws Exception {
     final String host = "localhost";
     final int port = 8181;
 
@@ -106,17 +130,70 @@ public class RouteMatcherTest extends TestBase {
           }
         };
 
-        if (regex) {
-          matcher.getWithRegEx(pattern, handler);
-        } else {
-          matcher.get(pattern, handler);
+        switch (method) {
+          case "GET":
+            if (regex) {
+              matcher.getWithRegEx(pattern, handler);
+            } else {
+              matcher.get(pattern, handler);
+            }
+            break;
+          case "PUT":
+            if (regex) {
+              matcher.putWithRegEx(pattern, handler);
+            } else {
+              matcher.put(pattern, handler);
+            }
+            break;
+          case "POST":
+            if (regex) {
+              matcher.postWithRegEx(pattern, handler);
+            } else {
+              matcher.post(pattern, handler);
+            }
+            break;
+          case "DELETE":
+            if (regex) {
+              matcher.deleteWithRegEx(pattern, handler);
+            } else {
+              matcher.delete(pattern, handler);
+            }
+            break;
+          case "OPTIONS":
+            if (regex) {
+              matcher.optionsWithRegEx(pattern, handler);
+            } else {
+              matcher.options(pattern, handler);
+            }
+            break;
+          case "HEAD":
+            if (regex) {
+              matcher.headWithRegEx(pattern, handler);
+            } else {
+              matcher.head(pattern, handler);
+            }
+            break;
+          case "TRACE":
+            if (regex) {
+              matcher.traceWithRegEx(pattern, handler);
+            } else {
+              matcher.trace(pattern, handler);
+            }
+            break;
+          case "PATCH":
+            if (regex) {
+              matcher.patchWithRegEx(pattern, handler);
+            } else {
+              matcher.patch(pattern, handler);
+            }
+            break;
         }
 
         final HttpServer server = new HttpServer().requestHandler(matcher).listen(port, host);
 
         final HttpClient client = new HttpClient().setPort(port).setHost(host);
 
-        final HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
+        Handler<HttpClientResponse> respHandler = new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             assert (200 == resp.statusCode);
             server.close(new SimpleHandler() {
@@ -125,7 +202,38 @@ public class RouteMatcherTest extends TestBase {
               }
             });
           }
-        });
+        };
+
+        final HttpClientRequest req;
+
+        switch (method) {
+          case "GET":
+            req = client.get(uri, respHandler);
+            break;
+          case "PUT":
+            req = client.put(uri, respHandler);
+            break;
+          case "POST":
+            req = client.post(uri, respHandler);
+            break;
+          case "DELETE":
+            req = client.delete(uri, respHandler);
+            break;
+          case "OPTIONS":
+            req = client.options(uri, respHandler);
+            break;
+          case "HEAD":
+            req = client.head(uri, respHandler);
+            break;
+          case "TRACE":
+            req = client.trace(uri, respHandler);
+            break;
+          case "PATCH":
+            req = client.patch(uri, respHandler);
+            break;
+          default:
+            throw new IllegalArgumentException("Invalid method");
+        }
 
         req.end();
       }

@@ -298,6 +298,14 @@ public class HttpClient extends NetClientBase {
   }
 
   /**
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP PATCH request with the specified {@code uri}.<p>
+   * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   */
+  public HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler) {
+    return request("PATCH", uri, responseHandler);
+  }
+
+  /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP request with the specified {@code uri}. The specific HTTP method
    * (e.g. GET, POST, PUT etc) is specified using the parameter {@code method}<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
