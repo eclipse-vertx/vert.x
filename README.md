@@ -1,5 +1,4 @@
 # vert.x
-
 ## What is vert.x?
 
 The next generation polyglot asynchronous application framework.
