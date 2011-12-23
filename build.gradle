@@ -50,6 +50,22 @@ task redisTests(type: Test, dependsOn: testClasses) {
     include("**/RedisTest.class")
 }
 
+task yardoc(type: Exec) {
+    rubySrc = "src/main/ruby/core/**"
+    vertxRbSrc = "src/main/ruby/vertx.rb"
+    licenseSrc = "LICENSE.txt"
+    readmeSrc = "README.md"
+    destDir = "target/docs/ruby/api/"
+
+    inputs.files licenseSrc, vertxRbSrc, readmeSrc
+    inputs.dir rubySrc
+    outputs.dir destDir
+
+    commandLine = ["yardoc", "--title", "'vert.x Ruby API'", "--readme",
+                   readmeSrc, "--no-private", "--output-dir", destDir,
+                   vertxRbSrc, rubySrc, "-", licenseSrc]
+}
+
 distSpec = copySpec {
   into('lib/java') {
     from jar, configurations.compile
@@ -69,7 +85,10 @@ distSpec = copySpec {
     from javadoc
   }
   into('docs/groovy/api') {
-      from groovydoc
+    from groovydoc
+  }
+  into('docs/ruby/api') {
+    from yardoc
   }
   into('bin') {
     from 'src/scripts/vertx'
@@ -82,24 +101,19 @@ distSpec = copySpec {
   from 'LICENSE.txt', "README.md", "rel-notes/release-notes-${version}.txt"
 }
 
-task yardoc(type: Exec) {
-    executable = "yardoc"
-}
+
 
 
 
 task dist(type: Zip) {
-  //dependsOn groovydoc
   description = 'Builds the distribution.'
   group = 'build'
   into("$project.name-$version") {
     with distSpec
   }
-  // todo add ruby-doc
 }
 
 task install(type: Sync) {
-  //dependsOn groovydoc
   with distSpec
   into '/tmp/java/vertx'
 }
