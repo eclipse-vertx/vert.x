@@ -142,7 +142,7 @@
         <exec executable="yardoc"/>
     </target>
 
-    <target name="dist" depends="clean, jar-core, javadoc, yardoc">
+    <target name="dist" depends="clean, jar-core">
         <mkdir dir="${dist-build}"/>
 
         <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
@@ -179,6 +179,13 @@
             </fileset>
         </copy>
 
+        <copy todir="${dist-build}/lib/javascript">
+            <fileset dir="src/main/javascript">
+                <include name="**/*.js"/>
+            </fileset>
+        </copy>
+
+      <!--
         <copy todir="${dist-build}/${javadoc-dir}">
             <fileset dir="${target}/${javadoc-dir}"/>
         </copy>
@@ -186,7 +193,7 @@
         <copy todir="${dist-build}/${rubydoc-dir}">
             <fileset dir="${target}/${rubydoc-dir}"/>
         </copy>
-
+          -->
         <!-- We need to use exec since the ant copy task does not preserve file permissions -->
         <mkdir dir="${dist-build}/bin"/>
 
@@ -196,7 +203,9 @@
         </exec>
 
         <copy todir="${dist-build}/examples">
-            <fileset dir="src/examples"/>
+            <fileset dir="src/examples">
+                <exclude name="**/vertx-dev"/>
+            </fileset>
         </copy>
 
         <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
@@ -210,9 +219,6 @@
                 <include name="release-notes-${version-number}.txt"/>
             </fileset>
         </copy>
-
-        <!-- Don't create the zip since file permissions are not preserved - use tar.gz instead
-        <zip destfile="${target}/vert.x-${version-number}.zip" basedir="${dist-build-base}"/> -->
 
         <tar destfile="${target}/vert.x-${version-number}.tar" longfile="gnu">
           <tarfileset dir="${dist-build-base}" filemode="755">
