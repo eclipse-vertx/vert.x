@@ -1,20 +1,24 @@
 apply plugin: 'java'
+apply plugin: 'groovy'
 
 version = '0.1'
 
+repositories {
+    flatDir(dirs: file('lib/opt'))
+}
+
 dependencies {
   compile fileTree('lib/core').matching { include '*.jar' }
-  compile fileTree('lib/opt').matching { include '*.jar' }
+  compile fileTree('lib/opt').matching {
+    include '*.jar'
+    exclude 'groovy-all-*.jar'
+  }
   testCompile fileTree('lib/tests').matching { include '*.jar' }
+
+  groovy module(':groovy-all:1.8.3')
 }
 
 sourceSets {
-  main {
-    java {
-      resources.srcDirs = [file('src/main/java')]
-    }
-  }
-
   test {
     java.srcDirs = [file('src/tests/java'), file('src/tests/testapps/java')]
     resources.srcDirs = [file('src/tests/java')]
@@ -41,6 +45,11 @@ task rubyTests(type: Exec, dependsOn: testClasses) {
   executable = file('src/tests/ruby/run_tests.sh')
 }
 
+task redisTests(type: Test, dependsOn: testClasses) {
+    useTestNG()
+    include("**/RedisTest.class")
+}
+
 distSpec = copySpec {
   into('lib/java') {
     from jar, configurations.compile
@@ -59,6 +68,9 @@ distSpec = copySpec {
   into('docs/java/api') {
     from javadoc
   }
+  into('docs/groovy/api') {
+      from groovydoc
+  }
   into('bin') {
     from 'src/scripts/vertx'
     fileMode = 0755
@@ -70,9 +82,14 @@ distSpec = copySpec {
   from 'LICENSE.txt', "README.md", "rel-notes/release-notes-${version}.txt"
 }
 
-// todo yardoc
+task yardoc(type: Exec) {
+    executable = "yardoc"
+}
+
+
 
 task dist(type: Zip) {
+  //dependsOn groovydoc
   description = 'Builds the distribution.'
   group = 'build'
   into("$project.name-$version") {
@@ -82,8 +99,9 @@ task dist(type: Zip) {
 }
 
 task install(type: Sync) {
+  //dependsOn groovydoc
   with distSpec
-  into '/Users/hans/java/vertx'
+  into '/tmp/java/vertx'
 }
 
 task tarDist(type: Tar) {
@@ -94,6 +112,4 @@ task tarDist(type: Tar) {
 }
 
 task wrapper(type: Wrapper)
-
-
 
