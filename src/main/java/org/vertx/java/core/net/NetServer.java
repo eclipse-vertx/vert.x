@@ -38,6 +38,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.mozilla.javascript.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
@@ -218,6 +219,9 @@ public class NetServer extends NetServerBase {
    * @return a reference to this so multiple method calls can be chained together
    */
   public NetServer listen(int port, String host) {
+
+    log.info("Java, in listen: " + port + " " + host);
+
     checkThread();
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
@@ -385,6 +389,10 @@ public class NetServer extends NetServerBase {
           VertxInternal.instance.setContextID(handler.contextID);
           NetSocket sock = new NetSocket(ch, handler.contextID, Thread.currentThread());
           socketMap.put(ch, sock);
+
+
+          log.info("creating new netsocket, context is " + Context.getCurrentContext());
+
           handler.handler.handle(sock);
         }
       });
