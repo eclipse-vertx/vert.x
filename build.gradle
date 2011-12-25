@@ -102,9 +102,6 @@ distSpec = copySpec {
 }
 
 
-
-
-
 task dist(type: Zip) {
   description = 'Builds the distribution.'
   group = 'build'
@@ -115,7 +112,12 @@ task dist(type: Zip) {
 
 task install(type: Sync) {
   with distSpec
-  into '/tmp/java/vertx'
+  if (System.getenv()['VERTX_HOME']) {
+    into System.getenv()['VERTX_HOME']
+  }
+  else {
+    into System.getProperty('java.io.tmpdir') + '/vertx'
+  }
 }
 
 task tarDist(type: Tar) {
