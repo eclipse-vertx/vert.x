@@ -1,20 +1,24 @@
 apply plugin: 'java'
+apply plugin: 'groovy'
 
 version = '0.1'
 
+repositories {
+    flatDir(dirs: file('lib/opt'))
+}
+
 dependencies {
   compile fileTree('lib/core').matching { include '*.jar' }
-  compile fileTree('lib/opt').matching { include '*.jar' }
+  compile fileTree('lib/opt').matching {
+    include '*.jar'
+    exclude 'groovy-all-*.jar'
+  }
   testCompile fileTree('lib/tests').matching { include '*.jar' }
+
+  groovy module(':groovy-all:1.8.3')
 }
 
 sourceSets {
-  main {
-    java {
-      resources.srcDirs = [file('src/main/java')]
-    }
-  }
-
   test {
     java.srcDirs = [file('src/tests/java'), file('src/tests/testapps/java')]
     resources.srcDirs = [file('src/tests/java')]
@@ -41,6 +45,27 @@ task rubyTests(type: Exec, dependsOn: testClasses) {
   executable = file('src/tests/ruby/run_tests.sh')
 }
 
+task redisTests(type: Test, dependsOn: testClasses) {
+    useTestNG()
+    include("**/RedisTest.class")
+}
+
+task yardoc(type: Exec) {
+    rubySrc = "src/main/ruby/core/**"
+    vertxRbSrc = "src/main/ruby/vertx.rb"
+    licenseSrc = "LICENSE.txt"
+    readmeSrc = "README.md"
+    destDir = "target/docs/ruby/api/"
+
+    inputs.files licenseSrc, vertxRbSrc, readmeSrc
+    inputs.dir rubySrc
+    outputs.dir destDir
+
+    commandLine = ["yardoc", "--title", "'vert.x Ruby API'", "--readme",
+                   readmeSrc, "--no-private", "--output-dir", destDir,
+                   vertxRbSrc, rubySrc, "-", licenseSrc]
+}
+
 distSpec = copySpec {
   into('lib/java') {
     from jar, configurations.compile
@@ -59,6 +84,12 @@ distSpec = copySpec {
   into('docs/java/api') {
     from javadoc
   }
+  into('docs/groovy/api') {
+    from groovydoc
+  }
+  into('docs/ruby/api') {
+    from yardoc
+  }
   into('bin') {
     from 'src/scripts/vertx'
     fileMode = 0755
@@ -70,7 +101,6 @@ distSpec = copySpec {
   from 'LICENSE.txt', "README.md", "rel-notes/release-notes-${version}.txt"
 }
 
-// todo yardoc
 
 task dist(type: Zip) {
   description = 'Builds the distribution.'
@@ -78,12 +108,16 @@ task dist(type: Zip) {
   into("$project.name-$version") {
     with distSpec
   }
-  // todo add ruby-doc
 }
 
 task install(type: Sync) {
   with distSpec
-  into '/Users/hans/java/vertx'
+  if (System.getenv()['VERTX_HOME']) {
+    into System.getenv()['VERTX_HOME']
+  }
+  else {
+    into System.getProperty('java.io.tmpdir') + '/vertx'
+  }
 }
 
 task tarDist(type: Tar) {
@@ -94,6 +128,4 @@ task tarDist(type: Tar) {
 }
 
 task wrapper(type: Wrapper)
-
-
 

@@ -6,3 +6,5 @@ test-output
 Scratch.java
 ScratchTest.java
 .yardoc
+build
+.gradle
