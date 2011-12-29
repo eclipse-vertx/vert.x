@@ -219,9 +219,6 @@ public class NetServer extends NetServerBase {
    * @return a reference to this so multiple method calls can be chained together
    */
   public NetServer listen(int port, String host) {
-
-    log.info("Java, in listen: " + port + " " + host);
-
     checkThread();
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
@@ -389,10 +386,6 @@ public class NetServer extends NetServerBase {
           VertxInternal.instance.setContextID(handler.contextID);
           NetSocket sock = new NetSocket(ch, handler.contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-
-
-          log.info("creating new netsocket, context is " + Context.getCurrentContext());
-
           handler.handler.handle(sock);
         }
       });

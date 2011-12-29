@@ -22,7 +22,7 @@ public class ServerApp implements VertxApp {
       public void handle(final NetSocket socket) {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.trace("Server got data: " + buffer.length());
+            //tu.trace("Server got data: " + buffer.length());
             socket.write(buffer);
           }
         });

@@ -31,34 +31,40 @@ public class TestBase extends TestCase {
   private BlockingQueue<Map<String, Object>> events = new LinkedBlockingQueue<>();
   private ObjectMapper mapper = new ObjectMapper();
   private TestUtils tu = new TestUtils();
+  private long contextID;
+  private volatile Handler<Message> handler;
 
   private static final int DEFAULT_TIMEOUT = 5;
 
   public static final String EVENTS_ADDRESS = "__test_events";
-
 
   @Override
   protected void setUp() throws Exception {
 
     appManager = AppManager.instance;
 
-    //Ugly ugly
-
     final CountDownLatch latch = new CountDownLatch(1);
-    VertxInternal.instance.go(new Runnable() {
-      public void run() {
-        // Start non clustered event bus
-        ServerID defaultServerID = new ServerID(2550, "localhost");
-        EventBus bus = new EventBus(defaultServerID) {};
-        EventBus.initialize(bus);
 
-        EventBus.instance.registerHandler(EVENTS_ADDRESS, new Handler<Message>() {
+    contextID = VertxInternal.instance.createAndAssociateContext();
+    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+      public void run() {
+        VertxInternal.instance.setContextID(contextID);
+
+        if (EventBus.instance == null) {
+          // Start non clustered event bus
+          ServerID defaultServerID = new ServerID(2550, "localhost");
+          EventBus bus = new EventBus(defaultServerID) {};
+          EventBus.initialize(bus);
+        }
+
+        handler = new Handler<Message>() {
           public void handle(Message message)  {
             try {
-
               Map<String, Object> map = mapper.readValue(message.body.toString(), Map.class);
-
               String type = (String)map.get("type");
+
+              log.info("******************* Got message: " + type);
+
               switch (type) {
                 case EventFields.TRACE_EVENT:
                   log.trace(map.get(EventFields.TRACE_MESSAGE_FIELD));
@@ -70,9 +76,7 @@ public class TestBase extends TestCase {
                 case EventFields.ASSERT_EVENT:
                   boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(map.get(EventFields.ASSERT_RESULT_FIELD));
                   if (passed) {
-                    log.info("assert passed");
                   } else {
-                    log.info("remote assert failed");
                     TestBase.assertEquals((String)map.get(EventFields.ASSERT_MESSAGE_FIELD), true, false);
                   }
                   break;
@@ -92,7 +96,9 @@ public class TestBase extends TestCase {
               log.error("Failed to parse JSON", e);
             }
           }
-        });
+        };
+
+        EventBus.instance.registerHandler(EVENTS_ADDRESS, handler);
 
         latch.countDown();
       }
@@ -102,7 +108,15 @@ public class TestBase extends TestCase {
 
   @Override
   protected void tearDown() throws Exception {
-
+    final CountDownLatch latch = new CountDownLatch(1);
+    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+      public void run() {
+        VertxInternal.instance.setContextID(contextID);
+        EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
+        latch.countDown();
+      }
+    });
+    latch.await(5, TimeUnit.SECONDS);
   }
 
   protected String startApp(AppType type, String main) throws Exception {
@@ -138,6 +152,9 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName) {
+
+    log.info("Starting test: " + testName);
+
     tu.startTest(testName);
   }
 
@@ -173,6 +190,10 @@ public class TestBase extends TestCase {
         break;
       } catch (InterruptedException cont) {
       }
+    }
+
+    if (message == null) {
+      throw new IllegalStateException("Timed out waiting for event");
     }
 
     if (!eventName.equals(message.get("type"))) {
