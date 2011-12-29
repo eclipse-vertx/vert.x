@@ -29,12 +29,26 @@ public class NetTest extends TestBase {
     stopApp(clientApp);
     stopApp(serverApp);
 
+    Thread.sleep(1000);
+
     super.tearDown();
   }
 
   @Test
-  public void test1() {
-    startTest("test1");
+  public void testEcho() {
+    startTest("testEcho");
+    waitTestComplete();
+  }
+
+  @Test
+  public void testConnect() {
+    startTest("testConnect");
+    waitTestComplete();
+  }
+
+  @Test
+  public void testWriteWithCompletion() {
+    startTest("testWriteWithCompletion");
     waitTestComplete();
   }
 

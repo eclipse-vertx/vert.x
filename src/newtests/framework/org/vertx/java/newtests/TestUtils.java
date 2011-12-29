@@ -77,8 +77,10 @@ public class TestUtils {
     sendMessage(map);
   }
 
+  private Map<String, Handler<Message>> handlers = new HashMap<>();
+
   public void register(final String testName, final Handler<Void> handler) {
-    EventBus.instance.registerHandler(TestBase.EVENTS_ADDRESS, new Handler<Message>() {
+    Handler<Message> h = new Handler<Message>() {
       public void handle(Message msg) {
         try {
           Map<String, Object> map = mapper.readValue(msg.body.toString(), Map.class);
@@ -89,7 +91,13 @@ public class TestUtils {
           log.error("Failed to parse JSON", e);
         }
       }
-    });
+    };
+    EventBus.instance.registerHandler(TestBase.EVENTS_ADDRESS, h);
+    handlers.put(testName, h);
+  }
+
+  public void unregister(String testName) {
+    EventBus.instance.unregisterHandler(TestBase.EVENTS_ADDRESS, handlers.get(testName));
   }
 
   private void sendMessage(Map<String, String> msg) {
