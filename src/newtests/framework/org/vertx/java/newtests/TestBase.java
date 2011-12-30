@@ -184,7 +184,8 @@ public class TestBase extends TestCase {
     waitAppStopped();
   }
 
-  protected void startTest(String testName) {
+  protected void startTest() {
+    String testName = Thread.currentThread().getStackTrace()[2].getMethodName();
     log.info("*** Starting test: " + testName);
     tu.startTest(testName);
     waitTestComplete();
