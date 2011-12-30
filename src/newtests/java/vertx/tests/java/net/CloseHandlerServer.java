@@ -14,6 +14,12 @@ public class CloseHandlerServer extends BaseServer {
 
   private static final Logger log = Logger.getLogger(CloseHandlerServer.class);
 
+  protected boolean closeFromServer;
+
+  public CloseHandlerServer() {
+    closeFromServer = false;
+  }
+
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       final AtomicInteger counter = new AtomicInteger(0);
@@ -32,6 +38,9 @@ public class CloseHandlerServer extends BaseServer {
             tu.testComplete("testServerCloseHandler");
           }
         });
+        if (closeFromServer) {
+          sock.close();
+        }
       }
     };
   }

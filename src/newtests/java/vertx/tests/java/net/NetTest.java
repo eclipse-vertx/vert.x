@@ -76,15 +76,27 @@ public class NetTest extends TestBase {
   }
 
   @Test
-  public void testClientCloseHandlers() throws Exception {
+  public void testClientCloseHandlersCloseFromClient() throws Exception {
     startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
-    startTest("testClientCloseHandlers");
+    startTest("testClientCloseHandlersCloseFromClient");
   }
 
   @Test
-  public void testServerCloseHandlers() throws Exception {
+  public void testClientCloseHandlersCloseFromServer() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.ClosingServer");
+    startTest("testClientCloseHandlersCloseFromServer");
+  }
+
+  @Test
+  public void testServerCloseHandlersCloseFromClient() throws Exception {
     startApp(AppType.JAVA, "vertx.tests.java.net.CloseHandlerServer");
-    startTest("testServerCloseHandlers");
+    startTest("testServerCloseHandlersCloseFromClient");
+  }
+
+  @Test
+  public void testServerCloseHandlersCloseFromServer() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.CloseHandlerServerCloseFromServer");
+    startTest("testServerCloseHandlersCloseFromServer");
   }
 
   @Test
