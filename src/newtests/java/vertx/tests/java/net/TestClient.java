@@ -170,7 +170,15 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  public void testClientCloseHandlers() {
+  public void testClientCloseHandlersCloseFromClient() {
+    clientCloseHandlers(true);
+  }
+
+  public void testClientCloseHandlersCloseFromServer() {
+    clientCloseHandlers(false);
+  }
+
+  void clientCloseHandlers(final boolean closeFromClient) {
     final ContextChecker check = new ContextChecker(tu);
     client.connect(8080, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
@@ -189,18 +197,28 @@ public class TestClient extends TestClientBase {
             tu.testComplete("testClientCloseHandler");
           }
         });
-        sock.close();
+        if (closeFromClient) {
+          sock.close();
+        }
       }
     });
   }
 
-  public void testServerCloseHandlers() {
+  public void testServerCloseHandlersCloseFromClient() {
     client.connect(8080, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         sock.close();
       }
     });
   }
+
+  public void testServerCloseHandlersCloseFromServer() {
+    client.connect(8080, new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+      }
+    });
+  }
+
 
   public void testClientDrainHandler() {
     final ContextChecker check = new ContextChecker(tu);
