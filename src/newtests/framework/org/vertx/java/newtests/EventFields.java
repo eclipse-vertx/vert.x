@@ -21,6 +21,7 @@ public class EventFields {
   public static final String ASSERT_RESULT_VALUE_PASS = "pass";
   public static final String ASSERT_RESULT_VALUE_FAIL = "fail";
   public static final String ASSERT_MESSAGE_FIELD = "message";
+  public static final String ASSERT_STACKTRACE_FIELD = "stacktrace";
 
 
   public static final String APP_READY_EVENT = "app_ready";

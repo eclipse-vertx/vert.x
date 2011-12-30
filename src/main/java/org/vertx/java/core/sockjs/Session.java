@@ -1,7 +1,6 @@
 package org.vertx.java.core.sockjs;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Immutable;
 import org.vertx.java.core.Vertx;
@@ -10,8 +9,6 @@ import org.vertx.java.core.logging.Logger;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
