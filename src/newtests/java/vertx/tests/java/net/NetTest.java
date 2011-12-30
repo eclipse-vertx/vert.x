@@ -12,44 +12,91 @@ public class NetTest extends TestBase {
 
   private static final Logger log = Logger.getLogger(NetTest.class);
 
-  private String serverApp;
-  private String clientApp;
-
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-
-    serverApp = startApp(AppType.JAVA, "vertx.tests.java.net.ServerApp");
-    clientApp = startApp(AppType.JAVA, "vertx.tests.java.net.ClientApp");
+    startApp(AppType.JAVA, "vertx.tests.java.net.TestClient");
   }
 
   @Override
   protected void tearDown() throws Exception {
-
-    stopApp(clientApp);
-    stopApp(serverApp);
-
-    Thread.sleep(1000);
-
     super.tearDown();
   }
 
   @Test
-  public void testEcho() {
-    startTest("testEcho");
-    waitTestComplete();
+  public void testEchoBytes() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testEchoBytes");
   }
 
   @Test
-  public void testConnect() {
-    startTest("testConnect");
-    waitTestComplete();
+  public void testEchoStringDefaultEncoding() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testEchoStringDefaultEncoding");
   }
 
   @Test
-  public void testWriteWithCompletion() {
+  public void testEchoStringUTF8() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testEchoStringUTF8");
+  }
+
+  @Test
+  public void testEchoStringUTF16() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testEchoStringUTF16");
+  }
+
+  @Test
+  public void testConnectDefaultHost() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testConnectDefaultHost");
+  }
+
+  @Test
+  public void testConnectLocalHost() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testConnectLocalHost");
+  }
+
+  @Test
+  public void testConnectInvalidPort() {
+    startTest("testConnectInvalidPort");
+  }
+
+  @Test
+  public void testConnectInvalidHost() {
+    startTest("testConnectInvalidPort");
+  }
+
+  @Test
+  public void testWriteWithCompletion() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
     startTest("testWriteWithCompletion");
-    waitTestComplete();
+  }
+
+  @Test
+  public void testClientCloseHandlers() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
+    startTest("testClientCloseHandlers");
+  }
+
+  @Test
+  public void testServerCloseHandlers() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.CloseHandlerServer");
+    startTest("testServerCloseHandlers");
+  }
+
+  @Test
+  public void testClientDrainHandler() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.PausingServer");
+    startTest("testClientDrainHandler");
+  }
+
+  @Test
+  public void testServerDrainHandler() throws Exception {
+    startApp(AppType.JAVA, "vertx.tests.java.net.DrainingServer");
+    startTest("testServerDrainHandler");
   }
 
 }

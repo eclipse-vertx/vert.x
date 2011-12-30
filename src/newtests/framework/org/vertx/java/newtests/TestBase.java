@@ -13,7 +13,11 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.ServerID;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -33,10 +37,28 @@ public class TestBase extends TestCase {
   private TestUtils tu = new TestUtils();
   private long contextID;
   private volatile Handler<Message> handler;
+  private List<AssertHolder> failedAsserts = new ArrayList<>();
+
+  private class AssertHolder {
+    final String message;
+    final String stackTrace;
+
+    private AssertHolder(String message, String stackTrace) {
+      this.message = message;
+      this.stackTrace = stackTrace;
+    }
+  }
 
   private static final int DEFAULT_TIMEOUT = 5;
 
   public static final String EVENTS_ADDRESS = "__test_events";
+
+  private void throwAsserts() {
+    for (AssertHolder holder: failedAsserts) {
+      assertEquals(holder.message + "\n" + holder.stackTrace, true, false);
+    }
+    failedAsserts.clear();
+  }
 
   @Override
   protected void setUp() throws Exception {
@@ -63,7 +85,7 @@ public class TestBase extends TestCase {
               Map<String, Object> map = mapper.readValue(message.body.toString(), Map.class);
               String type = (String)map.get("type");
 
-              log.info("******************* Got message: " + type);
+              //log.info("******************* Got message: " + type);
 
               switch (type) {
                 case EventFields.TRACE_EVENT:
@@ -77,7 +99,8 @@ public class TestBase extends TestCase {
                   boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(map.get(EventFields.ASSERT_RESULT_FIELD));
                   if (passed) {
                   } else {
-                    TestBase.assertEquals((String)map.get(EventFields.ASSERT_MESSAGE_FIELD), true, false);
+                    failedAsserts.add(new AssertHolder((String)map.get(EventFields.ASSERT_MESSAGE_FIELD),
+                                                       (String)map.get(EventFields.ASSERT_STACKTRACE_FIELD)));
                   }
                   break;
                 case EventFields.START_TEST_EVENT:
@@ -108,19 +131,29 @@ public class TestBase extends TestCase {
 
   @Override
   protected void tearDown() throws Exception {
-    final CountDownLatch latch = new CountDownLatch(1);
-    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
-      public void run() {
-        VertxInternal.instance.setContextID(contextID);
-        EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
-        latch.countDown();
+    try {
+      throwAsserts();
+    } finally {
+      for (String appName: startedApps) {
+        stopApp(appName);
       }
-    });
-    latch.await(5, TimeUnit.SECONDS);
+      final CountDownLatch latch = new CountDownLatch(1);
+      VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+        public void run() {
+          VertxInternal.instance.setContextID(contextID);
+          EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
+          latch.countDown();
+        }
+      });
+      latch.await(5, TimeUnit.SECONDS);
+    }
   }
+
+  private Set<String> startedApps = new HashSet<>();
 
   protected String startApp(AppType type, String main) throws Exception {
     String appName = startApp(type, main, 1);
+    startedApps.add(appName);
     waitAppReady();
     return appName;
   }
@@ -140,7 +173,7 @@ public class TestBase extends TestCase {
     return appName;
   }
 
-  protected void stopApp(String appName) throws Exception {
+  private void stopApp(String appName) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
     appManager.undeploy(appName, new SimpleHandler() {
       public void handle() {
@@ -152,10 +185,9 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName) {
-
-    log.info("Starting test: " + testName);
-
+    log.info("*** Starting test: " + testName);
     tu.startTest(testName);
+    waitTestComplete();
   }
 
   protected void waitAppReady() {
@@ -164,10 +196,6 @@ public class TestBase extends TestCase {
 
   protected void waitAppStopped() {
     waitAppStopped(DEFAULT_TIMEOUT);
-  }
-
-  protected void waitTestComplete() {
-    waitTestComplete(DEFAULT_TIMEOUT);
   }
 
   protected void waitAppReady(int timeout) {
@@ -183,6 +211,7 @@ public class TestBase extends TestCase {
   }
 
   protected void waitEvent(int timeout, String eventName) {
+
     Map<String, Object> message;
     while (true) {
       try {
@@ -199,6 +228,10 @@ public class TestBase extends TestCase {
     if (!eventName.equals(message.get("type"))) {
       throw new IllegalStateException("Expected event: " + eventName + " got: " + message.get(EventFields.TYPE_FIELD));
     }
+  }
+
+  private void waitTestComplete() {
+    waitTestComplete(DEFAULT_TIMEOUT);
   }
 
 

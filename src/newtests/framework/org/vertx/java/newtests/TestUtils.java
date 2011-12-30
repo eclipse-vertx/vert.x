@@ -23,15 +23,18 @@ public class TestUtils {
   private ObjectMapper mapper = new ObjectMapper();
 
   public void azzert(boolean result) {
-    azzert(result, null);
+    azzert(null, result);
   }
 
-  public void azzert(boolean result, String message) {
+  public void azzert(String message, boolean result) {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.ASSERT_EVENT);
     map.put(EventFields.ASSERT_RESULT_FIELD, result ? EventFields.ASSERT_RESULT_VALUE_PASS : EventFields.ASSERT_RESULT_VALUE_FAIL);
     if (message != null) {
       map.put(EventFields.ASSERT_MESSAGE_FIELD, message);
+    }
+    if (!result) {
+      map.put(EventFields.ASSERT_STACKTRACE_FIELD, getStackTrace(new Exception()));
     }
     sendMessage(map);
   }
@@ -58,15 +61,11 @@ public class TestUtils {
     sendMessage(map);
   }
 
-
   public void exception(Throwable t, String message) {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.EXCEPTION_EVENT);
     map.put(EventFields.EXCEPTION_MESSAGE_FIELD, message);
-    Writer result = new StringWriter();
-    PrintWriter printWriter = new PrintWriter(result);
-    t.printStackTrace(printWriter);
-    map.put(EventFields.EXCEPTION_STACKTRACE_FIELD, result.toString());
+    map.put(EventFields.EXCEPTION_STACKTRACE_FIELD, getStackTrace(t));
     sendMessage(map);
   }
 
@@ -96,8 +95,11 @@ public class TestUtils {
     handlers.put(testName, h);
   }
 
-  public void unregister(String testName) {
-    EventBus.instance.unregisterHandler(TestBase.EVENTS_ADDRESS, handlers.get(testName));
+  public void unregisterAll() {
+    for (Handler<Message> handler: handlers.values()) {
+      EventBus.instance.unregisterHandler(TestBase.EVENTS_ADDRESS, handler);
+    }
+    handlers.clear();
   }
 
   private void sendMessage(Map<String, String> msg) {
@@ -114,6 +116,14 @@ public class TestUtils {
     map.put(EventFields.TYPE_FIELD, eventName);
     sendMessage(map);
   }
+
+  private String getStackTrace(Throwable t) {
+    Writer result = new StringWriter();
+    PrintWriter printWriter = new PrintWriter(result);
+    t.printStackTrace(printWriter);
+    return result.toString();
+  }
+
 
 
 }

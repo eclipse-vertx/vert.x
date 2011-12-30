@@ -146,9 +146,14 @@ public class NetClient extends NetClientBase {
                }
             });
           } else {
-            Throwable t = channelFuture.getCause();
+            final Throwable t = channelFuture.getCause();
             if (t instanceof Exception && exceptionHandler != null) {
-              exceptionHandler.handle((Exception) t);
+              runOnCorrectThread(ch, new Runnable() {
+                public void run() {
+                  VertxInternal.instance.setContextID(contextID);
+                  exceptionHandler.handle((Exception) t);
+                }
+              });
             } else {
               log.error("Unhandled exception", t);
             }

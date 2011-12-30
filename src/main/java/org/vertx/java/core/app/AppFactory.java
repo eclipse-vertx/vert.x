@@ -1,7 +1,5 @@
 package org.vertx.java.core.app;
 
-import java.net.URL;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
