@@ -23,10 +23,6 @@ public class NetTest extends TestBase {
     super.tearDown();
   }
 
-  private String getMethodName() {
-    return Thread.currentThread().getStackTrace()[2].getMethodName();
-  }
-
   @Test
   public void testEchoBytes() throws Exception {
     startApp(AppType.JAVA, "vertx.tests.java.net.EchoServer");
