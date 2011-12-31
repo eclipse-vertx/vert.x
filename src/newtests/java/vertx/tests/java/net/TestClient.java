@@ -305,7 +305,7 @@ public class TestClient extends TestClientBase {
     };
   }
 
-  //Recursive - we don't write the next packet until we get the completion back from the previous write
+  // Recursive - we don't write the next packet until we get the completion back from the previous write
   void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize,
                final ContextChecker checker) {
     Buffer b = Utils.generateRandomBuffer(sendSize);
