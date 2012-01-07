@@ -33,6 +33,7 @@
     <property name="lib-dir" value="lib"/>
     <property name="core-lib" value="${lib-dir}/core"/>
     <property name="opt-lib" value="${lib-dir}/opt"/>
+    <property name="test-results" value="test-results"/>
 
     <property name="test-lib" value="${lib-dir}/tests"/>
     <property name="tests-target" value="${target}/tests/classes"/>
@@ -40,6 +41,12 @@
 
     <property name="test-apps-target" value="${target}/test-apps/classes"/>
     <property name="java-test-apps-src" value="src/tests/testapps/java"/>
+
+    <property name="new-tests-target" value="${target}/newtests/classes"/>
+    <property name="new-tests-base" value="src/newtests"/>
+    <property name="new-tests-src" value="${new-tests-base}/java"/>
+    <property name="new-test-framework-src" value="src/newtests/framework"/>
+
 
     <property name="javadoc-dir" value="docs/java/api"/>
     <property name="rubydoc-dir" value="docs/ruby/api"/>
@@ -61,6 +68,18 @@
         <pathelement location="${tests-target}"/>
         <pathelement location="${test-apps-target}"/>
         <pathelement location="target/vert.x.jar"/>
+    </path>
+
+    <path id="new-test-classpath">
+        <path refid="core-lib-classpath"/>
+        <fileset dir="${test-lib}">
+            <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${new-tests-target}"/>
+        <pathelement location="target/vert.x.jar"/>
+        <pathelement location="${new-tests-base}/javascript"/>
+        <pathelement location="${new-tests-base}/framework/javascript"/>
+        <pathelement location="src/main/javascript"/>
     </path>
 
     <taskdef name="groovyc"
@@ -104,6 +123,15 @@
         <javac srcdir="${java-test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
     </target>
 
+    <target name="compile-new-tests" depends="jar-core">
+        <mkdir dir="${new-tests-target}"/>
+        <javac srcdir="${new-test-framework-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+               debug="on"
+               includeantruntime="false"/>
+        <javac srcdir="${new-tests-src}" destdir="${new-tests-target}" classpathref="new-test-classpath" debug="on"
+               includeantruntime="false"/>
+    </target>
+
     <target name="tests" depends="java-tests, ruby-tests">
     </target>
 
@@ -112,6 +140,23 @@
             <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
             <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
         </testng>
+    </target>
+
+    <target name="new-tests" depends="compile-new-tests">
+        <mkdir dir="${test-results}"/>
+        <junit printsummary="withOutAndErr" haltonfailure="yes">
+            <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
+
+            <classpath refid="new-test-classpath" />
+
+            <formatter type="plain"/>
+
+            <batchtest fork="yes" todir="${test-results}">
+              <fileset dir="${new-tests-target}">
+                <include name="**/JavaScriptNetTest.class"/>
+              </fileset>
+            </batchtest>
+        </junit>
     </target>
 
     <target name="redis-tests" depends="compile-tests">

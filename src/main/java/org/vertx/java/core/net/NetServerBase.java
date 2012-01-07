@@ -38,6 +38,5 @@ public abstract class NetServerBase extends NetBase {
 
   protected NetServerBase() {
     super();
-    connectionOptions.put("reuseAddress", true); //Not child since applies to the acceptor socket
   }
 }

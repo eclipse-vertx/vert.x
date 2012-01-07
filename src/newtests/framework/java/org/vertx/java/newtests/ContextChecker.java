@@ -24,8 +24,8 @@ public class ContextChecker {
   }
 
   public void check() {
-    tu.azzert("Expected:" + th + " Actual:" + Thread.currentThread(), th == Thread.currentThread());
-    tu.azzert("Expected:" + contextID + " Actual:" + Vertx.instance
-        .getContextID(), contextID.equals(Vertx.instance.getContextID()));
+    tu.azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
+    tu.azzert(contextID.equals(Vertx.instance.getContextID()), "Expected:" + contextID + " Actual:" + Vertx.instance
+        .getContextID());
   }
 }

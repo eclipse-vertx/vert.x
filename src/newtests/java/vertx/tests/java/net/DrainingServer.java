@@ -8,7 +8,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.tests.Utils;
+import org.vertx.java.newtests.TestUtils;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -28,7 +28,7 @@ public class DrainingServer extends BaseServer {
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
 
-        final Buffer buff = Utils.generateRandomBuffer(10000);
+        final Buffer buff = TestUtils.generateRandomBuffer(10000);
         //Send data until the buffer is full
         Vertx.instance.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {

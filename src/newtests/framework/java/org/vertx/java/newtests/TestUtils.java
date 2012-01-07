@@ -23,10 +23,10 @@ public class TestUtils {
   private ObjectMapper mapper = new ObjectMapper();
 
   public void azzert(boolean result) {
-    azzert(null, result);
+    azzert(result, null);
   }
 
-  public void azzert(String message, boolean result) {
+  public void azzert(boolean result, String message) {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.ASSERT_EVENT);
     map.put(EventFields.ASSERT_RESULT_FIELD, result ? EventFields.ASSERT_RESULT_VALUE_PASS : EventFields.ASSERT_RESULT_VALUE_FAIL);
@@ -58,6 +58,7 @@ public class TestUtils {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.START_TEST_EVENT);
     map.put(EventFields.START_TEST_NAME_FIELD, testName);
+    log.info("**** Sending start test message for test name: " + testName);
     sendMessage(map);
   }
 
@@ -124,6 +125,60 @@ public class TestUtils {
     return result.toString();
   }
 
+  public static Buffer generateRandomBuffer(int length) {
+    return generateRandomBuffer(length, false, (byte) 0);
+  }
 
+  public static byte[] generateRandomByteArray(int length) {
+    return generateRandomByteArray(length, false, (byte) 0);
+  }
+
+  public static byte[] generateRandomByteArray(int length, boolean avoid, byte avoidByte) {
+    byte[] line = new byte[length];
+    for (int i = 0; i < length; i++) {
+      //Choose a random byte - if we're generating delimited lines then make sure we don't
+      //choose first byte of delim
+      byte rand;
+      do {
+        rand = (byte) ((int) (Math.random() * 255) - 128);
+      } while (avoid && rand == avoidByte);
+
+      line[i] = rand;
+    }
+    return line;
+  }
+
+  public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
+    byte[] line = generateRandomByteArray(length, avoid, avoidByte);
+    return Buffer.create(line);
+  }
+
+  public static String randomUnicodeString(int length) {
+    StringBuilder builder = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      char c;
+      do {
+        c = (char) (0xFFFF * Math.random());
+      } while ((c >= 0xFFFE && c <= 0xFFFF) || (c >= 0xD800 && c <= 0xDFFF)); //Illegal chars
+      builder.append(c);
+    }
+    return builder.toString();
+  }
+
+  public static boolean buffersEqual(Buffer b1, Buffer b2) {
+    if (b1.length() != b2.length()) return false;
+    for (int i = 0; i < b1.length(); i++) {
+      if (b1.getByte(i) != b2.getByte(i)) return false;
+    }
+    return true;
+  }
+
+  public static boolean byteArraysEqual(byte[] b1, byte[] b2) {
+    if (b1.length != b2.length) return false;
+    for (int i = 0; i < b1.length; i++) {
+      if (b1[i] != b2[i]) return false;
+    }
+    return true;
+  }
 
 }
