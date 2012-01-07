@@ -162,27 +162,26 @@ public class TestBase extends TestCase {
 
     String appName = UUID.randomUUID().toString();
 
+    log.info("Starting app " + main);
+
     URL url = null;
     if (type == AppType.JAVA) {
-      main = main.replace('.', '/') + ".class";
-      url = getClass().getClassLoader().getResource(main);
-
-      if (url == null) {
-        throw new IllegalArgumentException("Can't find main: " + main);
-      }
-
+      String classDir = main.replace('.', '/') + ".class";
+      url = getClass().getClassLoader().getResource(classDir);
+      String surl = url.toString();
+      String surlroot = surl.substring(0, surl.length() - classDir.length());
+      url = new URL(surlroot);
     } else if (type == AppType.JS) {
       url = getClass().getClassLoader().getResource(main);
     } else if (type == AppType.RUBY) {
       url = getClass().getClassLoader().getResource(main);
     }
 
-    String surl = url.toString();
-    String surlroot = surl.substring(0, surl.length() - main.length());
+    if (url == null) {
+      throw new IllegalArgumentException("Can't find main: " + main);
+    }
 
-    log.info("surl root is " + surlroot);
-
-    url = new URL(surlroot);
+    log.info("url is " + url);
 
     appManager.deploy(type, appName, main, new URL[] { url }, instances);
 

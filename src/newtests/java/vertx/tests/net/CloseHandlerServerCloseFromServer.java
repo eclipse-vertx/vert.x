@@ -1,4 +1,4 @@
-package vertx.tests.java.net;
+package vertx.tests.net;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
