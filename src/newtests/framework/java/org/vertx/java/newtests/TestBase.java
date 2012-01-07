@@ -173,6 +173,8 @@ public class TestBase extends TestCase {
 
     } else if (type == AppType.JS) {
       url = getClass().getClassLoader().getResource(main);
+    } else if (type == AppType.RUBY) {
+      url = getClass().getClassLoader().getResource(main);
     }
 
     String surl = url.toString();

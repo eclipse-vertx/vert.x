@@ -47,9 +47,11 @@
     <property name="new-tests-src" value="${new-tests-base}/java"/>
     <property name="new-test-framework-src" value="src/newtests/framework"/>
 
-
     <property name="javadoc-dir" value="docs/java/api"/>
     <property name="rubydoc-dir" value="docs/ruby/api"/>
+
+    <property environment="env"/>
+
 
     <path id="core-lib-classpath">
         <fileset dir="${core-lib}">
@@ -80,6 +82,9 @@
         <pathelement location="${new-tests-base}/javascript"/>
         <pathelement location="${new-tests-base}/framework/javascript"/>
         <pathelement location="src/main/javascript"/>
+        <pathelement location="${new-tests-base}/ruby"/>
+        <pathelement location="${new-tests-base}/framework/ruby"/>
+        <pathelement location="src/main/ruby"/>
     </path>
 
     <taskdef name="groovyc"
@@ -143,9 +148,11 @@
     </target>
 
     <target name="new-tests" depends="compile-new-tests">
+
         <mkdir dir="${test-results}"/>
         <junit printsummary="withOutAndErr" haltonfailure="yes">
             <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
+            <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
 
             <classpath refid="new-test-classpath" />
 
@@ -153,7 +160,7 @@
 
             <batchtest fork="yes" todir="${test-results}">
               <fileset dir="${new-tests-target}">
-                <include name="**/JavaScriptNetTest.class"/>
+                <include name="**/RubyNetTest.class"/>
               </fileset>
             </batchtest>
         </junit>
