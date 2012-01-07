@@ -1,4 +1,4 @@
-package vertx.tests.java.net;
+package vertx.tests.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;

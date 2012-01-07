@@ -39,13 +39,16 @@
     <property name="tests-target" value="${target}/tests/classes"/>
     <property name="tests-src" value="src/tests/java"/>
 
+    <!-- TODO simplify these paths -->
+
     <property name="test-apps-target" value="${target}/test-apps/classes"/>
     <property name="java-test-apps-src" value="src/tests/testapps/java"/>
 
     <property name="new-tests-target" value="${target}/newtests/classes"/>
     <property name="new-tests-base" value="src/newtests"/>
-    <property name="new-tests-src" value="${new-tests-base}/java"/>
-    <property name="new-test-framework-src" value="src/newtests/framework"/>
+    <property name="new-test-java-tests-src" value="${new-tests-base}/java"/>
+    <property name="new-test-framework-src" value="${new-tests-base}/framework"/>
+    <property name="new-test-controllers-src" value="${new-tests-base}/controllers"/>
 
     <property name="javadoc-dir" value="docs/java/api"/>
     <property name="rubydoc-dir" value="docs/ruby/api"/>
@@ -133,7 +136,11 @@
         <javac srcdir="${new-test-framework-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
                debug="on"
                includeantruntime="false"/>
-        <javac srcdir="${new-tests-src}" destdir="${new-tests-target}" classpathref="new-test-classpath" debug="on"
+       <javac srcdir="${new-test-controllers-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+              debug="on"
+               includeantruntime="false"/>
+        <javac srcdir="${new-test-java-tests-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+               debug="on"
                includeantruntime="false"/>
     </target>
 
@@ -160,7 +167,7 @@
 
             <batchtest fork="yes" todir="${test-results}">
               <fileset dir="${new-tests-target}">
-                <include name="**/RubyNetTest.class"/>
+                <include name="org/vertx/java/tests/**/*Test.class"/>
               </fileset>
             </batchtest>
         </junit>

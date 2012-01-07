@@ -1,4 +1,4 @@
-package org.vertx.tests;
+package org.vertx.java.tests;
 
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
@@ -8,14 +8,14 @@ import org.vertx.java.newtests.TestBase;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class RubyNetTest extends TestBase {
+public class JavaScriptNetTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(RubyNetTest.class);
+  private static final Logger log = Logger.getLogger(JavaScriptNetTest.class);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "test_client.rb");
+    startApp(AppType.JS, "test_client.js");
   }
 
   @Override
@@ -25,9 +25,8 @@ public class RubyNetTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(AppType.RUBY, "echo_server.rb");
+    startApp(AppType.JS, "echo_server.js");
     startTest();
-    log.info("*****test1 complete");
   }
 
 
