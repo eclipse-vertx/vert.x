@@ -22,7 +22,7 @@ public abstract class TestClientBase implements VertxApp {
         tu.register(method.getName(), new SimpleHandler() {
           public void handle() {
             try {
-              method.invoke(TestClientBase.this, null);
+              method.invoke(TestClientBase.this, (Object[])null);
             } catch (Exception e) {
               log.error("Failed to invoke test", e);
             }

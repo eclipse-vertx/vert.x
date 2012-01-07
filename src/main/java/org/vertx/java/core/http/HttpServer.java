@@ -194,7 +194,7 @@ public class HttpServer extends NetServerBase {
                 VertxInternal.instance.getAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOptions(connectionOptions);
+        bootstrap.setOptions(generateConnectionOptions());
 
         checkSSL();
 
@@ -304,9 +304,9 @@ public class HttpServer extends NetServerBase {
   /**
    * {@inheritDoc}
    */
-  public HttpServer setTcpNoDelay(boolean tcpNoDelay) {
+  public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
     checkThread();
-    return (HttpServer) super.setTcpNoDelay(tcpNoDelay);
+    return (HttpServer) super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**

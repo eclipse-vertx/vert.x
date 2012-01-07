@@ -1,4 +1,4 @@
-package vertx.tests.java.net;
+package org.vertx.tests;
 
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
@@ -8,9 +8,9 @@ import org.vertx.java.newtests.TestBase;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetTest extends TestBase {
+public class JavaNetTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(NetTest.class);
+  private static final Logger log = Logger.getLogger(JavaNetTest.class);
 
   @Override
   protected void setUp() throws Exception {
@@ -21,6 +21,26 @@ public class NetTest extends TestBase {
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
+  }
+
+  @Test
+  public void testClientDefaults() throws Exception {
+    startTest();
+  }
+
+  @Test
+  public void testClientAttributes() throws Exception {
+    startTest();
+  }
+
+  @Test
+  public void testServerDefaults() throws Exception {
+    startTest();
+  }
+
+  @Test
+  public void testServerAttributes() throws Exception {
+    startTest();
   }
 
   @Test

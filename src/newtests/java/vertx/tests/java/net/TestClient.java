@@ -8,12 +8,13 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
-import org.vertx.tests.Utils;
+import org.vertx.java.newtests.TestUtils;
 
-import java.net.ConnectException;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,7 +41,249 @@ public class TestClient extends TestClientBase {
 
   // The tests
 
-  // TODO test all client and server params, TCP no delay etc
+  public void testClientDefaults() {
+    tu.azzert(!client.isSSL());
+    tu.azzert(client.getKeyStorePassword() == null);
+    tu.azzert(client.getKeyStorePath() == null);
+    tu.azzert(client.getTrustStorePassword() == null);
+    tu.azzert(client.getTrustStorePath() == null);
+    tu.azzert(client.isReuseAddress() == null);
+    tu.azzert(client.isSoLinger() == null);
+    tu.azzert(client.isTCPKeepAlive());
+    tu.azzert(client.isTCPNoDelay());
+    tu.azzert(client.getReconnectAttempts() == 0);
+    tu.azzert(client.getReconnectInterval() == 1000);
+    tu.azzert(client.getReceiveBufferSize() == null);
+    tu.azzert(client.getSendBufferSize() == null);
+    tu.azzert(client.getTrafficClass() == null);
+    tu.testComplete("testClientDefaults");
+  }
+
+  public void testClientAttributes() {
+
+    tu.azzert(client.setSSL(false) == client);
+    tu.azzert(!client.isSSL());
+
+    tu.azzert(client.setSSL(true) == client);
+    tu.azzert(client.isSSL());
+
+    String pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setKeyStorePassword(pwd) == client);
+    tu.azzert(client.getKeyStorePassword().equals(pwd));
+
+    String path = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setKeyStorePath(path) == client);
+    tu.azzert(client.getKeyStorePath().equals(path));
+
+    pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setTrustStorePassword(pwd) == client);
+    tu.azzert(client.getTrustStorePassword().equals(pwd));
+
+    path = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setTrustStorePath(path) == client);
+    tu.azzert(client.getTrustStorePath().equals(path));
+
+    tu.azzert(client.setReuseAddress(true) == client);
+    tu.azzert(client.isReuseAddress());
+    tu.azzert(client.setReuseAddress(false) == client);
+    tu.azzert(!client.isReuseAddress());
+
+    tu.azzert(client.setSoLinger(true) == client);
+    tu.azzert(client.isSoLinger());
+    tu.azzert(client.setSoLinger(false) == client);
+    tu.azzert(!client.isSoLinger());
+
+    tu.azzert(client.setTCPKeepAlive(true) == client);
+    tu.azzert(client.isTCPKeepAlive());
+    tu.azzert(client.setTCPKeepAlive(false) == client);
+    tu.azzert(!client.isTCPKeepAlive());
+
+    tu.azzert(client.setTCPNoDelay(true) == client);
+    tu.azzert(client.isTCPNoDelay());
+    tu.azzert(client.setTCPNoDelay(false) == client);
+    tu.azzert(!client.isTCPNoDelay());
+
+    int reconnectAttempts = new Random().nextInt(1000) + 1;
+    tu.azzert(client.setReconnectAttempts(reconnectAttempts) == client);
+    tu.azzert(client.getReconnectAttempts() == reconnectAttempts);
+
+    try {
+      client.setReconnectAttempts(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int reconnectDelay = new Random().nextInt(1000) + 1;
+    tu.azzert(client.setReconnectInterval(reconnectDelay) == client);
+    tu.azzert(client.getReconnectInterval() == reconnectDelay);
+
+    try {
+      client.setReconnectInterval(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      client.setReconnectInterval(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+
+    int rbs = new Random().nextInt(1024 * 1024) + 1;
+    tu.azzert(client.setReceiveBufferSize(rbs) == client);
+    tu.azzert(client.getReceiveBufferSize() == rbs);
+
+    try {
+      client.setReceiveBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      client.setReceiveBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int sbs = new Random().nextInt(1024 * 1024);
+    tu.azzert(client.setSendBufferSize(sbs) == client);
+    tu.azzert(client.getSendBufferSize() == sbs);
+
+    try {
+      client.setSendBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      client.setSendBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int trafficClass = new Random().nextInt(10000000);
+    tu.azzert(client.setTrafficClass(trafficClass) == client);
+    tu.azzert(client.getTrafficClass() == trafficClass);
+
+    tu.testComplete("testClientAttributes");
+
+  }
+
+  public void testServerDefaults() {
+    NetServer server = new NetServer();
+    tu.azzert(!server.isSSL());
+    tu.azzert(server.getKeyStorePassword() == null);
+    tu.azzert(server.getKeyStorePath() == null);
+    tu.azzert(server.getTrustStorePassword() == null);
+    tu.azzert(server.getTrustStorePath() == null);
+    tu.azzert(server.isReuseAddress());
+    tu.azzert(server.isSoLinger() == null);
+    tu.azzert(server.isTCPKeepAlive());
+    tu.azzert(server.isTCPNoDelay());
+    tu.azzert(server.getReceiveBufferSize() == null);
+    tu.azzert(server.getSendBufferSize() == null);
+    tu.azzert(server.getTrafficClass() == null);
+     tu.testComplete("testServerDefaults");
+  }
+
+  public void testServerAttributes() {
+
+    NetServer server = new NetServer();
+
+    tu.azzert(server.setSSL(false) == server);
+    tu.azzert(!server.isSSL());
+
+    tu.azzert(server.setSSL(true) == server);
+    tu.azzert(server.isSSL());
+
+
+    String pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setKeyStorePassword(pwd) == server);
+    tu.azzert(server.getKeyStorePassword().equals(pwd));
+
+    String path = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setKeyStorePath(path) == server);
+    tu.azzert(server.getKeyStorePath().equals(path));
+
+    pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setTrustStorePassword(pwd) == server);
+    tu.azzert(server.getTrustStorePassword().equals(pwd));
+
+    path = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setTrustStorePath(path) == server);
+    tu.azzert(server.getTrustStorePath().equals(path));
+
+    tu.azzert(server.setReuseAddress(true) == server);
+    tu.azzert(server.isReuseAddress());
+    tu.azzert(server.setReuseAddress(false) == server);
+    tu.azzert(!server.isReuseAddress());
+
+    tu.azzert(server.setSoLinger(true) == server);
+    tu.azzert(server.isSoLinger());
+    tu.azzert(server.setSoLinger(false) == server);
+    tu.azzert(!server.isSoLinger());
+
+    tu.azzert(server.setTCPKeepAlive(true) == server);
+    tu.azzert(server.isTCPKeepAlive());
+    tu.azzert(server.setTCPKeepAlive(false) == server);
+    tu.azzert(!server.isTCPKeepAlive());
+
+    tu.azzert(server.setTCPNoDelay(true) == server);
+    tu.azzert(server.isTCPNoDelay());
+    tu.azzert(server.setTCPNoDelay(false) == server);
+    tu.azzert(!server.isTCPNoDelay());
+
+    int rbs = new Random().nextInt(1024 * 1024) + 1;
+    tu.azzert(server.setReceiveBufferSize(rbs) == server);
+    tu.azzert(server.getReceiveBufferSize() == rbs);
+
+    try {
+      server.setReceiveBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      server.setReceiveBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int sbs = new Random().nextInt(1024 * 1024);
+    tu.azzert(server.setSendBufferSize(sbs) == server);
+    tu.azzert(server.getSendBufferSize() == sbs);
+
+    try {
+      server.setSendBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      server.setSendBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int trafficClass = new Random().nextInt(10000000);
+    tu.azzert(server.setTrafficClass(trafficClass) == server);
+    tu.azzert(server.getTrafficClass() == trafficClass);
+
+    tu.testComplete("testServerAttributes");
+
+  }
 
   public void testEchoBytes() {
     final ContextChecker check = new ContextChecker(tu);
@@ -58,7 +301,7 @@ public class TestClient extends TestClientBase {
             check.check();
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
-              tu.azzert(Utils.buffersEqual(sent, received));
+              tu.azzert(TestUtils.buffersEqual(sent, received));
               tu.testComplete("testEcho");
             }
           }
@@ -66,7 +309,7 @@ public class TestClient extends TestClientBase {
 
         //Now send some data
         for (int i = 0; i < numChunks; i++) {
-          Buffer buff = Utils.generateRandomBuffer(chunkSize);
+          Buffer buff = TestUtils.generateRandomBuffer(chunkSize);
           sent.appendBuffer(buff);
           socket.write(buff);
         }
@@ -93,7 +336,7 @@ public class TestClient extends TestClientBase {
 
         check.check();
 
-        final String str = Utils.randomUnicodeString(1000);
+        final String str = TestUtils.randomUnicodeString(1000);
         final Buffer sentBuff = enc == null ? Buffer.create(str) : Buffer.create(str, enc);
 
         //We will receive the buffer in fragments which may not be valid strings (since multi-byte chars)
@@ -105,7 +348,7 @@ public class TestClient extends TestClientBase {
             received.appendBuffer(buffer);
             if (received.length() == sentBuff.length()) {
               String rec = enc == null ? received.toString() : received.toString(enc);
-              tu.azzert("Expected:" + str + " Received:" + rec, str.equals(rec));
+              tu.azzert(str.equals(rec), "Expected:" + str + " Received:" + rec);
               tu.testComplete("testEcho");
             }
           }
@@ -155,7 +398,7 @@ public class TestClient extends TestClientBase {
     client.exceptionHandler(createNoConnectHandler("testConnectInvalidPort", check));
     client.connect(9998, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
-        tu.azzert("Connect should not be called", false);
+        tu.azzert(false, "Connect should not be called");
       }
     });
   }
@@ -165,7 +408,7 @@ public class TestClient extends TestClientBase {
     client.exceptionHandler(createNoConnectHandler("testConnectInvalidHost", check));
     client.connect(8080, "somehost", new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
-        tu.azzert("Connect should not be called", false);
+        tu.azzert(false, "Connect should not be called");
       }
     });
   }
@@ -228,7 +471,7 @@ public class TestClient extends TestClientBase {
         check.check();
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
-        final Buffer buff = Utils.generateRandomBuffer(10000);
+        final Buffer buff = TestUtils.generateRandomBuffer(10000);
         Vertx.instance.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
             sock.write(buff);
@@ -308,7 +551,7 @@ public class TestClient extends TestClientBase {
   // Recursive - we don't write the next packet until we get the completion back from the previous write
   void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize,
                final ContextChecker checker) {
-    Buffer b = Utils.generateRandomBuffer(sendSize);
+    Buffer b = TestUtils.generateRandomBuffer(sendSize);
     sentBuff.appendBuffer(b);
     count--;
     final int c = count;

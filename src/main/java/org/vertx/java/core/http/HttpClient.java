@@ -331,8 +331,8 @@ public class HttpClient extends NetClientBase {
   /**
    * {@inheritDoc}
    */
-  public HttpClient setTcpNoDelay(boolean tcpNoDelay) {
-    return (HttpClient) super.setTcpNoDelay(tcpNoDelay);
+  public HttpClient setTCPNoDelay(boolean tcpNoDelay) {
+    return (HttpClient) super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**
@@ -418,7 +418,7 @@ public class HttpClient extends NetClientBase {
 
     //Client connections share context with caller
     channelFactory.setWorker(VertxInternal.instance.getWorkerForContextID(contextID));
-    bootstrap.setOptions(connectionOptions);
+    bootstrap.setOptions(generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {

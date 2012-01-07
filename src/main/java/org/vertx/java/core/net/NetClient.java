@@ -116,7 +116,7 @@ public class NetClient extends NetClientBase {
     //Client connections share context with caller
     channelFactory.setWorker(VertxInternal.instance.getWorkerForContextID(contextID));
 
-    bootstrap.setOptions(connectionOptions);
+    bootstrap.setOptions(generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
@@ -187,11 +187,12 @@ public class NetClient extends NetClientBase {
    * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
    * to connect a further number of times, before it fails. Default value is zero.
    */
-  public void setReconnectAttempts(int attempts) {
+  public NetClient setReconnectAttempts(int attempts) {
     if (attempts < 0) {
-      throw new IllegalArgumentException("Invalid attempts: " + attempts);
+      throw new IllegalArgumentException("reconnect attempts nust be >= 0");
     }
     this.reconnectAttempts = attempts;
+    return this;
   }
 
   /**
@@ -204,11 +205,12 @@ public class NetClient extends NetClientBase {
   /**
    * Set the reconnect interval, in milliseconds
    */
-  public void setReconnectInterval(long interval) {
+  public NetClient setReconnectInterval(long interval) {
     if (interval < 1) {
-      throw new IllegalArgumentException("Invalid interval: " + interval);
+      throw new IllegalArgumentException("reconnect interval nust be >= 1");
     }
     this.reconnectInterval = interval;
+    return this;
   }
 
   /**
@@ -271,8 +273,8 @@ public class NetClient extends NetClientBase {
   /**
    * {@inheritDoc}
    */
-  public NetClient setTcpNoDelay(boolean tcpNoDelay) {
-    return (NetClient)super.setTcpNoDelay(tcpNoDelay);
+  public NetClient setTCPNoDelay(boolean tcpNoDelay) {
+    return (NetClient)super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**

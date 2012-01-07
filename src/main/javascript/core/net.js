@@ -1,54 +1,57 @@
-var vertx = vertx || {};
-
-vertx.NetServer = function() {
+var vertx = vertx || new (function() {
 
   var that = this;
-  var jServer = new org.vertx.java.core.net.NetServer();
-
-  that.listen = function(port, host) {
-    jServer.listen(port, host);
-  };
 
   var NetSocket = function(jSocket) {
     var that = this;
 
     that.dataHandler = function(handler) {
-      jSocket.dataHandler(new org.vertx.java.core.Handler({
-        handle: function(buff) {
-          handler(buff);
-        }
-      }));
+      jSocket.dataHandler(function(buff) {
+        handler(buff);
+      });
     }
 
     that.write = function(buff) {
       jSocket.write(buff);
     }
-  }
+  };
 
-  that.connectHandler = function(handler) {
-    jServer.connectHandler(new org.vertx.java.core.Handler({
-      handle: function(jSocket) {
+  that.NetServer = function() {
+
+    var that = this;
+    var jServer = new org.vertx.java.core.net.NetServer();
+
+    that.listen = function(port, host) {
+      jServer.listen(port, host);
+    };
+
+    that.connectHandler = function(handler) {
+      jServer.connectHandler(function(jSocket) {
         handler(new NetSocket(jSocket));
-      }
-    }));
+      });
+    }
+  };
+
+  that.NetClient = function() {
+    var that = this;
+
+    var jClient = new org.vertx.java.core.net.NetClient();
+
+    that.connect = function(port, host, handler) {
+      jClient.connect(port, host, function(jSocket) {
+        handler(new NetSocket(jSocket));
+      });
+    }
+
+    that.close = function() {
+      jClient.close();
+    }
+
+  };
+
+  that.Buffer = function(p) {
+    return org.vertx.java.core.buffer.Buffer.create(p);
   }
 
-}
 
-// TODO hide this in a module
-
-vertx.Buffer = function(param1, param2) {
-
-  if (typeof param == "number") {
-    var jBuffer = new org.vertx.java.core.buffer.Buffer.create(param);
-  } else if (typeof param1 == "string") {
-    var enc = param2 || "UTF-8";
-    var jBuffer = new org.vertx.java.core.buffer.Buffer.create(param1, enc);
-  }
-
-  var that = this;
-
-  //etc
-
-
-}
+})();

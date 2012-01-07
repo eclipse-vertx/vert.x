@@ -86,6 +86,7 @@ public class NetServer extends NetServerBase {
    */
   public NetServer() {
     super();
+    this.reuseAddress = true;
   }
 
   /**
@@ -151,9 +152,9 @@ public class NetServer extends NetServerBase {
   /**
    * {@inheritDoc}
    */
-  public NetServer setTcpNoDelay(boolean tcpNoDelay) {
+  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
     checkThread();
-    return (NetServer)super.setTcpNoDelay(tcpNoDelay);
+    return (NetServer)super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**
@@ -269,7 +270,7 @@ public class NetServer extends NetServerBase {
           }
         });
 
-        bootstrap.setOptions(connectionOptions);
+        bootstrap.setOptions(generateConnectionOptions());
 
         try {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
