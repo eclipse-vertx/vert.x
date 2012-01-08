@@ -16,279 +16,292 @@
 
 <project name="vert.x" default="jar-core" basedir=".">
 
-    <description>
-        Build script for vert.x
-    </description>
+  <description>
+    Build script for vert.x
+  </description>
 
-    <!-- set global properties for this build -->
-    <property name="target" value="target"/>
-    <property name="jar-file" value="vert.x.jar"/>
-    <property name="version-number" value="0.3"/>
-    <property name="dist-build-base" value="${target}/dist-build"/>
-    <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
-    <property name="core-src" value="src/main/java"/>
-    <property name="core-src-groovy" value="src/main/groovy"/>
-    <property name="core-target" value="${target}/core/classes"/>
-    <property name="conf-dir" value="conf"/>
-    <property name="lib-dir" value="lib"/>
-    <property name="core-lib" value="${lib-dir}/core"/>
-    <property name="opt-lib" value="${lib-dir}/opt"/>
-    <property name="test-results" value="test-results"/>
+  <!-- set global properties for this build -->
+  <property name="target" value="target"/>
+  <property name="jar-file" value="vert.x.jar"/>
+  <property name="version-number" value="0.3"/>
+  <property name="dist-build-base" value="${target}/dist-build"/>
+  <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
+  <property name="core-src" value="src/main/java"/>
+  <property name="core-src-groovy" value="src/main/groovy"/>
+  <property name="core-target" value="${target}/core/classes"/>
+  <property name="conf-dir" value="conf"/>
+  <property name="lib-dir" value="lib"/>
+  <property name="core-lib" value="${lib-dir}/core"/>
+  <property name="opt-lib" value="${lib-dir}/opt"/>
+  <property name="test-results" value="test-results"/>
 
-    <property name="test-lib" value="${lib-dir}/tests"/>
-    <property name="tests-target" value="${target}/tests/classes"/>
-    <property name="tests-src" value="src/tests/java"/>
+  <property name="test-lib" value="${lib-dir}/tests"/>
+  <property name="tests-target" value="${target}/tests/classes"/>
+  <property name="tests-src" value="src/tests/java"/>
 
-    <!-- TODO simplify these paths -->
+  <!-- TODO simplify these paths -->
 
-    <property name="test-apps-target" value="${target}/test-apps/classes"/>
-    <property name="java-test-apps-src" value="src/tests/testapps/java"/>
+  <property name="test-apps-target" value="${target}/test-apps/classes"/>
+  <property name="java-test-apps-src" value="src/tests/testapps/java"/>
 
-    <property name="new-tests-target" value="${target}/newtests/classes"/>
-    <property name="new-tests-base" value="src/newtests"/>
-    <property name="new-test-java-tests-src" value="${new-tests-base}/java"/>
-    <property name="new-test-framework-src" value="${new-tests-base}/framework"/>
-    <property name="new-test-controllers-src" value="${new-tests-base}/controllers"/>
+  <property name="new-tests-target" value="${target}/newtests/classes"/>
+  <property name="new-tests-base" value="src/newtests"/>
+  <property name="new-test-java-tests-src" value="${new-tests-base}/java"/>
+  <property name="new-test-framework-src-java" value="${new-tests-base}/framework/java"/>
+  <property name="new-test-controllers-src" value="${new-tests-base}/controllers"/>
 
-    <property name="javadoc-dir" value="docs/java/api"/>
-    <property name="rubydoc-dir" value="docs/ruby/api"/>
+  <property name="javadoc-dir" value="docs/java/api"/>
+  <property name="rubydoc-dir" value="docs/ruby/api"/>
 
-    <property environment="env"/>
+  <property environment="env"/>
 
 
-    <path id="core-lib-classpath">
-        <fileset dir="${core-lib}">
-            <include name="*.jar"/>
+  <path id="core-lib-classpath">
+    <fileset dir="${core-lib}">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="${opt-lib}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="test-classpath">
+    <path refid="core-lib-classpath"/>
+    <fileset dir="${test-lib}">
+      <include name="*.jar"/>
+    </fileset>
+    <pathelement location="${tests-target}"/>
+    <pathelement location="${test-apps-target}"/>
+    <pathelement location="target/vert.x.jar"/>
+  </path>
+
+  <path id="new-test-classpath">
+    <path refid="core-lib-classpath"/>
+    <fileset dir="${test-lib}">
+      <include name="*.jar"/>
+    </fileset>
+    <pathelement location="${new-tests-target}"/>
+    <pathelement location="target/vert.x.jar"/>
+
+    <pathelement location="${new-tests-base}/javascript"/>
+    <pathelement location="${new-tests-base}/framework/javascript"/>
+    <pathelement location="src/main/javascript"/>
+
+    <pathelement location="${new-tests-base}/ruby"/>
+    <pathelement location="${new-tests-base}/framework/ruby"/>
+    <pathelement location="src/main/ruby"/>
+
+    <pathelement location="${new-tests-base}/groovy"/>
+    <pathelement location="${new-tests-base}/framework/groovy"/>
+    <pathelement location="src/main/groovy"/>
+  </path>
+
+  <taskdef name="groovyc"
+           classname="org.codehaus.groovy.ant.Groovyc"
+           classpathref="core-lib-classpath"/>
+
+  <taskdef name="testng" classpathref="test-classpath"
+           classname="org.testng.TestNGAntTask"/>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+  </target>
+
+  <target name="compile-core" depends="init" description="compile the source for the core">
+    <mkdir dir="${core-target}"/>
+    <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on"
+           includeantruntime="false" target="1.7" source="1.7"/>
+    <groovyc srcdir="${core-src-groovy}" destdir="${core-target}">
+      <classpath>
+        <pathelement path="core-lib-classpath"/>
+        <pathelement location="${core-target}"/>
+      </classpath>
+    </groovyc>
+  </target>
+
+  <target name="jar-core" depends="compile-core" description="generate the core jar">
+    <jar jarfile="${target}/${jar-file}" basedir="${core-target}" includes="**/*.class"/>
+  </target>
+
+  <target name="clean" description="clean up">
+    <delete dir="${target}"/>
+  </target>
+
+  <target name="compile-tests" depends="jar-core">
+    <mkdir dir="${tests-target}"/>
+    <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on"
+           includeantruntime="false"/>
+  </target>
+
+  <target name="compile-test-apps" depends="jar-core">
+    <mkdir dir="${test-apps-target}"/>
+    <javac srcdir="${java-test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on"
+           includeantruntime="false"/>
+  </target>
+
+  <target name="compile-new-tests" depends="jar-core">
+    <mkdir dir="${new-tests-target}"/>
+
+    <javac srcdir="${new-test-framework-src-java}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+           debug="on"
+           includeantruntime="false"/>
+    <javac srcdir="${new-test-java-tests-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+           debug="on"
+           includeantruntime="false"/>
+    <javac srcdir="${new-test-controllers-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+           debug="on"
+           includeantruntime="false"/>
+
+
+  </target>
+
+  <target name="tests" depends="java-tests, ruby-tests">
+  </target>
+
+  <target name="java-tests" depends="compile-tests, compile-test-apps">
+    <testng classpathref="test-classpath">
+      <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
+      <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
+    </testng>
+  </target>
+
+  <target name="new-tests" depends="compile-new-tests">
+
+    <delete dir="${test-results}"/>
+    <mkdir dir="${test-results}"/>
+    <junit printsummary="yes" haltonfailure="yes">
+      <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
+      <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
+
+      <classpath refid="new-test-classpath"/>
+
+      <formatter type="plain"/>
+
+      <batchtest fork="yes" todir="${test-results}">
+        <fileset dir="${new-tests-target}">
+          <include name="org/vertx/java/tests/**/*Test.class"/>
         </fileset>
-        <fileset dir="${opt-lib}">
-            <include name="*.jar"/>
-        </fileset>
-    </path>
+      </batchtest>
+    </junit>
+  </target>
 
-    <path id="test-classpath">
-        <path refid="core-lib-classpath"/>
-        <fileset dir="${test-lib}">
-            <include name="*.jar"/>
-        </fileset>
-        <pathelement location="${tests-target}"/>
-        <pathelement location="${test-apps-target}"/>
-        <pathelement location="target/vert.x.jar"/>
-    </path>
+  <target name="redis-tests" depends="compile-tests">
+    <!-- Make sure you have a local redis server running before you run this -->
+    <testng classpathref="test-classpath">
+      <classfileset dir="${tests-target}" includes="**/RedisTest.class"/>
+    </testng>
+  </target>
 
-    <path id="new-test-classpath">
-        <path refid="core-lib-classpath"/>
-        <fileset dir="${test-lib}">
-            <include name="*.jar"/>
-        </fileset>
-        <pathelement location="${new-tests-target}"/>
-        <pathelement location="target/vert.x.jar"/>
-        <pathelement location="${new-tests-base}/javascript"/>
-        <pathelement location="${new-tests-base}/framework/javascript"/>
-        <pathelement location="src/main/javascript"/>
-        <pathelement location="${new-tests-base}/ruby"/>
-        <pathelement location="${new-tests-base}/framework/ruby"/>
-        <pathelement location="src/main/ruby"/>
-    </path>
+  <target name="ruby-tests" depends="compile-tests">
+    <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true"/>
+  </target>
 
-    <taskdef name="groovyc"
-             classname="org.codehaus.groovy.ant.Groovyc"
-             classpathref="core-lib-classpath"/>
-    
-    <taskdef name="testng" classpathref="test-classpath"
-             classname="org.testng.TestNGAntTask"/>
+  <target name="javadoc" depends="compile-core">
+    <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
+             classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}"
+             packagenames="org.vertx.java.core,org.vertx.java.core.buffer,org.vertx.java.core.composition,org.vertx.java.core.file,org.vertx.java.core.http,org.vertx.java.core.logging,org.vertx.java.core.net,org.vertx.java.core.parsetools,org.vertx.java.core.shared,org.vertx.java.core.sockjs,org.vertx.java.core.stdio,org.vertx.java.core.streams,org.vertx.java.core.eventbus">
+      <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
+    </javadoc>
+  </target>
 
-    <target name="init">
-        <!-- Create the time stamp -->
-        <tstamp/>
-    </target>
+  <!--
+  Needs:
+  jruby -S gem install yard
+  jruby -S gem install rdiscount
+  -->
+  <target name="yardoc">
+    <exec executable="yardoc"/>
+  </target>
 
-    <target name="compile-core" depends="init" description="compile the source for the core">
-        <mkdir dir="${core-target}"/>
-        <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on" includeantruntime="false" target="1.7" source="1.7"/>
-        <groovyc srcdir="${core-src-groovy}" destdir="${core-target}">
-            <classpath>
-                <pathelement path="core-lib-classpath"/>
-                <pathelement location="${core-target}"/>
-            </classpath>
-        </groovyc>
-    </target>
+  <target name="dist" depends="clean, jar-core">
+    <mkdir dir="${dist-build}"/>
 
-    <target name="jar-core" depends="compile-core" description="generate the core jar">
-        <jar jarfile="${target}/${jar-file}" basedir="${core-target}" includes="**/*.class"/>
-    </target>
+    <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
 
-    <target name="clean" description="clean up">
-        <delete dir="${target}"/>
-    </target>
+    <mkdir dir="${dist-build}/conf"/>
 
-    <target name="compile-tests" depends="jar-core">
-        <mkdir dir="${tests-target}"/>
-        <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
-    </target>
+    <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
+    <copy file="conf/hazelcast.xml" todir="${dist-build}/conf"/>
 
-    <target name="compile-test-apps" depends="jar-core">
-        <mkdir dir="${test-apps-target}"/>
-        <javac srcdir="${java-test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on" includeantruntime="false"/>
-    </target>
+    <copy todir="${dist-build}/lib/java">
+      <fileset dir="${core-lib}">
+        <include name="netty.jar"/>
+        <include name="high-scale-lib.jar"/>
+        <include name="jackson-all-1.9.2.jar"/>
+        <!-- <include name="jruby.jar"/> -->
+      </fileset>
+      <fileset dir="${opt-lib}">
+        <!-- <include name="jruby.jar"/> -->
+        <include name="js.jar"/>
+        <include name="groovy-all-*.jar"/>
+        <include name="hazelcast-all-1.9.4.4.jar"/>
+      </fileset>
+    </copy>
 
-    <target name="compile-new-tests" depends="jar-core">
-        <mkdir dir="${new-tests-target}"/>
-        <javac srcdir="${new-test-framework-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
-               debug="on"
-               includeantruntime="false"/>
-       <javac srcdir="${new-test-controllers-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
-              debug="on"
-               includeantruntime="false"/>
-        <javac srcdir="${new-test-java-tests-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
-               debug="on"
-               includeantruntime="false"/>
-    </target>
+    <copy todir="${dist-build}/lib/ruby">
+      <fileset dir="src/main/ruby">
+        <include name="**/*.rb"/>
+      </fileset>
+    </copy>
 
-    <target name="tests" depends="java-tests, ruby-tests">
-    </target>
+    <copy todir="${dist-build}/lib/groovy">
+      <fileset dir="src/main/groovy">
+        <include name="**/*.groovy"/>
+      </fileset>
+    </copy>
 
-    <target name="java-tests" depends="compile-tests, compile-test-apps">
-        <testng classpathref="test-classpath">
-            <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
-            <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
-        </testng>
-    </target>
-
-    <target name="new-tests" depends="compile-new-tests">
-
-        <mkdir dir="${test-results}"/>
-        <junit printsummary="withOutAndErr" haltonfailure="yes">
-            <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
-            <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
-
-            <classpath refid="new-test-classpath" />
-
-            <formatter type="plain"/>
-
-            <batchtest fork="yes" todir="${test-results}">
-              <fileset dir="${new-tests-target}">
-                <include name="org/vertx/java/tests/**/*Test.class"/>
-              </fileset>
-            </batchtest>
-        </junit>
-    </target>
-
-    <target name="redis-tests" depends="compile-tests">
-        <!-- Make sure you have a local redis server running before you run this -->
-        <testng classpathref="test-classpath">
-            <classfileset dir="${tests-target}" includes="**/RedisTest.class"/>
-        </testng>
-    </target>
-
-    <target name="ruby-tests" depends="compile-tests">
-        <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true"/>
-    </target>
-
-    <target name="javadoc" depends="compile-core">
-        <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
-                classpathref="core-lib-classpath" Public="true" sourcepath="${core-src}"
-                packagenames="org.vertx.java.core,org.vertx.java.core.buffer,org.vertx.java.core.composition,org.vertx.java.core.file,org.vertx.java.core.http,org.vertx.java.core.logging,org.vertx.java.core.net,org.vertx.java.core.parsetools,org.vertx.java.core.shared,org.vertx.java.core.sockjs,org.vertx.java.core.stdio,org.vertx.java.core.streams,org.vertx.java.core.eventbus">
-            <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
-        </javadoc>
-    </target>
+    <copy todir="${dist-build}/lib/javascript">
+      <fileset dir="src/main/javascript">
+        <include name="**/*.js"/>
+      </fileset>
+    </copy>
 
     <!--
-    Needs:
-    jruby -S gem install yard
-    jruby -S gem install rdiscount
+  <copy todir="${dist-build}/${javadoc-dir}">
+      <fileset dir="${target}/${javadoc-dir}"/>
+  </copy>
+
+  <copy todir="${dist-build}/${rubydoc-dir}">
+      <fileset dir="${target}/${rubydoc-dir}"/>
+  </copy>
     -->
-    <target name="yardoc">
-        <exec executable="yardoc"/>
-    </target>
+    <!-- We need to use exec since the ant copy task does not preserve file permissions -->
+    <mkdir dir="${dist-build}/bin"/>
 
-    <target name="dist" depends="clean, jar-core">
-        <mkdir dir="${dist-build}"/>
+    <exec executable="cp">
+      <arg value="src/scripts/vertx"/>
+      <arg value="${dist-build}/bin/vertx"/>
+    </exec>
 
-        <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
+    <copy todir="${dist-build}/examples">
+      <fileset dir="src/examples">
+        <exclude name="**/vertx-dev"/>
+      </fileset>
+    </copy>
 
-        <mkdir dir="${dist-build}/conf"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
 
-        <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
-        <copy file="conf/hazelcast.xml" todir="${dist-build}/conf"/>
+    <copy file="LICENSE.txt" todir="${dist-build}"/>
+    <copy file="README.md" todir="${dist-build}"/>
 
-        <copy todir="${dist-build}/lib/java">
-            <fileset dir="${core-lib}">
-                <include name="netty.jar"/>
-                <include name="high-scale-lib.jar"/>
-                <include name="jackson-all-1.9.2.jar"/>
-                <!-- <include name="jruby.jar"/> -->
-            </fileset>
-            <fileset dir="${opt-lib}">
-                <!-- <include name="jruby.jar"/> -->
-                <include name="js.jar"/>
-                <include name="groovy-all-*.jar"/>
-                <include name="hazelcast-all-1.9.4.4.jar"/>
-            </fileset>
-        </copy>
+    <copy todir="${dist-build}">
+      <fileset dir="rel-notes">
+        <include name="release-notes-${version-number}.txt"/>
+      </fileset>
+    </copy>
 
-        <copy todir="${dist-build}/lib/ruby">
-            <fileset dir="src/main/ruby">
-                <include name="**/*.rb"/>
-            </fileset>
-        </copy>
+    <tar destfile="${target}/vert.x-${version-number}.tar" longfile="gnu">
+      <tarfileset dir="${dist-build-base}" filemode="755">
+        <include name="**/bin/**"/>
+      </tarfileset>
+      <tarfileset dir="${dist-build-base}">
+        <exclude name="**/bin/**"/>
+      </tarfileset>
+    </tar>
 
-        <copy todir="${dist-build}/lib/groovy">
-            <fileset dir="src/main/groovy">
-                <include name="**/*.groovy"/>
-            </fileset>
-        </copy>
-
-        <copy todir="${dist-build}/lib/javascript">
-            <fileset dir="src/main/javascript">
-                <include name="**/*.js"/>
-            </fileset>
-        </copy>
-
-      <!--
-        <copy todir="${dist-build}/${javadoc-dir}">
-            <fileset dir="${target}/${javadoc-dir}"/>
-        </copy>
-
-        <copy todir="${dist-build}/${rubydoc-dir}">
-            <fileset dir="${target}/${rubydoc-dir}"/>
-        </copy>
-          -->
-        <!-- We need to use exec since the ant copy task does not preserve file permissions -->
-        <mkdir dir="${dist-build}/bin"/>
-
-        <exec executable="cp">
-            <arg value="src/scripts/vertx"/>
-            <arg value="${dist-build}/bin/vertx"/>
-        </exec>
-
-        <copy todir="${dist-build}/examples">
-            <fileset dir="src/examples">
-                <exclude name="**/vertx-dev"/>
-            </fileset>
-        </copy>
-
-        <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
-        <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
-
-        <copy file="LICENSE.txt" todir="${dist-build}"/>
-        <copy file="README.md" todir="${dist-build}"/>
-
-        <copy todir="${dist-build}">
-            <fileset dir="rel-notes">
-                <include name="release-notes-${version-number}.txt"/>
-            </fileset>
-        </copy>
-
-        <tar destfile="${target}/vert.x-${version-number}.tar" longfile="gnu">
-          <tarfileset dir="${dist-build-base}" filemode="755">
-            <include name="**/bin/**"/>
-          </tarfileset>
-          <tarfileset dir="${dist-build-base}">
-            <exclude name="**/bin/**"/>
-          </tarfileset>
-        </tar>
-
-        <gzip destfile="${target}/vert.x-${version-number}.tar.gz" src="${target}/vert.x-${version-number}.tar"/>
-    </target>
+    <gzip destfile="${target}/vert.x-${version-number}.tar.gz" src="${target}/vert.x-${version-number}.tar"/>
+  </target>
 
 </project>
