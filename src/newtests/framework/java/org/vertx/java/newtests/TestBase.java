@@ -175,6 +175,8 @@ public class TestBase extends TestCase {
       url = getClass().getClassLoader().getResource(main);
     } else if (type == AppType.RUBY) {
       url = getClass().getClassLoader().getResource(main);
+    } else if (type == AppType.GROOVY) {
+      url = getClass().getClassLoader().getResource(main);
     }
 
     if (url == null) {

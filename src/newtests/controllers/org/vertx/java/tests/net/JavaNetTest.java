@@ -1,4 +1,4 @@
-package org.vertx.java.tests;
+package org.vertx.java.tests.net;
 
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
