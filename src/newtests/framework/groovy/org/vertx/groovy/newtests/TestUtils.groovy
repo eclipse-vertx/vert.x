@@ -7,11 +7,7 @@ class TestUtils extends org.vertx.java.newtests.TestUtils {
 
   // Provide a version of register which takes a closure
   def register(testName, handler) {
-    super.register(testName, wrapHandler(handler))
-  }
-
-  private wrapHandler(hndlr) {
-    return {hndlr.call()} as Handler
+    super.register(testName, handler as Handler)
   }
 
 }
