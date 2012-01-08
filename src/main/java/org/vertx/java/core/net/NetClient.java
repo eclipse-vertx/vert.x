@@ -83,8 +83,8 @@ public class NetClient extends NetClientBase {
     return connect(port, host, connectHandler, reconnectAttempts);
   }
 
-  private NetClient connect(final int port, final String host, final Handler<NetSocket> connectHandler, final int remainingAttempts) {
-
+  private NetClient connect(final int port, final String host, final Handler<NetSocket> connectHandler,
+                            final int remainingAttempts) {
     final Long contextID = Vertx.instance.getContextID();
     if (contextID == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
@@ -132,7 +132,7 @@ public class NetClient extends NetClientBase {
             }
           });
         } else {
-          if (remainingAttempts > 0) {
+          if (remainingAttempts > 0 || remainingAttempts == -1) {
             runOnCorrectThread(ch, new Runnable() {
               public void run() {
                 VertxInternal.instance.setContextID(contextID);
@@ -140,7 +140,8 @@ public class NetClient extends NetClientBase {
                 //Set a timer to retry connection
                 Vertx.instance.setTimer(reconnectInterval, new Handler<Long>() {
                   public void handle(Long timerID) {
-                    connect(port, host, connectHandler, remainingAttempts - 1);
+                    connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                        - 1);
                   }
                 });
                }
@@ -188,8 +189,8 @@ public class NetClient extends NetClientBase {
    * to connect a further number of times, before it fails. Default value is zero.
    */
   public NetClient setReconnectAttempts(int attempts) {
-    if (attempts < 0) {
-      throw new IllegalArgumentException("reconnect attempts nust be >= 0");
+    if (attempts < -1) {
+      throw new IllegalArgumentException("reconnect attempts must be >= -1");
     }
     this.reconnectAttempts = attempts;
     return this;

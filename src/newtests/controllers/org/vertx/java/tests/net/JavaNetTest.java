@@ -138,5 +138,32 @@ public class JavaNetTest extends TestBase {
     startTest();
   }
 
+  @Test
+  public void testReconnectAttemptsInfinite() throws Exception {
+    // Start the client without the server
+    startTest(false);
+    reconnectAttempts();
+  }
+
+  @Test
+  public void testReconnectAttemptsMany() throws Exception {
+    // Start the client without the server
+    startTest(false);
+    reconnectAttempts();
+  }
+
+  @Test
+  public void testReconnectAttemptsNotEnough() throws Exception {
+    // Start the client without the server
+    startTest();
+  }
+
+  void reconnectAttempts() throws Exception {
+    // Wait a little while then start the server
+    Thread.sleep(1000);
+    startApp(AppType.JAVA, EchoServer.class.getName());
+    waitTestComplete();
+  }
+
 }
 

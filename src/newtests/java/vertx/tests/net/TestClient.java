@@ -523,6 +523,51 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testReconnectAttemptsInfinite() {
+    reconnectAttempts(-1);
+  }
+
+  public void testReconnectAttemptsMany() {
+    reconnectAttempts(100000);
+  }
+
+  void reconnectAttempts(int attempts) {
+    client.setReconnectAttempts(-1);
+    client.setReconnectInterval(10);
+
+    final ContextChecker check = new ContextChecker(tu);
+
+    //The server delays starting for a a few seconds, but it should still connect
+    client.connect(8080, new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+        check.check();
+        tu.testComplete("testReconnectAttempts");
+      }
+    });
+  }
+
+  public void testReconnectAttemptsNotEnough() {
+    client.setReconnectAttempts(10);
+    client.setReconnectInterval(10);
+
+    final ContextChecker check = new ContextChecker(tu);
+
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+        check.check();
+        tu.testComplete("testReconnectAttemptsNotEnough");
+      }
+    });
+
+    //The server delays starting for a a few seconds, and it should run out of attempts before that
+    client.connect(8080, new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+        check.check();
+        tu.azzert(false, "Should not connect");
+      }
+    });
+  }
+
   void setHandlers(final NetSocket sock, final ContextChecker check) {
     final Handler<Message> resumeHandler = new Handler<Message>() {
       public void handle(Message message) {

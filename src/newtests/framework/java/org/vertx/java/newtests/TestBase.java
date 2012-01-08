@@ -202,10 +202,16 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest() {
+    startTest(false);
+  }
+
+  protected void startTest(boolean wait) {
     String testName = Thread.currentThread().getStackTrace()[2].getMethodName();
     log.info("*** Starting test: " + testName);
     tu.startTest(testName);
-    waitTestComplete();
+    if (wait) {
+      waitTestComplete();
+    }
   }
 
   protected void waitAppReady() {
@@ -248,7 +254,7 @@ public class TestBase extends TestCase {
     }
   }
 
-  private void waitTestComplete() {
+  protected void waitTestComplete() {
     waitTestComplete(DEFAULT_TIMEOUT);
   }
 
