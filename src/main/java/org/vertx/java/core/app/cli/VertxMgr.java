@@ -240,8 +240,7 @@ public class VertxMgr {
       VertxInternal.instance.go(new Runnable() {
         public void run() {
           // Start non clustered event bus
-          ServerID defaultServerID = new ServerID(2550, "localhost");
-          EventBus bus = new EventBus(defaultServerID) {};
+          EventBus bus = new EventBus() {};
           EventBus.initialize(bus);
           latch.countDown();
         }

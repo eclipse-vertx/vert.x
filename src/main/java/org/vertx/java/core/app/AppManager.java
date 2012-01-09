@@ -65,9 +65,7 @@ public class AppManager {
       throw new IllegalStateException("There is already a deployed application with name: " + appName);
     }
 
-    for (int i = 0; i < instances; i++) {
-
-      AppFactory appFactory;
+    AppFactory appFactory;
       switch (type) {
         case JAVA:
           appFactory = new JavaAppFactory();
@@ -84,6 +82,8 @@ public class AppManager {
         default:
           throw new IllegalArgumentException("Unsupported type: " + type);
       }
+
+    for (int i = 0; i < instances; i++) {
 
       final VertxApp app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
           .getClassLoader()));

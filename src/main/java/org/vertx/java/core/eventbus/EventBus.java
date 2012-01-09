@@ -77,10 +77,11 @@ public class EventBus {
   /*
   Non clustered event bus
    */
-  protected EventBus(ServerID serverID) {
-    this.serverID = serverID;
+  protected EventBus() {
+    // Just some dummy server ID
+    this.serverID = new ServerID(2550, "localhost");
+    this.server = null;
     this.subs = null;
-    this.server = setServer();
   }
 
   /*
@@ -125,45 +126,54 @@ public class EventBus {
    * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
    */
   public void send(final Message message, final Handler<Message> replyHandler) {
-    if (message.messageID == null) {
-      message.messageID = UUID.randomUUID().toString();
-    }
-    message.sender = serverID;
-    if (replyHandler != null) {
-      message.replyAddress = UUID.randomUUID().toString();
-      registerHandler(message.replyAddress, replyHandler, null, true);
-    }
-
-    // First check if sender is in response address cache - it will be if it's a response
-    ServerID serverID = replyAddressCache.remove(message.address);
-    if (serverID != null) {
-      // Yes, it's a response to a particular server
-      if (!serverID.equals(this.serverID)) {
-        send(serverID, message);
-      } else {
-        receiveMessage(message.copy());
+    Long contextID = Vertx.instance.getContextID();
+    try {
+      if (message.messageID == null) {
+        message.messageID = UUID.randomUUID().toString();
       }
-    } else {
-      if (subs != null) {
-        subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
-          public void handle(Future<Collection<ServerID>> event) {
-            Collection<ServerID> serverIDs = event.result();
-            if (event.succeeded()) {
-              if (serverIDs != null) {
-                for (ServerID serverID : serverIDs) {
-                  if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
-                    send(serverID, message);
+      message.sender = serverID;
+      if (replyHandler != null) {
+        message.replyAddress = UUID.randomUUID().toString();
+        registerHandler(message.replyAddress, replyHandler, null, true);
+      }
+
+      // First check if sender is in response address cache - it will be if it's a response
+      ServerID serverID = replyAddressCache.remove(message.address);
+      if (serverID != null) {
+        // Yes, it's a response to a particular server
+        if (!serverID.equals(this.serverID)) {
+          send(serverID, message);
+        } else {
+          receiveMessage(message.copy());
+        }
+      } else {
+        if (subs != null) {
+          subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
+            public void handle(Future<Collection<ServerID>> event) {
+              Collection<ServerID> serverIDs = event.result();
+              if (event.succeeded()) {
+                if (serverIDs != null) {
+                  for (ServerID serverID : serverIDs) {
+                    if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
+                      send(serverID, message);
+                    }
                   }
                 }
+              } else {
+                log.error("Failed to send message", event.exception());
               }
-            } else {
-              log.error("Failed to send message", event.exception());
             }
-          }
-        });
+          });
+        }
+        //also send locally
+        receiveMessage(message.copy());
       }
-      //also send locally
-      receiveMessage(message.copy());
+    } finally {
+      // Reset the context id - send can cause messages to be delivered in different contexts so the context id
+      // of the current thread can change
+      if (contextID != null) {
+        VertxInternal.instance.setContextID(contextID);
+      }
     }
   }
 

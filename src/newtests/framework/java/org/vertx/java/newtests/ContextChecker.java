@@ -10,8 +10,8 @@ public class ContextChecker {
 
   private static final Logger log = Logger.getLogger(ContextChecker.class);
 
-  final Thread th;
-  final Long contextID;
+  public final Thread th;
+  public final Long contextID;
   final TestUtils tu;
 
   public ContextChecker(TestUtils tu) {

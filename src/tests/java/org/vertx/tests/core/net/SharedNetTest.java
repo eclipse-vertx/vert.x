@@ -41,7 +41,6 @@ public class SharedNetTest extends TestBase {
 
   private static final Logger log = Logger.getLogger(SharedNetTest.class);
 
-
   @Test
   public void testConnectionDistribution() throws Exception {
     final int dataLength = 10;

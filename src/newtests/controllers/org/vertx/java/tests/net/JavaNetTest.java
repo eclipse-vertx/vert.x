@@ -12,6 +12,7 @@ import vertx.tests.net.ClosingServer;
 import vertx.tests.net.DrainingServer;
 import vertx.tests.net.EchoServer;
 import vertx.tests.net.EchoServerNoReady;
+import vertx.tests.net.InstanceCheckServer;
 import vertx.tests.net.PausingServer;
 import vertx.tests.net.TLSServer;
 import vertx.tests.net.TestClient;
@@ -242,6 +243,23 @@ public class JavaNetTest extends TestBase {
     SharedData.getMap("TLSTest").put("params", params);
     startApp(AppType.JAVA, TLSServer.class.getName());
     startTest(testName);
+  }
+
+  @Test
+  // Make sure that when multiple servers are listening on the same host/port that connection requests are
+  // distributed amongst them
+  public void testSharedServers() throws Exception {
+    // Start multiple instances (more than number of cores)
+    final int numInstances = Runtime.getRuntime().availableProcessors() * 2;
+    startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+    for (int i = 0; i < numInstances; i++) {
+      waitAppReady();
+    }
+
+    startTest(getMethodName());
+
+    // And make sure connection requests are distributed amongst them
+    assertEquals(numInstances, SharedData.getSet("instances").size());
   }
 
 }
