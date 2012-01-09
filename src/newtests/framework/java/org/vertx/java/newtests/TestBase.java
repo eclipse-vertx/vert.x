@@ -152,9 +152,15 @@ public class TestBase extends TestCase {
   private Set<String> startedApps = new HashSet<>();
 
   protected String startApp(AppType type, String main) throws Exception {
+    return startApp(type, main, true);
+  }
+
+  protected String startApp(AppType type, String main, boolean await) throws Exception {
     String appName = startApp(type, main, 1);
     startedApps.add(appName);
-    waitAppReady();
+    if (await) {
+      waitAppReady();
+    }
     return appName;
   }
 
@@ -201,17 +207,20 @@ public class TestBase extends TestCase {
     waitAppStopped();
   }
 
-  protected void startTest() {
-    startTest(false);
+  protected void startTest(String testName) {
+    startTest(testName, true);
   }
 
-  protected void startTest(boolean wait) {
-    String testName = Thread.currentThread().getStackTrace()[2].getMethodName();
+  protected void startTest(String testName, boolean wait) {
     log.info("*** Starting test: " + testName);
     tu.startTest(testName);
     if (wait) {
       waitTestComplete();
     }
+  }
+
+  protected String getMethodName() {
+    return Thread.currentThread().getStackTrace()[2].getMethodName();
   }
 
   protected void waitAppReady() {

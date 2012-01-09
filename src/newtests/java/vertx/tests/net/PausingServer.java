@@ -12,6 +12,10 @@ import org.vertx.java.core.net.NetSocket;
  */
 public class PausingServer extends BaseServer {
 
+  public PausingServer() {
+    super(true);
+  }
+
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {

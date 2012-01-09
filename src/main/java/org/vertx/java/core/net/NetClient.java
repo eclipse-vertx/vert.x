@@ -123,14 +123,26 @@ public class NetClient extends NetClientBase {
         final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
 
         if (channelFuture.isSuccess()) {
-          runOnCorrectThread(ch, new Runnable() {
-            public void run() {
-              VertxInternal.instance.setContextID(contextID);
-              NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
-              socketMap.put(ch, sock);
-              connectHandler.handle(sock);
-            }
-          });
+
+          if (ssl) {
+            // TCP connected, so now we must do the SSL handshake
+
+            SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+
+            ChannelFuture fut = sslHandler.handshake();
+            fut.addListener(new ChannelFutureListener() {
+
+              public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                if (channelFuture.isSuccess()) {
+                  connected(ch, connectHandler);
+                } else {
+                  failed(ch, channelFuture.getCause());
+                }
+              }
+            });
+          } else {
+            connected(ch, connectHandler);
+          }
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             runOnCorrectThread(ch, new Runnable() {
@@ -147,22 +159,36 @@ public class NetClient extends NetClientBase {
                }
             });
           } else {
-            final Throwable t = channelFuture.getCause();
-            if (t instanceof Exception && exceptionHandler != null) {
-              runOnCorrectThread(ch, new Runnable() {
-                public void run() {
-                  VertxInternal.instance.setContextID(contextID);
-                  exceptionHandler.handle((Exception) t);
-                }
-              });
-            } else {
-              log.error("Unhandled exception", t);
-            }
+            failed(ch, channelFuture.getCause());
           }
         }
       }
     });
     return this;
+  }
+
+  private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
+    runOnCorrectThread(ch, new Runnable() {
+      public void run() {
+        VertxInternal.instance.setContextID(contextID);
+        NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
+        socketMap.put(ch, sock);
+        connectHandler.handle(sock);
+      }
+    });
+  }
+
+  private void failed(NioSocketChannel ch, final Throwable t) {
+    if (t instanceof Exception && exceptionHandler != null) {
+      runOnCorrectThread(ch, new Runnable() {
+        public void run() {
+          VertxInternal.instance.setContextID(contextID);
+          exceptionHandler.handle((Exception) t);
+        }
+      });
+    } else {
+      log.error("Unhandled exception", t);
+    }
   }
 
   /**
@@ -376,7 +402,7 @@ public class NetClient extends NetClientBase {
           }
         });
       } else {
-        t.printStackTrace();
+        // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
       }
     }
   }

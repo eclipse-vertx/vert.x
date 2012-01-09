@@ -1,5 +1,6 @@
 package vertx.tests.net;
 
+import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -10,9 +11,11 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
+import org.vertx.java.tests.net.JavaNetTest;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,7 +59,7 @@ public class TestClient extends TestClientBase {
     tu.azzert(client.getReceiveBufferSize() == null);
     tu.azzert(client.getSendBufferSize() == null);
     tu.azzert(client.getTrafficClass() == null);
-    tu.testComplete("testClientDefaults");
+    tu.testComplete();
   }
 
   public void testClientAttributes() {
@@ -108,7 +111,7 @@ public class TestClient extends TestClientBase {
     tu.azzert(client.getReconnectAttempts() == reconnectAttempts);
 
     try {
-      client.setReconnectAttempts(-1);
+      client.setReconnectAttempts(-2);
       tu.azzert(false, "Should throw exception");
     } catch (IllegalArgumentException e) {
       //OK
@@ -173,7 +176,7 @@ public class TestClient extends TestClientBase {
     tu.azzert(client.setTrafficClass(trafficClass) == client);
     tu.azzert(client.getTrafficClass() == trafficClass);
 
-    tu.testComplete("testClientAttributes");
+    tu.testComplete();
 
   }
 
@@ -191,7 +194,7 @@ public class TestClient extends TestClientBase {
     tu.azzert(server.getReceiveBufferSize() == null);
     tu.azzert(server.getSendBufferSize() == null);
     tu.azzert(server.getTrafficClass() == null);
-     tu.testComplete("testServerDefaults");
+    tu.testComplete();
   }
 
   public void testServerAttributes() {
@@ -281,13 +284,12 @@ public class TestClient extends TestClientBase {
     tu.azzert(server.setTrafficClass(trafficClass) == server);
     tu.azzert(server.getTrafficClass() == trafficClass);
 
-    tu.testComplete("testServerAttributes");
+    tu.testComplete();
 
   }
 
-  public void testEchoBytes() {
-    final ContextChecker check = new ContextChecker(tu);
-    client.connect(8080, new Handler<NetSocket>() {
+  private Handler<NetSocket> getEchoHandler(final ContextChecker check) {
+    return new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
         check.check();
         final int numChunks = 100;
@@ -302,7 +304,7 @@ public class TestClient extends TestClientBase {
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
               tu.azzert(TestUtils.buffersEqual(sent, received));
-              tu.testComplete("testEcho");
+              tu.testComplete();
             }
           }
         });
@@ -314,7 +316,12 @@ public class TestClient extends TestClientBase {
           socket.write(buff);
         }
       }
-    });
+    };
+  }
+
+  public void testEchoBytes() {
+    final ContextChecker check = new ContextChecker(tu);
+    client.connect(8080, getEchoHandler(check));
   }
 
   public void testEchoStringDefaultEncoding() {
@@ -349,7 +356,7 @@ public class TestClient extends TestClientBase {
             if (received.length() == sentBuff.length()) {
               String rec = enc == null ? received.toString() : received.toString(enc);
               tu.azzert(str.equals(rec), "Expected:" + str + " Received:" + rec);
-              tu.testComplete("testEcho");
+              tu.testComplete();
             }
           }
         });
@@ -381,7 +388,7 @@ public class TestClient extends TestClientBase {
           check.check();
           sock.close();
           if (connCount.incrementAndGet() == numConnections) {
-            tu.testComplete("testConnect");
+            tu.testComplete();
           }
         }
       };
@@ -395,7 +402,7 @@ public class TestClient extends TestClientBase {
 
   public void testConnectInvalidPort() {
     final ContextChecker check = new ContextChecker(tu);
-    client.exceptionHandler(createNoConnectHandler("testConnectInvalidPort", check));
+    client.exceptionHandler(createNoConnectHandler(check));
     client.connect(9998, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         tu.azzert(false, "Connect should not be called");
@@ -405,7 +412,7 @@ public class TestClient extends TestClientBase {
 
   public void testConnectInvalidHost() {
     final ContextChecker check = new ContextChecker(tu);
-    client.exceptionHandler(createNoConnectHandler("testConnectInvalidHost", check));
+    client.exceptionHandler(createNoConnectHandler(check));
     client.connect(8080, "somehost", new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         tu.azzert(false, "Connect should not be called");
@@ -437,7 +444,7 @@ public class TestClient extends TestClientBase {
           public void handle() {
             check.check();
             tu.azzert(counter.incrementAndGet() == 2);
-            tu.testComplete("testClientCloseHandler");
+            tu.testComplete();
           }
         });
         if (closeFromClient) {
@@ -481,7 +488,7 @@ public class TestClient extends TestClientBase {
                 public void handle() {
                   check.check();
                   tu.azzert(!sock.writeQueueFull());
-                  tu.testComplete("testClientDrainHandler");
+                  tu.testComplete();
                 }
               });
 
@@ -541,7 +548,7 @@ public class TestClient extends TestClientBase {
     client.connect(8080, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         check.check();
-        tu.testComplete("testReconnectAttempts");
+        tu.testComplete();
       }
     });
   }
@@ -555,7 +562,7 @@ public class TestClient extends TestClientBase {
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
         check.check();
-        tu.testComplete("testReconnectAttemptsNotEnough");
+        tu.testComplete();
       }
     });
 
@@ -564,6 +571,100 @@ public class TestClient extends TestClientBase {
       public void handle(NetSocket sock) {
         check.check();
         tu.azzert(false, "Should not connect");
+      }
+    });
+  }
+
+  public void testTLSClientTrustAll() {
+    tls();
+  }
+
+  public void testTLSClientTrustServerCert() {
+    tls();
+  }
+
+  public void testTLSClientUntrustedServer() {
+    tls();
+  }
+
+  public void testTLSClientCertNotRequired() {
+    tls();
+  }
+
+  public void testTLSClientCertRequired() {
+    tls();
+  }
+
+  public void testTLSClientCertRequiredNoClientCert() {
+    tls();
+  }
+
+  public void testTLSClientCertClientNotTrusted() {
+    tls();
+  }
+
+  void tls() {
+    JavaNetTest.TLSTestParams params = SharedData.<String, JavaNetTest.TLSTestParams>getMap("TLSTest").get("params");
+
+    client.setSSL(true);
+
+    if (params.clientTrustAll) {
+      client.setTrustAll(true);
+    }
+
+    if (params.clientTrust) {
+      client.setTrustStorePath("./src/tests/keystores/client-truststore.jks")
+          .setTrustStorePassword("wibble");
+    }
+    if (params.clientCert) {
+      client.setKeyStorePath("./src/tests/keystores/client-keystore.jks")
+          .setKeyStorePassword("wibble");
+    }
+
+    final ContextChecker check = new ContextChecker(tu);
+
+    final boolean shouldPass = params.shouldPass;
+
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+        if (shouldPass) {
+          tu.azzert(false, "Should not throw exception");
+        } else {
+          tu.testComplete();
+        }
+      }
+    });
+
+    client.connect(4043, new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+        check.check();
+        if (!shouldPass) {
+          tu.azzert(false, "Should not connect");
+          return;
+        }
+        final int numChunks = 100;
+        final int chunkSize = 100;
+
+        final Buffer received = Buffer.create(0);
+        final Buffer sent = Buffer.create(0);
+
+        socket.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            check.check();
+            received.appendBuffer(buffer);
+            if (received.length() == sent.length()) {
+              tu.azzert(TestUtils.buffersEqual(sent, received));
+              tu.testComplete();
+            }
+          }
+        });
+
+        //Now send some data
+        for (int i = 0; i < numChunks; i++) {
+          Buffer buff = TestUtils.generateRandomBuffer(chunkSize);
+          sent.appendBuffer(buff);
+          socket.write(buff);
+        }
       }
     });
   }
@@ -584,11 +685,11 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  Handler<Exception> createNoConnectHandler(final String testName, final ContextChecker check) {
+  Handler<Exception> createNoConnectHandler(final ContextChecker check) {
     return new Handler<Exception>() {
       public void handle(Exception e) {
         check.check();
-        tu.testComplete(testName);
+        tu.testComplete();
       }
     };
   }
@@ -605,7 +706,7 @@ public class TestClient extends TestClientBase {
       sock.write(b, new SimpleHandler() {
         public void handle() {
           checker.check();
-          tu.testComplete("testWriteWithCompletion");
+          tu.testComplete();
         }
       });
     } else {

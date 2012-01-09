@@ -278,7 +278,7 @@ public class NetServer extends NetServerBase {
           serverChannelGroup.add(serverChannel);
           log.trace("Net server listening on " + host + ":" + port);
         } catch (UnknownHostException e) {
-          e.printStackTrace();
+          log.error("Failed to bind", e);
         }
         servers.put(id, this);
         actualServer = this;

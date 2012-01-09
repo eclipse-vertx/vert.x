@@ -235,7 +235,7 @@ public class HttpServer extends NetServerBase {
           Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           serverChannelGroup.add(serverChannel);
         } catch (UnknownHostException e) {
-          e.printStackTrace();
+          log.error("Failed to bind", e);
         }
         servers.put(id, this);
         actualServer = this;
@@ -574,7 +574,7 @@ public class HttpServer extends NetServerBase {
           }
         });
       } else {
-        t.printStackTrace();
+        log.error("Unhandled exception", t);
       }
     }
 

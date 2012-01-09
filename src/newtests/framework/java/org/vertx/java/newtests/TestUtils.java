@@ -47,10 +47,10 @@ public class TestUtils {
     sendEvent(EventFields.APP_STOPPED_EVENT);
   }
 
-  public void testComplete(String testName) {
+  public void testComplete() {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.TEST_COMPLETE_EVENT);
-    map.put(EventFields.TEST_COMPLETE_NAME_FIELD, testName);
+    map.put(EventFields.TEST_COMPLETE_NAME_FIELD, "unused");
     sendMessage(map);
   }
 

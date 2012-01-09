@@ -11,7 +11,7 @@ tu.register('test1', function() {
 
     sock.dataHandler(function(data) {
       log.println("Got data echoed back");
-      tu.testComplete('test1');
+      tu.testComplete();
     });
 
     sock.write(new vertx.Buffer('this is a buffer'));

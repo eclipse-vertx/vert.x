@@ -22,12 +22,20 @@ public abstract class BaseServer implements VertxApp {
 
   protected ContextChecker check;
 
+  private final boolean sendAppReady;
+
+  protected BaseServer(boolean sendAppReady) {
+    this.sendAppReady = sendAppReady;
+  }
+
   public void start() {
     check = new ContextChecker(tu);
     server = new NetServer();
     server.connectHandler(getConnectHandler());
     server.listen(8080);
-    tu.appReady();
+    if (sendAppReady) {
+      tu.appReady();
+    }
   }
 
   public void stop() {

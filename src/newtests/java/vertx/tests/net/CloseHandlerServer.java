@@ -17,6 +17,7 @@ public class CloseHandlerServer extends BaseServer {
   protected boolean closeFromServer;
 
   public CloseHandlerServer() {
+    super(true);
     closeFromServer = false;
   }
 
@@ -35,7 +36,7 @@ public class CloseHandlerServer extends BaseServer {
           public void handle() {
             check.check();
             tu.azzert(counter.incrementAndGet() == 2);
-            tu.testComplete("testServerCloseHandler");
+            tu.testComplete();
           }
         });
         if (closeFromServer) {

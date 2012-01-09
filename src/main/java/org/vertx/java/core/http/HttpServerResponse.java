@@ -395,7 +395,7 @@ public class HttpServerResponse implements WriteStream {
           response.setHeader(Names.CONTENT_TYPE, contenttype);
         }
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Failed to get content type", e);
       }
 
       conn.write(response);

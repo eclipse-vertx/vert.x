@@ -9,6 +9,14 @@ import org.vertx.java.core.net.NetSocket;
  */
 public class EchoServer extends BaseServer {
 
+  public EchoServer() {
+    super(true);
+  }
+
+  protected EchoServer(boolean sendAppReady) {
+    super(sendAppReady);
+  }
+
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {

@@ -17,6 +17,10 @@ public class DrainingServer extends BaseServer {
 
   private static final Logger log = Logger.getLogger(DrainingServer.class);
 
+  public DrainingServer() {
+    super(true);
+  }
+
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
@@ -40,7 +44,7 @@ public class DrainingServer extends BaseServer {
                 public void handle() {
                   check.check();
                   tu.azzert(!sock.writeQueueFull());
-                  tu.testComplete("testServerDrainHandler");
+                  tu.testComplete();
                 }
               });
 

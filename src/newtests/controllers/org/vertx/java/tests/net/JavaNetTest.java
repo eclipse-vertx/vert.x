@@ -1,15 +1,19 @@
 package org.vertx.java.tests.net;
 
 import org.junit.Test;
+import org.vertx.java.core.Immutable;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.net.CloseHandlerServer;
 import vertx.tests.net.CloseHandlerServerCloseFromServer;
 import vertx.tests.net.ClosingServer;
 import vertx.tests.net.DrainingServer;
 import vertx.tests.net.EchoServer;
+import vertx.tests.net.EchoServerNoReady;
 import vertx.tests.net.PausingServer;
+import vertx.tests.net.TLSServer;
 import vertx.tests.net.TestClient;
 
 /**
@@ -32,137 +36,212 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testClientDefaults() throws Exception {
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testClientAttributes() throws Exception {
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testServerDefaults() throws Exception {
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testServerAttributes() throws Exception {
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testEchoBytes() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringDefaultEncoding() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringUTF8() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringUTF16() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testConnectDefaultHost() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testConnectLocalHost() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testConnectInvalidPort() {
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testConnectInvalidHost() {
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testWriteWithCompletion() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testClientCloseHandlersCloseFromClient() throws Exception {
     startApp(AppType.JAVA, EchoServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testClientCloseHandlersCloseFromServer() throws Exception {
     startApp(AppType.JAVA, ClosingServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testServerCloseHandlersCloseFromClient() throws Exception {
     startApp(AppType.JAVA, CloseHandlerServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testServerCloseHandlersCloseFromServer() throws Exception {
     startApp(AppType.JAVA, CloseHandlerServerCloseFromServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testClientDrainHandler() throws Exception {
     startApp(AppType.JAVA, PausingServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testServerDrainHandler() throws Exception {
     startApp(AppType.JAVA, DrainingServer.class.getName());
-    startTest();
+    startTest(getMethodName());
   }
 
   @Test
   public void testReconnectAttemptsInfinite() throws Exception {
     // Start the client without the server
-    startTest(false);
+    startTest(getMethodName(), false);
     reconnectAttempts();
   }
 
   @Test
   public void testReconnectAttemptsMany() throws Exception {
     // Start the client without the server
-    startTest(false);
+    startTest(getMethodName(), false);
     reconnectAttempts();
   }
 
   @Test
   public void testReconnectAttemptsNotEnough() throws Exception {
     // Start the client without the server
-    startTest();
+    startTest(getMethodName());
   }
 
   void reconnectAttempts() throws Exception {
     // Wait a little while then start the server
     Thread.sleep(1000);
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(AppType.JAVA, EchoServerNoReady.class.getName(), false);
     waitTestComplete();
+  }
+
+  public static class TLSTestParams implements Immutable {
+    public final boolean clientCert;
+    public final boolean clientTrust;
+    public final boolean serverCert;
+    public final boolean serverTrust;
+    public final boolean requireClientAuth;
+    public final boolean clientTrustAll;
+    public final boolean shouldPass;
+
+    public TLSTestParams(boolean clientCert, boolean clientTrust, boolean serverCert, boolean serverTrust,
+                         boolean requireClientAuth, boolean clientTrustAll, boolean shouldPass) {
+      this.clientCert = clientCert;
+      this.clientTrust = clientTrust;
+      this.serverCert = serverCert;
+      this.serverTrust = serverTrust;
+      this.requireClientAuth = requireClientAuth;
+      this.clientTrustAll = clientTrustAll;
+      this.shouldPass = shouldPass;
+    }
+  }
+
+  @Test
+  // Client trusts all server certs
+  public void testTLSClientTrustAll() throws Exception {
+    testTLS(getMethodName(), false, false, true, false, false, true, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCert() throws Exception {
+    testTLS(getMethodName(), false, true, true, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client doesn't trust
+  public void testTLSClientUntrustedServer() throws Exception {
+    testTLS(getMethodName(), false, false, true, false, false, false, false);
+  }
+
+  @Test
+  //Client specifies cert even though it's not required
+  public void testTLSClientCertNotRequired() throws Exception {
+    testTLS(getMethodName(), true, true, true, true, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it's not required
+  public void testTLSClientCertRequired() throws Exception {
+    testTLS(getMethodName(), true, true, true, true, true, false, true);
+  }
+
+  @Test
+  //Client doesn't specify cert but it's required
+  public void testTLSClientCertRequiredNoClientCert() throws Exception {
+    testTLS(getMethodName(), false, true, true, true, true, false, false);
+  }
+
+  @Test
+  //Client specifies cert but it's not trusted
+  public void testTLSClientCertClientNotTrusted() throws Exception {
+    testTLS(getMethodName(), true, true, true, false, true, false, false);
+  }
+
+  void testTLS(String testName, boolean clientCert, boolean clientTrust,
+               boolean serverCert, boolean serverTrust,
+               boolean requireClientAuth, boolean clientTrustAll,
+               boolean shouldPass) throws Exception {
+    //Put the params in shared-data
+    TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
+        requireClientAuth, clientTrustAll, shouldPass);
+    SharedData.getMap("TLSTest").put("params", params);
+    startApp(AppType.JAVA, TLSServer.class.getName());
+    startTest(testName);
   }
 
 }
