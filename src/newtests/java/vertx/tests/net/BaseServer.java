@@ -2,6 +2,7 @@ package vertx.tests.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetServer;
@@ -30,9 +31,11 @@ public abstract class BaseServer implements VertxApp {
 
   public void start() {
     check = new ContextChecker(tu);
+
     server = new NetServer();
     server.connectHandler(getConnectHandler());
     server.listen(8080);
+
     if (sendAppReady) {
       tu.appReady();
     }

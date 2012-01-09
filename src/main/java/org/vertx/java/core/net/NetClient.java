@@ -41,6 +41,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -136,7 +137,7 @@ public class NetClient extends NetClientBase {
                 if (channelFuture.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, channelFuture.getCause());
+                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
                 }
               }
             });

@@ -74,8 +74,7 @@ public class TestBase extends TestCase {
 
         if (EventBus.instance == null) {
           // Start non clustered event bus
-          ServerID defaultServerID = new ServerID(2550, "localhost");
-          EventBus bus = new EventBus(defaultServerID) {};
+          EventBus bus = new EventBus() {};
           EventBus.initialize(bus);
         }
 
@@ -157,7 +156,6 @@ public class TestBase extends TestCase {
 
   protected String startApp(AppType type, String main, boolean await) throws Exception {
     String appName = startApp(type, main, 1);
-    startedApps.add(appName);
     if (await) {
       waitAppReady();
     }
@@ -192,6 +190,8 @@ public class TestBase extends TestCase {
     log.info("url is " + url);
 
     appManager.deploy(type, appName, main, new URL[] { url }, instances);
+
+    startedApps.add(appName);
 
     return appName;
   }

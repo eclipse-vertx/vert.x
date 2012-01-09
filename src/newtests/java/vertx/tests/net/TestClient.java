@@ -627,6 +627,7 @@ public class TestClient extends TestClientBase {
 
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
+        e.printStackTrace();
         if (shouldPass) {
           tu.azzert(false, "Should not throw exception");
         } else {
@@ -667,6 +668,25 @@ public class TestClient extends TestClientBase {
         }
       }
     });
+  }
+
+  public void testSharedServers() {
+    // Create a bunch of connections
+    final int numConnections = 100;
+    final AtomicInteger counter = new AtomicInteger(0);
+    for (int i = 0; i < numConnections; i++) {
+      client.connect(8080, "localhost", new Handler<NetSocket>() {
+        public void handle(NetSocket sock) {
+          sock.closedHandler(new SimpleHandler() {
+            public void handle() {
+              if (counter.incrementAndGet() == numConnections) {
+                tu.testComplete();
+              }
+            }
+          });
+        }
+      });
+    }
   }
 
   void setHandlers(final NetSocket sock, final ContextChecker check) {
