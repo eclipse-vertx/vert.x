@@ -20,6 +20,8 @@ import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -381,6 +383,27 @@ public class NetServer extends NetServerBase {
         return;
       }
 
+      if (ssl) {
+        SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+
+        ChannelFuture fut = sslHandler.handshake();
+        fut.addListener(new ChannelFutureListener() {
+
+          public void operationComplete(ChannelFuture channelFuture) throws Exception {
+            if (channelFuture.isSuccess()) {
+              connected(ch, handler);
+            } else {
+              log.error("Client from origin " + ch.getRemoteAddress() + " failed to connect over ssl");
+            }
+          }
+        });
+
+      } else {
+        connected(ch, handler);
+      }
+    }
+
+    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       VertxInternal.instance.executeOnContext(handler.contextID, new Runnable() {
         public void run() {
           VertxInternal.instance.setContextID(handler.contextID);
@@ -441,7 +464,8 @@ public class NetServer extends NetServerBase {
           }
         });
       } else {
-        t.printStackTrace();
+        // Ignore - any exceptions not associated with any sock (e.g. failure in ssl handshake) will
+        // be communicated explicitly
       }
     }
   }
