@@ -26,7 +26,7 @@ public class JavaScriptNetTest extends TestBase {
   @Test
   public void test1() throws Exception {
     startApp(AppType.JS, "echo_server.js");
-    startTest();
+    startTest(getMethodName());
   }
 
 

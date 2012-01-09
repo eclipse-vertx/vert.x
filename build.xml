@@ -143,17 +143,13 @@
   <target name="compile-new-tests" depends="jar-core">
     <mkdir dir="${new-tests-target}"/>
 
-    <javac srcdir="${new-test-framework-src-java}" destdir="${new-tests-target}" classpathref="new-test-classpath"
+    <javac destdir="${new-tests-target}" classpathref="new-test-classpath"
            debug="on"
-           includeantruntime="false"/>
-    <javac srcdir="${new-test-java-tests-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
-           debug="on"
-           includeantruntime="false"/>
-    <javac srcdir="${new-test-controllers-src}" destdir="${new-tests-target}" classpathref="new-test-classpath"
-           debug="on"
-           includeantruntime="false"/>
-
-
+           includeantruntime="false">
+      <src path="${new-test-framework-src-java}"/>
+      <src path="${new-test-controllers-src}"/>
+      <src path="${new-test-java-tests-src}"/>
+    </javac>
   </target>
 
   <target name="tests" depends="java-tests, ruby-tests">

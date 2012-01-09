@@ -19,8 +19,8 @@ var TestUtils = function() {
     jutils.appStopped();
   }
 
-  that.testComplete = function(testName) {
-    jutils.testComplete(testName);
+  that.testComplete = function() {
+    jutils.testComplete();
   }
 
   that.register = function(testName, test) {

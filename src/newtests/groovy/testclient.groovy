@@ -12,7 +12,7 @@ tu.register("test1", {
 
     socket.dataHandler { buffer ->
       println "Net client receiving: ${buffer.toString("UTF-8")}"
-      tu.testComplete("test1")
+      tu.testComplete()
     }
 
     String str = "hello"

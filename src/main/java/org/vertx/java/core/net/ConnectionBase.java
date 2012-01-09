@@ -154,7 +154,7 @@ public abstract class ConnectionBase {
           if (exceptionHandler != null && err instanceof Exception) {
             exceptionHandler.handle((Exception) err);
           } else {
-            err.printStackTrace();
+            log.error("Unhandled exception", err);
           }
         }
       }

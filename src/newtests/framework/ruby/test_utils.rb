@@ -19,8 +19,8 @@ class TestUtils
     @j_tu.appStopped
   end
 
-  def test_complete(test_name)
-    @j_tu.testComplete(test_name)
+  def test_complete()
+    @j_tu.testComplete
   end
 
   def register(test_name, &test_handler)

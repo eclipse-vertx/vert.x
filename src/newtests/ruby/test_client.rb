@@ -10,7 +10,7 @@ require "test_utils"
   @client.connect(8080, "localhost") do |socket|
     socket.data_handler do |data|
       puts "Echo client received #{data.to_s}"
-      @tu.test_complete('test1')
+      @tu.test_complete()
       puts "Sending test complete!!!!"
     end
     str = "hello"
