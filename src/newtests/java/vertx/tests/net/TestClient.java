@@ -1,13 +1,11 @@
 package vertx.tests.net;
 
-import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -25,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TestClient extends TestClientBase {
 
-  private static final Logger log = Logger.getLogger(TestClient.class);
+ // private static final Logger log = Logger.getLogger(TestClient.class);
 
   private NetClient client;
 
@@ -670,16 +668,19 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  public void testSharedServers() {
+  public void testSharedServersMultipleInstances1() {
+    System.out.println("in testSharedServersMultipleInstances");
     // Create a bunch of connections
-    final int numConnections = 100;
+    final int numConnections = SharedData.<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connect(8080, "localhost", new Handler<NetSocket>() {
         public void handle(NetSocket sock) {
           sock.closedHandler(new SimpleHandler() {
             public void handle() {
-              if (counter.incrementAndGet() == numConnections) {
+              int count = counter.incrementAndGet();
+              if (count == numConnections) {
+                System.out.println("Test complete");
                 tu.testComplete();
               }
             }
@@ -687,6 +688,38 @@ public class TestClient extends TestClientBase {
         }
       });
     }
+  }
+
+  public void testSharedServersMultipleInstances2() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances3() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances1StartAllStopAll() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances2StartAllStopAll() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances3StartAllStopAll() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances1StartAllStopSome() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances2StartAllStopSome() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances3StartAllStopSome() {
+    testSharedServersMultipleInstances1();
   }
 
   void setHandlers(final NetSocket sock, final ContextChecker check) {

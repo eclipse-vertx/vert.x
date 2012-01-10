@@ -28,6 +28,6 @@ public class DeployCommand extends VertxCommand {
   }
 
   public void execute(AppManager appMgr) throws Exception {
-    appMgr.deploy(type, name, main, urls, instances);
+    appMgr.deploy(type, name, main, urls, instances, null);
   }
 }

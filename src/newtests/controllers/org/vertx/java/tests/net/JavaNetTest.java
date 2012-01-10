@@ -246,21 +246,110 @@ public class JavaNetTest extends TestBase {
   }
 
   @Test
-  // Make sure that when multiple servers are listening on the same host/port that connection requests are
-  // distributed amongst them
-  public void testSharedServers() throws Exception {
-    // Start multiple instances (more than number of cores)
-    final int numInstances = Runtime.getRuntime().availableProcessors() * 2;
-    startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+  public void testSharedServersMultipleInstances1() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() * 2;
+    sharedServers(getMethodName(), true, numInstances, 0, 0);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances2() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    sharedServers(getMethodName(), true, numInstances, 0, 0);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances3() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() + 1;
+    sharedServers(getMethodName(), true, numInstances, 0, 0);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances1StartAllStopAll() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() * 2;
+    sharedServers(getMethodName(), true, numInstances, numInstances, numInstances);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances2StartAllStopAll() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    sharedServers(getMethodName(), true, numInstances, numInstances, numInstances);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances3StartAllStopAll() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() + 1;
+    sharedServers(getMethodName(), true, numInstances, numInstances,
+        numInstances);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances1StartAllStopSome() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() * 2;
+    sharedServers(getMethodName(), true, numInstances, numInstances, numInstances / 2);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances2StartAllStopSome() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    sharedServers(getMethodName(), true, numInstances, numInstances, numInstances / 2);
+  }
+
+  @Test
+  public void testSharedServersMultipleInstances3StartAllStopSome() throws Exception {
+    int numInstances = Runtime.getRuntime().availableProcessors() + 1;
+    sharedServers(getMethodName(), true, numInstances, numInstances,
+        numInstances / 2);
+  }
+
+  void sharedServers(String testName, boolean multipleInstances, int numInstances, int initialServers, int initialToStop) throws Exception {
+
+    // Start an echo server on a different port to make sure shared servers work ok when there are other servers
+    // on different ports
+
+    SharedData.getMap("params").put("listenport", 8181);
+    startApp(AppType.JAVA, EchoServer.class.getName(), true);
+    SharedData.getMap("params").remove("listenport");
+
+    //We initially start then stop them to make sure the shared server cleanup code works ok
+
+    // First start some servers
+    String[] appNames = new String[initialServers];
+    for (int i = 0; i < initialServers; i++) {
+      appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+      waitAppReady();
+    }
+
+    // Then stop some
+
+    for (int i = 0; i < initialToStop; i++) {
+      stopApp(appNames[i]);
+    }
+
+    SharedData.getCounter("connections").set(0);
+    SharedData.getCounter("servers").set(0);
+    SharedData.getSet("instances").clear();
+    int numConnections = 100;
+    SharedData.getMap("params").put("numConnections", numConnections);
+
+    //Now start some more
+
+    if (multipleInstances) {
+      startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+    } else {
+      for (int i = 0; i < numInstances; i++) {
+        startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+      }
+    }
+
     for (int i = 0; i < numInstances; i++) {
       waitAppReady();
     }
 
-    startTest(getMethodName());
+    startTest(testName);
 
-    assertEquals(100, SharedData.getCounter("connections").get());
+    assertEquals(numConnections, SharedData.getCounter("connections").get());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances, SharedData.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
   }
 
 }

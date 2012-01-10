@@ -4,7 +4,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
@@ -16,8 +15,6 @@ import org.vertx.java.tests.net.JavaNetTest;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TLSServer implements VertxApp {
-
-  private static final Logger log = Logger.getLogger(TLSServer.class);
 
   protected TestUtils tu = new TestUtils();
 
@@ -53,7 +50,6 @@ public class TLSServer implements VertxApp {
     server.close(new SimpleHandler() {
       public void handle() {
         check.check();
-        log.info("Stopping tls server");
         tu.appStopped();
       }
     });
@@ -62,12 +58,6 @@ public class TLSServer implements VertxApp {
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-
-        socket.exceptionHandler(new Handler<Exception>() {
-          public void handle(Exception e) {
-            log.info("*********** got exception in server socket handler");
-          }
-        });
 
         check.check();
         socket.dataHandler(new Handler<Buffer>() {
