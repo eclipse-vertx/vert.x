@@ -312,23 +312,38 @@ public class JavaNetTest extends TestBase {
 
     //We initially start then stop them to make sure the shared server cleanup code works ok
 
-    // First start some servers
-    String[] appNames = new String[initialServers];
-    for (int i = 0; i < initialServers; i++) {
-      appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
-      waitAppReady();
-    }
+    int numConnections = 100;
 
-    // Then stop some
+    if (initialServers > 0) {
 
-    for (int i = 0; i < initialToStop; i++) {
-      stopApp(appNames[i]);
+      // First start some servers
+      String[] appNames = new String[initialServers];
+      for (int i = 0; i < initialServers; i++) {
+        appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        waitAppReady();
+      }
+
+      SharedData.getCounter("connections").set(0);
+      SharedData.getCounter("servers").set(0);
+      SharedData.getSet("instances").clear();
+      SharedData.getMap("params").put("numConnections", numConnections);
+
+      startTest(testName);
+
+      assertEquals(numConnections, SharedData.getCounter("connections").get());
+      // And make sure connection requests are distributed amongst them
+      assertEquals(initialServers, SharedData.getSet("instances").size());
+
+      // Then stop some
+
+      for (int i = 0; i < initialToStop; i++) {
+        stopApp(appNames[i]);
+      }
     }
 
     SharedData.getCounter("connections").set(0);
     SharedData.getCounter("servers").set(0);
     SharedData.getSet("instances").clear();
-    int numConnections = 100;
     SharedData.getMap("params").put("numConnections", numConnections);
 
     //Now start some more
