@@ -92,8 +92,7 @@ public class TestBase extends TestCase {
                   log.trace(map.get(EventFields.TRACE_MESSAGE_FIELD));
                   break;
                 case EventFields.EXCEPTION_EVENT:
-                  log.error(map.get(EventFields.EXCEPTION_MESSAGE_FIELD));
-                  log.error(map.get(EventFields.EXCEPTION_STACKTRACE_FIELD));
+                  failedAsserts.add(new AssertHolder((String)map.get(EventFields.EXCEPTION_MESSAGE_FIELD), (String)map.get(EventFields.EXCEPTION_STACKTRACE_FIELD)));
                   break;
                 case EventFields.ASSERT_EVENT:
                   boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(map.get(EventFields.ASSERT_RESULT_FIELD));
@@ -283,7 +282,7 @@ public class TestBase extends TestCase {
 
   @Test
   protected void runTestInLoop(String testName, int iters) throws Exception {
-    Method meth = this.getClass().getMethod(testName, null);
+    Method meth = getClass().getMethod(testName, (Class<?>[])null);
     for (int i = 0; i < iters; i++) {
       log.info("****************************** ITER " + i);
       meth.invoke(this);

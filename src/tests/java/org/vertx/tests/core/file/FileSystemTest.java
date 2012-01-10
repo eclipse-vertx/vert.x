@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class FileSystemTest extends TestBase {
 
-  private static final String TEST_DIR = "test-tmp";
+  public static final String TEST_DIR = "test-tmp";
   private static final String DEFAULT_DIR_PERMS = "rwxr-xr-x";
 
   private File testDir;

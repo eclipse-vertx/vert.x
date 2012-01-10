@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package org.vertx.tests.core.streams;
+package org.vertx.java.tests.streams;
 
-import org.testng.annotations.Test;
+import junit.framework.TestCase;
+import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import org.vertx.tests.Utils;
+import org.vertx.java.newtests.TestUtils;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class PumpTest {
+public class JavaPumpTest extends TestCase {
 
   @Test
   public void testPumpBasic() throws Exception {
@@ -40,20 +41,20 @@ public class PumpTest {
 
       Buffer inp = Buffer.create(0);
       for (int j = 0; j < 10; j++) {
-        Buffer b = Utils.generateRandomBuffer(100);
+        Buffer b = TestUtils.generateRandomBuffer(100);
         inp.appendBuffer(b);
         rs.addData(b);
       }
-      Utils.buffersEqual(inp, ws.received);
-      assert !rs.paused;
-      assert rs.pauseCount == 0;
-      assert rs.resumeCount == 0;
+      TestUtils.buffersEqual(inp, ws.received);
+      assertFalse(rs.paused);
+      assertEquals(0, rs.pauseCount);
+      assertEquals(0, rs.resumeCount);
 
       p.stop();
       ws.clearReceived();
-      Buffer b = Utils.generateRandomBuffer(100);
+      Buffer b = TestUtils.generateRandomBuffer(100);
       rs.addData(b);
-      assert ws.received.length() == 0;
+      assertEquals(0, ws.received.length());
     }
   }
 
@@ -67,26 +68,26 @@ public class PumpTest {
     for (int i = 0; i < 10; i++) {   // Repeat a few times
       Buffer inp = Buffer.create(0);
       for (int j = 0; j < 4; j++) {
-        Buffer b = Utils.generateRandomBuffer(100);
+        Buffer b = TestUtils.generateRandomBuffer(100);
         inp.appendBuffer(b);
         rs.addData(b);
-        assert !rs.paused;
-        assert rs.pauseCount == i;
-        assert rs.resumeCount == i;
+        assertFalse(rs.paused);
+        assertEquals(i, rs.pauseCount);
+        assertEquals(i, rs.resumeCount);
       }
-      Buffer b = Utils.generateRandomBuffer(100);
+      Buffer b = TestUtils.generateRandomBuffer(100);
       inp.appendBuffer(b);
       rs.addData(b);
-      assert rs.paused;
-      assert rs.pauseCount == i + 1;
-      assert rs.resumeCount == i;
+      assertTrue(rs.paused);
+      assertEquals(i + 1, rs.pauseCount);
+      assertEquals(i, rs.resumeCount);
 
-      Utils.buffersEqual(inp, ws.received);
+      TestUtils.buffersEqual(inp, ws.received);
       ws.clearReceived();
       inp = Buffer.create(0);
-      assert !rs.paused;
-      assert rs.pauseCount == i + 1;
-      assert rs.resumeCount == i + 1;
+      assertFalse(rs.paused);
+      assertEquals(i + 1, rs.pauseCount);
+      assertEquals(i + 1, rs.resumeCount);
     }
   }
 

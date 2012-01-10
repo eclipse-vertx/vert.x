@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.vertx.tests.core.shared;
+package org.vertx.java.tests.shareddata;
 
-import org.testng.annotations.Test;
+import junit.framework.TestCase;
+import org.junit.Test;
 import org.vertx.java.core.Immutable;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.shareddata.SharedCounter;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.tests.Utils;
-import org.vertx.tests.core.TestBase;
+import org.vertx.java.newtests.TestUtils;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SharedDataTest extends TestBase {
+public class JavaSharedDataTest extends TestCase {
 
   @Test
   public void testMap() throws Exception {
@@ -77,15 +78,15 @@ public class SharedDataTest extends TestBase {
     map.put(key, new MyImmutable());
     Buffer buff = Buffer.create(0);
     map.put(key, buff);
-    azzert(map.get(key) != buff); // Make sure it's copied
-    byte[] bytes = Utils.generateRandomByteArray(100);
+    assertTrue(map.get(key) != buff); // Make sure it's copied
+    byte[] bytes = TestUtils.generateRandomByteArray(100);
     map.put(key, bytes);
     byte[] got = (byte[]) map.get(key);
-    azzert(got != bytes);
-    azzert(Utils.byteArraysEqual(bytes, got));
+    assertTrue(got != bytes);
+    assertTrue(TestUtils.byteArraysEqual(bytes, got));
     try {
       map.put(key, new SomeOtherClass());
-      azzert(false, "Should throw exception");
+      fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       //OK
     }
@@ -112,25 +113,25 @@ public class SharedDataTest extends TestBase {
     assert (set4 != set3);
   }
 
-//  @Test
-//  public void testCounter() throws Exception {
-//
-//    SharedCounter counter = SharedData.getCounter("foo");
-//
-//    SharedCounter counter2 = SharedData.getCounter("foo");
-//
-//    assert (counter == counter2);
-//
-//    SharedCounter counter3 = SharedData.getCounter("bar");
-//
-//    assert (counter3 != counter2);
-//
-//    assert (SharedData.removeCounter("foo"));
-//
-//    SharedCounter counter4 = SharedData.getCounter("foo");
-//
-//    assert (counter4 != counter3);
-//  }
+  @Test
+  public void testCounter() throws Exception {
+
+    SharedCounter counter = SharedData.getCounter("foo");
+
+    SharedCounter counter2 = SharedData.getCounter("foo");
+
+    assert (counter == counter2);
+
+    SharedCounter counter3 = SharedData.getCounter("bar");
+
+    assert (counter3 != counter2);
+
+    assert (SharedData.removeCounter("foo"));
+
+    SharedCounter counter4 = SharedData.getCounter("foo");
+
+    assert (counter4 != counter3);
+  }
 
 //  @Test
 //  public void testQueue() throws Exception {
