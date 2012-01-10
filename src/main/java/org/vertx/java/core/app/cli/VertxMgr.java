@@ -84,7 +84,7 @@ public class VertxMgr {
       DeployCommand dc = createDeployCommand(args, "run");
       if (dc != null) {
         try {
-          mgr.deploy(dc.type, dc.name, dc.main, dc.urls, dc.instances);
+          mgr.deploy(dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
           mgr.block();
         } catch (Exception e) {
           System.err.println("Failed to deploy application");

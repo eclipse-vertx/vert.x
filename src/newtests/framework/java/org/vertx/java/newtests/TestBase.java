@@ -2,6 +2,7 @@ package org.vertx.java.newtests;
 
 import junit.framework.TestCase;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
@@ -10,8 +11,8 @@ import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.net.ServerID;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,6 +31,9 @@ import java.util.concurrent.TimeUnit;
 public class TestBase extends TestCase {
 
   private static final Logger log = Logger.getLogger(TestBase.class);
+  private static final int DEFAULT_TIMEOUT = 5;
+
+  public static final String EVENTS_ADDRESS = "__test_events";
 
   private AppManager appManager;
   private BlockingQueue<Map<String, Object>> events = new LinkedBlockingQueue<>();
@@ -38,6 +42,7 @@ public class TestBase extends TestCase {
   private long contextID;
   private volatile Handler<Message> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
+  private Set<String> startedApps = new HashSet<>();
 
   private class AssertHolder {
     final String message;
@@ -48,10 +53,6 @@ public class TestBase extends TestCase {
       this.stackTrace = stackTrace;
     }
   }
-
-  private static final int DEFAULT_TIMEOUT = 5;
-
-  public static final String EVENTS_ADDRESS = "__test_events";
 
   private void throwAsserts() {
     for (AssertHolder holder: failedAsserts) {
@@ -133,9 +134,11 @@ public class TestBase extends TestCase {
     try {
       throwAsserts();
     } finally {
-      for (String appName: startedApps) {
+      Set<String> apps = new HashSet<>(startedApps);
+      for (String appName: apps) {
         stopApp(appName);
       }
+      events.clear();
       final CountDownLatch latch = new CountDownLatch(1);
       VertxInternal.instance.executeOnContext(contextID, new Runnable() {
         public void run() {
@@ -147,8 +150,6 @@ public class TestBase extends TestCase {
       latch.await(5, TimeUnit.SECONDS);
     }
   }
-
-  private Set<String> startedApps = new HashSet<>();
 
   protected String startApp(AppType type, String main) throws Exception {
     return startApp(type, main, true);
@@ -165,8 +166,6 @@ public class TestBase extends TestCase {
   protected String startApp(AppType type, String main, int instances) throws Exception {
 
     String appName = UUID.randomUUID().toString();
-
-    log.info("Starting app " + main);
 
     URL url = null;
     if (type == AppType.JAVA) {
@@ -187,24 +186,40 @@ public class TestBase extends TestCase {
       throw new IllegalArgumentException("Can't find main: " + main);
     }
 
-    log.info("url is " + url);
+    final CountDownLatch doneLatch = new CountDownLatch(1);
 
-    appManager.deploy(type, appName, main, new URL[] { url }, instances);
+    Handler<Void> doneHandler = new SimpleHandler() {
+      public void handle() {
+        doneLatch.countDown();
+      }
+    };
+
+    appManager.deploy(type, appName, main, new URL[] { url }, instances, doneHandler);
 
     startedApps.add(appName);
+
+    if (!doneLatch.await(5, TimeUnit.SECONDS)) {
+      throw new IllegalStateException("Timedout waiting for apps to start");
+    }
 
     return appName;
   }
 
-  private void stopApp(String appName) throws Exception {
+  protected void stopApp(String appName) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
+    int instances = appManager.listInstances().get(appName);
     appManager.undeploy(appName, new SimpleHandler() {
       public void handle() {
         latch.countDown();
       }
     });
-    latch.await(5, TimeUnit.SECONDS);
-    waitAppStopped();
+    if (!latch.await(5, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Timedout waiting for app to stop");
+    }
+    for (int i = 0; i < instances; i++) {
+      waitAppStopped();
+    }
+    startedApps.remove(appName);
   }
 
   protected void startTest(String testName) {
@@ -212,7 +227,6 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName, boolean wait) {
-    log.info("*** Starting test: " + testName);
     tu.startTest(testName);
     if (wait) {
       waitTestComplete();
@@ -265,6 +279,19 @@ public class TestBase extends TestCase {
 
   protected void waitTestComplete() {
     waitTestComplete(DEFAULT_TIMEOUT);
+  }
+
+  @Test
+  protected void runTestInLoop(String testName, int iters) throws Exception {
+    Method meth = this.getClass().getMethod(testName, null);
+    for (int i = 0; i < iters; i++) {
+      log.info("****************************** ITER " + i);
+      meth.invoke(this);
+      tearDown();
+      if (i != iters - 1) {
+        setUp();
+      }
+    }
   }
 
 

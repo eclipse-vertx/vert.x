@@ -87,6 +87,7 @@ public class SharedData {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
     if (set == null) {
       set = new SharedSet<>();
+      //set = Collections.synchronizedSet(new HashSet<E>());
       SharedSet prev = sets.putIfAbsent(name, set);
       if (prev != null) {
         set = prev;

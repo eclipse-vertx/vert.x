@@ -27,7 +27,6 @@ public class RubyNetTest extends TestBase {
   public void test1() throws Exception {
     startApp(AppType.RUBY, "echo_server.rb");
     startTest(getMethodName());
-    log.info("*****test1 complete");
   }
 
 

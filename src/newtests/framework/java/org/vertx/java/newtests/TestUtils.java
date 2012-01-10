@@ -2,7 +2,6 @@ package org.vertx.java.newtests;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -59,7 +58,6 @@ public class TestUtils {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.START_TEST_EVENT);
     map.put(EventFields.START_TEST_NAME_FIELD, testName);
-    log.info("**** Sending start test message for test name: " + testName);
     sendMessage(map);
   }
 

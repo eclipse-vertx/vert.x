@@ -1,20 +1,18 @@
 package vertx.tests.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class InstanceCheckServer extends BaseServer {
 
-  private static final Logger log = Logger.getLogger(InstanceCheckServer.class);
+  private final String id = UUID.randomUUID().toString();
 
   public InstanceCheckServer() {
     super(true);
@@ -27,7 +25,8 @@ public class InstanceCheckServer extends BaseServer {
 
         check.check();
         //We add the object id of the server to the set
-        SharedData.getSet("instances").add(System.identityHashCode(InstanceCheckServer.this));
+        Set<String> set = SharedData.getSet("instances");
+        set.add(id);
         SharedData.getCounter("connections").increment();
 
         socket.close();

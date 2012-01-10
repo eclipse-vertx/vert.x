@@ -4,13 +4,6 @@ import org.junit.Test;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
-import vertx.tests.net.CloseHandlerServer;
-import vertx.tests.net.CloseHandlerServerCloseFromServer;
-import vertx.tests.net.ClosingServer;
-import vertx.tests.net.DrainingServer;
-import vertx.tests.net.EchoServer;
-import vertx.tests.net.PausingServer;
-import vertx.tests.net.TestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

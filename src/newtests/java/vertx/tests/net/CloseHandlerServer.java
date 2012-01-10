@@ -2,7 +2,6 @@ package vertx.tests.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -11,8 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class CloseHandlerServer extends BaseServer {
-
-  private static final Logger log = Logger.getLogger(CloseHandlerServer.class);
 
   protected boolean closeFromServer;
 

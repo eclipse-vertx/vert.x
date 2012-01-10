@@ -33,8 +33,6 @@ public class RhinoApp implements VertxApp {
 
   public static void load(String moduleName) {
     try {
-      log.info("In load " + moduleName);
-
       ScriptableObject scope = scopeThreadLocal.get();
       ClassLoader cl = clThreadLocal.get();
       Context cx = Context.getCurrentContext();
@@ -60,8 +58,6 @@ public class RhinoApp implements VertxApp {
   }
 
   public void start() throws Exception {
-    log.info("in rhinoapp start");
-
     Context cx = Context.enter();
     try {
       scope = cx.initStandardObjects();

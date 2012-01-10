@@ -6,7 +6,6 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.newtests.TestUtils;
 
@@ -14,8 +13,6 @@ import org.vertx.java.newtests.TestUtils;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DrainingServer extends BaseServer {
-
-  private static final Logger log = Logger.getLogger(DrainingServer.class);
 
   public DrainingServer() {
     super(true);

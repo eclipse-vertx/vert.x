@@ -217,7 +217,6 @@ class VertxImpl implements VertxInternal {
 
   public long createAndAssociateContext() {
     NioWorker worker = getWorkerPool().nextWorker();
-    log.info("associating ctx to worker " + worker);
     return associateContextWithWorker(worker);
   }
 
