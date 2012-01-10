@@ -28,6 +28,8 @@ public class InstanceCheckServer extends BaseServer {
         check.check();
         //We add the object id of the server to the set
         SharedData.getSet("instances").add(System.identityHashCode(InstanceCheckServer.this));
+        SharedData.getCounter("connections").increment();
+
         socket.close();
       }
     };

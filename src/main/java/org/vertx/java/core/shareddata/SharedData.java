@@ -95,17 +95,17 @@ public class SharedData {
     return set;
   }
 
-//  public static SharedCounter getCounter(Object name) {
-//    SharedCounter counter = counters.get(name);
-//    if (counter == null) {
-//      counter = new SharedCounter();
-//      SharedCounter prev = counters.putIfAbsent(name, counter);
-//      if (prev != null) {
-//        counter = prev;
-//      }
-//    }
-//    return counter;
-//  }
+  public static SharedCounter getCounter(Object name) {
+    SharedCounter counter = counters.get(name);
+    if (counter == null) {
+      counter = new SharedCounter();
+      SharedCounter prev = counters.putIfAbsent(name, counter);
+      if (prev != null) {
+        counter = prev;
+      }
+    }
+    return counter;
+  }
 
 //  public static <E> SharedQueue<E> getQueue(Object name) {
 //    SharedQueue<E> queue = (SharedQueue<E>) queues.get(name);

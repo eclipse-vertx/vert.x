@@ -106,7 +106,7 @@ class VertxImpl implements VertxInternal {
   }
 
   public <T> boolean sendToHandler(long handlerID, T message) {
-    final T msg = Utils.chekShareableObject(message);
+    final T msg = Utils.checkShareableObject(message);
     final ActorHolder holder = actors.get(handlerID);
     if (holder != null) {
       final Handler<T> actor = (Handler<T>) holder.actor; // FIXME - unchecked cast
@@ -217,6 +217,7 @@ class VertxImpl implements VertxInternal {
 
   public long createAndAssociateContext() {
     NioWorker worker = getWorkerPool().nextWorker();
+    log.info("associating ctx to worker " + worker);
     return associateContextWithWorker(worker);
   }
 

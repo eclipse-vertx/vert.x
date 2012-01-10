@@ -132,6 +132,7 @@ public class AppManager {
     List<AppHolder> list = apps.get(name);
     log.info("Undeploying " + list.size() + " instances of application: " + name);
     for (final AppHolder holder: list) {
+      log.info("holder is " + holder);
       VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
         public void run() {
           VertxInternal.instance.setContextID(holder.contextID);

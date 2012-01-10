@@ -30,8 +30,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   private final ConcurrentMap<K, V> map = new NonBlockingHashMap<>();
 
   public V putIfAbsent(K k, V v) {
-    k = Utils.chekShareableObject(k);
-    v = Utils.chekShareableObject(v);
+    k = Utils.checkShareableObject(k);
+    v = Utils.checkShareableObject(v);
     return map.putIfAbsent(k, v);
   }
 
@@ -40,14 +40,14 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public boolean replace(K k, V v, V v1) {
-    k = Utils.chekShareableObject(k);
-    v1 = Utils.chekShareableObject(v1);
+    k = Utils.checkShareableObject(k);
+    v1 = Utils.checkShareableObject(v1);
     return map.replace(k, v, v1);
   }
 
   public V replace(K k, V v) {
-    k = Utils.chekShareableObject(k);
-    v = Utils.chekShareableObject(v);
+    k = Utils.checkShareableObject(k);
+    v = Utils.checkShareableObject(v);
     return map.replace(k, v);
   }
 
@@ -72,8 +72,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public V put(K k, V v) {
-    k = Utils.chekShareableObject(k);
-    v = Utils.chekShareableObject(v);
+    k = Utils.checkShareableObject(k);
+    v = Utils.checkShareableObject(v);
     return map.put(k, v);
   }
 
@@ -83,8 +83,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
   public void putAll(Map<? extends K, ? extends V> map) {
     for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-      K k = Utils.chekShareableObject(entry.getKey());
-      V v = Utils.chekShareableObject(entry.getValue());
+      K k = Utils.checkShareableObject(entry.getKey());
+      V v = Utils.checkShareableObject(entry.getValue());
       this.map.put(k, v);
     }
   }
@@ -137,7 +137,7 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
     public V setValue(V value) {
       V old = internalEntry.getValue();
-      value = Utils.chekShareableObject(value);
+      value = Utils.checkShareableObject(value);
       internalEntry.setValue(value);
       return old;
     }

@@ -41,6 +41,9 @@ public class HandlerManager<T> {
     long contextID = Vertx.instance.getContextID();
     //log.info("registering handler with context id " + contextID);
     NioWorker worker = VertxInternal.instance.getWorkerForContextID(contextID);
+
+
+
     availableWorkers.addWorker(worker);
     Handlers handlers = handlerMap.get(worker);
     if (handlers == null) {
