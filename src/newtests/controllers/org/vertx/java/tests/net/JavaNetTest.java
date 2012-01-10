@@ -258,6 +258,7 @@ public class JavaNetTest extends TestBase {
 
     startTest(getMethodName());
 
+    assertEquals(100, SharedData.getCounter("connections").get());
     // And make sure connection requests are distributed amongst them
     assertEquals(numInstances, SharedData.getSet("instances").size());
   }
