@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.vertx.tests.core.composition;
+package org.vertx.java.tests.composition;
 
-import org.testng.annotations.Test;
+import junit.framework.TestCase;
+import org.junit.Test;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.composition.Composer;
-import org.vertx.tests.core.TestBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ComposerTest extends TestBase {
+public class JavaComposerTest extends TestCase {
 
 
   @Test
@@ -34,16 +34,16 @@ public class ComposerTest extends TestBase {
 
     MyDeferred d1 = new MyDeferred();
     c.parallel(d1);
-    azzert(!d1.executed());
+    assertFalse(d1.executed());
 
     MyDeferred d2 = new MyDeferred();
     c.parallel(d2);
-    azzert(!d2.executed());
+    assertFalse(d2.executed());
 
     c.execute();
 
-    azzert(d1.executed());
-    azzert(d2.executed());
+    assertTrue(d1.executed());
+    assertTrue(d2.executed());
   }
 
   @Test
@@ -53,30 +53,30 @@ public class ComposerTest extends TestBase {
 
     MyDeferred d1 = new MyDeferred();
     c.series(d1);
-    azzert(!d1.executed());
+    assertFalse(d1.executed());
 
     MyDeferred d2 = new MyDeferred();
     c.series(d2);
-    azzert(!d2.executed());
+    assertFalse(d2.executed());
 
     MyDeferred d3 = new MyDeferred();
     c.series(d3);
-    azzert(!d3.executed());
+    assertFalse(d3.executed());
 
     c.execute();
 
-    azzert(d1.executed());
-    azzert(!d2.executed());
-    azzert(!d3.executed());
+    assertTrue(d1.executed());
+    assertFalse(d2.executed());
+    assertFalse(d3.executed());
 
     d1.setResult();
 
-    azzert(d2.executed());
-    azzert(!d3.executed());
+    assertTrue(d2.executed());
+    assertFalse(d3.executed());
 
     d2.setResult();
 
-    azzert(d3.executed());
+    assertTrue(d3.executed());
   }
 
   @Test
@@ -86,89 +86,89 @@ public class ComposerTest extends TestBase {
 
     MyDeferred d1_1 = new MyDeferred();
     c.parallel(d1_1);
-    azzert(!d1_1.executed());
+    assertFalse(d1_1.executed());
     MyDeferred d1_2 = new MyDeferred();
     c.parallel(d1_2);
-    azzert(!d1_2.executed());
+    assertFalse(d1_2.executed());
     MyDeferred d1_3 = new MyDeferred();
     c.parallel(d1_3);
-    azzert(!d1_3.executed());
+    assertFalse(d1_3.executed());
 
     MyDeferred d2_1 = new MyDeferred();
     c.series(d2_1);
-    azzert(!d2_1.executed());
+    assertFalse(d2_1.executed());
     MyDeferred d2_2 = new MyDeferred();
     c.parallel(d2_2);
-    azzert(!d2_2.executed());
+    assertFalse(d2_2.executed());
     MyDeferred d2_3 = new MyDeferred();
     c.parallel(d2_3);
-    azzert(!d2_3.executed());
+    assertFalse(d2_3.executed());
 
 
     MyDeferred d3_1 = new MyDeferred();
     c.series(d3_1);
-    azzert(!d3_1.executed());
+    assertFalse(d3_1.executed());
     MyDeferred d3_2 = new MyDeferred();
     c.parallel(d3_2);
-    azzert(!d3_2.executed());
+    assertFalse(d3_2.executed());
     MyDeferred d3_3 = new MyDeferred();
     c.parallel(d3_3);
-    azzert(!d3_3.executed());
+    assertFalse(d3_3.executed());
 
     c.execute();
 
-    azzert(d1_1.executed());
-    azzert(d1_2.executed());
-    azzert(d1_3.executed());
-    azzert(!d2_1.executed());
-    azzert(!d2_2.executed());
-    azzert(!d2_3.executed());
-    azzert(!d3_1.executed());
-    azzert(!d3_2.executed());
-    azzert(!d3_3.executed());
+    assertTrue(d1_1.executed());
+    assertTrue(d1_2.executed());
+    assertTrue(d1_3.executed());
+    assertFalse(d2_1.executed());
+    assertFalse(d2_2.executed());
+    assertFalse(d2_3.executed());
+    assertFalse(d3_1.executed());
+    assertFalse(d3_2.executed());
+    assertFalse(d3_3.executed());
 
     d1_1.setResult();
 
-    azzert(!d2_1.executed());
-    azzert(!d2_2.executed());
-    azzert(!d2_3.executed());
-    azzert(!d3_1.executed());
-    azzert(!d3_2.executed());
-    azzert(!d3_3.executed());
+    assertFalse(d2_1.executed());
+    assertFalse(d2_2.executed());
+    assertFalse(d2_3.executed());
+    assertFalse(d3_1.executed());
+    assertFalse(d3_2.executed());
+    assertFalse(d3_3.executed());
 
     d1_2.setResult();
 
-    azzert(!d2_1.executed());
-    azzert(!d2_2.executed());
-    azzert(!d2_3.executed());
-    azzert(!d3_1.executed());
-    azzert(!d3_2.executed());
-    azzert(!d3_3.executed());
+    assertFalse(d2_1.executed());
+    assertFalse(d2_2.executed());
+    assertFalse(d2_3.executed());
+    assertFalse(d3_1.executed());
+    assertFalse(d3_2.executed());
+    assertFalse(d3_3.executed());
 
     d1_3.setResult();
-    azzert(d2_1.executed());
-    azzert(d2_2.executed());
-    azzert(d2_3.executed());
-    azzert(!d3_1.executed());
-    azzert(!d3_2.executed());
-    azzert(!d3_3.executed());
+    assertTrue(d2_1.executed());
+    assertTrue(d2_2.executed());
+    assertTrue(d2_3.executed());
+    assertFalse(d3_1.executed());
+    assertFalse(d3_2.executed());
+    assertFalse(d3_3.executed());
 
     d2_1.setResult();
 
-    azzert(!d3_1.executed());
-    azzert(!d3_2.executed());
-    azzert(!d3_3.executed());
+    assertFalse(d3_1.executed());
+    assertFalse(d3_2.executed());
+    assertFalse(d3_3.executed());
 
     d2_2.setResult();
 
-    azzert(!d3_1.executed());
-    azzert(!d3_2.executed());
-    azzert(!d3_3.executed());
+    assertFalse(d3_1.executed());
+    assertFalse(d3_2.executed());
+    assertFalse(d3_3.executed());
 
     d2_3.setResult();
-    azzert(d3_1.executed());
-    azzert(d3_2.executed());
-    azzert(d3_3.executed());
+    assertTrue(d3_1.executed());
+    assertTrue(d3_2.executed());
+    assertTrue(d3_3.executed());
   }
 
   @Test
@@ -178,7 +178,7 @@ public class ComposerTest extends TestBase {
     MyDeferred d = new MyDeferred();
     try {
       c.series(d);
-      azzert(false, "Should throw exception");
+      fail("Should throw exception");
     }
     catch (IllegalStateException e) {
       //OK
@@ -192,7 +192,7 @@ public class ComposerTest extends TestBase {
     MyDeferred d = new MyDeferred();
     try {
       c.parallel(d);
-      azzert(false, "Should throw exception");
+      fail("Should throw exception");
     }
     catch (IllegalStateException e) {
       //OK

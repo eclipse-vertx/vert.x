@@ -25,7 +25,7 @@ public class GroovyNetTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(AppType.GROOVY, "echoServer.groovy");
+    startApp(AppType.GROOVY, "EchoServer.groovy");
     startTest(getMethodName());
   }
 

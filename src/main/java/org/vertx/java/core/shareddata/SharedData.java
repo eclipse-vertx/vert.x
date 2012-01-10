@@ -134,9 +134,9 @@ public class SharedData {
     return sets.remove(name) != null;
   }
 
-//  public static boolean removeCounter(Object name) {
-//    return counters.remove(name) != null;
-//  }
+  public static boolean removeCounter(Object name) {
+    return counters.remove(name) != null;
+  }
 //
 //  public static boolean removeQueue(Object name) {
 //    return queues.remove(name) != null;
