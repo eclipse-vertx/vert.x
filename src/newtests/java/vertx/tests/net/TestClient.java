@@ -319,7 +319,7 @@ public class TestClient extends TestClientBase {
 
   public void testEchoBytes() {
     final ContextChecker check = new ContextChecker(tu);
-    client.connect(8080, getEchoHandler(check));
+    client.connect(1234, getEchoHandler(check));
   }
 
   public void testEchoStringDefaultEncoding() {
@@ -336,7 +336,7 @@ public class TestClient extends TestClientBase {
 
   void echoString(final String enc) {
     final ContextChecker check = new ContextChecker(tu);
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         check.check();
@@ -369,11 +369,11 @@ public class TestClient extends TestClientBase {
   }
 
   public void testConnectDefaultHost() {
-    connect(8080, null);
+    connect(1234, null);
   }
 
   public void testConnectLocalHost() {
-    connect(8080, "localhost");
+    connect(1234, "localhost");
   }
 
   void connect(int port, String host) {
@@ -411,7 +411,7 @@ public class TestClient extends TestClientBase {
   public void testConnectInvalidHost() {
     final ContextChecker check = new ContextChecker(tu);
     client.exceptionHandler(createNoConnectHandler(check));
-    client.connect(8080, "somehost", new Handler<NetSocket>() {
+    client.connect(1234, "somehost", new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         tu.azzert(false, "Connect should not be called");
       }
@@ -428,7 +428,7 @@ public class TestClient extends TestClientBase {
 
   void clientCloseHandlers(final boolean closeFromClient) {
     final ContextChecker check = new ContextChecker(tu);
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         check.check();
         final AtomicInteger counter = new AtomicInteger(0);
@@ -453,7 +453,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testServerCloseHandlersCloseFromClient() {
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         sock.close();
       }
@@ -461,7 +461,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testServerCloseHandlersCloseFromServer() {
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
       }
     });
@@ -470,7 +470,7 @@ public class TestClient extends TestClientBase {
 
   public void testClientDrainHandler() {
     final ContextChecker check = new ContextChecker(tu);
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
 
       public void handle(final NetSocket sock) {
         check.check();
@@ -501,7 +501,7 @@ public class TestClient extends TestClientBase {
 
   public void testServerDrainHandler() {
     final ContextChecker check = new ContextChecker(tu);
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
         check.check();
         sock.pause();
@@ -520,7 +520,7 @@ public class TestClient extends TestClientBase {
     final int sendSize = 100;
     final Buffer sentBuff = Buffer.create(0);
 
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         check.check();
         doWrite(sentBuff, sock, numSends, sendSize, check);
@@ -543,7 +543,7 @@ public class TestClient extends TestClientBase {
     final ContextChecker check = new ContextChecker(tu);
 
     //The server delays starting for a a few seconds, but it should still connect
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         check.check();
         tu.testComplete();
@@ -565,7 +565,7 @@ public class TestClient extends TestClientBase {
     });
 
     //The server delays starting for a a few seconds, and it should run out of attempts before that
-    client.connect(8080, new Handler<NetSocket>() {
+    client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
         check.check();
         tu.azzert(false, "Should not connect");
@@ -674,7 +674,7 @@ public class TestClient extends TestClientBase {
     final int numConnections = SharedData.<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
-      client.connect(8080, "localhost", new Handler<NetSocket>() {
+      client.connect(1234, "localhost", new Handler<NetSocket>() {
         public void handle(NetSocket sock) {
           sock.closedHandler(new SimpleHandler() {
             public void handle() {
@@ -720,6 +720,53 @@ public class TestClient extends TestClientBase {
 
   public void testSharedServersMultipleInstances3StartAllStopSome() {
     testSharedServersMultipleInstances1();
+  }
+
+  // This tests using NetSocket.writeHandlerID (on the server side)
+  // Send some data and make sure it is fanned out to all connections
+  public void testFanout() {
+    final int numConnections = 10;
+    final ContextChecker check = new ContextChecker(tu);
+
+    abstract class Aggregator {
+      int count;
+      void inc() {
+        if (++count == numConnections) {
+          action();
+        }
+      }
+      abstract void action();
+    }
+
+    final Aggregator connected = new Aggregator() {
+      public void action() {
+        // They've all connected so send some data
+        client.connect(1234, new Handler<NetSocket>() {
+          public void handle(NetSocket sock) {
+            sock.write("foo");
+          }
+        });
+      }
+    };
+
+    final Aggregator receivedData = new Aggregator() {
+      public void action() {
+        tu.testComplete();
+      }
+    };
+
+    for (int i = 0; i < numConnections; i++) {
+      client.connect(1234, new Handler<NetSocket>() {
+        public void handle(NetSocket sock) {
+          connected.inc();
+          sock.dataHandler(new Handler<Buffer>() {
+            public void handle(Buffer data) {
+              receivedData.inc();
+            }
+          });
+        }
+      });
+    }
   }
 
   void setHandlers(final NetSocket sock, final ContextChecker check) {

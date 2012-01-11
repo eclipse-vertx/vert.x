@@ -172,7 +172,7 @@
 
       <classpath refid="new-test-classpath"/>
 
-      <batchtest haltonfailure="no" haltonerror="no" fork="yes" todir="${test-results}">
+      <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
         <fileset dir="${new-tests-target}">
           <include name="org/vertx/java/tests/**/*Test.class"/>

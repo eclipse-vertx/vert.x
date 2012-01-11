@@ -16,6 +16,7 @@ import vertx.tests.net.ClosingServer;
 import vertx.tests.net.DrainingServer;
 import vertx.tests.net.EchoServer;
 import vertx.tests.net.EchoServerNoReady;
+import vertx.tests.net.FanoutServer;
 import vertx.tests.net.InstanceCheckServer;
 import vertx.tests.net.PausingServer;
 import vertx.tests.net.TLSServer;
@@ -391,5 +392,10 @@ public class JavaNetTest extends TestBase {
     }
   }
 
+  @Test
+  public void testFanout() throws Exception {
+    startApp(AppType.JAVA, FanoutServer.class.getName());
+    startTest(getMethodName());
+  }
 }
 

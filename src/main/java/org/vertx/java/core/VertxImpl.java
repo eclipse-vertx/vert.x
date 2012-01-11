@@ -106,6 +106,9 @@ class VertxImpl implements VertxInternal {
   }
 
   public <T> boolean sendToHandler(long handlerID, T message) {
+    if (getContextID() == null) {
+      throw new IllegalStateException("Cannot send to handler with no context");
+    }
     final T msg = Utils.checkShareableObject(message);
     final ActorHolder holder = actors.get(handlerID);
     if (holder != null) {

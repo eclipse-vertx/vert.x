@@ -320,8 +320,9 @@ public class EventBus {
     msg.bus = this;
     Set<HandlerHolder> set = handlers.get(msg.address);
     if (set != null) {
+      Set<HandlerHolder> copy = new HashSet<>(set);
       boolean replyHandler = false;
-      for (final HandlerHolder holder: set) {
+      for (final HandlerHolder holder: copy) {
         if (holder.replyHandler) {
           replyHandler = true;
         }

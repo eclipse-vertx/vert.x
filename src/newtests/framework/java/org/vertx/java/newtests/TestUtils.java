@@ -114,7 +114,7 @@ public class TestUtils {
     }
   }
 
-  private void sendEvent(String eventName) {
+  public void sendEvent(String eventName) {
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, eventName);
     sendMessage(map);
@@ -162,6 +162,15 @@ public class TestUtils {
       do {
         c = (char) (0xFFFF * Math.random());
       } while ((c >= 0xFFFE && c <= 0xFFFF) || (c >= 0xD800 && c <= 0xDFFF)); //Illegal chars
+      builder.append(c);
+    }
+    return builder.toString();
+  }
+
+  public static String randomAlphaString(int length) {
+    StringBuilder builder = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      char c = (char) (65 + 25 * Math.random());
       builder.append(c);
     }
     return builder.toString();
