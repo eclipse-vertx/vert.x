@@ -256,6 +256,10 @@ public class TestBase extends TestCase {
     waitEvent(timeout, EventFields.TEST_COMPLETE_EVENT);
   }
 
+  protected void waitEvent(String eventName) {
+    waitEvent(5, eventName);
+  }
+
   protected void waitEvent(int timeout, String eventName) {
 
     Map<String, Object> message;
