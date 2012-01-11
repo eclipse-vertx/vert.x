@@ -1,15 +1,19 @@
 package vertx.tests.filesystem;
 
-import org.testng.annotations.Test;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileProps;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.FileSystemException;
+import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.core.streams.Pump;
+import org.vertx.java.core.streams.ReadStream;
+import org.vertx.java.core.streams.WriteStream;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 
@@ -24,8 +28,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -374,14 +376,14 @@ public class TestClient extends TestClientBase {
     }
   }
   
-  public void testStat() throws Exception {
+  public void testProps() throws Exception {
     String fileName = "some-file.txt";
     final long fileSize = 1234;
     final long start = 1000 * (System.currentTimeMillis() / 1000);
     createFileWithJunk(fileName, fileSize);
     final long end = 1000 * (System.currentTimeMillis() / 1000);
 
-    testStat(fileName, false, true, new Handler<FileProps>() {
+    testProps(fileName, false, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
         tu.azzert(fileSize == st.size);
@@ -394,17 +396,17 @@ public class TestClient extends TestClientBase {
         tu.azzert(!st.isDirectory);
         tu.azzert(!st.isOther);
         tu.azzert(st.isRegularFile);
-        tu.azzert(!st.isSymbolicLink);  
+        tu.azzert(!st.isSymbolicLink);
       }
     });
   }
   
-  public void testStatFileDoesNotExist() throws Exception {
+  public void testPropsFileDoesNotExist() throws Exception {
     String fileName = "some-file.txt";
-    testStat(fileName, false, false, null);
+    testProps(fileName, false, false, null);
   }
   
-  public void testStatFollowLink() throws Exception {
+  public void testPropsFollowLink() throws Exception {
     final String fileName = "some-file.txt";
     final long fileSize = 1234;
     final long start = 1000 * (System.currentTimeMillis() / 1000);
@@ -414,7 +416,7 @@ public class TestClient extends TestClientBase {
     String linkName = "some-link.txt";
     Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
 
-    testStat(linkName, false, true, new Handler<FileProps>() {
+    testProps(linkName, false, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
         tu.azzert(fileSize == st.size);
@@ -427,18 +429,18 @@ public class TestClient extends TestClientBase {
         tu.azzert(!st.isDirectory);
         tu.azzert(!st.isOther);
         tu.azzert(st.isRegularFile);
-        tu.azzert(!st.isSymbolicLink);  
+        tu.azzert(!st.isSymbolicLink);
       }
     });
   }
 
-  public void testStatDontFollowLink() throws Exception {
+  public void testPropsDontFollowLink() throws Exception {
     final String fileName = "some-file.txt";
     final long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
     String linkName = "some-link.txt";
     Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
-    testStat(linkName, true, true, new Handler<FileProps>() {
+    testProps(linkName, true, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
         tu.azzert(st.isSymbolicLink);
@@ -446,8 +448,8 @@ public class TestClient extends TestClientBase {
     });
   }
   
-  private void testStat(final String fileName, final boolean link, final boolean shouldPass,
-                        final Handler<FileProps> afterOK) throws Exception {
+  private void testProps(final String fileName, final boolean link, final boolean shouldPass,
+                         final Handler<FileProps> afterOK) throws Exception {
     CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
       public void handle(Future<FileProps> completion) {
         if (!completion.succeeded()) {
@@ -822,6 +824,347 @@ public class TestClient extends TestClientBase {
     FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff).handler(compl);
   }
 
+  public void testWriteAsync() throws Exception {
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+
+    byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
+    final Buffer buff = Buffer.create(content);
+
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
+
+      int count;
+
+      public void handle(Future<AsyncFile> completion) {
+        if (completion.succeeded()) {
+          for (int i = 0; i < chunks; i++) {
+
+            Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
+            tu.azzert(chunk.length() == chunkSize);
+
+            completion.result().write(chunk, i * chunkSize).handler(new CompletionHandler<Void>() {
+
+              public void handle(Future<Void> completion) {
+                if (completion.succeeded()) {
+                  tu.azzert(fileExists(fileName));
+                  byte[] readBytes;
+                  try {
+                    readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                  } catch (IOException e) {
+                    tu.exception(e, "Failed to read file");
+                    return;
+                  }
+                  tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+                  if (++count == chunks) {
+                    tu.testComplete();
+                  }
+                } else {
+                  tu.exception(completion.exception(), "Failed to write");
+                }
+              }
+            });
+          }
+        } else {
+          tu.exception(completion.exception(), "Failed to open");
+        }
+      }
+    });
+  }
+
+  public void testReadAsync() throws Exception {
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+
+    byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
+    final Buffer expected = Buffer.create(content);
+    createFile(fileName, content);
+
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
+
+      int reads;
+
+      public void handle(Future<AsyncFile> completion) {
+        if (completion.succeeded()) {
+          final Buffer buff = Buffer.create(chunks * chunkSize);
+          for (int i = 0; i < chunks; i++) {
+            completion.result().read(buff, i * chunkSize, i * chunkSize, chunkSize).handler(new CompletionHandler<Buffer>() {
+              public void handle(Future<Buffer> completion) {
+                if (completion.succeeded()) {
+                  if (++reads == chunks) {
+                    tu.azzert(TestUtils.buffersEqual(expected, buff));
+                    tu.azzert(buff == completion.result());
+                    tu.testComplete();
+                  }
+                } else {
+                  tu.exception(completion.exception(), "failed to read");
+                }
+              }
+            });
+          }
+        } else {
+          tu.exception(completion.exception(), "failed to open file");
+        }
+      }
+    });
+  }
+
+  public void testWriteStream() throws Exception {
+
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+    byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
+    final Buffer buff = Buffer.create(content);
+
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
+
+      public void handle(Future<AsyncFile> completion) {
+        if (completion.succeeded()) {
+          WriteStream ws = completion.result().getWriteStream();
+
+          ws.exceptionHandler(new Handler<Exception>() {
+            public void handle(Exception e) {
+              tu.exception(e, "caught exception on stream");
+            }
+          });
+
+          for (int i = 0; i < chunks; i++) {
+            Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
+            tu.azzert(chunk.length() == chunkSize);
+            ws.writeBuffer(chunk);
+          }
+
+          completion.result().close().handler(new CompletionHandler<Void>() {
+            public void handle(Future<Void> completion) {
+              if (completion.failed()) {
+                tu.exception(completion.exception(), "failed to close");
+              } else {
+                tu.azzert(fileExists(fileName));
+                byte[] readBytes;
+                try {
+                  readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                } catch (IOException e) {
+                  tu.exception(e, "failed to read");
+                  return;
+                }
+                tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+                tu.testComplete();
+              }
+            }
+          });
+        } else {
+          tu.exception(completion.exception(), "failed to open");
+        }
+      }
+    });
+  }
+
+  public void testReadStream() throws Exception {
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+    final byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
+    createFile(fileName, content);
+
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
+
+      public void handle(Future<AsyncFile> completion) {
+        if (completion.succeeded()) {
+          ReadStream rs = completion.result().getReadStream();
+          final Buffer buff = Buffer.create(0);
+
+          rs.dataHandler(new Handler<Buffer>() {
+            public void handle(Buffer data) {
+              buff.appendBuffer(data);
+            }
+          });
+
+          rs.exceptionHandler(new Handler<Exception>() {
+            public void handle(Exception e) {
+              tu.exception(e, "caught exception");
+            }
+          });
+
+          rs.endHandler(new SimpleHandler() {
+            public void handle() {
+              tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(content)));
+              tu.testComplete();
+            }
+          });
+        } else {
+          tu.exception(completion.exception(), "failed to open");
+        }
+      }
+    });
+  }
+
+  public void testPumpFileStreams() throws Exception {
+    final String fileName1 = "some-file.dat";
+    final String fileName2 = "some-other-file.dat";
+
+    //Non integer multiple of buffer size
+    final int fileSize = (int) (AsyncFile.BUFFER_SIZE * 1000.3);
+    final byte[] content = TestUtils.generateRandomByteArray(fileSize);
+    createFile(fileName1, content);
+
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
+
+      public void handle(Future<AsyncFile> completion) {
+        if (completion.succeeded()) {
+          final ReadStream rs = completion.result().getReadStream();
+
+          //Open file for writing
+          FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true).handler(new CompletionHandler<AsyncFile>() {
+
+            public void handle(final Future<AsyncFile> completion) {
+              if (completion.succeeded()) {
+
+                WriteStream ws = completion.result().getWriteStream();
+                Pump p = new Pump(rs, ws);
+                p.start();
+                rs.endHandler(new SimpleHandler() {
+                  public void handle() {
+                    completion.result().close().handler(new CompletionHandler<Void>() {
+
+                      public void handle(Future<Void> completion) {
+                        if (completion.failed()) {
+                          tu.exception(completion.exception(), "failed to close");
+                        } else {
+                          tu.azzert(fileExists(fileName2));
+                          byte[] readBytes;
+                          try {
+                            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName2));
+                          } catch (IOException e) {
+                            tu.exception(e, "failed to read");
+                            return;
+                          }
+                          tu.azzert(TestUtils.buffersEqual(Buffer.create(content), Buffer.create(readBytes)));
+                          tu.testComplete();
+                        }
+                      }
+                    });
+                  }
+                });
+              } else {
+                tu.exception(completion.exception(), "failed to open");
+              }
+            }
+          });
+        } else {
+          tu.exception(completion.exception(), "failed to open");
+        }
+      }
+    });
+  }
+
+  public void testCreateFileNoPerms() throws Exception {
+    testCreateFile(null, true);
+  }
+
+  public void testCreateFileWithPerms() throws Exception {
+    testCreateFile("rwx------", true);
+  }
+
+  public void testCreateFileAlreadyExists() throws Exception {
+    createFileWithJunk("some-file.dat", 100);
+    testCreateFile(null, false);
+  }
+
+  private void testCreateFile(final String perms, final boolean shouldPass) throws Exception {
+    final String fileName = "some-file.dat";
+    CompletionHandler compl = new CompletionHandler<Void>() {
+      public void handle(Future<Void> completion) {
+        if (completion.failed()) {
+          if (shouldPass) {
+            tu.exception(completion.exception(), "failed to create");
+          } else {
+            tu.azzert(completion.exception() instanceof FileSystemException);
+            tu.testComplete();
+          }
+        } else {
+          if (shouldPass) {
+            tu.azzert(fileExists(fileName));
+            tu.azzert(0 == fileLength(fileName));
+            if (perms != null) {
+              tu.azzert(perms.equals(getPerms(fileName)));
+            }
+            tu.testComplete();
+          } else {
+            tu.azzert(false, "test should fail");
+          }
+        }
+      }
+    };
+    if (perms != null) {
+      FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, perms).handler(compl);
+    } else {
+      FileSystem.instance.createFile(TEST_DIR + pathSep + fileName).handler(compl);
+    }
+  }
+
+  public void testExists() throws Exception {
+    testExists(true);
+  }
+
+  public void testNotExists() throws Exception {
+    testExists(false);
+  }
+
+  private void testExists(final boolean exists) throws Exception {
+    final String fileName = "some-file.dat";
+    if (exists) {
+      createFileWithJunk(fileName, 100);
+    }
+
+    CompletionHandler<Boolean> compl = new CompletionHandler<Boolean>() {
+      public void handle(Future<Boolean> completion) {
+        if (completion.succeeded()) {
+          if (exists) {
+            tu.azzert(completion.result());
+          } else {
+            tu.azzert(!completion.result());
+          }
+          tu.testComplete();
+        } else {
+          tu.exception(completion.exception(), "failed to check");
+        }
+      }
+    };
+    FileSystem.instance.exists(TEST_DIR + pathSep + fileName).handler(compl);
+  }
+
+  public void testFSProps() throws Exception {
+    String fileName = "some-file.txt";
+    createFileWithJunk(fileName, 1234);
+    testFSProps(fileName, new Handler<FileSystemProps>() {
+      public void handle(FileSystemProps props) {
+        System.out.println("Total space:" + props.totalSpace);
+        System.out.println("Unallocated space:" + props.unallocatedSpace);
+        System.out.println("Usable space:" + props.usableSpace);
+        tu.azzert(props.totalSpace > 0);
+        tu.azzert(props.unallocatedSpace > 0);
+        tu.azzert(props.usableSpace > 0);
+      }
+    });
+  }
+
+  private void testFSProps(final String fileName,
+                           final Handler<FileSystemProps> afterOK) throws Exception {
+    CompletionHandler<FileSystemProps> compl = new CompletionHandler<FileSystemProps>() {
+      public void handle(Future<FileSystemProps> completion) {
+        if (!completion.succeeded()) {
+          tu.exception(completion.exception(), "props failed");
+        } else {
+          afterOK.handle(completion.result());
+          tu.testComplete();
+        }
+      }
+    };
+    FileSystem.instance.fsProps(TEST_DIR + pathSep + fileName).handler(compl);
+  }
+
   private CompletionHandler<Void> createHandler(final boolean shouldPass, final Handler<Void> afterOK) {
     return new CompletionHandler<Void>() {
       public void handle(Future<Void> completion) {
@@ -848,6 +1191,8 @@ public class TestClient extends TestClientBase {
       }
     };
   }
+
+
 
   // Helper methods
 

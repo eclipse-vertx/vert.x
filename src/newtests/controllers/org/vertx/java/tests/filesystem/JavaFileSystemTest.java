@@ -178,19 +178,19 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
-  public void testStat() throws Exception {
+  public void testProps() throws Exception {
     startTest(getMethodName());
   }
 
-  public void testStatFileDoesNotExist() throws Exception {
+  public void testPropsFileDoesNotExist() throws Exception {
     startTest(getMethodName());
   }
 
-  public void testStatFollowLink() throws Exception {
+  public void testPropsFollowLink() throws Exception {
     startTest(getMethodName());
   }
 
-  public void testStatDontFollowLink() throws Exception {
+  public void testPropsDontFollowLink() throws Exception {
     startTest(getMethodName());
   }
 
@@ -266,4 +266,47 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testWriteAsync() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testReadAsync() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testWriteStream() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testReadStream() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testPumpFileStreams() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testCreateFileWithPerms() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testCreateFileNoPerms() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testCreateFileAlreadyExists() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testExists() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testNotExists() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testFSProps() throws Exception {
+    startTest(getMethodName());
+  }
 }
