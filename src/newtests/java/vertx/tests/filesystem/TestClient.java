@@ -14,6 +14,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
+import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 
@@ -451,7 +452,9 @@ public class TestClient extends TestClientBase {
   private void testProps(final String fileName, final boolean link, final boolean shouldPass,
                          final Handler<FileProps> afterOK) throws Exception {
     CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<FileProps> completion) {
+        check.check();
         if (!completion.succeeded()) {
           if (shouldPass) {
             tu.exception(completion.exception(), "stat failed");
@@ -509,7 +512,7 @@ public class TestClient extends TestClientBase {
 
   private void testLink(final String from, final String to, final boolean symbolic,
                         final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
-    CompletionHandler<Void> compl = this.createHandler(shouldPass, afterOK);
+    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
     if (symbolic) {
       // Symlink is relative
       FileSystem.instance.symlink(TEST_DIR + pathSep + from, to).handler(compl);
@@ -540,7 +543,9 @@ public class TestClient extends TestClientBase {
     final String linkName = "some-link.txt";
     Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
     CompletionHandler<String> compl = new CompletionHandler<String>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<String> completion) {
+        check.check();
         if (!completion.succeeded()) {
           tu.exception(completion.exception(), "Read failed");
         } else {
@@ -750,7 +755,9 @@ public class TestClient extends TestClientBase {
   private void testReadDir(final String dirName, final String filter, final boolean shouldPass,
                            final Handler<String[]> afterOK) throws Exception {
     CompletionHandler<String[]> compl = new CompletionHandler<String[]>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<String[]> completion) {
+        check.check();
         if (!completion.succeeded()) {
           if (shouldPass) {
             tu.exception(completion.exception(), "read failed");
@@ -785,7 +792,9 @@ public class TestClient extends TestClientBase {
     final String fileName = "some-file.dat";
     createFile(fileName, content);
     CompletionHandler<Buffer> compl = new CompletionHandler<Buffer>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<Buffer> completion) {
+        check.check();
         if (!completion.succeeded()) {
           tu.exception(completion.exception(), "failed to read");
         } else {
@@ -801,9 +810,10 @@ public class TestClient extends TestClientBase {
     final byte[] content = TestUtils.generateRandomByteArray(1000);
     final Buffer buff = Buffer.create(content);
     final String fileName = "some-file.dat";
-
     CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<Void> completion) {
+        check.check();
         if (!completion.succeeded()) {
           tu.exception(completion.exception(), "failed to write");
         } else {
@@ -833,18 +843,15 @@ public class TestClient extends TestClientBase {
     final Buffer buff = Buffer.create(content);
 
     FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
-
       int count;
-
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<AsyncFile> completion) {
+        check.check();
         if (completion.succeeded()) {
           for (int i = 0; i < chunks; i++) {
-
             Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
-
             completion.result().write(chunk, i * chunkSize).handler(new CompletionHandler<Void>() {
-
               public void handle(Future<Void> completion) {
                 if (completion.succeeded()) {
                   tu.azzert(fileExists(fileName));
@@ -876,16 +883,14 @@ public class TestClient extends TestClientBase {
     final String fileName = "some-file.dat";
     final int chunkSize = 1000;
     final int chunks = 10;
-
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     final Buffer expected = Buffer.create(content);
     createFile(fileName, content);
-
     FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
-
       int reads;
-
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<AsyncFile> completion) {
+        check.check();
         if (completion.succeeded()) {
           final Buffer buff = Buffer.create(chunks * chunkSize);
           for (int i = 0; i < chunks; i++) {
@@ -911,21 +916,21 @@ public class TestClient extends TestClientBase {
   }
 
   public void testWriteStream() throws Exception {
-
     final String fileName = "some-file.dat";
     final int chunkSize = 1000;
     final int chunks = 10;
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     final Buffer buff = Buffer.create(content);
-
     FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
-
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<AsyncFile> completion) {
+        check.check();
         if (completion.succeeded()) {
           WriteStream ws = completion.result().getWriteStream();
 
           ws.exceptionHandler(new Handler<Exception>() {
             public void handle(Exception e) {
+              check.check();
               tu.exception(e, "caught exception on stream");
             }
           });
@@ -938,6 +943,7 @@ public class TestClient extends TestClientBase {
 
           completion.result().close().handler(new CompletionHandler<Void>() {
             public void handle(Future<Void> completion) {
+              check.check();
               if (completion.failed()) {
                 tu.exception(completion.exception(), "failed to close");
               } else {
@@ -969,26 +975,30 @@ public class TestClient extends TestClientBase {
     createFile(fileName, content);
 
     FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
-
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<AsyncFile> completion) {
+        check.check();
         if (completion.succeeded()) {
           ReadStream rs = completion.result().getReadStream();
           final Buffer buff = Buffer.create(0);
 
           rs.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer data) {
+              check.check();
               buff.appendBuffer(data);
             }
           });
 
           rs.exceptionHandler(new Handler<Exception>() {
             public void handle(Exception e) {
+              check.check();
               tu.exception(e, "caught exception");
             }
           });
 
           rs.endHandler(new SimpleHandler() {
             public void handle() {
+              check.check();
               tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(content)));
               tu.testComplete();
             }
@@ -1010,8 +1020,9 @@ public class TestClient extends TestClientBase {
     createFile(fileName1, content);
 
     FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
-
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<AsyncFile> completion) {
+        check.check();
         if (completion.succeeded()) {
           final ReadStream rs = completion.result().getReadStream();
 
@@ -1019,6 +1030,7 @@ public class TestClient extends TestClientBase {
           FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true).handler(new CompletionHandler<AsyncFile>() {
 
             public void handle(final Future<AsyncFile> completion) {
+              check.check();
               if (completion.succeeded()) {
 
                 WriteStream ws = completion.result().getWriteStream();
@@ -1026,9 +1038,11 @@ public class TestClient extends TestClientBase {
                 p.start();
                 rs.endHandler(new SimpleHandler() {
                   public void handle() {
+                    check.check();
                     completion.result().close().handler(new CompletionHandler<Void>() {
 
                       public void handle(Future<Void> completion) {
+                        check.check();
                         if (completion.failed()) {
                           tu.exception(completion.exception(), "failed to close");
                         } else {
@@ -1075,7 +1089,9 @@ public class TestClient extends TestClientBase {
   private void testCreateFile(final String perms, final boolean shouldPass) throws Exception {
     final String fileName = "some-file.dat";
     CompletionHandler compl = new CompletionHandler<Void>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<Void> completion) {
+        check.check();
         if (completion.failed()) {
           if (shouldPass) {
             tu.exception(completion.exception(), "failed to create");
@@ -1119,7 +1135,9 @@ public class TestClient extends TestClientBase {
     }
 
     CompletionHandler<Boolean> compl = new CompletionHandler<Boolean>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<Boolean> completion) {
+        check.check();
         if (completion.succeeded()) {
           if (exists) {
             tu.azzert(completion.result());
@@ -1153,7 +1171,9 @@ public class TestClient extends TestClientBase {
   private void testFSProps(final String fileName,
                            final Handler<FileSystemProps> afterOK) throws Exception {
     CompletionHandler<FileSystemProps> compl = new CompletionHandler<FileSystemProps>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<FileSystemProps> completion) {
+        check.check();
         if (!completion.succeeded()) {
           tu.exception(completion.exception(), "props failed");
         } else {
@@ -1167,7 +1187,9 @@ public class TestClient extends TestClientBase {
 
   private CompletionHandler<Void> createHandler(final boolean shouldPass, final Handler<Void> afterOK) {
     return new CompletionHandler<Void>() {
+      ContextChecker check = new ContextChecker(tu);
       public void handle(Future<Void> completion) {
+        check.check();
         if (!completion.succeeded()) {
           if (shouldPass) {
             tu.exception(completion.exception(), "operation failed");
@@ -1191,8 +1213,6 @@ public class TestClient extends TestClientBase {
       }
     };
   }
-
-
 
   // Helper methods
 
