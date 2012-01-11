@@ -37,6 +37,9 @@ public class TestUtils {
       map.put(EventFields.ASSERT_STACKTRACE_FIELD, getStackTrace(new Exception()));
     }
     sendMessage(map);
+    if (!result) {
+      throw new AssertionError(message);
+    }
   }
 
   public void appReady() {

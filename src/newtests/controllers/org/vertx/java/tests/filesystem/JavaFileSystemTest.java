@@ -178,4 +178,92 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testStat() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testStatFileDoesNotExist() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testStatFollowLink() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testStatDontFollowLink() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testLink() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testSymLink() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testUnlink() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testReadSymLink() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testSimpleDelete() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testDeleteEmptyDir() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testDeleteNonExistent() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testDeleteNonEmptyFails() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testDeleteRecursive() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testMkdirSimple() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testMkdirWithParentsFails() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testMkdirWithPerms() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testMkdirCreateParents() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testMkdirCreateParentsWithPerms() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testReadDirSimple() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testReadDirWithFilter() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testReadFile() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testWriteFile() throws Exception {
+    startTest(getMethodName());
+  }
+
 }
