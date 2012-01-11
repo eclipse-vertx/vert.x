@@ -1,9 +1,13 @@
 package org.vertx.java.tests.net;
 
 import org.junit.Test;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Immutable;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.net.CloseHandlerServer;
@@ -365,6 +369,26 @@ public class JavaNetTest extends TestBase {
     assertEquals(numConnections, SharedData.getCounter("connections").get());
     // And make sure connection requests are distributed amongst them
     assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
+  }
+
+  @Test
+  public void testCreateServerNoContext() throws Exception {
+    try {
+      new NetServer();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // Ok
+    }
+  }
+
+  @Test
+  public void testCreateClientNoContext() throws Exception {
+    try {
+      new NetClient();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // Ok
+    }
   }
 
 }
