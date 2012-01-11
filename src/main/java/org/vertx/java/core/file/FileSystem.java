@@ -919,7 +919,7 @@ public class FileSystem {
   }
 
   /**
-   * The same as {@link #getFSProps(String)} but the check does not start until the {@link Deferred#execute} method
+   * The same as {@link #fsProps(String)} but the check does not start until the {@link Deferred#execute} method
    * is called on the Deferred instance returned by this method.
    * @return a Deferred representing the as-yet unexecuted action.
    */
@@ -937,7 +937,7 @@ public class FileSystem {
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<FileSystemProps> getFSProps(final String path) {
+  public Future<FileSystemProps> fsProps(final String path) {
     return getFSPropsDeferred(path).execute();
   }
 
