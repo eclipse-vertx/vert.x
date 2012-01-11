@@ -5,6 +5,8 @@ import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.file.FileProps;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.shareddata.SharedData;
@@ -12,12 +14,14 @@ import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TestClient extends TestClientBase {
 
   private static final String TEST_DIR = "test-tmp";
+  private static final String DEFAULT_DIR_PERMS = "rwxr-xr-x";
 
   private Map<String, Object> params;
   private String pathSep;
@@ -368,32 +373,480 @@ public class TestClient extends TestClientBase {
       FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms).handler(compl);
     }
   }
+  
+  public void testStat() throws Exception {
+    String fileName = "some-file.txt";
+    final long fileSize = 1234;
+    final long start = 1000 * (System.currentTimeMillis() / 1000);
+    createFileWithJunk(fileName, fileSize);
+    final long end = 1000 * (System.currentTimeMillis() / 1000);
+
+    testStat(fileName, false, true, new Handler<FileProps>() {
+      public void handle(FileProps st) {
+        tu.azzert(st != null);
+        tu.azzert(fileSize == st.size);
+        tu.azzert(st.creationTime.getTime() >= start);
+        tu.azzert(st.creationTime.getTime() <= end);
+        tu.azzert(st.lastAccessTime.getTime() >= start);
+        tu.azzert(st.lastAccessTime.getTime() <= end);
+        tu.azzert(st.lastModifiedTime.getTime() >= start);
+        tu.azzert(st.lastModifiedTime.getTime() <= end);
+        tu.azzert(!st.isDirectory);
+        tu.azzert(!st.isOther);
+        tu.azzert(st.isRegularFile);
+        tu.azzert(!st.isSymbolicLink);  
+      }
+    });
+  }
+  
+  public void testStatFileDoesNotExist() throws Exception {
+    String fileName = "some-file.txt";
+    testStat(fileName, false, false, null);
+  }
+  
+  public void testStatFollowLink() throws Exception {
+    final String fileName = "some-file.txt";
+    final long fileSize = 1234;
+    final long start = 1000 * (System.currentTimeMillis() / 1000);
+    createFileWithJunk(fileName, fileSize);
+    final long end = 1000 * (System.currentTimeMillis() / 1000);
+
+    String linkName = "some-link.txt";
+    Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
+
+    testStat(linkName, false, true, new Handler<FileProps>() {
+      public void handle(FileProps st) {
+        tu.azzert(st != null);
+        tu.azzert(fileSize == st.size);
+        tu.azzert(st.creationTime.getTime() >= start);
+        tu.azzert(st.creationTime.getTime() <= end);
+        tu.azzert(st.lastAccessTime.getTime() >= start);
+        tu.azzert(st.lastAccessTime.getTime() <= end);
+        tu.azzert(st.lastModifiedTime.getTime() >= start);
+        tu.azzert(st.lastModifiedTime.getTime() <= end);
+        tu.azzert(!st.isDirectory);
+        tu.azzert(!st.isOther);
+        tu.azzert(st.isRegularFile);
+        tu.azzert(!st.isSymbolicLink);  
+      }
+    });
+  }
+
+  public void testStatDontFollowLink() throws Exception {
+    final String fileName = "some-file.txt";
+    final long fileSize = 1234;
+    createFileWithJunk(fileName, fileSize);
+    String linkName = "some-link.txt";
+    Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
+    testStat(linkName, true, true, new Handler<FileProps>() {
+      public void handle(FileProps st) {
+        tu.azzert(st != null);
+        tu.azzert(st.isSymbolicLink);
+      }
+    });
+  }
+  
+  private void testStat(final String fileName, final boolean link, final boolean shouldPass,
+                        final Handler<FileProps> afterOK) throws Exception {
+    CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
+      public void handle(Future<FileProps> completion) {
+        if (!completion.succeeded()) {
+          if (shouldPass) {
+            tu.exception(completion.exception(), "stat failed");
+          } else {
+            tu.azzert(completion.exception() instanceof FileSystemException);
+            if (afterOK != null) {
+              afterOK.handle(completion.result());
+            }
+            tu.testComplete();
+          }
+        } else {
+          if (shouldPass) {
+            if (afterOK != null) {
+              afterOK.handle(completion.result());
+            }
+            tu.testComplete();
+          } else {
+            tu.azzert(false, "stat should fail");
+          }
+        }
+      }
+    };
+    if (link) {
+      FileSystem.instance.lprops(TEST_DIR + pathSep + fileName).handler(compl);
+    } else {
+      FileSystem.instance.props(TEST_DIR + pathSep + fileName).handler(compl);
+    }
+  }
+
+  public void testLink() throws Exception {
+    String fileName = "some-file.txt";
+    final long fileSize = 1234;
+    createFileWithJunk(fileName, fileSize);
+    final String linkName = "some-link.txt";
+    testLink(linkName, fileName, false, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(fileLength(linkName) == fileSize);
+        tu.azzert(!Files.isSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName)));
+      }
+    });
+  }
+
+  public void testSymLink() throws Exception {
+    String fileName = "some-file.txt";
+    final long fileSize = 1234;
+    createFileWithJunk(fileName, fileSize);
+    final String symlinkName = "some-sym-link.txt";
+    testLink(symlinkName, fileName, true, true, new SimpleHandler() {
+      public void handle() {
+       tu.azzert(fileLength(symlinkName) == fileSize);
+       tu.azzert(Files.isSymbolicLink(Paths.get(TEST_DIR + pathSep + symlinkName)));
+      }
+    });
+  }
+
+  private void testLink(final String from, final String to, final boolean symbolic,
+                        final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
+    CompletionHandler<Void> compl = this.createHandler(shouldPass, afterOK);
+    if (symbolic) {
+      // Symlink is relative
+      FileSystem.instance.symlink(TEST_DIR + pathSep + from, to).handler(compl);
+    } else {
+      FileSystem.instance.link(TEST_DIR + pathSep + from, TEST_DIR + pathSep + to).handler(compl);
+    }
+  }
+
+  public void testUnlink() throws Exception {
+    String fileName = "some-file.txt";
+    long fileSize = 1234;
+    createFileWithJunk(fileName, fileSize);
+    final String linkName = "some-link.txt";
+    Files.createLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(TEST_DIR + pathSep + fileName));
+    tu.azzert(fileSize == fileLength(linkName));
+    CompletionHandler<Void> compl = createHandler(true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(!fileExists(linkName));
+      }
+    });
+    FileSystem.instance.unlink(TEST_DIR + pathSep + linkName).handler(compl);
+  }
+
+  public void testReadSymLink() throws Exception {
+    final String fileName = "some-file.txt";
+    long fileSize = 1234;
+    createFileWithJunk(fileName, fileSize);
+    final String linkName = "some-link.txt";
+    Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
+    CompletionHandler<String> compl = new CompletionHandler<String>() {
+      public void handle(Future<String> completion) {
+        if (!completion.succeeded()) {
+          tu.exception(completion.exception(), "Read failed");
+        } else {
+          tu.azzert(fileName.equals(completion.result()));
+          tu.testComplete();
+        }
+      }
+    };
+    FileSystem.instance.readSymlink(TEST_DIR + pathSep + linkName).handler(compl);
+  }
+
+  public void testSimpleDelete() throws Exception {
+    final String fileName = "some-file.txt";
+    createFileWithJunk(fileName, 100);
+    tu.azzert(fileExists(fileName));
+    testDelete(fileName, false, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(!fileExists(fileName));
+      }
+    });
+  }
+
+  public void testDeleteEmptyDir() throws Exception {
+    final String dirName = "some-dir";
+    mkDir(dirName);
+    tu.azzert(fileExists(dirName));
+    testDelete(dirName, false, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(!fileExists(dirName));
+      }
+    });
+  }
+
+  public void testDeleteNonExistent() throws Exception {
+    String dirName = "some-dir";
+    tu.azzert(!fileExists(dirName));
+    testDelete(dirName, false, false, null);
+  }
+
+  public void testDeleteNonEmptyFails() throws Exception {
+    String dirName = "some-dir";
+    mkDir(dirName);
+    String file1 = "some-file.txt";
+    createFileWithJunk(dirName + pathSep + file1, 100);
+    testDelete(dirName, false, false, null);
+  }
+
+  public void testDeleteRecursive() throws Exception {
+    final String dir = "some-dir";
+    String file1 = pathSep + "file1.dat";
+    String file2 = pathSep + "index.html";
+    String dir2 = "next-dir";
+    String file3 = pathSep + "blah.java";
+    mkDir(dir);
+    createFileWithJunk(dir + file1, 100);
+    createFileWithJunk(dir + file2, 100);
+    mkDir(dir + pathSep + dir2);
+    createFileWithJunk(dir + pathSep + dir2 + file3, 100);
+    testDelete(dir, true, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(!fileExists(dir));
+      }
+    });
+  }
+
+  private void testDelete(final String fileName, final boolean recursive, final boolean shouldPass,
+                          final Handler<Void> afterOK) throws Exception {
+    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    if (recursive) {
+      FileSystem.instance.delete(TEST_DIR + pathSep + fileName, recursive).handler(compl);
+    } else {
+      FileSystem.instance.delete(TEST_DIR + pathSep + fileName).handler(compl);
+    }
+  }
+
+  public void testMkdirSimple() throws Exception {
+    final String dirName = "some-dir";
+    testMkdir(dirName, null, false, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(fileExists(dirName));
+        tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
+        tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
+      }
+    });
+  }
+
+  public void testMkdirWithParentsFails() throws Exception {
+    String dirName = "top-dir" + pathSep + "some-dir";
+    testMkdir(dirName, null, false, false, null);
+  }
+
+  public void testMkdirWithPerms() throws Exception {
+    final String dirName = "some-dir";
+    final String perms = "rwx--x--x";
+    testMkdir(dirName, perms, false, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(fileExists(dirName));
+        tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
+        tu.azzert(perms.equals(getPerms(dirName)));
+      }
+    });
+  }
+
+  public void testMkdirCreateParents() throws Exception {
+    final String dirName = "top-dir" + pathSep + "/some-dir";
+    testMkdir(dirName, null, true, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(fileExists(dirName));
+        tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
+        tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
+      }
+    });
+  }
+
+  public void testMkdirCreateParentsWithPerms() throws Exception {
+    final String dirName = "top-dir" + pathSep + "/some-dir";
+    final String perms = "rwx--x--x";
+    testMkdir(dirName, perms, true, true, new SimpleHandler() {
+      public void handle() {
+        tu.azzert(fileExists(dirName));
+        tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
+        tu.azzert(perms.equals(getPerms(dirName)));
+      }
+    });
+  }
+
+  private void testMkdir(final String dirName, final String perms, final boolean createParents,
+                         final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
+    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    if (createParents) {
+      if (perms != null) {
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, createParents).handler(compl);
+      } else {
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, createParents).handler(compl);
+      }
+    } else {
+      if (perms != null) {
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms).handler(compl);
+      } else {
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName).handler(compl);
+      }
+    }
+  }
+
+  public void testReadDirSimple() throws Exception {
+    System.out.println("in trd");
+    final String dirName = "some-dir";
+    mkDir(dirName);
+    final int numFiles = 10;
+    for (int i = 0; i < numFiles; i++) {
+      createFileWithJunk(dirName + pathSep + "file-" + i + ".dat", 100);
+    }
+    testReadDir(dirName, null, true, new Handler<String[]>() {
+      public void handle(String[] fileNames) {
+        tu.azzert(fileNames.length == numFiles);
+        Set<String> fset = new HashSet<String>();
+        for (int i = 0; i < numFiles; i++) {
+          fset.add(fileNames[i]);
+        }
+        File dir = new File(TEST_DIR + pathSep + dirName);
+        String root;
+        try {
+          root = dir.getCanonicalPath();
+        } catch (IOException e) {
+          tu.exception(e, "failed to get path");
+          return;
+        }
+        for (int i = 0; i < numFiles; i++) {
+          tu.azzert(fset.contains(root + pathSep + "file-" + i + ".dat"));
+        }
+      }
+    });
+  }
+
+  public void testReadDirWithFilter() throws Exception {
+    final String dirName = "some-dir";
+    mkDir(dirName);
+    final int numFiles = 10;
+    for (int i = 0; i < numFiles; i++) {
+      createFileWithJunk(dirName + pathSep + "foo-" + i + ".txt", 100);
+    }
+    for (int i = 0; i < numFiles; i++) {
+      createFileWithJunk(dirName + pathSep + "bar-" + i + ".txt", 100);
+    }
+    testReadDir(dirName, "foo.+", true, new Handler<String[]>() {
+      public void handle(String[] fileNames) {
+        tu.azzert(fileNames.length == numFiles);
+        Set<String> fset = new HashSet<String>();
+        for (int i = 0; i < numFiles; i++) {
+          fset.add(fileNames[i]);
+        }
+        File dir = new File(TEST_DIR + pathSep + dirName);
+        String root;
+        try {
+          root = dir.getCanonicalPath();
+        } catch (IOException e) {
+          tu.exception(e, "failed to get path");
+          return;
+        }
+        for (int i = 0; i < numFiles; i++) {
+          tu.azzert(fset.contains(root + pathSep + "foo-" + i + ".txt"));
+        }
+      }
+    });
+  }
+
+  private void testReadDir(final String dirName, final String filter, final boolean shouldPass,
+                           final Handler<String[]> afterOK) throws Exception {
+    CompletionHandler<String[]> compl = new CompletionHandler<String[]>() {
+      public void handle(Future<String[]> completion) {
+        if (!completion.succeeded()) {
+          if (shouldPass) {
+            tu.exception(completion.exception(), "read failed");
+          } else {
+            tu.azzert(completion.exception() instanceof FileSystemException);
+            if (afterOK != null) {
+              afterOK.handle(null);
+            }
+            tu.testComplete();
+          }
+        } else {
+          if (shouldPass) {
+            if (afterOK != null) {
+              afterOK.handle(completion.result());
+            }
+            tu.testComplete();
+          } else {
+            tu.azzert(false, "read should fail");
+          }
+        }
+      }
+    };
+    if (filter == null) {
+      FileSystem.instance.readDir(TEST_DIR + pathSep + dirName).handler(compl);
+    } else {
+      FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, filter).handler(compl);
+    }
+  }
+
+  public void testReadFile() throws Exception {
+    final byte[] content = TestUtils.generateRandomByteArray(1000);
+    final String fileName = "some-file.dat";
+    createFile(fileName, content);
+    CompletionHandler<Buffer> compl = new CompletionHandler<Buffer>() {
+      public void handle(Future<Buffer> completion) {
+        if (!completion.succeeded()) {
+          tu.exception(completion.exception(), "failed to read");
+        } else {
+          tu.azzert(TestUtils.buffersEqual(Buffer.create(content), completion.result()));
+          tu.testComplete();
+        }
+      }
+    };
+    FileSystem.instance.readFile(TEST_DIR + pathSep + fileName).handler(compl);
+  }
+
+  public void testWriteFile() throws Exception {
+    final byte[] content = TestUtils.generateRandomByteArray(1000);
+    final Buffer buff = Buffer.create(content);
+    final String fileName = "some-file.dat";
+
+    CompletionHandler<Void> compl = new CompletionHandler<Void>() {
+      public void handle(Future<Void> completion) {
+        if (!completion.succeeded()) {
+          tu.exception(completion.exception(), "failed to write");
+        } else {
+          tu.azzert(fileExists(fileName));
+          tu.azzert(fileLength(fileName) == content.length);
+          byte[] readBytes;
+          try {
+            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+          } catch (IOException e) {
+            tu.exception(e, "failed to read");
+            return;
+          }
+          tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+          tu.testComplete();
+        }
+      }
+    };
+    FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff).handler(compl);
+  }
 
   private CompletionHandler<Void> createHandler(final boolean shouldPass, final Handler<Void> afterOK) {
     return new CompletionHandler<Void>() {
-          public void handle(Future<Void> completion) {
-            if (!completion.succeeded()) {
-              if (shouldPass) {
-                tu.exception(completion.exception(), "Truncate failed");
-              } else {
-                tu.azzert(completion.exception() instanceof FileSystemException);
-                if (afterOK != null) {
-                  afterOK.handle(null);
-                }
-                tu.testComplete();
-              }
-            } else {
-              if (shouldPass) {
-                if (afterOK != null) {
-                  afterOK.handle(null);
-                }
-                tu.testComplete();
-              } else {
-                tu.azzert(false, "Truncate should fail");
-              }
+      public void handle(Future<Void> completion) {
+        if (!completion.succeeded()) {
+          if (shouldPass) {
+            tu.exception(completion.exception(), "operation failed");
+          } else {
+            tu.azzert(completion.exception() instanceof FileSystemException);
+            if (afterOK != null) {
+              afterOK.handle(null);
             }
+            tu.testComplete();
           }
-        };
+        } else {
+          if (shouldPass) {
+            if (afterOK != null) {
+              afterOK.handle(null);
+            }
+            tu.testComplete();
+          } else {
+            tu.azzert(false, "operation should fail");
+          }
+        }
+      }
+    };
   }
 
   // Helper methods
