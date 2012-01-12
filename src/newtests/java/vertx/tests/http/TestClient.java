@@ -1,11 +1,11 @@
 package vertx.tests.http;
 
-import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -868,7 +866,6 @@ public class TestClient extends TestClientBase {
         check.check();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            System.out.println("size:" + resp.getTrailers().size());
             tu.azzert(resp.getTrailers().size() == trailers.size());
             for (Map.Entry<String, String> entry : trailers.entrySet()) {
               tu.azzert(entry.getValue().equals(resp.getTrailer(entry.getKey())));
@@ -1436,7 +1433,6 @@ public class TestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       int count;
       public void handle(final HttpServerRequest req) {
-        System.out.println("Got request");
         tu.azzert(count == Integer.parseInt(req.getHeader("count")));
         final int theCount = count;
         count++;
@@ -1448,7 +1444,6 @@ public class TestClient extends TestClientBase {
             //wrong order if we didn't implement pipelining correctly
             Vertx.instance.setTimer((long) (10 * Math.random()), new Handler<Long>() {
               public void handle(Long timerID) {
-                System.out.println("Sending back response");
                 req.response.putHeader("count", String.valueOf(theCount));
                 req.response.write(buff);
                 req.response.end();
@@ -1467,7 +1462,6 @@ public class TestClient extends TestClientBase {
               ("count"));
           response.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buff) {
-              System.out.println("Got response on client " + theCount + " re");
               tu.azzert(("This is content " + theCount).equals(buff.toString()));
               if (theCount == requests - 1) {
                 tu.testComplete();
@@ -1526,6 +1520,7 @@ public class TestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
+            check.check();
             tu.azzert(TestUtils.buffersEqual(toSend, data));
             req.response.end();
           }
@@ -1536,6 +1531,7 @@ public class TestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         resp.endHandler(new SimpleHandler() {
           public void handle() {
+            check.check();
             tu.testComplete();
           }
         });
@@ -1545,6 +1541,7 @@ public class TestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
+        check.check();
         req.write(toSend);
         req.end();
       }
@@ -1561,6 +1558,7 @@ public class TestClient extends TestClientBase {
         req.response.putHeader("HTTP/1.1", "100 Continue");
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
+            check.check();
             tu.azzert(TestUtils.buffersEqual(toSend, data));
             req.response.end();
           }
@@ -1572,6 +1570,7 @@ public class TestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         resp.endHandler(new SimpleHandler() {
           public void handle() {
+            check.check();
             tu.testComplete();
           }
         });
@@ -1582,6 +1581,7 @@ public class TestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
+        check.check();
         req.write(toSend);
         req.end();
       }
@@ -1589,6 +1589,61 @@ public class TestClient extends TestClientBase {
     req.sendHead();
   }
 
+  public void testClientDrainHandler() {
+    final HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+      }
+    });
+    req.setChunked(true);
+    tu.azzert(!req.writeQueueFull());
+    req.setWriteQueueMaxSize(1000);
+    final Buffer buff = TestUtils.generateRandomBuffer(10000);
+    Vertx.instance.setPeriodic(0, new Handler<Long>() {
+      public void handle(Long id) {
+        check.check();
+        req.write(buff);
+        if (req.writeQueueFull()) {
+          Vertx.instance.cancelTimer(id);
+          req.drainHandler(new SimpleHandler() {
+            public void handle() {
+              check.check();
+              tu.azzert(!req.writeQueueFull());
+              tu.testComplete();
+            }
+          });
+
+          // Tell the server to resume
+          EventBus.instance.send(new Message("server_resume"));
+        }
+      }
+    });
+  }
+
+  public void testServerDrainHandler() {
+    final HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse resp) {
+        resp.pause();
+        final Handler<Message> resumeHandler = new Handler<Message>() {
+          public void handle(Message message) {
+            check.check();
+            resp.resume();
+          }
+        };
+        EventBus.instance.registerHandler("client_resume", resumeHandler);
+        resp.endHandler(new SimpleHandler() {
+          public void handle() {
+            check.check();
+            EventBus.instance.unregisterHandler("client_resume", resumeHandler);
+          }
+        });
+        resp.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+          }
+        });
+      }
+    });
+    req.end();
+  }
 
 
   // -------------------------------------------------------------------------------------------

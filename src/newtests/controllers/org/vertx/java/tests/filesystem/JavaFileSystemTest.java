@@ -1,8 +1,6 @@
 package org.vertx.java.tests.filesystem;
 
 import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.FileSystem;

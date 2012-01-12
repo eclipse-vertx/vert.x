@@ -1,26 +1,13 @@
 package org.vertx.java.tests.http;
 
 import org.junit.Test;
-
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.app.AppType;
-
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
 import org.vertx.java.newtests.TestBase;
-
-import org.vertx.java.newtests.TestUtils;
+import vertx.tests.http.DrainingServer;
+import vertx.tests.http.PausingServer;
 import vertx.tests.http.TestClient;
-import vertx.tests.http.TestServer;
-
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -395,6 +382,16 @@ public class JavaHttpTest extends TestBase {
   }
 
   public void test100ContinueHandled() {
+    startTest(getMethodName());
+  }
+
+  public void testClientDrainHandler() throws Exception {
+    startApp(AppType.JAVA, PausingServer.class.getName());
+    startTest(getMethodName());
+  }
+
+  public void testServerDrainHandler() throws Exception {
+    startApp(AppType.JAVA, DrainingServer.class.getName());
     startTest(getMethodName());
   }
 

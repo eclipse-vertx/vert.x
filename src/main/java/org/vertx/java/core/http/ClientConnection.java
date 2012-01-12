@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.http;
 
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -134,11 +133,9 @@ class ClientConnection extends AbstractConnection {
 
   void handleInterestedOpsChanged() {
     try {
-      if (currentRequest != null) {
-        if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
-          setContextID();
-          currentRequest.handleInterestedOpsChanged();
-        }
+      if (currentRequest != null && channel.isWritable()) {
+        setContextID();
+        currentRequest.handleDrained();
       }
     } catch (Throwable t) {
       handleHandlerException(t);

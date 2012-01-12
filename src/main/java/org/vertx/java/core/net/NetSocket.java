@@ -223,7 +223,6 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
 
   private void callDrainHandler() {
     if (drainHandler != null) {
-      //if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
       if (channel.isWritable()) {
         try {
           drainHandler.handle(null);

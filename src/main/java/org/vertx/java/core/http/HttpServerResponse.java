@@ -409,7 +409,7 @@ public class HttpServerResponse implements WriteStream {
     return this;
   }
 
-  void writable() {
+  void handleDrained() {
     if (drainHandler != null) {
       drainHandler.handle(null);
     }

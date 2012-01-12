@@ -669,7 +669,6 @@ public class TestClient extends TestClientBase {
   }
 
   public void testSharedServersMultipleInstances1() {
-    System.out.println("in testSharedServersMultipleInstances");
     // Create a bunch of connections
     final int numConnections = SharedData.<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
@@ -680,7 +679,6 @@ public class TestClient extends TestClientBase {
             public void handle() {
               int count = counter.incrementAndGet();
               if (count == numConnections) {
-                System.out.println("Test complete");
                 tu.testComplete();
               }
             }
