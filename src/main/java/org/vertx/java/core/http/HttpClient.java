@@ -509,7 +509,7 @@ public class HttpClient extends NetClientBase {
         if (content.readable()) {
           conn.handleResponseChunk(new Buffer(content));
         }
-        if (!response.isChunked()) {
+        if (!response.isChunked() && (response.getStatus().getCode() != 100)) {
           conn.handleResponseEnd();
         }
       } else if (msg instanceof HttpChunk) {

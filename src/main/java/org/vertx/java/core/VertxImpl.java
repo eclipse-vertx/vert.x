@@ -259,8 +259,6 @@ class VertxImpl implements VertxInternal {
       if (sameThreadOptimise && (worker.getThread() == Thread.currentThread())) {
         runnable.run();
       } else {
-        // TODO currently this will still run directly if current thread = desired thread
-        // Take a look at NioWorker.scheduleOtherTask
         worker.scheduleOtherTask(runnable);
       }
     } else {
