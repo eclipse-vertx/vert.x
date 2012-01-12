@@ -388,7 +388,7 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  void handleInterestedOpsChanged() {
+  void handleDrained() {
     checkThread();
     if (drainHandler != null) {
       drainHandler.handle(null);

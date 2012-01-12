@@ -23,9 +23,6 @@ public class DrainingServer extends BaseServer {
       public void handle(final NetSocket sock) {
         check.check();
 
-        // Tell the client to pause
-        EventBus.instance.send(new Message("client_pause"));
-
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
 
