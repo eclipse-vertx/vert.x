@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EchoServer implements VertxApp {
+public class TestServer implements VertxApp {
 
   protected TestUtils tu = new TestUtils();
 

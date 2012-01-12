@@ -62,11 +62,9 @@ public class HttpServerResponse implements WriteStream {
 
   private static final Logger log = Logger.getLogger(HttpServerResponse.class);
 
-
   private final ServerConnection conn;
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
-
   private boolean headWritten;
   private ChannelFuture writeFuture;
   private boolean written;
@@ -150,6 +148,7 @@ public class HttpServerResponse implements WriteStream {
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse putTrailer(String key, Object value) {
+    checkChunked();
     checkWritten();
     checkTrailer();
     trailer.setHeader(key, value);
@@ -164,6 +163,7 @@ public class HttpServerResponse implements WriteStream {
    * @return A reference to this, so multiple method calls can be chained.
    */
   public HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
+    checkChunked();
     checkWritten();
     checkTrailer();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
@@ -424,6 +424,12 @@ public class HttpServerResponse implements WriteStream {
   void handleClosed() {
     if (closeHandler != null) {
       closeHandler.handle(null);
+    }
+  }
+
+  private void checkChunked() {
+    if (!chunked) {
+      throw new IllegalStateException("Cannot set trailer for non-chunked response");
     }
   }
 
