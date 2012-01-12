@@ -4,10 +4,14 @@ import org.junit.Test;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
+import org.vertx.java.tests.TLSTestParams;
+import vertx.tests.http.CountServer;
 import vertx.tests.http.DrainingServer;
 import vertx.tests.http.PausingServer;
 import vertx.tests.http.TestClient;
+import vertx.tests.http.TLSServer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -394,5 +398,71 @@ public class JavaHttpTest extends TestBase {
     startApp(AppType.JAVA, DrainingServer.class.getName());
     startTest(getMethodName());
   }
+
+  public void testPooling() throws Exception {
+    startApp(AppType.JAVA, CountServer.class.getName());
+    startTest(getMethodName());
+  }
+
+  public void testPoolingNoKeepAlive() throws Exception {
+    startApp(AppType.JAVA, CountServer.class.getName());
+    startTest(getMethodName());
+  }
+
+    @Test
+  // Client trusts all server certs
+  public void testTLSClientTrustAll() throws Exception {
+    testTLS(getMethodName(), false, false, true, false, false, true, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCert() throws Exception {
+    testTLS(getMethodName(), false, true, true, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client doesn't trust
+  public void testTLSClientUntrustedServer() throws Exception {
+    testTLS(getMethodName(), false, false, true, false, false, false, false);
+  }
+
+  @Test
+  //Client specifies cert even though it's not required
+  public void testTLSClientCertNotRequired() throws Exception {
+    testTLS(getMethodName(), true, true, true, true, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it's not required
+  public void testTLSClientCertRequired() throws Exception {
+    testTLS(getMethodName(), true, true, true, true, true, false, true);
+  }
+
+  @Test
+  //Client doesn't specify cert but it's required
+  public void testTLSClientCertRequiredNoClientCert() throws Exception {
+    testTLS(getMethodName(), false, true, true, true, true, false, false);
+  }
+
+  @Test
+  //Client specifies cert but it's not trusted
+  public void testTLSClientCertClientNotTrusted() throws Exception {
+    testTLS(getMethodName(), true, true, true, false, true, false, false);
+  }
+
+  private void testTLS(String testName, boolean clientCert, boolean clientTrust,
+               boolean serverCert, boolean serverTrust,
+               boolean requireClientAuth, boolean clientTrustAll,
+               boolean shouldPass) throws Exception {
+    //Put the params in shared-data
+    TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
+        requireClientAuth, clientTrustAll, shouldPass);
+    SharedData.getMap("TLSTest").put("params", params);
+    startApp(AppType.JAVA, TLSServer.class.getName());
+    startTest(testName);
+  }
+
+
 
 }
