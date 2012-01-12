@@ -3,6 +3,7 @@ package vertx.tests.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -12,15 +13,21 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
+import org.vertx.java.tests.TLSTestParams;
+import org.vertx.java.tests.net.JavaNetTest;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -1643,6 +1650,117 @@ public class TestClient extends TestClientBase {
       }
     });
     req.end();
+  }
+
+  public void testPooling() throws Exception {
+    testPooling(true);
+  }
+
+  public void testPoolingNoKeepAlive() throws Exception {
+    testPooling(false);
+  }
+
+  private void testPooling(final boolean keepAlive) throws Exception {
+    final String path = "foo.txt";
+    final int numGets = 1000;
+    int maxPoolSize = 10;
+    client.setKeepAlive(keepAlive).setMaxPoolSize(maxPoolSize);
+    for (int i = 0; i < numGets; i++) {
+      final int theCount = i;
+      HttpClientRequest req = client.get(path, new Handler<HttpClientResponse>() {
+        public void handle(final HttpClientResponse response) {
+          tu.azzert(response.statusCode == 200);
+          tu.azzert(theCount == Integer.parseInt(response.getHeader("count")));
+          if (theCount == numGets - 1) {
+            tu.testComplete();
+          }
+        }
+      });
+      req.putHeader("count", i);
+      req.end();
+    }
+  }
+
+  public void testTLSClientTrustAll() {
+    tls();
+  }
+
+  public void testTLSClientTrustServerCert() {
+    tls();
+  }
+
+  public void testTLSClientUntrustedServer() {
+    tls();
+  }
+
+  public void testTLSClientCertNotRequired() {
+    tls();
+  }
+
+  public void testTLSClientCertRequired() {
+    tls();
+  }
+
+  public void testTLSClientCertRequiredNoClientCert() {
+    tls();
+  }
+
+  public void testTLSClientCertClientNotTrusted() {
+    tls();
+  }
+
+  private void tls() {
+    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+
+    client.setSSL(true);
+
+    if (params.clientTrustAll) {
+      client.setTrustAll(true);
+    }
+
+    if (params.clientTrust) {
+      client.setTrustStorePath("./src/tests/keystores/client-truststore.jks")
+          .setTrustStorePassword("wibble");
+    }
+    if (params.clientCert) {
+      client.setKeyStorePath("./src/tests/keystores/client-keystore.jks")
+          .setKeyStorePassword("wibble");
+    }
+
+    final ContextChecker check = new ContextChecker(tu);
+
+    final boolean shouldPass = params.shouldPass;
+
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+        System.out.println("Exception handler called");
+        if (shouldPass) {
+          tu.azzert(false, "Should not throw exception");
+        } else {
+          tu.testComplete();
+        }
+      }
+    });
+
+    client.setPort(4043);
+
+    HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        check.check();
+        response.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            tu.azzert("bar".equals(data.toString()));
+          }
+        });
+        tu.testComplete();
+      }
+    });
+    req.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+        System.out.println("Request exception handler called");
+      }
+    });
+    req.end("foo");
   }
 
 

@@ -1,10 +1,13 @@
-package vertx.tests.net;
+package vertx.tests.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
@@ -19,15 +22,16 @@ public class TLSServer implements VertxApp {
 
   protected TestUtils tu = new TestUtils();
 
-  private NetServer server;
+  private HttpServer server;
 
   protected ContextChecker check;
 
   public void start() {
     check = new ContextChecker(tu);
-    server = new NetServer();
 
     TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+
+    server = new HttpServer();
 
     server.setSSL(true);
 
@@ -42,8 +46,21 @@ public class TLSServer implements VertxApp {
       server.setClientAuthRequired(true);
     }
 
-    server.connectHandler(getConnectHandler());
-    server.listen(4043);
+    server.requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+
+        check.check();
+
+        req.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer buffer) {
+            check.check();
+            tu.azzert("foo".equals(buffer.toString()));
+            req.response.end("bar");
+          }
+        });
+      }
+    }).listen(4043);
+
     tu.appReady();
   }
 
@@ -56,18 +73,4 @@ public class TLSServer implements VertxApp {
     });
   }
 
-  protected Handler<NetSocket> getConnectHandler() {
-    return new Handler<NetSocket>() {
-      public void handle(final NetSocket socket) {
-
-        check.check();
-        socket.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer buffer) {
-            check.check();
-            socket.write(buffer);
-          }
-        });
-      }
-    };
-  }
 }

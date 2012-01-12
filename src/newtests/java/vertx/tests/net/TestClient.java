@@ -13,6 +13,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
+import org.vertx.java.tests.TLSTestParams;
 import org.vertx.java.tests.net.JavaNetTest;
 
 import java.util.Random;
@@ -602,7 +603,7 @@ public class TestClient extends TestClientBase {
   }
 
   void tls() {
-    JavaNetTest.TLSTestParams params = SharedData.<String, JavaNetTest.TLSTestParams>getMap("TLSTest").get("params");
+    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
 
     client.setSSL(true);
 

@@ -8,6 +8,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
+import org.vertx.java.tests.TLSTestParams;
 import vertx.tests.net.CloseHandlerServer;
 import vertx.tests.net.CloseHandlerServerCloseFromServer;
 import vertx.tests.net.ClosingServer;
@@ -171,27 +172,6 @@ public class JavaNetTest extends TestBase {
     Thread.sleep(1000);
     startApp(AppType.JAVA, EchoServerNoReady.class.getName(), false);
     waitTestComplete();
-  }
-
-  public static class TLSTestParams implements Immutable {
-    public final boolean clientCert;
-    public final boolean clientTrust;
-    public final boolean serverCert;
-    public final boolean serverTrust;
-    public final boolean requireClientAuth;
-    public final boolean clientTrustAll;
-    public final boolean shouldPass;
-
-    public TLSTestParams(boolean clientCert, boolean clientTrust, boolean serverCert, boolean serverTrust,
-                         boolean requireClientAuth, boolean clientTrustAll, boolean shouldPass) {
-      this.clientCert = clientCert;
-      this.clientTrust = clientTrust;
-      this.serverCert = serverCert;
-      this.serverTrust = serverTrust;
-      this.requireClientAuth = requireClientAuth;
-      this.clientTrustAll = clientTrustAll;
-      this.shouldPass = shouldPass;
-    }
   }
 
   @Test
