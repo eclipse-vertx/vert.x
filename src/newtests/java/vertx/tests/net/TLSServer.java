@@ -10,7 +10,6 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 import org.vertx.java.tests.TLSTestParams;
-import org.vertx.java.tests.net.JavaNetTest;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

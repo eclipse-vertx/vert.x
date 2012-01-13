@@ -6,9 +6,9 @@ import org.vertx.java.core.net.NetSocket;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClosingServer extends BaseServer {
+public class CloseSocketServer extends BaseServer {
 
-  public ClosingServer() {
+  public CloseSocketServer() {
     super(true);
   }
 

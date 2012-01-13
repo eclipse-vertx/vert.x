@@ -1,7 +1,6 @@
 package org.vertx.java.tests.net;
 
 import org.junit.Test;
-import org.vertx.java.core.Immutable;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
@@ -11,7 +10,7 @@ import org.vertx.java.newtests.TestBase;
 import org.vertx.java.tests.TLSTestParams;
 import vertx.tests.net.CloseHandlerServer;
 import vertx.tests.net.CloseHandlerServerCloseFromServer;
-import vertx.tests.net.ClosingServer;
+import vertx.tests.net.CloseSocketServer;
 import vertx.tests.net.DrainingServer;
 import vertx.tests.net.EchoServer;
 import vertx.tests.net.EchoServerNoReady;
@@ -119,7 +118,7 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testClientCloseHandlersCloseFromServer() throws Exception {
-    startApp(AppType.JAVA, ClosingServer.class.getName());
+    startApp(AppType.JAVA, CloseSocketServer.class.getName());
     startTest(getMethodName());
   }
 

@@ -41,8 +41,10 @@ public abstract class BaseServer implements VertxApp {
   }
 
   public void stop() {
+    System.out.println("closing server");
     server.close(new SimpleHandler() {
       public void handle() {
+        System.out.println("server closed");
         check.check();
         tu.appStopped();
       }

@@ -15,10 +15,8 @@ import org.vertx.java.core.logging.Logger;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +40,7 @@ public class TestBase extends TestCase {
   private long contextID;
   private volatile Handler<Message> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
-  private Set<String> startedApps = new HashSet<>();
+  private List<String> startedApps = new ArrayList<>();
 
   private class AssertHolder {
     final String message;
@@ -133,7 +131,7 @@ public class TestBase extends TestCase {
     try {
       throwAsserts();
     } finally {
-      Set<String> apps = new HashSet<>(startedApps);
+      List<String> apps = new ArrayList<>(startedApps);
       for (String appName: apps) {
         stopApp(appName);
       }

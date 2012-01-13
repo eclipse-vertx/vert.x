@@ -14,7 +14,6 @@ import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 import org.vertx.java.tests.TLSTestParams;
-import org.vertx.java.tests.net.JavaNetTest;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;

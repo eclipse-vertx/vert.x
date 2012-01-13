@@ -135,6 +135,7 @@ public class HttpServer extends NetServerBase {
    * @return The request handler
    */
   public Handler<HttpServerRequest> requestHandler() {
+    checkThread();
     return requestHandler;
   }
 
@@ -155,6 +156,7 @@ public class HttpServer extends NetServerBase {
    * @return The websocket handler
    */
   public WebSocketHandler websocketHandler() {
+    checkThread();
     return wsHandler;
   }
 
