@@ -462,7 +462,6 @@ public class HttpServer extends NetServerBase {
         }
 
         if (WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
-
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -490,7 +489,7 @@ public class HttpServer extends NetServerBase {
             return;
           }
 
-           HandlerHolder<WebSocket> firstHandler = null;
+          HandlerHolder<WebSocket> firstHandler = null;
 
           while (true) {
             HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());

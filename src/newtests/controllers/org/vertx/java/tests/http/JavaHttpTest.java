@@ -9,10 +9,10 @@ import org.vertx.java.newtests.TestBase;
 import org.vertx.java.tests.TLSTestParams;
 import vertx.tests.http.CountServer;
 import vertx.tests.http.DrainingServer;
+import vertx.tests.http.HttpTestClient;
 import vertx.tests.http.InstanceCheckServer;
 import vertx.tests.http.PausingServer;
 import vertx.tests.http.TLSServer;
-import vertx.tests.http.HttpTestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -576,7 +576,6 @@ public class JavaHttpTest extends TestBase {
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
         appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
-        waitAppReady();
       }
 
       SharedData.getCounter("requests").set(0);
@@ -610,10 +609,6 @@ public class JavaHttpTest extends TestBase {
       for (int i = 0; i < numInstances; i++) {
         startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
-    }
-
-    for (int i = 0; i < numInstances; i++) {
-      waitAppReady();
     }
 
     startTest(testName);

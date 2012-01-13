@@ -51,8 +51,9 @@ class ClientConnection extends AbstractConnection {
 
   final HttpClient client;
   final String hostHeader;
-  final boolean keepAlive;
+  boolean keepAlive;
   private final boolean ssl;
+  private boolean wsHandshakeConnection;
 
   private volatile HttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
@@ -84,6 +85,8 @@ class ClientConnection extends AbstractConnection {
       SwitchingHttpResponseDecoder decoder = (SwitchingHttpResponseDecoder)p.get("decoder");
 
       decoder.setSwitch("wsdecoder", shake.getDecoder());
+
+      wsHandshakeConnection = true;
 
       // Create a raw request
       HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
@@ -121,11 +124,18 @@ class ClientConnection extends AbstractConnection {
 //      ChannelFuture future = channel.write(ChannelBuffers.copiedBuffer(bytes));
 //      future.addListener(ChannelFutureListener.CLOSE);  // Close after it's written
 //    }
-    client.returnConnection(this);
+    if (wsHandshakeConnection) {
+      // Do nothing - this will be ugraded
+    } else if (!keepAlive) {
+      //Close it
+      log.info("closing it");
+      internalClose();
+    } else {
+      client.returnConnection(this);
+    }
   }
 
   void internalClose() {
-    //channel.write(ChannelBuffers.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
     channel.close();
   }
 

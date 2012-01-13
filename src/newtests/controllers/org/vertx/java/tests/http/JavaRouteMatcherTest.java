@@ -4,9 +4,6 @@ import org.vertx.java.core.app.AppType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.http.RouteMatcherTestClient;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
