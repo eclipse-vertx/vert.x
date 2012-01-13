@@ -179,6 +179,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
 
   protected void handleClosed() {
     setContextID();
+
     if (endHandler != null) {
       try {
         endHandler.handle(null);
@@ -209,7 +210,6 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
       }
     }
   }
-
 
   //Close without checking thread - used when server is closed
   void internalClose() {

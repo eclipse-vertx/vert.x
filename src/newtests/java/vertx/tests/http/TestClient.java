@@ -3,7 +3,6 @@ package vertx.tests.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -13,21 +12,20 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 import org.vertx.java.tests.TLSTestParams;
-import org.vertx.java.tests.net.JavaNetTest;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -66,6 +64,218 @@ public class TestClient extends TestClientBase {
     server = new HttpServer();
     server.requestHandler(serverHandler);
     server.listen(8080, "localhost");
+  }
+
+  public void testClientDefaults() {
+    tu.azzert(!client.isSSL());
+    tu.azzert(client.getKeyStorePassword() == null);
+    tu.azzert(client.getKeyStorePath() == null);
+    tu.azzert(client.getTrustStorePassword() == null);
+    tu.azzert(client.getTrustStorePath() == null);
+    tu.azzert(client.isReuseAddress() == null);
+    tu.azzert(client.isSoLinger() == null);
+    tu.azzert(client.isTCPKeepAlive());
+    tu.azzert(client.isTCPNoDelay());
+    tu.azzert(client.getReceiveBufferSize() == null);
+    tu.azzert(client.getSendBufferSize() == null);
+    tu.azzert(client.getTrafficClass() == null);
+    tu.testComplete();
+  }
+
+  public void testClientAttributes() {
+
+    tu.azzert(client.setSSL(false) == client);
+    tu.azzert(!client.isSSL());
+
+    tu.azzert(client.setSSL(true) == client);
+    tu.azzert(client.isSSL());
+
+    String pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setKeyStorePassword(pwd) == client);
+    tu.azzert(client.getKeyStorePassword().equals(pwd));
+
+    String path = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setKeyStorePath(path) == client);
+    tu.azzert(client.getKeyStorePath().equals(path));
+
+    pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setTrustStorePassword(pwd) == client);
+    tu.azzert(client.getTrustStorePassword().equals(pwd));
+
+    path = TestUtils.randomUnicodeString(10);
+    tu.azzert(client.setTrustStorePath(path) == client);
+    tu.azzert(client.getTrustStorePath().equals(path));
+
+    tu.azzert(client.setReuseAddress(true) == client);
+    tu.azzert(client.isReuseAddress());
+    tu.azzert(client.setReuseAddress(false) == client);
+    tu.azzert(!client.isReuseAddress());
+
+    tu.azzert(client.setSoLinger(true) == client);
+    tu.azzert(client.isSoLinger());
+    tu.azzert(client.setSoLinger(false) == client);
+    tu.azzert(!client.isSoLinger());
+
+    tu.azzert(client.setTCPKeepAlive(true) == client);
+    tu.azzert(client.isTCPKeepAlive());
+    tu.azzert(client.setTCPKeepAlive(false) == client);
+    tu.azzert(!client.isTCPKeepAlive());
+
+    tu.azzert(client.setTCPNoDelay(true) == client);
+    tu.azzert(client.isTCPNoDelay());
+    tu.azzert(client.setTCPNoDelay(false) == client);
+    tu.azzert(!client.isTCPNoDelay());
+
+    int rbs = new Random().nextInt(1024 * 1024) + 1;
+    tu.azzert(client.setReceiveBufferSize(rbs) == client);
+    tu.azzert(client.getReceiveBufferSize() == rbs);
+
+    try {
+      client.setReceiveBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      client.setReceiveBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int sbs = new Random().nextInt(1024 * 1024);
+    tu.azzert(client.setSendBufferSize(sbs) == client);
+    tu.azzert(client.getSendBufferSize() == sbs);
+
+    try {
+      client.setSendBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      client.setSendBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int trafficClass = new Random().nextInt(10000000);
+    tu.azzert(client.setTrafficClass(trafficClass) == client);
+    tu.azzert(client.getTrafficClass() == trafficClass);
+
+    tu.testComplete();
+
+  }
+
+  public void testServerDefaults() {
+    NetServer server = new NetServer();
+    tu.azzert(!server.isSSL());
+    tu.azzert(server.getKeyStorePassword() == null);
+    tu.azzert(server.getKeyStorePath() == null);
+    tu.azzert(server.getTrustStorePassword() == null);
+    tu.azzert(server.getTrustStorePath() == null);
+    tu.azzert(server.isReuseAddress());
+    tu.azzert(server.isSoLinger() == null);
+    tu.azzert(server.isTCPKeepAlive());
+    tu.azzert(server.isTCPNoDelay());
+    tu.azzert(server.getReceiveBufferSize() == null);
+    tu.azzert(server.getSendBufferSize() == null);
+    tu.azzert(server.getTrafficClass() == null);
+    tu.testComplete();
+  }
+
+  public void testServerAttributes() {
+
+    HttpServer server = new HttpServer();
+
+    tu.azzert(server.setSSL(false) == server);
+    tu.azzert(!server.isSSL());
+
+    tu.azzert(server.setSSL(true) == server);
+    tu.azzert(server.isSSL());
+
+
+    String pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setKeyStorePassword(pwd) == server);
+    tu.azzert(server.getKeyStorePassword().equals(pwd));
+
+    String path = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setKeyStorePath(path) == server);
+    tu.azzert(server.getKeyStorePath().equals(path));
+
+    pwd = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setTrustStorePassword(pwd) == server);
+    tu.azzert(server.getTrustStorePassword().equals(pwd));
+
+    path = TestUtils.randomUnicodeString(10);
+    tu.azzert(server.setTrustStorePath(path) == server);
+    tu.azzert(server.getTrustStorePath().equals(path));
+
+    tu.azzert(server.setReuseAddress(true) == server);
+    tu.azzert(server.isReuseAddress());
+    tu.azzert(server.setReuseAddress(false) == server);
+    tu.azzert(!server.isReuseAddress());
+
+    tu.azzert(server.setSoLinger(true) == server);
+    tu.azzert(server.isSoLinger());
+    tu.azzert(server.setSoLinger(false) == server);
+    tu.azzert(!server.isSoLinger());
+
+    tu.azzert(server.setTCPKeepAlive(true) == server);
+    tu.azzert(server.isTCPKeepAlive());
+    tu.azzert(server.setTCPKeepAlive(false) == server);
+    tu.azzert(!server.isTCPKeepAlive());
+
+    tu.azzert(server.setTCPNoDelay(true) == server);
+    tu.azzert(server.isTCPNoDelay());
+    tu.azzert(server.setTCPNoDelay(false) == server);
+    tu.azzert(!server.isTCPNoDelay());
+
+    int rbs = new Random().nextInt(1024 * 1024) + 1;
+    tu.azzert(server.setReceiveBufferSize(rbs) == server);
+    tu.azzert(server.getReceiveBufferSize() == rbs);
+
+    try {
+      server.setReceiveBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      server.setReceiveBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int sbs = new Random().nextInt(1024 * 1024);
+    tu.azzert(server.setSendBufferSize(sbs) == server);
+    tu.azzert(server.getSendBufferSize() == sbs);
+
+    try {
+      server.setSendBufferSize(0);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    try {
+      server.setSendBufferSize(-1);
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+
+    int trafficClass = new Random().nextInt(10000000);
+    tu.azzert(server.setTrafficClass(trafficClass) == server);
+    tu.azzert(server.getTrafficClass() == trafficClass);
+
+    tu.testComplete();
+
   }
 
   public void testSimpleGET() {
@@ -1760,6 +1970,88 @@ public class TestClient extends TestClientBase {
       }
     });
     req.end("foo");
+  }
+
+  public void testConnectInvalidPort() {
+    final ContextChecker check = new ContextChecker(tu);
+    client.exceptionHandler(createNoConnectHandler(check));
+    client.setPort(9998);
+    client.getNow("someurl", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "Connect should not be called");
+      }
+    });
+  }
+
+  public void testConnectInvalidHost() {
+    final ContextChecker check = new ContextChecker(tu);
+    client.exceptionHandler(createNoConnectHandler(check));
+    client.setHost("wibble");
+    client.getNow("someurl", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "Connect should not be called");
+      }
+    });
+  }
+
+  Handler<Exception> createNoConnectHandler(final ContextChecker check) {
+    return new Handler<Exception>() {
+      public void handle(Exception e) {
+        check.check();
+        tu.testComplete();
+      }
+    };
+  }
+
+  public void testSharedServersMultipleInstances1() {
+    //Make sure connections aren't reused
+    client.setKeepAlive(false);
+    // Make a bunch of requests
+    final int numRequests = SharedData.<String, Integer>getMap("params").get("numRequests");
+    final AtomicInteger counter = new AtomicInteger(0);
+    for (int i = 0; i < numRequests; i++) {
+
+      client.getNow("someurl", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+          int count = counter.incrementAndGet();
+          if (count == numRequests) {
+            tu.testComplete();
+          }
+        }
+      });
+    }
+  }
+
+  public void testSharedServersMultipleInstances2() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances3() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances1StartAllStopAll() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances2StartAllStopAll() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances3StartAllStopAll() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances1StartAllStopSome() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances2StartAllStopSome() {
+    testSharedServersMultipleInstances1();
+  }
+
+  public void testSharedServersMultipleInstances3StartAllStopSome() {
+    testSharedServersMultipleInstances1();
   }
 
 

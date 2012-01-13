@@ -188,7 +188,7 @@ public class NetClient extends NetClientBase {
         }
       });
     } else {
-      log.error("Unhandled exception8", t);
+      log.error("Unhandled exception", t);
     }
   }
 
@@ -206,9 +206,11 @@ public class NetClient extends NetClientBase {
    * Close the client. Any sockets which have not been closed manually will be closed here.
    */
   public void close() {
+    log.info("closing client");
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
+    log.info("client closed");
   }
 
   /**
@@ -356,6 +358,7 @@ public class NetClient extends NetClientBase {
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
+      log.info("channel closed!!");
       final NetSocket sock = socketMap.get(ch);
       socketMap.remove(ch);
       if (sock != null) {
@@ -404,6 +407,7 @@ public class NetClient extends NetClientBase {
         });
       } else {
         // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
+        t.printStackTrace();
       }
     }
   }

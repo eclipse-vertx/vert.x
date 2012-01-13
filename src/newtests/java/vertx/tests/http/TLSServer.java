@@ -1,20 +1,15 @@
 package vertx.tests.http;
 
-import com.sun.corba.se.impl.presentation.rmi.ExceptionHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 import org.vertx.java.tests.TLSTestParams;
-import org.vertx.java.tests.net.JavaNetTest;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

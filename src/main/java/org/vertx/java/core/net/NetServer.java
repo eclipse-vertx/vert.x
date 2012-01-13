@@ -311,7 +311,6 @@ public class NetServer extends NetServerBase {
 
     if (!listening) return;
     listening = false;
-
     synchronized (servers) {
 
       actualServer.handlerManager.removeHandler(connectHandler);
