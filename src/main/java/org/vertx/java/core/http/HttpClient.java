@@ -383,12 +383,7 @@ public class HttpClient extends NetClientBase {
   }
 
   void returnConnection(final ClientConnection conn) {
-    if (!conn.keepAlive) {
-      //Close it
-      conn.internalClose();
-    } else {
-      pool.returnConnection(conn);
-    }
+    pool.returnConnection(conn);
   }
 
   private void internalConnect(final Handler<ClientConnection> connectHandler, final long contextID) {

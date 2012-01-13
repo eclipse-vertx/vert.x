@@ -302,7 +302,6 @@ public class JavaNetTest extends TestBase {
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
         appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
-        waitAppReady();
       }
 
       SharedData.getCounter("connections").set(0);
@@ -336,10 +335,6 @@ public class JavaNetTest extends TestBase {
       for (int i = 0; i < numInstances; i++) {
         startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
-    }
-
-    for (int i = 0; i < numInstances; i++) {
-      waitAppReady();
     }
 
     startTest(testName);

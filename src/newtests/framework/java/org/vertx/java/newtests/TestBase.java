@@ -153,14 +153,14 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(AppType type, String main, boolean await) throws Exception {
-    String appName = startApp(type, main, 1);
-    if (await) {
-      waitAppReady();
-    }
-    return appName;
+    return startApp(type, main, 1, await);
   }
 
   protected String startApp(AppType type, String main, int instances) throws Exception {
+    return startApp(type, main, instances, true);
+  }
+
+  protected String startApp(AppType type, String main, int instances, boolean await) throws Exception {
 
     String appName = UUID.randomUUID().toString();
 
@@ -197,6 +197,13 @@ public class TestBase extends TestCase {
 
     if (!doneLatch.await(5, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
+    }
+
+    if (await) {
+      for (int i = 0; i < instances; i++) {
+        waitAppReady();
+        log.info("*** app is ready!");
+      }
     }
 
     return appName;
