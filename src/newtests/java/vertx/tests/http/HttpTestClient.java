@@ -2033,7 +2033,6 @@ public class HttpTestClient extends TestClientBase {
     });
     req.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        System.out.println("Request exception handler called");
       }
     });
     req.end("foo");

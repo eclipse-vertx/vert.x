@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class TestBase extends TestCase {
 
   private static final Logger log = Logger.getLogger(TestBase.class);
-  private static final int DEFAULT_TIMEOUT = 5;
+  private static final int DEFAULT_TIMEOUT = 30;
 
   public static final String EVENTS_ADDRESS = "__test_events";
 
@@ -202,7 +202,6 @@ public class TestBase extends TestCase {
     if (await) {
       for (int i = 0; i < instances; i++) {
         waitAppReady();
-        log.info("*** app is ready!");
       }
     }
 
