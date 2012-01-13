@@ -1733,7 +1733,6 @@ public class TestClient extends TestClientBase {
 
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        System.out.println("Exception handler called");
         if (shouldPass) {
           tu.azzert(false, "Should not throw exception");
         } else {

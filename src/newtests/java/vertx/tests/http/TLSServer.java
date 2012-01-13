@@ -1,5 +1,6 @@
 package vertx.tests.http;
 
+import com.sun.corba.se.impl.presentation.rmi.ExceptionHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.app.VertxApp;
@@ -48,6 +49,12 @@ public class TLSServer implements VertxApp {
 
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+
+        req.exceptionHandler(new Handler<Exception>() {
+          public void handle(Exception e) {
+            System.out.println("*** caught exception on the server side");
+          }
+        });
 
         check.check();
 

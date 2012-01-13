@@ -188,7 +188,7 @@ public class NetClient extends NetClientBase {
         }
       });
     } else {
-      log.error("Unhandled exception", t);
+      log.error("Unhandled exception8", t);
     }
   }
 
