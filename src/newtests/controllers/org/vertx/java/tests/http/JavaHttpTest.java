@@ -12,7 +12,7 @@ import vertx.tests.http.DrainingServer;
 import vertx.tests.http.InstanceCheckServer;
 import vertx.tests.http.PausingServer;
 import vertx.tests.http.TLSServer;
-import vertx.tests.http.TestClient;
+import vertx.tests.http.HttpTestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -22,7 +22,7 @@ public class JavaHttpTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(AppType.JAVA, HttpTestClient.class.getName());
   }
 
   @Override
@@ -47,6 +47,21 @@ public class JavaHttpTest extends TestBase {
 
   @Test
   public void testServerAttributes() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testServerChaining() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testServerChainingSendFile() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testClientChaining() throws Exception {
     startTest(getMethodName());
   }
 
