@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TestClient extends TestClientBase {
+public class HttpTestClient extends TestClientBase {
 
   private HttpClient client;
   private HttpServer server;
@@ -52,7 +52,7 @@ public class TestClient extends TestClientBase {
       server.close(new SimpleHandler() {
         public void handle() {
           check.check();
-          TestClient.super.stop();
+          HttpTestClient.super.stop();
         }
       });
     } else {
@@ -276,6 +276,73 @@ public class TestClient extends TestClientBase {
 
     tu.testComplete();
 
+  }
+
+  public void testClientChaining() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+
+      }
+    });
+    HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+
+      }
+    });
+    tu.azzert(req.setChunked(true) == req);
+    tu.azzert(req.putHeader("foo", "bar") == req);
+    tu.azzert(req.putAllHeaders(new HashMap<String, Object>()) == req);
+    tu.azzert(req.sendHead() == req);
+    tu.azzert(req.write("foo", "UTF-8") == req);
+    tu.azzert(req.write("foo") == req);
+    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write("foo", new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write(Buffer.create("foo")) == req);
+    tu.azzert(req.write(Buffer.create("foo"), new SimpleHandler() { public void handle() {} }) == req);
+    tu.testComplete();
+  }
+
+  public void testServerChainingSendFile() throws Exception {
+    testServerChaining(true);
+  }
+
+  public void testServerChaining() throws Exception {
+    testServerChaining(false);
+  }
+
+  private void testServerChaining(final boolean sendFile) throws Exception {
+    final File file;
+    if (sendFile) {
+      file = setupFile("test-server-chaining.dat", "blah");
+    } else {
+      file = null;
+    }
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        if (sendFile) {
+          tu.azzert(req.response.sendFile(file.getAbsolutePath()) == req.response);
+          file.delete();
+        } else {
+          tu.azzert(req.response.setChunked(true) == req.response);
+          tu.azzert(req.response.write("foo", "UTF-8") == req.response);
+          tu.azzert(req.response.write("foo") == req.response);
+          tu.azzert(req.response.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write("foo", new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write(Buffer.create("foo")) == req.response);
+          tu.azzert(req.response.write(Buffer.create("foo"), new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.putAllHeaders(new HashMap<String, Object>()) == req.response);
+          tu.azzert(req.response.putAllTrailers(new HashMap<String, Object>()) == req.response);
+          tu.azzert(req.response.putHeader("foo", "bar") == req.response);
+          tu.azzert(req.response.putTrailer("foo", "bar") == req.response);
+        }
+        tu.testComplete();
+      }
+    });
+    HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+      }
+    });
+    req.end();
   }
 
   public void testSimpleGET() {
@@ -2111,4 +2178,5 @@ public class TestClient extends TestClientBase {
   }
 
 }
+
 
