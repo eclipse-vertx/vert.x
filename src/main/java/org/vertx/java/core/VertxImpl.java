@@ -250,7 +250,7 @@ class VertxImpl implements VertxInternal {
   }
 
   public void executeOnContext(long contextID, Runnable runnable) {
-    executeOnContext(contextID, runnable, true);
+    executeOnContext(contextID, runnable, false);
   }
 
   private void executeOnContext(long contextID, Runnable runnable, boolean sameThreadOptimise) {

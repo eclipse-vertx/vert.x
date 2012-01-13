@@ -574,7 +574,8 @@ public class HttpServer extends NetServerBase {
           }
         });
       } else {
-        log.error("Unhandled exception", t);
+        // Ignore - any exceptions not associated with any sock (e.g. failure in ssl handshake) will
+        // be communicated explicitly
       }
     }
 
