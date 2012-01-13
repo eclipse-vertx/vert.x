@@ -39,7 +39,7 @@ public class Message extends Sendable {
    * @param address The address to send the message to
    */
   public Message(String address) {
-    this(address, Buffer.create(0));
+    this(address, null);
   }
 
   /**
@@ -48,8 +48,7 @@ public class Message extends Sendable {
    * @param body
    */
   public Message(String address, Buffer body) {
-    this.address = address;
-    this.body = body;
+    this(null, address, body);
   }
 
   /**
@@ -60,8 +59,11 @@ public class Message extends Sendable {
    */
   public Message(String messageID, String address, Buffer body) {
     this.address = address;
-    this.body = body;
     this.messageID = messageID;
+    if (body == null) {
+      body = Buffer.create(0);
+    }
+    this.body = body;
   }
 
   /**
