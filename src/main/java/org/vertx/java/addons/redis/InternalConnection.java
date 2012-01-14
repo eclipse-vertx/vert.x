@@ -143,6 +143,7 @@ public class InternalConnection implements Handler<RedisReply>{
   }
 
   public void handle(final RedisReply reply) {
+    log.info("got reply: " + reply);
     if (currentReplyHandler != null) {
       currentReplyHandler.handleReply(reply);
     } else {
