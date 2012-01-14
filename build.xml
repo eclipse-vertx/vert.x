@@ -163,7 +163,6 @@
   </target>
 
   <target name="new-tests" depends="compile-new-tests">
-
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes">
@@ -173,7 +172,7 @@
       <classpath refid="new-test-classpath"/>
 
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
-        <formatter type="plain" usefile="yes"/>
+        <formatter type="plain" usefile="no"/>
         <fileset dir="${new-tests-target}">
           <include name="org/vertx/java/tests/**/*Test.class"/>
         </fileset>
