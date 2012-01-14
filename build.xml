@@ -174,7 +174,7 @@
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="no"/>
         <fileset dir="${new-tests-target}">
-          <include name="org/vertx/java/tests/**/*Test.class"/>
+          <include name="org/vertx/java/tests/**/Ruby*Test.class"/>
         </fileset>
       </batchtest>
     </junit>
