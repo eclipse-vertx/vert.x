@@ -11,7 +11,7 @@ import org.vertx.java.core.SimpleAction;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.composition.Composer;
 import org.vertx.java.newtests.TestClientBase;
-import org.vertx.tests.Utils;
+import org.vertx.java.newtests.TestUtils;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -1340,13 +1340,13 @@ public class TestClient extends TestClientBase {
           tu.azzert(value == null, "Expected: " + value + " Actual: " + res);
         } else {
           if (res instanceof Buffer) {
-            tu.azzert(Utils.buffersEqual((Buffer) value, (Buffer) res), "Expected: " + value + " Actual: " + res);
+            tu.azzert(TestUtils.buffersEqual((Buffer) value, (Buffer) res), "Expected: " + value + " Actual: " + res);
           } else if (res instanceof Buffer[]) {
             Buffer[] mb = (Buffer[]) res;
             Buffer[] expected = (Buffer[]) value;
             for (int i = 0; i < expected.length; i++) {
               if (expected[i] != null) {
-                tu.azzert(Utils.buffersEqual(expected[i], mb[i]), "Buffer not equal: " + expected[i] + " " + mb[i]);
+                tu.azzert(TestUtils.buffersEqual(expected[i], mb[i]), "Buffer not equal: " + expected[i] + " " + mb[i]);
               } else {
                 tu.azzert(mb[i] == null);
               }
@@ -1372,7 +1372,7 @@ public class TestClient extends TestClientBase {
           Buffer b = value[i];
           boolean found = false;
           for (int j = 0; j < res.length; j++) {
-            if (Utils.buffersEqual(b, res[j])) {
+            if (TestUtils.buffersEqual(b, res[j])) {
               found = true;
               break;
             }
@@ -1387,7 +1387,7 @@ public class TestClient extends TestClientBase {
     final Future<Buffer> res = comp.series(connection.get(key));
     comp.series(new TestAction() {
       protected void doAct() {
-        tu.azzert(Utils.buffersEqual(value, res.result()));
+        tu.azzert(TestUtils.buffersEqual(value, res.result()));
       }
     });
   }

@@ -160,21 +160,23 @@ public class AppManager {
 
   private void internalUndeploy(String name, final Handler<Void> doneHandler) {
     List<AppHolder> list = apps.get(name);
-    log.info("Undeploying " + list.size() + " instances of application: " + name);
-    for (final AppHolder holder: list) {
-      VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
-        public void run() {
-          VertxInternal.instance.setContextID(holder.contextID);
-          try {
-            holder.app.stop();
-          } catch (Exception e) {
-            log.error("Unhandled exception in application stop", e);
+    if (list != null) {
+      log.info("Undeploying " + list.size() + " instances of application: " + name);
+      for (final AppHolder holder: list) {
+        VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
+          public void run() {
+            VertxInternal.instance.setContextID(holder.contextID);
+            try {
+              holder.app.stop();
+            } catch (Exception e) {
+              log.error("Unhandled exception in application stop", e);
+            }
+            if (doneHandler != null) {
+              doneHandler.handle(null);
+            }
           }
-          if (doneHandler != null) {
-            doneHandler.handle(null);
-          }
-        }
-      });
+        });
+      }
     }
     appMeta.remove(name);
     apps.remove(name);
