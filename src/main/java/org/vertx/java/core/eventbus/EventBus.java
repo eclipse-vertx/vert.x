@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import com.hazelcast.util.ConcurrentHashSet;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -194,7 +195,7 @@ public class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
-    this.registerHandler(address, handler, completionHandler, false);
+   registerHandler(address, handler, completionHandler, false);
   }
 
   /**
@@ -232,7 +233,7 @@ public class EventBus {
                                boolean replyHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set == null) {
-      set = new HashSet<>();
+      set = new ConcurrentHashSet<>();
       Set<HandlerHolder> prevSet = handlers.putIfAbsent(address, set);
       if (prevSet != null) {
         set = prevSet;
@@ -320,9 +321,8 @@ public class EventBus {
     msg.bus = this;
     Set<HandlerHolder> set = handlers.get(msg.address);
     if (set != null) {
-      Set<HandlerHolder> copy = new HashSet<>(set);
       boolean replyHandler = false;
-      for (final HandlerHolder holder: copy) {
+      for (final HandlerHolder holder: set) {
         if (holder.replyHandler) {
           replyHandler = true;
         }
