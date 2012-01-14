@@ -36,7 +36,6 @@ public class HttpTestClient extends TestClientBase {
   private HttpServer server;
   private ContextChecker check;
 
-
   @Override
   public void start() {
     super.start();
