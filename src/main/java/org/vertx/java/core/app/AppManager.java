@@ -51,8 +51,9 @@ public class AppManager {
     stopLatch.countDown();
   }
 
-  public synchronized void deploy(final AppType type, final String appName, String main, URL[] urls, int instances,
-                                    final Handler<Void> doneHandler)
+  public synchronized void deploy(final AppType type, final String appName, final String main, final URL[] urls,
+                                  int instances,
+                                  final Handler<Void> doneHandler)
     throws Exception {
 
     if (instances == -1) {
@@ -67,7 +68,7 @@ public class AppManager {
       throw new IllegalStateException("There is already a deployed application with name: " + appName);
     }
 
-    AppFactory appFactory;
+    final AppFactory appFactory;
       switch (type) {
         case JAVA:
           appFactory = new JavaAppFactory();
@@ -104,25 +105,27 @@ public class AppManager {
 
     for (int i = 0; i < instances; i++) {
 
-      final VertxApp app;
-      try {
-        app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
-          .getClassLoader()));
-      } catch (Throwable t) {
-        log.error("Failed to create application", t);
-        internalUndeploy(appName, doneHandler);
-        return;
-      }
-
       // Launch the app instance
 
       VertxInternal.instance.go(new Runnable() {
         public void run() {
+
+          VertxApp app;
+          try {
+            app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
+              .getClassLoader()));
+          } catch (Throwable t) {
+            log.error("Failed to create application", t);
+            internalUndeploy(appName, doneHandler);
+            return;
+          }
+
           try {
             app.start();
             addApp(appName, app);
           } catch (Throwable t) {
             log.error("Unhandled exception in application start", t);
+            internalUndeploy(appName, doneHandler);
           }
           aggHandler.started();
         }

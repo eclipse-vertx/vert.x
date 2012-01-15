@@ -1,0 +1,48 @@
+package org.vertx.java.tests.filesystem;
+
+import org.junit.Test;
+import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.newtests.TestBase;
+import vertx.tests.filesystem.TestClient;
+
+import java.util.Map;
+
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class RubyFileSystemTest extends TestBase {
+
+  private static final Logger log = Logger.getLogger(RubyFileSystemTest.class);
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    startApp(AppType.RUBY, "filesystem/test_client.rb");
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
+  @Test
+  public void test_stats() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void test_async_file() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void test_async_file_streams() throws Exception {
+    startTest(getMethodName());
+  }
+
+
+}

@@ -27,7 +27,25 @@ class TestUtils
     @j_tu.register(test_name, test_handler)
   end
 
+  def register_all(object)
+    methods = object.private_methods
+    methods.each do |meth|
+      if meth.start_with? 'test_'
+        register(meth) { object.method(meth).call }
+      end
+    end
+  end
+
   def unregister_all
     @j_tu.unregisterAll
+  end
+
+  def TestUtils.gen_buffer(size)
+    j_buff = org.vertx.java.newtests.TestUtils.generateRandomBuffer(size)
+    Buffer.new(j_buff)
+  end
+
+  def TestUtils.buffers_equal(buff1, buff2)
+    org.vertx.java.newtests.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end
 end
