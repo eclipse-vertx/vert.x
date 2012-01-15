@@ -309,7 +309,12 @@ public class NetServer extends NetServerBase {
   public void close(final Handler<Void> done) {
     checkThread();
 
-    if (!listening) return;
+    if (!listening) {
+      if (done != null) {
+        done.handle(null);
+      }
+      return;
+    }
     listening = false;
     synchronized (servers) {
 

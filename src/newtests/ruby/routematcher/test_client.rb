@@ -4,17 +4,6 @@ require "test_utils"
 
 @tu = TestUtils.new
 
-@tu.register('test_route_with_pattern') do
-  params = { "name" => "foo", "version" => "v0.1"}
-  route(false, "/:name/:version", params, "/foo/v0.1")
-end
-
-@tu.register('test_route_with_regex') do
-  params = { "param0" => "foo", "param1" => "v0.1"}
-  regex = "\\/([^\\/]+)\\/([^\\/]+)"
-  route(true, regex, params, "/foo/v0.1")
-end
-
 @server = HttpServer.new
 @rm = RouteMatcher.new
 @server.request_handler(@rm)
@@ -22,6 +11,17 @@ end
 
 @client = HttpClient.new
 @client.port = 8080;
+
+def test_route_with_pattern
+  params = { "name" => "foo", "version" => "v0.1"}
+  route(false, "/:name/:version", params, "/foo/v0.1")
+end
+
+def test_route_with_regex
+  params = { "param0" => "foo", "param1" => "v0.1"}
+  regex = "\\/([^\\/]+)\\/([^\\/]+)"
+  route(true, regex, params, "/foo/v0.1")
+end
 
 def route(regex, pattern, params, uri)
 
@@ -46,8 +46,6 @@ def route(regex, pattern, params, uri)
 
 end
 
-@tu.app_ready
-
 def vertx_stop
   @tu.unregister_all
   @client.close
@@ -55,3 +53,6 @@ def vertx_stop
     @tu.app_stopped
   end
 end
+
+@tu.register_all(self)
+@tu.app_ready

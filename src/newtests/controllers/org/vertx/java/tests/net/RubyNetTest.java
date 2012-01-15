@@ -15,7 +15,6 @@ public class RubyNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "test_client.rb");
   }
 
   @Override
@@ -24,8 +23,20 @@ public class RubyNetTest extends TestBase {
   }
 
   @Test
-  public void test1() throws Exception {
-    startApp(AppType.RUBY, "echo_server.rb");
+  public void test_echo() throws Exception {
+    startApp(AppType.RUBY, "net/test_client.rb");
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void test_echo_ssl() throws Exception {
+    startApp(AppType.RUBY, "net/test_client.rb");
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void test_methods() throws Exception {
+    startApp(AppType.RUBY, "net/test_client.rb");
     startTest(getMethodName());
   }
 
