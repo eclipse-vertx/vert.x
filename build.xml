@@ -165,16 +165,17 @@
   <target name="new-tests" depends="compile-new-tests">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
-    <junit printsummary="no">
+    <junit printsummary="yes">
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
 
       <classpath refid="new-test-classpath"/>
 
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
-        <formatter type="plain" usefile="no"/>
+        <formatter type="plain" usefile="yes"/>
         <fileset dir="${new-tests-target}">
-          <include name="org/vertx/java/tests/**/Ruby*Test.class"/>
+          <include name="org/vertx/java/tests/**/*Test.class"/>
+          <exclude name="org/vertx/java/tests/redis/*Test.class"/>
         </fileset>
       </batchtest>
     </junit>
@@ -182,9 +183,21 @@
 
   <target name="redis-tests" depends="compile-tests">
     <!-- Make sure you have a local redis server running before you run this -->
-    <testng classpathref="test-classpath">
-      <classfileset dir="${tests-target}" includes="**/RedisTest.class"/>
-    </testng>
+    <delete dir="${test-results}"/>
+    <mkdir dir="${test-results}"/>
+    <junit printsummary="yes">
+      <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
+      <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
+
+      <classpath refid="new-test-classpath"/>
+
+      <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
+        <formatter type="plain" usefile="yes"/>
+        <fileset dir="${new-tests-target}">
+          <include name="org/vertx/java/tests/redis/*Test.class"/>
+        </fileset>
+      </batchtest>
+    </junit>
   </target>
 
   <target name="ruby-tests" depends="compile-tests">

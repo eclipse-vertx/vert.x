@@ -115,6 +115,7 @@ public class Composer {
           } else {
             ret.setException(f.exception());
             handleException(f.exception());
+            batch.complete();
           }
         }
       });

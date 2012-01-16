@@ -48,4 +48,8 @@ class TestUtils
   def TestUtils.buffers_equal(buff1, buff2)
     org.vertx.java.newtests.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end
+
+  def check_context
+    @j_tu.checkContext
+  end
 end

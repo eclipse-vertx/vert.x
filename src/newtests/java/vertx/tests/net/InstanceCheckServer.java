@@ -23,7 +23,7 @@ public class InstanceCheckServer extends BaseServer {
 
       public void handle(final NetSocket socket) {
 
-        check.check();
+        tu.checkContext();
         //We add the object id of the server to the set
         Set<String> set = SharedData.getSet("instances");
         set.add(id);

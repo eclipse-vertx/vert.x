@@ -6,8 +6,6 @@ import org.vertx.java.newtests.TestBase;
 import vertx.tests.eventbus.LocalClient;
 import vertx.tests.eventbus.LocalPeer;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

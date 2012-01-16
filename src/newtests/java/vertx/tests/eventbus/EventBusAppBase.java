@@ -7,7 +7,6 @@ import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.tests.eventbus.JavaClusteredEventBusTest;
 
@@ -19,7 +18,6 @@ import java.util.Map;
 public abstract class EventBusAppBase extends TestClientBase {
 
   protected Map<String, Object> data;
-  protected ContextChecker check;
   protected EventBus eb;
 
   class TestEventBus extends EventBus {
@@ -37,7 +35,6 @@ public abstract class EventBusAppBase extends TestClientBase {
   public void start() {
     super.start();
     data = SharedData.getMap("data");
-    check = new ContextChecker(tu);
 
     if (isLocal()) {
       eb = EventBus.instance;

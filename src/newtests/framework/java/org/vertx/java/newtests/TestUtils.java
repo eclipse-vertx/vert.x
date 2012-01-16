@@ -2,6 +2,7 @@ package org.vertx.java.newtests;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -21,6 +22,14 @@ public class TestUtils {
   private static final Logger log = Logger.getLogger(TestUtils.class);
 
   private ObjectMapper mapper = new ObjectMapper();
+  private final Thread th;
+  private final Long contextID;
+  private Map<String, Handler<Message>> handlers = new HashMap<>();
+
+  public TestUtils() {
+    this.th = Thread.currentThread();
+    this.contextID = Vertx.instance.getContextID();
+  }
 
   public void azzert(boolean result) {
     azzert(result, null);
@@ -78,8 +87,6 @@ public class TestUtils {
     map.put(EventFields.TRACE_MESSAGE_FIELD, message);
     sendMessage(map);
   }
-
-  private Map<String, Handler<Message>> handlers = new HashMap<>();
 
   public void register(final String testName, final Handler<Void> handler) {
     Handler<Message> h = new Handler<Message>() {
@@ -190,6 +197,15 @@ public class TestUtils {
       if (b1[i] != b2[i]) return false;
     }
     return true;
+  }
+
+  public void checkContext() {
+    if (contextID == null) {
+      throw new IllegalStateException("Don't call checkContext if utils were created with a null context");
+    }
+    azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
+    azzert(contextID.equals(Vertx.instance.getContextID()), "Expected:" + contextID + " Actual:" + Vertx.instance
+        .getContextID());
   }
 
 }

@@ -20,7 +20,6 @@ import org.vertx.java.core.ConnectionPool;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
@@ -31,6 +30,10 @@ import java.util.Queue;
 /**
  *
  * This is the actual connection which gets pooled, RedisConnection is just a handle to an instance of InternalConnection
+ *
+ * [Note: This class may seem a little overcomplex for what it does - this is because it was originally
+ * designed to be used safely across multiple contexts, but now that is not the case. The class could probably
+ * be simplified further]
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -95,7 +98,7 @@ public class InternalConnection implements Handler<RedisReply>{
     this.closedHandler = handler;
   }
 
-  void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe, long contextID) {
+  void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe) {
     if (closed) {
       log.warn("Socket is closed");
       return;
@@ -109,7 +112,7 @@ public class InternalConnection implements Handler<RedisReply>{
             throw new IllegalStateException("Already in tx");
           }
           deferredQueue.add(deferred);
-          currentTXSendingHandler = new TxReplyHandler(contextID);
+          currentTXSendingHandler = new TxReplyHandler();
           deferredQueue.add(currentTXSendingHandler);
           break;
         } case EXEC: {
@@ -143,7 +146,6 @@ public class InternalConnection implements Handler<RedisReply>{
   }
 
   public void handle(final RedisReply reply) {
-    log.info("got reply: " + reply);
     if (currentReplyHandler != null) {
       currentReplyHandler.handleReply(reply);
     } else {
@@ -156,10 +158,10 @@ public class InternalConnection implements Handler<RedisReply>{
     }
   }
 
-  void subscribe(long contextID) {
-    if (!this.subscriber) {
+  void subscribe() {
+    if (!subscriber) {
       subscriber = true;
-      this.currentReplyHandler = new SubscriberHandler(contextID);
+      this.currentReplyHandler = new SubscriberHandler();
     }
   }
 
@@ -172,11 +174,6 @@ public class InternalConnection implements Handler<RedisReply>{
 
 
   private abstract class BaseReplyHandler implements Runnable, ReplyHandler {
-    final long contextID;
-
-    BaseReplyHandler(long contextID) {
-      this.contextID = contextID;
-    }
 
     public abstract void run();
 
@@ -184,18 +181,14 @@ public class InternalConnection implements Handler<RedisReply>{
 
     public void handleReply(RedisReply reply) {
       this.reply = reply;
-      VertxInternal.instance.executeOnContext(contextID, this);
+      run();
     }
+
   }
 
   private class SubscriberHandler extends BaseReplyHandler {
 
-    SubscriberHandler(long contextID) {
-      super(contextID);
-    }
-
     public void run() {
-      VertxInternal.instance.setContextID(contextID);
       switch (reply.type) {
         case INTEGER: {
           // unsubscribe or subscribe
@@ -222,6 +215,9 @@ public class InternalConnection implements Handler<RedisReply>{
         }
       }
     }
+
+    protected void preHandle() {
+    }
   }
 
   private void deliverMessage(Buffer msg) {
@@ -236,13 +232,7 @@ public class InternalConnection implements Handler<RedisReply>{
     RedisDeferred<?> endDeferred; // The Deferred corresponding to the EXEC/DISCARD
     boolean discarded;
 
-    TxReplyHandler(long contextID) {
-      super(contextID);
-    }
-
     public void run() {
-      VertxInternal.instance.setContextID(contextID);
-
       currentReplyHandler = this;
 
       if (reply.type == RedisReply.Type.ONE_LINE) {
@@ -258,8 +248,7 @@ public class InternalConnection implements Handler<RedisReply>{
       } else {
         RedisDeferred<?> deferred = deferreds.poll();
         if (deferred != null) {
-          //We are already on correct context so we can run it directly
-          deferred.handleReplyDirect(reply);
+          deferred.handleReply(reply);
           if (deferreds.isEmpty()) {
             sendEnd();
           }

@@ -18,9 +18,13 @@ require "test_utils"
 
 @tu = TestUtils.new
 
+@tu.check_context
+
 @server = NetServer.new.connect_handler { |socket|
+  @tu.check_context
   puts "connected on #{java.lang.System.identityHashCode(self)}"
   socket.data_handler { |data|
+    @tu.check_context
     socket.write_buffer(data)
   }
 }.listen(8080)
@@ -28,6 +32,7 @@ require "test_utils"
 @tu.app_ready
 
 def vertx_stop
+  @tu.check_context
   @server.close
   @tu.app_stopped
 end

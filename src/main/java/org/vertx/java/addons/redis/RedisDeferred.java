@@ -18,8 +18,6 @@ package org.vertx.java.addons.redis;
 
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.DeferredAction;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
@@ -39,7 +37,6 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
   }
 
   final DeferredType type;
-  final long contextID;
   final RedisConnection rc;
 
   TxCommandType commandType = TxCommandType.OTHER;
@@ -47,7 +44,6 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
 
   RedisDeferred(DeferredType type, RedisConnection rc) {
     this.type = type;
-    this.contextID = Vertx.instance.getContextID();
     this.rc = rc;
   }
 
@@ -109,20 +105,10 @@ abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandle
 
   public void handleReply(final RedisReply reply) {
     this.reply = reply;
-    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
-      public void run() {
-        VertxInternal.instance.setContextID(contextID);
-        try {
-          doHandleReply();
-        } catch (Exception e) {
-          log.error("Failed to handle reply", e);
-        }
-      }
-    });
-  }
-
-  public void handleReplyDirect(final RedisReply reply) {
-    this.reply = reply;
-    doHandleReply();
+    try {
+      doHandleReply();
+    } catch (Exception e) {
+      log.error("Failed to handle reply", e);
+    }
   }
 }

@@ -2,14 +2,8 @@ package org.vertx.java.tests.filesystem;
 
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
-import vertx.tests.filesystem.TestClient;
-
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -19,24 +19,24 @@ public class PausingServer extends BaseServer {
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
-        check.check();
+        tu.checkContext();
         sock.pause();
         final Handler<Message> resumeHandler = new Handler<Message>() {
           public void handle(Message message) {
-            check.check();
+            tu.checkContext();
             sock.resume();
           }
         };
         EventBus.instance.registerHandler("server_resume", resumeHandler);
         sock.closedHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             EventBus.instance.unregisterHandler("server_resume", resumeHandler);
           }
         });
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            check.check();
+            tu.checkContext();
             sock.write(buffer);
           }
         });

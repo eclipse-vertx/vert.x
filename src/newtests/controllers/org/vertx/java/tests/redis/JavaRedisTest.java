@@ -1,6 +1,5 @@
 package org.vertx.java.tests.redis;
 
-import org.junit.Test;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.redis.TestClient;

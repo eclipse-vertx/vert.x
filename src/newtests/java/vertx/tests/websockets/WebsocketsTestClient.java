@@ -9,7 +9,6 @@ import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketHandler;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 
@@ -20,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class WebsocketsTestClient extends TestClientBase {
 
-  private ContextChecker check;
   private HttpClient client;
   private HttpServer server;
 
@@ -28,7 +26,6 @@ public class WebsocketsTestClient extends TestClientBase {
   public void start() {
     super.start();
     client = new HttpClient().setHost("localhost").setPort(8080);
-    check = new ContextChecker(tu);
     tu.appReady();
   }
 
@@ -38,7 +35,7 @@ public class WebsocketsTestClient extends TestClientBase {
     if (server != null) {
       server.close(new SimpleHandler() {
         public void handle() {
-          check.check();
+          tu.checkContext();
           WebsocketsTestClient.super.stop();
         }
       });
@@ -96,7 +93,7 @@ public class WebsocketsTestClient extends TestClientBase {
       public void handle(final WebSocket ws) {
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            check.check();
+            tu.checkContext();
             //Echo it back
             ws.writeBuffer(data);
           }
@@ -104,7 +101,7 @@ public class WebsocketsTestClient extends TestClientBase {
       }
 
       public boolean accept(String p) {
-        check.check();
+        tu.checkContext();
         tu.azzert(path.equals(p));
         return true;
       }
@@ -115,11 +112,11 @@ public class WebsocketsTestClient extends TestClientBase {
 
     client.connectWebsocket(path, version, new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
-        check.check();
+        tu.checkContext();
         final Buffer received = Buffer.create(0);
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            check.check();
+            tu.checkContext();
             received.appendBuffer(data);
             if (received.length() == bsize * sends) {
               ws.close();

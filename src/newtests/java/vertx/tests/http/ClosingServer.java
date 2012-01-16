@@ -4,7 +4,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 
 /**
@@ -16,14 +15,10 @@ public class ClosingServer implements VertxApp {
 
   private HttpServer server;
 
-  protected ContextChecker check;
-
   public void start() {
-    check = new ContextChecker(tu);
-
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
 
         req.response.end();
 

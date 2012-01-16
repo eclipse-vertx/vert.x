@@ -9,7 +9,6 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 
 /**
@@ -18,17 +17,12 @@ import org.vertx.java.newtests.TestUtils;
 public class DrainingServer implements VertxApp {
 
   protected TestUtils tu = new TestUtils();
-
   private HttpServer server;
 
-  protected ContextChecker check;
-
   public void start() {
-    check = new ContextChecker(tu);
-
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
 
         req.response.setChunked(true);
 
@@ -39,13 +33,13 @@ public class DrainingServer implements VertxApp {
         //Send data until the buffer is full
         Vertx.instance.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
-            check.check();
+            tu.checkContext();
             req.response.write(buff);
             if (req.response.writeQueueFull()) {
               Vertx.instance.cancelTimer(id);
               req.response.drainHandler(new SimpleHandler() {
                 public void handle() {
-                  check.check();
+                  tu.checkContext();
                   tu.azzert(!req.response.writeQueueFull());
                   tu.testComplete();
                 }
@@ -65,7 +59,7 @@ public class DrainingServer implements VertxApp {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         tu.appStopped();
       }
     });
