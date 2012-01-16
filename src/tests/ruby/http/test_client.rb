@@ -86,9 +86,9 @@ def http_method(ssl, method, client_chunks, server_chunks)
 
   if ssl
     @server.ssl = true
-    @server.key_store_path = './src/newtests/keystores/server-keystore.jks'
+    @server.key_store_path = './src/tests/keystores/server-keystore.jks'
     @server.key_store_password = 'wibble'
-    @server.trust_store_path = './src/newtests/keystores/server-truststore.jks'
+    @server.trust_store_path = './src/tests/keystores/server-truststore.jks'
     @server.trust_store_password = 'wibble'
     @server.client_auth_required = true
   end
@@ -116,9 +116,9 @@ def http_method(ssl, method, client_chunks, server_chunks)
 
   if ssl
     @client.ssl = true
-    @client.key_store_path = './src/newtests/keystores/client-keystore.jks'
+    @client.key_store_path = './src/tests/keystores/client-keystore.jks'
     @client.key_store_password = 'wibble'
-    @client.trust_store_path = './src/newtests/keystores/client-truststore.jks'
+    @client.trust_store_path = './src/tests/keystores/client-truststore.jks'
     @client.trust_store_password = 'wibble'
   end
 
