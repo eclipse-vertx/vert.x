@@ -34,6 +34,7 @@
   <property name="core-lib" value="${lib-dir}/core"/>
   <property name="opt-lib" value="${lib-dir}/opt"/>
   <property name="test-results" value="test-results"/>
+  <property name="test-tmp" value="test-tmp"/>
 
   <property name="test-lib" value="${lib-dir}/tests"/>
   <property name="tests-target" value="${target}/tests/classes"/>
@@ -112,6 +113,8 @@
 
   <target name="clean" description="clean up">
     <delete dir="${target}"/>
+    <delete dir="${test-results}"/>
+    <delete dir="${test-tmp}"/>
   </target>
 
   <target name="compile-tests" depends="jar-core">
