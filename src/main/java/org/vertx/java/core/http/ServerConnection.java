@@ -32,6 +32,7 @@ import org.vertx.java.core.logging.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -140,10 +141,10 @@ class ServerConnection extends AbstractConnection {
 
   void handleInterestedOpsChanged() {
     try {
-      if ((channel.getInterestOps() & Channel.OP_WRITE) == Channel.OP_WRITE) {
+      if (channel.isWritable()) {
         setContextID();
-        if (currentRequest != null) {
-          currentRequest.response.writable();
+        if (pendingResponse != null) {
+          pendingResponse.handleDrained();
         } else if (ws != null) {
           ws.writable();
         }
@@ -208,7 +209,8 @@ class ServerConnection extends AbstractConnection {
     //On HTTP server we want to swallow Connection reset by peer exceptions since this is normal if the client
     //closes the HTTP connection
 
-    if (!(t instanceof IOException && t.getMessage().equals("Connection reset by peer"))) {
+    if (!(t instanceof IOException && "Connection reset by peer".equals(t.getMessage()))
+        && !(t instanceof ClosedChannelException)) {
       super.handleHandlerException(t);
     }
   }

@@ -20,6 +20,8 @@ import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -86,6 +88,7 @@ public class NetServer extends NetServerBase {
    */
   public NetServer() {
     super();
+    this.reuseAddress = true;
   }
 
   /**
@@ -151,9 +154,9 @@ public class NetServer extends NetServerBase {
   /**
    * {@inheritDoc}
    */
-  public NetServer setTcpNoDelay(boolean tcpNoDelay) {
+  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
     checkThread();
-    return (NetServer)super.setTcpNoDelay(tcpNoDelay);
+    return (NetServer)super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**
@@ -269,7 +272,7 @@ public class NetServer extends NetServerBase {
           }
         });
 
-        bootstrap.setOptions(connectionOptions);
+        bootstrap.setOptions(generateConnectionOptions());
 
         try {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
@@ -277,7 +280,7 @@ public class NetServer extends NetServerBase {
           serverChannelGroup.add(serverChannel);
           log.trace("Net server listening on " + host + ":" + port);
         } catch (UnknownHostException e) {
-          e.printStackTrace();
+          log.error("Failed to bind", e);
         }
         servers.put(id, this);
         actualServer = this;
@@ -306,9 +309,13 @@ public class NetServer extends NetServerBase {
   public void close(final Handler<Void> done) {
     checkThread();
 
-    if (!listening) return;
+    if (!listening) {
+      if (done != null) {
+        done.handle(null);
+      }
+      return;
+    }
     listening = false;
-
     synchronized (servers) {
 
       actualServer.handlerManager.removeHandler(connectHandler);
@@ -380,6 +387,27 @@ public class NetServer extends NetServerBase {
         return;
       }
 
+      if (ssl) {
+        SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+
+        ChannelFuture fut = sslHandler.handshake();
+        fut.addListener(new ChannelFutureListener() {
+
+          public void operationComplete(ChannelFuture channelFuture) throws Exception {
+            if (channelFuture.isSuccess()) {
+              connected(ch, handler);
+            } else {
+              log.error("Client from origin " + ch.getRemoteAddress() + " failed to connect over ssl");
+            }
+          }
+        });
+
+      } else {
+        connected(ch, handler);
+      }
+    }
+
+    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       VertxInternal.instance.executeOnContext(handler.contextID, new Runnable() {
         public void run() {
           VertxInternal.instance.setContextID(handler.contextID);
@@ -440,7 +468,8 @@ public class NetServer extends NetServerBase {
           }
         });
       } else {
-        t.printStackTrace();
+        // Ignore - any exceptions not associated with any sock (e.g. failure in ssl handshake) will
+        // be communicated explicitly
       }
     }
   }

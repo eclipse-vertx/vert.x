@@ -47,6 +47,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClientBase;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -331,8 +332,8 @@ public class HttpClient extends NetClientBase {
   /**
    * {@inheritDoc}
    */
-  public HttpClient setTcpNoDelay(boolean tcpNoDelay) {
-    return (HttpClient) super.setTcpNoDelay(tcpNoDelay);
+  public HttpClient setTCPNoDelay(boolean tcpNoDelay) {
+    return (HttpClient) super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**
@@ -382,12 +383,7 @@ public class HttpClient extends NetClientBase {
   }
 
   void returnConnection(final ClientConnection conn) {
-    if (!conn.keepAlive) {
-      //Close it
-      conn.internalClose();
-    } else {
-      pool.returnConnection(conn);
-    }
+    pool.returnConnection(conn);
   }
 
   private void internalConnect(final Handler<ClientConnection> connectHandler, final long contextID) {
@@ -416,41 +412,72 @@ public class HttpClient extends NetClientBase {
       });
     }
 
-    //Client connections share context with caller
     channelFactory.setWorker(VertxInternal.instance.getWorkerForContextID(contextID));
-    bootstrap.setOptions(connectionOptions);
+    bootstrap.setOptions(generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
+
+        final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
+
         if (channelFuture.isSuccess()) {
 
-          final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
+          if (ssl) {
+            // TCP connected, so now we must do the SSL handshake
 
-          runOnCorrectThread(ch, new Runnable() {
-            public void run() {
-              final ClientConnection conn = new ClientConnection(HttpClient.this, ch,
-                  host + ":" + port, ssl, keepAlive, contextID,
-                  Thread.currentThread());
-              conn.closedHandler(new SimpleHandler() {
-                public void handle() {
-                  pool.connectionClosed();
+            SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+
+            ChannelFuture fut = sslHandler.handshake();
+            fut.addListener(new ChannelFutureListener() {
+
+              public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                if (channelFuture.isSuccess()) {
+                  connected(ch, connectHandler);
+                } else {
+                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
                 }
-              });
-              connectionMap.put(ch, conn);
-              VertxInternal.instance.setContextID(contextID);
-              connectHandler.handle(conn);
-            }
-          });
-        } else {
-          Throwable t = channelFuture.getCause();
-          if (t instanceof Exception && exceptionHandler != null) {
-            exceptionHandler.handle((Exception) t);
+              }
+            });
           } else {
-            log.error("Unhandled exception", t);
+            connected(ch, connectHandler);
           }
+
+        } else {
+          failed(ch, channelFuture.getCause());
         }
       }
     });
+  }
+
+  private void connected(final NioSocketChannel ch, final Handler<ClientConnection> connectHandler) {
+    runOnCorrectThread(ch, new Runnable() {
+      public void run() {
+        final ClientConnection conn = new ClientConnection(HttpClient.this, ch,
+            host + ":" + port, ssl, keepAlive, contextID,
+            Thread.currentThread());
+        conn.closedHandler(new SimpleHandler() {
+          public void handle() {
+            pool.connectionClosed();
+          }
+        });
+        connectionMap.put(ch, conn);
+        VertxInternal.instance.setContextID(contextID);
+        connectHandler.handle(conn);
+      }
+    });
+  }
+
+  private void failed(NioSocketChannel ch, final Throwable t) {
+    if (t instanceof Exception && exceptionHandler != null) {
+      runOnCorrectThread(ch, new Runnable() {
+        public void run() {
+          VertxInternal.instance.setContextID(contextID);
+          exceptionHandler.handle((Exception) t);
+        }
+      });
+    } else {
+      log.error("Unhandled exception", t);
+    }
   }
 
   private class ClientHandler extends SimpleChannelUpstreamHandler {
@@ -491,7 +518,7 @@ public class HttpClient extends NetClientBase {
           }
         });
       } else {
-        log.error("Unhandled exception", t);
+        // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
       }
     }
 
@@ -509,7 +536,7 @@ public class HttpClient extends NetClientBase {
         if (content.readable()) {
           conn.handleResponseChunk(new Buffer(content));
         }
-        if (!response.isChunked()) {
+        if (!response.isChunked() && (response.getStatus().getCode() != 100)) {
           conn.handleResponseEnd();
         }
       } else if (msg instanceof HttpChunk) {

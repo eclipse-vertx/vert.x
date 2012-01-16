@@ -28,7 +28,7 @@ public class SharedQueue<T> {
   private final Queue<T> queue = new ConcurrentLinkedQueue<>();
 
   public void add(T t) {
-    t = Utils.chekShareableObject(t);
+    t = Utils.checkShareableObject(t);
     queue.add(t);
   }
 

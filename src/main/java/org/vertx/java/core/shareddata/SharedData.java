@@ -87,6 +87,7 @@ public class SharedData {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
     if (set == null) {
       set = new SharedSet<>();
+      //set = Collections.synchronizedSet(new HashSet<E>());
       SharedSet prev = sets.putIfAbsent(name, set);
       if (prev != null) {
         set = prev;
@@ -95,17 +96,17 @@ public class SharedData {
     return set;
   }
 
-//  public static SharedCounter getCounter(Object name) {
-//    SharedCounter counter = counters.get(name);
-//    if (counter == null) {
-//      counter = new SharedCounter();
-//      SharedCounter prev = counters.putIfAbsent(name, counter);
-//      if (prev != null) {
-//        counter = prev;
-//      }
-//    }
-//    return counter;
-//  }
+  public static SharedCounter getCounter(Object name) {
+    SharedCounter counter = counters.get(name);
+    if (counter == null) {
+      counter = new SharedCounter();
+      SharedCounter prev = counters.putIfAbsent(name, counter);
+      if (prev != null) {
+        counter = prev;
+      }
+    }
+    return counter;
+  }
 
 //  public static <E> SharedQueue<E> getQueue(Object name) {
 //    SharedQueue<E> queue = (SharedQueue<E>) queues.get(name);
@@ -133,9 +134,9 @@ public class SharedData {
     return sets.remove(name) != null;
   }
 
-//  public static boolean removeCounter(Object name) {
-//    return counters.remove(name) != null;
-//  }
+  public static boolean removeCounter(Object name) {
+    return counters.remove(name) != null;
+  }
 //
 //  public static boolean removeQueue(Object name) {
 //    return queues.remove(name) != null;

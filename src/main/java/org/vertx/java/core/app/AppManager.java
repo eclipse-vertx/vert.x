@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -50,7 +51,9 @@ public class AppManager {
     stopLatch.countDown();
   }
 
-  public synchronized String deploy(final AppType type, final String appName, String main, URL[] urls, int instances)
+  public synchronized void deploy(final AppType type, final String appName, final String main, final URL[] urls,
+                                  int instances,
+                                  final Handler<Void> doneHandler)
     throws Exception {
 
     if (instances == -1) {
@@ -58,16 +61,14 @@ public class AppManager {
       instances = Runtime.getRuntime().availableProcessors();
     }
 
-    log.info("Deploying application name : " + appName + " type: " + type + " main class: " + main +
+    log.debug("Deploying application name : " + appName + " type: " + type + " main class: " + main +
              " instances: " + instances);
 
     if (appMeta.containsKey(appName)) {
       throw new IllegalStateException("There is already a deployed application with name: " + appName);
     }
 
-    for (int i = 0; i < instances; i++) {
-
-      AppFactory appFactory;
+    final AppFactory appFactory;
       switch (type) {
         case JAVA:
           appFactory = new JavaAppFactory();
@@ -85,25 +86,52 @@ public class AppManager {
           throw new IllegalArgumentException("Unsupported type: " + type);
       }
 
-      final VertxApp app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
-          .getClassLoader()));
+    final int instCount = instances;
+
+    class AggHandler {
+      final AtomicInteger count = new AtomicInteger(0);
+
+      void started() {
+        if (count.incrementAndGet() == instCount) {
+          log.debug("Started " + instCount + " instances ok");
+          if (doneHandler != null) {
+            doneHandler.handle(null);
+          }
+        }
+      }
+    }
+
+    final AggHandler aggHandler = new AggHandler();
+
+    for (int i = 0; i < instances; i++) {
 
       // Launch the app instance
 
       VertxInternal.instance.go(new Runnable() {
         public void run() {
+
+          VertxApp app;
+          try {
+            app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
+              .getClassLoader()));
+          } catch (Throwable t) {
+            log.error("Failed to create application", t);
+            internalUndeploy(appName, doneHandler);
+            return;
+          }
+
           try {
             app.start();
-          } catch (Exception e) {
-            log.error("Unhandled exception in application start", e);
+            addApp(appName, app);
+          } catch (Throwable t) {
+            log.error("Unhandled exception in application start", t);
+            internalUndeploy(appName, doneHandler);
           }
-          addApp(appName, app);
+          aggHandler.started();
         }
       });
     }
     appMeta.put(appName, new AppMetaData(urls, main));
-    log.info("Started " + instances + " instances ok");
-    return null;
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -129,27 +157,34 @@ public class AppManager {
     if (appMeta.get(name) == null) {
       return "There is no deployed app with name " + name;
     }
+    internalUndeploy(name, doneHandler);
+    return null;
+  }
+
+  private void internalUndeploy(String name, final Handler<Void> doneHandler) {
     List<AppHolder> list = apps.get(name);
-    log.info("Undeploying " + list.size() + " instances of application: " + name);
-    for (final AppHolder holder: list) {
-      VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
-        public void run() {
-          VertxInternal.instance.setContextID(holder.contextID);
-          try {
-            holder.app.stop();
-          } catch (Exception e) {
-            log.error("Unhandled exception in application stop", e);
+    if (list != null) {
+      log.debug("Undeploying " + list.size() + " instances of application: " + name);
+      for (final AppHolder holder: list) {
+        VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
+          public void run() {
+            VertxInternal.instance.setContextID(holder.contextID);
+            try {
+              holder.app.stop();
+            } catch (Exception e) {
+              log.error("Unhandled exception in application stop", e);
+            }
+            if (doneHandler != null) {
+              doneHandler.handle(null);
+            }
           }
-          if (doneHandler != null) {
-            doneHandler.handle(null);
-          }
-        }
-      });
+        });
+      }
     }
     appMeta.remove(name);
     apps.remove(name);
-    return null;
   }
+
 
   public synchronized Map<String, Integer> listInstances() {
     Map<String, Integer> map = new HashMap<>();
@@ -159,7 +194,8 @@ public class AppManager {
     return map;
   }
 
-  private void addApp(String name, VertxApp app) {
+  // Must be sychronized since called directly after app is deployed from different thread
+  private synchronized void addApp(String name, VertxApp app) {
     List<AppHolder> list = apps.get(name);
     if (list == null) {
       list = new ArrayList<>();

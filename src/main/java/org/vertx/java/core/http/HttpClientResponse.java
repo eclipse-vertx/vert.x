@@ -20,6 +20,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.logging.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,8 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientResponse extends HttpReadStreamBase {
+
+  private static final Logger log = Logger.getLogger(HttpClientResponse.class);
 
   private final ClientConnection conn;
   private final Thread th;

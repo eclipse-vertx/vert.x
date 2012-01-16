@@ -135,6 +135,7 @@ public class HttpServer extends NetServerBase {
    * @return The request handler
    */
   public Handler<HttpServerRequest> requestHandler() {
+    checkThread();
     return requestHandler;
   }
 
@@ -155,6 +156,7 @@ public class HttpServer extends NetServerBase {
    * @return The websocket handler
    */
   public WebSocketHandler websocketHandler() {
+    checkThread();
     return wsHandler;
   }
 
@@ -194,7 +196,7 @@ public class HttpServer extends NetServerBase {
                 VertxInternal.instance.getAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOptions(connectionOptions);
+        bootstrap.setOptions(generateConnectionOptions());
 
         checkSSL();
 
@@ -235,7 +237,7 @@ public class HttpServer extends NetServerBase {
           Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           serverChannelGroup.add(serverChannel);
         } catch (UnknownHostException e) {
-          e.printStackTrace();
+          log.error("Failed to bind", e);
         }
         servers.put(id, this);
         actualServer = this;
@@ -304,9 +306,9 @@ public class HttpServer extends NetServerBase {
   /**
    * {@inheritDoc}
    */
-  public HttpServer setTcpNoDelay(boolean tcpNoDelay) {
+  public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
     checkThread();
-    return (HttpServer) super.setTcpNoDelay(tcpNoDelay);
+    return (HttpServer) super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**
@@ -460,7 +462,6 @@ public class HttpServer extends NetServerBase {
         }
 
         if (WEBSOCKET.equalsIgnoreCase(request.getHeader(HttpHeaders.Names.UPGRADE))) {
-
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -488,7 +489,7 @@ public class HttpServer extends NetServerBase {
             return;
           }
 
-           HandlerHolder<WebSocket> firstHandler = null;
+          HandlerHolder<WebSocket> firstHandler = null;
 
           while (true) {
             HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
@@ -574,7 +575,8 @@ public class HttpServer extends NetServerBase {
           }
         });
       } else {
-        t.printStackTrace();
+        // Ignore - any exceptions not associated with any sock (e.g. failure in ssl handshake) will
+        // be communicated explicitly
       }
     }
 

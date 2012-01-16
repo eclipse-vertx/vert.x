@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import com.hazelcast.util.ConcurrentHashSet;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -18,7 +19,6 @@ import org.vertx.java.core.parsetools.RecordParser;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,10 +77,11 @@ public class EventBus {
   /*
   Non clustered event bus
    */
-  protected EventBus(ServerID serverID) {
-    this.serverID = serverID;
+  protected EventBus() {
+    // Just some dummy server ID
+    this.serverID = new ServerID(2550, "localhost");
+    this.server = null;
     this.subs = null;
-    this.server = setServer();
   }
 
   /*
@@ -125,45 +126,54 @@ public class EventBus {
    * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
    */
   public void send(final Message message, final Handler<Message> replyHandler) {
-    if (message.messageID == null) {
-      message.messageID = UUID.randomUUID().toString();
-    }
-    message.sender = serverID;
-    if (replyHandler != null) {
-      message.replyAddress = UUID.randomUUID().toString();
-      registerHandler(message.replyAddress, replyHandler, null, true);
-    }
-
-    // First check if sender is in response address cache - it will be if it's a response
-    ServerID serverID = replyAddressCache.remove(message.address);
-    if (serverID != null) {
-      // Yes, it's a response to a particular server
-      if (!serverID.equals(this.serverID)) {
-        send(serverID, message);
-      } else {
-        receiveMessage(message.copy());
+    Long contextID = Vertx.instance.getContextID();
+    try {
+      if (message.messageID == null) {
+        message.messageID = UUID.randomUUID().toString();
       }
-    } else {
-      if (subs != null) {
-        subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
-          public void handle(Future<Collection<ServerID>> event) {
-            Collection<ServerID> serverIDs = event.result();
-            if (event.succeeded()) {
-              if (serverIDs != null) {
-                for (ServerID serverID : serverIDs) {
-                  if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
-                    send(serverID, message);
+      message.sender = serverID;
+      if (replyHandler != null) {
+        message.replyAddress = UUID.randomUUID().toString();
+        registerHandler(message.replyAddress, replyHandler, null, true);
+      }
+
+      // First check if sender is in response address cache - it will be if it's a response
+      ServerID serverID = replyAddressCache.remove(message.address);
+      if (serverID != null) {
+        // Yes, it's a response to a particular server
+        if (!serverID.equals(this.serverID)) {
+          send(serverID, message);
+        } else {
+          receiveMessage(message.copy());
+        }
+      } else {
+        if (subs != null) {
+          subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
+            public void handle(Future<Collection<ServerID>> event) {
+              Collection<ServerID> serverIDs = event.result();
+              if (event.succeeded()) {
+                if (serverIDs != null) {
+                  for (ServerID serverID : serverIDs) {
+                    if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
+                      send(serverID, message);
+                    }
                   }
                 }
+              } else {
+                log.error("Failed to send message", event.exception());
               }
-            } else {
-              log.error("Failed to send message", event.exception());
             }
-          }
-        });
+          });
+        }
+        //also send locally
+        receiveMessage(message.copy());
       }
-      //also send locally
-      receiveMessage(message.copy());
+    } finally {
+      // Reset the context id - send can cause messages to be delivered in different contexts so the context id
+      // of the current thread can change
+      if (contextID != null) {
+        VertxInternal.instance.setContextID(contextID);
+      }
     }
   }
 
@@ -184,7 +194,7 @@ public class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
-    this.registerHandler(address, handler, completionHandler, false);
+    registerHandler(address, handler, completionHandler, false);
   }
 
   /**
@@ -196,22 +206,38 @@ public class EventBus {
     registerHandler(address, handler, null);
   }
 
+
   /**
    * Unregisters a handler
    * @param address The address the handler was registered to
    * @param handler The handler
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
    */
-  public void unregisterHandler(String address, Handler<Message> handler) {
+  public void unregisterHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
       set.remove(new HandlerHolder(handler, false));
       if (set.isEmpty()) {
         handlers.remove(address);
         if (subs != null) {
-          removeSub(address, serverID);
+          removeSub(address, serverID, completionHandler);
+        } else if (completionHandler != null) {
+          callCompletionHandler(completionHandler);
         }
+      } else if (completionHandler != null) {
+        callCompletionHandler(completionHandler);
       }
     }
+  }
+
+  /**
+   * Unregisters a handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   */
+  public void unregisterHandler(String address, Handler<Message> handler) {
+    unregisterHandler(address, handler, null);
   }
 
   protected void close(Handler<Void> doneHandler) {
@@ -222,7 +248,7 @@ public class EventBus {
                                boolean replyHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set == null) {
-      set = new HashSet<>();
+      set = new ConcurrentHashSet<>();
       Set<HandlerHolder> prevSet = handlers.putIfAbsent(address, set);
       if (prevSet != null) {
         set = prevSet;
@@ -239,16 +265,24 @@ public class EventBus {
       if (subs != null && !replyHandler) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
+      } else {
+        if (completionHandler != null) {
+          callCompletionHandler(completionHandler);
+        }
       }
       set.add(new HandlerHolder(handler, replyHandler));
     } else {
       set.add(new HandlerHolder(handler, replyHandler));
       if (completionHandler != null) {
-        SimpleFuture<Void> f = new SimpleFuture<>();
-        f.setResult(null);
-        completionHandler.handle(f);
+        callCompletionHandler(completionHandler);
       }
     }
+  }
+
+  private void callCompletionHandler(CompletionHandler<Void> completionHandler) {
+    SimpleFuture<Void> f = new SimpleFuture<>();
+    f.setResult(null);
+    completionHandler.handle(f);
   }
 
   private void send(final ServerID serverID, final Sendable sendable) {
@@ -279,7 +313,7 @@ public class EventBus {
           log.debug("Cluster connection failed. Removing it from map");
           connections.remove(serverID);
           if (subs != null && sendable.type() == Sendable.TYPE_MESSAGE) {
-            removeSub(((Message)sendable).address, serverID);
+            removeSub(((Message)sendable).address, serverID, null);
           }
         }
       });
@@ -292,11 +326,21 @@ public class EventBus {
     }
   }
 
-  private void removeSub(String subName, ServerID serverID) {
+  private void removeSub(String subName, ServerID serverID, final CompletionHandler<Void> completionHandler) {
    subs.remove(subName, serverID, new CompletionHandler<Boolean>() {
       public void handle(Future<Boolean> event) {
-        if (event.failed()) {
-          log.error("Failed to remove entry", event.exception());
+        if (completionHandler != null) {
+          SimpleFuture<Void> f = new SimpleFuture<>();
+          if (event.failed()) {
+            f.setException(event.exception());
+          } else {
+            f.setResult(null);
+          }
+          completionHandler.handle(f);
+        } else {
+          if (event.failed()) {
+            log.error("Failed to remove subscription", event.exception());
+          }
         }
       }
     });

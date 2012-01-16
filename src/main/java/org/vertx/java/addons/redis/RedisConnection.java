@@ -87,6 +87,10 @@ import java.util.Map;
  *
  * <p>For a full description of the various Redis commands, please see the <a href="http://redis.io/commands">Redis documentation</a>.</p>
  *
+ * [Note: This class may seem a little overcomplex for what it does - this is because it was originally
+ * designed to be used safely across multiple contexts, but now that is not the case. The class could probably
+ * be simplified further]
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RedisConnection {
@@ -914,10 +918,10 @@ public class RedisConnection {
     return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
       public void run() {
         final Buffer buff = createCommand(command, channels);
-        sendRequest(this, buff, true, contextID);
+        sendRequest(this, buff, true);
       }
       public void handleReply(RedisReply reply) {
-        rc.conn.subscribe(contextID);
+        rc.conn.subscribe();
         setResult(null);
       }
     };
@@ -927,7 +931,7 @@ public class RedisConnection {
     final Buffer buff = createCommand(command, channels);
     return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
       public void run() {
-        sendRequest(this, buff, true, contextID);
+        sendRequest(this, buff, true);
       }
       public void handleReply(RedisReply reply) {
         int num = reply.intResult;
@@ -957,6 +961,9 @@ public class RedisConnection {
       buff.appendBuffer(arg);
       buff.appendBytes(ReplyParser.CRLF);
     }
+
+    log.info("command is " + buff.toString());
+
     return buff;
   }
 
@@ -964,7 +971,7 @@ public class RedisConnection {
     return new RedisDeferred<Double>(RedisDeferred.DeferredType.DOUBLE, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
@@ -973,7 +980,7 @@ public class RedisConnection {
     return new RedisDeferred<Integer>(RedisDeferred.DeferredType.INTEGER, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
@@ -982,7 +989,7 @@ public class RedisConnection {
     return new RedisDeferred<Void>(RedisDeferred.DeferredType.VOID, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
@@ -991,7 +998,7 @@ public class RedisConnection {
     return new RedisDeferred<String>(RedisDeferred.DeferredType.STRING, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
@@ -1000,7 +1007,7 @@ public class RedisConnection {
     return new RedisDeferred<Boolean>(RedisDeferred.DeferredType.BOOLEAN, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
@@ -1009,7 +1016,7 @@ public class RedisConnection {
     return new RedisDeferred<Buffer>(RedisDeferred.DeferredType.BULK, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
@@ -1018,17 +1025,17 @@ public class RedisConnection {
     return new RedisDeferred<Buffer[]>(RedisDeferred.DeferredType.MULTI_BULK, this) {
       public void run() {
         Buffer buff = createCommand(command, args);
-        sendRequest(this, buff, contextID);
+        sendRequest(this, buff);
       }
     };
   }
 
-  private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, long contextID) {
-    sendRequest(deferred, buffer, false, contextID);
+  private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer) {
+    sendRequest(deferred, buffer, false);
   }
 
-  private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe, long contextID) {
-    conn.sendRequest(deferred, buffer, subscribe, contextID);
+  private void sendRequest(final RedisDeferred<?> deferred, final Buffer buffer, boolean subscribe) {
+    conn.sendRequest(deferred, buffer, subscribe);
   }
 
   private Buffer[] toBufferArray(Buffer[] buffers, Buffer... others) {

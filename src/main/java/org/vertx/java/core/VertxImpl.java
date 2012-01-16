@@ -106,7 +106,10 @@ class VertxImpl implements VertxInternal {
   }
 
   public <T> boolean sendToHandler(long handlerID, T message) {
-    final T msg = Utils.chekShareableObject(message);
+    if (getContextID() == null) {
+      throw new IllegalStateException("Cannot send to handler with no context");
+    }
+    final T msg = Utils.checkShareableObject(message);
     final ActorHolder holder = actors.get(handlerID);
     if (holder != null) {
       final Handler<T> actor = (Handler<T>) holder.actor; // FIXME - unchecked cast
@@ -247,7 +250,7 @@ class VertxImpl implements VertxInternal {
   }
 
   public void executeOnContext(long contextID, Runnable runnable) {
-    executeOnContext(contextID, runnable, true);
+    executeOnContext(contextID, runnable, false);
   }
 
   private void executeOnContext(long contextID, Runnable runnable, boolean sameThreadOptimise) {
@@ -256,8 +259,6 @@ class VertxImpl implements VertxInternal {
       if (sameThreadOptimise && (worker.getThread() == Thread.currentThread())) {
         runnable.run();
       } else {
-        // TODO currently this will still run directly if current thread = desired thread
-        // Take a look at NioWorker.scheduleOtherTask
         worker.scheduleOtherTask(runnable);
       }
     } else {

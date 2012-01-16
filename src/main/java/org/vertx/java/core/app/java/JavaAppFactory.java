@@ -1,10 +1,7 @@
 package org.vertx.java.core.app.java;
 
 import org.vertx.java.core.app.AppFactory;
-import org.vertx.java.core.app.ParentLastURLClassLoader;
 import org.vertx.java.core.app.VertxApp;
-
-import java.net.URL;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

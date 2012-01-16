@@ -24,7 +24,7 @@ import java.math.BigDecimal;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Utils {
-  public static <T> T chekShareableObject(T obj) {
+  public static <T> T checkShareableObject(T obj) {
     if (obj instanceof Immutable ||
         obj instanceof String ||
         obj instanceof Integer ||

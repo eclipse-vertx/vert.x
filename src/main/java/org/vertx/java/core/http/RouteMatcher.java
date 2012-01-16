@@ -89,7 +89,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
       case "PATCH":
         route(request, patchBindings);
         break;
-
+      case "CONNECT":
+        route(request, connectBindings);
+        break;
     }
   }
 
