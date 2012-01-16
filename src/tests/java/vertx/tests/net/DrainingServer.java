@@ -38,7 +38,12 @@ public class DrainingServer extends BaseServer {
                 public void handle() {
                   tu.checkContext();
                   tu.azzert(!sock.writeQueueFull());
-                  tu.testComplete();
+                  // End test after a short delay to give the client some time to read the data
+                  Vertx.instance.setTimer(100, new Handler<Long>() {
+                    public void handle(Long id) {
+                      tu.testComplete();
+                    }
+                  });
                 }
               });
 
