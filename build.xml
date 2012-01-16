@@ -45,7 +45,7 @@
   <property name="java-test-apps-src" value="src/tests/testapps/java"/>
 
   <property name="tests-target" value="${target}/newtests/classes"/>
-  <property name="tests-base" value="src/newtests"/>
+  <property name="tests-base" value="src/tests"/>
   <property name="test-java-tests-src" value="${tests-base}/java"/>
   <property name="test-framework-src-java" value="${tests-base}/framework/java"/>
   <property name="test-controllers-src" value="${tests-base}/controllers"/>
@@ -224,15 +224,14 @@
       </fileset>
     </copy>
 
-    <!--
-  <copy todir="${dist-build}/${javadoc-dir}">
-      <fileset dir="${target}/${javadoc-dir}"/>
-  </copy>
+    <copy todir="${dist-build}/${javadoc-dir}">
+        <fileset dir="${target}/${javadoc-dir}"/>
+    </copy>
 
-  <copy todir="${dist-build}/${rubydoc-dir}">
-      <fileset dir="${target}/${rubydoc-dir}"/>
-  </copy>
-    -->
+    <copy todir="${dist-build}/${rubydoc-dir}">
+        <fileset dir="${target}/${rubydoc-dir}"/>
+    </copy>
+
     <!-- We need to use exec since the ant copy task does not preserve file permissions -->
     <mkdir dir="${dist-build}/bin"/>
 

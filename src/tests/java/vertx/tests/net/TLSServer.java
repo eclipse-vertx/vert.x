@@ -27,11 +27,11 @@ public class TLSServer implements VertxApp {
     server.setSSL(true);
 
     if (params.serverTrust) {
-      server.setTrustStorePath("./src/newtests/keystores/server-truststore.jks").setTrustStorePassword
+      server.setTrustStorePath("./src/tests/keystores/server-truststore.jks").setTrustStorePassword
           ("wibble");
     }
     if (params.serverCert) {
-      server.setKeyStorePath("./src/newtests/keystores/server-keystore.jks").setKeyStorePassword("wibble");
+      server.setKeyStorePath("./src/tests/keystores/server-keystore.jks").setKeyStorePassword("wibble");
     }
     if (params.requireClientAuth) {
       server.setClientAuthRequired(true);
