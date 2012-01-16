@@ -85,6 +85,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
+    checkContext();
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
     return new BlockingAction<Void>() {
@@ -141,6 +142,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> moveDeferred(String from, String to) {
+    checkContext();
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
@@ -174,6 +176,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> truncateDeferred(final String path, final long len) {
+    checkContext();
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
         if (len < 0) {
@@ -230,6 +233,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> chmodDeferred(String path, String perms, String dirPerms) {
+    checkContext();
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
@@ -309,6 +313,7 @@ public class FileSystem {
   }
 
   private Deferred<FileProps> props(String path, final boolean followLinks) {
+    checkContext();
     final Path target = Paths.get(path);
     return new BlockingAction<FileProps>() {
       public FileProps action() throws Exception {
@@ -362,6 +367,7 @@ public class FileSystem {
   }
 
   private Deferred<Void> link(String link, String existing, final boolean symbolic) {
+    checkContext();
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
     return new BlockingAction<Void>() {
@@ -403,6 +409,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<String> readSymlinkDeferred(String link) {
+    checkContext();
     final Path source = Paths.get(link);
     return new BlockingAction<String>() {
       public String action() throws Exception {
@@ -446,6 +453,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> deleteDeferred(String path, final boolean recursive) {
+    checkContext();
     final Path source = Paths.get(path);
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -551,6 +559,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
+    checkContext();
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>() {
@@ -616,6 +625,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<String[]> readDirDeferred(final String path, final String filter) {
+    checkContext();
     return new BlockingAction<String[]>() {
       public String[] action() throws Exception {
         File file = new File(path);
@@ -668,6 +678,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Buffer> readFileDeferred(final String path) {
+    checkContext();
     return new BlockingAction<Buffer>() {
       public Buffer action() throws Exception {
         Path target = Paths.get(path);
@@ -693,6 +704,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
+    checkContext();
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
         Path target = Paths.get(path);
@@ -816,7 +828,11 @@ public class FileSystem {
    */
   public Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
-    final long contextID = Vertx.instance.getContextID();
+    Long cid = Vertx.instance.getContextID();
+    if (cid == null) {
+      throw new IllegalStateException("Can't use file system from outside an event loop");
+    }
+    final long contextID = cid;
     final Thread th = Thread.currentThread();
     return new BlockingAction<AsyncFile>() {
       public AsyncFile action() throws Exception {
@@ -870,6 +886,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Void> createFileDeferred(final String path, final String perms) {
+    checkContext();
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -902,6 +919,7 @@ public class FileSystem {
    * @return a Deferred representing the as-yet unexecuted action.
    */
   public Deferred<Boolean> existsDeferred(final String path) {
+    checkContext();
     return new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
         File file = new File(path);
@@ -919,11 +937,12 @@ public class FileSystem {
   }
 
   /**
-   * The same as {@link #getFSProps(String)} but the check does not start until the {@link Deferred#execute} method
+   * The same as {@link #fsProps(String)} but the check does not start until the {@link Deferred#execute} method
    * is called on the Deferred instance returned by this method.
    * @return a Deferred representing the as-yet unexecuted action.
    */
-  public Deferred<FileSystemProps> getFSPropsDeferred(final String path) {
+  public Deferred<FileSystemProps> fsPropsDeferred(final String path) {
+    checkContext();
     return new BlockingAction<FileSystemProps>() {
       public FileSystemProps action() throws Exception {
         Path target = Paths.get(path);
@@ -937,8 +956,14 @@ public class FileSystem {
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<FileSystemProps> getFSProps(final String path) {
-    return getFSPropsDeferred(path).execute();
+  public Future<FileSystemProps> fsProps(final String path) {
+    return fsPropsDeferred(path).execute();
+  }
+
+  private void checkContext() {
+    if (Vertx.instance.getContextID() == null) {
+      throw new IllegalStateException("Can't use file system outside an event loop");
+    }
   }
 
 }

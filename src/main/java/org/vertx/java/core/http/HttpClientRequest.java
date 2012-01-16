@@ -388,7 +388,7 @@ public class HttpClientRequest implements WriteStream {
     }
   }
 
-  void handleInterestedOpsChanged() {
+  void handleDrained() {
     checkThread();
     if (drainHandler != null) {
       drainHandler.handle(null);
@@ -448,12 +448,9 @@ public class HttpClientRequest implements WriteStream {
   private void connected(ClientConnection conn) {
     checkThread();
 
-    this.conn = conn;
-
     conn.setCurrentRequest(this);
 
-    request.setHeader(HttpHeaders.Names.CONNECTION, conn.keepAlive ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values
-        .CLOSE);
+    this.conn = conn;
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now
@@ -472,7 +469,6 @@ public class HttpClientRequest implements WriteStream {
         sendChunk(chunk.chunk, chunk.doneHandler);
       }
     }
-
     if (completed) {
       if (chunked) {
         writeEndChunk();
@@ -489,7 +485,7 @@ public class HttpClientRequest implements WriteStream {
       if (chunked) {
         request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
       } else if (contentLength == 0) {
-        request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
+        //request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
     }
     conn.write(request);

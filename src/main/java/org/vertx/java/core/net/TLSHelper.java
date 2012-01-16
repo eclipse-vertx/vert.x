@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.net;
 
+import org.vertx.java.core.logging.Logger;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -36,6 +38,8 @@ import java.security.cert.X509Certificate;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TLSHelper {
+
+  private static final Logger log = Logger.getLogger(TLSHelper.class);
 
   /*
   If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
@@ -63,7 +67,7 @@ public class TLSHelper {
       return context;
     } catch (Exception e) {
       //TODO better logging
-      e.printStackTrace();
+      log.error("Failed to create conext", e);
       throw new RuntimeException(e.getMessage());
     }
   }

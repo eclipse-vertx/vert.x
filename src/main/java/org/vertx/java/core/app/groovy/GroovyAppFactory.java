@@ -2,14 +2,12 @@ package org.vertx.java.core.app.groovy;
 
 import groovy.lang.GroovyClassLoader;
 import org.vertx.java.core.app.AppFactory;
-import org.vertx.java.core.app.ParentLastURLClassLoader;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.URL;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

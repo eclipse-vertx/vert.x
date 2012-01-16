@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# This script is used only for running vert.x to run examples from the development source tree
+
+PRG="$0"
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+
+DIRNAME=`dirname "$PRG"`
+
+CLASSPATH=$DIRNAME/../../target/vert.x.jar:$DIRNAME/../../lib/core/netty.jar:$DIRNAME/../../lib/core/high-scale-lib.jar:\
+:$DIRNAME/../../lib/opt/hazelcast-all-1.9.4.4.jar:$DIRNAME/../../lib/core/jackson-all-1.9.2.jar:\
+$DIRNAME/../../conf:$DIRNAME/../../lib/opt/js.jar:$DIRNAME/../../lib/opt/groovy-all-1.8.3.jar:\
+$DIRNAME/../../src/main/ruby:$DIRNAME/../../src/main/javascript:$JRUBY_HOME/lib/jruby.jar
+
+java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties -Djruby.home=$JRUBY_HOME\
+ -cp $CLASSPATH org.vertx.java.core.app.cli.VertxMgr "$@"

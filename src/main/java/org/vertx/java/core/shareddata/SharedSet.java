@@ -52,7 +52,7 @@ class SharedSet<E> implements Set<E> {
   }
 
   public boolean add(E e) {
-    e = Utils.chekShareableObject(e);
+    e = Utils.checkShareableObject(e);
     return set.add(e);
   }
 
@@ -66,7 +66,7 @@ class SharedSet<E> implements Set<E> {
 
   public boolean addAll(Collection<? extends E> es) {
     for (E e : es) {
-      e = Utils.chekShareableObject(e);
+      e = Utils.checkShareableObject(e);
       set.add(e);
     }
     return true;

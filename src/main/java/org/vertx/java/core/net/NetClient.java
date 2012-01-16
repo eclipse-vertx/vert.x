@@ -41,6 +41,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,8 +84,8 @@ public class NetClient extends NetClientBase {
     return connect(port, host, connectHandler, reconnectAttempts);
   }
 
-  private NetClient connect(final int port, final String host, final Handler<NetSocket> connectHandler, final int remainingAttempts) {
-
+  private NetClient connect(final int port, final String host, final Handler<NetSocket> connectHandler,
+                            final int remainingAttempts) {
     final Long contextID = Vertx.instance.getContextID();
     if (contextID == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
@@ -116,23 +117,35 @@ public class NetClient extends NetClientBase {
     //Client connections share context with caller
     channelFactory.setWorker(VertxInternal.instance.getWorkerForContextID(contextID));
 
-    bootstrap.setOptions(connectionOptions);
+    bootstrap.setOptions(generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
 
         if (channelFuture.isSuccess()) {
-          runOnCorrectThread(ch, new Runnable() {
-            public void run() {
-              VertxInternal.instance.setContextID(contextID);
-              NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
-              socketMap.put(ch, sock);
-              connectHandler.handle(sock);
-            }
-          });
+
+          if (ssl) {
+            // TCP connected, so now we must do the SSL handshake
+
+            SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+
+            ChannelFuture fut = sslHandler.handshake();
+            fut.addListener(new ChannelFutureListener() {
+
+              public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                if (channelFuture.isSuccess()) {
+                  connected(ch, connectHandler);
+                } else {
+                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
+                }
+              }
+            });
+          } else {
+            connected(ch, connectHandler);
+          }
         } else {
-          if (remainingAttempts > 0) {
+          if (remainingAttempts > 0 || remainingAttempts == -1) {
             runOnCorrectThread(ch, new Runnable() {
               public void run() {
                 VertxInternal.instance.setContextID(contextID);
@@ -140,23 +153,43 @@ public class NetClient extends NetClientBase {
                 //Set a timer to retry connection
                 Vertx.instance.setTimer(reconnectInterval, new Handler<Long>() {
                   public void handle(Long timerID) {
-                    connect(port, host, connectHandler, remainingAttempts - 1);
+                    connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                        - 1);
                   }
                 });
                }
             });
           } else {
-            Throwable t = channelFuture.getCause();
-            if (t instanceof Exception && exceptionHandler != null) {
-              exceptionHandler.handle((Exception) t);
-            } else {
-              log.error("Unhandled exception", t);
-            }
+            failed(ch, channelFuture.getCause());
           }
         }
       }
     });
     return this;
+  }
+
+  private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
+    runOnCorrectThread(ch, new Runnable() {
+      public void run() {
+        VertxInternal.instance.setContextID(contextID);
+        NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
+        socketMap.put(ch, sock);
+        connectHandler.handle(sock);
+      }
+    });
+  }
+
+  private void failed(NioSocketChannel ch, final Throwable t) {
+    if (t instanceof Exception && exceptionHandler != null) {
+      runOnCorrectThread(ch, new Runnable() {
+        public void run() {
+          VertxInternal.instance.setContextID(contextID);
+          exceptionHandler.handle((Exception) t);
+        }
+      });
+    } else {
+      log.error("Unhandled exception", t);
+    }
   }
 
   /**
@@ -182,11 +215,12 @@ public class NetClient extends NetClientBase {
    * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
    * to connect a further number of times, before it fails. Default value is zero.
    */
-  public void setReconnectAttempts(int attempts) {
-    if (attempts < 0) {
-      throw new IllegalArgumentException("Invalid attempts: " + attempts);
+  public NetClient setReconnectAttempts(int attempts) {
+    if (attempts < -1) {
+      throw new IllegalArgumentException("reconnect attempts must be >= -1");
     }
     this.reconnectAttempts = attempts;
+    return this;
   }
 
   /**
@@ -199,11 +233,12 @@ public class NetClient extends NetClientBase {
   /**
    * Set the reconnect interval, in milliseconds
    */
-  public void setReconnectInterval(long interval) {
+  public NetClient setReconnectInterval(long interval) {
     if (interval < 1) {
-      throw new IllegalArgumentException("Invalid interval: " + interval);
+      throw new IllegalArgumentException("reconnect interval nust be >= 1");
     }
     this.reconnectInterval = interval;
+    return this;
   }
 
   /**
@@ -266,8 +301,8 @@ public class NetClient extends NetClientBase {
   /**
    * {@inheritDoc}
    */
-  public NetClient setTcpNoDelay(boolean tcpNoDelay) {
-    return (NetClient)super.setTcpNoDelay(tcpNoDelay);
+  public NetClient setTCPNoDelay(boolean tcpNoDelay) {
+    return (NetClient)super.setTCPNoDelay(tcpNoDelay);
   }
 
   /**
@@ -368,7 +403,7 @@ public class NetClient extends NetClientBase {
           }
         });
       } else {
-        t.printStackTrace();
+        // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
       }
     }
   }

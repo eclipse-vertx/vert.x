@@ -30,13 +30,21 @@ import java.util.Map;
  */
 public abstract class NetBase {
 
-  protected Map<String, Object> connectionOptions = new HashMap<>();
   protected boolean ssl;
   protected String keyStorePath;
   protected String keyStorePassword;
   protected String trustStorePath;
   protected String trustStorePassword;
   protected boolean trustAll;
+
+  protected Boolean tcpNoDelay = true;
+  protected Integer tcpSendBufferSize;
+  protected Integer tcpReceiveBufferSize;
+  protected Boolean tcpKeepAlive = true;
+  protected Boolean reuseAddress;
+  protected Boolean soLinger;
+  protected Integer trafficClass;
+
   protected SSLContext context;
   protected Thread th;
   protected long contextID;
@@ -48,10 +56,6 @@ public abstract class NetBase {
     }
     this.contextID = cid;
     this.th = Thread.currentThread();
-
-    //Defaults
-    connectionOptions.put("child.tcpNoDelay", true);
-    connectionOptions.put("child.keepAlive", true);
   }
 
   protected void checkSSL() {
@@ -91,13 +95,69 @@ public abstract class NetBase {
     }
   }
 
+  protected Map<String, Object> generateConnectionOptions() {
+    Map<String, Object> options = new HashMap<>();
+    if (tcpNoDelay != null) {
+      options.put("child.tcpNoDelay", tcpNoDelay);
+    }
+    if (tcpSendBufferSize != null) {
+      options.put("child.sendBufferSize", tcpSendBufferSize);
+    }
+    if (tcpReceiveBufferSize != null) {
+      options.put("child.receiveBufferSize", tcpReceiveBufferSize);
+    }
+    if (reuseAddress != null) {
+      options.put("reuseAddress", reuseAddress);
+    }
+    if (soLinger != null) {
+      options.put("child.soLinger", soLinger);
+    }
+    if (trafficClass != null) {
+      options.put("child.trafficClass", trafficClass);
+    }
+    return options;
+  }
+
+  public Boolean isTCPNoDelay() {
+    return tcpNoDelay;
+  }
+
+  public Integer getSendBufferSize() {
+    return tcpSendBufferSize;
+  }
+
+  public Integer getReceiveBufferSize() {
+    return tcpReceiveBufferSize;
+  }
+
+  public Boolean isTCPKeepAlive() {
+    return tcpKeepAlive;
+  }
+
+  public Boolean isReuseAddress() {
+    return reuseAddress;
+  }
+
+  public Boolean isSoLinger() {
+    return soLinger;
+  }
+
+  public Integer getTrafficClass() {
+    return trafficClass;
+  }
+
+  public boolean isSSL() {
+    return ssl;
+  }
+
+
   /**
    * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
    * will turned <b>off</b> for the TCP connections created by this instance.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setTcpNoDelay(boolean tcpNoDelay) {
-    connectionOptions.put("child.tcpNoDelay", tcpNoDelay);
+  public NetBase setTCPNoDelay(Boolean tcpNoDelay) {
+    this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
@@ -105,8 +165,11 @@ public abstract class NetBase {
    * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setSendBufferSize(int size) {
-    connectionOptions.put("child.sendBufferSize", size);
+  public NetBase setSendBufferSize(Integer size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("TCP send buffer size must be >= 1");
+    }
+    this.tcpSendBufferSize = size;
     return this;
   }
 
@@ -114,8 +177,11 @@ public abstract class NetBase {
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setReceiveBufferSize(int size) {
-    connectionOptions.put("child.receiveBufferSize", size);
+  public NetBase setReceiveBufferSize(Integer size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("TCP receive buffer size must be >= 1");
+    }
+    this.tcpReceiveBufferSize = size;
     return this;
   }
 
@@ -123,8 +189,8 @@ public abstract class NetBase {
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setTCPKeepAlive(boolean keepAlive) {
-    connectionOptions.put("child.keepAlive", keepAlive);
+  public NetBase setTCPKeepAlive(Boolean keepAlive) {
+    this.tcpKeepAlive = keepAlive;
     return this;
   }
 
@@ -132,8 +198,8 @@ public abstract class NetBase {
    * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setReuseAddress(boolean reuse) {
-    connectionOptions.put("child.reuseAddress", reuse);
+  public NetBase setReuseAddress(Boolean reuse) {
+    this.reuseAddress = reuse;
     return this;
   }
 
@@ -141,8 +207,8 @@ public abstract class NetBase {
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setSoLinger(boolean linger) {
-    connectionOptions.put("child.soLinger", linger);
+  public NetBase setSoLinger(Boolean linger) {
+    this.soLinger = linger;
     return this;
   }
 
@@ -150,8 +216,8 @@ public abstract class NetBase {
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetBase setTrafficClass(int trafficClass) {
-    connectionOptions.put("child.trafficClass", trafficClass);
+  public NetBase setTrafficClass(Integer trafficClass) {
+    this.trafficClass = trafficClass;
     return this;
   }
 
@@ -163,6 +229,22 @@ public abstract class NetBase {
   public NetBase setSSL(boolean ssl) {
     this.ssl = ssl;
     return this;
+  }
+
+  public String getKeyStorePath() {
+    return keyStorePath;
+  }
+
+  public String getKeyStorePassword() {
+    return keyStorePassword;
+  }
+
+  public String getTrustStorePath() {
+    return trustStorePath;
+  }
+
+  public String getTrustStorePassword() {
+    return trustStorePassword;
   }
 
   /**

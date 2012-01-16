@@ -371,7 +371,7 @@ module Vertx
     # @param [String] path Path in the file system.
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {FSProps}.
     def FileSystem.fs_props(path)
-      Future.new(org.vertx.java.core.file.FileSystem.instance.getFSProps(path)){ |j_props| FSProps.new(j_props)}
+      Future.new(org.vertx.java.core.file.FileSystem.instance.fsProps(path)){ |j_props| FSProps.new(j_props)}
     end
 
   end

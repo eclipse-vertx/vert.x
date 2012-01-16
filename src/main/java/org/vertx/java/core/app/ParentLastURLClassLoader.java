@@ -28,6 +28,11 @@ public class ParentLastURLClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
+    if (name.startsWith("org.vertx.java.core.logging.Logger")) {
+      // Don't allow system logger to be used from within app since it maintains static references which hang around
+      // after app is undeployed
+      throw new ClassNotFoundException("Do not use org.vertx.java.core.logging.Logger from within application");
+    }
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       if (isSystemClass(name)) {

@@ -18,7 +18,6 @@ public class JRubyApp implements VertxApp {
   private final ScriptingContainer container;
   private final ClassLoader cl;
   private final String scriptName;
-  private Object receiver;
 
   JRubyApp(String scriptName, ClassLoader cl) {
     this.container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
@@ -29,7 +28,7 @@ public class JRubyApp implements VertxApp {
 
   public void start() throws Exception {
     InputStream is = cl.getResourceAsStream(scriptName);
-    receiver = container.runScriptlet(is, scriptName);
+    container.runScriptlet(is, scriptName);
     try {
       is.close();
     } catch (IOException ignore) {
@@ -38,7 +37,9 @@ public class JRubyApp implements VertxApp {
 
   public void stop() throws Exception {
     try {
-      container.callMethod(receiver, "vertx_stop");
+      // We call the script with receiver = null - this causes the method to be called on the top level
+      // script
+      container.callMethod(null, "vertx_stop");
     } catch (Exception e) {
       log.error("Failed to call vertx_stop", e);
     }

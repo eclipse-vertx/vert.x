@@ -25,6 +25,8 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.streams.ReadStream;
@@ -147,16 +149,20 @@ public abstract class ConnectionBase {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
         setContextID();
-        if (channelFuture.isSuccess()) {
-          doneHandler.handle(null);
-        } else {
-          Throwable err = channelFuture.getCause();
-          if (exceptionHandler != null && err instanceof Exception) {
-            exceptionHandler.handle((Exception) err);
-          } else {
-            err.printStackTrace();
+        Vertx.instance.nextTick(new SimpleHandler() {
+          public void handle() {
+            if (channelFuture.isSuccess()) {
+              doneHandler.handle(null);
+            } else {
+              Throwable err = channelFuture.getCause();
+              if (exceptionHandler != null && err instanceof Exception) {
+                exceptionHandler.handle((Exception) err);
+              } else {
+                log.error("Unhandled exception", err);
+              }
+            }
           }
-        }
+        });
       }
     });
   }

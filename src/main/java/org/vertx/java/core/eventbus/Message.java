@@ -35,13 +35,20 @@ public class Message extends Sendable {
   public final Buffer body;
 
   /**
+   * Create a new empty Message without specifying messageID - this will be filled in by the system
+   * @param address The address to send the message to
+   */
+  public Message(String address) {
+    this(address, null);
+  }
+
+  /**
    * Create a new Message without specifying messageID - this will be filled in by the system
    * @param address The address to send the message to
    * @param body
    */
   public Message(String address, Buffer body) {
-    this.address = address;
-    this.body = body;
+    this(null, address, body);
   }
 
   /**
@@ -52,8 +59,11 @@ public class Message extends Sendable {
    */
   public Message(String messageID, String address, Buffer body) {
     this.address = address;
-    this.body = body;
     this.messageID = messageID;
+    if (body == null) {
+      body = Buffer.create(0);
+    }
+    this.body = body;
   }
 
   /**
