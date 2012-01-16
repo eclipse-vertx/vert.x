@@ -6,26 +6,28 @@ require "test_utils"
 
 FILEDIR = "ruby-test-output"
 
+@tu.check_context
+
 def setup
   FileSystem::exists?(FILEDIR).handler do |exists|
     if exists
       FileSystem::delete_recursive(FILEDIR).handler do
         FileSystem::mkdir(FILEDIR).handler do
-          @tu.app_ready
+          yield
         end
       end
     else
       FileSystem::mkdir(FILEDIR).handler do
-        @tu.app_ready
+        yield
       end
     end
   end
 end
 
-def teardown(&blk)
+def teardown
   FileSystem::delete_recursive(FILEDIR).handler do
     FileSystem::mkdir(FILEDIR).handler do
-      blk.call
+      yield
     end
   end
 end
@@ -33,7 +35,9 @@ end
 def test_stats
   filename = FILEDIR + "/test-file.txt"
   FileSystem::create_file(filename).handler do
+    @tu.check_context
     FileSystem::props(filename).handler do |compl|
+      @tu.check_context
       @tu.azzert(compl.succeeded?)
       stats = compl.result
 #          puts "creation time #{stats.creation_time}"
@@ -52,6 +56,7 @@ end
 
 def test_async_file
   FileSystem::open(FILEDIR + "/somefile.txt").handler do |compl|
+    @tu.check_context
     @tu.azzert(compl.succeeded?)
     file = compl.result
     num_chunks = 100;
@@ -62,6 +67,7 @@ def test_async_file
       buff = TestUtils.gen_buffer(chunk_size)
       tot_buff.append_buffer(buff)
       file.write(buff, i * chunk_size).handler do
+        @tu.check_context
         written += 1
         if written == num_chunks
           # all written
@@ -70,6 +76,7 @@ def test_async_file
           for j in 0..num_chunks - 1
             pos = j * chunk_size
             file.read(tot_read, pos, pos, chunk_size).handler do |compl|
+              @tu.check_context
               @tu.azzert(compl.succeeded?)
               buff = compl.result
               read += 1
@@ -77,6 +84,7 @@ def test_async_file
                 # all read
                 @tu.azzert(TestUtils.buffers_equal(tot_buff, tot_read))
                 file.close.handler do
+                  @tu.check_context
                   @tu.test_complete
                 end
               end
@@ -91,6 +99,7 @@ end
 def test_async_file_streams
   filename = FILEDIR + "/somefile.txt"
   FileSystem::open(filename).handler do |compl|
+    @tu.check_context
     @tu.azzert(compl.succeeded?)
     file = compl.result
     num_chunks = 100;
@@ -104,6 +113,7 @@ def test_async_file_streams
     end
     file.close.handler do
       FileSystem::open(filename).handler do |compl|
+        @tu.check_context
         @tu.azzert(compl.succeeded?)
         file = compl.result
         read_stream = file.read_stream
@@ -113,7 +123,9 @@ def test_async_file_streams
         end
         read_stream.end_handler do
           @tu.azzert(TestUtils.buffers_equal(tot_buff, tot_read))
+          @tu.check_context
           file.close.handler do
+            @tu.check_context
             @tu.test_complete
           end
         end
@@ -123,6 +135,7 @@ def test_async_file_streams
 end
 
 def vertx_stop
+  @tu.check_context
   teardown do
     @tu.unregister_all
     @tu.app_stopped
@@ -130,4 +143,4 @@ def vertx_stop
 end
 
 @tu.register_all(self)
-setup
+setup { @tu.app_ready }

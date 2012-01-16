@@ -22,16 +22,16 @@ public class CloseHandlerServer extends BaseServer {
     return new Handler<NetSocket>() {
       final AtomicInteger counter = new AtomicInteger(0);
       public void handle(final NetSocket sock) {
-        check.check();
+        tu.checkContext();
         sock.endHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             tu.azzert(counter.incrementAndGet() == 1);
           }
         });
         sock.closedHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             tu.azzert(counter.incrementAndGet() == 2);
             tu.testComplete();
           }

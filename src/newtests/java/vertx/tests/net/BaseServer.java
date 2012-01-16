@@ -6,7 +6,6 @@ import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 
 /**
@@ -18,8 +17,6 @@ public abstract class BaseServer implements VertxApp {
 
   private NetServer server;
 
-  protected ContextChecker check;
-
   private final boolean sendAppReady;
 
   protected BaseServer(boolean sendAppReady) {
@@ -27,8 +24,6 @@ public abstract class BaseServer implements VertxApp {
   }
 
   public void start() {
-    check = new ContextChecker(tu);
-
     server = new NetServer();
     server.connectHandler(getConnectHandler());
     Integer port = SharedData.<String, Integer>getMap("params").get("listenport");
@@ -43,7 +38,7 @@ public abstract class BaseServer implements VertxApp {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         tu.appStopped();
       }
     });

@@ -13,7 +13,6 @@ import org.vertx.java.core.composition.Composer;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -69,7 +68,6 @@ public class TestClient extends TestClientBase {
   }
 
   public void testAppend() {
-    System.out.println("in test append");
     comp.series(connection.set(key1, val1));
     comp.series(connection.append(key1, val2));
     assertKey(key1, Buffer.create(0).appendBuffer(val1).appendBuffer(val2));
@@ -239,6 +237,10 @@ public class TestClient extends TestClientBase {
 
   public void testTransactionDiscard() {
     comp.series(connection.set(key1, Buffer.create(String.valueOf(0))));
+    comp.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+      }
+    });
     Future<Void> res1 = comp.series(connection.multi());
     assertResult(res1, null);
     Future<Integer> res2 = comp.series(connection.incr(key1));

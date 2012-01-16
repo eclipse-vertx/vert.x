@@ -14,7 +14,6 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
 import org.vertx.java.tests.TLSTestParams;
@@ -34,14 +33,12 @@ public class HttpTestClient extends TestClientBase {
 
   private HttpClient client;
   private HttpServer server;
-  private ContextChecker check;
 
   @Override
   public void start() {
     super.start();
     tu.appReady();
     client = new HttpClient().setHost("localhost").setPort(8080);
-    check = new ContextChecker(tu);
   }
 
   @Override
@@ -50,7 +47,7 @@ public class HttpTestClient extends TestClientBase {
     if (server != null) {
       server.close(new SimpleHandler() {
         public void handle() {
-          check.check();
+          tu.checkContext();
           HttpTestClient.super.stop();
         }
       });
@@ -419,7 +416,7 @@ public class HttpTestClient extends TestClientBase {
   private void testSimpleRequest(final String method, final boolean specificMethod) {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         tu.azzert(req.method.equals(method));
         req.response.end();
       }
@@ -427,7 +424,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(specificMethod, method, "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     }).end();
@@ -444,7 +441,7 @@ public class HttpTestClient extends TestClientBase {
   private void testURIAndPath(final String uri, final String path) {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         tu.azzert(uri.equals(req.uri));
         tu.azzert(path.equals(req.path));
         req.response.end();
@@ -453,7 +450,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     }).end();
@@ -472,7 +469,7 @@ public class HttpTestClient extends TestClientBase {
     final String query = generateQueryString(params, delim);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         tu.azzert(query.equals(req.query));
         tu.azzert(req.getParams().size() == params.size());
         for (Map.Entry<String, String> entry : req.getParams().entrySet()) {
@@ -484,7 +481,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", "some-uri/?" + query, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     }).end();
@@ -493,7 +490,7 @@ public class HttpTestClient extends TestClientBase {
   public void testNoParams() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         tu.azzert(req.query == null);
         tu.azzert(req.getParams().isEmpty());
         req.response.end();
@@ -502,7 +499,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     }).end();
@@ -511,7 +508,7 @@ public class HttpTestClient extends TestClientBase {
   public void testDefaultRequestHeaders() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         tu.azzert(req.getHeaders().size() == 1);
         tu.azzert(req.getHeader("Host").equals("localhost:8080"));
         tu.azzert(req.getHeaders().get("Host").equals("localhost:8080"));
@@ -521,7 +518,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     }).end();
@@ -539,7 +536,7 @@ public class HttpTestClient extends TestClientBase {
     final Map<String, String> headers = genMap(10);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         tu.azzert(req.getHeaders().size() == 1 + headers.size());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(req.getHeader(entry.getKey())));
@@ -550,7 +547,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     });
@@ -574,13 +571,13 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
       }
     });
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
       }
     });
 
@@ -731,7 +728,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -743,7 +740,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     });
@@ -777,7 +774,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -789,7 +786,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     });
@@ -805,7 +802,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
           }
@@ -815,7 +812,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     });
@@ -851,7 +848,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -863,7 +860,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
       }
     });
 
@@ -963,7 +960,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -975,7 +972,7 @@ public class HttpTestClient extends TestClientBase {
 
     final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     });
@@ -1013,7 +1010,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1025,7 +1022,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     });
@@ -1052,7 +1049,7 @@ public class HttpTestClient extends TestClientBase {
   private void testStatusCode(final int code, final String statusMessage) {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         if (code != -1) {
           req.response.statusCode = code;
         }
@@ -1065,7 +1062,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         if (code != -1) {
           tu.azzert(resp.statusCode == code);
         } else {
@@ -1093,7 +1090,7 @@ public class HttpTestClient extends TestClientBase {
     final Map<String, String> headers = genMap(10);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         if (individually) {
           for (Map.Entry<String, String> header : headers.entrySet()) {
             req.response.putHeader(header.getKey(), header.getValue());
@@ -1107,7 +1104,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.azzert(resp.getHeaders().size() == headers.size() + 1);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(resp.getHeader(entry.getKey())));
@@ -1131,7 +1128,7 @@ public class HttpTestClient extends TestClientBase {
     final Map<String, String> trailers = genMap(10);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.response.setChunked(true);
         if (individually) {
           for (Map.Entry<String, String> header : trailers.entrySet()) {
@@ -1146,7 +1143,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
             tu.azzert(resp.getTrailers().size() == trailers.size());
@@ -1165,7 +1162,7 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseNoTrailers() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.response.setChunked(true);
         req.response.end();
       }
@@ -1173,7 +1170,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
             tu.azzert(resp.getTrailers().isEmpty());
@@ -1188,7 +1185,7 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseSetTrailerNonChunked() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         try {
           req.response.putTrailer("foo", "bar");
           tu.azzert(false, "Should throw exception");
@@ -1219,7 +1216,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
 
         Handler<Void> handler = new SimpleHandler() {
           public void handle() {
@@ -1395,7 +1392,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
       }
     });
 
@@ -1410,14 +1407,14 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.response.end(body);
       }
     });
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1456,7 +1453,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
 
         if (encoding == null) {
           req.response.end(body);
@@ -1468,7 +1465,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -1485,7 +1482,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         try {
           req.response.write("foo");
           tu.azzert(false, "Should throw exception");
@@ -1498,7 +1495,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     }).end();
@@ -1529,7 +1526,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
 
         if (chunked) {
           req.response.setChunked(true);
@@ -1551,7 +1548,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1638,7 +1635,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         if (chunked) {
           req.response.setChunked(true);
         } else {
@@ -1668,7 +1665,7 @@ public class HttpTestClient extends TestClientBase {
 
     final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -1688,7 +1685,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.response.setChunked(true);
         req.response.writeBuffer(body);
         req.response.end();
@@ -1697,7 +1694,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        check.check();
+        tu.checkContext();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1803,7 +1800,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            check.check();
+            tu.checkContext();
             tu.azzert(TestUtils.buffersEqual(toSend, data));
             req.response.end();
           }
@@ -1814,7 +1811,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             tu.testComplete();
           }
         });
@@ -1824,7 +1821,7 @@ public class HttpTestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         req.write(toSend);
         req.end();
       }
@@ -1841,7 +1838,7 @@ public class HttpTestClient extends TestClientBase {
         req.response.putHeader("HTTP/1.1", "100 Continue");
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            check.check();
+            tu.checkContext();
             tu.azzert(TestUtils.buffersEqual(toSend, data));
             req.response.end();
           }
@@ -1853,7 +1850,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             tu.testComplete();
           }
         });
@@ -1864,7 +1861,7 @@ public class HttpTestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         req.write(toSend);
         req.end();
       }
@@ -1883,13 +1880,13 @@ public class HttpTestClient extends TestClientBase {
     final Buffer buff = TestUtils.generateRandomBuffer(10000);
     Vertx.instance.setPeriodic(0, new Handler<Long>() {
       public void handle(Long id) {
-        check.check();
+        tu.checkContext();
         req.write(buff);
         if (req.writeQueueFull()) {
           Vertx.instance.cancelTimer(id);
           req.drainHandler(new SimpleHandler() {
             public void handle() {
-              check.check();
+              tu.checkContext();
               tu.azzert(!req.writeQueueFull());
               tu.testComplete();
             }
@@ -1908,14 +1905,14 @@ public class HttpTestClient extends TestClientBase {
         resp.pause();
         final Handler<Message> resumeHandler = new Handler<Message>() {
           public void handle(Message message) {
-            check.check();
+            tu.checkContext();
             resp.resume();
           }
         };
         EventBus.instance.registerHandler("client_resume", resumeHandler);
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             EventBus.instance.unregisterHandler("client_resume", resumeHandler);
           }
         });
@@ -2003,8 +2000,6 @@ public class HttpTestClient extends TestClientBase {
           .setKeyStorePassword("wibble");
     }
 
-    final ContextChecker check = new ContextChecker(tu);
-
     final boolean shouldPass = params.shouldPass;
 
     client.exceptionHandler(new Handler<Exception>() {
@@ -2021,7 +2016,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse response) {
-        check.check();
+        tu.checkContext();
         response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.azzert("bar".equals(data.toString()));
@@ -2038,8 +2033,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testConnectInvalidPort() {
-    final ContextChecker check = new ContextChecker(tu);
-    client.exceptionHandler(createNoConnectHandler(check));
+    client.exceptionHandler(createNoConnectHandler());
     client.setPort(9998);
     client.getNow("someurl", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
@@ -2049,8 +2043,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testConnectInvalidHost() {
-    final ContextChecker check = new ContextChecker(tu);
-    client.exceptionHandler(createNoConnectHandler(check));
+    client.exceptionHandler(createNoConnectHandler());
     client.setHost("wibble");
     client.getNow("someurl", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
@@ -2059,10 +2052,10 @@ public class HttpTestClient extends TestClientBase {
     });
   }
 
-  Handler<Exception> createNoConnectHandler(final ContextChecker check) {
+  Handler<Exception> createNoConnectHandler() {
     return new Handler<Exception>() {
       public void handle(Exception e) {
-        check.check();
+        tu.checkContext();
         tu.testComplete();
       }
     };

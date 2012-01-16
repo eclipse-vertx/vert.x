@@ -8,7 +8,6 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestClientBase;
 
 import java.util.HashMap;
@@ -18,8 +17,6 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RouteMatcherTestClient extends TestClientBase {
-
-  private ContextChecker check;
 
   @Override
   public void start() {

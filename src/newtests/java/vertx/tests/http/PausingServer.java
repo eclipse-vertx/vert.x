@@ -8,7 +8,6 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 
 /**
@@ -20,32 +19,28 @@ public class PausingServer implements VertxApp {
 
   private HttpServer server;
 
-  protected ContextChecker check;
-
   public void start() {
-    check = new ContextChecker(tu);
-
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        check.check();
+        tu.checkContext();
         req.response.setChunked(true);
         req.pause();
         final Handler<Message> resumeHandler = new Handler<Message>() {
           public void handle(Message message) {
-            check.check();
+            tu.checkContext();
             req.resume();
           }
         };
         EventBus.instance.registerHandler("server_resume", resumeHandler);
         req.endHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             EventBus.instance.unregisterHandler("server_resume", resumeHandler);
           }
         });
         req.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            check.check();
+            tu.checkContext();
             req.response.write(buffer);
           }
         });
@@ -58,7 +53,7 @@ public class PausingServer implements VertxApp {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         tu.appStopped();
       }
     });

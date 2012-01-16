@@ -8,7 +8,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 
 import java.util.Set;
@@ -22,21 +21,18 @@ public class FanoutServer implements VertxApp {
 
   private NetServer server;
 
-  protected ContextChecker check;
-
   public void start() {
-    check = new ContextChecker(tu);
 
     final Set<Long> connections = SharedData.getSet("conns");
 
     server = new NetServer();
     server.connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        check.check();
+        tu.checkContext();
         connections.add(socket.writeHandlerID);
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            check.check();
+            tu.checkContext();
             for (Long actorID : connections) {
               Vertx.instance.sendToHandler(actorID, buffer);
             }
@@ -44,7 +40,7 @@ public class FanoutServer implements VertxApp {
         });
         socket.closedHandler(new SimpleHandler() {
           public void handle() {
-            check.check();
+            tu.checkContext();
             connections.remove(socket.writeHandlerID);
           }
         });
@@ -57,7 +53,7 @@ public class FanoutServer implements VertxApp {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         tu.appStopped();
       }
     });

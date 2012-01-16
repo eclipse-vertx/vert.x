@@ -32,7 +32,7 @@ public class LocalPeer extends EventBusAppBase {
     eb.registerHandler(address, new Handler<Message>() {
       boolean handled = false;
       public void handle(Message msg) {
-        check.check();
+        tu.checkContext();
         tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
         tu.azzert(address.equals(msg.address));
         tu.azzert(msg.messageID != null);
@@ -59,7 +59,7 @@ public class LocalPeer extends EventBusAppBase {
       boolean handled = false;
 
       public void handle(Message msg) {
-        check.check();
+        tu.checkContext();
         tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
         tu.azzert(address.equals(msg.address));
         tu.azzert(msg.messageID != null);
@@ -78,7 +78,7 @@ public class LocalPeer extends EventBusAppBase {
     eb.registerHandler("some-address", new Handler<Message>() {
       boolean handled = false;
       public void handle(Message msg) {
-        check.check();
+        tu.checkContext();
         tu.azzert(msg.body.length() == 0);
         tu.azzert(address.equals(msg.address));
         tu.azzert(msg.messageID != null);
@@ -95,7 +95,7 @@ public class LocalPeer extends EventBusAppBase {
     eb.registerHandler("some-address", new Handler<Message>() {
       boolean handled = false;
       public void handle(Message msg) {
-        check.check();
+        tu.checkContext();
         tu.azzert(msg.body.length() == 0);
         tu.azzert(address.equals(msg.address));
         tu.azzert(msg.messageID != null);
@@ -112,7 +112,7 @@ public class LocalPeer extends EventBusAppBase {
     eb.registerHandler(address, new Handler<Message>() {
       boolean handled = false;
       public void handle(Message msg) {
-        check.check();
+        tu.checkContext();
         tu.azzert(!handled);
         tu.azzert(TestUtils.buffersEqual((Buffer)data.get("buffer"), msg.body));
         tu.azzert(address.equals(msg.address));
@@ -131,7 +131,7 @@ public class LocalPeer extends EventBusAppBase {
     eb.registerHandler(address, new Handler<Message>() {
       boolean handled = false;
       public void handle(Message msg) {
-        check.check();
+        tu.checkContext();
         tu.azzert(!handled);
         tu.azzert(TestUtils.buffersEqual((Buffer)data.get("buffer"), msg.body));
         tu.azzert(address.equals(msg.address));

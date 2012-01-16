@@ -21,7 +21,7 @@ public class DrainingServer extends BaseServer {
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
-        check.check();
+        tu.checkContext();
 
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
@@ -30,13 +30,13 @@ public class DrainingServer extends BaseServer {
         //Send data until the buffer is full
         Vertx.instance.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
-            check.check();
+            tu.checkContext();
             sock.write(buff);
             if (sock.writeQueueFull()) {
               Vertx.instance.cancelTimer(id);
               sock.drainHandler(new SimpleHandler() {
                 public void handle() {
-                  check.check();
+                  tu.checkContext();
                   tu.azzert(!sock.writeQueueFull());
                   tu.testComplete();
                 }

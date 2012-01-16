@@ -7,7 +7,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.ContextChecker;
 import org.vertx.java.newtests.TestUtils;
 import org.vertx.java.tests.TLSTestParams;
 
@@ -20,11 +19,7 @@ public class TLSServer implements VertxApp {
 
   private HttpServer server;
 
-  protected ContextChecker check;
-
   public void start() {
-    check = new ContextChecker(tu);
-
     TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
 
     server = new HttpServer();
@@ -45,11 +40,11 @@ public class TLSServer implements VertxApp {
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
-        check.check();
+        tu.checkContext();
 
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            check.check();
+            tu.checkContext();
             tu.azzert("foo".equals(buffer.toString()));
             req.response.end("bar");
           }
@@ -63,7 +58,7 @@ public class TLSServer implements VertxApp {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        check.check();
+        tu.checkContext();
         tu.appStopped();
       }
     });

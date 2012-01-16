@@ -83,7 +83,7 @@ public class LocalClient extends EventBusAppBase {
       eb.registerHandler(address, new Handler<Message>() {
         boolean handled;
         public void handle(Message msg) {
-          check.check();
+          tu.checkContext();
           tu.azzert(!handled);
           tu.azzert(TestUtils.buffersEqual(buff, msg.body));
           tu.azzert(address.equals(msg.address));
