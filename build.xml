@@ -44,17 +44,16 @@
   <property name="test-apps-target" value="${target}/test-apps/classes"/>
   <property name="java-test-apps-src" value="src/tests/testapps/java"/>
 
-  <property name="new-tests-target" value="${target}/newtests/classes"/>
-  <property name="new-tests-base" value="src/newtests"/>
-  <property name="new-test-java-tests-src" value="${new-tests-base}/java"/>
-  <property name="new-test-framework-src-java" value="${new-tests-base}/framework/java"/>
-  <property name="new-test-controllers-src" value="${new-tests-base}/controllers"/>
+  <property name="tests-target" value="${target}/newtests/classes"/>
+  <property name="tests-base" value="src/newtests"/>
+  <property name="test-java-tests-src" value="${tests-base}/java"/>
+  <property name="test-framework-src-java" value="${tests-base}/framework/java"/>
+  <property name="test-controllers-src" value="${tests-base}/controllers"/>
 
   <property name="javadoc-dir" value="docs/java/api"/>
   <property name="rubydoc-dir" value="docs/ruby/api"/>
 
   <property environment="env"/>
-
 
   <path id="core-lib-classpath">
     <fileset dir="${core-lib}">
@@ -71,37 +70,24 @@
       <include name="*.jar"/>
     </fileset>
     <pathelement location="${tests-target}"/>
-    <pathelement location="${test-apps-target}"/>
-    <pathelement location="target/vert.x.jar"/>
-  </path>
-
-  <path id="new-test-classpath">
-    <path refid="core-lib-classpath"/>
-    <fileset dir="${test-lib}">
-      <include name="*.jar"/>
-    </fileset>
-    <pathelement location="${new-tests-target}"/>
     <pathelement location="target/vert.x.jar"/>
 
-    <pathelement location="${new-tests-base}/javascript"/>
-    <pathelement location="${new-tests-base}/framework/javascript"/>
+    <pathelement location="${tests-base}/javascript"/>
+    <pathelement location="${tests-base}/framework/javascript"/>
     <pathelement location="src/main/javascript"/>
 
-    <pathelement location="${new-tests-base}/ruby"/>
-    <pathelement location="${new-tests-base}/framework/ruby"/>
+    <pathelement location="${tests-base}/ruby"/>
+    <pathelement location="${tests-base}/framework/ruby"/>
     <pathelement location="src/main/ruby"/>
 
-    <pathelement location="${new-tests-base}/groovy"/>
-    <pathelement location="${new-tests-base}/framework/groovy"/>
+    <pathelement location="${tests-base}/groovy"/>
+    <pathelement location="${tests-base}/framework/groovy"/>
     <pathelement location="src/main/groovy"/>
   </path>
 
   <taskdef name="groovyc"
            classname="org.codehaus.groovy.ant.Groovyc"
            classpathref="core-lib-classpath"/>
-
-  <taskdef name="testng" classpathref="test-classpath"
-           classname="org.testng.TestNGAntTask"/>
 
   <target name="init">
     <!-- Create the time stamp -->
@@ -130,50 +116,28 @@
 
   <target name="compile-tests" depends="jar-core">
     <mkdir dir="${tests-target}"/>
-    <javac srcdir="${tests-src}" destdir="${tests-target}" classpathref="test-classpath" debug="on"
-           includeantruntime="false"/>
-  </target>
 
-  <target name="compile-test-apps" depends="jar-core">
-    <mkdir dir="${test-apps-target}"/>
-    <javac srcdir="${java-test-apps-src}" destdir="${test-apps-target}" classpathref="test-classpath" debug="on"
-           includeantruntime="false"/>
-  </target>
-
-  <target name="compile-new-tests" depends="jar-core">
-    <mkdir dir="${new-tests-target}"/>
-
-    <javac destdir="${new-tests-target}" classpathref="new-test-classpath"
+    <javac destdir="${tests-target}" classpathref="test-classpath"
            debug="on"
            includeantruntime="false">
-      <src path="${new-test-framework-src-java}"/>
-      <src path="${new-test-controllers-src}"/>
-      <src path="${new-test-java-tests-src}"/>
+      <src path="${test-framework-src-java}"/>
+      <src path="${test-controllers-src}"/>
+      <src path="${test-java-tests-src}"/>
     </javac>
   </target>
 
-  <target name="tests" depends="java-tests, ruby-tests">
-  </target>
-
-  <target name="java-tests" depends="compile-tests, compile-test-apps">
-    <testng classpathref="test-classpath">
-      <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
-      <classfileset dir="${tests-target}" includes="**/*Test.class" excludes="**/redis/*.class"/>
-    </testng>
-  </target>
-
-  <target name="new-tests" depends="compile-new-tests">
+  <target name="tests" depends="compile-tests">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes">
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
 
-      <classpath refid="new-test-classpath"/>
+      <classpath refid="test-classpath"/>
 
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
-        <fileset dir="${new-tests-target}">
+        <fileset dir="${tests-target}">
           <include name="org/vertx/java/tests/**/*Test.class"/>
           <exclude name="org/vertx/java/tests/redis/*Test.class"/>
         </fileset>
@@ -189,19 +153,15 @@
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
 
-      <classpath refid="new-test-classpath"/>
+      <classpath refid="test-classpath"/>
 
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
-        <fileset dir="${new-tests-target}">
+        <fileset dir="${tests-target}">
           <include name="org/vertx/java/tests/redis/*Test.class"/>
         </fileset>
       </batchtest>
     </junit>
-  </target>
-
-  <target name="ruby-tests" depends="compile-tests">
-    <exec executable="./run_tests.sh" dir="./src/tests/ruby" failonerror="true"/>
   </target>
 
   <target name="javadoc" depends="compile-core">
