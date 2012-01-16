@@ -165,7 +165,6 @@ def create_buffer(len)
 end
 
 def vertx_stop
-  puts "in vertxstop tu is #{@tu}"
   @tu.unregister_all
   @tu.app_stopped
 end
