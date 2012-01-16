@@ -1,7 +1,5 @@
 package vertx.tests.sockjs;
 
-
-import org.testng.annotations.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -92,8 +90,6 @@ public class TestClient extends TestClientBase {
     });
   }
 
-
-  @Test
   public void testXHRPolling() {
 
     final HttpServer server = new HttpServer();
