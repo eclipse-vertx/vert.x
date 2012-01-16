@@ -30,6 +30,14 @@ var vertx = vertx || new (function() {
         handler(new NetSocket(jSocket));
       });
     }
+
+    that.close = function(doneHandler) {
+      if (doneHandler) {
+        jServer.close(doneHandler);
+      } else {
+        jServer.close();
+      }
+    }
   };
 
   that.NetClient = function() {

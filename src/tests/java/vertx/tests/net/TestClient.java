@@ -512,6 +512,15 @@ public class TestClient extends TestClientBase {
 
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
+        sock.dataHandler(new Handler<Buffer>() {
+          int received;
+          public void handle(Buffer data) {
+            received += data.length();
+            if (received == numSends * sendSize) {
+              tu.testComplete();
+            }
+          }
+        });
         tu.checkContext();
         doWrite(sentBuff, sock, numSends, sendSize);
       }
@@ -609,7 +618,6 @@ public class TestClient extends TestClientBase {
 
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        e.printStackTrace();
         if (shouldPass) {
           tu.azzert(false, "Should not throw exception");
         } else {
@@ -782,11 +790,9 @@ public class TestClient extends TestClientBase {
     count--;
     final int c = count;
     if (count == 0) {
-
       sock.write(b, new SimpleHandler() {
         public void handle() {
           tu.checkContext();
-          tu.testComplete();
         }
       });
     } else {

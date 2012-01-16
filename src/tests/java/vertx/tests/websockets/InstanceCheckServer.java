@@ -23,6 +23,7 @@ public class InstanceCheckServer implements VertxApp {
   private final String id = UUID.randomUUID().toString();
 
   public void start() {
+
     server = new HttpServer().websocketHandler(new WebSocketHandler() {
       public void handle(final WebSocket ws) {
         tu.checkContext();

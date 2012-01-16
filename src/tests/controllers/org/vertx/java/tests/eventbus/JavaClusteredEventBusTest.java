@@ -21,4 +21,8 @@ public class JavaClusteredEventBusTest extends JavaEventBusTest {
     return ClusteredClient.class.getName();
   }
 
+//  public void testFoo() throws Exception {
+//    super.runTestInLoop("testPointToPoint", 10000);
+//  }
+
 }

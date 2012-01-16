@@ -1,13 +1,15 @@
+package net
 
 import org.vertx.groovy.core.net.NetServer
 import org.vertx.groovy.newtests.TestUtils
 
-println "Starting server"
-
 tu = new TestUtils()
+tu.checkContext()
 
 server = new NetServer().connectHandler { socket ->
+  tu.checkContext()
   socket.dataHandler { buffer ->
+    tu.checkContext()
     socket.write buffer
   }
 }.listen(8080)
@@ -15,7 +17,7 @@ server = new NetServer().connectHandler { socket ->
 tu.appReady()
 
 void vertxStop() {
-  println "vertxStop called"
+  tu.checkContext()
   server.close()
   tu.appStopped()
 }

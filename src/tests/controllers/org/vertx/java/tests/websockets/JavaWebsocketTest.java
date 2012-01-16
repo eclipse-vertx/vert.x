@@ -2,6 +2,7 @@ package org.vertx.java.tests.websockets;
 
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.websockets.InstanceCheckServer;
@@ -11,6 +12,8 @@ import vertx.tests.websockets.WebsocketsTestClient;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JavaWebsocketTest extends TestBase {
+
+  private static final Logger log = Logger.getLogger(JavaWebsocketTest.class);
 
   @Override
   protected void setUp() throws Exception {
@@ -168,4 +171,8 @@ public class JavaWebsocketTest extends TestBase {
     // And make sure connection requests are distributed amongst them
     assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
   }
+
+//  public void testFoo() throws Exception {
+//    super.runTestInLoop("testSharedServersMultipleInstances3StartAllStopAll", 10);
+//  }
 }

@@ -37,7 +37,6 @@ public class PausingServer extends BaseServer {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             tu.checkContext();
-            sock.write(buffer);
           }
         });
       }

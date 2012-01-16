@@ -61,7 +61,7 @@ public class AppManager {
       instances = Runtime.getRuntime().availableProcessors();
     }
 
-    log.info("Deploying application name : " + appName + " type: " + type + " main class: " + main +
+    log.debug("Deploying application name : " + appName + " type: " + type + " main class: " + main +
              " instances: " + instances);
 
     if (appMeta.containsKey(appName)) {
@@ -93,7 +93,7 @@ public class AppManager {
 
       void started() {
         if (count.incrementAndGet() == instCount) {
-          log.info("Started " + instCount + " instances ok");
+          log.debug("Started " + instCount + " instances ok");
           if (doneHandler != null) {
             doneHandler.handle(null);
           }
@@ -164,7 +164,7 @@ public class AppManager {
   private void internalUndeploy(String name, final Handler<Void> doneHandler) {
     List<AppHolder> list = apps.get(name);
     if (list != null) {
-      log.info("Undeploying " + list.size() + " instances of application: " + name);
+      log.debug("Undeploying " + list.size() + " instances of application: " + name);
       for (final AppHolder holder: list) {
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {

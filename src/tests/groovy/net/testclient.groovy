@@ -1,17 +1,20 @@
+package net
 
 import org.vertx.groovy.core.net.NetClient
 import org.vertx.groovy.newtests.TestUtils
 import org.vertx.java.core.buffer.Buffer
 
 tu = new TestUtils()
+tu.checkContext()
 
 client = null
 
 tu.register("test1", {
   client = new NetClient().connect(8080, "localhost", { socket ->
-
+    tu.checkContext()
     socket.dataHandler { buffer ->
-      println "Net client receiving: ${buffer.toString("UTF-8")}"
+      tu.checkContext()
+      // println "Net client receiving: ${buffer.toString("UTF-8")}"
       tu.testComplete()
     }
 

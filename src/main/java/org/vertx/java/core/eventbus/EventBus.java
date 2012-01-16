@@ -194,7 +194,7 @@ public class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
-   registerHandler(address, handler, completionHandler, false);
+    registerHandler(address, handler, completionHandler, false);
   }
 
   /**
@@ -206,22 +206,38 @@ public class EventBus {
     registerHandler(address, handler, null);
   }
 
+
   /**
    * Unregisters a handler
    * @param address The address the handler was registered to
    * @param handler The handler
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
    */
-  public void unregisterHandler(String address, Handler<Message> handler) {
+  public void unregisterHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
       set.remove(new HandlerHolder(handler, false));
       if (set.isEmpty()) {
         handlers.remove(address);
         if (subs != null) {
-          removeSub(address, serverID);
+          removeSub(address, serverID, completionHandler);
+        } else if (completionHandler != null) {
+          callCompletionHandler(completionHandler);
         }
+      } else if (completionHandler != null) {
+        callCompletionHandler(completionHandler);
       }
     }
+  }
+
+  /**
+   * Unregisters a handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   */
+  public void unregisterHandler(String address, Handler<Message> handler) {
+    unregisterHandler(address, handler, null);
   }
 
   protected void close(Handler<Void> doneHandler) {
@@ -249,16 +265,24 @@ public class EventBus {
       if (subs != null && !replyHandler) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
+      } else {
+        if (completionHandler != null) {
+          callCompletionHandler(completionHandler);
+        }
       }
       set.add(new HandlerHolder(handler, replyHandler));
     } else {
       set.add(new HandlerHolder(handler, replyHandler));
       if (completionHandler != null) {
-        SimpleFuture<Void> f = new SimpleFuture<>();
-        f.setResult(null);
-        completionHandler.handle(f);
+        callCompletionHandler(completionHandler);
       }
     }
+  }
+
+  private void callCompletionHandler(CompletionHandler<Void> completionHandler) {
+    SimpleFuture<Void> f = new SimpleFuture<>();
+    f.setResult(null);
+    completionHandler.handle(f);
   }
 
   private void send(final ServerID serverID, final Sendable sendable) {
@@ -289,7 +313,7 @@ public class EventBus {
           log.debug("Cluster connection failed. Removing it from map");
           connections.remove(serverID);
           if (subs != null && sendable.type() == Sendable.TYPE_MESSAGE) {
-            removeSub(((Message)sendable).address, serverID);
+            removeSub(((Message)sendable).address, serverID, null);
           }
         }
       });
@@ -302,11 +326,21 @@ public class EventBus {
     }
   }
 
-  private void removeSub(String subName, ServerID serverID) {
+  private void removeSub(String subName, ServerID serverID, final CompletionHandler<Void> completionHandler) {
    subs.remove(subName, serverID, new CompletionHandler<Boolean>() {
       public void handle(Future<Boolean> event) {
-        if (event.failed()) {
-          log.error("Failed to remove entry", event.exception());
+        if (completionHandler != null) {
+          SimpleFuture<Void> f = new SimpleFuture<>();
+          if (event.failed()) {
+            f.setException(event.exception());
+          } else {
+            f.setResult(null);
+          }
+          completionHandler.handle(f);
+        } else {
+          if (event.failed()) {
+            log.error("Failed to remove subscription", event.exception());
+          }
         }
       }
     });

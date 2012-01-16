@@ -31,4 +31,8 @@ var TestUtils = function() {
     jutils.unregisterAll();
   }
 
+  that.checkContext = function() {
+    jutils.checkContext();
+  }
+
 }

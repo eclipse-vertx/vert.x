@@ -3,14 +3,16 @@ load('core/net.js')
 
 var tu = new TestUtils();
 
+var client;
+
 tu.register('test1', function() {
 
-  var client = new vertx.NetClient();
+  client = new vertx.NetClient();
 
   client.connect(8080, 'localhost', function(sock) {
 
     sock.dataHandler(function(data) {
-      log.println("Got data echoed back");
+      //log.println("Got data echoed back");
       tu.testComplete();
     });
 
@@ -23,5 +25,6 @@ tu.register('test1', function() {
 tu.appReady();
 
 function vertxStop() {
+  client.close();
   tu.appStopped();
 }

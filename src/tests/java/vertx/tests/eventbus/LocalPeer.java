@@ -1,5 +1,7 @@
 package vertx.tests.eventbus;
 
+import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -30,18 +32,35 @@ public class LocalPeer extends EventBusAppBase {
   public void testPubSubInitialise() {
     final String address = "some-address";
     eb.registerHandler(address, new Handler<Message>() {
-      boolean handled = false;
-      public void handle(Message msg) {
-        tu.checkContext();
-        tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-        tu.azzert(address.equals(msg.address));
-        tu.azzert(msg.messageID != null);
-        eb.unregisterHandler("some-address", this);
-        handled = true;
-        tu.testComplete();
+          boolean handled = false;
+
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
+            tu.azzert(address.equals(msg.address));
+            tu.azzert(msg.messageID != null);
+            handled = true;
+            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
+              public void handle(Future<Void> event) {
+                if (event.succeeded()) {
+                  tu.testComplete();
+                } else {
+                  tu.azzert(false, "Failed to unregister");
+                }
+              }
+            });
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
       }
-    });
-    tu.testComplete();
+    }
+    );
+
   }
 
   public void testPubSubMultipleHandlersInitialise() {
@@ -56,96 +75,164 @@ public class LocalPeer extends EventBusAppBase {
 
     final String address = "some-address";
     eb.registerHandler(address, new Handler<Message>() {
-      boolean handled = false;
+          boolean handled = false;
 
-      public void handle(Message msg) {
-        tu.checkContext();
-        tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-        tu.azzert(address.equals(msg.address));
-        tu.azzert(msg.messageID != null);
-        eb.unregisterHandler(address, this);
-        eb.unregisterHandler(address, otherHandler);
-        handled = true;
-        tu.testComplete();
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
+            tu.azzert(address.equals(msg.address));
+            tu.azzert(msg.messageID != null);
+            eb.unregisterHandler(address, this, new CompletionHandler<Void>() {
+              public void handle(Future<Void> event) {
+                if (event.succeeded()) {
+                  tu.testComplete();
+                } else {
+                  tu.azzert(false, "Failed to unregister");
+                }
+              }
+            });
+            eb.unregisterHandler(address, otherHandler);
+            handled = true;
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
       }
-    });
-
-    tu.testComplete();
+    }
+    );
   }
 
   public void testNoBufferInitialise() {
     final String address = "some-address";
     eb.registerHandler("some-address", new Handler<Message>() {
-      boolean handled = false;
-      public void handle(Message msg) {
-        tu.checkContext();
-        tu.azzert(msg.body.length() == 0);
-        tu.azzert(address.equals(msg.address));
-        tu.azzert(msg.messageID != null);
-        eb.unregisterHandler("some-address", this);
-        handled = true;
-        tu.testComplete();
+          boolean handled = false;
+
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(msg.body.length() == 0);
+            tu.azzert(address.equals(msg.address));
+            tu.azzert(msg.messageID != null);
+            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
+              public void handle(Future<Void> event) {
+                if (event.succeeded()) {
+                  tu.testComplete();
+                } else {
+                  tu.azzert(false, "Failed to unregister");
+                }
+              }
+            });
+            handled = true;
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
       }
-    });
-    tu.testComplete();
+    }
+    );
   }
 
   public void testNullBufferInitialise() {
     final String address = "some-address";
     eb.registerHandler("some-address", new Handler<Message>() {
-      boolean handled = false;
-      public void handle(Message msg) {
-        tu.checkContext();
-        tu.azzert(msg.body.length() == 0);
-        tu.azzert(address.equals(msg.address));
-        tu.azzert(msg.messageID != null);
-        eb.unregisterHandler("some-address", this);
-        handled = true;
-        tu.testComplete();
+          boolean handled = false;
+
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(msg.body.length() == 0);
+            tu.azzert(address.equals(msg.address));
+            tu.azzert(msg.messageID != null);
+            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
+              public void handle(Future<Void> event) {
+                if (event.succeeded()) {
+                  tu.testComplete();
+                } else {
+                  tu.azzert(false, "Failed to unregister");
+                }
+              }
+            });
+            handled = true;
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
       }
-    });
-    tu.testComplete();
+    }
+    );
   }
 
   public void testPointToPointInitialise() {
     final String address = UUID.randomUUID().toString();
     eb.registerHandler(address, new Handler<Message>() {
-      boolean handled = false;
-      public void handle(Message msg) {
-        tu.checkContext();
-        tu.azzert(!handled);
-        tu.azzert(TestUtils.buffersEqual((Buffer)data.get("buffer"), msg.body));
-        tu.azzert(address.equals(msg.address));
-        tu.azzert(msg.messageID != null);
-        eb.unregisterHandler(address, this);
-        handled = true;
-        tu.testComplete();
+          boolean handled = false;
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(!handled);
+            tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
+            tu.azzert(address.equals(msg.address));
+            tu.azzert(msg.messageID != null);
+            eb.unregisterHandler(address, this, new CompletionHandler<Void>() {
+              public void handle(Future<Void> event) {
+                if (event.succeeded()) {
+                  tu.testComplete();
+                } else {
+                  tu.azzert(false, "Failed to unregister");
+                }
+              }
+            });
+            handled = true;
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
       }
-    });
+    }
+    );
     SharedData.getSet("addresses").add(address);
-    tu.testComplete();
   }
 
   public void testReplyInitialise() {
     final String address = UUID.randomUUID().toString();
     eb.registerHandler(address, new Handler<Message>() {
-      boolean handled = false;
-      public void handle(Message msg) {
-        tu.checkContext();
-        tu.azzert(!handled);
-        tu.azzert(TestUtils.buffersEqual((Buffer)data.get("buffer"), msg.body));
-        tu.azzert(address.equals(msg.address));
-        tu.azzert(msg.messageID != null);
-        eb.unregisterHandler(address, this);
-        handled = true;
-        msg.reply(Buffer.create("reply" + address));
+          boolean handled = false;
+
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(!handled);
+            tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
+            tu.azzert(address.equals(msg.address));
+            tu.azzert(msg.messageID != null);
+            eb.unregisterHandler(address, this);
+            handled = true;
+            msg.reply(Buffer.create("reply" + address));
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
       }
-    });
+    }
+    );
     SharedData.getSet("addresses").add(address);
-    tu.testComplete();
   }
-
-
 
 
 }

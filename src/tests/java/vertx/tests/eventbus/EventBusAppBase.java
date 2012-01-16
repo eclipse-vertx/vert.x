@@ -44,8 +44,6 @@ public abstract class EventBusAppBase extends TestClientBase {
       // you wouldn't do this in real life (programmatically)
 
       int port = JavaClusteredEventBusTest.portCounter.getAndIncrement();
-      System.out.println("port is " + port);
-
       ServerID serverID = new ServerID(port, "localhost");
       ClusterManager cm = new HazelcastClusterManager();
       eb = new TestEventBus(serverID, cm);

@@ -42,7 +42,6 @@ public class WebsocketsTestClient extends TestClientBase {
     } else {
       super.stop();
     }
-    super.stop();
   }
 
   public void testWSBinaryHybi00() throws Exception {
