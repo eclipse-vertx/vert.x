@@ -1333,9 +1333,6 @@ public class TestClient extends TestClientBase {
   private void assertResult(final Future<?> future, final Object value) {
     comp.series(new TestAction() {
       protected void doAct() {
-        if (!future.succeeded()) {
-          future.exception().printStackTrace();
-        }
         tu.azzert(future.succeeded());
         Object res = future.result();
         if (res == null) {
@@ -1364,9 +1361,6 @@ public class TestClient extends TestClientBase {
   private void assertSameElements(final Future<Buffer[]> future, final Buffer[] value) {
     comp.series(new TestAction() {
       protected void doAct() {
-        if (!future.succeeded()) {
-          future.exception().printStackTrace();
-        }
         tu.azzert(future.succeeded());
         Buffer[] res = future.result();
         tu.azzert(value.length == res.length, "Expected length: " + value.length + " Actual length: " + res.length);
@@ -1410,7 +1404,6 @@ public class TestClient extends TestClientBase {
       try {
         doAct();
       } catch (Exception e) {
-        e.printStackTrace();
         tu.azzert(false, e.getMessage());
       }
     }

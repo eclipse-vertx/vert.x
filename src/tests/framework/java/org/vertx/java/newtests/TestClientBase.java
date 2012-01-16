@@ -15,6 +15,8 @@ public abstract class TestClientBase implements VertxApp {
 
   protected TestUtils tu = new TestUtils();
 
+  private boolean stopped;
+
   private void registerTests() {
     Method[] methods = this.getClass().getMethods();
     for (final Method method: methods) {
@@ -37,7 +39,11 @@ public abstract class TestClientBase implements VertxApp {
   }
 
   public void stop() {
+    if (stopped) {
+      throw new IllegalStateException("Already stopped");
+    }
     tu.unregisterAll();
     tu.appStopped();
+    stopped = true;
   }
 }

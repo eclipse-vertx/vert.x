@@ -15,7 +15,7 @@ public class GroovyNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.GROOVY, "testclient.groovy");
+    startApp(AppType.GROOVY, "net/testclient.groovy");
   }
 
   @Override
@@ -25,7 +25,7 @@ public class GroovyNetTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(AppType.GROOVY, "EchoServer.groovy");
+    startApp(AppType.GROOVY, "net/EchoServer.groovy");
     startTest(getMethodName());
   }
 

@@ -128,7 +128,6 @@ class ClientConnection extends AbstractConnection {
       // Do nothing - this will be ugraded
     } else if (!keepAlive) {
       //Close it
-      log.info("closing it");
       internalClose();
     } else {
       client.returnConnection(this);

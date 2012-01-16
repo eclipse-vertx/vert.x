@@ -381,18 +381,16 @@ public class TestClient extends TestClientBase {
     final long fileSize = 1234;
     final long start = 1000 * (System.currentTimeMillis() / 1000);
     createFileWithJunk(fileName, fileSize);
-    final long end = 1000 * (System.currentTimeMillis() / 1000);
 
     testProps(fileName, false, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
         tu.azzert(fileSize == st.size);
-        tu.azzert(st.creationTime.getTime() >= start);
-        tu.azzert(st.creationTime.getTime() <= end);
-        tu.azzert(st.lastAccessTime.getTime() >= start);
-        tu.azzert(st.lastAccessTime.getTime() <= end);
-        tu.azzert(st.lastModifiedTime.getTime() >= start);
-        tu.azzert(st.lastModifiedTime.getTime() <= end);
+
+        // The times are quite inaccurate so we give 1 second leeway
+        tu.azzert(st.creationTime.getTime() >= start - 1000);
+        tu.azzert(st.lastAccessTime.getTime() >= start - 1000);
+        tu.azzert(st.lastModifiedTime.getTime() >= start - 1000);
         tu.azzert(!st.isDirectory);
         tu.azzert(!st.isOther);
         tu.azzert(st.isRegularFile);

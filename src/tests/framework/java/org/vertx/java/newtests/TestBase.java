@@ -103,8 +103,12 @@ public class TestBase extends TestCase {
                 case EventFields.START_TEST_EVENT:
                   //Ignore
                   break;
-                case EventFields.APP_READY_EVENT:
                 case EventFields.APP_STOPPED_EVENT:
+                  events.add(map);
+                  break;
+                case EventFields.APP_READY_EVENT:
+                  events.add(map);
+                  break;
                 case EventFields.TEST_COMPLETE_EVENT:
                   events.add(map);
                   break;
@@ -230,6 +234,7 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName, boolean wait) {
+    log.info("Starting test: " + testName);
     tu.startTest(testName);
     if (wait) {
       waitTestComplete();

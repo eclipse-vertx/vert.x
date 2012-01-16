@@ -60,6 +60,7 @@ public class TestUtils {
   }
 
   public void testComplete() {
+   // log.info("Sending test complete");
     Map<String, String> map = new HashMap<>();
     map.put(EventFields.TYPE_FIELD, EventFields.TEST_COMPLETE_EVENT);
     map.put(EventFields.TEST_COMPLETE_NAME_FIELD, "unused");
