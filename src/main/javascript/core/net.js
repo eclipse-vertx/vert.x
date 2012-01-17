@@ -6,13 +6,27 @@ var vertx = vertx || new (function() {
     var that = this;
 
     that.dataHandler = function(handler) {
-      jSocket.dataHandler(function(buff) {
-        handler(buff);
-      });
-    }
+      jSocket.dataHandler(handler);
+    };
+
+    that.drainHandler = function(handler) {
+      jSocket.drainHandler(handler);
+    };
 
     that.write = function(buff) {
       jSocket.write(buff);
+    };
+
+    that.pause = function() {
+      jSocket.pause();
+    };
+
+    that.resume = function() {
+      jSocket.resume();
+    };
+
+    that.writeQueueFull = function() {
+      jSocket.writeQueueFull();
     }
   };
 

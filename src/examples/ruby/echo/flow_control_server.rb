@@ -18,6 +18,10 @@ include Vertx
 @server = NetServer.new.connect_handler { |socket|
   socket.data_handler { |data|
     socket.write_buffer(data)
+    if socket.write_queue_full?
+      socket.pause
+      socket.drain_handler { socket.resume }
+    end
   }
 }.listen(8080)
 
