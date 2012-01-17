@@ -20,7 +20,7 @@ include Vertx
 @server.key_store_path="server-keystore.jks"
 @server.key_store_password="wibble"
 @server.connect_handler { |socket| socket.data_handler { |data| socket.write_buffer(data) } }
-@server.listen(4443)
+@server.listen(1234)
 
 def vertx_stop
   @server.close

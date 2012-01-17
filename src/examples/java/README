@@ -32,7 +32,7 @@ To run the server:
 
 vertx run -main org.vertx.java.examples.echo.EchoServer -cp classes
 
-Then either telnet localhost 8080 and notice how text entered via telnet is echoed back
+Then either telnet localhost 1234 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client in a different console:
 
@@ -47,7 +47,7 @@ To run the server:
 
 vertx run -main org.vertx.java.examples.fanout.FanoutServer -cp classes
 
-Then telnet localhost 8080 from different consoles. Note how data entered in telnet is echoed to all connected connections
+Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
 HTTP
 ====
@@ -144,7 +144,7 @@ To run the server:
 
 vertx run -main org.vertx.java.examples.pubsub.PubSubServer -cp classes
 
-Then open some more consoles and telnet localhost 8080, and experiment with the protocol.
+Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
 SendFile
 ========

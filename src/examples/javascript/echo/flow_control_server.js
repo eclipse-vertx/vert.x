@@ -14,7 +14,7 @@ server.connectHandler(function(sock) {
   })
 })
 
-server.listen(8080, 'localhost');
+server.listen(1234, 'localhost');
 
 function vertxStop() {
   server.close

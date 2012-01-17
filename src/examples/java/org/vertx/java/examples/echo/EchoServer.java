@@ -35,7 +35,7 @@ public class EchoServer implements VertxApp {
           }
         });
       }
-    }).listen(8080);
+    }).listen(1234);
   }
 
   public void stop() {

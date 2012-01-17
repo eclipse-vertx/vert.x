@@ -35,7 +35,7 @@ public class SSLServer implements VertxApp {
           }
         });
       }
-    }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(4443);
+    }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(1234);
   }
 
   public void stop() {

@@ -19,7 +19,7 @@ include Vertx
   socket.data_handler { |data|
     socket.write_buffer(data)
   }
-}.listen(8080)
+}.listen(1234)
 
 def vertx_stop
   @server.close

@@ -38,7 +38,7 @@ include Vertx
     end
   end
   socket.data_handler(parser)
-end.listen(8080)
+end.listen(1234)
 
 def vertx_stop
   @server.close
