@@ -21,6 +21,7 @@ import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.streams.Pump;
 
 public class EchoServer implements VertxApp {
 
@@ -29,11 +30,7 @@ public class EchoServer implements VertxApp {
   public void start() {
     server = new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        socket.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer buffer) {
-            socket.write(buffer);
-          }
-        });
+        new Pump(socket, socket).start();
       }
     }).listen(1234);
   }

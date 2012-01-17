@@ -356,8 +356,7 @@ public class NetClient extends NetClientBase {
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocket sock = socketMap.get(ch);
-      socketMap.remove(ch);
+      final NetSocket sock = socketMap.remove(ch);
       if (sock != null) {
         runOnCorrectThread(ch, new Runnable() {
           public void run() {
@@ -393,7 +392,7 @@ public class NetClient extends NetClientBase {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocket sock = socketMap.get(ch);
+      final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
         runOnCorrectThread(ch, new Runnable() {

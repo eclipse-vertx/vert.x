@@ -458,7 +458,7 @@ public class NetServer extends NetServerBase {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocket sock = socketMap.get(ch);
+      final NetSocket sock = socketMap.remove(ch);
       ch.close();
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {

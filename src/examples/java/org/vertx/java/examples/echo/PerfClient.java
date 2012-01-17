@@ -38,10 +38,8 @@ public class PerfClient implements VertxApp {
         socket.dataHandler(new Handler<Buffer>() {
           int bytesReceived = 0;
           long start = System.currentTimeMillis();
-          long totalBytes = 0;
           public void handle(Buffer buffer) {
             bytesReceived += buffer.length();
-
             if (bytesReceived > batch) {
               long end = System.currentTimeMillis();
               double rate = 1000 * (double)bytesReceived / (end - start);
