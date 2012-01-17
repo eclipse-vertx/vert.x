@@ -22,14 +22,12 @@
 
   <property name="src" value="."/>
   <property name="output" value="classes"/>
-  <property name="libs" value="../../../lib/core"/>
-  <property name="vertx-classes" value="../../../target/core/classes"/>
+  <property name="dist-libs" value="../../lib/java"/>
 
   <path id="compile-classpath">
-    <fileset dir="${libs}">
+    <fileset dir="${dist-libs}">
       <include name="*.jar"/>
     </fileset>
-    <pathelement location="${vertx-classes}"/>
   </path>
 
   <target name="init">

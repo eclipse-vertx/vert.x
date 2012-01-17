@@ -227,6 +227,7 @@
       </fileset>
     </copy>
 
+    <!--
     <copy todir="${dist-build}/${javadoc-dir}">
         <fileset dir="${target}/${javadoc-dir}"/>
     </copy>
@@ -234,6 +235,7 @@
     <copy todir="${dist-build}/${rubydoc-dir}">
         <fileset dir="${target}/${rubydoc-dir}"/>
     </copy>
+    -->
 
     <!-- We need to use exec since the ant copy task does not preserve file permissions -->
     <mkdir dir="${dist-build}/bin"/>
@@ -246,8 +248,12 @@
     <copy todir="${dist-build}/examples">
       <fileset dir="src/examples">
         <exclude name="**/vertx-dev"/>
+        <exclude name="**/build.xml"/>
+        <exclude name="**/build-dist.xml"/>
       </fileset>
     </copy>
+
+    <copy file="src/examples/java/build-dist.xml" tofile="${dist-build}/examples/java/build.xml"/>
 
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>

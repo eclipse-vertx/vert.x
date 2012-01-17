@@ -33,20 +33,22 @@ public class PerfClient implements VertxApp {
       public void handle(NetSocket socket) {
 
         final int packetSize = 32 * 1024;
-        final long batch = 1024 * 1024 * 100;
+        final int batch = 1024 * 1024 * 512;
 
         socket.dataHandler(new Handler<Buffer>() {
           int bytesReceived = 0;
-          long beginning = System.currentTimeMillis();
+          long start = System.currentTimeMillis();
           long totalBytes = 0;
           public void handle(Buffer buffer) {
             bytesReceived += buffer.length();
 
             if (bytesReceived > batch) {
               long end = System.currentTimeMillis();
-              totalBytes += bytesReceived;
-              double totRate = 1000 * (double)totalBytes / (end - beginning);
-              System.out.println("tot rate: bytes / sec " + totRate);
+              double rate = 1000 * (double)bytesReceived / (end - start);
+              double mbitsRate = rate * 8 / (1024 * 1024);
+              System.out.println("rate: " + rate + " bytes/sec " + mbitsRate + " Mbits/sec");
+              bytesReceived = 0;
+              start = end;
             }
           }
         });
