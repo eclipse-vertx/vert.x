@@ -1,13 +1,13 @@
 package org.vertx.java.core.app.groovy;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
 import org.vertx.java.core.app.AppFactory;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.logging.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.URL;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -18,13 +18,10 @@ public class GroovyAppFactory implements AppFactory {
 
   public VertxApp createApp(String main, ClassLoader cl) throws Exception {
 
-    InputStream is = cl.getResourceAsStream(main);
+    URL url = cl.getResource(main);
+    GroovyCodeSource gcs = new GroovyCodeSource(url);
     GroovyClassLoader gcl = new GroovyClassLoader(cl);
-    Class clazz = gcl.parseClass(is);
-    try {
-      is.close();
-    } catch (IOException ignore) {
-    }
+    Class clazz = gcl.parseClass(gcs);
 
     Method stop;
     try {

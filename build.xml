@@ -142,6 +142,9 @@
         <formatter type="plain" usefile="yes"/>
         <fileset dir="${tests-target}">
           <include name="org/vertx/java/tests/**/*Test.class"/>
+          <!-- temp exclude until rhino issue is fixed -->
+          <exclude name="org/vertx/java/tests/net/JavaScriptNetTest.class"/>
+          <exclude name="org/vertx/java/tests/net/GroovyNetTest.class"/>
           <exclude name="org/vertx/java/tests/redis/*Test.class"/>
         </fileset>
       </batchtest>

@@ -5,7 +5,7 @@ var tu = new TestUtils();
 
 var client;
 
-tu.register('test1', function() {
+function test1() {
 
   client = new vertx.NetClient();
 
@@ -20,11 +20,14 @@ tu.register('test1', function() {
 
   });
 
-})
+  tu.testComplete();
+}
 
+tu.registerTests(this);
 tu.appReady();
 
 function vertxStop() {
   client.close();
+  tu.unregisterAll();
   tu.appStopped();
 }

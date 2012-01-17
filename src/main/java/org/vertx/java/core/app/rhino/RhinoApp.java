@@ -7,6 +7,7 @@ import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,21 +32,20 @@ public class RhinoApp implements VertxApp {
     this.scriptName = scriptName;
   }
 
-  public static void load(String moduleName) {
-    try {
-      ScriptableObject scope = scopeThreadLocal.get();
-      ClassLoader cl = clThreadLocal.get();
-      Context cx = Context.getCurrentContext();
-      loadScript(cl, cx, scope, moduleName);
-    } catch (Exception e) {
-      log.error("Failed to load module: " + moduleName, e);
-    }
+  public static void load(String moduleName) throws Exception {
+    ScriptableObject scope = scopeThreadLocal.get();
+    ClassLoader cl = clThreadLocal.get();
+    Context cx = Context.getCurrentContext();
+    loadScript(cl, cx, scope, moduleName);
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
     InputStream is = cl.getResourceAsStream(scriptName);
+    if (is == null) {
+      throw new FileNotFoundException("Cannot find script: " + scriptName);
+    }
     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-    cx.evaluateReader(scope, reader, "net.js", 0, null);
+    cx.evaluateReader(scope, reader, scriptName, 0, null);
     try {
       is.close();
     } catch (IOException ignore) {

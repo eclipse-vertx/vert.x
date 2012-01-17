@@ -2,6 +2,7 @@ package org.vertx.java.newtests;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
@@ -11,6 +12,7 @@ import org.vertx.java.core.logging.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,18 +94,37 @@ public class TestUtils {
   public void register(final String testName, final Handler<Void> handler) {
     Handler<Message> h = new Handler<Message>() {
       public void handle(Message msg) {
+        Map<String, Object> map;
         try {
-          Map<String, Object> map = mapper.readValue(msg.body.toString(), Map.class);
-          if (EventFields.START_TEST_EVENT.equals(map.get(EventFields.TYPE_FIELD)) && testName.equals(map.get(EventFields.START_TEST_NAME_FIELD))) {
-            handler.handle(null);
-          }
+          map = mapper.readValue(msg.body.toString(), Map.class);
         } catch (Exception e) {
           log.error("Failed to parse JSON", e);
+          return;
+        }
+        if (EventFields.START_TEST_EVENT.equals(map.get(EventFields.TYPE_FIELD)) && testName.equals(map.get(EventFields.START_TEST_NAME_FIELD))) {
+          handler.handle(null);
         }
       }
     };
     EventBus.instance.registerHandler(TestBase.EVENTS_ADDRESS, h);
     handlers.put(testName, h);
+  }
+
+  public void registerTests(final Object obj) {
+    Method[] methods = obj.getClass().getMethods();
+    for (final Method method: methods) {
+      if (method.getName().startsWith("test")) {
+        register(method.getName(), new SimpleHandler() {
+          public void handle() {
+            try {
+              method.invoke(obj, (Object[])null);
+            } catch (Exception e) {
+              log.error("Failed to invoke test", e);
+            }
+          }
+        });
+      }
+    }
   }
 
   public void unregisterAll() {
