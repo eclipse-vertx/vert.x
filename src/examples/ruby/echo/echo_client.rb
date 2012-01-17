@@ -16,7 +16,7 @@ require "vertx"
 include Vertx
 
 @client = NetClient.new
-@client.connect(8080, "localhost") do |socket|
+@client.connect(1234, "localhost") do |socket|
   socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
   (1..10).each do |i|
     str = "hello #{i}\n"

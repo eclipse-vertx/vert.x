@@ -29,7 +29,7 @@ public class PerfClient implements VertxApp {
   private NetClient client;
 
   public void start() {
-    client = new NetClient().connect(8080, "localhost", new Handler<NetSocket>() {
+    client = new NetClient().connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         final int packetSize = 32 * 1024;

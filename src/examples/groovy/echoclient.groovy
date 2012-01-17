@@ -3,7 +3,7 @@ import org.vertx.groovy.core.net.NetClient
 import org.vertx.java.core.buffer.Buffer
 
 for (int i in 0..<10) {
-  new NetClient().connect(8080, "localhost", { socket, index ->
+  new NetClient().connect(1234, "localhost", { socket, index ->
 
     socket.dataHandler { buffer ->
       println "Net client receiving: ${buffer.toString("UTF-8")}"

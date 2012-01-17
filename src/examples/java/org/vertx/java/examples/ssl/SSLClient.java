@@ -27,7 +27,7 @@ public class SSLClient implements VertxApp {
   private NetClient client;
 
   public void start() {
-    client = new NetClient().setSSL(true).setTrustAll(true).connect(4443, "localhost", new Handler<NetSocket>() {
+    client = new NetClient().setSSL(true).setTrustAll(true).connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         socket.dataHandler(new Handler<Buffer>() {

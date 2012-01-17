@@ -8,7 +8,7 @@ server = new NetServer().connectHandler { socket ->
   socket.dataHandler { buffer ->
     socket.write buffer
   }
-}.listen(8080)
+}.listen(1234)
 
 
 void vertxStop() {

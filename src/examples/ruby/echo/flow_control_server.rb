@@ -23,7 +23,7 @@ include Vertx
       socket.drain_handler { socket.resume }
     end
   }
-}.listen(8080)
+}.listen(1234)
 
 def vertx_stop
   @server.close

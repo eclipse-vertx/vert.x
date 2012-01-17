@@ -33,7 +33,7 @@ To run the server:
 
 vertx run -ruby -main echo/echo_server.rb -cp .
 
-Then either telnet localhost 8080 and notice how text entered via telnet is echoed back
+Then either telnet localhost 1234 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client in a different console:
 
@@ -48,7 +48,7 @@ To run the server:
 
 vertx run -ruby -main fanout/fanout_server.rb -cp .
 
-Then telnet localhost 8080 from different consoles. Note how data entered in telnet is echoed to all connected connections
+Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
 HTTP
 ====
@@ -144,7 +144,7 @@ To run the server:
 
 vertx run -ruby -main pubsub/pubsub_server.rb -cp .
 
-Then open some more consoles and telnet localhost 8080, and experiment with the protocol.
+Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
 SendFile
 ========

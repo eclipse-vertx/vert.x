@@ -25,7 +25,7 @@ import org.vertx.java.core.net.NetSocket;
 public class EchoClient implements VertxApp {
 
   public void start() {
-    new NetClient().connect(8080, "localhost", new Handler<NetSocket>() {
+    new NetClient().connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         socket.dataHandler(new Handler<Buffer>() {

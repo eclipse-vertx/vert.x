@@ -22,7 +22,7 @@ conns = SharedData::get_set("conns")
     conns.each { |actor_id| Vertx::send_to_handler(actor_id, data) }
   end
   socket.closed_handler { conns.delete(socket.write_handler_id) }
-end.listen(8080)
+end.listen(1234)
 
 def vertx_stop
   @server.close

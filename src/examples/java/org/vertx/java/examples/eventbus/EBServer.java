@@ -40,7 +40,7 @@ public class EBServer implements VertxApp {
       public void handle(final NetSocket socket) {
         EventBus.instance.send(new Message("test-sub", Buffer.create("Hello World")));
       }
-    }).listen(8080);
+    }).listen(1234);
   }
 
   public void stop() {

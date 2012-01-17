@@ -28,7 +28,7 @@ public class BridgeServer implements VertxApp {
       }
     });
 
-    server.listen(8080);
+    server.listen(1234);
   }
 
   public void stop() throws Exception {
