@@ -2,6 +2,23 @@ var vertx = vertx || new (function() {
 
   var that = this;
 
+  that.NetServer = function() {
+    return new org.vertx.java.core.net.NetServer();
+  }
+
+  that.NetClient = function() {
+    return new org.vertx.java.core.net.NetClient();
+  }
+
+  that.Buffer = function(p) {
+    return org.vertx.java.core.buffer.Buffer.create(p);
+  }
+
+  that.Pump = function(rs, ws) {
+    return new org.vertx.java.core.streams.Pump(rs, ws);
+  }
+
+
 //  var NetSocket = function(jSocket) {
 //    var that = this;
 //
@@ -69,21 +86,6 @@ var vertx = vertx || new (function() {
 //
 //  };
 
-  that.NetServer = function() {
-    return new org.vertx.java.core.net.NetServer();
-  }
-
-  that.NetClient = function() {
-    return new org.vertx.java.core.net.NetClient();
-  }
-
-  that.Buffer = function(p) {
-    return org.vertx.java.core.buffer.Buffer.create(p);
-  }
-
-  that.Pump = function(rs, ws) {
-    return new org.vertx.java.core.streams.Pump(rs, ws);
-  }
 
 
 })();

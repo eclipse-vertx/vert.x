@@ -361,8 +361,12 @@ public class EventBus {
         }
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {
-            VertxInternal.instance.setContextID(holder.contextID);
-            holder.handler.handle(msg);
+            try {
+              VertxInternal.instance.setContextID(holder.contextID);
+               holder.handler.handle(msg);
+            } catch (Throwable t) {
+              log.error("Unhandled exception in event bus handler", t);
+            }
           }
         });
       }

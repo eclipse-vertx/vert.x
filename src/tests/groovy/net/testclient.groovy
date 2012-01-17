@@ -9,7 +9,7 @@ tu.checkContext()
 
 client = null
 
-tu.register("test1", {
+void test1() {
   client = new NetClient().connect(8080, "localhost", { socket ->
     tu.checkContext()
     socket.dataHandler { buffer ->
@@ -21,12 +21,13 @@ tu.register("test1", {
     String str = "hello"
     socket << Buffer.create(str)
   })
-})
+}
 
 tu.appReady()
 
 void vertxStop() {
   if (client != null) client.close()
+  tu.unregisterAll()
   tu.appStopped()
 }
 

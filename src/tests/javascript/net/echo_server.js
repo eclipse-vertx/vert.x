@@ -1,4 +1,4 @@
-load('core/net.js')
+//load('core/net.js')
 load('test_utils.js')
 
 var tu = new TestUtils();
@@ -18,6 +18,9 @@ server.listen(8080, 'localhost');
 tu.appReady();
 
 function vertxStop() {
-  // server.close();
-  tu.appStopped();
+  tu.checkContext();
+  server.close(function() {
+    tu.checkContext();
+    tu.appStopped();
+  });
 }
