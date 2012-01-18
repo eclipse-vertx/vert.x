@@ -54,7 +54,7 @@ public class TestBase extends TestCase {
 
   private void throwAsserts() {
     for (AssertHolder holder: failedAsserts) {
-      assertEquals(holder.message + "\n" + holder.stackTrace, true, false);
+      fail(holder.message + "\n" + holder.stackTrace);
     }
     failedAsserts.clear();
   }
@@ -234,7 +234,7 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName, boolean wait) {
-    log.info("Starting test: " + testName);
+    log.info("Running test: " + testName);
     tu.startTest(testName);
     if (wait) {
       waitTestComplete();

@@ -1,4 +1,4 @@
-load('core/net.js')
+load('core/vertx.js')
 
 var server = new vertx.NetServer();
 
