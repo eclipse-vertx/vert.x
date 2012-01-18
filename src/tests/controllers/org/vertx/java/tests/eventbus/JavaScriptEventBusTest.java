@@ -19,7 +19,23 @@ public class JavaScriptEventBusTest extends TestBase {
     super.tearDown();
   }
 
-  public void testEventBus() {
+  public void testSimple() {
+    startTest(getMethodName());
+  }
+
+  public void testUnregister() {
+    startTest(getMethodName());
+  }
+
+  public void testWithReply() {
+    startTest(getMethodName());
+  }
+
+  public void testEmptyReply() {
+    startTest(getMethodName());
+  }
+
+  public void testEmptyMessage() {
     startTest(getMethodName());
   }
 

@@ -352,7 +352,7 @@ public class EventBus {
       replyAddressCache.put(msg.replyAddress, msg.sender);
     }
     msg.bus = this;
-    Set<HandlerHolder> set = handlers.get(msg.address);
+    final Set<HandlerHolder> set = handlers.get(msg.address);
     if (set != null) {
       boolean replyHandler = false;
       for (final HandlerHolder holder: set) {
@@ -362,8 +362,12 @@ public class EventBus {
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {
             try {
-              VertxInternal.instance.setContextID(holder.contextID);
-               holder.handler.handle(msg);
+              // Need to check handler is still there - the handler might have been removed after the message were sent but
+              // before it was received
+              if (set.contains(holder)) {
+                VertxInternal.instance.setContextID(holder.contextID);
+                holder.handler.handle(msg);
+              }
             } catch (Throwable t) {
               log.error("Unhandled exception in event bus handler", t);
             }
