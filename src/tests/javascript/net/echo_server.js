@@ -1,4 +1,4 @@
-//load('core/net.js')
+load('vertx.js')
 load('test_utils.js')
 
 var tu = new TestUtils();

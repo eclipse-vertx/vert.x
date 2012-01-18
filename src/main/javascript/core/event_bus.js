@@ -1,27 +1,10 @@
-var vertx = vertx || new (function() {
+var vertx = vertx || {};
 
-  var that = this;
-
-  that.NetServer = function() {
-    return new org.vertx.java.core.net.NetServer();
-  }
-
-  that.NetClient = function() {
-    return new org.vertx.java.core.net.NetClient();
-  }
-
-  that.Buffer = function(p) {
-    return org.vertx.java.core.buffer.Buffer.create(p);
-  }
-
-  that.Pump = function(rs, ws) {
-    return new org.vertx.java.core.streams.Pump(rs, ws);
-  }
-
-  var handlerMap = {};
-
-  that.EventBus = new (function() {
+if (!vertx.EventBus) {
+  vertx.EventBus = new (function() {
     var that = this;
+
+    var handlerMap = {};
 
     var jEventBus = org.vertx.java.core.eventbus.EventBus.instance;
 
@@ -40,12 +23,21 @@ var vertx = vertx || new (function() {
       }
     }
 
+    function bufferToStr(jBuffer) {
+      var str;
+      if (jBuffer.length() == 0) {
+        str = "{}";
+      } else {
+        str = jBuffer.toString();
+      }
+      return str;
+    }
+
     that.registerHandler = function(address, handler) {
       checkHandlerParams(address, handler);
       var wrapped = new org.vertx.java.core.Handler({
         handle: function(jMsg) {
-           // Null bodies??
-          var bodyStr = jMsg.body.toString();
+          var bodyStr = bufferToStr(jMsg.body);
           var json = JSON.parse(bodyStr);
           json.address = address;
           json.messageID = '' + jMsg.messageID;
@@ -82,9 +74,7 @@ var vertx = vertx || new (function() {
     It should have a property "address"
      */
     that.send = function(message, replyHandler) {
-      if (!message) {
-        throw "Message must be specfied";
-      }
+
       if (replyHandler && typeof replyHandler != "function") {
         throw "replyHandler must be a function";
       }
@@ -98,8 +88,8 @@ var vertx = vertx || new (function() {
       var java_msg = new org.vertx.java.core.eventbus.Message(address, body);
       if (replyHandler) {
         var hndlr = new org.vertx.java.core.Handler({
-          handle: function(jBuffer) {
-            var bodyStr = jBuffer.body.toString();
+          handle: function(jMessage) {
+            var bodyStr = bufferToStr(jMessage.body);
             var json = JSON.parse(bodyStr);
             replyHandler(json);
           }
@@ -112,17 +102,4 @@ var vertx = vertx || new (function() {
     };
 
   })();
-
-  that.setTimer = function(delay, handler) {
-    org.vertx.java.core.Vertx.instance.setTimer(delay, handler);
-  }
-
-  that.setPeriodic = function(interval, handler) {
-    org.vertx.java.core.Vertx.instance.setPeriodic(interval, handler);
-  }
-
-  that.cancelTimer = function(id) {
-    org.vertx.java.core.Vertx.instance.cancelTimer(id);
-  }
-
-})();
+}

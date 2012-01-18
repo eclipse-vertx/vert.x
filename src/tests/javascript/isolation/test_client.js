@@ -1,5 +1,5 @@
 load('test_utils.js')
-load('core/vertx.js')
+load('vertx.js')
 
 var tu = new TestUtils();
 
