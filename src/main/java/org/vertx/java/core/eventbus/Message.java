@@ -58,6 +58,9 @@ public class Message extends Sendable {
    * @param body
    */
   public Message(String messageID, String address, Buffer body) {
+    if (address == null) {
+      throw new IllegalArgumentException("address must be specified");
+    }
     this.address = address;
     this.messageID = messageID;
     if (body == null) {

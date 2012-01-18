@@ -1,5 +1,5 @@
 load('test_utils.js')
-load('core/vertx.js')
+load('vertx.js')
 
 var tu = new TestUtils();
 
@@ -136,8 +136,6 @@ function testEmptyReply() {
   eb.send(sent);
   tu.azzert(sent.messageID != undefined);
 }
-
-// TODO test null bodies and replies
 
 tu.registerTests(this);
 tu.appReady();
