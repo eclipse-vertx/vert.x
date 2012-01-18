@@ -5,13 +5,15 @@ var tu = new TestUtils();
 
 var server = new vertx.NetServer();
 
-server.connectHandler(function(sock) {
+var h = function(sock) {
   tu.checkContext();
   sock.dataHandler(function(data) {
     tu.checkContext();
     sock.write(data);
   })
-})
+};
+
+server.connectHandler(h);
 
 server.listen(8080, 'localhost');
 
