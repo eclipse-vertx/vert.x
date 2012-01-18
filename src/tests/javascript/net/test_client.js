@@ -12,15 +12,12 @@ function test1() {
   client.connect(8080, 'localhost', function(sock) {
 
     sock.dataHandler(function(data) {
-      //log.println("Got data echoed back");
       tu.testComplete();
     });
 
     sock.write(new vertx.Buffer('this is a buffer'));
 
   });
-
-  tu.testComplete();
 }
 
 tu.registerTests(this);

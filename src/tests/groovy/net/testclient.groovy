@@ -23,6 +23,7 @@ void test1() {
   })
 }
 
+tu.registerTests(this)
 tu.appReady()
 
 void vertxStop() {
