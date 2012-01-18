@@ -1,6 +1,7 @@
 package org.vertx.java.busmods.workqueue;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
@@ -16,54 +17,38 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkQueue implements VertxApp, Handler<Message> {
+public class WorkQueue extends BusModBase {
 
   private static final Logger log = Logger.getLogger(WorkQueue.class);
 
-  private final String address;
   private final long processTimeout;
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private Queue<String> processors = new LinkedList<>();
   private Queue<Message> messages = new LinkedList<>();
-  private JsonHelper helper = new JsonHelper();
-  private EventBus eb = EventBus.instance;
 
   public WorkQueue(final String address, long processTimeout) {
-    this.address = address;
+    super(address);
     this.processTimeout = processTimeout;
-  }
-
-  @Override
-  public void start() {
-    EventBus.instance.registerHandler(address, this);
   }
 
   @Override
   public void stop() {
     EventBus.instance.unregisterHandler(address, this);
-    messages.clear();
-    processors.clear();
+    super.stop();
   }
 
-  public void handle(Message message) {
-    Map<String, Object> map;
-    try {
-      map = helper.toJson(message);
-    } catch (Exception e) {
-      log.error("Invalid JSON: " + message.body.toString());
-      return;
-    }
-    String action = (String)map.get("action");
+  public void handle(Message message, Map<String, Object> json) {
+    String action = (String)json.get("action");
     if (action == null) {
       log.error("action field must be specified");
       return;
     }
     switch (action) {
       case "register":
-        doRegister(message, map);
+        doRegister(message, json);
         break;
       case "unregister":
-        doUnregister(message, map);
+        doUnregister(message, json);
         break;
       case "send":
         doSend(message);
