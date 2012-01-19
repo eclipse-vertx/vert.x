@@ -289,7 +289,7 @@ public class SockJSServer {
 
   // For debug only
   public static void main(String[] args) throws Exception {
-    VertxInternal.instance.go(new Runnable() {
+    VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
         HttpServer httpServer = new HttpServer();
         SockJSServer sjsServer = new SockJSServer(httpServer);

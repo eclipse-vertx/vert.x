@@ -19,14 +19,9 @@ package org.vertx.java.core;
 import org.vertx.java.core.logging.Logger;
 
 /**
- * <p>Sometimes it is necessary to perform operations in vert.x which are inherently blocking, e.g. talking to legacy
- * blocking APIs or libraries. This class allows blocking operations to be executed cleanly in an asychronous
- * environment.</p>
- * <p>By subclassing this class, implementing the {@link SynchronousAction#action} method and executing it, vert.x will perform the blocking operation on a thread from a
- * background thread pool specially reserved for blocking operations. This means the event loop threads are not
- * blocked and can continue to service other requests.</p>
- * <p>It will rarely be necessary to use this class directly, it is normally used by libraries which wrap legacy
- * blocking APIs into an asynchronous form suitable for a 100% asynchronous framework such as vert.x</p>
+ * <p>Internal class used to run specific blocking actions on the background pool.</p>
+ *
+ * <p>This class shouldn't be used directlty from user applications.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -63,7 +58,7 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
       }
     };
 
-    VertxInternal.instance.executeInBackground(runner);
+    VertxInternal.instance.getBackgroundPool().execute(runner);
   }
 
 }

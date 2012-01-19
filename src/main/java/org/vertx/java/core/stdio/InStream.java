@@ -87,7 +87,7 @@ public class InStream extends StreamBase implements ReadStream {
 
   private void doRead() {
     final VertxInternal vertx = VertxInternal.instance;
-    vertx.executeInBackground(new Runnable() {
+    vertx.getBackgroundPool().execute(new Runnable() {
       public void run() {
         try {
           byte[] buff = new byte[BUFFER_SIZE];

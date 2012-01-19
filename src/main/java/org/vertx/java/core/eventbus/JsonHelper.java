@@ -1,6 +1,7 @@
 package org.vertx.java.core.eventbus;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 
 import java.util.Map;
@@ -13,9 +14,13 @@ public class JsonHelper {
   private final EventBus eb = EventBus.instance;
 
   public void sendJSON(Map<String, Object> message) throws Exception {
+    sendJSON(message, null);
+  }
+
+  public void sendJSON(Map<String, Object> message, Handler<Message> replyHandler) throws Exception {
     String json = mapper.writeValueAsString(message);
     Message msg = new Message((String)message.get("address"), Buffer.create(json));
-    eb.send(msg);
+    eb.send(msg, replyHandler);
     message.put("messageID", msg.messageID);
   }
 
