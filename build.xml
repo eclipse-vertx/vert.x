@@ -142,7 +142,6 @@
         <formatter type="plain" usefile="yes"/>
         <fileset dir="${tests-target}">
           <include name="org/vertx/java/tests/**/*Test.class"/>
-          <exclude name="org/vertx/java/tests/**/JavaMailerTest.class"/>
           <exclude name="org/vertx/java/tests/redis/*Test.class"/>
         </fileset>
       </batchtest>
