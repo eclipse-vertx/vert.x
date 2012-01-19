@@ -2,7 +2,6 @@ package vertx.tests.busmods.workqueue;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonHelper;

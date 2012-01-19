@@ -3,9 +3,9 @@ package org.vertx.java.tests.busmods.workqueue;
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.newtests.TestBase;
-import vertx.tests.busmods.workqueue.TestClient;
 import vertx.tests.busmods.workqueue.OrderProcessor;
 import vertx.tests.busmods.workqueue.OrderQueue;
+import vertx.tests.busmods.workqueue.TestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
