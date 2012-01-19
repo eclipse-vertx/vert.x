@@ -10,13 +10,15 @@ import java.net.URL;
  */
 public class DeployCommand extends VertxCommand {
 
+  public boolean background;
   public AppType type;
   public String name;
   public String main;
   public URL[] urls;
   public int instances;
 
-  public DeployCommand(AppType type, String name, String main, URL[] urls, int instances) {
+  public DeployCommand(boolean background, AppType type, String name, String main, URL[] urls, int instances) {
+    this.background = background;
     this.type = type;
     this.name = name;
     this.main = main;
@@ -28,6 +30,6 @@ public class DeployCommand extends VertxCommand {
   }
 
   public void execute(AppManager appMgr) throws Exception {
-    appMgr.deploy(type, name, main, urls, instances, null);
+    appMgr.deploy(background, type, name, main, urls, instances, null);
   }
 }

@@ -39,21 +39,15 @@ public interface VertxInternal extends Vertx {
 
   void executeOnContext(long contextID, Runnable runnable);
 
-  long createAndAssociateContext();
-
-  long associateContextWithWorker(NioWorker worker);
-
   boolean destroyContext(long contextID);
 
   void setContextID(long contextID);
-
-  void executeInBackground(Runnable runnable);
 
   ExecutorService getBackgroundPool();
 
   NioWorker getWorkerForContextID(long contextID);
 
-  int getCoreThreadPoolSize();
+  long startOnEventLoop(Runnable runnable);
 
-  void go(Runnable runnable);
+  long startInBackground(Runnable runnable);
 }

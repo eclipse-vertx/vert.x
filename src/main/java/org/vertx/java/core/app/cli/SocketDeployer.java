@@ -30,7 +30,7 @@ public class SocketDeployer {
   }
 
   public void start() {
-    VertxInternal.instance.go(new Runnable() {
+    VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
         serverContextID = Vertx.instance.getContextID();
         server = new NetServer().connectHandler(new Handler<NetSocket>() {
@@ -38,6 +38,7 @@ public class SocketDeployer {
             final RecordParser parser = RecordParser.newFixed(4, null);
             Handler<Buffer> handler = new Handler<Buffer>() {
               int size = -1;
+
               public void handle(Buffer buff) {
                 if (size == -1) {
                   size = buff.getInt(0);

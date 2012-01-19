@@ -51,7 +51,7 @@ public class AppManager {
     stopLatch.countDown();
   }
 
-  public synchronized void deploy(final AppType type, final String appName, final String main, final URL[] urls,
+  public synchronized void deploy(boolean background, AppType type, final String appName, final String main, final URL[] urls,
                                   int instances,
                                   final Handler<Void> doneHandler)
     throws Exception {
@@ -107,13 +107,13 @@ public class AppManager {
 
       // Launch the app instance
 
-      VertxInternal.instance.go(new Runnable() {
+      Runnable runner = new Runnable() {
         public void run() {
 
           VertxApp app;
           try {
             app = appFactory.createApp(main, new ParentLastURLClassLoader(urls, getClass()
-              .getClassLoader()));
+                .getClassLoader()));
           } catch (Throwable t) {
             log.error("Failed to create application", t);
             internalUndeploy(appName, doneHandler);
@@ -129,7 +129,15 @@ public class AppManager {
           }
           aggHandler.started();
         }
-      });
+      };
+
+      if (background) {
+        log.info("Starting background application");
+        VertxInternal.instance.startInBackground(runner);
+      } else {
+        VertxInternal.instance.startOnEventLoop(runner);
+      }
+
     }
     appMeta.put(appName, new AppMetaData(urls, main));
   }
@@ -174,6 +182,9 @@ public class AppManager {
             } catch (Exception e) {
               log.error("Unhandled exception in application stop", e);
             }
+            //FIXME - we need to destroy the context, but not until after the app has fully stopped which may
+            //be asynchronous, e.g. if the app needs to close servers
+            //VertxInternal.instance.destroyContext(holder.contextID);
             if (doneHandler != null) {
               doneHandler.handle(null);
             }

@@ -84,7 +84,7 @@ public class VertxMgr {
       DeployCommand dc = createDeployCommand(args, "run");
       if (dc != null) {
         try {
-          mgr.deploy(dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
+          mgr.deploy(dc.background, dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
           mgr.block();
         } catch (Exception e) {
           System.err.println("Failed to deploy application");
@@ -116,6 +116,8 @@ public class VertxMgr {
     cp is mandatory
     instances is optional, defaults to number of cores on server
      */
+
+    boolean background = args.map.get("-background") != null;
 
     AppType type = AppType.JAVA;
     String flag = args.map.get("-ruby");
@@ -187,7 +189,7 @@ public class VertxMgr {
       }
       urls[index++] = url;
     }
-    return new DeployCommand(type, name, main, urls, instances);
+    return new DeployCommand(background, type, name, main, urls, instances);
   }
 
 
@@ -215,17 +217,18 @@ public class VertxMgr {
       }
       final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
       final CountDownLatch latch = new CountDownLatch(1);
-      VertxInternal.instance.go(new Runnable() {
+      VertxInternal.instance.startOnEventLoop(new Runnable() {
         public void run() {
           ClusterManager mgr;
           try {
-            mgr = (ClusterManager)clusterProvider.newInstance();
+            mgr = (ClusterManager) clusterProvider.newInstance();
           } catch (Exception e) {
             e.printStackTrace(System.err);
             System.err.println("Failed to instantiate eventbus provider");
             return;
           }
-          EventBus bus = new EventBus(clusterServerID, mgr) {};
+          EventBus bus = new EventBus(clusterServerID, mgr) {
+          };
           EventBus.initialize(bus);
           latch.countDown();
         }
@@ -237,10 +240,11 @@ public class VertxMgr {
     } else {
       // This is ugly - tidy it up!
       final CountDownLatch latch = new CountDownLatch(1);
-      VertxInternal.instance.go(new Runnable() {
+      VertxInternal.instance.startOnEventLoop(new Runnable() {
         public void run() {
           // Start non clustered event bus
-          EventBus bus = new EventBus() {};
+          EventBus bus = new EventBus() {
+          };
           EventBus.initialize(bus);
           latch.countDown();
         }
@@ -305,7 +309,7 @@ public class VertxMgr {
   private String sendCommand(final int port, final VertxCommand command) {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<String> result = new AtomicReference<>();
-    VertxInternal.instance.go(new Runnable() {
+    VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
         final NetClient client = new NetClient();
         client.connect(port, "localhost", new Handler<NetSocket>() {

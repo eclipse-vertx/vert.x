@@ -107,6 +107,8 @@ network)
 39) Rewrite readme
 41) bodyHandler helper method in Net module too?
 42) Currently apps not undeployed when server stops or vertxrun is CTRL-C
+43) context not destroyed after app stop is called. - this is tricky - we don't want to destroy the context until
+the application has stopped completely - this might be asynchronous (e.g. server.close) - this means we will have to pass
 
 
 

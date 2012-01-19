@@ -52,7 +52,7 @@ public class OutStream extends StreamBase implements WriteStream {
     checkThread();
     final byte[] bytes = data.getBytes();
     pendingWrites.addAndGet(bytes.length);
-    VertxInternal.instance.executeInBackground(new Runnable() {
+    VertxInternal.instance.getBackgroundPool().execute(new Runnable() {
       public void run() {
         out.write(bytes, 0, bytes.length);
         int queueSize = pendingWrites.addAndGet(-bytes.length);

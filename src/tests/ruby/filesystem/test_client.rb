@@ -40,14 +40,14 @@ def test_stats
       @tu.check_context
       @tu.azzert(compl.succeeded?)
       stats = compl.result
-#          puts "creation time #{stats.creation_time}"
-#          puts "last access time #{stats.last_access_time}"
-#          puts "last modification time #{stats.last_modified_time}"
-#          puts "directory? #{stats.directory?}"
-#          puts "regular file? #{stats.regular_file?}"
-#          puts "symbolic link? #{stats.symbolic_link?}"
-#          puts "other? #{stats.other?}"
-#          puts "size #{stats.size}"
+          puts "creation time #{stats.creation_time}"
+          puts "last access time #{stats.last_access_time}"
+          puts "last modification time #{stats.last_modified_time}"
+          puts "directory? #{stats.directory?}"
+          puts "regular file? #{stats.regular_file?}"
+          puts "symbolic link? #{stats.symbolic_link?}"
+          puts "other? #{stats.other?}"
+          puts "size #{stats.size}"
       @tu.azzert(stats.regular_file?)
       @tu.test_complete
     end

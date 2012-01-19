@@ -66,22 +66,21 @@ public class TestBase extends TestCase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    contextID = VertxInternal.instance.createAndAssociateContext();
-    VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+    contextID = VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(contextID);
 
         if (EventBus.instance == null) {
           // Start non clustered event bus
-          EventBus bus = new EventBus() {};
+          EventBus bus = new EventBus() {
+          };
           EventBus.initialize(bus);
         }
 
         handler = new Handler<Message>() {
-          public void handle(Message message)  {
+          public void handle(Message message) {
             try {
               Map<String, Object> map = mapper.readValue(message.body.toString(), Map.class);
-              String type = (String)map.get("type");
+              String type = (String) map.get("type");
 
               //log.info("******************* Got message: " + type);
 
@@ -90,14 +89,14 @@ public class TestBase extends TestCase {
                   log.trace(map.get(EventFields.TRACE_MESSAGE_FIELD));
                   break;
                 case EventFields.EXCEPTION_EVENT:
-                  failedAsserts.add(new AssertHolder((String)map.get(EventFields.EXCEPTION_MESSAGE_FIELD), (String)map.get(EventFields.EXCEPTION_STACKTRACE_FIELD)));
+                  failedAsserts.add(new AssertHolder((String) map.get(EventFields.EXCEPTION_MESSAGE_FIELD), (String) map.get(EventFields.EXCEPTION_STACKTRACE_FIELD)));
                   break;
                 case EventFields.ASSERT_EVENT:
                   boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(map.get(EventFields.ASSERT_RESULT_FIELD));
                   if (passed) {
                   } else {
-                    failedAsserts.add(new AssertHolder((String)map.get(EventFields.ASSERT_MESSAGE_FIELD),
-                                                       (String)map.get(EventFields.ASSERT_STACKTRACE_FIELD)));
+                    failedAsserts.add(new AssertHolder((String) map.get(EventFields.ASSERT_MESSAGE_FIELD),
+                        (String) map.get(EventFields.ASSERT_STACKTRACE_FIELD)));
                   }
                   break;
                 case EventFields.START_TEST_EVENT:
@@ -153,18 +152,30 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(AppType type, String main) throws Exception {
-    return startApp(type, main, true);
+    return startApp(false, type, main, true);
   }
 
   protected String startApp(AppType type, String main, boolean await) throws Exception {
-    return startApp(type, main, 1, await);
+    return startApp(false, type, main, 1, await);
   }
 
   protected String startApp(AppType type, String main, int instances) throws Exception {
-    return startApp(type, main, instances, true);
+    return startApp(false, type, main, instances, true);
   }
 
-  protected String startApp(AppType type, String main, int instances, boolean await) throws Exception {
+  protected String startApp(boolean background, AppType type, String main) throws Exception {
+    return startApp(background, type, main, true);
+  }
+
+  protected String startApp(boolean background, AppType type, String main, boolean await) throws Exception {
+    return startApp(background, type, main, 1, await);
+  }
+
+  protected String startApp(boolean background, AppType type, String main, int instances) throws Exception {
+    return startApp(background, type, main, instances, true);
+  }
+
+  protected String startApp(boolean background, AppType type, String main, int instances, boolean await) throws Exception {
 
     String appName = UUID.randomUUID().toString();
 
@@ -195,7 +206,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    appManager.deploy(type, appName, main, new URL[] { url }, instances, doneHandler);
+    appManager.deploy(background, type, appName, main, new URL[] { url }, instances, doneHandler);
 
     startedApps.add(appName);
 

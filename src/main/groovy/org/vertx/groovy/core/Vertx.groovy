@@ -21,7 +21,7 @@ class Vertx {
   static j_instance = org.vertx.java.core.Vertx.instance
 
   static go(closure) {
-    j_instance.go closure
+    j_instance.startOnEventLoop closure
   }
 
 }
