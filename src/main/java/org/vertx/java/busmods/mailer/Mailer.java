@@ -1,8 +1,6 @@
 package org.vertx.java.busmods.mailer;
 
 import org.vertx.java.busmods.BusModBase;
-import org.vertx.java.core.BlockingAction;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -14,6 +12,7 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -110,13 +109,13 @@ public class Mailer extends BusModBase {
       try {
         msg.setFrom(new InternetAddress(from));
       } catch (AddressException e) {
-        sendError("Invalid from address: " + from, e);
+        sendError(message, "Invalid from address: " + from, e);
         return;
       }
       try {
-        msg.setRecipients(javax.mail.Message.RecipientType.TO,  InternetAddress.parse(to, false));
+        msg.setRecipients(javax.mail.Message.RecipientType.TO,  InternetAddress.parse(to, true));
       } catch (AddressException e) {
-        sendError("Invalid recipients: " + to, e);
+        sendError(message, "Invalid recipients: " + to, e);
         return;
       }
 
@@ -126,18 +125,27 @@ public class Mailer extends BusModBase {
 
       transport.send(msg);
 
-      message.reply();
+      sendOK(message);
 
     } catch (MessagingException e) {
-      sendError("Failed to send message", e);
+      sendError(message, "Failed to send message", e);
     }
   }
 
-  private void sendOK() {
+  private void sendOK(Message message) {
+    log.info("sending ok");
+    Map<String, Object> json = new HashMap<>();
+    json.put("status", "ok");
+    helper.sendReply(message, json);
   }
 
-  private void sendError(String error, Exception e) {
-    log.error(error, e);
+  private void sendError(Message message, String error, Exception e) {
+    log.info("sending error: " + error);
+    log.trace(error, e);
+    Map<String, Object> json = new HashMap<>();
+    json.put("status", "error");
+    json.put("message", error);
+    helper.sendReply(message, json);
   }
 
 }

@@ -1,10 +1,6 @@
 package org.vertx.java.busmods.persistor;
 
 import org.vertx.java.busmods.BusModBase;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonHelper;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
