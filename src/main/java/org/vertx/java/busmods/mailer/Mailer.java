@@ -35,14 +35,14 @@ public class Mailer extends BusModBase {
   private String password;
 
   public Mailer(String address, String host) {
-    this(address, false, host, 25, false, null, null);
+    this(address, host, 25, false, false, null, null);
   }
 
   public Mailer(String address, String host, int port) {
-    this(address, false, host, port, false, null, null);
+    this(address, host, port, false, false, null, null);
   }
 
-  public Mailer(String address, boolean ssl, String host, int port, boolean auth, String username, String password) {
+  public Mailer(String address, String host, int port, boolean ssl,boolean auth, String username, String password) {
     super(address);
     this.ssl = ssl;
     this.host = host;
