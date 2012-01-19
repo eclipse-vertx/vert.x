@@ -13,6 +13,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -95,52 +96,95 @@ public class Mailer extends BusModBase {
     super.stop();
   }
 
+  private InternetAddress[] parseAddresses(Message message, Map<String, Object> json, String fieldName,
+                                           boolean required)
+  {
+    Object oto = json.get(fieldName);
+    if (oto == null) {
+      if (required) {
+        sendError(message, fieldName + " address(es) must be specified");
+      }
+      return null;
+    }
+    try {
+      InternetAddress[] addresses = null;
+      if (oto instanceof String) {
+        addresses = InternetAddress.parse((String)oto, true);
+      } else if (oto instanceof List) {
+        List loto = (List)oto;
+        addresses = new InternetAddress[loto.size()];
+        int count = 0;
+        for (Object addr: loto) {
+          if (addr instanceof String == false) {
+            sendError(message, "Invalid " + fieldName + " field");
+            return null;
+          }
+          InternetAddress[] ia = InternetAddress.parse((String)addr, true);
+          addresses[count++] = ia[0];
+        }
+      }
+      return addresses;
+    } catch (AddressException e) {
+      sendError(message, "Invalid " + fieldName + " field");
+      return null;
+    }
+  }
+
   public void handle(Message message, Map<String, Object> json) {
 
     String from = (String)json.get("from");
-    String to = (String)json.get("to");
+
+    if (from == null) {
+      sendError(message, "from address must be specified");
+      return;
+    }
+
+    InternetAddress fromAddress;
+    try {
+      fromAddress = new InternetAddress(from, true);
+    } catch (AddressException e) {
+      sendError(message, "Invalid from address: " + from, e);
+      return;
+    }
+
+    InternetAddress[] recipients = parseAddresses(message, json, "to", true);
+    if (recipients == null) {
+      return;
+    }
+    InternetAddress[] cc = parseAddresses(message, json, "cc", false);
+    InternetAddress[] bcc = parseAddresses(message, json, "bcc", false);
+
     String subject = (String)json.get("subject");
     String body = (String)json.get("body");
 
     javax.mail.Message msg = new MimeMessage(session);
 
     try {
-
-      try {
-        msg.setFrom(new InternetAddress(from));
-      } catch (AddressException e) {
-        sendError(message, "Invalid from address: " + from, e);
-        return;
-      }
-      try {
-        msg.setRecipients(javax.mail.Message.RecipientType.TO,  InternetAddress.parse(to, true));
-      } catch (AddressException e) {
-        sendError(message, "Invalid recipients: " + to, e);
-        return;
-      }
-
+      msg.setFrom(fromAddress);
+      msg.setRecipients(javax.mail.Message.RecipientType.TO, recipients);
+      msg.setRecipients(javax.mail.Message.RecipientType.CC, cc);
+      msg.setRecipients(javax.mail.Message.RecipientType.BCC, bcc);
       msg.setSubject(subject);
       msg.setText(body);
       msg.setSentDate(new Date());
-
       transport.send(msg);
-
       sendOK(message);
-
     } catch (MessagingException e) {
       sendError(message, "Failed to send message", e);
     }
   }
 
   private void sendOK(Message message) {
-    log.info("sending ok");
     Map<String, Object> json = new HashMap<>();
     json.put("status", "ok");
     helper.sendReply(message, json);
   }
 
+  private void sendError(Message message, String error) {
+    sendError(message, error, null);
+  }
+
   private void sendError(Message message, String error, Exception e) {
-    log.info("sending error: " + error);
     log.trace(error, e);
     Map<String, Object> json = new HashMap<>();
     json.put("status", "error");
