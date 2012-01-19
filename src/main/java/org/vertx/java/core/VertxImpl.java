@@ -272,10 +272,7 @@ class VertxImpl implements VertxInternal {
       if (bgExec != null) {
         bgExec.execute(new Runnable() {
           public void run() {
-            // Sync block to provide memory barrier
-            synchronized (VertxImpl.this) {
-              runnable.run();
-            }
+            runnable.run();
           }
         });
       } else {
