@@ -129,24 +129,36 @@
     </javac>
   </target>
 
-  <fileset id="all-tests.fs" dir="${tests-target}">
+  <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
     <exclude name="org/vertx/java/tests/redis/*Test.class"/>
+    <!-- Exclude mailer since not everyone has a localhost mailserver -->
+    <exclude name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
   </fileset>
 
   <fileset id="redis-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/redis/*Test.class"/>
   </fileset>
 
+  <fileset id="mailer-tests.fs" dir="${tests-target}">
+    <include name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
+  </fileset>
+
   <target name="tests">
     <antcall target="internal-tests">
-      <param name="tests-fs" value="all-tests.fs"/>
+      <param name="tests-fs" value="main-tests.fs"/>
     </antcall>
   </target>
 
   <target name="redis-tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="redis-tests.fs"/>
+    </antcall>
+  </target>
+
+  <target name="mailer-tests">
+    <antcall target="internal-tests">
+      <param name="tests-fs" value="mailer-tests.fs"/>
     </antcall>
   </target>
 
