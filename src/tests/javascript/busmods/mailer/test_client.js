@@ -17,7 +17,6 @@ function testMailer() {
   }
 
   eb.send(msg, function(msg) {
-    log.println('Got reply');
     tu.azzert(msg.status == 'ok');
     tu.testComplete();
   });
@@ -33,7 +32,6 @@ function testMailerError() {
   }
 
   eb.send(msg, function(msg) {
-    log.println('Got reply');
     tu.azzert(msg.status == 'error');
     tu.testComplete();
   });
