@@ -17,8 +17,8 @@ public abstract class BusModBase implements VertxApp, Handler<Message> {
   private static final Logger log = Logger.getLogger(BusModBase.class);
 
   protected final String address;
-  protected JsonHelper helper = new JsonHelper();
-  protected EventBus eb = EventBus.instance;
+  protected final JsonHelper helper = new JsonHelper();
+  protected final EventBus eb = EventBus.instance;
 
   protected BusModBase(final String address) {
     this.address = address;

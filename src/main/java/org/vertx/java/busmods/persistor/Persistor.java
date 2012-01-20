@@ -7,6 +7,9 @@ import org.vertx.java.core.logging.Logger;
 import java.util.Map;
 
 /**
+ * insert: json
+ *
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Persistor extends BusModBase {
