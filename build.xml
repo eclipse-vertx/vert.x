@@ -144,6 +144,10 @@
     <include name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
   </fileset>
 
+  <fileset id="test-one.fs" dir="${tests-target}">
+    <include name="**/${test.name}.class"/>
+  </fileset>
+
   <target name="tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="main-tests.fs"/>
@@ -159,6 +163,13 @@
   <target name="mailer-tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="mailer-tests.fs"/>
+    </antcall>
+  </target>
+
+  <!-- To use this from command line: ant test-one -Dtest.name=<testname> -->
+  <target name="test-one">
+    <antcall target="internal-tests">
+      <param name="tests-fs" value="test-one.fs"/>
     </antcall>
   </target>
 

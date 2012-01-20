@@ -24,7 +24,7 @@ public class WorkQueue extends BusModBase {
   private final Queue<Message> messages = new LinkedList<>();
 
   public WorkQueue(final String address, long processTimeout) {
-    super(address);
+    super(address, false);
     this.processTimeout = processTimeout;
   }
 

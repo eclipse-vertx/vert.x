@@ -44,14 +44,25 @@ public class JsonHelper {
   }
 
   public Map<String, Object> toJson(Message message) {
-    Map<String, Object> json;
-    try {
-      json = mapper.readValue(message.body.toString(), Map.class);
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage());
-    }
+    Map<String, Object> json = stringToJson(message.body.toString());
     json.put("address", message.address);
     json.put("messageID", message.messageID);
     return json;
+  }
+
+  public String jsonToString(Object json) {
+    try {
+      return mapper.writeValueAsString(json);
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage());
+    }
+  }
+
+  public Map<String, Object> stringToJson(String str) {
+    try {
+      return mapper.readValue(str, Map.class);
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage());
+    }
   }
 }

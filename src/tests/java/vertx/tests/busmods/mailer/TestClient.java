@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class TestClient extends TestClientBase {
 
-  private JsonHelper sender = new JsonHelper();
+  private JsonHelper helper = new JsonHelper();
 
   @Override
   public void start() {
@@ -33,7 +33,7 @@ public class TestClient extends TestClientBase {
       int count;
       public void handle(Message message) {
         tu.checkContext();
-        Map<String, Object> json = sender.toJson(message);
+        Map<String, Object> json = helper.toJson(message);
         tu.azzert(json.get("status").equals("ok"));
         if (++count == numMails) {
           tu.testComplete();
@@ -43,7 +43,7 @@ public class TestClient extends TestClientBase {
     String user = System.getProperty("user.name");
     for (int i = 0; i < numMails; i++) {
       Map<String, Object> map = createBaseMessage();
-      sender.sendJSON(map, replyHandler);
+      helper.sendJSON(map, replyHandler);
     }
   }
 
@@ -118,7 +118,7 @@ public class TestClient extends TestClientBase {
       int count;
       public void handle(Message message) {
         tu.checkContext();
-        Map<String, Object> json = sender.toJson(message);
+        Map<String, Object> json = helper.toJson(message);
         if (error == null) {
           tu.azzert(json.get("status").equals("ok"));
         } else {
@@ -130,7 +130,7 @@ public class TestClient extends TestClientBase {
     };
     Map<String, Object> map = createBaseMessage();
     map.putAll(overrides);
-    sender.sendJSON(map, replyHandler);
+    helper.sendJSON(map, replyHandler);
   }
 
   private Map<String, Object> createBaseMessage() {
