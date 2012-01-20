@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * TODO max batch sizes
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -90,8 +91,6 @@ public class Persistor extends BusModBase {
     sendOK(message);
   }
 
-  private static final int DEFAULT_BATCH_SIZE = 50;
-
   private void doFind(Message message, Map<String, Object> json) {
     String collection = (String)getMandatory("collection", message, json);
     if (collection == null) {
@@ -101,16 +100,18 @@ public class Persistor extends BusModBase {
     if (limit == null) {
       limit = -1;
     }
-    Object matcher = json.get("matcher");
-    DBCollection coll = db.getCollection(collection);
-    DBCursor cursor;
+    Object matcher = getMandatory("matcher", message, json);
     if (matcher == null) {
-      cursor = coll.find();
-    } else {
-      cursor = coll.find(jsonToDBObject(matcher));
+      return;
     }
+    Object sort = json.get("sort");
+    DBCollection coll = db.getCollection(collection);
+    DBCursor cursor = coll.find(jsonToDBObject(matcher));
     if (limit != -1) {
       cursor.limit(limit);
+    }
+    if (sort != null) {
+      cursor.sort(jsonToDBObject(sort));
     }
     Map<String, Object> reply = new HashMap<>();
     List results = new ArrayList();
@@ -158,7 +159,7 @@ public class Persistor extends BusModBase {
     WriteResult res = coll.remove(jsonToDBObject(matcher));
     int deleted = res.getN();
     Map<String, Object> reply = new HashMap<>();
-    json.put("number", deleted);
+    reply.put("number", deleted);
     sendOK(message, reply);
   }
 

@@ -7,8 +7,6 @@ var queue = new vertx.WorkQueue("orderQueue", 30000);
 queue.start();
 tu.appReady();
 
-log.println("Started order queue");
-
 function vertxStop() {
   queue.stop();
   tu.checkContext();

@@ -24,7 +24,32 @@ public class JavaScriptPersistorTest extends TestBase {
   }
 
   @Test
-  public void testSimple() throws Exception {
+  public void testSave() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFind() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFindOne() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFindWithLimit() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFindWithSort() throws Exception {
     startTest(getMethodName());
   }
 
