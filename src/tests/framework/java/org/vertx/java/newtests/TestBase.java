@@ -163,19 +163,19 @@ public class TestBase extends TestCase {
     return startApp(false, type, main, instances, true);
   }
 
-  protected String startApp(boolean background, AppType type, String main) throws Exception {
-    return startApp(background, type, main, true);
+  protected String startApp(boolean worker, AppType type, String main) throws Exception {
+    return startApp(worker, type, main, true);
   }
 
-  protected String startApp(boolean background, AppType type, String main, boolean await) throws Exception {
-    return startApp(background, type, main, 1, await);
+  protected String startApp(boolean worker, AppType type, String main, boolean await) throws Exception {
+    return startApp(worker, type, main, 1, await);
   }
 
-  protected String startApp(boolean background, AppType type, String main, int instances) throws Exception {
-    return startApp(background, type, main, instances, true);
+  protected String startApp(boolean worker, AppType type, String main, int instances) throws Exception {
+    return startApp(worker, type, main, instances, true);
   }
 
-  protected String startApp(boolean background, AppType type, String main, int instances, boolean await) throws Exception {
+  protected String startApp(boolean worker, AppType type, String main, int instances, boolean await) throws Exception {
 
     String appName = UUID.randomUUID().toString();
 
@@ -206,7 +206,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    appManager.deploy(background, type, appName, main, new URL[] { url }, instances, doneHandler);
+    appManager.deploy(worker, type, appName, main, new URL[] { url }, instances, doneHandler);
 
     startedApps.add(appName);
 

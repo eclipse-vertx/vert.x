@@ -64,7 +64,7 @@ module Vertx
   # blocking APIs or libraries. This method allows blocking operations to be executed cleanly in an asychronous
   # environment.
   # This method will execute the proc or block on a thread from a
-  # background thread pool specially reserved for blocking operations. This means the event loop threads are not
+  # worker thread pool specially reserved for blocking operations. This means the event loop threads are not
   # blocked and can continue to service other requests.
   def Vertx.run_blocking(proc = nil, &block)
     block = proc if proc

@@ -19,7 +19,7 @@ package org.vertx.java.core;
 import org.vertx.java.core.logging.Logger;
 
 /**
- * <p>Internal class used to run specific blocking actions on the background pool.</p>
+ * <p>Internal class used to run specific blocking actions on the worker pool.</p>
  *
  * <p>This class shouldn't be used directlty from user applications.</p>
  *
@@ -30,7 +30,7 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
   private static final Logger log = Logger.getLogger(BlockingAction.class);
 
   /**
-   * Run the blocking action using a thread from the background pool.
+   * Run the blocking action using a thread from the worker pool.
    */
   protected void run() {
     final long contextID = Vertx.instance.getContextID();

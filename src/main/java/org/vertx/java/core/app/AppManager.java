@@ -132,7 +132,7 @@ public class AppManager {
       };
 
       if (background) {
-        log.info("Starting background application");
+        log.info("Starting worker application");
         VertxInternal.instance.startInBackground(runner);
       } else {
         VertxInternal.instance.startOnEventLoop(runner);

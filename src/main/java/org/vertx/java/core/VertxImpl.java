@@ -74,7 +74,7 @@ class VertxImpl implements VertxInternal {
 
   public synchronized void setBackgroundThreadPoolSize(int size) {
     if (backgroundPool != null) {
-      throw new IllegalStateException("Cannot set background size after pool has been created");
+      throw new IllegalStateException("Cannot set worker size after pool has been created");
     }
     backgroundPoolSize = size;
   }
@@ -151,15 +151,15 @@ class VertxImpl implements VertxInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-          log.error("Failed to run in background", t);
+          log.error("Failed to run in worker", t);
         }
       }
     });
     return contextID;
   }
 
-  public void exit() {
-    //TODO disallow if running in server mode
+  public boolean isEventLoopContext(long contextID) {
+    return workerMap.containsKey(contextID);
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {
@@ -186,7 +186,7 @@ class VertxImpl implements VertxInternal {
 
   // Internal API -----------------------------------------------------------------------------------------
 
-  //The background pool is used for making blocking calls to legacy synchronous APIs
+  //The worker pool is used for making blocking calls to legacy synchronous APIs
   public ExecutorService getBackgroundPool() {
     //This is a correct implementation of double-checked locking idiom
     ExecutorService result = backgroundPool;
@@ -194,7 +194,7 @@ class VertxImpl implements VertxInternal {
       synchronized (this) {
         result = backgroundPool;
         if (result == null) {
-          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory("vert.x-background-thread-"));
+          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory("vert.x-worker-thread-"));
           orderedFact = new OrderedExecutorFactory(backgroundPool);
         }
       }
@@ -267,7 +267,7 @@ class VertxImpl implements VertxInternal {
         worker.scheduleOtherTask(runnable);
       }
     } else {
-      // Will be run using a background executor
+      // Will be run using a worker executor
       Executor bgExec = backgroundExecutors.get(contextID);
       if (bgExec != null) {
         bgExec.execute(new Runnable() {

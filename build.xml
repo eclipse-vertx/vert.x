@@ -129,40 +129,37 @@
     </javac>
   </target>
 
-  <target name="tests" depends="compile-tests">
+  <fileset id="all-tests.fs" dir="${tests-target}">
+    <include name="org/vertx/java/tests/**/*Test.class"/>
+    <exclude name="org/vertx/java/tests/redis/*Test.class"/>
+  </fileset>
+
+  <fileset id="redis-tests.fs" dir="${tests-target}">
+    <include name="org/vertx/java/tests/redis/*Test.class"/>
+  </fileset>
+
+  <target name="tests">
+    <antcall target="internal-tests">
+      <param name="tests-fs" value="all-tests.fs"/>
+    </antcall>
+  </target>
+
+  <target name="redis-tests">
+    <antcall target="internal-tests">
+      <param name="tests-fs" value="redis-tests.fs"/>
+    </antcall>
+  </target>
+
+  <target name="internal-tests" depends="compile-tests">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes" timeout="120000" showoutput="true">
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
-
       <classpath refid="test-classpath"/>
-
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
-        <fileset dir="${tests-target}">
-          <include name="org/vertx/java/tests/**/*Test.class"/>
-          <exclude name="org/vertx/java/tests/redis/*Test.class"/>
-        </fileset>
-      </batchtest>
-    </junit>
-  </target>
-
-  <target name="redis-tests" depends="compile-tests">
-    <!-- Make sure you have a local redis server running before you run this -->
-    <delete dir="${test-results}"/>
-    <mkdir dir="${test-results}"/>
-    <junit printsummary="yes">
-      <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
-      <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
-
-      <classpath refid="test-classpath"/>
-
-      <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
-        <formatter type="plain" usefile="yes"/>
-        <fileset dir="${tests-target}">
-          <include name="org/vertx/java/tests/redis/*Test.class"/>
-        </fileset>
+        <fileset refid="${tests-fs}"/>
       </batchtest>
     </junit>
   </target>

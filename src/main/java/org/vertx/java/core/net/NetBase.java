@@ -18,6 +18,7 @@ package org.vertx.java.core.net;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 
 import javax.net.ssl.SSLContext;
 import java.util.HashMap;
@@ -53,6 +54,9 @@ public abstract class NetBase {
     Long cid = Vertx.instance.getContextID();
     if (cid == null) {
       throw new IllegalStateException("Can only be used from an event loop");
+    }
+    if (!VertxInternal.instance.isEventLoopContext(cid)) {
+      throw new IllegalStateException("Cannot be used in a worker");
     }
     this.contextID = cid;
     this.th = Thread.currentThread();
