@@ -20,8 +20,8 @@ public class WorkQueue extends BusModBase {
 
   private final long processTimeout;
   // LHS is typed as ArrayList to ensure high perf offset based index operations
-  private Queue<String> processors = new LinkedList<>();
-  private Queue<Message> messages = new LinkedList<>();
+  private final Queue<String> processors = new LinkedList<>();
+  private final Queue<Message> messages = new LinkedList<>();
 
   public WorkQueue(final String address, long processTimeout) {
     super(address);
