@@ -78,4 +78,10 @@ public interface Vertx {
    * Call the specified event handler asynchronously on the next "tick" of the event loop.
    */
   void nextTick(Handler<Void> handler);
+
+  /**
+   * Is the current thread an event loop thread?
+   * @return true if current thread is an event loop thread
+   */
+  boolean isEventLoop();
 }

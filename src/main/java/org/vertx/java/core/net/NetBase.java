@@ -55,8 +55,8 @@ public abstract class NetBase {
     if (cid == null) {
       throw new IllegalStateException("Can only be used from an event loop");
     }
-    if (!VertxInternal.instance.isEventLoopContext(cid)) {
-      throw new IllegalStateException("Cannot be used in a worker");
+    if (!VertxInternal.instance.isEventLoop()) {
+      throw new IllegalStateException("Cannot be used in a worker application");
     }
     this.contextID = cid;
     this.th = Thread.currentThread();
