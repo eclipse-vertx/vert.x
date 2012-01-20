@@ -23,11 +23,7 @@ public class OrderProcessor implements VertxApp, Handler<Message> {
 
   private String address = UUID.randomUUID().toString();
 
-  private ObjectMapper mapper = new ObjectMapper();
-
   private JsonHelper helper = new JsonHelper();
-
-  private int count;
 
   @Override
   public void start() throws Exception {
@@ -61,7 +57,7 @@ public class OrderProcessor implements VertxApp, Handler<Message> {
     try {
       Map<String, Object> json = helper.toJson(message);
 
-      // Simulate some processing time - ok to sleep here since this is a background application
+      // Simulate some processing time - ok to sleep here since this is a worker application
       Thread.sleep(100);
 
       message.reply();

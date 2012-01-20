@@ -50,4 +50,6 @@ public interface VertxInternal extends Vertx {
   long startOnEventLoop(Runnable runnable);
 
   long startInBackground(Runnable runnable);
+
+  boolean isEventLoopContext(long contextID);
 }

@@ -84,7 +84,7 @@ public class VertxMgr {
       DeployCommand dc = createDeployCommand(args, "run");
       if (dc != null) {
         try {
-          mgr.deploy(dc.background, dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
+          mgr.deploy(dc.worker, dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
           mgr.block();
         } catch (Exception e) {
           System.err.println("Failed to deploy application");
@@ -117,7 +117,7 @@ public class VertxMgr {
     instances is optional, defaults to number of cores on server
      */
 
-    boolean background = args.map.get("-background") != null;
+    boolean worker = args.map.get("-worker") != null;
 
     AppType type = AppType.JAVA;
     String flag = args.map.get("-ruby");
@@ -189,7 +189,7 @@ public class VertxMgr {
       }
       urls[index++] = url;
     }
-    return new DeployCommand(background, type, name, main, urls, instances);
+    return new DeployCommand(worker, type, name, main, urls, instances);
   }
 
 

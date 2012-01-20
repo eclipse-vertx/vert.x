@@ -1,4 +1,4 @@
-package vertx.tests.busmods.workqueue;
+package vertx.tests.busmods.worker;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
@@ -29,29 +29,20 @@ public class TestClient extends TestClientBase {
     super.stop();
   }
 
-  int count;
+  public void testWorker() throws Exception {
 
-  public void test1() throws Exception {
+    System.out.println("In test worker");
 
-    final int numMessages = 30;
-
-    eb.registerHandler("done", new Handler<Message>() {
+    Map<String, Object> map = new HashMap<>();
+    map.put("address", "testWorker");
+    map.put("foo", "wibble");
+    helper.sendJSON(map, new Handler<Message>() {
       public void handle(Message message) {
-        if (++count == numMessages) {
-          eb.unregisterHandler("done", this);
-          tu.testComplete();
-        }
+        Map<String, Object> json = helper.toJson(message);
+        tu.azzert(json.get("eek").equals("blurt"));
+        tu.testComplete();
       }
     });
-
-    for (int i = 0; i < numMessages; i++) {
-
-      Map<String, Object> map = new HashMap<>();
-      map.put("address", "orderQueue");
-      map.put("action", "send");
-      map.put("blah", "wibble" + i);
-      helper.sendJSON(map);
-    }
   }
 
 }
