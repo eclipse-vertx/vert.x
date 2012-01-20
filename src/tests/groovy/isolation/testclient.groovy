@@ -1,4 +1,4 @@
-package isolation
+package core.isolation
 
 import java.util.concurrent.atomic.AtomicInteger
 import org.vertx.groovy.newtests.TestUtils

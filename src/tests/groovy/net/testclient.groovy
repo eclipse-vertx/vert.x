@@ -1,4 +1,4 @@
-package net
+package core.net
 
 import org.vertx.groovy.core.net.NetClient
 import org.vertx.groovy.newtests.TestUtils

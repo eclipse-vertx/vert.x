@@ -1,5 +1,5 @@
 load("test_utils.js")
-load("scriptloading/script1.js");
+load("core/scriptloading/script1.js");
 
 var tu = new TestUtils();
 

@@ -21,8 +21,8 @@ public class JavaScriptWorkerTest extends TestBase {
 
   @Test
   public void testWorker() throws Exception {
-    startApp(AppType.JS, "worker/test_client.js");
-    startApp(true, AppType.JS, "worker/test_worker.js");
+    startApp(AppType.JS, "busmods/worker/test_client.js");
+    startApp(true, AppType.JS, "busmods/worker/test_worker.js");
     startTest(getMethodName());
   }
 

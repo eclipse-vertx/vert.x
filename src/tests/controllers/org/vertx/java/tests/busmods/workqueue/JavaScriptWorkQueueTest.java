@@ -22,12 +22,12 @@ public class JavaScriptWorkQueueTest extends TestBase {
 
   @Test
   public void testWorkQueue() throws Exception {
-    startApp(AppType.JS, "workqueue/order_queue.js");
+    startApp(AppType.JS, "busmods/workqueue/order_queue.js");
     int numProcessors = 10;
     for (int i = 0; i < numProcessors; i++) {
-      startApp(true, AppType.JS, "workqueue/order_processor.js");
+      startApp(true, AppType.JS, "busmods/workqueue/order_processor.js");
     }
-    startApp(AppType.JS, "workqueue/test_client.js");
+    startApp(AppType.JS, "busmods/workqueue/test_client.js");
     startTest(getMethodName());
   }
 

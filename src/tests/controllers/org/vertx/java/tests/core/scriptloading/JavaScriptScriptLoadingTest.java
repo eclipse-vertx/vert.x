@@ -21,7 +21,7 @@ public class JavaScriptScriptLoadingTest extends TestBase {
 
   @Test
   public void testScriptLoading() throws Exception {
-    startApp(AppType.JS, "scriptloading/test_client.js");
+    startApp(AppType.JS, "core/scriptloading/test_client.js");
     startTest(getMethodName());
   }
 

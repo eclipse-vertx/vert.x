@@ -15,7 +15,7 @@ public class JavaScriptNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JS, "net/test_client.js");
+    startApp(AppType.JS, "core/net/test_client.js");
   }
 
   @Override
@@ -25,7 +25,7 @@ public class JavaScriptNetTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(AppType.JS, "net/echo_server.js");
+    startApp(AppType.JS, "core/net/echo_server.js");
     startTest(getMethodName());
   }
 
