@@ -45,10 +45,7 @@ public class Mailer extends BusModBase {
   }
 
   public Mailer(String address, String host, int port, boolean ssl,boolean auth, String username, String password) {
-    super(address);
-    if (Vertx.instance.isEventLoop()) {
-      throw new IllegalStateException("Mailer can only be created inside a worker application (user -worker when deploying");
-    }
+    super(address, true);
     this.ssl = ssl;
     this.host = host;
     this.port = port;
@@ -177,24 +174,6 @@ public class Mailer extends BusModBase {
     } catch (MessagingException e) {
       sendError(message, "Failed to send message", e);
     }
-  }
-
-  private void sendOK(Message message) {
-    Map<String, Object> json = new HashMap<>();
-    json.put("status", "ok");
-    helper.sendReply(message, json);
-  }
-
-  private void sendError(Message message, String error) {
-    sendError(message, error, null);
-  }
-
-  private void sendError(Message message, String error, Exception e) {
-    log.trace(error, e);
-    Map<String, Object> json = new HashMap<>();
-    json.put("status", "error");
-    json.put("message", error);
-    helper.sendReply(message, json);
   }
 
 }

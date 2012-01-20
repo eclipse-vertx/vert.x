@@ -7,3 +7,4 @@ load('core/utils.js');
 
 load('busmods/work_queue.js');
 load('busmods/mailer.js');
+load('busmods/persistor.js');
