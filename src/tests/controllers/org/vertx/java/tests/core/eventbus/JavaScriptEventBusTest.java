@@ -11,7 +11,7 @@ public class JavaScriptEventBusTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JS, "eventbus/test_client.js");
+    startApp(AppType.JS, "core/eventbus/test_client.js");
   }
 
   @Override

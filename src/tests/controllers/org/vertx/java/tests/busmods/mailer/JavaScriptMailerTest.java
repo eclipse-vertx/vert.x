@@ -18,8 +18,8 @@ public class JavaScriptMailerTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(true, AppType.JS, "mailer/test_mailer.js");
-    startApp(AppType.JS, "mailer/test_client.js");
+    startApp(true, AppType.JS, "busmods/mailer/test_mailer.js");
+    startApp(AppType.JS, "busmods/mailer/test_client.js");
   }
 
   @Override

@@ -23,9 +23,9 @@ public class JavaScriptIsolationTest extends TestBase {
   public void testIsolation() throws Exception {
     int numInstances = 10;
     for (int i = 0; i < numInstances; i++) {
-      startApp(AppType.JS, "isolation/test_client.js");
+      startApp(AppType.JS, "core/isolation/test_client.js");
     }
-    startApp(AppType.JS, "isolation/test_client.js", numInstances);
+    startApp(AppType.JS, "core/isolation/test_client.js", numInstances);
     startTest(getMethodName(), false);
     for (int i = 0; i < numInstances * 2; i++) {
       waitTestComplete();
