@@ -158,8 +158,8 @@ class VertxImpl implements VertxInternal {
     return contextID;
   }
 
-  public boolean isEventLoopContext(long contextID) {
-    return workerMap.containsKey(contextID);
+  public boolean isEventLoop() {
+    return workerMap.containsKey(getContextID());
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {

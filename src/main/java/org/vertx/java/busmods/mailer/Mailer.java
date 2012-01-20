@@ -1,6 +1,8 @@
 package org.vertx.java.busmods.mailer;
 
 import org.vertx.java.busmods.BusModBase;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -44,6 +46,9 @@ public class Mailer extends BusModBase {
 
   public Mailer(String address, String host, int port, boolean ssl,boolean auth, String username, String password) {
     super(address);
+    if (Vertx.instance.isEventLoop()) {
+      throw new IllegalStateException("Mailer can only be created inside a worker application (user -worker when deploying");
+    }
     this.ssl = ssl;
     this.host = host;
     this.port = port;
