@@ -31,8 +31,6 @@ public class TestClient extends TestClientBase {
 
   public void testWorker() throws Exception {
 
-    System.out.println("In test worker");
-
     Map<String, Object> map = new HashMap<>();
     map.put("address", "testWorker");
     map.put("foo", "wibble");
