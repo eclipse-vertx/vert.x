@@ -961,9 +961,6 @@ public class RedisConnection {
       buff.appendBuffer(arg);
       buff.appendBytes(ReplyParser.CRLF);
     }
-
-    log.info("command is " + buff.toString());
-
     return buff;
   }
 

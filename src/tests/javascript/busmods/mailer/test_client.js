@@ -5,9 +5,10 @@ var tu = new TestUtils();
 
 var eb = vertx.EventBus;
 
-var user = java.lang.System.getProperty('user.name') + '@localhost';
+var user = 'tim@localhost';
 
 function testMailer() {
+
   var msg = {
     address: "testMailer",
     from: user,
@@ -15,6 +16,8 @@ function testMailer() {
     subject: 'this is the subject',
     body: 'this is the body'
   }
+
+  log.println("sending: " + JSON.stringify(msg));
 
   eb.send(msg, function(msg) {
     tu.azzert(msg.status == 'ok');

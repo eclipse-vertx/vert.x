@@ -92,17 +92,17 @@ public class Message extends Sendable {
     reply(null);
   }
 
-  String toJSONString() {
-    StringBuilder sb = new StringBuilder("{\"address\":\"");
-    sb.append(address).append("\",");
-    sb.append("\"body\":\"").append(body.toString()).append("\",");
-    sb.append("\"messageID\":\"").append(messageID).append("\"");
-    if (replyAddress != null) {
-      sb.append(",\"replyAddress\":\"").append(replyAddress).append("\"");
-    }
-    sb.append("}");
-    return sb.toString();
-  }
+//  String toJSONString() {
+//    StringBuilder sb = new StringBuilder("{\"address\":\"");
+//    sb.append(address).append("\",");
+//    sb.append("\"body\":\"").append(body.toString()).append("\",");
+//    sb.append("\"messageID\":\"").append(messageID).append("\"");
+//    if (replyAddress != null) {
+//      sb.append(",\"replyAddress\":\"").append(replyAddress).append("\"");
+//    }
+//    sb.append("}");
+//    return sb.toString();
+//  }
 
   Message(Buffer readBuff) {
     // TODO Meh. This could be improved

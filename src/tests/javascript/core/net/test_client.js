@@ -9,7 +9,7 @@ function test1() {
 
   client = new vertx.NetClient();
 
-  client.connect(8080, 'localhost', function(sock) {
+  client.connect(1234, 'localhost', function(sock) {
 
     sock.dataHandler(function(data) {
       tu.testComplete();

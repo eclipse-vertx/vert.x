@@ -3,19 +3,12 @@ load('test_utils.js')
 
 var tu = new TestUtils();
 
-var server = new vertx.NetServer();
+var server = new vertx.HttpServer();
 
-var h = function(sock) {
+server.requestHandler(function(req) {
   tu.checkContext();
-  sock.dataHandler(function(data) {
-    tu.checkContext();
-    sock.write(data);
-  })
-};
-
-server.connectHandler(h);
-
-server.listen(1234, 'localhost');
+  req.response.end('Hello World');
+}).listen(8080, 'localhost');
 
 tu.appReady();
 

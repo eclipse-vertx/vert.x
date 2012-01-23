@@ -134,6 +134,8 @@
     <exclude name="org/vertx/java/tests/redis/*Test.class"/>
     <!-- Exclude mailer since not everyone has a localhost mailserver -->
     <exclude name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
+    <!-- Exclude persistor since it requires a local MongoDB server -->
+    <exclude name="org/vertx/java/tests/busmods/persistor/*Test.class"/>
   </fileset>
 
   <fileset id="redis-tests.fs" dir="${tests-target}">
@@ -142,6 +144,10 @@
 
   <fileset id="mailer-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
+  </fileset>
+
+  <fileset id="persistor-tests.fs" dir="${tests-target}">
+    <include name="org/vertx/java/tests/busmods/persistor/*Test.class"/>
   </fileset>
 
   <fileset id="test-one.fs" dir="${tests-target}">
@@ -154,6 +160,9 @@
     </antcall>
   </target>
 
+  <target name="all-tests" depends="tests, redis-tests, mailer-tests, persistor-tests">
+  </target>
+
   <target name="redis-tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="redis-tests.fs"/>
@@ -163,6 +172,12 @@
   <target name="mailer-tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="mailer-tests.fs"/>
+    </antcall>
+  </target>
+
+  <target name="persistor-tests">
+    <antcall target="internal-tests">
+      <param name="tests-fs" value="persistor-tests.fs"/>
     </antcall>
   </target>
 
