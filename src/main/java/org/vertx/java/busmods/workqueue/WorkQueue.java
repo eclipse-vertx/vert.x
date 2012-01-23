@@ -9,6 +9,7 @@ import org.vertx.java.core.eventbus.JsonHelper;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -27,10 +28,19 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   private Handler<Message> registerHandler;
   private Handler<Message> unregisterHandler;
   private Handler<Message> sendHandler;
+  private String persistorAddress;
+  private String collection;
 
   public WorkQueue(final String address, long processTimeout) {
     super(address, false);
     this.processTimeout = processTimeout;
+  }
+
+  public WorkQueue(final String address, long processTimeout, String persistorAddress,
+                   String collection) {
+    this(address, processTimeout);
+    this.persistorAddress = persistorAddress;
+    this.collection = collection;
   }
 
   public void start() {
@@ -104,7 +114,28 @@ public class WorkQueue extends BusModBase implements VertxApp  {
     message.reply();
   }
 
-  private void doSend(Message message, Map<String, Object> work) {
+  private void doSend(final Message message, final Map<String, Object> work) {
+    if (persistorAddress != null) {
+      Map<String, Object> msg = new HashMap<>();
+      msg.put("action", "save");
+      msg.put("collection", collection);
+      msg.put("document", work);
+      helper.sendJSON(persistorAddress, msg, new Handler<Message>() {
+        public void handle(Message reply) {
+          Map<String, Object> replyJson = helper.toJson(reply);
+          if (replyJson.get("status").equals("ok")) {
+            actualSend(message, work);
+          } else {
+            sendError(message, (String)replyJson.get("message"));
+          }
+        }
+      });
+    } else {
+      actualSend(message, work);
+    }
+  }
+
+  private void actualSend(Message message, Map<String, Object> work) {
     messages.add(work);
     //Been added to the queue so reply
     sendOK(message);
