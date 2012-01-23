@@ -17,8 +17,6 @@ function testMailer() {
     body: 'this is the body'
   }
 
-  log.println("sending: " + JSON.stringify(msg));
-
   eb.send(msg, function(msg) {
     tu.azzert(msg.status == 'ok');
     tu.testComplete();
