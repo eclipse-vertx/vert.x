@@ -168,13 +168,4 @@ public class Persistor extends BusModBase {
     return (DBObject)JSON.parse(str);
   }
 
-  private Object getMandatory(String field, Message message, Map<String, Object> json) {
-    Object val = json.get(field);
-    if (val == null) {
-      sendError(message, field + " must be specified");
-    }
-    return val;
-  }
-
-
 }

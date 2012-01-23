@@ -36,8 +36,8 @@ function AppViewModel() {
     that.items = ko.observableArray([]);
 
     that.submitOrder = function() {
-      eb.send('demo.orderProcessor', {blah:'wibble'}, function(reply) {
-        console.log('Order has been processed: ' + JSON.stringify(reply));
+      eb.send('demo.orderManager', {blah:'wibble'}, function(reply) {
+        console.log('Order has been received: ' + JSON.stringify(reply));
       });
     }
   }

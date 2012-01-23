@@ -21,7 +21,7 @@ public class WorkQueue extends BusModBase {
   private final long processTimeout;
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
-  private final Queue<Message> messages = new LinkedList<>();
+  private final Queue<Map<String, Object>> messages = new LinkedList<>();
 
   public WorkQueue(final String address, long processTimeout) {
     super(address, false);
@@ -35,9 +35,8 @@ public class WorkQueue extends BusModBase {
   }
 
   public void handle(Message message, Map<String, Object> json) {
-    String action = (String)json.get("action");
+    String action = (String)getMandatory("action", message, json);
     if (action == null) {
-      log.error("action field must be specified");
       return;
     }
     switch (action) {
@@ -48,7 +47,7 @@ public class WorkQueue extends BusModBase {
         doUnregister(message, json);
         break;
       case "send":
-        doSend(message);
+        doSend(message, json);
         break;
       default:
         throw new IllegalArgumentException("Invalid action: " + action);
@@ -57,41 +56,54 @@ public class WorkQueue extends BusModBase {
 
   private void checkWork() {
     if (!messages.isEmpty() && !processors.isEmpty()) {
-      final Message message = messages.poll();
+      final Map<String, Object> message = messages.poll();
       final String address = processors.poll();
-
-      Message newMessage = new Message(address, message.body);
-      eb.send(newMessage, new Handler<Message>() {
-        public void handle(Message reply) {
-          processors.add(address);
-          checkWork();
-        }
-      });
-      Vertx.instance.setTimer(processTimeout, new Handler<Long>() {
+      message.put("address", address);
+      final long timeoutID = Vertx.instance.setTimer(processTimeout, new Handler<Long>() {
         public void handle(Long id) {
           // Processor timed out - put message back on queue
           log.warn("Processor timed out, message will be put back on queue");
           messages.add(message);
         }
       });
+      helper.sendJSON(message, new Handler<Message>() {
+        public void handle(Message reply) {
+          Vertx.instance.cancelTimer(timeoutID);
+          processors.add(address);
+          checkWork();
+        }
+      });
+
     }
   }
 
   private void doRegister(Message message, Map<String, Object> map) {
-    String address = (String)map.get("processor");
-    processors.add(address);
+    String processor = (String)getMandatory("processor", message, map);
+    if (processor == null) {
+      return;
+    }
+    processors.add(processor);
     checkWork();
     message.reply();
   }
 
   private void doUnregister(Message message, Map<String, Object> map) {
-    String address = (String)map.get("processor");
-    processors.remove(address);
+    String processor = (String)getMandatory("processor", message, map);
+    if (processor == null) {
+      return;
+    }
+    processors.remove(processor);
     message.reply();
   }
 
-  private void doSend(Message message) {
-    messages.add(message);
+  private void doSend(Message message, Map<String, Object> map) {
+    Map<String, Object> work = (Map<String, Object>)getMandatory("work", message, map);
+    if (work == null) {
+      return;
+    }
+    messages.add(work);
+    //Been added to the queue so reply
+    sendOK(message);
     checkWork();
   }
 
