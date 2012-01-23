@@ -103,9 +103,6 @@ module Vertx
     # @return [Buffer] the body of the message
     attr_accessor :body
 
-    # @return [String] the message id of the message. This is filled in by the server when sending
-    attr_accessor :message_id
-
     #@private
     attr_accessor :j_del
 
@@ -117,7 +114,6 @@ module Vertx
       raise "body parameter must be a Buffer" if !body.is_a? Buffer
       @address = address
       @body = body
-      @message_id = nil
       @j_del = nil
     end
 
@@ -134,7 +130,6 @@ module Vertx
     # @private
     def Message.create_from_j_msg(j_msg)
       msg = Message.new(j_msg.address, Buffer.new(j_msg.body))
-      msg.message_id = j_msg.messageID
       msg.j_del = j_msg
       msg
     end

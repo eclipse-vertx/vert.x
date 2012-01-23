@@ -6,8 +6,7 @@ var tu = new TestUtils();
 var eb = vertx.EventBus;
 
 function testWorker() {
-  eb.send({
-    address: "testWorker",
+  eb.send('testWorker', {
     foo: "wibble"
   }, function(reply) {
     tu.azzert(reply.eek === 'blurt');

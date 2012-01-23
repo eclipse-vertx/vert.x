@@ -47,10 +47,8 @@ public class TestClient extends TestClientBase {
     for (int i = 0; i < numMessages; i++) {
 
       Map<String, Object> map = new HashMap<>();
-      map.put("address", "orderQueue");
-      map.put("action", "send");
       map.put("blah", "wibble" + i);
-      helper.sendJSON(map);
+      helper.sendJSON("orderQueue", map);
     }
   }
 

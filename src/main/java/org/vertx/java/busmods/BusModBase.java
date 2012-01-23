@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BusModBase implements VertxApp, Handler<Message> {
+public abstract class BusModBase {
 
   private static final Logger log = Logger.getLogger(BusModBase.class);
 
@@ -27,28 +27,6 @@ public abstract class BusModBase implements VertxApp, Handler<Message> {
       throw new IllegalStateException("Worker busmod can only be created inside a worker application (user -worker when deploying");
     }
     this.address = address;
-  }
-
-  @Override
-  public void start() {
-    EventBus.instance.registerHandler(address, this);
-  }
-
-  @Override
-  public void stop() {
-    EventBus.instance.unregisterHandler(address, this);
-  }
-
-  @Override
-  public void handle(Message message) {
-    Map<String, Object> json;
-    try {
-      json = helper.toJson(message);
-    } catch (Exception e) {
-      log.error("Invalid JSON: " + message.body.toString());
-      return;
-    }
-    handle(message, json);
   }
 
   protected void sendOK(Message message) {
@@ -82,7 +60,4 @@ public abstract class BusModBase implements VertxApp, Handler<Message> {
     }
     return val;
   }
-
-
-  public abstract void handle(Message message, Map<String, Object> json);
 }

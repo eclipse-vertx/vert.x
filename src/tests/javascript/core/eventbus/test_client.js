@@ -9,7 +9,6 @@ var eb = vertx.EventBus;
 var address = 'foo-address';
 
 var sent = {
-  address : address,
   price : 23.45,
   name : 'tim'
 };
@@ -24,16 +23,10 @@ var reply = {
 }
 
 function assertSent(msg) {
-  tu.azzert(msg.messageID != undefined);
-  tu.azzert(sent.address === msg.address);
   tu.azzert(sent.price === msg.price);
   tu.azzert(sent.name === msg.name);
 }
 
-function assertEmptySent(msg) {
-  tu.azzert(msg.messageID != undefined);
-  tu.azzert(sent.address === msg.address);
-}
 
 function assertReply(rep) {
   tu.azzert(reply.desc === rep.desc);
@@ -52,8 +45,7 @@ function testSimple() {
     tu.testComplete();
   });
 
-  eb.send(sent);
-  tu.azzert(sent.messageID != undefined);
+  eb.send(address, sent);
 }
 
 function testEmptyMessage() {
@@ -62,14 +54,12 @@ function testEmptyMessage() {
   eb.registerHandler(address, function MyHandler(msg, replier) {
     tu.checkContext();
     tu.azzert(!handled);
-    assertEmptySent(msg);
     eb.unregisterHandler(address, MyHandler);
     handled = true;
     tu.testComplete();
   });
 
-  eb.send(emptySent);
-  tu.azzert(emptySent.messageID != undefined);
+  eb.send(address, emptySent);
 }
 
 
@@ -91,8 +81,7 @@ function testUnregister() {
   });
 
   for (var i = 0; i < 2; i++) {
-    eb.send(sent);
-    tu.azzert(sent.messageID != undefined);
+    eb.send(address, sent);
   }
 }
 
@@ -108,13 +97,12 @@ function testWithReply() {
     replier(reply);
   });
 
-  eb.send(sent, function(reply) {
+  eb.send(address, sent, function(reply) {
     tu.checkContext();
     assertReply(reply);
     tu.testComplete();
   });
-  eb.send(sent);
-  tu.azzert(sent.messageID != undefined);
+  eb.send(address, sent);
 }
 
 function testEmptyReply() {
@@ -129,12 +117,11 @@ function testEmptyReply() {
     replier({});
   });
 
-  eb.send(sent, function(reply) {
+  eb.send(address, sent, function(reply) {
     tu.checkContext();
     tu.testComplete();
   });
-  eb.send(sent);
-  tu.azzert(sent.messageID != undefined);
+  eb.send(address, sent);
 }
 
 tu.registerTests(this);

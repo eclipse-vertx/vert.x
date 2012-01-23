@@ -128,9 +128,6 @@ public class EventBus {
   public void send(final Message message, final Handler<Message> replyHandler) {
     Long contextID = Vertx.instance.getContextID();
     try {
-      if (message.messageID == null) {
-        message.messageID = UUID.randomUUID().toString();
-      }
       message.sender = serverID;
       if (replyHandler != null) {
         message.replyAddress = UUID.randomUUID().toString();

@@ -40,10 +40,9 @@ public class TestClient extends TestClientBase {
         }
       }
     };
-    String user = System.getProperty("user.name");
     for (int i = 0; i < numMails; i++) {
       Map<String, Object> map = createBaseMessage();
-      helper.sendJSON(map, replyHandler);
+      helper.sendJSON("testMailer", map, replyHandler);
     }
   }
 
@@ -130,13 +129,12 @@ public class TestClient extends TestClientBase {
     };
     Map<String, Object> map = createBaseMessage();
     map.putAll(overrides);
-    helper.sendJSON(map, replyHandler);
+    helper.sendJSON("testMailer", map, replyHandler);
   }
 
   private Map<String, Object> createBaseMessage() {
     String user = System.getProperty("user.name");
     Map<String, Object> map = new HashMap<>();
-    map.put("address", "testMailer");
     map.put("from", user + "@localhost");
     map.put("to", user + "@localhost");
     map.put("subject", "This is a test");

@@ -32,9 +32,8 @@ public class TestClient extends TestClientBase {
   public void testWorker() throws Exception {
 
     Map<String, Object> map = new HashMap<>();
-    map.put("address", "testWorker");
     map.put("foo", "wibble");
-    helper.sendJSON(map, new Handler<Message>() {
+    helper.sendJSON("testWorker", map, new Handler<Message>() {
       public void handle(Message message) {
         Map<String, Object> json = helper.toJson(message);
         tu.azzert(json.get("eek").equals("blurt"));

@@ -66,7 +66,6 @@ public class LocalClient extends EventBusAppBase {
       eb.send(new Message(address, buff), new Handler<Message>() {
         public void handle(Message reply) {
           tu.azzert(reply.address != null);
-          tu.azzert(reply.messageID != null);
           tu.azzert(("reply" + address).equals(reply.body.toString()));
           tu.testComplete();
         }
@@ -87,7 +86,6 @@ public class LocalClient extends EventBusAppBase {
           tu.azzert(!handled);
           tu.azzert(TestUtils.buffersEqual(buff, msg.body));
           tu.azzert(address.equals(msg.address));
-          tu.azzert(msg.messageID != null);
           int c = count.incrementAndGet();
           tu.azzert(c <= numHandlers);
           eb.unregisterHandler(address, this);

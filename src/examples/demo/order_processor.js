@@ -12,14 +12,13 @@ var handler = function(order, replier) {
     // Send a mail
 
     var msg = {
-      address: "demo.mailer",
       from: 'tim@localhost',
       to: 'tim@localhost',
       subject: 'Thank you for your order',
       body: 'blah blah blah'
     }
 
-    eb.send(msg);
+    eb.send('demo.mailer', msg);
 
     replier({});
 
@@ -31,13 +30,14 @@ var handler = function(order, replier) {
 
 eb.registerHandler(id, handler);
 
-eb.send({
-  address: "demo.orderQueue",
-  action: "register",
+eb.send('demo.orderQueue.register', {
   processor: id
 });
 
 function vertxStop() {
   eb.unregisterHandler(id, handler);
+  eb.send('demo.orderQueue.unregister', {
+    processor: id
+  });
 }
 

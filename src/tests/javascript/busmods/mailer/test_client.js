@@ -10,14 +10,13 @@ var user = 'tim@localhost';
 function testMailer() {
 
   var msg = {
-    address: "testMailer",
     from: user,
     to: user,
     subject: 'this is the subject',
     body: 'this is the body'
   }
 
-  eb.send(msg, function(msg) {
+  eb.send("testMailer", msg, function(msg) {
     tu.azzert(msg.status == 'ok');
     tu.testComplete();
   });
@@ -25,14 +24,13 @@ function testMailer() {
 
 function testMailerError() {
   var msg = {
-    address: "testMailer",
     from: "wdok wdqwd qd",
     to: user,
     subject: 'this is the subject',
     body: 'this is the body'
   }
 
-  eb.send(msg, function(msg) {
+  eb.send("testMailer", msg, function(msg) {
     tu.azzert(msg.status == 'error');
     tu.testComplete();
   });

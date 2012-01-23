@@ -1,8 +1,10 @@
 package org.vertx.java.busmods.mailer;
 
 import org.vertx.java.busmods.BusModBase;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -22,7 +24,7 @@ import java.util.Properties;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Mailer extends BusModBase {
+public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
 
   private static final Logger log = Logger.getLogger(Mailer.class);
 
@@ -56,7 +58,7 @@ public class Mailer extends BusModBase {
 
   @Override
   public void start() {
-    super.start();
+    eb.registerHandler(address, this);
 
     Properties props = new Properties();
     props.put("mail.transport.protocol", "smtp");
@@ -89,13 +91,13 @@ public class Mailer extends BusModBase {
 
   @Override
   public void stop() {
+    eb.unregisterHandler(address, this);
+
     try {
       transport.close();
     } catch (MessagingException e) {
       log.error("Failed to stop mail transport", e);
     }
-
-    super.stop();
   }
 
   private InternetAddress[] parseAddresses(Message message, Map<String, Object> json, String fieldName,
@@ -132,7 +134,9 @@ public class Mailer extends BusModBase {
     }
   }
 
-  public void handle(Message message, Map<String, Object> json) {
+  public void handle(Message message) {
+    Map<String, Object> json = helper.toJson(message);
+
     String from = (String)json.get("from");
 
     if (from == null) {

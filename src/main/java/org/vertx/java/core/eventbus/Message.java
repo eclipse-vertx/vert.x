@@ -20,11 +20,6 @@ public class Message extends Sendable {
   EventBus bus;
 
   /**
-   * The unique id of the message - this is filled in by the event bus when the message is sent
-   */
-  public String messageID;
-
-  /**
    * The address where the message is being sent
    */
   public String address;
@@ -48,21 +43,10 @@ public class Message extends Sendable {
    * @param body
    */
   public Message(String address, Buffer body) {
-    this(null, address, body);
-  }
-
-  /**
-   * Create a new Message specifying message ID
-   * @param messageID ID of the message
-   * @param address The address to send the message to
-   * @param body
-   */
-  public Message(String messageID, String address, Buffer body) {
     if (address == null) {
       throw new IllegalArgumentException("address must be specified");
     }
     this.address = address;
-    this.messageID = messageID;
     if (body == null) {
       body = Buffer.create(0);
     }
@@ -92,26 +76,8 @@ public class Message extends Sendable {
     reply(null);
   }
 
-//  String toJSONString() {
-//    StringBuilder sb = new StringBuilder("{\"address\":\"");
-//    sb.append(address).append("\",");
-//    sb.append("\"body\":\"").append(body.toString()).append("\",");
-//    sb.append("\"messageID\":\"").append(messageID).append("\"");
-//    if (replyAddress != null) {
-//      sb.append(",\"replyAddress\":\"").append(replyAddress).append("\"");
-//    }
-//    sb.append("}");
-//    return sb.toString();
-//  }
-
   Message(Buffer readBuff) {
-    // TODO Meh. This could be improved
     int pos = 1;
-    int messageIDLength = readBuff.getInt(pos);
-    pos += 4;
-    byte[] messageIDBytes = readBuff.getBytes(pos, pos + messageIDLength);
-    pos += messageIDLength;
-    messageID = new String(messageIDBytes, CharsetUtil.UTF_8);
 
     int addressLength = readBuff.getInt(pos);
     pos += 4;
@@ -146,12 +112,12 @@ public class Message extends Sendable {
   }
 
   void write(NetSocket socket) {
-    int length = 1 + 6 * 4 + address.length() + 1 + body.length() + messageID.length() + sender.host.length() +
-        4 + (replyAddress == null ? 0 : replyAddress.length());
+    int length = 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
+        4 + (replyAddress == null ? 0 : replyAddress.length()) +
+        4 + body.length();
     Buffer totBuff = Buffer.create(length);
     totBuff.appendInt(0);
     totBuff.appendByte(Sendable.TYPE_MESSAGE);
-    writeString(totBuff, messageID);
     writeString(totBuff, address);
     totBuff.appendInt(sender.port);
     writeString(totBuff, sender.host);
@@ -172,7 +138,6 @@ public class Message extends Sendable {
 
   Message copy() {
     Message msg = new Message(address, body.copy());
-    msg.messageID = this.messageID;
     msg.sender = this.sender;
     msg.replyAddress = this.replyAddress;
     return msg;
