@@ -1,6 +1,6 @@
 load('vertx.js');
 
-var queue = new vertx.WorkQueue("demo.orderQueue", 30000);
+var queue = new vertx.WorkQueue("demo.orderQueue", 30000, "demo.persistor", "orders");
 queue.start();
 
 function vertxStop() {
