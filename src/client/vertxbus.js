@@ -17,14 +17,18 @@
  * Description: Client side JavaScript for the vert.x event bus. Requires SockJS
  *
  */
-var VertxBus = function(url, options) {
+
+var vertx = vertx || {};
+
+vertx.EventBus = function(url, options) {
 
   // I use Crockford style to hide all private data
 
   var that = this;
   var sockJSConn = new SockJS(url, options);
   var handlerMap = {};
-  var state = VertxBus.CONNECTING;
+  var replyHandlers = {};
+  var state = vertx.EventBus.CONNECTING;
 
   that.onopen = null;
   that.onclose = null;
@@ -32,26 +36,19 @@ var VertxBus = function(url, options) {
   that.send = function(address, data, replyHandler) {
     checkSpecified("address", address);
     checkSpecified("data", data);
-    if (typeof data != "string") {
-      throw new Error("data parameter must be a string");
-    }
     if (replyHandler && !isFunction(replyHandler)) {
       throw new Error("replyHandler must be a function");
     }
     checkOpen();
     var msgID = makeUUID();
+    data.messageID = msgID;
+    data.address = address;
     var msg = { "type" : "send",
-              "messageID": msgID,
-              "address": address,
               "body": data };
     if (replyHandler) {
       var replyAddress = makeUUID();
       msg["replyAddress"] = replyAddress;
-      function wrapped(msg) {
-        that.unregisterHandler(replyAddress, wrapped);
-        replyHandler(msg);
-      };
-      that.registerHandler(replyAddress, wrapped);
+      replyHandlers[replyAddress] = replyHandler;
     }
     var str = JSON.stringify(msg);
     sockJSConn.send(str);
@@ -99,7 +96,7 @@ var VertxBus = function(url, options) {
 
   that.close = function() {
     checkOpen();
-    state = VertxBus.CLOSING;
+    state = vertx.EventBus.CLOSING;
     sockJSConn.close();
   }
 
@@ -108,14 +105,14 @@ var VertxBus = function(url, options) {
   }
 
   sockJSConn.onopen = function() {
-    state = VertxBus.OPEN;
+    state = vertx.EventBus.OPEN;
     if (that.onopen) {
       that.onopen();
     }
   };
 
   sockJSConn.onclose = function() {
-    state = VertxBus.CLOSED;
+    state = vertx.EventBus.CLOSED;
     if (that.onclose) {
       that.onclose();
     }
@@ -124,27 +121,34 @@ var VertxBus = function(url, options) {
   sockJSConn.onmessage = function(e) {
     var msg = e.data;
     var json = JSON.parse(msg);
-    var address = json["address"];
     var body = json["body"];
-    var messageID = json["messageID"];
     var replyAddress = json["replyAddress"];
+    var address = body["address"];
+    var messageID = body["messageID"];
+    var replyHandler;
+    if (replyAddress) {
+      replyHandler = function(data) {
+        // Send back reply
+        that.send(replyAddress, data);
+      };
+    }
     var handlers = handlerMap[address];
     if (handlers) {
       for (var i  = 0; i < handlers.length; i++) {
-        if (replyAddress) {
-          handlers[i](body, function(data) {
-            // Send back reply
-            that.send(replyAddress, data);
-          });
-        } else {
-          handlers[i](body);
-        }
+        handlers[i](body, replyHandler);
+      }
+    } else {
+      // Might be a reply message
+      var handler = replyHandlers[address];
+      if (handler) {
+        delete replyHandlers[replyAddress];
+        handler(body, replyHandler);
       }
     }
   }
 
   function checkOpen() {
-    if (state != VertxBus.OPEN) {
+    if (state != vertx.EventBus.OPEN) {
       throw new Error('INVALID_STATE_ERR');
     }
   }
@@ -164,10 +168,10 @@ var VertxBus = function(url, options) {
 
 }
 
-VertxBus.CONNECTING = 0;
-VertxBus.OPEN = 1;
-VertxBus.CLOSING = 2;
-VertxBus.CLOSED = 3;
+vertx.EventBus.CONNECTING = 0;
+vertx.EventBus.OPEN = 1;
+vertx.EventBus.CLOSING = 2;
+vertx.EventBus.CLOSED = 3;
 
 
 

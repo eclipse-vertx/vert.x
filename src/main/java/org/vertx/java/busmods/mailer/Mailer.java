@@ -133,7 +133,6 @@ public class Mailer extends BusModBase {
   }
 
   public void handle(Message message, Map<String, Object> json) {
-
     String from = (String)json.get("from");
 
     if (from == null) {

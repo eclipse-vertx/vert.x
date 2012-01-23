@@ -16,7 +16,9 @@ done
 DIRNAME=`dirname "$PRG"`
 
 CLASSPATH=$DIRNAME/../lib/java/vert.x.jar:$DIRNAME/../lib/java/netty.jar:$DIRNAME/../lib/java/high-scale-lib.jar:\
-:$DIRNAME/../lib/java/hazelcast-all-1.9.4.4.jar:$DIRNAME/../lib/java/jackson-all-1.9.2.jar:$DIRNAME/../conf:$DIRNAME/../lib/java/js.jar:$DIRNAME/../lib/java/groovy-all-1.8.3.jar:\
+$DIRNAME/../lib/java/hazelcast-all-1.9.4.4.jar:$DIRNAME/../lib/java/jackson-all-1.9.2.jar:\
+$DIRNAME/../lib/java/mongo.jar:$DIRNAME/../lib/java/mail.jar:\
+$DIRNAME/../conf:$DIRNAME/../lib/java/js.jar:$DIRNAME/../lib/java/groovy-all-1.8.3.jar:\
 $DIRNAME/../lib/ruby:$DIRNAME/../lib/javascript:$JRUBY_HOME/lib/jruby.jar
 
 java -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties -Djruby.home=$JRUBY_HOME\

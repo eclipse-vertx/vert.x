@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+
+<h2>Available Items</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th>
+    </tr>
+  </thead>
+  <tbody data-bind="foreach: items">
+    <tr>
+      <td data-bind="text: genre"></td>
+      <td data-bind="text: artist"></td>
+      <td data-bind="text: album"></td>
+      <td data-bind="text: price"></td>
+      <td><a href="#" data-bind="click: $root.addToCart">Add to Cart</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Cart</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th>
+    </tr>
+  </thead>
+  <tbody data-bind="foreach: cart.items">
+    <tr>
+      <td data-bind="text: genre"></td>
+      <td data-bind="text: artist"></td>
+      <td data-bind="text: album"></td>
+      <td data-bind="text: price"></td>
+    </tr>
+  </tbody>
+</table>
+
+<button data-bind="click: cart.submitOrder">Submit Order</button>
+
+</body>
+
+<script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
+<script type='text/javascript' src='js/vertxbus.js'></script>
+<script type='text/javascript' src='js/knockout-2.0.0.js'></script>
+<script type='text/javascript' src='js/app.js'></script>
+
+</html>

@@ -4,6 +4,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.HashMap;
@@ -22,6 +23,8 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SockJSBridgeHandler implements Handler<SockJSSocket> {
+
+  private static final Logger log = Logger.getLogger(SockJSBridgeHandler.class);
 
   private final EventBus eb = EventBus.instance;
   private final ObjectMapper mapper = new ObjectMapper();
@@ -42,7 +45,9 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
     sock.dataHandler(new Handler<Buffer>() {
 
-      private void handleSend(String address, String body, final String messageID, final String replyAddress) {
+      JsonHelper helper = new JsonHelper();
+
+      private void handleSend(Map<String, Object> body, final String replyAddress) {
         Handler<Message> replyHandler;
         if (replyAddress != null) {
           replyHandler = new Handler<Message>() {
@@ -54,11 +59,17 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         } else {
           replyHandler = null;
         }
-        eb.send(new Message(messageID, address, Buffer.create(body)), replyHandler);
+        helper.sendJSON(body, replyHandler);
       }
 
       private void deliverMessage(Message msg) {
-        sock.writeBuffer(Buffer.create(msg.toJSONString()));
+        Map<String, Object> json = helper.toJson(msg);
+        Map<String, Object> envelope = new HashMap<>();
+        if (msg.replyAddress != null) {
+          envelope.put("replyAddress", msg.replyAddress);
+        }
+        envelope.put("body", json);
+        sock.writeBuffer(Buffer.create(helper.jsonToString(envelope)));
       }
 
       private void handleRegister(String address) {
@@ -79,6 +90,14 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         }
       }
 
+      private Object getMandatory(Map<String, Object> json, String field) {
+        Object value = json.get(field);
+        if (value == null) {
+          throw new IllegalStateException(field + " must be specified for message");
+        }
+        return value;
+      }
+
       public void handle(Buffer data)  {
 
         Map<String, Object> msg;
@@ -88,30 +107,20 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
           throw new IllegalStateException("Failed to parse JSON");
         }
 
-        String type = (String)msg.get("type");
-        if (type == null) {
-          throw new IllegalStateException("type must be specified for message");
-        }
-
-        String address = (String)msg.get("address");
-        if (address == null) {
-          throw new IllegalStateException("address must be specified for message");
-        }
+        String type = (String)getMandatory(msg, "type");
 
         switch (type) {
           case "send":
-            String body = (String)msg.get("body");
-            if (body == null) {
-              throw new IllegalStateException("body must be specified for message");
-            }
+            Map<String, Object> body = (Map<String, Object>)getMandatory(msg, "body");
             String replyAddress = (String)msg.get("replyAddress");
-            String messageID = (String)msg.get("messageID");
-            handleSend(address, body, messageID, replyAddress);
+            handleSend(body, replyAddress);
             break;
           case "register":
+            String address = (String)getMandatory(msg, "address");
             handleRegister(address);
             break;
           case "unregister":
+            address = (String)getMandatory(msg, "address");
             handleUnregister(address);
             break;
           default:

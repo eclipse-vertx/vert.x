@@ -103,3 +103,7 @@ if (!vertx.EventBus) {
 
   })();
 }
+
+vertx.SockJSBridgeHandler = function() {
+  return new org.vertx.java.core.eventbus.SockJSBridgeHandler();
+}

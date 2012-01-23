@@ -5,8 +5,7 @@
   <title></title>
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
   <script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
-  <!-- In real life you'd get this from a CDN -->
-  <script src="http://localhost:8080/vertxbus.js"></script>
+  <script src="vertxbus.js"></script>
 </head>
 <style>
   .box {
@@ -83,7 +82,8 @@
 
   function send(address,  message) {
     if (eb) {
-      eb.send(address, message);
+      var json = {text: message};
+      eb.send(address, json);
       $('#sent').append($("<code>").text("Address:" + address + " Message:" + message));
       $('#sent').append($("</code><br>"));
     }
@@ -92,7 +92,7 @@
   function subscribe(address) {
     if (eb) {
       eb.registerHandler(address, function(msg, replyTo) {
-        $('#received').append("Address:" + address + " Message:" + msg + "<br>");
+        $('#received').append("Address:" + address + " Message:" + msg.text + "<br>");
       });
       $('#subscribed').append($("<code>").text("Address:" + address));
       $('#subscribed').append($("</code><br>"));
@@ -107,7 +107,7 @@
 
   function openConn() {
     if (!eb) {
-      eb = new VertxBus("http://localhost:8080/eventbus");
+      eb = new vertx.EventBus("http://localhost:8080/eventbus");
 
       eb.onopen = function() {
         $("#status_info").text("Connected");

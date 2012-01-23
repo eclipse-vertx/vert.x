@@ -383,10 +383,13 @@ public class HttpServerResponse implements WriteStream {
 
     File file = new File(filename);
 
+    log.info("path:" + file.getAbsolutePath());
+
     if (!file.exists()) {
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.NOT_FOUND);
-      writeFuture = conn.write(response);
+      log.info("file does not exist");
+      sendNotFound();
     } else {
+      log.info("file exists");
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       try {
@@ -396,17 +399,21 @@ public class HttpServerResponse implements WriteStream {
         }
       } catch (IOException e) {
         log.error("Failed to get content type", e);
+        sendNotFound();
       }
 
       conn.write(response);
-
       writeFuture = conn.sendFile(file);
+      headWritten = written = true;
+      conn.responseComplete();
     }
 
-    headWritten = written = true;
-    conn.responseComplete();
-
     return this;
+  }
+
+  private void sendNotFound() {
+    statusCode = HttpResponseStatus.NOT_FOUND.getCode();
+    end("<html><body>Resource not found</body><html>");
   }
 
   void handleDrained() {
