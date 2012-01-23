@@ -8,6 +8,8 @@ import com.mongodb.Mongo;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
 import org.vertx.java.busmods.BusModBase;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -22,7 +24,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Persistor extends BusModBase {
+public class Persistor extends BusModBase implements VertxApp, Handler<Message> {
 
   private static final Logger log = Logger.getLogger(Persistor.class);
 
@@ -33,24 +35,25 @@ public class Persistor extends BusModBase {
   private Mongo mongo;
   private DB db;
 
-  @Override
   public void start() {
+
     try {
       mongo = new Mongo("localhost", 27017 );
       db = mongo.getDB("mydb");
-      super.start();
+      eb.registerHandler(address, this);
     } catch (UnknownHostException e) {
       log.error("Failed to connect to mongo server", e);
     }
   }
 
-  @Override
   public void stop() {
-    super.stop();
+    eb.unregisterHandler(address, this);
     mongo.close();
   }
 
-  public void handle(Message message, Map<String, Object> json) {
+  public void handle(Message message) {
+    Map<String, Object> json  = helper.toJson(message);
+
     String action = (String)json.get("action");
 
     if (action == null) {

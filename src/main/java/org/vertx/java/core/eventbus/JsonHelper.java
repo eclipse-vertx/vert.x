@@ -17,20 +17,19 @@ public class JsonHelper {
   private final ObjectMapper mapper = new ObjectMapper();
   private final EventBus eb = EventBus.instance;
 
-  public void sendJSON(Map<String, Object> message) {
-    sendJSON(message, null);
+  public void sendJSON(String address, Map<String, Object> message) {
+    sendJSON(address, message, null);
   }
 
-  public void sendJSON(Map<String, Object> message, Handler<Message> replyHandler) {
+  public void sendJSON(String address, Map<String, Object> message, Handler<Message> replyHandler) {
     String json;
     try {
       json = mapper.writeValueAsString(message);
     } catch (Exception e) {
       throw new RuntimeException(e.getMessage());
     }
-    Message msg = new Message((String)message.get("address"), Buffer.create(json));
+    Message msg = new Message(address, Buffer.create(json));
     eb.send(msg, replyHandler);
-    message.put("messageID", msg.messageID);
   }
 
   public void sendReply(Message message, Map<String, Object> reply) {
@@ -45,8 +44,6 @@ public class JsonHelper {
 
   public Map<String, Object> toJson(Message message) {
     Map<String, Object> json = stringToJson(message.body.toString());
-    json.put("address", message.address);
-    json.put("messageID", message.messageID);
     return json;
   }
 

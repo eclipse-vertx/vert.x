@@ -47,7 +47,7 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
       JsonHelper helper = new JsonHelper();
 
-      private void handleSend(Map<String, Object> body, final String replyAddress) {
+      private void handleSend(String address, Map<String, Object> body, final String replyAddress) {
         Handler<Message> replyHandler;
         if (replyAddress != null) {
           replyHandler = new Handler<Message>() {
@@ -59,12 +59,13 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         } else {
           replyHandler = null;
         }
-        helper.sendJSON(body, replyHandler);
+        helper.sendJSON(address, body, replyHandler);
       }
 
       private void deliverMessage(Message msg) {
         Map<String, Object> json = helper.toJson(msg);
         Map<String, Object> envelope = new HashMap<>();
+        envelope.put("address", msg.address);
         if (msg.replyAddress != null) {
           envelope.put("replyAddress", msg.replyAddress);
         }
@@ -108,19 +109,17 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         }
 
         String type = (String)getMandatory(msg, "type");
-
+        String address = (String)getMandatory(msg, "address");
         switch (type) {
           case "send":
             Map<String, Object> body = (Map<String, Object>)getMandatory(msg, "body");
             String replyAddress = (String)msg.get("replyAddress");
-            handleSend(body, replyAddress);
+            handleSend(address, body, replyAddress);
             break;
           case "register":
-            String address = (String)getMandatory(msg, "address");
             handleRegister(address);
             break;
           case "unregister":
-            address = (String)getMandatory(msg, "address");
             handleUnregister(address);
             break;
           default:

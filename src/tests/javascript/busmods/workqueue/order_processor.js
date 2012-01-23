@@ -10,23 +10,19 @@ var id = vertx.generateUUID();
 var handler = function(message, replier) {
   tu.azzert(message.blah != "undefined");
   replier({});
-  eb.send({address: "done"});
+  eb.send('done', {});
 };
 
 eb.registerHandler(id, handler);
 
-eb.send({
-  address: "orderQueue",
-  action: "register",
+eb.send('orderQueue.register', {
   processor: id
 }, function() {
   tu.appReady();
 });
 
 function vertxStop() {
-  eb.send({
-    address: "orderQueue",
-    action: "unregister",
+  eb.send('orderQueue.unregister', {
     processor: id
   });
   eb.unregisterHandler(id, handler);

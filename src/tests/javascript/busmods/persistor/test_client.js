@@ -8,8 +8,7 @@ var eb = vertx.EventBus;
 deleteAll();
 
 function deleteAll() {
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'delete',
     matcher: {}
@@ -19,8 +18,7 @@ function deleteAll() {
 }
 
 function testSave() {
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -38,8 +36,7 @@ function testSave() {
 
 function testFind() {
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -53,8 +50,7 @@ function testFind() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'find',
     matcher: {
@@ -78,8 +74,7 @@ function testFind() {
 
 function testFindOne() {
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -93,8 +88,7 @@ function testFindOne() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'findone',
     matcher: {
@@ -122,8 +116,7 @@ function testFindWithLimit() {
   var limit = 12;
 
   for (var i = 0; i < num; i++) {
-    eb.send({
-      address: 'testPersistor',
+    eb.send('testPersistor', {
       collection: 'testcoll',
       action: 'save',
       document: {
@@ -134,8 +127,7 @@ function testFindWithLimit() {
     });
   }
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'find',
     limit: limit,
@@ -152,8 +144,7 @@ function testFindWithSort() {
   var num = 10;
 
   for (var i = 0; i < num; i++) {
-    eb.send({
-      address: 'testPersistor',
+    eb.send('testPersistor', {
       collection: 'testcoll',
       action: 'save',
       document: {
@@ -165,8 +156,7 @@ function testFindWithSort() {
     });
   }
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'find',
     matcher: {},
@@ -186,8 +176,7 @@ function testFindWithSort() {
 
 function testDelete() {
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -196,8 +185,7 @@ function testDelete() {
   }, function(reply) {
     tu.azzert(reply.status === 'ok');
   });
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -207,8 +195,7 @@ function testDelete() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('testPersistor', {
     collection: 'testcoll',
     action: 'delete',
     matcher: {
@@ -218,8 +205,7 @@ function testDelete() {
     tu.azzert(reply.status === 'ok');
     tu.azzert(reply.number === 1);
 
-    eb.send({
-      address: 'testPersistor',
+    eb.send('testPersistor', {
       collection: 'testcoll',
       action: 'find',
       matcher: {

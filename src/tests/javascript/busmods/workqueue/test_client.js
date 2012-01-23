@@ -19,8 +19,7 @@ function testWorkQueue() {
   eb.registerHandler("done", doneHandler);
 
   for (var i = 0; i < numMessages; i++) {
-    eb.send({
-      address: "orderQueue",
+    eb.send('orderQueue', {
       action: "send",
       blah: "somevalue: " + i
     })

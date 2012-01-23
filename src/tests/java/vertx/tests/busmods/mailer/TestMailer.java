@@ -30,8 +30,8 @@ public class TestMailer extends Mailer {
   }
 
   @Override
-  public void handle(Message message, Map<String, Object> json) {
+  public void handle(Message message) {
     tu.azzert(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
-    super.handle(message,json);
+    super.handle(message);
   }
 }

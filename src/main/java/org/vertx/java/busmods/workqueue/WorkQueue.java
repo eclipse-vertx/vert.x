@@ -3,7 +3,9 @@ package org.vertx.java.busmods.workqueue;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.JsonHelper;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -14,7 +16,7 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkQueue extends BusModBase {
+public class WorkQueue extends BusModBase implements VertxApp  {
 
   private static final Logger log = Logger.getLogger(WorkQueue.class);
 
@@ -22,43 +24,49 @@ public class WorkQueue extends BusModBase {
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
   private final Queue<Map<String, Object>> messages = new LinkedList<>();
+  private Handler<Message> registerHandler;
+  private Handler<Message> unregisterHandler;
+  private Handler<Message> sendHandler;
 
   public WorkQueue(final String address, long processTimeout) {
     super(address, false);
     this.processTimeout = processTimeout;
   }
 
-  @Override
-  public void stop() {
-    EventBus.instance.unregisterHandler(address, this);
-    super.stop();
+  public void start() {
+    registerHandler = new Handler<Message>() {
+      public void handle(Message message) {
+        Map<String, Object> json = helper.toJson(message);
+        doRegister(message, json);
+      }
+    };
+    eb.registerHandler(address + ".register", registerHandler);
+    unregisterHandler = new Handler<Message>() {
+      public void handle(Message message) {
+        Map<String, Object> json = helper.toJson(message);
+        doUnregister(message, json);
+      }
+    };
+    eb.registerHandler(address + ".unregister", unregisterHandler);
+    sendHandler = new Handler<Message>() {
+      public void handle(Message message) {
+        Map<String, Object> json = helper.toJson(message);
+        doSend(message, json);
+      }
+    };
+    eb.registerHandler(address, sendHandler);
   }
 
-  public void handle(Message message, Map<String, Object> json) {
-    String action = (String)getMandatory("action", message, json);
-    if (action == null) {
-      return;
-    }
-    switch (action) {
-      case "register":
-        doRegister(message, json);
-        break;
-      case "unregister":
-        doUnregister(message, json);
-        break;
-      case "send":
-        doSend(message, json);
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid action: " + action);
-    }
+  public void stop() {
+    eb.unregisterHandler(address, registerHandler);
+    eb.unregisterHandler(address, unregisterHandler);
+    eb.unregisterHandler(address, sendHandler);
   }
 
   private void checkWork() {
     if (!messages.isEmpty() && !processors.isEmpty()) {
       final Map<String, Object> message = messages.poll();
       final String address = processors.poll();
-      message.put("address", address);
       final long timeoutID = Vertx.instance.setTimer(processTimeout, new Handler<Long>() {
         public void handle(Long id) {
           // Processor timed out - put message back on queue
@@ -66,7 +74,7 @@ public class WorkQueue extends BusModBase {
           messages.add(message);
         }
       });
-      helper.sendJSON(message, new Handler<Message>() {
+      helper.sendJSON(address, message, new Handler<Message>() {
         public void handle(Message reply) {
           Vertx.instance.cancelTimer(timeoutID);
           processors.add(address);
@@ -96,11 +104,7 @@ public class WorkQueue extends BusModBase {
     message.reply();
   }
 
-  private void doSend(Message message, Map<String, Object> map) {
-    Map<String, Object> work = (Map<String, Object>)getMandatory("work", message, map);
-    if (work == null) {
-      return;
-    }
+  private void doSend(Message message, Map<String, Object> work) {
     messages.add(work);
     //Been added to the queue so reply
     sendOK(message);

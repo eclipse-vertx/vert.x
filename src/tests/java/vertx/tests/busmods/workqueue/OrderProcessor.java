@@ -30,11 +30,8 @@ public class OrderProcessor implements VertxApp, Handler<Message> {
     eb.registerHandler(address, this);
 
     Map<String, Object> msg = new HashMap<>();
-    msg.put("address", "orderQueue");
-    msg.put("action", "register");
     msg.put("processor", address);
-    helper.sendJSON(msg);
-
+    helper.sendJSON("orderQueue.register", msg);
     tu.appReady();
   }
 
@@ -43,10 +40,8 @@ public class OrderProcessor implements VertxApp, Handler<Message> {
   public void stop() throws Exception {
 
     Map<String, Object> msg = new HashMap<>();
-    msg.put("address", "orderQueue");
-    msg.put("action", "unregister");
     msg.put("processor", address);
-    helper.sendJSON(msg);
+    helper.sendJSON("orderQueue.unregister", msg);
 
     eb.unregisterHandler(address, this);
 

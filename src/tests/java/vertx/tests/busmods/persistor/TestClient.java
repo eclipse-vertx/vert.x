@@ -37,12 +37,11 @@ public class TestClient extends TestClientBase {
 
     //First delete everything
     Map<String, Object> json = new HashMap<>();
-    json.put("address", "testPersistor");
     json.put("collection", "testcoll");
     json.put("action", "delete");
     json.put("matcher", new HashMap());
 
-    helper.sendJSON(json, new Handler<Message>() {
+    helper.sendJSON("testPersistor", json, new Handler<Message>() {
       public void handle(Message reply) {
         Map<String, Object> jsonReply = helper.toJson(reply);
         tu.azzert("ok".equals(jsonReply.get("status")));
@@ -57,12 +56,11 @@ public class TestClient extends TestClientBase {
       doc.put("cat-name", "watt");
 
       json = new HashMap<>();
-      json.put("address", "testPersistor");
       json.put("collection", "testcoll");
       json.put("action", "save");
       json.put("document", doc);
 
-      helper.sendJSON(json, new Handler<Message>() {
+      helper.sendJSON("testPersistor", json, new Handler<Message>() {
         public void handle(Message reply) {
           Map<String, Object> jsonReply = helper.toJson(reply);
           tu.azzert("ok".equals(jsonReply.get("status")));
@@ -74,12 +72,11 @@ public class TestClient extends TestClientBase {
       matcher.put("name", "joe bloggs");
 
     json = new HashMap<>();
-    json.put("address", "testPersistor");
     json.put("collection", "testcoll");
     json.put("action", "find");
     json.put("matcher", matcher);
 
-    helper.sendJSON(json, new Handler<Message>() {
+    helper.sendJSON("testPersistor", json, new Handler<Message>() {
       public void handle(Message reply) {
         Map<String, Object> jsonReply = helper.toJson(reply);
         tu.azzert("ok".equals(jsonReply.get("status")));

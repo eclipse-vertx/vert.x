@@ -39,8 +39,6 @@ if (!vertx.EventBus) {
         handle: function(jMsg) {
           var bodyStr = bufferToStr(jMsg.body);
           var json = JSON.parse(bodyStr);
-          json.address = address;
-          json.messageID = '' + jMsg.messageID;
           handler(json, function(reply) {
             if (!reply) {
               throw "Reply message must be specified";
@@ -73,16 +71,16 @@ if (!vertx.EventBus) {
     Message should be a JSON object
     It should have a property "address"
      */
-    that.send = function(message, replyHandler) {
-
+    that.send = function(address, message, replyHandler) {
+      if (!address) {
+        throw "address must be specified";
+      }
+      if (typeof address != "string") {
+        throw "address must be a string";
+      }
       if (replyHandler && typeof replyHandler != "function") {
         throw "replyHandler must be a function";
       }
-      var address = message.address;
-      if (!address) {
-        throw "The message should be a JSON object with a field 'address'";
-      }
-
       var bodyStr = JSON.stringify(message);
       var body = org.vertx.java.core.buffer.Buffer.create(bodyStr);
       var java_msg = new org.vertx.java.core.eventbus.Message(address, body);

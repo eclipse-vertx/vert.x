@@ -380,16 +380,10 @@ public class HttpServerResponse implements WriteStream {
       throw new IllegalStateException("Head already written");
     }
     checkWritten();
-
     File file = new File(filename);
-
-    log.info("path:" + file.getAbsolutePath());
-
     if (!file.exists()) {
-      log.info("file does not exist");
       sendNotFound();
     } else {
-      log.info("file exists");
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       try {
