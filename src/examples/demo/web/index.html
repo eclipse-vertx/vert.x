@@ -6,7 +6,9 @@
 </head>
 <body>
 
-<h2>Available Items</h2>
+<h1>Welcome to vToons</h1>
+
+<h2>Available Albums</h2>
 
 <table>
   <thead>
@@ -20,7 +22,7 @@
       <td data-bind="text: artist"></td>
       <td data-bind="text: album"></td>
       <td data-bind="text: price"></td>
-      <td><a href="#" data-bind="click: $root.addToCart">Add to Cart</a></td>
+      <td><a href="#" data-bind="click: $root.cart.addToCart">Add to Cart</a></td>
     </tr>
   </tbody>
 </table>
@@ -43,6 +45,7 @@
   </tbody>
 </table>
 
+<p>Email address: <input data-bind="value: cart.emailAddress" /></p>
 <button data-bind="click: cart.submitOrder">Submit Order</button>
 
 </body>

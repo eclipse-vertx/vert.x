@@ -22,8 +22,6 @@ var vertx = vertx || {};
 
 vertx.EventBus = function(url, options) {
 
-  // I use Crockford style to hide all private data
-
   var that = this;
   var sockJSConn = new SockJS(url, options);
   var handlerMap = {};

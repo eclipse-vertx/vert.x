@@ -7,25 +7,28 @@ var id = vertx.generateUUID();
 var handler = function(order, replier) {
   log.println('Received order for processing');
 
-  vertx.setTimer(500, function() {
+  var email = order.email;
+  var items = order.items;
 
-    // Send a mail
+  // Send a confirmation email
 
-    var msg = {
-      from: 'tim@localhost',
-      to: 'tim@localhost',
-      subject: 'Thank you for your order',
-      body: 'blah blah blah'
-    }
+  var body = 'Thank you for your order\nYou bought:\n';
+  for (var i = 0; i < items.length; i++) {
+    body = body.concat(items[i].album, ' at £' ,items[i].price, '\n');
+  }
 
-    eb.send('demo.mailer', msg);
+  var msg = {
+    from: 'vToons@localhost',
+    to: email,
+    subject: 'Thank you for your order',
+    body: body
+  };
 
-    replier({});
+  eb.send('demo.mailer', msg);
 
-    log.println("Order successfully processed");
+  replier({});
 
-  })
-
+  log.println("Order successfully processed");
 }
 
 eb.registerHandler(id, handler);
