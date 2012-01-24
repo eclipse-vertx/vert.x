@@ -8,7 +8,7 @@ var handler = new vertx.SockJSBridgeHandler();
 handler.addMatches(
   // Let through orders posted to the order queue
   {
-    address : 'demo.ordersQueue',
+    address : 'demo.orderQueue',
     match : {
     }
   },

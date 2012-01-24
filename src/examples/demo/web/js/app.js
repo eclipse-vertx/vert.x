@@ -11,8 +11,11 @@
     eb.send('demo.persistor', {action: 'find', collection: 'albums', matcher: {} },
       function(reply) {
         if (reply.status === 'ok') {
-          that.items = ko.observableArray(reply.results);
-
+          var albumArray = [];
+          for (var i = 0; i < reply.results.length; i++) {
+            albumArray[i] = new Album(reply.results[i]);
+          }
+          that.items = ko.observableArray(albumArray);
           ko.applyBindings(that);
         } else {
           console.error('Failed to retrieve albums: ' + reply.message);
@@ -40,7 +43,7 @@
 
       eb.send('demo.orderQueue', order, function(reply) {
         if (reply.status === 'ok') {
-          console.log('Order has been received for processing');
+          alert('Your order has been accepted, and an email has been sent');
         } else {
           console.error('Failed to accept order');
         }
@@ -48,7 +51,24 @@
     }
 
     that.addToCart = function(album) {
+      console.log("in addto cart");
       that.items.push(album);
     };
+
+    that.canSubmit = ko.computed(function() {
+      console.log("in cansubmit, items.length: " + that.items.length + " trimmed " + that.emailAddress().trim());
+      return that.items().length > 0 && that.emailAddress().trim() != '';
+    });
+  }
+
+  function Album(json) {
+    var that = this;
+    that.genre = json.genre;
+    that.artist = json.artist;
+    that.album = json.album;
+    that.price = json.price;
+    that.formattedPrice = ko.computed(function() {
+      return '£' + that.price.toFixed(2);
+    });
   }
 })();
