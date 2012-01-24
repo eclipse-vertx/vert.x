@@ -4,8 +4,6 @@ import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonHelper;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -115,7 +113,6 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   }
 
   private void doSend(final Message message, final Map<String, Object> work) {
-    log.info("in work queue, persistoradress = " + persistorAddress);
     if (persistorAddress != null) {
       Map<String, Object> msg = new HashMap<>();
       msg.put("action", "save");
@@ -139,7 +136,6 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   private void actualSend(Message message, Map<String, Object> work) {
     messages.add(work);
     //Been added to the queue so reply
-    log.info("sending ok from workqueue");
     sendOK(message);
     checkWork();
   }

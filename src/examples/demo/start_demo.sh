@@ -8,4 +8,4 @@ cp ../../client/vertxbus.js web/js
 ../vertx-dev deploy -js -main static_data.js -cp . -instances 1
 ../vertx-dev deploy -js -main order_queue.js -cp . -instances 1
 ../vertx-dev deploy -js -worker -main order_processor.js -cp . -instances 10
-../vertx-dev deploy -ruby -main web_server.rb -cp .
+../vertx-dev deploy -js -main web_server.js -cp . -instances 1

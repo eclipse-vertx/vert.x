@@ -2,8 +2,6 @@ package org.vertx.java.busmods.mailer;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
@@ -16,7 +14,6 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;

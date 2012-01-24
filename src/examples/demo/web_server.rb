@@ -19,16 +19,33 @@ include Vertx
 sjs_server = SockJSServer.new(@server)
 
 # Bridge the vert.x event bus to the client side
-sjs_server.install_app({"prefix" => "/eventbus"}, SockJSBridgeHandler.new)
+handler = SockJSBridgeHandler.new
+
+# These are the message matches that the server will accept:
+handler.add_matches(
+  # Let through orders posted to the order queue
+  {
+    'address' => 'demo.orderQueue',
+    'match' => {
+    }
+  },
+  # Allow calls to get static album data from the persistor
+  {
+    'address' => 'demo.persistor',
+    'match' => {
+      'action' => 'find',
+      'collection' => 'albums'
+    }
+  }
+)
+sjs_server.install_app({"prefix" => "/eventbus"}, handler)
 
 # Also serve the index page
 @server.request_handler do |req|
-  puts "uri is #{req.uri}"
-  if req.uri == '/'
-    puts 'sending index.html'
+  if req.path == '/'
     req.response.send_file("web/index.html")
   else
-    req.response.send_file("web" + req.uri) if !req.uri.include? '..'
+    req.response.send_file("web" + req.path) if !req.path.include? '..'
   end
 end
 

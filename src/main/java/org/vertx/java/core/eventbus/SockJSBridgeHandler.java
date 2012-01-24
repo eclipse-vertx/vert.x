@@ -1,13 +1,15 @@
 package org.vertx.java.core.eventbus;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,7 +29,20 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
   private static final Logger log = Logger.getLogger(SockJSBridgeHandler.class);
 
   private final EventBus eb = EventBus.instance;
-  private final ObjectMapper mapper = new ObjectMapper();
+  private final JsonHelper helper = new JsonHelper();
+  private List<Map<String, Object>> matches = new ArrayList<>();
+
+  public void addMatch(Map<String, Object> match) {
+    matches.add(match);
+  }
+
+  public void addMatches(Map<String, Object>[] matchesArr) {
+    matches.addAll(Arrays.asList(matchesArr));
+  }
+
+  public void addMatches(List<Map<String, Object>> matchesList) {
+    matches.addAll(matchesList);
+  }
 
   public void handle(final SockJSSocket sock) {
 
@@ -45,8 +60,6 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
     sock.dataHandler(new Handler<Buffer>() {
 
-      JsonHelper helper = new JsonHelper();
-
       private void handleSend(String address, Map<String, Object> body, final String replyAddress) {
         Handler<Message> replyHandler;
         if (replyAddress != null) {
@@ -59,7 +72,11 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         } else {
           replyHandler = null;
         }
-        helper.sendJSON(address, body, replyHandler);
+        if (checkMatches(address, body)) {
+          helper.sendJSON(address, body, replyHandler);
+        } else {
+          log.info("Message rejected");
+        }
       }
 
       private void deliverMessage(Message msg) {
@@ -101,12 +118,7 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
       public void handle(Buffer data)  {
 
-        Map<String, Object> msg;
-        try {
-          msg = mapper.readValue(data.toString(), Map.class);
-        } catch (Exception e) {
-          throw new IllegalStateException("Failed to parse JSON");
-        }
+        Map<String, Object> msg = helper.stringToJson(data.toString());
 
         String type = (String)getMandatory(msg, "type");
         String address = (String)getMandatory(msg, "address");
@@ -127,5 +139,33 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         }
       }
     });
+  }
+
+  /*
+  Empty matches means reject everything - this is the default.
+  If at least one match is supplied and all the fields of any match match then the message matches,
+  this means that specifying one match with a JSON empty object means everything is accepted
+   */
+  private boolean checkMatches(String address, Map<String, Object> message) {
+    for (Map<String, Object> matchHolder: matches) {
+      String matchAddress = (String)matchHolder.get("address");
+      if (matchAddress == null || matchAddress.equals(address)) {
+        boolean matched = true;
+        Map<String, Object> match = (Map<String, Object>)matchHolder.get("match");
+        if (match != null) {
+          for (Map.Entry<String, Object> matchEntry: match.entrySet()) {
+            Object obj = message.get(matchEntry.getKey());
+            if (!matchEntry.getValue().equals(obj)) {
+              matched = false;
+              break;
+            }
+          }
+        }
+        if (matched) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

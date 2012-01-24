@@ -4,8 +4,6 @@ import org.vertx.java.busmods.mailer.Mailer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.newtests.TestUtils;
 
-import java.util.Map;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
