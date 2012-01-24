@@ -21,7 +21,7 @@
       <td data-bind="text: genre"></td>
       <td data-bind="text: artist"></td>
       <td data-bind="text: album"></td>
-      <td data-bind="text: price"></td>
+      <td data-bind="text: formattedPrice"></td>
       <td><a href="#" data-bind="click: $root.cart.addToCart">Add to Cart</a></td>
     </tr>
   </tbody>
@@ -40,13 +40,13 @@
       <td data-bind="text: genre"></td>
       <td data-bind="text: artist"></td>
       <td data-bind="text: album"></td>
-      <td data-bind="text: price"></td>
+      <td data-bind="text: formattedPrice"></td>
     </tr>
   </tbody>
 </table>
 
 <p>Email address: <input data-bind="value: cart.emailAddress" /></p>
-<button data-bind="click: cart.submitOrder">Submit Order</button>
+<button data-bind="click: cart.submitOrder, enable: cart.canSubmit">Submit Order</button>
 
 </body>
 
