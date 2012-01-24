@@ -3,8 +3,6 @@ package org.vertx.java.tests.busmods.mailer;
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.newtests.TestBase;
-import vertx.tests.busmods.mailer.TestClient;
-import vertx.tests.busmods.mailer.TestMailer;
 
 /**
  *

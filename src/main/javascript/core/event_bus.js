@@ -103,5 +103,20 @@ if (!vertx.EventBus) {
 }
 
 vertx.SockJSBridgeHandler = function() {
-  return new org.vertx.java.core.eventbus.SockJSBridgeHandler();
+  var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
+  var jsonHelper = new org.vertx.java.core.eventbus.JsonHelper();
+  var server = new org.vertx.java.core.Handler({
+    handle: function(sock) {
+      jHandler.handle(sock);
+    }
+  });
+  server.addMatches = function() {
+    for (var i = 0; i < arguments.length; i++) {
+      var match = arguments[i];
+      var json_str = JSON.stringify(match);
+      var jJson = jsonHelper.stringToJson(json_str);
+      jHandler.addMatch(jJson);
+    }
+  }
+  return server;
 }

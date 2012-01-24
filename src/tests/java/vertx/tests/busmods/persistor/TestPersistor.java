@@ -3,8 +3,6 @@ package vertx.tests.busmods.persistor;
 import org.vertx.java.busmods.persistor.Persistor;
 import org.vertx.java.newtests.TestUtils;
 
-import java.util.Map;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -14,6 +14,8 @@
 
 require 'core/streams'
 require 'core/ssl_support'
+require 'rubygems'
+require 'json'
 
 module Vertx
 
@@ -134,6 +136,7 @@ module Vertx
   class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
     def initialize
       super
+      @json_helper = org.vertx.java.core.eventbus.JsonHelper.new
     end
 
     # Call this handler - pretend to be a Proc
@@ -141,6 +144,15 @@ module Vertx
       # This is inefficient since we convert to a Ruby SockJSSocket and back again to a Java one
       handle(sock._to_java_socket)
     end
+
+    def add_matches(*matches)
+      matches.each do |match|
+        json_str = JSON.generate(match);
+        j_json = @json_helper.stringToJson(json_str);
+        addMatch(j_json);
+      end
+    end
+
   end
 
 end
