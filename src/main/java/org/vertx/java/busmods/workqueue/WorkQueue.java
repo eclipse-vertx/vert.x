@@ -115,6 +115,7 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   }
 
   private void doSend(final Message message, final Map<String, Object> work) {
+    log.info("in work queue, persistoradress = " + persistorAddress);
     if (persistorAddress != null) {
       Map<String, Object> msg = new HashMap<>();
       msg.put("action", "save");
@@ -138,6 +139,7 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   private void actualSend(Message message, Map<String, Object> work) {
     messages.add(work);
     //Been added to the queue so reply
+    log.info("sending ok from workqueue");
     sendOK(message);
     checkWork();
   }

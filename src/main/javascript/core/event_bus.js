@@ -28,7 +28,7 @@ if (!vertx.EventBus) {
       if (jBuffer.length() == 0) {
         str = "{}";
       } else {
-        str = jBuffer.toString();
+        str = '' + jBuffer.toString();
       }
       return str;
     }

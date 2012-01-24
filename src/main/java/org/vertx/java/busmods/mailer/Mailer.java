@@ -169,8 +169,12 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
       msg.setRecipients(javax.mail.Message.RecipientType.TO, recipients);
       msg.setRecipients(javax.mail.Message.RecipientType.CC, cc);
       msg.setRecipients(javax.mail.Message.RecipientType.BCC, bcc);
-      msg.setSubject(subject);
-      msg.setText(body);
+      if (subject != null) {
+        msg.setSubject(subject);
+      }
+      if (body != null) {
+        msg.setText(body);
+      }
       msg.setSentDate(new Date());
       transport.send(msg);
       sendOK(message);

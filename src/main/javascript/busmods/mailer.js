@@ -1,17 +1,14 @@
 var vertx = vertx || {};
 
 vertx.Mailer = function(address, host, port, ssl, auth, username, password) {
-  if (address && host) {
-    if (port) {
-      if (ssl && auth && username && password) {
-        return new org.vertx.java.busmods.mailer.Mailer(address, host, port, ssl, auth, username, password);
-      } else {
-        return new org.vertx.java.busmods.mailer.Mailer(address, host, port);
-      }
-    } else {
+
+  if (typeof ssl === 'undefined') {
+    if (typeof port == 'undefined') {
       return new org.vertx.java.busmods.mailer.Mailer(address, host);
+    } else {
+      return new org.vertx.java.busmods.mailer.Mailer(address, host, port);
     }
   } else {
-    throw "At minium address and port must be specified";
+    return new org.vertx.java.busmods.mailer.Mailer(address, host, port, ssl, auth, username, password);
   }
 }
