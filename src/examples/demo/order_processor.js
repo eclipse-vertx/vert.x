@@ -5,17 +5,24 @@ var eb = vertx.EventBus;
 var id = vertx.generateUUID();
 
 var handler = function(order, replier) {
-  log.println('Received order for processing');
+  log.println('Received order for processing ' + JSON.stringify(order));
 
   var email = order.email;
   var items = order.items;
 
   // Send a confirmation email
 
-  var body = 'Thank you for your order\nYou bought:\n\n';
+  var body = 'Thank you for your order\n\nYou bought:\n\n';
+  var totPrice = 0.0;
   for (var i = 0; i < items.length; i++) {
-    body = body.concat(items[i].title, ' at £' ,items[i].price, '\n');
+    var quant = items[i].quantity;
+    var album = items[i].album;
+    var linePrice = quant * album.price;
+    totPrice += linePrice;
+    body = body.concat(quant, ' of ', album.title, ' at £' ,album.price.toFixed(2),
+                       ' Line Total: £', linePrice.toFixed(2), '\n');
   }
+  body = body.concat('\n', 'Total: £', totPrice.toFixed(2));
 
   var msg = {
     from: 'vToons@localhost',
