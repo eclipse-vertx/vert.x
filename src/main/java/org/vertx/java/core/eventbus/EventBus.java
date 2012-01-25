@@ -141,7 +141,7 @@ public class EventBus {
         if (!serverID.equals(this.serverID)) {
           send(serverID, message);
         } else {
-          receiveMessage(message.copy());
+          receiveMessage(message);
         }
       } else {
         if (subs != null) {
@@ -163,7 +163,7 @@ public class EventBus {
           });
         }
         //also send locally
-        receiveMessage(message.copy());
+        receiveMessage(message);
       }
     } finally {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
@@ -344,7 +344,7 @@ public class EventBus {
   }
 
   // Called when a message is incoming
-  private void receiveMessage(final Message msg) {
+  private void receiveMessage(Message msg) {
     if (msg.replyAddress != null) {
       replyAddressCache.put(msg.replyAddress, msg.sender);
     }
@@ -356,6 +356,9 @@ public class EventBus {
         if (holder.replyHandler) {
           replyHandler = true;
         }
+        // Each handler gets a fresh copy
+        final Message copied = msg.copy();
+
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {
             try {
@@ -363,7 +366,7 @@ public class EventBus {
               // before it was received
               if (set.contains(holder)) {
                 VertxInternal.instance.setContextID(holder.contextID);
-                holder.handler.handle(msg);
+                holder.handler.handle(copied);
               }
             } catch (Throwable t) {
               log.error("Unhandled exception in event bus handler", t);

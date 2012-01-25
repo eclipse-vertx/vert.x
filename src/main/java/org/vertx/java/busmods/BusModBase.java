@@ -31,12 +31,21 @@ public abstract class BusModBase {
     sendOK(message, null);
   }
 
-  protected void sendOK(Message message, Map<String, Object> json) {
+  protected void sendStatus(String status, Message message) {
+    sendStatus(status, message, null);
+  }
+
+  protected void sendStatus(String status, Message message, Map<String, Object> json) {
     if (json == null) {
       json = new HashMap<>();
     }
-    json.put("status", "ok");
+    json.put("status", status);
     helper.sendReply(message, json);
+  }
+
+
+  protected void sendOK(Message message, Map<String, Object> json) {
+    sendStatus("ok", message, json);
   }
 
   protected void sendError(Message message, String error) {

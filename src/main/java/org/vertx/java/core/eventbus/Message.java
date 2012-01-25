@@ -60,7 +60,15 @@ public class Message extends Sendable {
    * Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
    * of the original message.
    */
+  boolean replied;
+  Exception er;
   public void reply(Buffer body) {
+    if (replied) {
+      log.error("Already replied from here", er);
+      log.error("Now in here", new Exception());
+    }
+    replied = true;
+    er = new Exception();
     if (bus != null && replyAddress != null) {
       if (body == null) {
         body = Buffer.create(0);
@@ -140,6 +148,7 @@ public class Message extends Sendable {
     Message msg = new Message(address, body.copy());
     msg.sender = this.sender;
     msg.replyAddress = this.replyAddress;
+    msg.bus = this.bus;
     return msg;
   }
 }

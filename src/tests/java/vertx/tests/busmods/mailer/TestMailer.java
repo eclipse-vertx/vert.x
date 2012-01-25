@@ -12,7 +12,7 @@ public class TestMailer extends Mailer {
   private TestUtils tu = new TestUtils();
 
   public TestMailer() {
-    super("testMailer", "localhost", 25);
+    super("test.mailer", "localhost", 25);
   }
 
   @Override

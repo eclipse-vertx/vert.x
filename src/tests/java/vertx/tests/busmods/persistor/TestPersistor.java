@@ -11,7 +11,7 @@ public class TestPersistor extends Persistor {
   private TestUtils tu = new TestUtils();
 
   public TestPersistor() {
-    super("testPersistor");
+    super("test.persistor");
   }
 
   @Override

@@ -141,18 +141,25 @@ public class AppManager {
     appMeta.put(appName, new AppMetaData(urls, main));
   }
 
+  private static class AggHandler extends SimpleHandler {
+    AggHandler(int count, Handler<Void> doneHandler) {
+      this.count = count;
+      this.doneHandler = doneHandler;
+    }
+    int count;
+    Handler<Void> doneHandler;
+    public void handle() {
+      if (--count == 0) {
+        doneHandler.handle(null); // All undeployed
+      }
+    }
+  }
+
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
     if (appMeta.isEmpty()) {
       doneHandler.handle(null);
     } else {
-      Handler<Void> aggHandler = new SimpleHandler() {
-        int count = appMeta.size();
-        public void handle() {
-          if (--count == 0) {
-            doneHandler.handle(null); // All undeployed
-          }
-        }
-      };
+      AggHandler aggHandler = new AggHandler(appMeta.size(), doneHandler);
       Set<String> names = new HashSet<>(appMeta.keySet()); // Avoid comod exception
       for (String name: names) {
         undeploy(name, aggHandler);
@@ -172,6 +179,9 @@ public class AppManager {
     List<AppHolder> list = apps.get(name);
     if (list != null) {
       log.debug("Undeploying " + list.size() + " instances of application: " + name);
+
+      final AggHandler aggHandler = doneHandler == null ? null : new AggHandler(list.size(), doneHandler);
+
       for (final AppHolder holder: list) {
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {
@@ -184,8 +194,8 @@ public class AppManager {
             //FIXME - we need to destroy the context, but not until after the app has fully stopped which may
             //be asynchronous, e.g. if the app needs to close servers
             //VertxInternal.instance.destroyContext(holder.contextID);
-            if (doneHandler != null) {
-              doneHandler.handle(null);
+            if (aggHandler != null) {
+              aggHandler.handle(null);
             }
           }
         });

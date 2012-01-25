@@ -8,7 +8,7 @@ var eb = vertx.EventBus;
 deleteAll();
 
 function deleteAll() {
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'delete',
     matcher: {}
@@ -18,7 +18,7 @@ function deleteAll() {
 }
 
 function testSave() {
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -36,7 +36,7 @@ function testSave() {
 
 function testFind() {
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -50,7 +50,7 @@ function testFind() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'find',
     matcher: {
@@ -74,7 +74,7 @@ function testFind() {
 
 function testFindOne() {
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -88,7 +88,7 @@ function testFindOne() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'findone',
     matcher: {
@@ -116,7 +116,7 @@ function testFindWithLimit() {
   var limit = 12;
 
   for (var i = 0; i < num; i++) {
-    eb.send('testPersistor', {
+    eb.send('test.persistor', {
       collection: 'testcoll',
       action: 'save',
       document: {
@@ -127,7 +127,7 @@ function testFindWithLimit() {
     });
   }
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'find',
     limit: limit,
@@ -144,7 +144,7 @@ function testFindWithSort() {
   var num = 10;
 
   for (var i = 0; i < num; i++) {
-    eb.send('testPersistor', {
+    eb.send('test.persistor', {
       collection: 'testcoll',
       action: 'save',
       document: {
@@ -156,7 +156,7 @@ function testFindWithSort() {
     });
   }
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'find',
     matcher: {},
@@ -176,7 +176,7 @@ function testFindWithSort() {
 
 function testDelete() {
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -185,7 +185,7 @@ function testDelete() {
   }, function(reply) {
     tu.azzert(reply.status === 'ok');
   });
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -195,7 +195,7 @@ function testDelete() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send('testPersistor', {
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'delete',
     matcher: {
@@ -205,7 +205,7 @@ function testDelete() {
     tu.azzert(reply.status === 'ok');
     tu.azzert(reply.number === 1);
 
-    eb.send('testPersistor', {
+    eb.send('test.persistor', {
       collection: 'testcoll',
       action: 'find',
       matcher: {
