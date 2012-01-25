@@ -6,28 +6,28 @@ var pa = 'demo.persistor';
 
 var albums = [
   {
-    artist: 'Muse',
-    genre: 'Indie Rock',
-    album: 'Black Holes and Revelations',
-    price: 5.95
+    artist: 'The Wurzels',
+    genre: 'Scrumpy and Western',
+    title: 'I Am A Cider Drinker',
+    price: 0.99
   },
   {
-    artist: 'NWA',
-    genre: 'Hip Hop',
-    album: 'Straight Outta Compton',
-    price: 6.95
+    artist: 'Vanilla Ice',
+    genre: 'Pip Hop',
+    title: 'Ice Ice Baby',
+    price: 0.01
   },
   {
     artist: 'Ena Baga',
     genre: 'Easy Listening',
-    album: 'The Happy Hammond',
+    title: 'The Happy Hammond',
     price: 0.50
   },
   {
-    artist: 'Skrillex',
-    genre: 'Wub wub wub',
-    album: 'Scary Monsters and Nice Sprites',
-    price: 4.50
+    artist: 'The Tweets',
+    genre: 'Bird related songs',
+    title: 'The Birdy Song',
+    price: 1.20
   }
 ];
 
