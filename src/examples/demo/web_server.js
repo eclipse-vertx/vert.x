@@ -6,11 +6,9 @@ var server = new vertx.HttpServer();
 var sockJSServer = new vertx.SockJSServer(server);
 var handler = new vertx.SockJSBridgeHandler();
 handler.addMatches(
-  // Let through orders posted to the order queue
+  // Let through orders posted to the order manager
   {
-    address : 'demo.orderQueue',
-    match : {
-    }
+    address : 'demo.orderMgr'
   },
   // Allow calls to get static album data from the persistor
   {
@@ -19,6 +17,10 @@ handler.addMatches(
       action : 'find',
       collection : 'albums'
     }
+  },
+  // Allow user to login
+  {
+    address : 'demo.authMgr.login'
   }
 );
 sockJSServer.installApp({prefix : '/eventbus'}, handler);

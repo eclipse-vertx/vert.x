@@ -165,8 +165,11 @@ public class AuthManager extends BusModBase implements VertxApp  {
     if (sessionID == null) {
       return;
     }
-    if (sessions.containsKey(sessionID)) {
-      sendOK(message);
+    String username = sessions.get(sessionID);
+    if (username != null) {
+      Map<String, Object> json = new HashMap<>();
+      json.put("username", username);
+      sendOK(message, json);
     } else {
       sendStatus("denied", message);
     }

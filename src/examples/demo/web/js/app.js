@@ -2,7 +2,6 @@
 
   var that = this;
   var eb = new vertx.EventBus('http://localhost:8080/eventbus');
-  that.emailAddress = ko.observable('');
   that.items = ko.observableArray([]);
 
   eb.onopen = function() {
@@ -54,7 +53,7 @@
   });
 
   that.orderReady = ko.computed(function() {
-    var or =  that.items().length > 0 && that.emailAddress().trim() != '';
+    var or =  that.items().length > 0 && that.sessionID() != '';
     return or;
   });
 
@@ -68,13 +67,12 @@
 
     var orderJson = ko.toJS(that.items);
     var order = {
-      email: that.emailAddress(),
+      sessionID: that.sessionID(),
       items: orderJson
     }
 
-    eb.send('demo.orderQueue', order, function(reply) {
+    eb.send('demo.orderMgr', order, function(reply) {
       if (reply.status === 'ok') {
-        //alert('Your order has been accepted, and an email has been sent');
         that.orderSubmitted(true);
         // Timeout the order confirmation box after 2 seconds
         window.setTimeout(function() { that.orderSubmitted(false); }, 2000);
@@ -82,6 +80,22 @@
         console.error('Failed to accept order');
       }
     });
+  };
+
+  that.username = ko.observable('');
+  that.password = ko.observable('');
+  that.sessionID = ko.observable('');
+
+  that.login = function() {
+    if (that.username().trim() != '' && that.password().trim() != '') {
+      eb.send('demo.authMgr.login', {username: that.username(), password: that.password()}, function (reply) {
+        if (reply.status === 'ok') {
+          that.sessionID(reply.sessionID);
+        } else {
+          alert('invalid login');
+        }
+      });
+    }
   }
 
   function Album(json) {

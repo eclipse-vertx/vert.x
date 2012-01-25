@@ -11,6 +11,7 @@
 
 <body>
 
+
   <div class="container-fluid">
 
     <div class="sidebar">
@@ -18,6 +19,22 @@
         <h2>Order total:</h2>
         <h2><strong data-bind="text:total"></strong></h2>
       </div>
+
+      <form class="form-stacked">
+        <label for="username">Username</label>
+        <input type="text" id="username" class="span2" data-bind="value: username"/>
+        <label for="password">Password</label>
+        <input type="password" id="password" class="span2" data-bind="value: password"/>
+        <br><br>
+        <input type="submit" class="btn primary" value="Login" data-bind="click: login"/>
+      </form>
+
+      <br>
+      <div data-bind="visible: sessionID() != ''">
+        <h3>Logged in as</h3>
+        <h3><strong data-bind="text: username"></strong></h3>
+      </div>
+
     </div>
 
     <div class="content">
@@ -33,6 +50,7 @@
         <ul class="tabs">
           <li class="active"><a href="#shop">Shop</a></li>
           <li><a href="#cart">Cart</a></li>
+          <li><a href="#account">Account</a></li>
         </ul>
 
         <div class="pill-content">
@@ -62,8 +80,8 @@
               </table>
             </div>
 
-
           </div>
+
           <div id="cart">
 
             <div class="alert-message info fade in" data-bind="visible: orderSubmitted()">
@@ -71,7 +89,7 @@
             </div>
 
             <div class="alert-message warn fade in" data-bind="visible: !orderReady()">
-              <p><strong>Please add some item(s) to your cart and specify an email address before submitting.</strong></p>
+              <p><strong>Please add some item(s) to your cart and login before submitting.</strong></p>
             </div>
 
             <div class="span16">
@@ -79,12 +97,6 @@
               <form>
                 <fieldset>
                   <legend>Cart</legend>
-                  <div class="clearfix">
-                    <label for="xlInput">Email Address</label>
-                    <div class="input">
-                      <input class="xlarge" id="xlInput" size="30" type="text" data-bind="value: emailAddress"/>
-                    </div>
-                  </div>
 
                   <div class="actions">
                     <input type="submit" class="btn primary" value="Submit Order" data-bind="click: submitOrder"/>
@@ -117,6 +129,28 @@
               </table>
 
              </div>
+
+          </div>
+
+          <div id="account">
+
+            <div class="span16">
+
+              <div class="alert-message warn fade in" data-bind="visible: sessionID() == ''">
+                <p><strong>Please login to view your account settings</strong></p>
+              </div>
+
+              <div data-bind="visible: sessionID() != ''">
+                <form>
+                  <fieldset>
+                    <legend>Account settings</legend>
+
+
+                  </fieldset>
+                </form>
+              </div>
+
+            </div>
 
           </div>
 
