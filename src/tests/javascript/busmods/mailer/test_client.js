@@ -16,7 +16,7 @@ function testMailer() {
     body: 'this is the body'
   }
 
-  eb.send("testMailer", msg, function(msg) {
+  eb.send("test.mailer", msg, function(msg) {
     tu.azzert(msg.status == 'ok');
     tu.testComplete();
   });
@@ -30,7 +30,7 @@ function testMailerError() {
     body: 'this is the body'
   }
 
-  eb.send("testMailer", msg, function(msg) {
+  eb.send("test.mailer", msg, function(msg) {
     tu.azzert(msg.status == 'error');
     tu.testComplete();
   });

@@ -134,20 +134,25 @@ public class TestBase extends TestCase {
     try {
       throwAsserts();
     } finally {
-      List<String> apps = new ArrayList<>(startedApps);
-      for (String appName: apps) {
-        stopApp(appName);
-      }
-      events.clear();
-      final CountDownLatch latch = new CountDownLatch(1);
-      VertxInternal.instance.executeOnContext(contextID, new Runnable() {
-        public void run() {
-          VertxInternal.instance.setContextID(contextID);
-          EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
-          latch.countDown();
+      try {
+        List<String> apps = new ArrayList<>(startedApps);
+        for (String appName: apps) {
+          stopApp(appName);
         }
-      });
-      latch.await(5, TimeUnit.SECONDS);
+        events.clear();
+        final CountDownLatch latch = new CountDownLatch(1);
+        VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          public void run() {
+            VertxInternal.instance.setContextID(contextID);
+            EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
+            latch.countDown();
+          }
+        });
+        latch.await(5, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw e;
+      }
     }
   }
 
@@ -176,7 +181,6 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(boolean worker, AppType type, String main, int instances, boolean await) throws Exception {
-
     String appName = UUID.randomUUID().toString();
 
     URL url = null;
@@ -245,7 +249,6 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName, boolean wait) {
-    log.info("Running test: " + testName);
     tu.startTest(testName);
     if (wait) {
       waitTestComplete();

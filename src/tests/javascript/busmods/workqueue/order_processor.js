@@ -15,14 +15,14 @@ var handler = function(message, replier) {
 
 eb.registerHandler(id, handler);
 
-eb.send('orderQueue.register', {
+eb.send('test.orderQueue.register', {
   processor: id
 }, function() {
   tu.appReady();
 });
 
 function vertxStop() {
-  eb.send('orderQueue.unregister', {
+  eb.send('test.orderQueue.unregister', {
     processor: id
   });
   eb.unregisterHandler(id, handler);

@@ -66,8 +66,8 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   }
 
   public void stop() {
-    eb.unregisterHandler(address, registerHandler);
-    eb.unregisterHandler(address, unregisterHandler);
+    eb.unregisterHandler(address + ".register", registerHandler);
+    eb.unregisterHandler(address + ".unregister", unregisterHandler);
     eb.unregisterHandler(address, sendHandler);
   }
 

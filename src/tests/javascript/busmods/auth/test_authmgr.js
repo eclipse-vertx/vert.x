@@ -3,12 +3,12 @@ load('test_utils.js');
 
 var tu = new TestUtils();
 
-var persistor = new vertx.Persistor("test.persistor");
-persistor.start();
+var authMgr = new vertx.AuthManager("test.authMgr", "users", "test.persistor");
+authMgr.start();
 tu.appReady();
 
 function vertxStop() {
-  persistor.stop();
+  authMgr.stop();
   tu.checkContext();
   tu.appStopped();
 }

@@ -42,7 +42,7 @@ public class TestClient extends TestClientBase {
     };
     for (int i = 0; i < numMails; i++) {
       Map<String, Object> map = createBaseMessage();
-      helper.sendJSON("testMailer", map, replyHandler);
+      helper.sendJSON("test.mailer", map, replyHandler);
     }
   }
 
@@ -129,7 +129,7 @@ public class TestClient extends TestClientBase {
     };
     Map<String, Object> map = createBaseMessage();
     map.putAll(overrides);
-    helper.sendJSON("testMailer", map, replyHandler);
+    helper.sendJSON("test.mailer", map, replyHandler);
   }
 
   private Map<String, Object> createBaseMessage() {

@@ -10,3 +10,4 @@ load('core/sockjs.js');
 load('busmods/work_queue.js');
 load('busmods/mailer.js');
 load('busmods/persistor.js');
+load('busmods/auth.js');

@@ -3,7 +3,7 @@ load('test_utils.js');
 
 var tu = new TestUtils();
 
-var queue = new vertx.WorkQueue("orderQueue", 30000);
+var queue = new vertx.WorkQueue("test.orderQueue", 30000);
 queue.start();
 tu.appReady();
 

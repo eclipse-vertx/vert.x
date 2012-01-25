@@ -35,6 +35,7 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
   private Mongo mongo;
   private DB db;
 
+  // TODO configuration!!!
   public void start() {
 
     try {
@@ -143,9 +144,11 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
       res = coll.findOne(jsonToDBObject(matcher));
     }
     Map<String, Object> reply = new HashMap<>();
-    String s = res.toString();
-    Map<String, Object> m = helper.stringToJson(s);
-    reply.put("result", m);
+    if (res != null) {
+      String s = res.toString();
+      Map<String, Object> m = helper.stringToJson(s);
+      reply.put("result", m);
+    }
     sendOK(message, reply);
   }
 
