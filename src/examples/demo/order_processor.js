@@ -19,10 +19,10 @@ var handler = function(order, replier) {
     var album = items[i].album;
     var linePrice = quant * album.price;
     totPrice += linePrice;
-    body = body.concat(quant, ' of ', album.title, ' at £' ,album.price.toFixed(2),
-                       ' Line Total: £', linePrice.toFixed(2), '\n');
+    body = body.concat(quant, ' of ', album.title, ' at $' ,album.price.toFixed(2),
+                       ' Line Total: $', linePrice.toFixed(2), '\n');
   }
-  body = body.concat('\n', 'Total: £', totPrice.toFixed(2));
+  body = body.concat('\n', 'Total: $', totPrice.toFixed(2));
 
   var msg = {
     from: 'vToons@localhost',
