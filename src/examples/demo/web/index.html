@@ -2,54 +2,139 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title></title>
+  <!-- <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css"> -->
+  <!-- <link rel="stylesheet" href="css/bootstrap.css"> -->
+
+  <link rel="stylesheet/less" href="css/bootstrap.less">
+  <script src="css/less-1.2.1.min.js"></script>
+  <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
+  <script type='text/javascript' src='css/bootstrap-tabs.js'></script>
+  <title>Welcome to vToons</title>
 </head>
+
 <body>
 
-<h1>Welcome to vToons</h1>
+  <div class="container-fluid">
 
-<h2>Available Albums</h2>
+    <div class="sidebar">
+      <div class="well">
+        <p>Order total:<strong data-bind="text:total"></strong></p>
+      </div>
+    </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th>
-    </tr>
-  </thead>
-  <tbody data-bind="foreach: items">
-    <tr>
-      <td data-bind="text: genre"></td>
-      <td data-bind="text: artist"></td>
-      <td data-bind="text: album"></td>
-      <td data-bind="text: formattedPrice"></td>
-      <td><a href="#" data-bind="click: $root.cart.addToCart">Add to Cart</a></td>
-    </tr>
-  </tbody>
-</table>
+    <div class="content">
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="hero-unit">
+        <h2>Welcome to vToons</h2>
+      </div>
 
-<h2>Cart</h2>
+      <!-- Example row of columns -->
+      <div class="row">
 
-<table>
-  <thead>
-    <tr>
-      <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th>
-    </tr>
-  </thead>
-  <tbody data-bind="foreach: cart.items">
-    <tr>
-      <td data-bind="text: genre"></td>
-      <td data-bind="text: artist"></td>
-      <td data-bind="text: album"></td>
-      <td data-bind="text: formattedPrice"></td>
-    </tr>
-  </tbody>
-</table>
+        <ul class="tabs">
+          <li class="active"><a href="#shop">Shop</a></li>
+          <li><a href="#cart">Cart</a></li>
+        </ul>
 
-<p>Email address: <input data-bind="value: cart.emailAddress" /></p>
-<button data-bind="click: cart.submitOrder, enable: cart.canSubmit">Submit Order</button>
+        <div class="pill-content">
+
+          <div class="active" id="shop">
+
+            <div class="span16">
+
+
+              <h2>Please choose from our wonderful selection of songs:</h2>
+
+              <table class="bordered-table">
+                <thead>
+                  <tr>
+                    <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th>
+                  </tr>
+                </thead>
+                <tbody data-bind="foreach: albums">
+                  <tr>
+                    <td data-bind="text: genre"></td>
+                    <td data-bind="text: artist"></td>
+                    <td data-bind="text: title"></td>
+                    <td data-bind="text: formattedPrice"></td>
+                    <td><a href="#" data-bind="click: $root.addToCart">Add to Cart</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+
+          </div>
+          <div id="cart">
+
+            <div class="alert-message info fade in" data-bind="visible: orderSubmitted()">
+              <p><strong>Your order has been accepted. An email will be on your way to you shortly.</strong></p>
+            </div>
+
+            <div class="alert-message warn fade in" data-bind="visible: !orderReady()">
+              <p><strong>Please add some item(s) to your cart and specify an email address before submitting.</strong></p>
+            </div>
+
+            <div class="span16">
+
+              <form>
+                <fieldset>
+                  <legend>Cart</legend>
+                  <div class="clearfix">
+                    <label for="xlInput">Email Address</label>
+                    <div class="input">
+                      <input class="xlarge" id="xlInput" size="30" type="text" data-bind="value: emailAddress"/>
+                    </div>
+                  </div>
+
+                  <div class="actions">
+                    <input type="submit" class="btn primary" value="Submit Order" data-bind="click: submitOrder"/>
+                  </div>
+
+                </fieldset>
+              </form>
+
+
+            </div>
+
+            <div class="span16">
+
+              <table class="bordered-table">
+                <thead>
+                  <tr>
+                    <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th><th>Quantity</th>
+                  </tr>
+                </thead>
+                <tbody data-bind="foreach: items">
+                  <tr>
+                    <td data-bind="text: album.genre"></td>
+                    <td data-bind="text: album.artist"></td>
+                    <td data-bind="text: album.title"></td>
+                    <td data-bind="text: album.formattedPrice"></td>
+                    <td data-bind="text: quantity"></td>
+                    <td><a href="#" data-bind="click: $root.removeFromCart">Remove</a></td>
+                  </tr>
+                </tbody>
+              </table>
+
+             </div>
+
+          </div>
+
+        </div>
+
+
+      </div>
+    </div>
+  </div>
 
 </body>
 
+<script>
+  $(function () {
+    $('.tabs').tabs();
+  })
+</script>
 <script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
 <script type='text/javascript' src='js/vertxbus.js'></script>
 <script type='text/javascript' src='js/knockout-2.0.0.js'></script>

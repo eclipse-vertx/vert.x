@@ -12,9 +12,9 @@ var handler = function(order, replier) {
 
   // Send a confirmation email
 
-  var body = 'Thank you for your order\nYou bought:\n';
+  var body = 'Thank you for your order\nYou bought:\n\n';
   for (var i = 0; i < items.length; i++) {
-    body = body.concat(items[i].album, ' at £' ,items[i].price, '\n');
+    body = body.concat(items[i].title, ' at £' ,items[i].price, '\n');
   }
 
   var msg = {

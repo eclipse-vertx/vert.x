@@ -379,17 +379,21 @@ public class HttpServerResponse implements WriteStream {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
     }
+    log.info("send file: " + filename);
     checkWritten();
     File file = new File(filename);
     if (!file.exists()) {
+      log.info("does not exist");
       sendNotFound();
     } else {
+      log.info("exists");
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       try {
-        String contenttype = Files.probeContentType(Paths.get(filename));
-        if (contenttype != null) {
-          response.setHeader(Names.CONTENT_TYPE, contenttype);
+        String contentType = Files.probeContentType(Paths.get(filename));
+        log.info("content type is " + contentType);
+        if (contentType != null) {
+          response.setHeader(Names.CONTENT_TYPE, contentType);
         }
       } catch (IOException e) {
         log.error("Failed to get content type", e);
