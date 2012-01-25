@@ -170,6 +170,27 @@ function testLoginMoreThanOnceThenLogout() {
   });
 }
 
+function testSessionTimeout() {
+  deleteAll();
+  storeEntries({username: 'tim', password: 'foo'});
+  eb.send('test.authMgr.login', {username: 'tim', password: 'foo'}, function(reply) {
+    tu.azzert(reply.status === 'ok');
+    tu.azzert(typeof reply.sessionID != 'undefined');
+    var sessionID = reply.sessionID;
+    eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+      tu.azzert(reply.status === 'ok');
+      // Allow session to timeout then try and validate again
+      vertx.setTimer(750, function() {
+        eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+          tu.azzert(reply.status === 'denied');
+          tu.testComplete();
+        });
+      });
+
+    });
+  });
+}
+
 function storeEntries() {
   for (var i = 0; i < arguments.length; i++) {
     var entry = arguments[i];
