@@ -35,6 +35,8 @@ var albums = [
 
 eb.send(pa, {action: 'delete', collection: 'albums', matcher: {}});
 
+eb.send(pa, {action: 'delete', collection: 'users', matcher: {}});
+
 // Insert albums - in real life price would probably be stored in a different collection, but, hey, this is a demo.
 
 for (var i = 0; i < albums.length; i++) {
@@ -44,3 +46,17 @@ for (var i = 0; i < albums.length; i++) {
     document: albums[i]
   });
 }
+
+// And a user
+
+eb.send(pa, {
+  action: 'save',
+  collection: 'users',
+  document: {
+    firstname: 'Tim',
+    lastname: 'Fox',
+    email: 'tim@localhost',
+    username: 'tim',
+    password: 'password'
+  }
+});
