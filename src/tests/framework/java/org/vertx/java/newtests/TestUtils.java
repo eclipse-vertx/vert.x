@@ -1,13 +1,12 @@
 package org.vertx.java.newtests;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonMessage;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.PrintWriter;
@@ -24,7 +23,6 @@ public class TestUtils {
 
   private static final Logger log = Logger.getLogger(TestUtils.class);
 
-  private ObjectMapper mapper = new ObjectMapper();
   private final Thread th;
   private final Long contextID;
   private Map<String, Handler<JsonMessage>> handlers = new HashMap<>();
@@ -39,16 +37,15 @@ public class TestUtils {
   }
 
   public void azzert(boolean result, String message) {
-    Map<String, String> map = new HashMap<>();
-    map.put(EventFields.TYPE_FIELD, EventFields.ASSERT_EVENT);
-    map.put(EventFields.ASSERT_RESULT_FIELD, result ? EventFields.ASSERT_RESULT_VALUE_PASS : EventFields.ASSERT_RESULT_VALUE_FAIL);
+    JsonObject jsonObject = new JsonObject().putString(EventFields.TYPE_FIELD, EventFields.ASSERT_EVENT)
+       .putString(EventFields.ASSERT_RESULT_FIELD, result ? EventFields.ASSERT_RESULT_VALUE_PASS : EventFields.ASSERT_RESULT_VALUE_FAIL);
     if (message != null) {
-      map.put(EventFields.ASSERT_MESSAGE_FIELD, message);
+      jsonObject.putString(EventFields.ASSERT_MESSAGE_FIELD, message);
     }
     if (!result) {
-      map.put(EventFields.ASSERT_STACKTRACE_FIELD, getStackTrace(new Exception()));
+      jsonObject.putString(EventFields.ASSERT_STACKTRACE_FIELD, getStackTrace(new Exception()));
     }
-    sendMessage(map);
+    sendMessage(jsonObject);
     if (!result) {
       throw new AssertionError(message);
     }
@@ -63,32 +60,27 @@ public class TestUtils {
   }
 
   public void testComplete() {
-    Map<String, String> map = new HashMap<>();
-    map.put(EventFields.TYPE_FIELD, EventFields.TEST_COMPLETE_EVENT);
-    map.put(EventFields.TEST_COMPLETE_NAME_FIELD, "unused");
-    sendMessage(map);
+   JsonObject jsonObject = new JsonObject().putString(EventFields.TYPE_FIELD, EventFields.TEST_COMPLETE_EVENT)
+     .putString(EventFields.TEST_COMPLETE_NAME_FIELD, "unused");
+    sendMessage(jsonObject);
   }
 
   public void startTest(String testName) {
-    Map<String, String> map = new HashMap<>();
-    map.put(EventFields.TYPE_FIELD, EventFields.START_TEST_EVENT);
-    map.put(EventFields.START_TEST_NAME_FIELD, testName);
-    sendMessage(map);
+    JsonObject jsonObject = new JsonObject().putString(EventFields.TYPE_FIELD, EventFields.START_TEST_EVENT)
+      .putString(EventFields.START_TEST_NAME_FIELD, testName);
+    sendMessage(jsonObject);
   }
 
   public void exception(Throwable t, String message) {
-    Map<String, String> map = new HashMap<>();
-    map.put(EventFields.TYPE_FIELD, EventFields.EXCEPTION_EVENT);
-    map.put(EventFields.EXCEPTION_MESSAGE_FIELD, message);
-    map.put(EventFields.EXCEPTION_STACKTRACE_FIELD, getStackTrace(t));
-    sendMessage(map);
+    JsonObject jsonObject = new JsonObject().putString(EventFields.TYPE_FIELD, EventFields.EXCEPTION_EVENT)
+      .putString(EventFields.EXCEPTION_MESSAGE_FIELD, message).putString(EventFields.EXCEPTION_STACKTRACE_FIELD, getStackTrace(t));
+    sendMessage(jsonObject);
   }
 
   public void trace(String message) {
-    Map<String, String> map = new HashMap<>();
-    map.put(EventFields.TYPE_FIELD, EventFields.TRACE_EVENT);
-    map.put(EventFields.TRACE_MESSAGE_FIELD, message);
-    sendMessage(map);
+    JsonObject jsonObject = new JsonObject().putString(EventFields.TYPE_FIELD, EventFields.TRACE_EVENT)
+      .putString(EventFields.TRACE_MESSAGE_FIELD, message);
+    sendMessage(jsonObject);
   }
 
   public void register(final String testName, final Handler<Void> handler) {
@@ -128,19 +120,17 @@ public class TestUtils {
     handlers.clear();
   }
 
-  private void sendMessage(Map<String, String> msg) {
+  private void sendMessage(JsonObject msg) {
     try {
-      String json = mapper.writeValueAsString(msg);
-      EventBus.instance.sendBinary(new Message(TestBase.EVENTS_ADDRESS, Buffer.create(json)));
+      EventBus.instance.sendJson(TestBase.EVENTS_ADDRESS, msg);
     } catch (Exception e) {
       log.error("Failed to send message", e);
     }
   }
 
   public void sendEvent(String eventName) {
-    Map<String, String> map = new HashMap<>();
-    map.put(EventFields.TYPE_FIELD, eventName);
-    sendMessage(map);
+    JsonObject msg = new JsonObject().putString(EventFields.TYPE_FIELD, eventName);
+    sendMessage(msg);
   }
 
   private String getStackTrace(Throwable t) {

@@ -1,7 +1,6 @@
 package org.vertx.java.newtests;
 
 import junit.framework.TestCase;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
@@ -35,7 +34,6 @@ public class TestBase extends TestCase {
 
   private AppManager appManager;
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
-  private ObjectMapper mapper = new ObjectMapper();
   private TestUtils tu = new TestUtils();
   private long contextID;
   private volatile Handler<JsonMessage> handler;

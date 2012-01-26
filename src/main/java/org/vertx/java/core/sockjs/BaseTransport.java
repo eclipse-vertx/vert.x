@@ -1,6 +1,5 @@
 package org.vertx.java.core.sockjs;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.StringEscapeUtils;
@@ -21,7 +20,6 @@ class BaseTransport {
 
   protected final Map<String, Session> sessions;
   protected AppConfig config;
-  private ObjectMapper mapper = new ObjectMapper();
 
   protected static final String COMMON_PATH_ELEMENT_RE = "\\/[^\\/\\.]+\\/([^\\/\\.]+)\\/";
 
