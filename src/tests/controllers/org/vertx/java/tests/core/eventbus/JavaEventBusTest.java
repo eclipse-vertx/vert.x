@@ -8,6 +8,9 @@ import vertx.tests.core.eventbus.LocalClient;
 import vertx.tests.core.eventbus.LocalPeer;
 
 /**
+ *
+ * TODO - test Json API as well as binary API
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JavaEventBusTest extends TestBase {

@@ -6,6 +6,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.JsonMessage;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 
@@ -26,7 +27,7 @@ public class TestUtils {
   private ObjectMapper mapper = new ObjectMapper();
   private final Thread th;
   private final Long contextID;
-  private Map<String, Handler<Message>> handlers = new HashMap<>();
+  private Map<String, Handler<JsonMessage>> handlers = new HashMap<>();
 
   public TestUtils() {
     this.th = Thread.currentThread();
@@ -91,21 +92,15 @@ public class TestUtils {
   }
 
   public void register(final String testName, final Handler<Void> handler) {
-    Handler<Message> h = new Handler<Message>() {
-      public void handle(Message msg) {
-        Map<String, Object> map;
-        try {
-          map = mapper.readValue(msg.body.toString(), Map.class);
-        } catch (Exception e) {
-          log.error("Failed to parse JSON", e);
-          return;
-        }
-        if (EventFields.START_TEST_EVENT.equals(map.get(EventFields.TYPE_FIELD)) && testName.equals(map.get(EventFields.START_TEST_NAME_FIELD))) {
+    Handler<JsonMessage> h = new Handler<JsonMessage>() {
+      public void handle(JsonMessage msg) {
+        if (EventFields.START_TEST_EVENT.equals(msg.jsonObject.getString(EventFields.TYPE_FIELD)) &&
+            testName.equals(msg.jsonObject.getString(EventFields.START_TEST_NAME_FIELD))) {
           handler.handle(null);
         }
       }
     };
-    EventBus.instance.registerHandler(TestBase.EVENTS_ADDRESS, h);
+    EventBus.instance.registerJsonHandler(TestBase.EVENTS_ADDRESS, h);
     handlers.put(testName, h);
   }
 
@@ -127,8 +122,8 @@ public class TestUtils {
   }
 
   public void unregisterAll() {
-    for (Handler<Message> handler: handlers.values()) {
-      EventBus.instance.unregisterHandler(TestBase.EVENTS_ADDRESS, handler);
+    for (Handler<JsonMessage> handler: handlers.values()) {
+      EventBus.instance.unregisterJsonHandler(TestBase.EVENTS_ADDRESS, handler);
     }
     handlers.clear();
   }
@@ -136,7 +131,7 @@ public class TestUtils {
   private void sendMessage(Map<String, String> msg) {
     try {
       String json = mapper.writeValueAsString(msg);
-      EventBus.instance.send(new Message(TestBase.EVENTS_ADDRESS, Buffer.create(json)));
+      EventBus.instance.sendBinary(new Message(TestBase.EVENTS_ADDRESS, Buffer.create(json)));
     } catch (Exception e) {
       log.error("Failed to send message", e);
     }

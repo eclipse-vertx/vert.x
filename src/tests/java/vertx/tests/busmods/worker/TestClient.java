@@ -2,12 +2,9 @@ package vertx.tests.busmods.worker;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonHelper;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -16,7 +13,6 @@ import java.util.Map;
 public class TestClient extends TestClientBase {
 
   private EventBus eb = EventBus.instance;
-  private JsonHelper helper = new JsonHelper();
 
   @Override
   public void start() {
@@ -30,13 +26,11 @@ public class TestClient extends TestClientBase {
   }
 
   public void testWorker() throws Exception {
-
-    Map<String, Object> map = new HashMap<>();
-    map.put("foo", "wibble");
-    helper.sendJSON("testWorker", map, new Handler<Message>() {
-      public void handle(Message message) {
-        Map<String, Object> json = helper.toJson(message);
-        tu.azzert(json.get("eek").equals("blurt"));
+    JsonObject obj = new JsonObject();
+    obj.putString("foo", "wibble");
+    eb.sendJson("testWorker", obj, new Handler<JsonMessage>() {
+      public void handle(JsonMessage message) {
+        tu.azzert(message.jsonObject.getString("eek").equals("blurt"));
         tu.testComplete();
       }
     });

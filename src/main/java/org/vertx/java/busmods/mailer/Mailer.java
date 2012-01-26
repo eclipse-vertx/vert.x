@@ -3,7 +3,8 @@ package org.vertx.java.busmods.mailer;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.logging.Logger;
 
 import javax.mail.MessagingException;
@@ -14,14 +15,12 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
+public class Mailer extends BusModBase implements VertxApp, Handler<JsonMessage> {
 
   private static final Logger log = Logger.getLogger(Mailer.class);
 
@@ -55,7 +54,7 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
 
   @Override
   public void start() {
-    eb.registerHandler(address, this);
+    eb.registerJsonHandler(address, this);
 
     Properties props = new Properties();
     props.put("mail.transport.protocol", "smtp");
@@ -88,7 +87,7 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
 
   @Override
   public void stop() {
-    eb.unregisterHandler(address, this);
+    eb.unregisterJsonHandler(address, this);
 
     try {
       transport.close();
@@ -97,10 +96,10 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
     }
   }
 
-  private InternetAddress[] parseAddresses(Message message, Map<String, Object> json, String fieldName,
+  private InternetAddress[] parseAddresses(JsonMessage message, String fieldName,
                                            boolean required)
   {
-    Object oto = json.get(fieldName);
+    Object oto = message.jsonObject.getField(fieldName);
     if (oto == null) {
       if (required) {
         sendError(message, fieldName + " address(es) must be specified");
@@ -111,8 +110,8 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
       InternetAddress[] addresses = null;
       if (oto instanceof String) {
         addresses = InternetAddress.parse((String)oto, true);
-      } else if (oto instanceof List) {
-        List loto = (List)oto;
+      } else if (oto instanceof JsonArray) {
+        JsonArray loto = (JsonArray)oto;
         addresses = new InternetAddress[loto.size()];
         int count = 0;
         for (Object addr: loto) {
@@ -131,10 +130,8 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
     }
   }
 
-  public void handle(Message message) {
-    Map<String, Object> json = helper.toJson(message);
-
-    String from = (String)json.get("from");
+  public void handle(JsonMessage message) {
+    String from = message.jsonObject.getString("from");
 
     if (from == null) {
       sendError(message, "from address must be specified");
@@ -149,15 +146,15 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message> {
       return;
     }
 
-    InternetAddress[] recipients = parseAddresses(message, json, "to", true);
+    InternetAddress[] recipients = parseAddresses(message, "to", true);
     if (recipients == null) {
       return;
     }
-    InternetAddress[] cc = parseAddresses(message, json, "cc", false);
-    InternetAddress[] bcc = parseAddresses(message, json, "bcc", false);
+    InternetAddress[] cc = parseAddresses(message, "cc", false);
+    InternetAddress[] bcc = parseAddresses(message, "bcc", false);
 
-    String subject = (String)json.get("subject");
-    String body = (String)json.get("body");
+    String subject = message.jsonObject.getString("subject");
+    String body = message.jsonObject.getString("body");
 
     javax.mail.Message msg = new MimeMessage(session);
 

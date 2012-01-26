@@ -9,14 +9,14 @@ import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -34,11 +34,11 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   private AppManager appManager;
-  private BlockingQueue<Map<String, Object>> events = new LinkedBlockingQueue<>();
+  private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private ObjectMapper mapper = new ObjectMapper();
   private TestUtils tu = new TestUtils();
   private long contextID;
-  private volatile Handler<Message> handler;
+  private volatile Handler<JsonMessage> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
   private List<String> startedApps = new ArrayList<>();
 
@@ -76,40 +76,41 @@ public class TestBase extends TestCase {
           EventBus.initialize(bus);
         }
 
-        handler = new Handler<Message>() {
-          public void handle(Message message) {
+        handler = new Handler<JsonMessage>() {
+          public void handle(JsonMessage message) {
             try {
-              Map<String, Object> map = mapper.readValue(message.body.toString(), Map.class);
-              String type = (String) map.get("type");
+
+              String type = message.jsonObject.getString("type");
 
               //log.info("******************* Got message: " + type);
 
               switch (type) {
                 case EventFields.TRACE_EVENT:
-                  log.trace(map.get(EventFields.TRACE_MESSAGE_FIELD));
+                  log.trace(message.jsonObject.getString(EventFields.TRACE_MESSAGE_FIELD));
                   break;
                 case EventFields.EXCEPTION_EVENT:
-                  failedAsserts.add(new AssertHolder((String) map.get(EventFields.EXCEPTION_MESSAGE_FIELD), (String) map.get(EventFields.EXCEPTION_STACKTRACE_FIELD)));
+                  failedAsserts.add(new AssertHolder(message.jsonObject.getString(EventFields.EXCEPTION_MESSAGE_FIELD),
+                      message.jsonObject.getString(EventFields.EXCEPTION_STACKTRACE_FIELD)));
                   break;
                 case EventFields.ASSERT_EVENT:
-                  boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(map.get(EventFields.ASSERT_RESULT_FIELD));
+                  boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(message.jsonObject.getString(EventFields.ASSERT_RESULT_FIELD));
                   if (passed) {
                   } else {
-                    failedAsserts.add(new AssertHolder((String) map.get(EventFields.ASSERT_MESSAGE_FIELD),
-                        (String) map.get(EventFields.ASSERT_STACKTRACE_FIELD)));
+                    failedAsserts.add(new AssertHolder(message.jsonObject.getString(EventFields.ASSERT_MESSAGE_FIELD),
+                        message.jsonObject.getString(EventFields.ASSERT_STACKTRACE_FIELD)));
                   }
                   break;
                 case EventFields.START_TEST_EVENT:
                   //Ignore
                   break;
                 case EventFields.APP_STOPPED_EVENT:
-                  events.add(map);
+                  events.add(message.jsonObject);
                   break;
                 case EventFields.APP_READY_EVENT:
-                  events.add(map);
+                  events.add(message.jsonObject);
                   break;
                 case EventFields.TEST_COMPLETE_EVENT:
-                  events.add(map);
+                  events.add(message.jsonObject);
                   break;
                 default:
                   throw new IllegalArgumentException("Invalid type: " + type);
@@ -121,7 +122,7 @@ public class TestBase extends TestCase {
           }
         };
 
-        EventBus.instance.registerHandler(EVENTS_ADDRESS, handler);
+        EventBus.instance.registerJsonHandler(EVENTS_ADDRESS, handler);
 
         latch.countDown();
       }
@@ -144,7 +145,7 @@ public class TestBase extends TestCase {
         VertxInternal.instance.executeOnContext(contextID, new Runnable() {
           public void run() {
             VertxInternal.instance.setContextID(contextID);
-            EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
+            EventBus.instance.unregisterJsonHandler(EVENTS_ADDRESS, handler);
             latch.countDown();
           }
         });
@@ -285,7 +286,7 @@ public class TestBase extends TestCase {
 
   protected void waitEvent(int timeout, String eventName) {
 
-    Map<String, Object> message;
+    JsonObject message;
     while (true) {
       try {
         message = events.poll(timeout, TimeUnit.SECONDS);
@@ -298,8 +299,8 @@ public class TestBase extends TestCase {
       throw new IllegalStateException("Timed out waiting for event");
     }
 
-    if (!eventName.equals(message.get("type"))) {
-      throw new IllegalStateException("Expected event: " + eventName + " got: " + message.get(EventFields.TYPE_FIELD));
+    if (!eventName.equals(message.getString("type"))) {
+      throw new IllegalStateException("Expected event: " + eventName + " got: " + message.getString(EventFields.TYPE_FIELD));
     }
   }
 

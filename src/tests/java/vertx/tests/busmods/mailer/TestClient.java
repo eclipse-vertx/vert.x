@@ -1,20 +1,18 @@
 package vertx.tests.busmods.mailer;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.eventbus.JsonHelper;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
-
-import java.util.HashMap;
-import java.util.Map;
-
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TestClient extends TestClientBase {
 
-  private JsonHelper helper = new JsonHelper();
+  private EventBus eb = EventBus.instance;
 
   @Override
   public void start() {
@@ -29,117 +27,115 @@ public class TestClient extends TestClientBase {
 
   public void testSendMultiple() throws Exception {
     final int numMails = 10;
-    Handler<Message> replyHandler = new Handler<Message>() {
+    Handler<JsonMessage> replyHandler = new Handler<JsonMessage>() {
       int count;
-      public void handle(Message message) {
+      public void handle(JsonMessage message) {
         tu.checkContext();
-        Map<String, Object> json = helper.toJson(message);
-        tu.azzert(json.get("status").equals("ok"));
+        tu.azzert(message.jsonObject.getString("status").equals("ok"));
         if (++count == numMails) {
           tu.testComplete();
         }
       }
     };
     for (int i = 0; i < numMails; i++) {
-      Map<String, Object> map = createBaseMessage();
-      helper.sendJSON("test.mailer", map, replyHandler);
+      JsonObject jsonObject = createBaseMessage();
+      eb.sendJson("test.mailer", jsonObject, replyHandler);
     }
   }
 
   public void testSendWithSingleRecipient() throws Exception {
-    Map<String, Object> map = new HashMap<>();
+    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    map.put("to", rec);
-    send(map, null);
+    jsonObject.putString("to", rec);
+    send(jsonObject, null);
   }
 
   public void testSendWithRecipientList() throws Exception {
-    Map<String, Object> map = new HashMap<>();
+    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    String[] recipients = new String[] { rec, rec, rec };
-    map.put("to", recipients);
-    send(map, null);
+    JsonArray recipients = new JsonArray(new String[] { rec, rec, rec });
+    jsonObject.putArray("to", recipients);
+    send(jsonObject, null);
   }
 
   public void testSendWithSingleCC() throws Exception {
-    Map<String, Object> map = new HashMap<>();
+    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    map.put("to", rec);
-    map.put("cc", rec);
-    send(map, null);
+    jsonObject.putString("to", rec);
+    jsonObject.putString("cc", rec);
+    send(jsonObject, null);
   }
 
   public void testSendWithCCList() throws Exception {
-    Map<String, Object> map = new HashMap<>();
+    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    String[] recipients = new String[] { rec, rec, rec };
-    map.put("cc", recipients);
-    send(map, null);
+    JsonArray recipients = new JsonArray(new String[] { rec, rec, rec });
+    jsonObject.putArray("cc", recipients);
+    send(jsonObject, null);
   }
 
   public void testSendWithSingleBCC() throws Exception {
-    Map<String, Object> map = new HashMap<>();
+    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    map.put("to", rec);
-    map.put("bcc", rec);
-    send(map, null);
+    jsonObject.putString("to", rec);
+    jsonObject.putString("bcc", rec);
+    send(jsonObject, null);
   }
 
   public void testSendWithBCCList() throws Exception {
-    Map<String, Object> map = new HashMap<>();
+    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    String[] recipients = new String[] { rec, rec, rec };
-    map.put("bcc", recipients);
-    send(map, null);
+    JsonArray recipients = new JsonArray(new String[] { rec, rec, rec });
+    jsonObject.putArray("bcc", recipients);
+    send(jsonObject, null);
   }
 
   public void testInvalidSingleFrom() throws Exception {
-    Map<String, Object> map = new HashMap<>();
-    map.put("from", "wqdqwd qwdqwd qwdqwd ");
-    send(map, "Invalid from");
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.putString("from", "wqdqwd qwdqwd qwdqwd ");
+    send(jsonObject, "Invalid from");
   }
 
   public void testInvalidSingleRecipient() throws Exception {
-    Map<String, Object> map = new HashMap<>();
-    map.put("to", "wqdqwd qwdqwd qwdqwd ");
-    send(map, "Invalid to");
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.putString("to", "wqdqwd qwdqwd qwdqwd ");
+    send(jsonObject, "Invalid to");
   }
 
   public void testInvalidRecipientList() throws Exception {
-    Map<String, Object> map = new HashMap<>();
-    String[] recipients = new String[] { "tim@localhost", "qwdqwd qwdqw d", "qwdkiwqdqwd d" };
-    map.put("to", recipients);
-    send(map, "Invalid to");
+    JsonObject jsonObject = new JsonObject();
+    JsonArray recipients = new JsonArray(new String[] { "tim@localhost", "qwdqwd qwdqw d", "qwdkiwqdqwd d" });
+    jsonObject.putArray("to", recipients);
+    send(jsonObject, "Invalid to");
   }
 
-  private void send(Map<String, Object> overrides, final String error) throws Exception {
-    Handler<Message> replyHandler = new Handler<Message>() {
+  private void send(JsonObject overrides, final String error) throws Exception {
+    Handler<JsonMessage> replyHandler = new Handler<JsonMessage>() {
       int count;
-      public void handle(Message message) {
+      public void handle(JsonMessage message) {
         tu.checkContext();
-        Map<String, Object> json = helper.toJson(message);
         if (error == null) {
-          tu.azzert(json.get("status").equals("ok"));
+          tu.azzert(message.jsonObject.getString("status").equals("ok"));
         } else {
-          tu.azzert(json.get("status").equals("error"));
-          tu.azzert(((String) json.get("message")).startsWith(error));
+          tu.azzert(message.jsonObject.getString("status").equals("error"));
+          tu.azzert(message.jsonObject.getString("message").startsWith(error));
         }
         tu.testComplete();
       }
     };
-    Map<String, Object> map = createBaseMessage();
-    map.putAll(overrides);
-    helper.sendJSON("test.mailer", map, replyHandler);
+    JsonObject jsonObject = createBaseMessage();
+    jsonObject.mergeIn(overrides);
+    eb.sendJson("test.mailer", jsonObject, replyHandler);
   }
 
-  private Map<String, Object> createBaseMessage() {
+  private JsonObject createBaseMessage() {
     String user = System.getProperty("user.name");
-    Map<String, Object> map = new HashMap<>();
-    map.put("from", user + "@localhost");
-    map.put("to", user + "@localhost");
-    map.put("subject", "This is a test");
-    map.put("body", "This is the body\nof the mail");
-    return map;
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.putString("from", user + "@localhost");
+    jsonObject.putString("to", user + "@localhost");
+    jsonObject.putString("subject", "This is a test");
+    jsonObject.putString("body", "This is the body\nof the mail");
+    return jsonObject;
   }
 
 

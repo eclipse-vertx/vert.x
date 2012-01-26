@@ -2,12 +2,9 @@ package vertx.tests.busmods.workqueue;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonHelper;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -16,7 +13,6 @@ import java.util.Map;
 public class TestClient extends TestClientBase {
 
   private EventBus eb = EventBus.instance;
-  private JsonHelper helper = new JsonHelper();
 
   @Override
   public void start() {
@@ -35,20 +31,19 @@ public class TestClient extends TestClientBase {
 
     final int numMessages = 30;
 
-    eb.registerHandler("done", new Handler<Message>() {
-      public void handle(Message message) {
+    eb.registerJsonHandler("done", new Handler<JsonMessage>() {
+      public void handle(JsonMessage message) {
         if (++count == numMessages) {
-          eb.unregisterHandler("done", this);
+          eb.unregisterJsonHandler("done", this);
           tu.testComplete();
         }
       }
     });
 
     for (int i = 0; i < numMessages; i++) {
-
-      Map<String, Object> map = new HashMap<>();
-      map.put("blah", "wibble" + i);
-      helper.sendJSON("orderQueue", map);
+      JsonObject obj = new JsonObject();
+      obj.putString("blah", "wibble" + i);
+      eb.sendJson("orderQueue", obj);
     }
   }
 

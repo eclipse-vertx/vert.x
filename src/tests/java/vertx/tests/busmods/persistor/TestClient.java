@@ -2,13 +2,10 @@ package vertx.tests.busmods.persistor;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonHelper;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -17,8 +14,6 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TestClient extends TestClientBase {
-
-  private JsonHelper helper = new JsonHelper();
 
   private EventBus eb = EventBus.instance;
 
@@ -36,51 +31,48 @@ public class TestClient extends TestClientBase {
   public void testPersistor() throws Exception {
 
     //First delete everything
-    Map<String, Object> json = new HashMap<>();
-    json.put("collection", "testcoll");
-    json.put("action", "delete");
-    json.put("matcher", new HashMap());
+    JsonObject json = new JsonObject();
+    json.putString("collection", "testcoll");
+    json.putString("action", "delete");
+    json.putObject("matcher", new JsonObject());
 
-    helper.sendJSON("test.persistor", json, new Handler<Message>() {
-      public void handle(Message reply) {
-        Map<String, Object> jsonReply = helper.toJson(reply);
-        tu.azzert("ok".equals(jsonReply.get("status")));
+    eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
+      public void handle(JsonMessage reply) {
+        tu.azzert("ok".equals(reply.jsonObject.getString("status")));
       }
     });
 
     final int numDocs = 1;
     for (int i = 0; i < numDocs; i++) {
-      Map<String, Object> doc = new HashMap<>();
-      doc.put("name", "joe bloggs");
-      doc.put("age", 40);
-      doc.put("cat-name", "watt");
+      JsonObject doc = new JsonObject();
+      doc.putString("name", "joe bloggs");
+      doc.putNumber("age", 40);
+      doc.putString("cat-name", "watt");
 
-      json = new HashMap<>();
-      json.put("collection", "testcoll");
-      json.put("action", "save");
-      json.put("document", doc);
+      json = new JsonObject();
+      json.putString("collection", "testcoll");
+      json.putString("action", "save");
+      json.putObject("document", doc);
 
-      helper.sendJSON("test.persistor", json, new Handler<Message>() {
-        public void handle(Message reply) {
-          Map<String, Object> jsonReply = helper.toJson(reply);
-          tu.azzert("ok".equals(jsonReply.get("status")));
+      eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
+        public void handle(JsonMessage reply) {
+          tu.azzert("ok".equals(reply.jsonObject.getString("status")));
         }
       });
     }
 
-    Map<String, Object> matcher = new HashMap<>();
-      matcher.put("name", "joe bloggs");
+    JsonObject matcher = new JsonObject();
+    matcher.putString("name", "joe bloggs");
 
-    json = new HashMap<>();
-    json.put("collection", "testcoll");
-    json.put("action", "find");
-    json.put("matcher", matcher);
+    json = new JsonObject();
+    json.putString("collection", "testcoll");
+    json.putString("action", "find");
+    json.putObject("matcher", matcher);
 
-    helper.sendJSON("test.persistor", json, new Handler<Message>() {
-      public void handle(Message reply) {
-        Map<String, Object> jsonReply = helper.toJson(reply);
-        tu.azzert("ok".equals(jsonReply.get("status")));
-        List results = (List)jsonReply.get("results");
+    eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
+      public void handle(JsonMessage reply) {
+        tu.azzert("ok".equals(reply.jsonObject.getString("status")));
+        JsonArray results = reply.jsonObject.getArray("results");
         tu.azzert(results.size() == numDocs);
         tu.testComplete();
       }

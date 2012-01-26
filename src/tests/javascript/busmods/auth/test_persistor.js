@@ -3,7 +3,7 @@ load('test_utils.js');
 
 var tu = new TestUtils();
 
-var persistor = new vertx.Persistor("test.persistor");
+var persistor = new vertx.Persistor("test.persistor", "testdb");
 persistor.start();
 tu.appReady();
 

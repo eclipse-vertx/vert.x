@@ -30,7 +30,7 @@ public class EBServer implements VertxApp {
 
   public void start() {
 
-    EventBus.instance.registerHandler("test-sub", new Handler<Message>() {
+    EventBus.instance.registerBinaryHandler("test-sub", new Handler<Message>() {
       public void handle(Message message) {
         System.out.println("Got message: " + message.body.toString());
       }
@@ -38,7 +38,7 @@ public class EBServer implements VertxApp {
 
     server = new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        EventBus.instance.send(new Message("test-sub", Buffer.create("Hello World")));
+        EventBus.instance.sendBinary(new Message("test-sub", Buffer.create("Hello World")));
       }
     }).listen(1234);
   }

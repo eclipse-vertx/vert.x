@@ -1893,7 +1893,7 @@ public class HttpTestClient extends TestClientBase {
           });
 
           // Tell the server to resume
-          EventBus.instance.send(new Message("server_resume"));
+          EventBus.instance.sendBinary(new Message("server_resume"));
         }
       }
     });
@@ -1909,11 +1909,11 @@ public class HttpTestClient extends TestClientBase {
             resp.resume();
           }
         };
-        EventBus.instance.registerHandler("client_resume", resumeHandler);
+        EventBus.instance.registerBinaryHandler("client_resume", resumeHandler);
         resp.endHandler(new SimpleHandler() {
           public void handle() {
             tu.checkContext();
-            EventBus.instance.unregisterHandler("client_resume", resumeHandler);
+            EventBus.instance.unregisterBinaryHandler("client_resume", resumeHandler);
           }
         });
         resp.dataHandler(new Handler<Buffer>() {
