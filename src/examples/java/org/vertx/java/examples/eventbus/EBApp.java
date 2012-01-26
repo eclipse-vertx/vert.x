@@ -25,7 +25,7 @@ public class EBApp implements VertxApp {
 
   public void start() {
 
-    EventBus.instance.registerHandler("test-sub", new Handler<Message>() {
+    EventBus.instance.registerBinaryHandler("test-sub", new Handler<Message>() {
       public void handle(Message message) {
         System.out.println("Got message: " + message.body.toString());
       }

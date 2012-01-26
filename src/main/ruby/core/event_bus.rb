@@ -48,9 +48,9 @@ module Vertx
     # It will be called when the reply from a receiver is received.
     def EventBus.send(message, &reply_handler)
       if reply_handler != nil
-        org.vertx.java.core.eventbus.EventBus.instance.send(message._to_java_message, reply_handler)
+        org.vertx.java.core.eventbus.EventBus.instance.sendBinary(message._to_java_message, reply_handler)
       else
-        org.vertx.java.core.eventbus.EventBus.instance.send(message._to_java_message)
+        org.vertx.java.core.eventbus.EventBus.instance.sendBinary(message._to_java_message)
       end
     end
 
@@ -61,7 +61,7 @@ module Vertx
     # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
     def EventBus.register_handler(address, &message_hndlr)
       internal = InternalHandler.new(address, message_hndlr)
-      org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
+      org.vertx.java.core.eventbus.EventBus.instance.registerBinaryHandler(address, internal)
       id = @@handler_seq.incrementAndGet
       @@handler_map.put(id, internal)
       id
@@ -72,7 +72,7 @@ module Vertx
     def EventBus.unregister_handler(handler_id)
       handler = @@handler_map.remove(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler.address, handler)
+      org.vertx.java.core.eventbus.EventBus.instance.unregisterBinaryHandler(handler.address, handler)
     end
 
     # @private
@@ -140,4 +140,37 @@ module Vertx
     end
 
   end
+
+  # A SockJSBridgeHandler plugs into a SockJS server and translates data received via SockJS into operations
+  # to send messages and register and unregister handlers on the vert.x event bus.
+  #
+  # When used in conjunction with the vert.x client side JavaScript event bus api (vertxbus.js) this effectively
+  # extends the reach of the vert.x event bus from vert.x server side applications to the browser as well. This
+  # enables a truly transparent single event bus where client side JavaScript applications can play on the same
+  # bus as server side application instances and services.
+  #
+  # @author {http://tfox.org Tim Fox}
+  class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
+    def initialize
+      super
+      @json_helper = org.vertx.java.core.eventbus.JsonHelper.new
+    end
+
+    # Call this handler - pretend to be a Proc
+    def call(sock)
+      # This is inefficient since we convert to a Ruby SockJSSocket and back again to a Java one
+      handle(sock._to_java_socket)
+    end
+
+    def add_permitted(*permitted)
+      permitted.each do |match|
+        json_str = JSON.generate(match);
+        j_json = @json_helper.stringToJson(json_str);
+        addPermitted(j_json);
+      end
+    end
+
+  end
+
+
 end

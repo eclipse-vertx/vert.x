@@ -4,13 +4,12 @@ import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -22,9 +21,9 @@ public class AuthManager extends BusModBase implements VertxApp  {
 
   private static final long DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 mins
 
-  private Handler<Message> loginHandler;
-  private Handler<Message> logoutHandler;
-  private Handler<Message> validateHandler;
+  private Handler<JsonMessage> loginHandler;
+  private Handler<JsonMessage> logoutHandler;
+  private Handler<JsonMessage> validateHandler;
 
   private final String userCollection;
   private final String persistorAddress;
@@ -55,57 +54,56 @@ public class AuthManager extends BusModBase implements VertxApp  {
   }
 
   public void start() {
-    loginHandler = new Handler<Message>() {
-      public void handle(Message message) {
-        Map<String, Object> json = helper.toJson(message);
-        doLogin(message, json);
+    loginHandler = new Handler<JsonMessage>() {
+      public void handle(JsonMessage message) {
+        doLogin(message);
       }
     };
-    eb.registerHandler(address + ".login", loginHandler);
-    logoutHandler = new Handler<Message>() {
-      public void handle(Message message) {
-        Map<String, Object> json = helper.toJson(message);
-        doLogout(message, json);
+    eb.registerJsonHandler(address + ".login", loginHandler);
+    logoutHandler = new Handler<JsonMessage>() {
+      public void handle(JsonMessage message) {
+        doLogout(message);
       }
     };
-    eb.registerHandler(address + ".logout", logoutHandler);
-    validateHandler = new Handler<Message>() {
-      public void handle(Message message) {
-        Map<String, Object> json = helper.toJson(message);
-        doValidate(message, json);
+    eb.registerJsonHandler(address + ".logout", logoutHandler);
+    validateHandler = new Handler<JsonMessage>() {
+      public void handle(JsonMessage message) {
+        doValidate(message);
       }
     };
-    eb.registerHandler(address + ".validate", validateHandler);
+    eb.registerJsonHandler(address + ".validate", validateHandler);
   }
 
   public void stop() {
-    eb.unregisterHandler(address + ".login", loginHandler);
-    eb.unregisterHandler(address + ".logout", logoutHandler);
-    eb.unregisterHandler(address + ".validate", validateHandler);
+    eb.unregisterJsonHandler(address + ".login", loginHandler);
+    eb.unregisterJsonHandler(address + ".logout", logoutHandler);
+    eb.unregisterJsonHandler(address + ".validate", validateHandler);
   }
 
-  private void doLogin(final Message message, Map<String, Object> map) {
-    final String username = (String)super.getMandatory("username", message, map);
+  private void doLogin(final JsonMessage message) {
+
+    final String username = getMandatoryString("username", message);
     if (username == null) {
       return;
     }
-    String password = (String)super.getMandatory("password", message, map);
+    String password = getMandatoryString("password", message);
     if (password == null) {
       return;
     }
-    Map<String, Object> findMsg = new HashMap<>();
-    findMsg.put("action", "findone");
-    findMsg.put("collection", userCollection);
-    Map<String, Object> matcher = new HashMap<>();
-    matcher.put("username", username);
-    matcher.put("password", password);
-    findMsg.put("matcher", matcher);
 
-    helper.sendJSON(persistorAddress, findMsg, new Handler<Message>() {
-      public void handle(Message reply) {
-        Map<String, Object> json = helper.toJson(reply);
-        if (json.get("status").equals("ok")) {
-          if (json.get("result") != null) {
+    JsonObject findMsg = new JsonObject();
+    findMsg.putString("action", "findone");
+    findMsg.putString("collection", userCollection);
+    JsonObject matcher = new JsonObject();
+    matcher.putString("username", username);
+    matcher.putString("password", password);
+    findMsg.putObject("matcher", matcher);
+
+    eb.sendJson(persistorAddress, findMsg, new Handler<JsonMessage>() {
+      public void handle(JsonMessage reply) {
+
+        if (reply.jsonObject.getString("status").equals("ok")) {
+          if (reply.jsonObject.getObject("result") != null) {
 
             // Check if already logged in, if so logout of the old session
             LoginInfo info = logins.get(username);
@@ -123,23 +121,23 @@ public class AuthManager extends BusModBase implements VertxApp  {
             });
             sessions.put(sessionID, username);
             logins.put(username, new LoginInfo(timerID, sessionID));
-            Map<String, Object> jsonReply = new HashMap<>();
-            jsonReply.put("sessionID", sessionID);
+            JsonObject jsonReply = new JsonObject();
+            jsonReply.putString("sessionID", sessionID);
             sendOK(message, jsonReply);
           } else {
             // Not found
             sendStatus("denied", message);
           }
         } else {
-          log.error("Failed to execute login query: " + json.get("message"));
+          log.error("Failed to execute login query: " + reply.jsonObject.getString("message"));
           sendError(message, "Failed to excecute login");
         }
       }
     });
   }
 
-  private void doLogout(final Message message, Map<String, Object> map) {
-    final String sessionID = (String)super.getMandatory("sessionID", message, map);
+  private void doLogout(final JsonMessage message) {
+    final String sessionID = getMandatoryString("sessionID", message);
     if (sessionID != null) {
       if (logout(sessionID)) {
         sendOK(message);
@@ -160,16 +158,16 @@ public class AuthManager extends BusModBase implements VertxApp  {
     }
   }
 
-  private void doValidate(Message message, Map<String, Object> map) {
-    String sessionID = (String)super.getMandatory("sessionID", message, map);
+  private void doValidate(JsonMessage message) {
+    String sessionID = getMandatoryString("sessionID", message);
     if (sessionID == null) {
       return;
     }
     String username = sessions.get(sessionID);
     if (username != null) {
-      Map<String, Object> json = new HashMap<>();
-      json.put("username", username);
-      sendOK(message, json);
+      JsonObject reply = new JsonObject();
+      reply.putString("username", username);
+      sendOK(message, reply);
     } else {
       sendStatus("denied", message);
     }

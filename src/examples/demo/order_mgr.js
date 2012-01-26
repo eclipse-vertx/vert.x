@@ -4,7 +4,6 @@ var eb = vertx.EventBus;
 
 var handler = function(order, replier) {
   log.println('Received order in order manager ' + JSON.stringify(order));
-
   var sessionID = order.sessionID;
   eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
     if (reply.status === 'ok') {

@@ -27,11 +27,11 @@ public class PausingServer extends BaseServer {
             sock.resume();
           }
         };
-        EventBus.instance.registerHandler("server_resume", resumeHandler);
+        EventBus.instance.registerBinaryHandler("server_resume", resumeHandler);
         sock.closedHandler(new SimpleHandler() {
           public void handle() {
             tu.checkContext();
-            EventBus.instance.unregisterHandler("server_resume", resumeHandler);
+            EventBus.instance.unregisterBinaryHandler("server_resume", resumeHandler);
           }
         });
         sock.dataHandler(new Handler<Buffer>() {

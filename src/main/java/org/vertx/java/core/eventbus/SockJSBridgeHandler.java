@@ -3,6 +3,7 @@ package org.vertx.java.core.eventbus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -29,87 +30,92 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
   private static final Logger log = Logger.getLogger(SockJSBridgeHandler.class);
 
   private final EventBus eb = EventBus.instance;
-  private final JsonHelper helper = new JsonHelper();
-  private List<Map<String, Object>> matches = new ArrayList<>();
+  private List<Map<String, Object>> permitted = new ArrayList<>();
 
-  public void addMatch(Map<String, Object> match) {
-    matches.add(match);
+  public void addPermitted(Map<String, Object> permitted) {
+    this.permitted.add(permitted);
   }
 
-  public void addMatches(Map<String, Object>[] matchesArr) {
-    matches.addAll(Arrays.asList(matchesArr));
+  public void addPermitted(Map<String, Object>[] permittedArr) {
+    permitted.addAll(Arrays.asList(permittedArr));
   }
 
-  public void addMatches(List<Map<String, Object>> matchesList) {
-    matches.addAll(matchesList);
+  public void addPermitted(List<Map<String, Object>> permittedList) {
+    permitted.addAll(permittedList);
   }
 
   public void handle(final SockJSSocket sock) {
 
-    final Map<String, Handler<Message>> handlers = new HashMap<>();
+    final Map<String, Handler<JsonMessage>> handlers = new HashMap<>();
 
     sock.endHandler(new SimpleHandler() {
       public void handle() {
 
         // On close unregister any handlers that haven't been unregistered
-        for (Map.Entry<String, Handler<Message>> entry: handlers.entrySet()) {
-          eb.unregisterHandler(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Handler<JsonMessage>> entry: handlers.entrySet()) {
+          eb.unregisterJsonHandler(entry.getKey(), entry.getValue());
         }
       }
     });
 
     sock.dataHandler(new Handler<Buffer>() {
 
-      private void handleSend(String address, Map<String, Object> body, final String replyAddress) {
-        Handler<Message> replyHandler;
+      private void handleSend(String address, JsonObject jsonObject, final String replyAddress) {
+        Handler<JsonMessage> replyHandler;
         if (replyAddress != null) {
-          replyHandler = new Handler<Message>() {
-            public void handle(Message message) {
-              message.address = replyAddress;
-              deliverMessage(message);
+          replyHandler = new Handler<JsonMessage>() {
+            public void handle(JsonMessage message) {
+              deliverMessage(replyAddress, message);
             }
           };
         } else {
           replyHandler = null;
         }
-        if (checkMatches(address, body)) {
-          helper.sendJSON(address, body, replyHandler);
+        if (checkMatches(address, jsonObject)) {
+          eb.sendJson(address, jsonObject, replyHandler);
         } else {
-          log.info("Message rejected");
+          log.trace("Message rejected");
         }
       }
 
-      private void deliverMessage(Message msg) {
-        Map<String, Object> json = helper.toJson(msg);
-        Map<String, Object> envelope = new HashMap<>();
-        envelope.put("address", msg.address);
-        if (msg.replyAddress != null) {
-          envelope.put("replyAddress", msg.replyAddress);
+      private void deliverMessage(String address, JsonMessage jsonMessage) {
+        JsonObject envelope = new JsonObject();
+        envelope.putString("address", address);
+        if (jsonMessage.replyAddress != null) {
+          envelope.putString("replyAddress", jsonMessage.replyAddress);
         }
-        envelope.put("body", json);
-        sock.writeBuffer(Buffer.create(helper.jsonToString(envelope)));
+        envelope.putObject("body", jsonMessage.jsonObject);
+        sock.writeBuffer(Buffer.create(envelope.encode()));
       }
 
-      private void handleRegister(String address) {
-        Handler<Message> handler = new Handler<Message>() {
-          public void handle(Message msg) {
-            deliverMessage(msg);
+      private void handleRegister(final String address) {
+        Handler<JsonMessage> handler = new Handler<JsonMessage>() {
+          public void handle(JsonMessage msg) {
+            deliverMessage(address, msg);
           }
         };
 
         handlers.put(address, handler);
-        eb.registerHandler(address, handler);
+        eb.registerJsonHandler(address, handler);
       }
 
       private void handleUnregister(String address) {
-        Handler<Message> handler = handlers.remove(address);
+        Handler<JsonMessage> handler = handlers.remove(address);
         if (handler != null) {
-          eb.unregisterHandler(address, handler);
+          eb.unregisterJsonHandler(address, handler);
         }
       }
 
-      private Object getMandatory(Map<String, Object> json, String field) {
-        Object value = json.get(field);
+      private String getMandatoryString(JsonObject json, String field) {
+        String value = json.getString(field);
+        if (value == null) {
+          throw new IllegalStateException(field + " must be specified for message");
+        }
+        return value;
+      }
+
+      private JsonObject getMandatoryObject(JsonObject json, String field) {
+        JsonObject value = json.getObject(field);
         if (value == null) {
           throw new IllegalStateException(field + " must be specified for message");
         }
@@ -118,14 +124,14 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
       public void handle(Buffer data)  {
 
-        Map<String, Object> msg = helper.stringToJson(data.toString());
+        JsonObject msg = new JsonObject(data.toString());
 
-        String type = (String)getMandatory(msg, "type");
-        String address = (String)getMandatory(msg, "address");
+        String type = getMandatoryString(msg, "type");
+        String address = getMandatoryString(msg, "address");
         switch (type) {
           case "send":
-            Map<String, Object> body = (Map<String, Object>)getMandatory(msg, "body");
-            String replyAddress = (String)msg.get("replyAddress");
+            JsonObject body = getMandatoryObject(msg, "body");
+            String replyAddress = msg.getString("replyAddress");
             handleSend(address, body, replyAddress);
             break;
           case "register":
@@ -142,19 +148,19 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
   }
 
   /*
-  Empty matches means reject everything - this is the default.
-  If at least one match is supplied and all the fields of any match match then the message matches,
+  Empty permitted means reject everything - this is the default.
+  If at least one match is supplied and all the fields of any match match then the message permitted,
   this means that specifying one match with a JSON empty object means everything is accepted
    */
-  private boolean checkMatches(String address, Map<String, Object> message) {
-    for (Map<String, Object> matchHolder: matches) {
+  private boolean checkMatches(String address, JsonObject message) {
+    for (Map<String, Object> matchHolder: permitted) {
       String matchAddress = (String)matchHolder.get("address");
       if (matchAddress == null || matchAddress.equals(address)) {
         boolean matched = true;
         Map<String, Object> match = (Map<String, Object>)matchHolder.get("match");
         if (match != null) {
           for (Map.Entry<String, Object> matchEntry: match.entrySet()) {
-            Object obj = message.get(matchEntry.getKey());
+            Object obj = message.getField(matchEntry.getKey());
             if (!matchEntry.getValue().equals(obj)) {
               matched = false;
               break;

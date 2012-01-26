@@ -54,7 +54,7 @@ if (!vertx.EventBus) {
       // have to keep track of it :(
       handlerMap[handler] = wrapped;
 
-      jEventBus.registerHandler(address, wrapped);
+      jEventBus.registerBinaryHandler(address, wrapped);
     };
 
 
@@ -62,7 +62,7 @@ if (!vertx.EventBus) {
       checkHandlerParams(address, handler);
       var wrapped = handlerMap[handler];
       if (wrapped) {
-        jEventBus.unregisterHandler(address, wrapped);
+        jEventBus.unregisterBinaryHandler(address, wrapped);
         delete handlerMap[handler];
       }
     };
@@ -92,9 +92,9 @@ if (!vertx.EventBus) {
             replyHandler(json);
           }
         });
-        jEventBus.send(java_msg, hndlr);
+        jEventBus.sendBinary(java_msg, hndlr);
       } else {
-        jEventBus.send(java_msg);
+        jEventBus.sendBinary(java_msg);
       }
       message.messageID = '' + java_msg.messageID;
     };
@@ -110,12 +110,12 @@ vertx.SockJSBridgeHandler = function() {
       jHandler.handle(sock);
     }
   });
-  server.addMatches = function() {
+  server.addPermitted = function() {
     for (var i = 0; i < arguments.length; i++) {
       var match = arguments[i];
       var json_str = JSON.stringify(match);
       var jJson = jsonHelper.stringToJson(json_str);
-      jHandler.addMatch(jJson);
+      jHandler.addPermitted(jJson);
     }
   }
   return server;

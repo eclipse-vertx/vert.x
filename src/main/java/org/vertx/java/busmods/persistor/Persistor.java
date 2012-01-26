@@ -10,52 +10,59 @@ import com.mongodb.util.JSON;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * TODO max batch sizes
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Persistor extends BusModBase implements VertxApp, Handler<Message> {
+public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessage> {
 
   private static final Logger log = Logger.getLogger(Persistor.class);
 
-  public Persistor(final String address) {
+  private final String hostName;
+  private final int port;
+  private final String dbName;
+
+  public Persistor(String address, String dbName) {
+    this(address, dbName, "localhost", 27017);
+  }
+
+  public Persistor(String address, String dbName, String hostName, int port) {
     super(address, true);
+    this.hostName = hostName;
+    this.port = port;
+    this.dbName = dbName;
   }
 
   private Mongo mongo;
   private DB db;
 
-  // TODO configuration!!!
   public void start() {
 
     try {
-      mongo = new Mongo("localhost", 27017 );
-      db = mongo.getDB("mydb");
-      eb.registerHandler(address, this);
+      mongo = new Mongo(hostName, port);
+      db = mongo.getDB(dbName);
+      eb.registerJsonHandler(address, this);
     } catch (UnknownHostException e) {
       log.error("Failed to connect to mongo server", e);
     }
   }
 
   public void stop() {
-    eb.unregisterHandler(address, this);
+    eb.unregisterJsonHandler(address, this);
     mongo.close();
   }
 
-  public void handle(Message message) {
-    Map<String, Object> json  = helper.toJson(message);
+  public void handle(JsonMessage message) {
 
-    String action = (String)json.get("action");
+    String action = message.jsonObject.getString("action");
 
     if (action == null) {
       sendError(message, "action must be specified");
@@ -64,16 +71,16 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
 
     switch (action) {
       case "save":
-        doSave(message, json);
+        doSave(message);
         break;
       case "find":
-        doFind(message, json);
+        doFind(message);
         break;
       case "findone":
-        doFindOne(message, json);
+        doFindOne(message);
         break;
       case "delete":
-        doDelete(message, json);
+        doDelete(message);
         break;
       default:
         sendError(message, "Invalid action: " + action);
@@ -81,12 +88,12 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
     }
   }
 
-  private void doSave(Message message, Map<String, Object> json) {
-    String collection = (String)getMandatory("collection", message, json);
+  private void doSave(JsonMessage message) {
+    String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
     }
-    Object doc = getMandatory("document", message, json);
+    JsonObject doc = getMandatoryObject("document", message);
     if (doc == null) {
       return;
     }
@@ -95,20 +102,20 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
     sendOK(message);
   }
 
-  private void doFind(Message message, Map<String, Object> json) {
-    String collection = (String)getMandatory("collection", message, json);
+  private void doFind(JsonMessage message) {
+    String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
     }
-    Integer limit = (Integer)json.get("limit");
+    Integer limit = (Integer)message.jsonObject.getNumber("limit");
     if (limit == null) {
       limit = -1;
     }
-    Object matcher = getMandatory("matcher", message, json);
+    JsonObject matcher = getMandatoryObject("matcher", message);
     if (matcher == null) {
       return;
     }
-    Object sort = json.get("sort");
+    JsonObject sort = message.jsonObject.getObject("sort");
     DBCollection coll = db.getCollection(collection);
     DBCursor cursor = coll.find(jsonToDBObject(matcher));
     if (limit != -1) {
@@ -117,25 +124,25 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
     if (sort != null) {
       cursor.sort(jsonToDBObject(sort));
     }
-    Map<String, Object> reply = new HashMap<>();
-    List results = new ArrayList();
+    JsonObject reply = new JsonObject();
+    JsonArray results = new JsonArray();
     while (cursor.hasNext()) {
       DBObject obj = cursor.next();
       String s = obj.toString();
-      Map<String, Object> m = helper.stringToJson(s);
+      JsonObject m = new JsonObject(s);
       results.add(m);
     }
     cursor.close();
-    reply.put("results", results);
+    reply.putArray("results", results);
     sendOK(message, reply);
   }
 
-  private void doFindOne(Message message, Map<String, Object> json) {
-    String collection = (String)getMandatory("collection", message, json);
+  private void doFindOne(JsonMessage message) {
+    String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
     }
-    Object matcher = json.get("matcher");
+    JsonObject matcher = message.jsonObject.getObject("matcher");
     DBCollection coll = db.getCollection(collection);
     DBObject res;
     if (matcher == null) {
@@ -143,34 +150,35 @@ public class Persistor extends BusModBase implements VertxApp, Handler<Message> 
     } else {
       res = coll.findOne(jsonToDBObject(matcher));
     }
-    Map<String, Object> reply = new HashMap<>();
+    JsonObject reply = new JsonObject();
     if (res != null) {
       String s = res.toString();
-      Map<String, Object> m = helper.stringToJson(s);
-      reply.put("result", m);
+      JsonObject m = new JsonObject(s);
+      reply.putObject("result", m);
     }
     sendOK(message, reply);
   }
 
-  private void doDelete(Message message, Map<String, Object> json) {
-    String collection = (String)getMandatory("collection", message, json);
+  private void doDelete(JsonMessage message) {
+    String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
     }
-    Object matcher = getMandatory("matcher", message, json);
+    JsonObject matcher = getMandatoryObject("matcher", message);
     if (matcher == null) {
       return;
     }
     DBCollection coll = db.getCollection(collection);
-    WriteResult res = coll.remove(jsonToDBObject(matcher));
+    DBObject obj = jsonToDBObject(matcher);
+    WriteResult res = coll.remove(obj);
     int deleted = res.getN();
-    Map<String, Object> reply = new HashMap<>();
-    reply.put("number", deleted);
+    JsonObject reply = new JsonObject();
+    reply.putNumber("number", deleted);
     sendOK(message, reply);
   }
 
-  private DBObject jsonToDBObject(Object json) {
-    String str = helper.jsonToString(json);
+  private DBObject jsonToDBObject(JsonObject object) {
+    String str = object.encode();
     return (DBObject)JSON.parse(str);
   }
 

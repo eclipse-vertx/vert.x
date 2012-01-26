@@ -31,11 +31,11 @@ public class PausingServer implements VertxApp {
             req.resume();
           }
         };
-        EventBus.instance.registerHandler("server_resume", resumeHandler);
+        EventBus.instance.registerBinaryHandler("server_resume", resumeHandler);
         req.endHandler(new SimpleHandler() {
           public void handle() {
             tu.checkContext();
-            EventBus.instance.unregisterHandler("server_resume", resumeHandler);
+            EventBus.instance.unregisterBinaryHandler("server_resume", resumeHandler);
           }
         });
         req.dataHandler(new Handler<Buffer>() {

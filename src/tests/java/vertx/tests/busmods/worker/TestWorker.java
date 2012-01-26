@@ -3,21 +3,18 @@ package vertx.tests.busmods.worker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonHelper;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.JsonMessage;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.newtests.TestUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TestWorker implements VertxApp, Handler<Message> {
+public class TestWorker implements VertxApp, Handler<JsonMessage> {
 
   private TestUtils tu = new TestUtils();
 
@@ -25,25 +22,22 @@ public class TestWorker implements VertxApp, Handler<Message> {
 
   private String address = "testWorker";
 
-  private JsonHelper helper = new JsonHelper();
-
   @Override
   public void start() throws Exception {
-    eb.registerHandler(address, this);
+    eb.registerJsonHandler(address, this);
     tu.appReady();
   }
 
 
   @Override
   public void stop() throws Exception {
-    eb.unregisterHandler(address, this);
+    eb.unregisterJsonHandler(address, this);
     tu.appStopped();
   }
 
-  public void handle(final Message message) {
+  public void handle(final JsonMessage message) {
     try {
-      Map<String, Object> json = helper.toJson(message);
-      tu.azzert(json.get("foo").equals("wibble"));
+      tu.azzert(message.jsonObject.getString("foo").equals("wibble"));
       tu.azzert(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
 
       // Trying to create any network clients or servers should fail - workers can only use the event bus
@@ -79,9 +73,9 @@ public class TestWorker implements VertxApp, Handler<Message> {
       // Simulate some processing time - ok to sleep here since this is a worker application
       Thread.sleep(100);
 
-      Map<String, Object> reply = new HashMap<>();
-      reply.put("eek", "blurt");
-      helper.sendReply(message, reply);
+      JsonObject reply = new JsonObject();
+      reply.putString("eek", "blurt");
+      message.reply(reply);
     } catch (Exception e) {
       e.printStackTrace();
     }

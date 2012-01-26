@@ -32,21 +32,21 @@ public class LocalClient extends EventBusAppBase {
   public void testPubSub() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    eb.send(new Message("some-address", buff));
+    eb.sendBinary(new Message("some-address", buff));
   }
 
   public void testPubSubMultipleHandlers() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    eb.send(new Message("some-address", buff));
+    eb.sendBinary(new Message("some-address", buff));
   }
 
   public void testNoBuffer() {
-    eb.send(new Message("some-address"));
+    eb.sendBinary(new Message("some-address"));
   }
 
   public void testNullBuffer() {
-    eb.send(new Message("some-address", null));
+    eb.sendBinary(new Message("some-address", null));
   }
 
   public void testPointToPoint() {
@@ -54,7 +54,7 @@ public class LocalClient extends EventBusAppBase {
     data.put("buffer", buff);
     Set<String> addresses = SharedData.getSet("addresses");
     for (String address: addresses) {
-      eb.send(new Message(address, buff));
+      eb.sendBinary(new Message(address, buff));
     }
   }
 
@@ -63,7 +63,7 @@ public class LocalClient extends EventBusAppBase {
     data.put("buffer", buff);
     Set<String> addresses = SharedData.getSet("addresses");
     for (final String address: addresses) {
-      eb.send(new Message(address, buff), new Handler<Message>() {
+      eb.sendBinary(new Message(address, buff), new Handler<Message>() {
         public void handle(Message reply) {
           tu.azzert(reply.address != null);
           tu.azzert(("reply" + address).equals(reply.body.toString()));
@@ -79,8 +79,9 @@ public class LocalClient extends EventBusAppBase {
     final AtomicInteger count = new AtomicInteger(0);
     final Buffer buff = TestUtils.generateRandomBuffer(1000);
     for (int i = 0; i < numHandlers; i++) {
-      eb.registerHandler(address, new Handler<Message>() {
+      eb.registerBinaryHandler(address, new Handler<Message>() {
         boolean handled;
+
         public void handle(Message msg) {
           tu.checkContext();
           tu.azzert(!handled);
@@ -88,7 +89,7 @@ public class LocalClient extends EventBusAppBase {
           tu.azzert(address.equals(msg.address));
           int c = count.incrementAndGet();
           tu.azzert(c <= numHandlers);
-          eb.unregisterHandler(address, this);
+          eb.unregisterBinaryHandler(address, this);
           if (c == numHandlers) {
             tu.testComplete();
           }
@@ -97,7 +98,7 @@ public class LocalClient extends EventBusAppBase {
       });
     }
 
-    eb.send(new Message(address, buff));
+    eb.sendBinary(new Message(address, buff));
   }
 
 

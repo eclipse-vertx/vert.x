@@ -10,6 +10,7 @@ import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -73,6 +74,7 @@ public class EventBus {
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
+  private final Map<Handler<JsonMessage>, Handler<Message>> jsonHandlerMap = new ConcurrentHashMap<>();
 
   /*
   Non clustered event bus
@@ -120,18 +122,37 @@ public class EventBus {
     }).listen(serverID.port, serverID.host);
   }
 
+  public void sendJson(String address, final JsonObject jsonObject, final Handler<JsonMessage> replyHandler) {
+    Message msg = new Message(address, Buffer.create(jsonObject.encode()));
+    Handler<Message> rHandler = replyHandler == null ? null : new Handler<Message>() {
+      public void handle(Message message) {
+        replyHandler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
+      }
+    };
+    sendBinary(msg, rHandler);
+  }
+
+  /**
+   * Send a Json message on the event bus
+   * @param address The address to be send it to
+   * @param jsonObject The message
+   */
+  public void sendJson(String address, JsonObject jsonObject) {
+    sendJson(address, jsonObject, null);
+  }
+
   /**
    * Send a message on the event bus
    * @param message The message
    * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
    */
-  public void send(final Message message, final Handler<Message> replyHandler) {
+  public void sendBinary(final Message message, final Handler<Message> replyHandler) {
     Long contextID = Vertx.instance.getContextID();
     try {
       message.sender = serverID;
       if (replyHandler != null) {
         message.replyAddress = UUID.randomUUID().toString();
-        registerHandler(message.replyAddress, replyHandler, null, true);
+        registerBinaryHandler(message.replyAddress, replyHandler, null, true);
       }
 
       // First check if sender is in response address cache - it will be if it's a response
@@ -178,8 +199,8 @@ public class EventBus {
    * Send a message on the event bus
    * @param message
    */
-  public void send(final Message message) {
-    send(message, null);
+  public void sendBinary(final Message message) {
+    sendBinary(message, null);
   }
 
   /**
@@ -190,19 +211,45 @@ public class EventBus {
    * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
-    registerHandler(address, handler, completionHandler, false);
+  public void registerBinaryHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
+    registerBinaryHandler(address, handler, completionHandler, false);
   }
 
   /**
    * Registers handler
    *
-   * The same as {@link #registerHandler(String, Handler, CompletionHandler)} with a null completionHandler
+   * The same as {@link #registerBinaryHandler(String, Handler, CompletionHandler)} with a null completionHandler
    */
-  public void registerHandler(String address, Handler<Message> handler) {
-    registerHandler(address, handler, null);
+  public void registerBinaryHandler(String address, Handler<Message> handler) {
+    registerBinaryHandler(address, handler, null);
   }
 
+  /**
+   * Register a handler for Json messages.
+   * @param address The address to register for. Any messages sent to that address will be
+   * received by the handler. A single handler can be registered against many addresses.
+   * @param handler The handler
+   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
+  public void registerJsonHandler(String address, final Handler<JsonMessage> handler, CompletionHandler<Void> completionHandler) {
+    Handler<Message> mHandler = new Handler<Message>() {
+      public void handle(Message message) {
+        handler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
+      }
+    };
+    registerBinaryHandler(address, mHandler, completionHandler, false);
+    jsonHandlerMap.put(handler, mHandler);
+  }
+
+  /**
+   * Registers handler
+   *
+   * The same as {@link #registerJsonHandler(String, Handler, CompletionHandler)} with a null completionHandler
+   */
+  public void registerJsonHandler(String address, final Handler<JsonMessage> handler) {
+    registerJsonHandler(address, handler, null);
+  }
 
   /**
    * Unregisters a handler
@@ -211,7 +258,7 @@ public class EventBus {
    * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public void unregisterHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
+  public void unregisterBinaryHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
       set.remove(new HandlerHolder(handler, false));
@@ -233,15 +280,38 @@ public class EventBus {
    * @param address The address the handler was registered to
    * @param handler The handler
    */
-  public void unregisterHandler(String address, Handler<Message> handler) {
-    unregisterHandler(address, handler, null);
+  public void unregisterBinaryHandler(String address, Handler<Message> handler) {
+    unregisterBinaryHandler(address, handler, null);
+  }
+
+  /**
+   * Unregisters a handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
+  public void unregisterJsonHandler(String address, Handler<JsonMessage> handler, CompletionHandler<Void> completionHandler) {
+    Handler<Message> mHandler = jsonHandlerMap.remove(handler);
+    if (mHandler != null) {
+      unregisterBinaryHandler(address, mHandler, completionHandler);
+    }
+  }
+
+  /**
+   * Unregisters a handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   */
+  public void unregisterJsonHandler(String address, Handler<JsonMessage> handler) {
+    unregisterJsonHandler(address, handler, null);
   }
 
   protected void close(Handler<Void> doneHandler) {
     server.close(doneHandler);
   }
 
-  private void registerHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler,
+  private void registerBinaryHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler,
                                boolean replyHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set == null) {
