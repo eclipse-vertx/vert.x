@@ -24,8 +24,7 @@ public class JavaJsonTest extends TestBase {
 
   @Test
   public void testJsonObject() throws Exception {
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "bar");
+    JsonObject obj = new JsonObject().putString("foo", "bar");
     String str = obj.encode();
     JsonObject obj2 = new JsonObject(str);
     assertEquals("bar", obj2.getString("foo"));

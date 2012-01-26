@@ -26,8 +26,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testWorker() throws Exception {
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "wibble");
+    JsonObject obj = new JsonObject().putString("foo", "wibble");
     eb.sendJson("testWorker", obj, new Handler<JsonMessage>() {
       public void handle(JsonMessage message) {
         tu.azzert(message.jsonObject.getString("eek").equals("blurt"));

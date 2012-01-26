@@ -50,9 +50,7 @@ public abstract class BusModBase {
 
   protected void sendError(JsonMessage message, String error, Exception e) {
     log.error(error, e);
-    JsonObject json = new JsonObject();
-    json.putString("status", "error");
-    json.putString("message", error);
+    JsonObject json = new JsonObject().putString("status", "error").putString("message", error);
     message.reply(json);
   }
 

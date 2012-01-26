@@ -73,8 +73,7 @@ public class TestWorker implements VertxApp, Handler<JsonMessage> {
       // Simulate some processing time - ok to sleep here since this is a worker application
       Thread.sleep(100);
 
-      JsonObject reply = new JsonObject();
-      reply.putString("eek", "blurt");
+      JsonObject reply = new JsonObject().putString("eek", "blurt");
       message.reply(reply);
     } catch (Exception e) {
       e.printStackTrace();
