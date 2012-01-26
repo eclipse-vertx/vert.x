@@ -71,12 +71,10 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
       }
 
       private void deliverMessage(String address, JsonMessage jsonMessage) {
-        JsonObject envelope = new JsonObject();
-        envelope.putString("address", address);
+        JsonObject envelope = new JsonObject().putString("address", address).putObject("body", jsonMessage.jsonObject);
         if (jsonMessage.replyAddress != null) {
           envelope.putString("replyAddress", jsonMessage.replyAddress);
         }
-        envelope.putObject("body", jsonMessage.jsonObject);
         sock.writeBuffer(Buffer.create(envelope.encode()));
       }
 

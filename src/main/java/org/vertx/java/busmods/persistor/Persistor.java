@@ -172,8 +172,7 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     DBObject obj = jsonToDBObject(matcher);
     WriteResult res = coll.remove(obj);
     int deleted = res.getN();
-    JsonObject reply = new JsonObject();
-    reply.putNumber("number", deleted);
+    JsonObject reply = new JsonObject().putNumber("number", deleted);
     sendOK(message, reply);
   }
 

@@ -91,12 +91,8 @@ public class AuthManager extends BusModBase implements VertxApp  {
       return;
     }
 
-    JsonObject findMsg = new JsonObject();
-    findMsg.putString("action", "findone");
-    findMsg.putString("collection", userCollection);
-    JsonObject matcher = new JsonObject();
-    matcher.putString("username", username);
-    matcher.putString("password", password);
+    JsonObject findMsg = new JsonObject().putString("action", "findone").putString("collection", userCollection);
+    JsonObject matcher = new JsonObject().putString("username", username).putString("password", password);
     findMsg.putObject("matcher", matcher);
 
     eb.sendJson(persistorAddress, findMsg, new Handler<JsonMessage>() {
@@ -121,8 +117,7 @@ public class AuthManager extends BusModBase implements VertxApp  {
             });
             sessions.put(sessionID, username);
             logins.put(username, new LoginInfo(timerID, sessionID));
-            JsonObject jsonReply = new JsonObject();
-            jsonReply.putString("sessionID", sessionID);
+            JsonObject jsonReply = new JsonObject().putString("sessionID", sessionID);
             sendOK(message, jsonReply);
           } else {
             // Not found
@@ -165,8 +160,7 @@ public class AuthManager extends BusModBase implements VertxApp  {
     }
     String username = sessions.get(sessionID);
     if (username != null) {
-      JsonObject reply = new JsonObject();
-      reply.putString("username", username);
+      JsonObject reply = new JsonObject().putString("username", username);
       sendOK(message, reply);
     } else {
       sendStatus("denied", message);

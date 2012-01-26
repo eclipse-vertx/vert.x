@@ -44,68 +44,57 @@ public class TestClient extends TestClientBase {
   }
 
   public void testSendWithSingleRecipient() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    jsonObject.putString("to", rec);
+    JsonObject jsonObject = new JsonObject().putString("to", rec);
     send(jsonObject, null);
   }
 
   public void testSendWithRecipientList() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
     JsonArray recipients = new JsonArray(new String[] { rec, rec, rec });
-    jsonObject.putArray("to", recipients);
+    JsonObject jsonObject = new JsonObject().putArray("to", recipients);
     send(jsonObject, null);
   }
 
   public void testSendWithSingleCC() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    jsonObject.putString("to", rec);
-    jsonObject.putString("cc", rec);
+    JsonObject jsonObject = new JsonObject().putString("to", rec).putString("cc", rec);
     send(jsonObject, null);
   }
 
   public void testSendWithCCList() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
     JsonArray recipients = new JsonArray(new String[] { rec, rec, rec });
-    jsonObject.putArray("cc", recipients);
+    JsonObject jsonObject = new JsonObject().putArray("cc", recipients);
     send(jsonObject, null);
   }
 
   public void testSendWithSingleBCC() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
-    jsonObject.putString("to", rec);
-    jsonObject.putString("bcc", rec);
+    JsonObject jsonObject = new JsonObject().putString("to", rec).putString("bcc", rec);
     send(jsonObject, null);
   }
 
   public void testSendWithBCCList() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     String rec = System.getProperty("user.name") + "@localhost";
     JsonArray recipients = new JsonArray(new String[] { rec, rec, rec });
-    jsonObject.putArray("bcc", recipients);
+    JsonObject jsonObject = new JsonObject().putArray("bcc", recipients);
     send(jsonObject, null);
   }
 
   public void testInvalidSingleFrom() throws Exception {
-    JsonObject jsonObject = new JsonObject();
-    jsonObject.putString("from", "wqdqwd qwdqwd qwdqwd ");
+    JsonObject jsonObject = new JsonObject().putString("from", "wqdqwd qwdqwd qwdqwd ");
     send(jsonObject, "Invalid from");
   }
 
   public void testInvalidSingleRecipient() throws Exception {
-    JsonObject jsonObject = new JsonObject();
-    jsonObject.putString("to", "wqdqwd qwdqwd qwdqwd ");
+    JsonObject jsonObject = new JsonObject().putString("to", "wqdqwd qwdqwd qwdqwd ");
     send(jsonObject, "Invalid to");
   }
 
   public void testInvalidRecipientList() throws Exception {
-    JsonObject jsonObject = new JsonObject();
     JsonArray recipients = new JsonArray(new String[] { "tim@localhost", "qwdqwd qwdqw d", "qwdkiwqdqwd d" });
-    jsonObject.putArray("to", recipients);
+    JsonObject jsonObject = new JsonObject().putArray("to", recipients);
     send(jsonObject, "Invalid to");
   }
 
@@ -130,15 +119,9 @@ public class TestClient extends TestClientBase {
 
   private JsonObject createBaseMessage() {
     String user = System.getProperty("user.name");
-    JsonObject jsonObject = new JsonObject();
-    jsonObject.putString("from", user + "@localhost");
-    jsonObject.putString("to", user + "@localhost");
-    jsonObject.putString("subject", "This is a test");
-    jsonObject.putString("body", "This is the body\nof the mail");
+    JsonObject jsonObject = new JsonObject().putString("from", user + "@localhost").putString("to", user + "@localhost")
+        .putString("subject", "This is a test").putString("body", "This is the body\nof the mail");
     return jsonObject;
   }
-
-
-
 
 }

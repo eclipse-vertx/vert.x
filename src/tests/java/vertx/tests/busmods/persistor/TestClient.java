@@ -31,10 +31,8 @@ public class TestClient extends TestClientBase {
   public void testPersistor() throws Exception {
 
     //First delete everything
-    JsonObject json = new JsonObject();
-    json.putString("collection", "testcoll");
-    json.putString("action", "delete");
-    json.putObject("matcher", new JsonObject());
+    JsonObject json = new JsonObject().putString("collection", "testcoll")
+                                      .putString("action", "delete").putObject("matcher", new JsonObject());
 
     eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
       public void handle(JsonMessage reply) {
@@ -44,16 +42,8 @@ public class TestClient extends TestClientBase {
 
     final int numDocs = 1;
     for (int i = 0; i < numDocs; i++) {
-      JsonObject doc = new JsonObject();
-      doc.putString("name", "joe bloggs");
-      doc.putNumber("age", 40);
-      doc.putString("cat-name", "watt");
-
-      json = new JsonObject();
-      json.putString("collection", "testcoll");
-      json.putString("action", "save");
-      json.putObject("document", doc);
-
+      JsonObject doc = new JsonObject().putString("name", "joe bloggs").putNumber("age", 40).putString("cat-name", "watt");
+      json = new JsonObject().putString("collection", "testcoll").putString("action", "save").putObject("document", doc);
       eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
         public void handle(JsonMessage reply) {
           tu.azzert("ok".equals(reply.jsonObject.getString("status")));
@@ -61,13 +51,9 @@ public class TestClient extends TestClientBase {
       });
     }
 
-    JsonObject matcher = new JsonObject();
-    matcher.putString("name", "joe bloggs");
+    JsonObject matcher = new JsonObject().putString("name", "joe bloggs");
 
-    json = new JsonObject();
-    json.putString("collection", "testcoll");
-    json.putString("action", "find");
-    json.putObject("matcher", matcher);
+    json = new JsonObject().putString("collection", "testcoll").putString("action", "find").putObject("matcher", matcher);
 
     eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
       public void handle(JsonMessage reply) {

@@ -112,10 +112,8 @@ public class WorkQueue extends BusModBase implements VertxApp  {
 
   private void doSend(final JsonMessage message) {
     if (persistorAddress != null) {
-      JsonObject msg = new JsonObject();
-      msg.putString("action", "save");
-      msg.putString("collection", collection);
-      msg.putObject("document", message.jsonObject);
+      JsonObject msg = new JsonObject().putString("action", "save").putString("collection", collection)
+                                       .putObject("document", message.jsonObject);
       eb.sendJson(persistorAddress, msg, new Handler<JsonMessage>() {
         public void handle(JsonMessage reply) {
           if (reply.jsonObject.getString("status").equals("ok")) {

@@ -41,8 +41,7 @@ public class TestClient extends TestClientBase {
     });
 
     for (int i = 0; i < numMessages; i++) {
-      JsonObject obj = new JsonObject();
-      obj.putString("blah", "wibble" + i);
+      JsonObject obj = new JsonObject().putString("blah", "wibble" + i);
       eb.sendJson("orderQueue", obj);
     }
   }

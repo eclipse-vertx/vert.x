@@ -23,8 +23,7 @@ public class OrderProcessor implements VertxApp, Handler<JsonMessage> {
   @Override
   public void start() throws Exception {
     eb.registerJsonHandler(address, this);
-    JsonObject msg = new JsonObject();
-    msg.putString("processor", address);
+    JsonObject msg = new JsonObject().putString("processor", address);
     eb.sendJson("orderQueue.register", msg);
     tu.appReady();
   }
@@ -33,8 +32,7 @@ public class OrderProcessor implements VertxApp, Handler<JsonMessage> {
   @Override
   public void stop() throws Exception {
 
-    JsonObject msg = new JsonObject();
-    msg.putString("processor", address);
+    JsonObject msg = new JsonObject().putString("processor", address);
     eb.sendJson("orderQueue.unregister", msg);
 
     eb.unregisterJsonHandler(address, this);
