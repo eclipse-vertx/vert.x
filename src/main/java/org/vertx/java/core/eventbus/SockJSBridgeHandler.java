@@ -30,18 +30,10 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
   private static final Logger log = Logger.getLogger(SockJSBridgeHandler.class);
 
   private final EventBus eb = EventBus.instance;
-  private List<Map<String, Object>> permitted = new ArrayList<>();
+  private List<JsonObject> permitted = new ArrayList<>();
 
-  public void addPermitted(Map<String, Object> permitted) {
+  public void addPermitted(JsonObject permitted) {
     this.permitted.add(permitted);
-  }
-
-  public void addPermitted(Map<String, Object>[] permittedArr) {
-    permitted.addAll(Arrays.asList(permittedArr));
-  }
-
-  public void addPermitted(List<Map<String, Object>> permittedList) {
-    permitted.addAll(permittedList);
   }
 
   public void handle(final SockJSSocket sock) {
@@ -153,15 +145,14 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
   this means that specifying one match with a JSON empty object means everything is accepted
    */
   private boolean checkMatches(String address, JsonObject message) {
-    for (Map<String, Object> matchHolder: permitted) {
-      String matchAddress = (String)matchHolder.get("address");
+    for (JsonObject matchHolder: permitted) {
+      String matchAddress = matchHolder.getString("address");
       if (matchAddress == null || matchAddress.equals(address)) {
         boolean matched = true;
-        Map<String, Object> match = (Map<String, Object>)matchHolder.get("match");
+        JsonObject match = matchHolder.getObject("match");
         if (match != null) {
-          for (Map.Entry<String, Object> matchEntry: match.entrySet()) {
-            Object obj = message.getField(matchEntry.getKey());
-            if (!matchEntry.getValue().equals(obj)) {
+          for (String fieldName: match.getFieldNames()) {
+            if (!match.getField(fieldName).equals(message.getField(fieldName))) {
               matched = false;
               break;
             }
