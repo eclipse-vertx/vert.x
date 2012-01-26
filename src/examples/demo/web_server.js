@@ -5,7 +5,7 @@ var server = new vertx.HttpServer();
 // Link up the client side to the server side event bus
 var sockJSServer = new vertx.SockJSServer(server);
 var handler = new vertx.SockJSBridgeHandler();
-handler.addMatches(
+handler.addPermitted(
   // Let through orders posted to the order manager
   {
     address : 'demo.orderMgr'

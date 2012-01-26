@@ -104,7 +104,6 @@ if (!vertx.EventBus) {
 
 vertx.SockJSBridgeHandler = function() {
   var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
-  var jsonHelper = new org.vertx.java.core.eventbus.JsonHelper();
   var server = new org.vertx.java.core.Handler({
     handle: function(sock) {
       jHandler.handle(sock);
@@ -114,7 +113,7 @@ vertx.SockJSBridgeHandler = function() {
     for (var i = 0; i < arguments.length; i++) {
       var match = arguments[i];
       var json_str = JSON.stringify(match);
-      var jJson = jsonHelper.stringToJson(json_str);
+      var jJson = new org.vertx.java.core.json.JsonObject(json_str);
       jHandler.addPermitted(jJson);
     }
   }
