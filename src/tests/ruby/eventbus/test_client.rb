@@ -7,19 +7,17 @@ require "test_utils"
 
 def test_event_bus
 
-  body = "hello world!"
+  json = {'message' => 'hello world!'}
   address = "some-address"
+  reply = {'cheese' => 'stilton!'}
 
   id = EventBus.register_handler(address) do |msg|
-    @tu.azzert body == msg.body.to_s
-    msg.reply
+    @tu.azzert(msg.json_object['message'] == json['message'])
+    msg.reply(reply)
   end
 
-  buff = Buffer.create_from_str(body)
-  msg = Message.new(address, buff)
-
-  EventBus.send(msg) do
-    # receipt handler
+  EventBus.send(address, json) do |msg|
+    @tu.azzert(msg.json_object['cheese'] == reply['cheese'])
     EventBus.unregister_handler(id)
     @tu.test_complete
   end
