@@ -24,19 +24,19 @@ public class RubyNetTest extends TestBase {
 
   @Test
   public void test_echo() throws Exception {
-    startApp(AppType.RUBY, "net/test_client.rb");
+    startApp(AppType.RUBY, "core/net/test_client.rb");
     startTest(getMethodName());
   }
 
   @Test
   public void test_echo_ssl() throws Exception {
-    startApp(AppType.RUBY, "net/test_client.rb");
+    startApp(AppType.RUBY, "core/net/test_client.rb");
     startTest(getMethodName());
   }
 
   @Test
   public void test_methods() throws Exception {
-    startApp(AppType.RUBY, "net/test_client.rb");
+    startApp(AppType.RUBY, "core/net/test_client.rb");
     startTest(getMethodName());
   }
 

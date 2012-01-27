@@ -23,9 +23,9 @@ public class RubyIsolationTest extends TestBase {
   public void test_isolation() throws Exception {
     int numInstances = 10;
     for (int i = 0; i < numInstances; i++) {
-      startApp(AppType.RUBY, "isolation/test_client.rb");
+      startApp(AppType.RUBY, "core/isolation/test_client.rb");
     }
-    startApp(AppType.RUBY, "isolation/test_client.rb", numInstances);
+    startApp(AppType.RUBY, "core/isolation/test_client.rb", numInstances);
     startTest(getMethodName(), false);
     for (int i = 0; i < numInstances * 2; i++) {
       waitTestComplete();

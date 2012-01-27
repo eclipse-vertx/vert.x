@@ -15,7 +15,7 @@ public class RubyFileSystemTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "filesystem/test_client.rb");
+    startApp(AppType.RUBY, "core/filesystem/test_client.rb");
   }
 
   @Override

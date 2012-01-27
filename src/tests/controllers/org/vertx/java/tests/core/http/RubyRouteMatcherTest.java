@@ -11,7 +11,7 @@ public class RubyRouteMatcherTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "routematcher/test_client.rb");
+    startApp(AppType.RUBY, "core/routematcher/test_client.rb");
   }
 
   @Override

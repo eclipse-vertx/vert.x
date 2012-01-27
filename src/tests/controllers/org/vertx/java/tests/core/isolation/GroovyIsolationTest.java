@@ -23,9 +23,9 @@ public class GroovyIsolationTest extends TestBase {
   public void testIsolation() throws Exception {
     int numInstances = 10;
     for (int i = 0; i < numInstances; i++) {
-      startApp(AppType.GROOVY, "isolation/testclient.groovy");
+      startApp(AppType.GROOVY, "core/isolation/testclient.groovy");
     }
-    startApp(AppType.GROOVY, "isolation/testclient.groovy", numInstances);
+    startApp(AppType.GROOVY, "core/isolation/testclient.groovy", numInstances);
     startTest(getMethodName(), false);
     for (int i = 0; i < numInstances * 2; i++) {
       waitTestComplete();

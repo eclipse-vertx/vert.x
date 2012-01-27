@@ -1,7 +1,7 @@
 require "vertx"
 include Vertx
 require "test_utils"
-require 'scriptloading/script1'
+require 'core/scriptloading/script1'
 
 @tu = TestUtils.new
 
