@@ -44,4 +44,8 @@ var TestUtils = function() {
     jutils.checkContext();
   }
 
+  that.generateRandomBuffer = function(size) {
+    return jutils.generateRandomBuffer(size);
+  }
+
 }
