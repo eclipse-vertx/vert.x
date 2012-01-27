@@ -3,8 +3,12 @@ package org.vertx.java.core.sockjs;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
+
+import java.util.UUID;
 
 /**
  *
@@ -18,16 +22,21 @@ import org.vertx.java.core.streams.WriteStream;
  */
 public abstract class SockJSSocket implements ReadStream, WriteStream {
 
-  public abstract void close();
-
-  public final long writeHandlerID;
+  public final String writeHandlerID;
+  public final Handler<Message<Buffer>> writeHandler;
 
   SockJSSocket() {
-    this.writeHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {
-      public void handle(Buffer buff) {
-        writeBuffer(buff);
+    this.writeHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> buff) {
+        writeBuffer(buff.body);
       }
-    });
+    };
+    this.writeHandlerID = UUID.randomUUID().toString();
+    EventBus.instance.registerBinaryHandler(writeHandlerID, writeHandler);
+  }
+
+  public void close() {
+    EventBus.instance.unregisterBinaryHandler(writeHandlerID, writeHandler);
   }
 
 }

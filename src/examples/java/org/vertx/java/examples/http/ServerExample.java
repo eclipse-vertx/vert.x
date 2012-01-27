@@ -34,7 +34,7 @@ public class ServerExample implements VertxApp {
           System.out.println(key + ":" + req.getHeader(key));
         }
         req.response.putHeader("Content-Type", "text/html; charset=UTF-8").
-                     end("<html><body><h1>Hello from vert.x!</h1></body></html>");
+                     end("<html><payload><h1>Hello from vert.x!</h1></payload></html>");
       }
     }).listen(8080);
   }

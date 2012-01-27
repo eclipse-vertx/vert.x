@@ -497,7 +497,7 @@ public class HttpClientRequest implements WriteStream {
 
     if (!raw && !chunked && written > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
+          + "payload BEFORE sending any data if you are not using HTTP chunked encoding. "
           + "Current written: " + written + " Current Content-Length: " + contentLength);
     }
 

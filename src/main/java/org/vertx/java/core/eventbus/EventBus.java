@@ -74,7 +74,7 @@ public class EventBus {
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
-  private final Map<Handler<JsonMessage>, Handler<Message>> jsonHandlerMap = new ConcurrentHashMap<>();
+  private final Map<Handler<JsonMessage>, Handler<Message<Buffer>>> jsonHandlerMap = new ConcurrentHashMap<>();
 
   /*
   Non clustered event bus
@@ -106,11 +106,8 @@ public class EventBus {
               size = buff.getInt(0);
               parser.fixedSizeMode(size);
             } else {
-              Sendable received = Sendable.read(buff);
-              if (received.type() == Sendable.TYPE_MESSAGE) {
-                Message msg = (Message)received;
-                receiveMessage(msg);
-              }
+              Message received = Message.read(buff);
+              receiveMessage(received);
               parser.fixedSizeMode(4);
               size = -1;
             }
@@ -123,13 +120,12 @@ public class EventBus {
   }
 
   public void sendJson(String address, final JsonObject jsonObject, final Handler<JsonMessage> replyHandler) {
-    Message msg = new Message(address, Buffer.create(jsonObject.encode()));
-    Handler<Message> rHandler = replyHandler == null ? null : new Handler<Message>() {
-      public void handle(Message message) {
+    Handler<Message<Buffer>> rHandler = replyHandler == null ? null : new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> message) {
         replyHandler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
       }
     };
-    sendBinary(msg, rHandler);
+    sendBinary(address, Buffer.create(jsonObject.encode()), rHandler);
   }
 
   /**
@@ -141,12 +137,21 @@ public class EventBus {
     sendJson(address, jsonObject, null);
   }
 
+
   /**
    * Send a message on the event bus
-   * @param message The message
+   * @param address The address to send the message to
+   * @param body body of the message
    * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
    */
-  public void sendBinary(final Message message, final Handler<Message> replyHandler) {
+  public <T> void sendBinary(String address, T body, final Handler<Message<T>> replyHandler) {
+    if (address == null) {
+      throw new IllegalArgumentException("address must be specified");
+    }
+    if (body == null) {
+      throw new IllegalArgumentException("body must be specified");
+    }
+    final Message message = createMessage(address, body);
     Long contextID = Vertx.instance.getContextID();
     try {
       message.sender = serverID;
@@ -156,11 +161,11 @@ public class EventBus {
       }
 
       // First check if sender is in response address cache - it will be if it's a response
-      ServerID serverID = replyAddressCache.remove(message.address);
-      if (serverID != null) {
+      ServerID theServerID = replyAddressCache.remove(message.address);
+      if (theServerID != null) {
         // Yes, it's a response to a particular server
-        if (!serverID.equals(this.serverID)) {
-          send(serverID, message);
+        if (!theServerID.equals(this.serverID)) {
+          sendRemote(theServerID, message);
         } else {
           receiveMessage(message);
         }
@@ -173,7 +178,7 @@ public class EventBus {
                 if (serverIDs != null) {
                   for (ServerID serverID : serverIDs) {
                     if (!serverID.equals(EventBus.this.serverID)) {  //We don't send to this node
-                      send(serverID, message);
+                      sendRemote(serverID, message);
                     }
                   }
                 }
@@ -197,10 +202,10 @@ public class EventBus {
 
   /**
    * Send a message on the event bus
-   * @param message
+   * @param body
    */
-  public void sendBinary(final Message message) {
-    sendBinary(message, null);
+  public <T> void sendBinary(String address, T body) {
+    sendBinary(address, body, null);
   }
 
   /**
@@ -211,7 +216,7 @@ public class EventBus {
    * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public void registerBinaryHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
+  public <T> void registerBinaryHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler) {
     registerBinaryHandler(address, handler, completionHandler, false);
   }
 
@@ -220,7 +225,7 @@ public class EventBus {
    *
    * The same as {@link #registerBinaryHandler(String, Handler, CompletionHandler)} with a null completionHandler
    */
-  public void registerBinaryHandler(String address, Handler<Message> handler) {
+  public <T> void registerBinaryHandler(String address, Handler<Message<T>> handler) {
     registerBinaryHandler(address, handler, null);
   }
 
@@ -233,8 +238,8 @@ public class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void registerJsonHandler(String address, final Handler<JsonMessage> handler, CompletionHandler<Void> completionHandler) {
-    Handler<Message> mHandler = new Handler<Message>() {
-      public void handle(Message message) {
+    Handler<Message<Buffer>> mHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> message) {
         handler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
       }
     };
@@ -258,7 +263,7 @@ public class EventBus {
    * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public void unregisterBinaryHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler) {
+  public <T> void unregisterBinaryHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
       set.remove(new HandlerHolder(handler, false));
@@ -280,7 +285,7 @@ public class EventBus {
    * @param address The address the handler was registered to
    * @param handler The handler
    */
-  public void unregisterBinaryHandler(String address, Handler<Message> handler) {
+  public <T> void unregisterBinaryHandler(String address, Handler<Message<T>> handler) {
     unregisterBinaryHandler(address, handler, null);
   }
 
@@ -292,7 +297,7 @@ public class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void unregisterJsonHandler(String address, Handler<JsonMessage> handler, CompletionHandler<Void> completionHandler) {
-    Handler<Message> mHandler = jsonHandlerMap.remove(handler);
+    Handler<Message<Buffer>> mHandler = jsonHandlerMap.remove(handler);
     if (mHandler != null) {
       unregisterBinaryHandler(address, mHandler, completionHandler);
     }
@@ -311,7 +316,7 @@ public class EventBus {
     server.close(doneHandler);
   }
 
-  private void registerBinaryHandler(String address, Handler<Message> handler, CompletionHandler<Void> completionHandler,
+  private <T> void registerBinaryHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler,
                                boolean replyHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set == null) {
@@ -352,7 +357,7 @@ public class EventBus {
     completionHandler.handle(f);
   }
 
-  private void send(final ServerID serverID, final Sendable sendable) {
+  private void sendRemote(final ServerID serverID, final Message message) {
     //We need to deal with the fact that connecting can take some time and is async, and we cannot
     //block to wait for it. So we add any sends to a pending list if not connected yet.
     //Once we connect we send them.
@@ -364,13 +369,13 @@ public class EventBus {
       if (prevHolder != null) {
         holder = prevHolder;
       }
-      holder.pending.add(sendable);
+      holder.pending.add(message);
       final ConnectionHolder fholder = holder;
       client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
         public void handle(NetSocket socket) {
           fholder.socket = socket;
-          for (Sendable sendable : fholder.pending) {
-            sendable.write(socket);
+          for (Message Message : fholder.pending) {
+            Message.write(socket);
           }
           fholder.connected = true;
         }
@@ -379,22 +384,22 @@ public class EventBus {
         public void handle(Exception e) {
           log.debug("Cluster connection failed. Removing it from map");
           connections.remove(serverID);
-          if (subs != null && sendable.type() == Sendable.TYPE_MESSAGE) {
-            removeSub(((Message)sendable).address, serverID, null);
+          if (subs != null) {
+            removeSub(message.address, serverID, null);
           }
         }
       });
     } else {
       if (holder.connected) {
-        sendable.write(holder.socket);
+        message.write(holder.socket);
       } else {
-        holder.pending.add(sendable);
+        holder.pending.add(message);
       }
     }
   }
 
   private void removeSub(String subName, ServerID serverID, final CompletionHandler<Void> completionHandler) {
-   subs.remove(subName, serverID, new CompletionHandler<Boolean>() {
+    subs.remove(subName, serverID, new CompletionHandler<Boolean>() {
       public void handle(Future<Boolean> event) {
         if (completionHandler != null) {
           SimpleFuture<Void> f = new SimpleFuture<>();
@@ -450,12 +455,40 @@ public class EventBus {
     }
   }
 
-  private class HandlerHolder {
+  private <T> Message createMessage(String address, T payload) {
+    Message msg;
+    if (payload instanceof String) {
+      msg = new StringMessage(address, (String)payload);
+    } else if (payload instanceof Buffer) {
+      msg =  new BufferMessage(address, (Buffer)payload);
+    } else if (payload instanceof Boolean) {
+      msg =  new BooleanMessage(address, (Boolean)payload);
+    } else if (payload instanceof byte[]) {
+      msg =  new ByteArrayMessage(address, (byte[])payload);
+    } else if (payload instanceof Character) {
+      msg = new CharacterMessage(address, (Character)payload);
+    } else if (payload instanceof Double) {
+      msg = new DoubleMessage(address, (Double)payload);
+    } else if (payload instanceof Float) {
+      msg = new FloatMessage(address, (Float)payload);
+    } else if (payload instanceof Integer) {
+      msg = new IntMessage(address, (Integer)payload);
+    } else if (payload instanceof Long) {
+      msg = new LongMessage(address, (Long)payload);
+    } else if (payload instanceof Short) {
+      msg = new ShortMessage(address, (Short)payload);
+    } else {
+      throw new IllegalArgumentException("Invalid type to send as message: " + payload.getClass());
+    }
+    return msg;
+  }
+
+  private class HandlerHolder<T> {
     final long contextID;
-    final Handler<Message> handler;
+    final Handler<Message<T>> handler;
     final boolean replyHandler;
 
-    private HandlerHolder(Handler<Message> handler, boolean replyHandler) {
+    private HandlerHolder(Handler<Message<T>> handler, boolean replyHandler) {
       this.contextID = Vertx.instance.getContextID();
       this.handler = handler;
       this.replyHandler = replyHandler;
@@ -477,7 +510,7 @@ public class EventBus {
   private static class ConnectionHolder {
     final NetClient client;
     NetSocket socket;
-    final List<Sendable> pending = new ArrayList<>();
+    final List<Message> pending = new ArrayList<>();
     boolean connected;
 
     private ConnectionHolder(NetClient client) {

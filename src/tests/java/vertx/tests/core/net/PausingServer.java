@@ -21,8 +21,8 @@ public class PausingServer extends BaseServer {
       public void handle(final NetSocket sock) {
         tu.checkContext();
         sock.pause();
-        final Handler<Message> resumeHandler = new Handler<Message>() {
-          public void handle(Message message) {
+        final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
+          public void handle(Message<Buffer> message) {
             tu.checkContext();
             sock.resume();
           }

@@ -46,7 +46,7 @@ public class ProxyServer implements VertxApp {
             req.response.setChunked(true);
             cRes.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
-                System.out.println("Proxying response body:" + data);
+                System.out.println("Proxying response payload:" + data);
                 req.response.write(data);
               }
             });
@@ -61,7 +61,7 @@ public class ProxyServer implements VertxApp {
         cReq.setChunked(true);
         req.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            System.out.println("Proxying request body:" + data);
+            System.out.println("Proxying request payload:" + data);
             cReq.write(data);
           }
         });

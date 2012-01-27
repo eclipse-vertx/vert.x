@@ -22,7 +22,7 @@ class HtmlFileTransport extends BaseTransport {
     "<html><head>\n" +
     "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
     "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-    "</head><body><h2>Don't panic!</h2>\n" +
+    "</head><payload><h2>Don't panic!</h2>\n" +
     "  <script>\n" +
     "    document.domain = document.domain;\n" +
     "    var c = parent.{{ callback }};\n" +

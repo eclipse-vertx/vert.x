@@ -54,20 +54,20 @@ public interface Vertx {
    * registerHandler} method.
    * @return the unique ID of the handler. This is required when calling {@link #sendToHandler}.
    */
-  <T> long registerHandler(Handler<T> handler);
+ // <T> long registerHandler(Handler<T> handler);
 
   /**
    * Unregister the handler with the specified {@code handlerID}. This must be called from the same event loop that
    * registered the handler.
    * @return true if the handler was successfully unregistered, otherwise false if the handler cannot be found.
    */
-  boolean unregisterHandler(long handlerID);
+//  boolean unregisterHandler(long handlerID);
 
   /**
    * Send a message to the handler with the specified {@code actorID}. This can be called from any event loop.
    * @return true of the message was successfully sent, or false if no such handler exists.
    */
-  <T> boolean sendToHandler(long actorID, T message);
+ // <T> boolean sendToHandler(long actorID, T message);
 
   /**
    * Returns the context ID for the current event loop. The context ID uniquely identifies the event loop.

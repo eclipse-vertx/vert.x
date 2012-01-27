@@ -14,17 +14,17 @@ public class UnregisteringServer implements VertxApp {
   protected TestUtils tu = new TestUtils();
   public void start() {
 
-    long id = Vertx.instance.registerHandler(new Handler<String>() {
-      public void handle(String message) {
-        tu.checkContext();
-        tu.azzert(false, "Should not receive message");
-      }
-    });
-
-    SharedData.getSet("handlerids").add(id);
-
-    //And immediately unregister it
-    Vertx.instance.unregisterHandler(id);
+//    long id = Vertx.instance.registerHandler(new Handler<String>() {
+//      public void handle(String message) {
+//        tu.checkContext();
+//        tu.azzert(false, "Should not receive message");
+//      }
+//    });
+//
+//    SharedData.getSet("handlerids").add(id);
+//
+//    //And immediately unregister it
+//    Vertx.instance.unregisterHandler(id);
 
     tu.appReady();
   }

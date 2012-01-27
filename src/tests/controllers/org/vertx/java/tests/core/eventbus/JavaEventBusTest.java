@@ -63,16 +63,6 @@ public class JavaEventBusTest extends TestBase {
   }
 
   @Test
-  public void testNoBuffer() throws Exception {
-    runPeerTest(getMethodName());
-  }
-
-  @Test
-  public void testNullBuffer() throws Exception {
-    runPeerTest(getMethodName());
-  }
-
-  @Test
   public void testPointToPoint() {
     runPeerTest(getMethodName());
   }
@@ -84,6 +74,16 @@ public class JavaEventBusTest extends TestBase {
 
   @Test
   public void testLocal() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testStringMessage() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testLongMessage() {
     startTest(getMethodName());
   }
 

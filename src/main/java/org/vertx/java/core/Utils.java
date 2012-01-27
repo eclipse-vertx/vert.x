@@ -34,8 +34,7 @@ public class Utils {
         obj instanceof Float ||
         obj instanceof Short ||
         obj instanceof Byte ||
-        obj instanceof Character ||
-        obj instanceof BigDecimal) {
+        obj instanceof Character) {
       return obj;
     } else if (obj instanceof byte[]) {
       //Copy it

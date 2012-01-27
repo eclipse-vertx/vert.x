@@ -25,7 +25,7 @@ public class PausingServer implements VertxApp {
         tu.checkContext();
         req.response.setChunked(true);
         req.pause();
-        final Handler<Message> resumeHandler = new Handler<Message>() {
+        final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
           public void handle(Message message) {
             tu.checkContext();
             req.resume();

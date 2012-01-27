@@ -5,6 +5,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
@@ -281,10 +282,10 @@ public class SockJSServer {
           "  </script>\n" +
           "  <script src=\"{{ sockjs_url }}\"></script>\n" +
           "</head>\n" +
-          "<body>\n" +
+          "<payload>\n" +
           "  <h2>Don't panic!</h2>\n" +
           "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
-          "</body>\n" +
+          "</payload>\n" +
           "</html>";
 
   // For debug only
@@ -366,13 +367,13 @@ public class SockJSServer {
       }
     });
     installApp(new AppConfig().setPrefix("/broadcast"), new Handler<SockJSSocket>() {
-      final Set<Long> connections = SharedData.getSet("conns");
+      final Set<String> connections = SharedData.getSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID);
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            for (Long actorID : connections) {
-              Vertx.instance.sendToHandler(actorID, buffer);
+            for (String actorID : connections) {
+              EventBus.instance.sendBinary(actorID, buffer);
             }
           }
         });

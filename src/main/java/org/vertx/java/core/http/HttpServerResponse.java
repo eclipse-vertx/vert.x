@@ -407,7 +407,7 @@ public class HttpServerResponse implements WriteStream {
 
   private void sendNotFound() {
     statusCode = HttpResponseStatus.NOT_FOUND.getCode();
-    end("<html><body>Resource not found</body><html>");
+    end("<html><payload>Resource not found</payload><html>");
   }
 
   void handleDrained() {
@@ -473,7 +473,7 @@ public class HttpServerResponse implements WriteStream {
     writtenBytes += chunk.readableBytes();
     if (!chunked && writtenBytes > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
+          + "payload BEFORE sending any data if you are not using HTTP chunked encoding. "
           + "Current written: " + written + " Current Content-Length: " + contentLength);
     }
 

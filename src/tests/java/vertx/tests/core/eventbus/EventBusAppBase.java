@@ -34,6 +34,7 @@ public abstract class EventBusAppBase extends TestClientBase {
   @Override
   public void start() {
     super.start();
+
     data = SharedData.getMap("data");
 
     if (isLocal()) {

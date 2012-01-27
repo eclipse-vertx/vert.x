@@ -116,7 +116,7 @@
   }
 
   $(document).ready(function () {
-    new Alert($('body'), {
+    new Alert($('payload'), {
       selector: '.alert-message[data-alert] .close'
     })
   })

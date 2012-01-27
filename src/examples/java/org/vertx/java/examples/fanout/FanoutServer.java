@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
@@ -32,7 +33,7 @@ public class FanoutServer implements VertxApp {
   private NetServer server;
 
   public void start()  {
-    final Set<Long> connections = SharedData.getSet("conns");
+    final Set<String> connections = SharedData.getSet("conns");
 
     System.out.println("connections is " + System.identityHashCode(connections));
 
@@ -43,8 +44,8 @@ public class FanoutServer implements VertxApp {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             System.out.println("Fanning out to " + connections.size() + " connections");
-            for (Long actorID : connections) {
-              Vertx.instance.sendToHandler(actorID, buffer);
+            for (String actorID : connections) {
+              EventBus.instance.sendBinary(actorID, buffer);
             }
           }
         });

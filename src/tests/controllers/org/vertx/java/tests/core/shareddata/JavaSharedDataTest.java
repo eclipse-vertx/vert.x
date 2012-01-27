@@ -24,7 +24,6 @@ import org.vertx.java.core.shareddata.SharedCounter;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
-import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,7 +73,6 @@ public class JavaSharedDataTest extends TestCase {
     map.put(key, 123l);
     map.put(key, true);
     map.put(key, (char) 12);
-    map.put(key, new BigDecimal(32));
     map.put(key, new MyImmutable());
     Buffer buff = Buffer.create(0);
     map.put(key, buff);

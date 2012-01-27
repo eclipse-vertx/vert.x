@@ -120,7 +120,7 @@ public class TestClient extends TestClientBase {
   private JsonObject createBaseMessage() {
     String user = System.getProperty("user.name");
     JsonObject jsonObject = new JsonObject().putString("from", user + "@localhost").putString("to", user + "@localhost")
-        .putString("subject", "This is a test").putString("body", "This is the body\nof the mail");
+        .putString("subject", "This is a test").putString("payload", "This is the payload\nof the mail");
     return jsonObject;
   }
 
