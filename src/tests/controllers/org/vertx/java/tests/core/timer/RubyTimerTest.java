@@ -11,7 +11,7 @@ public class RubyTimerTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "timer/test_client.rb");
+    startApp(AppType.RUBY, "core/timer/test_client.rb");
   }
 
   @Override

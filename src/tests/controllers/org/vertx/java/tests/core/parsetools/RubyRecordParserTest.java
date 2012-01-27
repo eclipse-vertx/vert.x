@@ -11,7 +11,7 @@ public class RubyRecordParserTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "parsetools/test_client.rb");
+    startApp(AppType.RUBY, "core/parsetools/test_client.rb");
   }
 
   @Override

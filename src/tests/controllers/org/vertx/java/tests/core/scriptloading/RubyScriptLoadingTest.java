@@ -21,7 +21,7 @@ public class RubyScriptLoadingTest extends TestBase {
 
   @Test
   public void test_scriptloading() throws Exception {
-    startApp(AppType.RUBY, "scriptloading/test_client.rb");
+    startApp(AppType.RUBY, "core/scriptloading/test_client.rb");
     startTest(getMethodName());
   }
 

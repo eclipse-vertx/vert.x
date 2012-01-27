@@ -11,7 +11,7 @@ public class RubyHttpTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "http/test_client.rb");
+    startApp(AppType.RUBY, "core/http/test_client.rb");
   }
 
   @Override

@@ -11,7 +11,7 @@ public class RubyCompositionTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "composition/test_client.rb");
+    startApp(AppType.RUBY, "core/composition/test_client.rb");
   }
 
   @Override

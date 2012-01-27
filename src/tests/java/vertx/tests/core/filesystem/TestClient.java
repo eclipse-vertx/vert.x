@@ -852,7 +852,9 @@ public class TestClient extends TestClientBase {
                     tu.exception(e, "Failed to read file");
                     return;
                   }
-                  tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+                  Buffer read = Buffer.create(readBytes);
+                  System.out.println("buff.length: " + buff.length() + " read length: " + read.length());
+                  tu.azzert(TestUtils.buffersEqual(buff, read));
                   if (++count == chunks) {
                     tu.testComplete();
                   }

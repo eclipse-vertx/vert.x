@@ -11,7 +11,7 @@ public class RubyEventBusTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "eventbus/test_client.rb");
+    startApp(AppType.RUBY, "core/eventbus/test_client.rb");
   }
 
   @Override

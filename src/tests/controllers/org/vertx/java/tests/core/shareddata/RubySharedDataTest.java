@@ -11,7 +11,7 @@ public class RubySharedDataTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "shareddata/test_client.rb");
+    startApp(AppType.RUBY, "core/shareddata/test_client.rb");
   }
 
   @Override

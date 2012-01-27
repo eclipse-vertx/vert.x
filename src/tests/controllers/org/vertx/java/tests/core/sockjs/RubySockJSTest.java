@@ -11,7 +11,7 @@ public class RubySockJSTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "sockjs/test_client.rb");
+    startApp(AppType.RUBY, "core/sockjs/test_client.rb");
   }
 
   @Override

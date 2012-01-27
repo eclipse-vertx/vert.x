@@ -11,7 +11,7 @@ public class RubyBufferTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "buffer/test_client.rb");
+    startApp(AppType.RUBY, "core/buffer/test_client.rb");
   }
 
   @Override
