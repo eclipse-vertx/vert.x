@@ -1,5 +1,7 @@
 package org.vertx.java.core.json;
 
+import org.vertx.java.core.http.ws.Base64;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -11,7 +13,7 @@ import java.util.Map;
  */
 public class JsonArray implements Iterable<Object> {
 
-  List list = new ArrayList();
+  final List list;
 
   public JsonArray(List array) {
     this.list = array;
@@ -22,6 +24,7 @@ public class JsonArray implements Iterable<Object> {
   }
 
   public JsonArray() {
+    this.list = new ArrayList();
   }
 
   public JsonArray(String jsonString) {
@@ -30,6 +33,37 @@ public class JsonArray implements Iterable<Object> {
       } catch (Exception e) {
       throw new DecodeException("Failed to decode JSON array from string: " + jsonString);
     }
+  }
+
+  public JsonArray addString(String str) {
+    list.add(str);
+    return this;
+  }
+
+  public JsonArray addObject(JsonObject value) {
+    list.add(value.map);
+    return this;
+  }
+
+  public JsonArray addArray(JsonArray value) {
+    list.add(value.list);
+    return this;
+  }
+
+  public JsonArray addNumber(Number value) {
+    list.add(value);
+    return this;
+  }
+
+  public JsonArray addBoolean(Boolean value) {
+    list.add(value);
+    return this;
+  }
+
+  public JsonArray addBinary(byte[] value) {
+    String encoded = Base64.encodeBytes(value);
+    list.add(encoded);
+    return this;
   }
 
   public JsonArray add(Object obj) {
