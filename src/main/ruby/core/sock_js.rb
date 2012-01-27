@@ -14,9 +14,6 @@
 
 require 'core/streams'
 require 'core/ssl_support'
-require 'rubygems'
-require 'json'
-
 module Vertx
 
   # This is an implementation of the server side part of {"https://github.com/sockjs"}

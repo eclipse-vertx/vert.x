@@ -12,17 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'rubygems'
+require 'json'
+
 module Vertx
 
   # This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
   # It is very useful for otherwise isolated vert.x application instances to communicate with each other.
   #
-  # Messages sent over the event bus are represented by instances of the {Message} class.
+  # Messages sent over the event bus are json objects represented as Ruby Hash instances.
   #
   # The event bus implements a distributed publish / subscribe network.
   #
   # Messages are sent to an address which is simply an arbitrary String.
-  # There can be multiple handlers can be registered against that address.
+  # There can be multiple handlers registered against that address.
   # Any handlers with a matching name will receive the message irrespective of what vert.x application instance and
   # what vert.x instance they are located in.
   #
@@ -36,21 +39,26 @@ module Vertx
   # When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
   # has been received.
   #
+  # When receiving a message in a handler the received object is an instance of EventBus::Message - this contains
+  # the actual Hash of the message plus a reply method which can be used to reply to it.
+  #
   # @author {http://tfox.org Tim Fox}
   class EventBus
 
-    @@handler_map = java.util.concurrent.ConcurrentHashMap.new
-    @@handler_seq = java.util.concurrent.atomic.AtomicLong.new(0)
+    # These could actually be normal map/counters since no concurrency here
+    @@handler_map = {}
+    @@handler_seq = 0
 
     # Send a message on the event bus
-    # @param message [Message] The message to send
+    # @param message [Hash] The message to send
     # @param reply_handler [Block] replyHandler An optional reply handler.
     # It will be called when the reply from a receiver is received.
-    def EventBus.send(message, &reply_handler)
+    def EventBus.send(address, message, &reply_handler)
+      json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
       if reply_handler != nil
-        org.vertx.java.core.eventbus.EventBus.instance.sendBinary(message._to_java_message, reply_handler)
+        org.vertx.java.core.eventbus.EventBus.instance.sendJson(address, json_obj, InternalHandler.new(nil, reply_handler))
       else
-        org.vertx.java.core.eventbus.EventBus.instance.sendBinary(message._to_java_message)
+        org.vertx.java.core.eventbus.EventBus.instance.sendJson(address, json_obj)
       end
     end
 
@@ -61,18 +69,19 @@ module Vertx
     # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
     def EventBus.register_handler(address, &message_hndlr)
       internal = InternalHandler.new(address, message_hndlr)
-      org.vertx.java.core.eventbus.EventBus.instance.registerBinaryHandler(address, internal)
-      id = @@handler_seq.incrementAndGet
-      @@handler_map.put(id, internal)
+      org.vertx.java.core.eventbus.EventBus.instance.registerJsonHandler(address, internal)
+      id = @@handler_seq
+      @@handler_seq += 1
+      @@handler_map[id] = internal
       id
     end
 
     # Unregisters a handler
     # @param handler_id [FixNum] The id of the handler to unregister. Returned from {EventBus.register_handler}
     def EventBus.unregister_handler(handler_id)
-      handler = @@handler_map.remove(handler_id)
+      handler = @@handler_map.delete(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.core.eventbus.EventBus.instance.unregisterBinaryHandler(handler.address, handler)
+      org.vertx.java.core.eventbus.EventBus.instance.unregisterJsonHandler(handler.address, handler)
     end
 
     # @private
@@ -86,35 +95,23 @@ module Vertx
         @hndlr = hndlr
       end
 
-      def handle(j_msg)
-        @hndlr.call(Message.create_from_j_msg(j_msg))
+      def handle(json_message)
+        @hndlr.call(Message.new(json_message))
       end
     end
 
   end
 
-  # Represents a message sent on the event bus
+  # Represents a message received from the event bus
   # @author {http://tfox.org Tim Fox}
   class Message
 
-    # @return [String] the address of the message
-    attr_accessor :address
+    attr_reader :json_object
 
-    # @return [Buffer] the body of the message
-    attr_accessor :body
-
-    #@private
-    attr_accessor :j_del
-
-    # Create a message
-    # @param address [String] The address to send the message to
-    # @param body [Buffer] Buffer representing body of message
-    def initialize(address, body)
-      raise "address parameter must be a String" if !address.is_a? String
-      raise "body parameter must be a Buffer" if !body.is_a? Buffer
-      @address = address
-      @body = body
-      @j_del = nil
+    # @private
+    def initialize(json_msg)
+      @j_del = json_msg
+      @json_object = JSON.parse(json_msg.jsonObject.encode)
     end
 
     # Reply to this message. If the message was sent specifying a receipt handler, that handler will be
@@ -122,21 +119,14 @@ module Vertx
     # this method does nothing.
     # Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
     # of the original message.
-    # @param [Buffer] Buffer representing body of the reply
-    def reply(buff = nil)
-      @j_del.reply if @j_del
-    end
-
-    # @private
-    def Message.create_from_j_msg(j_msg)
-      msg = Message.new(j_msg.address, Buffer.new(j_msg.body))
-      msg.j_del = j_msg
-      msg
-    end
-
-    # @private
-    def _to_java_message
-      org.vertx.java.core.eventbus.Message.new(@address, @body._to_java_buffer)
+    # @param [Hash] Message send as reply
+    def reply(reply = nil)
+      if reply
+        json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(reply))
+        @j_del.reply(json_obj)
+      else
+        @j_del.reply
+      end
     end
 
   end
@@ -153,7 +143,6 @@ module Vertx
   class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
     def initialize
       super
-      @json_helper = org.vertx.java.core.eventbus.JsonHelper.new
     end
 
     # Call this handler - pretend to be a Proc
@@ -165,7 +154,7 @@ module Vertx
     def add_permitted(*permitted)
       permitted.each do |match|
         json_str = JSON.generate(match);
-        j_json = @json_helper.stringToJson(json_str);
+        j_json = new org.vertx.java.core.json.JsonObject(json_str);
         addPermitted(j_json);
       end
     end
