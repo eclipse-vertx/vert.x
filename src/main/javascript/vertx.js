@@ -7,6 +7,7 @@ load('core/timers.js');
 load('core/utils.js');
 load('core/sockjs.js');
 load('core/parse_tools.js');
+load('core/shared_data.js');
 
 load('busmods/work_queue.js');
 load('busmods/mailer.js');

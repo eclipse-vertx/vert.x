@@ -83,7 +83,6 @@ if (!vertx.EventBus) {
       }
       var bodyStr = JSON.stringify(message);
       var body = org.vertx.java.core.buffer.Buffer.create(bodyStr);
-      var java_msg = new org.vertx.java.core.eventbus.Message(address, body);
       if (replyHandler) {
         var hndlr = new org.vertx.java.core.Handler({
           handle: function(jMessage) {
@@ -92,11 +91,10 @@ if (!vertx.EventBus) {
             replyHandler(json);
           }
         });
-        jEventBus.sendBinary(java_msg, hndlr);
+        jEventBus.sendBinary(address, body, hndlr);
       } else {
-        jEventBus.sendBinary(java_msg);
+        jEventBus.sendBinary(address, body);
       }
-      message.messageID = '' + java_msg.messageID;
     };
 
   })();

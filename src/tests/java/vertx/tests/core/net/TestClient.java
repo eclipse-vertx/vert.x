@@ -483,7 +483,7 @@ public class TestClient extends TestClientBase {
               });
 
               // Tell the server to resume
-              EventBus.instance.sendBinary(new Message("server_resume"));
+              EventBus.instance.sendBinary("server_resume", "");
             }
           }
         });
@@ -759,8 +759,8 @@ public class TestClient extends TestClientBase {
   }
 
   void setHandlers(final NetSocket sock) {
-    final Handler<Message> resumeHandler = new Handler<Message>() {
-      public void handle(Message message) {
+    final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> message) {
         tu.checkContext();
         sock.resume();
       }

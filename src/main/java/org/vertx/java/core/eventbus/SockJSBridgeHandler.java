@@ -70,7 +70,7 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
       }
 
       private void deliverMessage(String address, JsonMessage jsonMessage) {
-        JsonObject envelope = new JsonObject().putString("address", address).putObject("body", jsonMessage.jsonObject);
+        JsonObject envelope = new JsonObject().putString("address", address).putObject("payload", jsonMessage.jsonObject);
         if (jsonMessage.replyAddress != null) {
           envelope.putString("replyAddress", jsonMessage.replyAddress);
         }
@@ -119,7 +119,7 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         String address = getMandatoryString(msg, "address");
         switch (type) {
           case "send":
-            JsonObject body = getMandatoryObject(msg, "body");
+            JsonObject body = getMandatoryObject(msg, "payload");
             String replyAddress = msg.getString("replyAddress");
             handleSend(address, body, replyAddress);
             break;

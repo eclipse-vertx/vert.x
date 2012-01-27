@@ -25,11 +25,14 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.UUID;
 
 /**
  * <p>Represents the interface to a TCP or SSL connection on either the client or the server side.</p>
@@ -42,23 +45,27 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
+  private Handler<Message<Buffer>> writeHandler;
 
   /**
-   * When a {@code NetSocket} is created it automatically registers an event handler with the system, the ID of that
+   * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
    * handler is given by {@code writeHandlerID}.<p>
-   * Given this ID, a different event loop can send a buffer to that event handler using {@link org.vertx.java.core.Vertx#sendToHandler} and
+   * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
    * allows you to write data to other connections which are owned by different event loops.
    */
-  public final long writeHandlerID;
+  public final String writeHandlerID;
+
 
   NetSocket(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
-    writeHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {
-      public void handle(Buffer buff) {
-        writeBuffer(buff);
+    writeHandlerID = UUID.randomUUID().toString();
+    writeHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> msg) {
+        writeBuffer(msg.body);
       }
-    });
+    };
+    EventBus.instance.registerBinaryHandler(writeHandlerID, writeHandler);
   }
 
   /**
@@ -188,7 +195,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
       }
     }
     super.handleClosed();
-    Vertx.instance.unregisterHandler(writeHandlerID);
+    EventBus.instance.unregisterBinaryHandler(writeHandlerID, writeHandler);
   }
 
   protected void handleException(Exception e) {

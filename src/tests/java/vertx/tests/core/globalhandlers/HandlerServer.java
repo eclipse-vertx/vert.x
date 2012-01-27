@@ -17,18 +17,18 @@ public class HandlerServer implements VertxApp {
   private long id;
 
   public void start() {
-    id = Vertx.instance.registerHandler(new Handler<String>() {
-      public void handle(String message) {
-        tu.checkContext();
-        tu.testComplete();
-      }
-    });
-    SharedData.getSet("handlerids").add(id);
-    tu.appReady();
+//    id = Vertx.instance.registerHandler(new Handler<String>() {
+//      public void handle(String message) {
+//        tu.checkContext();
+//        tu.testComplete();
+//      }
+//    });
+//    SharedData.getSet("handlerids").add(id);
+//    tu.appReady();
   }
 
   public void stop() {
-    Vertx.instance.unregisterHandler(id);
+   // Vertx.instance.unregisterHandler(id);
     tu.appStopped();
   }
 

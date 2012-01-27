@@ -28,7 +28,7 @@ server = new HttpServer().requestHandler { req ->
   final redisConn = pool.connection()
   if (req.uri.equals("/")) {
     redisConn.incr(key).handler({ future ->
-      def content = Buffer.create("<html><body><h1>Hit count is ${future.result()}</h1></body></html>")
+      def content = Buffer.create("<html><payload><h1>Hit count is ${future.result()}</h1></payload></html>")
       req.response["Content-Type"] = "text/html; charset=UTF-8"
       req.response["Content-Length"] = content.length().toString()
       req.response << content

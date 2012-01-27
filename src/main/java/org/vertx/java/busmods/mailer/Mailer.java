@@ -154,7 +154,7 @@ public class Mailer extends BusModBase implements VertxApp, Handler<JsonMessage>
     InternetAddress[] bcc = parseAddresses(message, "bcc", false);
 
     String subject = message.jsonObject.getString("subject");
-    String body = message.jsonObject.getString("body");
+    String body = message.jsonObject.getString("payload");
 
     javax.mail.Message msg = new MimeMessage(session);
 

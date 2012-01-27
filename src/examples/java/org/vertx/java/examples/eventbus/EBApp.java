@@ -18,6 +18,7 @@ package org.vertx.java.examples.eventbus;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 
@@ -25,8 +26,8 @@ public class EBApp implements VertxApp {
 
   public void start() {
 
-    EventBus.instance.registerBinaryHandler("test-sub", new Handler<Message>() {
-      public void handle(Message message) {
+    EventBus.instance.registerBinaryHandler("test-sub", new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> message) {
         System.out.println("Got message: " + message.body.toString());
       }
     });

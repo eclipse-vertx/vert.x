@@ -77,7 +77,7 @@ def http_server
           # We get a response back with the price and number of items in stock
             price = resp_props.headers["price"]
             stock = resp_props.headers["stock"]
-            content = "<html><body>Price is: #{price}<br>Stock is: #{stock}</body></html>"
+            content = "<html><payload>Price is: #{price}<br>Stock is: #{stock}</payload></html>"
             resp.write_str(content, "UTF-8").end
           }
         }

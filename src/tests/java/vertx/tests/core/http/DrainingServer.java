@@ -46,7 +46,7 @@ public class DrainingServer implements VertxApp {
               });
 
               // Tell the client to resume
-              EventBus.instance.sendBinary(new Message("client_resume"));
+              EventBus.instance.sendBinary("client_resume", "");
             }
           }
         });

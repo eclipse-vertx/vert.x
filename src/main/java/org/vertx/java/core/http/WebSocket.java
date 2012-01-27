@@ -19,10 +19,14 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
+
+import java.util.UUID;
 
 /**
  * <p>Encapsulation of an HTML 5 Websocket</p>
@@ -46,36 +50,43 @@ public class WebSocket implements ReadStream, WriteStream {
   private Handler<Void> closedHandler;
   private Handler<Void> endHandler;
 
-  /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the system, the ID of that
-   * handler is given by {@code binaryHandlerID}.<p>
-   * Given this ID, a different event loop can send a binary frame to that event handler using {@link org.vertx.java.core.Vertx#sendToHandler} and
-   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
-   */
-  public final long binaryHandlerID;
+  private Handler<Message<Buffer>> binaryHandler;
+  private Handler<Message<String>> textHandler;
 
   /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the system, the ID of that
-   * handler is given by {@code textHandlerID}.<p>
-   * Given this ID, a different event loop can send a text frame to that event handler using {@link org.vertx.java.core.Vertx#sendToHandler} and
+   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
+   * handler is given by {@code binaryHandlerID}.<p>
+   * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
    * allows you to write data to other websockets which are owned by different event loops.
    */
-  public final long textHandlerID;
+  public final String binaryHandlerID;
+
+  /**
+   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
+   * handler is given by {@code textHandlerID}.<p>
+   * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
+   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+   * allows you to write data to other websockets which are owned by different event loops.
+   */
+  public final String textHandlerID;
 
   WebSocket(AbstractConnection conn) {
     this.conn = conn;
-    binaryHandlerID = Vertx.instance.registerHandler(new Handler<Buffer>() {
-      public void handle(Buffer buff) {
-        writeBinaryFrame(buff);
+    binaryHandlerID = UUID.randomUUID().toString();
+    binaryHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> msg) {
+        writeBinaryFrame(msg.body);
       }
-    });
-    textHandlerID = Vertx.instance.registerHandler(new Handler<String>() {
-      public void handle(String str) {
-        writeTextFrame(str);
+    };
+    EventBus.instance.registerBinaryHandler(binaryHandlerID, binaryHandler);
+    textHandlerID = UUID.randomUUID().toString();
+    textHandler = new Handler<Message<String>>() {
+      public void handle(Message<String> msg) {
+        writeTextFrame(msg.body);
       }
-    });
+    };
+    EventBus.instance.registerBinaryHandler(textHandlerID, textHandler);
   }
 
   /**
@@ -189,6 +200,8 @@ public class WebSocket implements ReadStream, WriteStream {
    */
   public void close() {
     conn.close();
+    EventBus.instance.unregisterBinaryHandler(binaryHandlerID, binaryHandler);
+    EventBus.instance.unregisterBinaryHandler(textHandlerID, textHandler);
   }
 
   void handleFrame(WebSocketFrame frame) {
