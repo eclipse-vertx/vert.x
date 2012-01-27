@@ -54,6 +54,8 @@ module Vertx
     # @param reply_handler [Block] replyHandler An optional reply handler.
     # It will be called when the reply from a receiver is received.
     def EventBus.send(address, message, &reply_handler)
+      raise "An address must be specified" if !address
+      raise "A message must be specified" if !message
       json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
       if reply_handler != nil
         org.vertx.java.core.eventbus.EventBus.instance.sendJson(address, json_obj, InternalHandler.new(nil, reply_handler))
@@ -68,6 +70,8 @@ module Vertx
     # @param message_hndlr [Block] The handler
     # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
     def EventBus.register_handler(address, &message_hndlr)
+      raise "An address must be specified" if !address
+      raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(address, message_hndlr)
       org.vertx.java.core.eventbus.EventBus.instance.registerJsonHandler(address, internal)
       id = @@handler_seq
@@ -79,6 +83,7 @@ module Vertx
     # Unregisters a handler
     # @param handler_id [FixNum] The id of the handler to unregister. Returned from {EventBus.register_handler}
     def EventBus.unregister_handler(handler_id)
+      raise "A handler_id must be specified" if !handler_id
       handler = @@handler_map.delete(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
       org.vertx.java.core.eventbus.EventBus.instance.unregisterJsonHandler(handler.address, handler)
@@ -120,13 +125,10 @@ module Vertx
     # Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
     # of the original message.
     # @param [Hash] Message send as reply
-    def reply(reply = nil)
-      if reply
-        json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(reply))
-        @j_del.reply(json_obj)
-      else
-        @j_del.reply
-      end
+    def reply(reply)
+      raise "A reply message must be specified" if !reply
+      json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(reply))
+      @j_del.reply(json_obj)
     end
 
   end
