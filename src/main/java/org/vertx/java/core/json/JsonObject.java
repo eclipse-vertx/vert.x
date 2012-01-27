@@ -1,5 +1,7 @@
 package org.vertx.java.core.json;
 
+import org.vertx.java.core.http.ws.Base64;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,11 @@ public class JsonObject {
     return this;
   }
 
+  public JsonObject putBinary(String fieldName, byte[] binary) {
+    map.put(fieldName, Base64.encodeBytes(binary));
+    return this;
+  }
+
   public String getString(String fieldName) {
     return (String)map.get(fieldName);
   }
@@ -73,6 +80,11 @@ public class JsonObject {
 
   public Boolean getBoolean(String fieldName) {
     return (Boolean)map.get(fieldName);
+  }
+
+  public byte[] getBinary(String fieldName) {
+    String encoded = (String)map.get(fieldName);
+    return Base64.decode(encoded);
   }
 
   public Set<String> getFieldNames() {
