@@ -5,7 +5,6 @@ vertx.SockJSServer = function(httpServer) {
   var server = {
     installApp: function(config, handler) {
       var jConfig = new org.vertx.java.core.sockjs.AppConfig();
-
       var prefix = config['prefix'];
       if (typeof prefix != 'undefined') jConfig.setPrefix(prefix);
       var jsessionid = config['insert_JSESSIONID'];
