@@ -35,7 +35,7 @@ public class FanoutServer implements VertxApp {
           public void handle(Buffer buffer) {
             tu.checkContext();
             for (String actorID : connections) {
-              EventBus.instance.sendBinary(actorID, buffer);
+              EventBus.instance.send(actorID, buffer);
             }
           }
         });

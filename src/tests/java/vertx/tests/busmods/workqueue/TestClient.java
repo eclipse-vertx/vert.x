@@ -3,6 +3,7 @@ package vertx.tests.busmods.workqueue;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
 
@@ -31,10 +32,10 @@ public class TestClient extends TestClientBase {
 
     final int numMessages = 30;
 
-    eb.registerJsonHandler("done", new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    eb.registerHandler("done", new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         if (++count == numMessages) {
-          eb.unregisterJsonHandler("done", this);
+          eb.unregisterHandler("done", this);
           tu.testComplete();
         }
       }
@@ -42,7 +43,7 @@ public class TestClient extends TestClientBase {
 
     for (int i = 0; i < numMessages; i++) {
       JsonObject obj = new JsonObject().putString("blah", "wibble" + i);
-      eb.sendJson("orderQueue", obj);
+      eb.send("orderQueue", obj);
     }
   }
 

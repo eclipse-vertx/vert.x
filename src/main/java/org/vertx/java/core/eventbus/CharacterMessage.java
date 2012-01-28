@@ -39,4 +39,8 @@ public class CharacterMessage extends Message<Character> {
     return TYPE_CHARACTER;
   }
 
+  protected void handleReply(Character reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

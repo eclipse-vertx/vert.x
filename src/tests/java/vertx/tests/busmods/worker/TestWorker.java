@@ -4,6 +4,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.json.JsonObject;
@@ -14,7 +15,7 @@ import org.vertx.java.newtests.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TestWorker implements VertxApp, Handler<JsonMessage> {
+public class TestWorker implements VertxApp, Handler<Message<JsonObject>> {
 
   private TestUtils tu = new TestUtils();
 
@@ -24,20 +25,20 @@ public class TestWorker implements VertxApp, Handler<JsonMessage> {
 
   @Override
   public void start() throws Exception {
-    eb.registerJsonHandler(address, this);
+    eb.registerHandler(address, this);
     tu.appReady();
   }
 
 
   @Override
   public void stop() throws Exception {
-    eb.unregisterJsonHandler(address, this);
+    eb.unregisterHandler(address, this);
     tu.appStopped();
   }
 
-  public void handle(final JsonMessage message) {
+  public void handle(final Message<JsonObject> message) {
     try {
-      tu.azzert(message.jsonObject.getString("foo").equals("wibble"));
+      tu.azzert(message.body.getString("foo").equals("wibble"));
       tu.azzert(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
 
       // Trying to create any network clients or servers should fail - workers can only use the event bus

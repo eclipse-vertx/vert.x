@@ -58,9 +58,9 @@ module Vertx
       raise "A message must be specified" if !message
       json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
       if reply_handler != nil
-        org.vertx.java.core.eventbus.EventBus.instance.sendJson(address, json_obj, InternalHandler.new(nil, reply_handler))
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, json_obj, InternalHandler.new(nil, reply_handler))
       else
-        org.vertx.java.core.eventbus.EventBus.instance.sendJson(address, json_obj)
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, json_obj)
       end
     end
 
@@ -73,7 +73,7 @@ module Vertx
       raise "An address must be specified" if !address
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(address, message_hndlr)
-      org.vertx.java.core.eventbus.EventBus.instance.registerJsonHandler(address, internal)
+      org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
       id = @@handler_seq
       @@handler_seq += 1
       @@handler_map[id] = internal
@@ -86,7 +86,7 @@ module Vertx
       raise "A handler_id must be specified" if !handler_id
       handler = @@handler_map.delete(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.core.eventbus.EventBus.instance.unregisterJsonHandler(handler.address, handler)
+      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler.address, handler)
     end
 
     # @private

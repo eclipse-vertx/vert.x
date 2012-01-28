@@ -39,4 +39,8 @@ public class BooleanMessage extends Message<Boolean> {
     return TYPE_BOOLEAN;
   }
 
+  protected void handleReply(Boolean reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

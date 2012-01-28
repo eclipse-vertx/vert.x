@@ -79,14 +79,14 @@ public class WebSocket implements ReadStream, WriteStream {
         writeBinaryFrame(msg.body);
       }
     };
-    EventBus.instance.registerBinaryHandler(binaryHandlerID, binaryHandler);
+    EventBus.instance.registerHandler(binaryHandlerID, binaryHandler);
     textHandlerID = UUID.randomUUID().toString();
     textHandler = new Handler<Message<String>>() {
       public void handle(Message<String> msg) {
         writeTextFrame(msg.body);
       }
     };
-    EventBus.instance.registerBinaryHandler(textHandlerID, textHandler);
+    EventBus.instance.registerHandler(textHandlerID, textHandler);
   }
 
   /**
@@ -200,8 +200,8 @@ public class WebSocket implements ReadStream, WriteStream {
    */
   public void close() {
     conn.close();
-    EventBus.instance.unregisterBinaryHandler(binaryHandlerID, binaryHandler);
-    EventBus.instance.unregisterBinaryHandler(textHandlerID, textHandler);
+    EventBus.instance.unregisterHandler(binaryHandlerID, binaryHandler);
+    EventBus.instance.unregisterHandler(textHandlerID, textHandler);
   }
 
   void handleFrame(WebSocketFrame frame) {

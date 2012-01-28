@@ -39,4 +39,8 @@ public class ShortMessage extends Message<Short> {
     return TYPE_SHORT;
   }
 
+  protected void handleReply(Short reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

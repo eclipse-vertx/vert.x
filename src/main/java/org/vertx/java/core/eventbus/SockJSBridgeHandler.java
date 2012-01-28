@@ -37,14 +37,14 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
   public void handle(final SockJSSocket sock) {
 
-    final Map<String, Handler<JsonMessage>> handlers = new HashMap<>();
+    final Map<String, Handler<Message<JsonObject>>> handlers = new HashMap<>();
 
     sock.endHandler(new SimpleHandler() {
       public void handle() {
 
         // On close unregister any handlers that haven't been unregistered
-        for (Map.Entry<String, Handler<JsonMessage>> entry: handlers.entrySet()) {
-          eb.unregisterJsonHandler(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Handler<Message<JsonObject>>> entry: handlers.entrySet()) {
+          eb.unregisterHandler(entry.getKey(), entry.getValue());
         }
       }
     });
@@ -52,10 +52,10 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
     sock.dataHandler(new Handler<Buffer>() {
 
       private void handleSend(String address, JsonObject jsonObject, final String replyAddress) {
-        Handler<JsonMessage> replyHandler;
+        Handler<Message<JsonObject>> replyHandler;
         if (replyAddress != null) {
-          replyHandler = new Handler<JsonMessage>() {
-            public void handle(JsonMessage message) {
+          replyHandler = new Handler<Message<JsonObject>>() {
+            public void handle(Message<JsonObject> message) {
               deliverMessage(replyAddress, message);
             }
           };
@@ -63,14 +63,14 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
           replyHandler = null;
         }
         if (checkMatches(address, jsonObject)) {
-          eb.sendJson(address, jsonObject, replyHandler);
+          eb.send(address, jsonObject, replyHandler);
         } else {
           log.trace("Message rejected");
         }
       }
 
-      private void deliverMessage(String address, JsonMessage jsonMessage) {
-        JsonObject envelope = new JsonObject().putString("address", address).putObject("payload", jsonMessage.jsonObject);
+      private void deliverMessage(String address, Message<JsonObject> jsonMessage) {
+        JsonObject envelope = new JsonObject().putString("address", address).putObject("payload", jsonMessage.body);
         if (jsonMessage.replyAddress != null) {
           envelope.putString("replyAddress", jsonMessage.replyAddress);
         }
@@ -78,20 +78,20 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
       }
 
       private void handleRegister(final String address) {
-        Handler<JsonMessage> handler = new Handler<JsonMessage>() {
-          public void handle(JsonMessage msg) {
+        Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
+          public void handle(Message<JsonObject> msg) {
             deliverMessage(address, msg);
           }
         };
 
         handlers.put(address, handler);
-        eb.registerJsonHandler(address, handler);
+        eb.registerHandler(address, handler);
       }
 
       private void handleUnregister(String address) {
-        Handler<JsonMessage> handler = handlers.remove(address);
+        Handler<Message<JsonObject>> handler = handlers.remove(address);
         if (handler != null) {
-          eb.unregisterJsonHandler(address, handler);
+          eb.unregisterHandler(address, handler);
         }
       }
 

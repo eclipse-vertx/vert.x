@@ -46,4 +46,8 @@ public class BufferMessage extends Message<Buffer> {
     return TYPE_BUFFER;
   }
 
+  protected void handleReply(Buffer reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

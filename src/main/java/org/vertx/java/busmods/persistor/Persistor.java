@@ -11,6 +11,7 @@ import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -22,7 +23,7 @@ import java.net.UnknownHostException;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessage> {
+public class Persistor extends BusModBase implements VertxApp, Handler<Message<JsonObject>> {
 
   private static final Logger log = Logger.getLogger(Persistor.class);
 
@@ -49,20 +50,20 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     try {
       mongo = new Mongo(hostName, port);
       db = mongo.getDB(dbName);
-      eb.registerJsonHandler(address, this);
+      eb.registerHandler(address, this);
     } catch (UnknownHostException e) {
       log.error("Failed to connect to mongo server", e);
     }
   }
 
   public void stop() {
-    eb.unregisterJsonHandler(address, this);
+    eb.unregisterHandler(address, this);
     mongo.close();
   }
 
-  public void handle(JsonMessage message) {
+  public void handle(Message<JsonObject> message) {
 
-    String action = message.jsonObject.getString("action");
+    String action = message.body.getString("action");
 
     if (action == null) {
       sendError(message, "action must be specified");
@@ -88,7 +89,7 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     }
   }
 
-  private void doSave(JsonMessage message) {
+  private void doSave(Message<JsonObject> message) {
     String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
@@ -102,12 +103,12 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     sendOK(message);
   }
 
-  private void doFind(JsonMessage message) {
+  private void doFind(Message<JsonObject> message) {
     String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
     }
-    Integer limit = (Integer)message.jsonObject.getNumber("limit");
+    Integer limit = (Integer)message.body.getNumber("limit");
     if (limit == null) {
       limit = -1;
     }
@@ -115,7 +116,7 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     if (matcher == null) {
       return;
     }
-    JsonObject sort = message.jsonObject.getObject("sort");
+    JsonObject sort = message.body.getObject("sort");
     DBCollection coll = db.getCollection(collection);
     DBCursor cursor = coll.find(jsonToDBObject(matcher));
     if (limit != -1) {
@@ -137,12 +138,12 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     sendOK(message, reply);
   }
 
-  private void doFindOne(JsonMessage message) {
+  private void doFindOne(Message<JsonObject> message) {
     String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
     }
-    JsonObject matcher = message.jsonObject.getObject("matcher");
+    JsonObject matcher = message.body.getObject("matcher");
     DBCollection coll = db.getCollection(collection);
     DBObject res;
     if (matcher == null) {
@@ -159,7 +160,7 @@ public class Persistor extends BusModBase implements VertxApp, Handler<JsonMessa
     sendOK(message, reply);
   }
 
-  private void doDelete(JsonMessage message) {
+  private void doDelete(Message<JsonObject> message) {
     String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;

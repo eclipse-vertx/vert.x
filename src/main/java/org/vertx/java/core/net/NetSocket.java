@@ -65,7 +65,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
         writeBuffer(msg.body);
       }
     };
-    EventBus.instance.registerBinaryHandler(writeHandlerID, writeHandler);
+    EventBus.instance.registerHandler(writeHandlerID, writeHandler);
   }
 
   /**
@@ -195,7 +195,7 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
       }
     }
     super.handleClosed();
-    EventBus.instance.unregisterBinaryHandler(writeHandlerID, writeHandler);
+    EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
   }
 
   protected void handleException(Exception e) {

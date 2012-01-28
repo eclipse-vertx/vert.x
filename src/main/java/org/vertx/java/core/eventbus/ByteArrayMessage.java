@@ -48,4 +48,8 @@ public class ByteArrayMessage extends Message<byte[]> {
     return TYPE_BYTEARRAY;
   }
 
+  protected void handleReply(byte[] reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

@@ -114,4 +114,8 @@ public class JsonObject {
   public String encode() throws EncodeException {
     return Json.encode(this.map);
   }
+
+  public JsonObject copy() {
+    return new JsonObject(encode());
+  }
 }

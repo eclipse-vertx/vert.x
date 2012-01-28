@@ -39,4 +39,8 @@ public class ByteMessage extends Message<Byte> {
     return TYPE_BYTE;
   }
 
+  protected void handleReply(Byte reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

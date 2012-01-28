@@ -39,4 +39,8 @@ public class LongMessage extends Message<Long> {
     return TYPE_LONG;
   }
 
+  protected void handleReply(Long reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

@@ -31,14 +31,14 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testPubSubInitialise() {
     final String address = "some-address";
-    eb.registerBinaryHandler(address, new Handler<Message<Buffer>>() {
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
 
           public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
             handled = true;
-            eb.unregisterBinaryHandler("some-address", this, new CompletionHandler<Void>() {
+            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
               public void handle(Future<Void> event) {
                 if (event.succeeded()) {
                   tu.testComplete();
@@ -69,16 +69,16 @@ public class LocalPeer extends EventBusAppBase {
         tu.azzert(false, "Should not receive message");
       }
     };
-    eb.registerBinaryHandler(address2, otherHandler);
+    eb.registerHandler(address2, otherHandler);
 
     final String address = "some-address";
-    eb.registerBinaryHandler(address, new Handler<Message<Buffer>>() {
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
 
           public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            eb.unregisterBinaryHandler(address, this, new CompletionHandler<Void>() {
+            eb.unregisterHandler(address, this, new CompletionHandler<Void>() {
               public void handle(Future<Void> event) {
                 if (event.succeeded()) {
                   tu.testComplete();
@@ -87,7 +87,7 @@ public class LocalPeer extends EventBusAppBase {
                 }
               }
             });
-            eb.unregisterBinaryHandler(address, otherHandler);
+            eb.unregisterHandler(address, otherHandler);
             handled = true;
           }
         }, new CompletionHandler<Void>() {
@@ -104,13 +104,13 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testPointToPointInitialise() {
     final String address = UUID.randomUUID().toString();
-    eb.registerBinaryHandler(address, new Handler<Message<Buffer>>() {
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
           public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            eb.unregisterBinaryHandler(address, this, new CompletionHandler<Void>() {
+            eb.unregisterHandler(address, this, new CompletionHandler<Void>() {
               public void handle(Future<Void> event) {
                 if (event.succeeded()) {
                   tu.testComplete();
@@ -136,14 +136,14 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testReplyInitialise() {
     final String address = UUID.randomUUID().toString();
-    eb.registerBinaryHandler(address, new Handler<Message<Buffer>>() {
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
 
           public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            eb.unregisterBinaryHandler(address, this);
+            eb.unregisterHandler(address, this);
             handled = true;
             msg.reply(Buffer.create("reply" + address));
           }

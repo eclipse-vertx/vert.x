@@ -2,6 +2,8 @@ package vertx.tests.busmods.mailer;
 
 import org.vertx.java.busmods.mailer.Mailer;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestUtils;
 
 /**
@@ -28,7 +30,7 @@ public class TestMailer extends Mailer {
   }
 
   @Override
-  public void handle(JsonMessage message) {
+  public void handle(Message<JsonObject> message) {
     tu.azzert(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
     super.handle(message);
   }

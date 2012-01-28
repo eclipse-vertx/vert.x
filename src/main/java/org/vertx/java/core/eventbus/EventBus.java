@@ -74,7 +74,7 @@ public class EventBus {
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
-  private final Map<Handler<JsonMessage>, Handler<Message<Buffer>>> jsonHandlerMap = new ConcurrentHashMap<>();
+  //private final Map<Handler<Message<JsonObject>>, Handler<Message<Buffer>>> jsonHandlerMap = new ConcurrentHashMap<>();
 
   /*
   Non clustered event bus
@@ -119,45 +119,127 @@ public class EventBus {
     }).listen(serverID.port, serverID.host);
   }
 
-  public void sendJson(String address, final JsonObject jsonObject, final Handler<JsonMessage> replyHandler) {
-    Handler<Message<Buffer>> rHandler = replyHandler == null ? null : new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> message) {
-        replyHandler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
-      }
-    };
-    sendBinary(address, Buffer.create(jsonObject.encode()), rHandler);
+//  public void send(String address, final JsonObject jsonObject, final Handler<Message<JsonObject>> replyHandler) {
+//    Handler<Message<Buffer>> rHandler = replyHandler == null ? null : new Handler<Message<Buffer>>() {
+//      public void handle(Message<Buffer> message) {
+//        replyHandler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
+//      }
+//    };
+//    send(address, Buffer.create(jsonObject.encode()), rHandler);
+//  }
+
+//  /**
+//   * Send a Json message on the event bus
+//   * @param address The address to be send it to
+//   * @param jsonObject The message
+//   */
+//  public void send(String address, JsonObject jsonObject) {
+//    send(address, jsonObject, null);
+//  }
+
+  public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
+    send(new JsonMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, JsonObject message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler) {
+    send(new BufferMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Buffer message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler) {
+    send(new ByteArrayMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, byte[] message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, String message, final Handler<Message<String>> replyHandler) {
+    send(new StringMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, String message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Integer message, final Handler<Message<Integer>> replyHandler) {
+    send(new IntMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Integer message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Long message, final Handler<Message<Long>> replyHandler) {
+    send(new LongMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Long message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Float message, final Handler<Message<Float>> replyHandler) {
+    send(new FloatMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Float message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Double message, final Handler<Message<Double>> replyHandler) {
+    send(new DoubleMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Double message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) {
+    send(new BooleanMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Boolean message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Short message, final Handler<Message<Short>> replyHandler) {
+    send(new ShortMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Short message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Character message, final Handler<Message<Character>> replyHandler) {
+    send(new CharacterMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Character message) {
+    send(address, message, null);
+  }
+  
+  public void send(String address, Byte message, final Handler<Message<Byte>> replyHandler) {
+    send(new ByteMessage(address, message), replyHandler);
+  }
+  
+  public void send(String address, Byte message) {
+    send(address, message, null);
   }
 
-  /**
-   * Send a Json message on the event bus
-   * @param address The address to be send it to
-   * @param jsonObject The message
-   */
-  public void sendJson(String address, JsonObject jsonObject) {
-    sendJson(address, jsonObject, null);
-  }
-
-
-  /**
-   * Send a message on the event bus
-   * @param address The address to send the message to
-   * @param body body of the message
-   * @param replyHandler An optional reply handler. It will be called when the reply from a receiver is received.
-   */
-  public <T> void sendBinary(String address, T body, final Handler<Message<T>> replyHandler) {
-    if (address == null) {
-      throw new IllegalArgumentException("address must be specified");
-    }
-    if (body == null) {
-      throw new IllegalArgumentException("body must be specified");
-    }
-    final Message message = createMessage(address, body);
+  private void send(final Message message, final Handler replyHandler) {
     Long contextID = Vertx.instance.getContextID();
     try {
       message.sender = serverID;
       if (replyHandler != null) {
         message.replyAddress = UUID.randomUUID().toString();
-        registerBinaryHandler(message.replyAddress, replyHandler, null, true);
+        registerHandler(message.replyAddress, replyHandler, null, true);
       }
 
       // First check if sender is in response address cache - it will be if it's a response
@@ -200,61 +282,61 @@ public class EventBus {
     }
   }
 
-  /**
-   * Send a message on the event bus
-   * @param body
-   */
-  public <T> void sendBinary(String address, T body) {
-    sendBinary(address, body, null);
-  }
+//  /**
+//   * Send a message on the event bus
+//   * @param body
+//   */
+//  public <T> void send(String address, T body) {
+//    send(address, body, null);
+//  }
 
-  /**
-   * Register a handler.
-   * @param address The address to register for. Any messages sent to that address will be
-   * received by the handler. A single handler can be registered against many addresses.
-   * @param handler The handler
-   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   */
-  public <T> void registerBinaryHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler) {
-    registerBinaryHandler(address, handler, completionHandler, false);
-  }
-
-  /**
-   * Registers handler
-   *
-   * The same as {@link #registerBinaryHandler(String, Handler, CompletionHandler)} with a null completionHandler
-   */
-  public <T> void registerBinaryHandler(String address, Handler<Message<T>> handler) {
-    registerBinaryHandler(address, handler, null);
-  }
-
-  /**
-   * Register a handler for Json messages.
-   * @param address The address to register for. Any messages sent to that address will be
-   * received by the handler. A single handler can be registered against many addresses.
-   * @param handler The handler
-   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   */
-  public void registerJsonHandler(String address, final Handler<JsonMessage> handler, CompletionHandler<Void> completionHandler) {
-    Handler<Message<Buffer>> mHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> message) {
-        handler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
-      }
-    };
-    registerBinaryHandler(address, mHandler, completionHandler, false);
-    jsonHandlerMap.put(handler, mHandler);
-  }
-
-  /**
-   * Registers handler
-   *
-   * The same as {@link #registerJsonHandler(String, Handler, CompletionHandler)} with a null completionHandler
-   */
-  public void registerJsonHandler(String address, final Handler<JsonMessage> handler) {
-    registerJsonHandler(address, handler, null);
-  }
+//  /**
+//   * Register a handler.
+//   * @param address The address to register for. Any messages sent to that address will be
+//   * received by the handler. A single handler can be registered against many addresses.
+//   * @param handler The handler
+//   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
+//   * propagated to all nodes of the event bus, the handler will be called.
+//   */
+//  public <T> void registerHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler) {
+//    registerHandler(address, handler, completionHandler, false);
+//  }
+//
+//  /**
+//   * Registers handler
+//   *
+//   * The same as {@link #registerHandler(String, Handler, CompletionHandler)} with a null completionHandler
+//   */
+//  public <T> void registerHandler(String address, Handler<Message<T>> handler) {
+//    registerHandler(address, handler, null);
+//  }
+//
+//  /**
+//   * Register a handler for Json messages.
+//   * @param address The address to register for. Any messages sent to that address will be
+//   * received by the handler. A single handler can be registered against many addresses.
+//   * @param handler The handler
+//   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
+//   * propagated to all nodes of the event bus, the handler will be called.
+//   */
+//  public void registerHandler(String address, final Handler<Message<JsonObject>> handler, CompletionHandler<Void> completionHandler) {
+//    Handler<Message<Buffer>> mHandler = new Handler<Message<Buffer>>() {
+//      public void handle(Message<Buffer> message) {
+//        handler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
+//      }
+//    };
+//    registerHandler(address, mHandler, completionHandler, false);
+//    jsonHandlerMap.put(handler, mHandler);
+//  }
+//
+//  /**
+//   * Registers handler
+//   *
+//   * The same as {@link #registerHandler(String, Handler, CompletionHandler)} with a null completionHandler
+//   */
+//  public void registerHandler(String address, final Handler<Message<JsonObject>> handler) {
+//    registerHandler(address, handler, null);
+//  }
 
   /**
    * Unregisters a handler
@@ -263,7 +345,8 @@ public class EventBus {
    * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public <T> void unregisterBinaryHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler) {
+  public <T> void unregisterHandler(String address, Handler<Message<T>> handler,
+                                CompletionHandler<Void> completionHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
       set.remove(new HandlerHolder(handler, false));
@@ -280,43 +363,57 @@ public class EventBus {
     }
   }
 
-  /**
-   * Unregisters a handler
-   * @param address The address the handler was registered to
-   * @param handler The handler
-   */
-  public <T> void unregisterBinaryHandler(String address, Handler<Message<T>> handler) {
-    unregisterBinaryHandler(address, handler, null);
+  public <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
+    unregisterHandler(address, handler, null);
   }
 
-  /**
-   * Unregisters a handler
-   * @param address The address the handler was registered to
-   * @param handler The handler
-   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   */
-  public void unregisterJsonHandler(String address, Handler<JsonMessage> handler, CompletionHandler<Void> completionHandler) {
-    Handler<Message<Buffer>> mHandler = jsonHandlerMap.remove(handler);
-    if (mHandler != null) {
-      unregisterBinaryHandler(address, mHandler, completionHandler);
-    }
-  }
+//  /**
+//   * Unregisters a handler
+//   * @param address The address the handler was registered to
+//   * @param handler The handler
+//   */
+//  public <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
+//    unregisterHandler(address, handler, null);
+//  }
+//
+//  /**
+//   * Unregisters a handler
+//   * @param address The address the handler was registered to
+//   * @param handler The handler
+//   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+//   * propagated to all nodes of the event bus, the handler will be called.
+//   */
+//  public void unregisterHandler(String address, Handler<Message<JsonObject>> handler, CompletionHandler<Void> completionHandler) {
+//    Handler<Message<Buffer>> mHandler = jsonHandlerMap.remove(handler);
+//    if (mHandler != null) {
+//      unregisterHandler(address, mHandler, completionHandler);
+//    }
+//  }
 
-  /**
-   * Unregisters a handler
-   * @param address The address the handler was registered to
-   * @param handler The handler
-   */
-  public void unregisterJsonHandler(String address, Handler<JsonMessage> handler) {
-    unregisterJsonHandler(address, handler, null);
-  }
+//  /**
+//   * Unregisters a handler
+//   * @param address The address the handler was registered to
+//   * @param handler The handler
+//   */
+//  public void unregisterHandler(String address, Handler<Message<JsonObject>> handler) {
+//    unregisterHandler(address, handler, null);
+//  }
 
   protected void close(Handler<Void> doneHandler) {
     server.close(doneHandler);
   }
 
-  private <T> void registerBinaryHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler,
+  public <T> void registerHandler(String address, Handler<Message<T>> handler,
+                               CompletionHandler<Void> completionHandler) {
+    registerHandler(address, handler, completionHandler, false);
+  }
+
+  public <T> void registerHandler(String address, Handler<Message<T>> handler) {
+    registerHandler(address, handler, null, false);
+  }
+
+  private <T> void registerHandler(String address, Handler<Message<T>> handler,
+                                 CompletionHandler<Void> completionHandler,
                                boolean replyHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set == null) {
@@ -455,40 +552,40 @@ public class EventBus {
     }
   }
 
-  private <T> Message createMessage(String address, T payload) {
-    Message msg;
-    if (payload instanceof String) {
-      msg = new StringMessage(address, (String)payload);
-    } else if (payload instanceof Buffer) {
-      msg =  new BufferMessage(address, (Buffer)payload);
-    } else if (payload instanceof Boolean) {
-      msg =  new BooleanMessage(address, (Boolean)payload);
-    } else if (payload instanceof byte[]) {
-      msg =  new ByteArrayMessage(address, (byte[])payload);
-    } else if (payload instanceof Character) {
-      msg = new CharacterMessage(address, (Character)payload);
-    } else if (payload instanceof Double) {
-      msg = new DoubleMessage(address, (Double)payload);
-    } else if (payload instanceof Float) {
-      msg = new FloatMessage(address, (Float)payload);
-    } else if (payload instanceof Integer) {
-      msg = new IntMessage(address, (Integer)payload);
-    } else if (payload instanceof Long) {
-      msg = new LongMessage(address, (Long)payload);
-    } else if (payload instanceof Short) {
-      msg = new ShortMessage(address, (Short)payload);
-    } else {
-      throw new IllegalArgumentException("Invalid type to send as message: " + payload.getClass());
-    }
-    return msg;
-  }
+//  private <T> Message createMessage(String address, T payload) {
+//    Message msg;
+//    if (payload instanceof String) {
+//      msg = new StringMessage(address, (String)payload);
+//    } else if (payload instanceof Buffer) {
+//      msg =  new BufferMessage(address, (Buffer)payload);
+//    } else if (payload instanceof Boolean) {
+//      msg =  new BooleanMessage(address, (Boolean)payload);
+//    } else if (payload instanceof byte[]) {
+//      msg =  new ByteArrayMessage(address, (byte[])payload);
+//    } else if (payload instanceof Character) {
+//      msg = new CharacterMessage(address, (Character)payload);
+//    } else if (payload instanceof Double) {
+//      msg = new DoubleMessage(address, (Double)payload);
+//    } else if (payload instanceof Float) {
+//      msg = new FloatMessage(address, (Float)payload);
+//    } else if (payload instanceof Integer) {
+//      msg = new IntMessage(address, (Integer)payload);
+//    } else if (payload instanceof Long) {
+//      msg = new LongMessage(address, (Long)payload);
+//    } else if (payload instanceof Short) {
+//      msg = new ShortMessage(address, (Short)payload);
+//    } else {
+//      throw new IllegalArgumentException("Invalid type to send as message: " + payload.getClass());
+//    }
+//    return msg;
+//  }
 
-  private class HandlerHolder<T> {
+  private class HandlerHolder {
     final long contextID;
-    final Handler<Message<T>> handler;
+    final Handler handler;
     final boolean replyHandler;
 
-    private HandlerHolder(Handler<Message<T>> handler, boolean replyHandler) {
+    private HandlerHolder(Handler handler, boolean replyHandler) {
       this.contextID = Vertx.instance.getContextID();
       this.handler = handler;
       this.replyHandler = replyHandler;

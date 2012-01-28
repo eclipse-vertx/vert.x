@@ -11,6 +11,8 @@ public class StringMessage extends Message<String> {
 
   private static final Logger log = Logger.getLogger(StringMessage.class);
 
+  private byte[] encoded;
+
   StringMessage(String address, String payload) {
     super(address, payload);
   }
@@ -27,12 +29,14 @@ public class StringMessage extends Message<String> {
   }
 
   protected void writeBody(Buffer buff) {
-    writeString(buff, body);
+    buff.appendInt(encoded.length);
+    buff.appendBytes(encoded);
+    encoded = null;
   }
 
   protected int getBodyLength() {
-    // Just give it enough space - doesn't have to be exact
-    return 4 + 2 * body.length();
+    encoded = body.getBytes(CharsetUtil.UTF_8);
+    return 4 + encoded.length;
   }
 
   protected Message copy() {
@@ -42,6 +46,10 @@ public class StringMessage extends Message<String> {
 
   protected byte type() {
     return TYPE_STRING;
+  }
+
+  protected void handleReply(String reply) {
+    EventBus.instance.send(replyAddress, reply);
   }
 
 }

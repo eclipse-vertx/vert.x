@@ -5,6 +5,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
@@ -24,9 +25,9 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
   private final Queue<JsonObject> messages = new LinkedList<>();
-  private Handler<JsonMessage> registerHandler;
-  private Handler<JsonMessage> unregisterHandler;
-  private Handler<JsonMessage> sendHandler;
+  private Handler<Message<JsonObject>> registerHandler;
+  private Handler<Message<JsonObject>> unregisterHandler;
+  private Handler<Message<JsonObject>> sendHandler;
   private String persistorAddress;
   private String collection;
 
@@ -43,30 +44,30 @@ public class WorkQueue extends BusModBase implements VertxApp  {
   }
 
   public void start() {
-    registerHandler = new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    registerHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         doRegister(message);
       }
     };
-    eb.registerJsonHandler(address + ".register", registerHandler);
-    unregisterHandler = new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    eb.registerHandler(address + ".register", registerHandler);
+    unregisterHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         doUnregister(message);
       }
     };
-    eb.registerJsonHandler(address + ".unregister", unregisterHandler);
-    sendHandler = new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    eb.registerHandler(address + ".unregister", unregisterHandler);
+    sendHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         doSend(message);
       }
     };
-    eb.registerJsonHandler(address, sendHandler);
+    eb.registerHandler(address, sendHandler);
   }
 
   public void stop() {
-    eb.unregisterJsonHandler(address + ".register", registerHandler);
-    eb.unregisterJsonHandler(address + ".unregister", unregisterHandler);
-    eb.unregisterJsonHandler(address, sendHandler);
+    eb.unregisterHandler(address + ".register", registerHandler);
+    eb.unregisterHandler(address + ".unregister", unregisterHandler);
+    eb.unregisterHandler(address, sendHandler);
   }
 
   private void checkWork() {
@@ -80,8 +81,8 @@ public class WorkQueue extends BusModBase implements VertxApp  {
           messages.add(message);
         }
       });
-      eb.sendJson(address, message, new Handler<JsonMessage>() {
-        public void handle(JsonMessage reply) {
+      eb.send(address, message, new Handler<Message<JsonObject>>() {
+        public void handle(Message<JsonObject> reply) {
           Vertx.instance.cancelTimer(timeoutID);
           processors.add(address);
           checkWork();
@@ -91,7 +92,7 @@ public class WorkQueue extends BusModBase implements VertxApp  {
     }
   }
 
-  private void doRegister(JsonMessage message) {
+  private void doRegister(Message<JsonObject> message) {
     String processor = getMandatoryString("processor", message);
     if (processor == null) {
       return;
@@ -101,7 +102,7 @@ public class WorkQueue extends BusModBase implements VertxApp  {
     message.reply();
   }
 
-  private void doUnregister(JsonMessage message) {
+  private void doUnregister(Message<JsonObject> message) {
     String processor = getMandatoryString("processor", message);
     if (processor == null) {
       return;
@@ -110,25 +111,25 @@ public class WorkQueue extends BusModBase implements VertxApp  {
     message.reply();
   }
 
-  private void doSend(final JsonMessage message) {
+  private void doSend(final Message<JsonObject> message) {
     if (persistorAddress != null) {
       JsonObject msg = new JsonObject().putString("action", "save").putString("collection", collection)
-                                       .putObject("document", message.jsonObject);
-      eb.sendJson(persistorAddress, msg, new Handler<JsonMessage>() {
-        public void handle(JsonMessage reply) {
-          if (reply.jsonObject.getString("status").equals("ok")) {
-            actualSend(message, message.jsonObject);
+                                       .putObject("document", message.body);
+      eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
+        public void handle(Message<JsonObject> reply) {
+          if (reply.body.getString("status").equals("ok")) {
+            actualSend(message, message.body);
           } else {
-            sendError(message, reply.jsonObject.getString("message"));
+            sendError(message, reply.body.getString("message"));
           }
         }
       });
     } else {
-      actualSend(message, message.jsonObject);
+      actualSend(message, message.body);
     }
   }
 
-  private void actualSend(JsonMessage message, JsonObject work) {
+  private void actualSend(Message<JsonObject> message, JsonObject work) {
     messages.add(work);
     //Been added to the queue so reply
     sendOK(message);

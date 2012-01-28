@@ -32,11 +32,11 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
       }
     };
     this.writeHandlerID = UUID.randomUUID().toString();
-    EventBus.instance.registerBinaryHandler(writeHandlerID, writeHandler);
+    EventBus.instance.registerHandler(writeHandlerID, writeHandler);
   }
 
   public void close() {
-    EventBus.instance.unregisterBinaryHandler(writeHandlerID, writeHandler);
+    EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
   }
 
 }

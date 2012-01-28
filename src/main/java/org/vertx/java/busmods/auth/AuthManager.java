@@ -5,6 +5,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
@@ -21,9 +22,9 @@ public class AuthManager extends BusModBase implements VertxApp  {
 
   private static final long DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 mins
 
-  private Handler<JsonMessage> loginHandler;
-  private Handler<JsonMessage> logoutHandler;
-  private Handler<JsonMessage> validateHandler;
+  private Handler<Message<JsonObject>> loginHandler;
+  private Handler<Message<JsonObject>> logoutHandler;
+  private Handler<Message<JsonObject>> validateHandler;
 
   private final String userCollection;
   private final String persistorAddress;
@@ -54,33 +55,33 @@ public class AuthManager extends BusModBase implements VertxApp  {
   }
 
   public void start() {
-    loginHandler = new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    loginHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         doLogin(message);
       }
     };
-    eb.registerJsonHandler(address + ".login", loginHandler);
-    logoutHandler = new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    eb.registerHandler(address + ".login", loginHandler);
+    logoutHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         doLogout(message);
       }
     };
-    eb.registerJsonHandler(address + ".logout", logoutHandler);
-    validateHandler = new Handler<JsonMessage>() {
-      public void handle(JsonMessage message) {
+    eb.registerHandler(address + ".logout", logoutHandler);
+    validateHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
         doValidate(message);
       }
     };
-    eb.registerJsonHandler(address + ".validate", validateHandler);
+    eb.registerHandler(address + ".validate", validateHandler);
   }
 
   public void stop() {
-    eb.unregisterJsonHandler(address + ".login", loginHandler);
-    eb.unregisterJsonHandler(address + ".logout", logoutHandler);
-    eb.unregisterJsonHandler(address + ".validate", validateHandler);
+    eb.unregisterHandler(address + ".login", loginHandler);
+    eb.unregisterHandler(address + ".logout", logoutHandler);
+    eb.unregisterHandler(address + ".validate", validateHandler);
   }
 
-  private void doLogin(final JsonMessage message) {
+  private void doLogin(final Message<JsonObject> message) {
 
     final String username = getMandatoryString("username", message);
     if (username == null) {
@@ -95,11 +96,11 @@ public class AuthManager extends BusModBase implements VertxApp  {
     JsonObject matcher = new JsonObject().putString("username", username).putString("password", password);
     findMsg.putObject("matcher", matcher);
 
-    eb.sendJson(persistorAddress, findMsg, new Handler<JsonMessage>() {
-      public void handle(JsonMessage reply) {
+    eb.send(persistorAddress, findMsg, new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> reply) {
 
-        if (reply.jsonObject.getString("status").equals("ok")) {
-          if (reply.jsonObject.getObject("result") != null) {
+        if (reply.body.getString("status").equals("ok")) {
+          if (reply.body.getObject("result") != null) {
 
             // Check if already logged in, if so logout of the old session
             LoginInfo info = logins.get(username);
@@ -124,14 +125,14 @@ public class AuthManager extends BusModBase implements VertxApp  {
             sendStatus("denied", message);
           }
         } else {
-          log.error("Failed to execute login query: " + reply.jsonObject.getString("message"));
+          log.error("Failed to execute login query: " + reply.body.getString("message"));
           sendError(message, "Failed to excecute login");
         }
       }
     });
   }
 
-  private void doLogout(final JsonMessage message) {
+  private void doLogout(final Message<JsonObject> message) {
     final String sessionID = getMandatoryString("sessionID", message);
     if (sessionID != null) {
       if (logout(sessionID)) {
@@ -153,7 +154,7 @@ public class AuthManager extends BusModBase implements VertxApp  {
     }
   }
 
-  private void doValidate(JsonMessage message) {
+  private void doValidate(Message<JsonObject> message) {
     String sessionID = getMandatoryString("sessionID", message);
     if (sessionID == null) {
       return;

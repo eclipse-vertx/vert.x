@@ -26,6 +26,7 @@ public abstract class Message<T>  {
   static final byte TYPE_LONG = 9;
   static final byte TYPE_SHORT = 10;
   static final byte TYPE_STRING = 11;
+  static final byte TYPE_JSON = 12;
 
   static Message read(Buffer buff) {
     byte type = buff.getByte(0);
@@ -52,6 +53,8 @@ public abstract class Message<T>  {
         return new ShortMessage(buff);
       case TYPE_STRING:
         return new StringMessage(buff);
+      case TYPE_JSON:
+        return new JsonMessage(buff);
       default:
         throw new IllegalStateException("Invalid type " + type);
     }
@@ -86,7 +89,7 @@ public abstract class Message<T>  {
    */
   public void reply(T message) {
     if (bus != null && replyAddress != null) {
-      bus.sendBinary(replyAddress, message);
+      handleReply(message);
     }
   }
 
@@ -124,12 +127,6 @@ public abstract class Message<T>  {
     body = readBody(pos, readBuff);
   }
 
-  protected abstract T readBody(int pos, Buffer readBuff);
-
-  protected abstract void writeBody(Buffer buff);
-
-  protected abstract int getBodyLength();
-
   protected void write(NetSocket socket) {
     int length = 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
         4 + (replyAddress == null ? 0 : replyAddress.length()) +
@@ -150,13 +147,21 @@ public abstract class Message<T>  {
     socket.write(totBuff);
   }
 
-  protected abstract byte type();
-
-  protected abstract Message copy();
-
   protected void writeString(Buffer buff, String str) {
     byte[] strBytes = str.getBytes(CharsetUtil.UTF_8);
     buff.appendInt(strBytes.length);
     buff.appendBytes(strBytes);
   }
+
+  protected abstract byte type();
+
+  protected abstract Message copy();
+
+  protected abstract T readBody(int pos, Buffer readBuff);
+
+  protected abstract void writeBody(Buffer buff);
+
+  protected abstract int getBodyLength();
+
+  protected abstract void handleReply(T reply);
 }

@@ -3,6 +3,7 @@ package vertx.tests.busmods.persistor;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
@@ -34,9 +35,9 @@ public class TestClient extends TestClientBase {
     JsonObject json = new JsonObject().putString("collection", "testcoll")
                                       .putString("action", "delete").putObject("matcher", new JsonObject());
 
-    eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
-      public void handle(JsonMessage reply) {
-        tu.azzert("ok".equals(reply.jsonObject.getString("status")));
+    eb.send("test.persistor", json, new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> reply) {
+        tu.azzert("ok".equals(reply.body.getString("status")));
       }
     });
 
@@ -44,9 +45,9 @@ public class TestClient extends TestClientBase {
     for (int i = 0; i < numDocs; i++) {
       JsonObject doc = new JsonObject().putString("name", "joe bloggs").putNumber("age", 40).putString("cat-name", "watt");
       json = new JsonObject().putString("collection", "testcoll").putString("action", "save").putObject("document", doc);
-      eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
-        public void handle(JsonMessage reply) {
-          tu.azzert("ok".equals(reply.jsonObject.getString("status")));
+      eb.send("test.persistor", json, new Handler<Message<JsonObject>>() {
+        public void handle(Message<JsonObject> reply) {
+          tu.azzert("ok".equals(reply.body.getString("status")));
         }
       });
     }
@@ -55,10 +56,10 @@ public class TestClient extends TestClientBase {
 
     json = new JsonObject().putString("collection", "testcoll").putString("action", "find").putObject("matcher", matcher);
 
-    eb.sendJson("test.persistor", json, new Handler<JsonMessage>() {
-      public void handle(JsonMessage reply) {
-        tu.azzert("ok".equals(reply.jsonObject.getString("status")));
-        JsonArray results = reply.jsonObject.getArray("results");
+    eb.send("test.persistor", json, new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> reply) {
+        tu.azzert("ok".equals(reply.body.getString("status")));
+        JsonArray results = reply.body.getArray("results");
         tu.azzert(results.size() == numDocs);
         tu.testComplete();
       }
