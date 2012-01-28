@@ -39,4 +39,8 @@ public class FloatMessage extends Message<Float> {
     return TYPE_FLOAT;
   }
 
+  protected void handleReply(Float reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

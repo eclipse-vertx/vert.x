@@ -39,4 +39,8 @@ public class DoubleMessage extends Message<Double> {
     return TYPE_DOUBLE;
   }
 
+  protected void handleReply(Double reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

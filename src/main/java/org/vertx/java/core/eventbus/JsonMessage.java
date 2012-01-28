@@ -1,33 +1,57 @@
 package org.vertx.java.core.eventbus;
 
+import org.jboss.netty.util.CharsetUtil;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonMessage {
+public class JsonMessage extends Message<JsonObject> {
 
-  final EventBus bus;
-  final String replyAddress;
+  private static final Logger log = Logger.getLogger(JsonMessage.class);
 
-  public final JsonObject jsonObject;
+  private byte[] encoded;
 
-  JsonMessage(JsonObject jsonObject, EventBus bus, String replyAddress) {
-    this.jsonObject = jsonObject;
-    this.bus = bus;
-    this.replyAddress = replyAddress;
+  JsonMessage(String address, JsonObject payload) {
+    super(address, payload);
   }
 
-  public void reply(JsonObject object) {
-    if (bus != null && replyAddress != null) {
-      if (object == null) {
-        object = new JsonObject();
-      }
-      bus.sendJson(replyAddress, object);
-    }
+  public JsonMessage(Buffer readBuff) {
+    super(readBuff);
   }
 
-  public void reply() {
-    reply(null);
+  protected JsonObject readBody(int pos, Buffer readBuff) {
+    int strLength = readBuff.getInt(pos);
+    pos += 4;
+    byte[] bytes = readBuff.getBytes(pos, pos + strLength);
+    String str = new String(bytes, CharsetUtil.UTF_8);
+    return new JsonObject(str);
   }
+
+  protected void writeBody(Buffer buff) {
+    buff.appendInt(encoded.length);
+    buff.appendBytes(encoded);
+    encoded = null;
+  }
+
+  protected int getBodyLength() {
+    String strJson = body.encode();
+    encoded = strJson.getBytes(CharsetUtil.UTF_8);
+    return 4 + encoded.length;
+  }
+
+  protected Message copy() {
+    return new JsonMessage(address, body.copy());
+  }
+
+  protected byte type() {
+    return TYPE_JSON;
+  }
+
+  protected void handleReply(JsonObject reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

@@ -373,7 +373,7 @@ public class SockJSServer {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
-              EventBus.instance.sendBinary(actorID, buffer);
+              EventBus.instance.send(actorID, buffer);
             }
           }
         });

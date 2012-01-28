@@ -47,7 +47,7 @@ public class PubSubServer implements VertxApp {
             } else if (line.startsWith("publish")) {
               Set<String> actorIDs = SharedData.getSet(parts[1]);
               for (String actorID : actorIDs) {
-                EventBus.instance.sendBinary(actorID, Buffer.create(parts[2]));
+                EventBus.instance.send(actorID, Buffer.create(parts[2]));
               }
             }
           }

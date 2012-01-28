@@ -39,4 +39,8 @@ public class IntMessage extends Message<Integer> {
     return TYPE_INT;
   }
 
+  protected void handleReply(Integer reply) {
+    EventBus.instance.send(replyAddress, reply);
+  }
+
 }

@@ -9,6 +9,7 @@ import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
@@ -36,7 +37,7 @@ public class TestBase extends TestCase {
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils();
   private long contextID;
-  private volatile Handler<JsonMessage> handler;
+  private volatile Handler<Message<JsonObject>> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
   private List<String> startedApps = new ArrayList<>();
 
@@ -74,41 +75,41 @@ public class TestBase extends TestCase {
           EventBus.initialize(bus);
         }
 
-        handler = new Handler<JsonMessage>() {
-          public void handle(JsonMessage message) {
+        handler = new Handler<Message<JsonObject>>() {
+          public void handle(Message<JsonObject> message) {
             try {
 
-              String type = message.jsonObject.getString("type");
+              String type = message.body.getString("type");
 
               //log.info("******************* Got message: " + type);
 
               switch (type) {
                 case EventFields.TRACE_EVENT:
-                  log.trace(message.jsonObject.getString(EventFields.TRACE_MESSAGE_FIELD));
+                  log.trace(message.body.getString(EventFields.TRACE_MESSAGE_FIELD));
                   break;
                 case EventFields.EXCEPTION_EVENT:
-                  failedAsserts.add(new AssertHolder(message.jsonObject.getString(EventFields.EXCEPTION_MESSAGE_FIELD),
-                      message.jsonObject.getString(EventFields.EXCEPTION_STACKTRACE_FIELD)));
+                  failedAsserts.add(new AssertHolder(message.body.getString(EventFields.EXCEPTION_MESSAGE_FIELD),
+                      message.body.getString(EventFields.EXCEPTION_STACKTRACE_FIELD)));
                   break;
                 case EventFields.ASSERT_EVENT:
-                  boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(message.jsonObject.getString(EventFields.ASSERT_RESULT_FIELD));
+                  boolean passed = EventFields.ASSERT_RESULT_VALUE_PASS.equals(message.body.getString(EventFields.ASSERT_RESULT_FIELD));
                   if (passed) {
                   } else {
-                    failedAsserts.add(new AssertHolder(message.jsonObject.getString(EventFields.ASSERT_MESSAGE_FIELD),
-                        message.jsonObject.getString(EventFields.ASSERT_STACKTRACE_FIELD)));
+                    failedAsserts.add(new AssertHolder(message.body.getString(EventFields.ASSERT_MESSAGE_FIELD),
+                        message.body.getString(EventFields.ASSERT_STACKTRACE_FIELD)));
                   }
                   break;
                 case EventFields.START_TEST_EVENT:
                   //Ignore
                   break;
                 case EventFields.APP_STOPPED_EVENT:
-                  events.add(message.jsonObject);
+                  events.add(message.body);
                   break;
                 case EventFields.APP_READY_EVENT:
-                  events.add(message.jsonObject);
+                  events.add(message.body);
                   break;
                 case EventFields.TEST_COMPLETE_EVENT:
-                  events.add(message.jsonObject);
+                  events.add(message.body);
                   break;
                 default:
                   throw new IllegalArgumentException("Invalid type: " + type);
@@ -120,7 +121,7 @@ public class TestBase extends TestCase {
           }
         };
 
-        EventBus.instance.registerJsonHandler(EVENTS_ADDRESS, handler);
+        EventBus.instance.registerHandler(EVENTS_ADDRESS, handler);
 
         latch.countDown();
       }
@@ -143,7 +144,7 @@ public class TestBase extends TestCase {
         VertxInternal.instance.executeOnContext(contextID, new Runnable() {
           public void run() {
             VertxInternal.instance.setContextID(contextID);
-            EventBus.instance.unregisterJsonHandler(EVENTS_ADDRESS, handler);
+            EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
             latch.countDown();
           }
         });

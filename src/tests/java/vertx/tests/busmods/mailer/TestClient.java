@@ -3,6 +3,7 @@ package vertx.tests.busmods.mailer;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.JsonMessage;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestClientBase;
@@ -27,11 +28,11 @@ public class TestClient extends TestClientBase {
 
   public void testSendMultiple() throws Exception {
     final int numMails = 10;
-    Handler<JsonMessage> replyHandler = new Handler<JsonMessage>() {
+    Handler<Message<JsonObject>> replyHandler = new Handler<Message<JsonObject>>() {
       int count;
-      public void handle(JsonMessage message) {
+      public void handle(Message<JsonObject> message) {
         tu.checkContext();
-        tu.azzert(message.jsonObject.getString("status").equals("ok"));
+        tu.azzert(message.body.getString("status").equals("ok"));
         if (++count == numMails) {
           tu.testComplete();
         }
@@ -39,7 +40,7 @@ public class TestClient extends TestClientBase {
     };
     for (int i = 0; i < numMails; i++) {
       JsonObject jsonObject = createBaseMessage();
-      eb.sendJson("test.mailer", jsonObject, replyHandler);
+      eb.send("test.mailer", jsonObject, replyHandler);
     }
   }
 
@@ -99,22 +100,22 @@ public class TestClient extends TestClientBase {
   }
 
   private void send(JsonObject overrides, final String error) throws Exception {
-    Handler<JsonMessage> replyHandler = new Handler<JsonMessage>() {
+    Handler<Message<JsonObject>> replyHandler = new Handler<Message<JsonObject>>() {
       int count;
-      public void handle(JsonMessage message) {
+      public void handle(Message<JsonObject> message) {
         tu.checkContext();
         if (error == null) {
-          tu.azzert(message.jsonObject.getString("status").equals("ok"));
+          tu.azzert(message.body.getString("status").equals("ok"));
         } else {
-          tu.azzert(message.jsonObject.getString("status").equals("error"));
-          tu.azzert(message.jsonObject.getString("message").startsWith(error));
+          tu.azzert(message.body.getString("status").equals("error"));
+          tu.azzert(message.body.getString("message").startsWith(error));
         }
         tu.testComplete();
       }
     };
     JsonObject jsonObject = createBaseMessage();
     jsonObject.mergeIn(overrides);
-    eb.sendJson("test.mailer", jsonObject, replyHandler);
+    eb.send("test.mailer", jsonObject, replyHandler);
   }
 
   private JsonObject createBaseMessage() {

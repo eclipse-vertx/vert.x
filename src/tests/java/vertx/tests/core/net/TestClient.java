@@ -483,7 +483,7 @@ public class TestClient extends TestClientBase {
               });
 
               // Tell the server to resume
-              EventBus.instance.sendBinary("server_resume", "");
+              EventBus.instance.send("server_resume", "");
             }
           }
         });
@@ -765,11 +765,11 @@ public class TestClient extends TestClientBase {
         sock.resume();
       }
     };
-    EventBus.instance.registerBinaryHandler("client_resume", resumeHandler);
+    EventBus.instance.registerHandler("client_resume", resumeHandler);
     sock.closedHandler(new SimpleHandler() {
       public void handle() {
         tu.checkContext();
-        EventBus.instance.unregisterBinaryHandler("client_resume", resumeHandler);
+        EventBus.instance.unregisterHandler("client_resume", resumeHandler);
       }
     });
   }

@@ -45,7 +45,7 @@ public class FanoutServer implements VertxApp {
           public void handle(Buffer buffer) {
             System.out.println("Fanning out to " + connections.size() + " connections");
             for (String actorID : connections) {
-              EventBus.instance.sendBinary(actorID, buffer);
+              EventBus.instance.send(actorID, buffer);
             }
           }
         });

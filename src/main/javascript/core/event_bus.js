@@ -54,7 +54,7 @@ if (!vertx.EventBus) {
       // have to keep track of it :(
       handlerMap[handler] = wrapped;
 
-      jEventBus.registerBinaryHandler(address, wrapped);
+      jEventBus.registerHandler(address, wrapped);
     };
 
 
@@ -62,7 +62,7 @@ if (!vertx.EventBus) {
       checkHandlerParams(address, handler);
       var wrapped = handlerMap[handler];
       if (wrapped) {
-        jEventBus.unregisterBinaryHandler(address, wrapped);
+        jEventBus.unregisterHandler(address, wrapped);
         delete handlerMap[handler];
       }
     };
@@ -91,9 +91,9 @@ if (!vertx.EventBus) {
             replyHandler(json);
           }
         });
-        jEventBus.sendBinary(address, body, hndlr);
+        jEventBus.send(address, body, hndlr);
       } else {
-        jEventBus.sendBinary(address, body);
+        jEventBus.send(address, body);
       }
     };
 
