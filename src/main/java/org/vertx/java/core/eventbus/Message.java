@@ -76,6 +76,9 @@ public abstract class Message<T>  {
    * @param body
    */
   Message(String address, T body) {
+    if (address == null) {
+      throw new IllegalArgumentException("address must be specified");
+    }
     this.address = address;
     this.body = body;
   }
@@ -124,7 +127,7 @@ public abstract class Message<T>  {
     } else {
       replyAddress = null;
     }
-    body = readBody(pos, readBuff);
+    readBody(pos, readBuff);
   }
 
   protected void write(NetSocket socket) {
@@ -157,7 +160,7 @@ public abstract class Message<T>  {
 
   protected abstract Message copy();
 
-  protected abstract T readBody(int pos, Buffer readBuff);
+  protected abstract void readBody(int pos, Buffer readBuff);
 
   protected abstract void writeBody(Buffer buff);
 

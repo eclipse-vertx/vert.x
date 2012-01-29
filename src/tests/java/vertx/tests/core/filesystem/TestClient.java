@@ -853,7 +853,6 @@ public class TestClient extends TestClientBase {
                     return;
                   }
                   Buffer read = Buffer.create(readBytes);
-                  System.out.println("buff.length: " + buff.length() + " read length: " + read.length());
                   tu.azzert(TestUtils.buffersEqual(buff, read));
                   if (++count == chunks) {
                     tu.testComplete();

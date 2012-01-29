@@ -7,7 +7,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class StringMessage extends Message<String> {
+class StringMessage extends Message<String> {
 
   private static final Logger log = Logger.getLogger(StringMessage.class);
 
@@ -21,22 +21,34 @@ public class StringMessage extends Message<String> {
     super(readBuff);
   }
 
-  protected String readBody(int pos, Buffer readBuff) {
-    int strLength = readBuff.getInt(pos);
-    pos += 4;
-    byte[] bytes = readBuff.getBytes(pos, pos + strLength);
-    return new String(bytes, CharsetUtil.UTF_8);
+  protected void readBody(int pos, Buffer readBuff) {
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      int strLength = readBuff.getInt(pos);
+      pos += 4;
+      byte[] bytes = readBuff.getBytes(pos, pos + strLength);
+      body = new String(bytes, CharsetUtil.UTF_8);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-    buff.appendInt(encoded.length);
-    buff.appendBytes(encoded);
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendInt(encoded.length);
+      buff.appendBytes(encoded);
+    }
     encoded = null;
   }
 
   protected int getBodyLength() {
-    encoded = body.getBytes(CharsetUtil.UTF_8);
-    return 4 + encoded.length;
+    if (body == null) {
+      return 1;
+    } else {
+      encoded = body.getBytes(CharsetUtil.UTF_8);
+      return 1 +4 + encoded.length;
+    }
   }
 
   protected Message copy() {
@@ -49,7 +61,7 @@ public class StringMessage extends Message<String> {
   }
 
   protected void handleReply(String reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

@@ -6,7 +6,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DoubleMessage extends Message<Double> {
+class DoubleMessage extends Message<Double> {
 
   private static final Logger log = Logger.getLogger(DoubleMessage.class);
 
@@ -18,16 +18,24 @@ public class DoubleMessage extends Message<Double> {
     super(readBuff);
   }
 
-  protected Double readBody(int pos, Buffer readBuff) {
-    return readBuff.getDouble(pos);
+  protected void readBody(int pos, Buffer readBuff) {
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      body = readBuff.getDouble(pos);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-    buff.appendDouble(body);
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendDouble(body);
+    }
   }
 
   protected int getBodyLength() {
-    return 8;
+    return 1 + (body == null ? 0 : 8);
   }
 
   protected Message copy() {
@@ -40,7 +48,7 @@ public class DoubleMessage extends Message<Double> {
   }
 
   protected void handleReply(Double reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

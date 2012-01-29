@@ -56,13 +56,16 @@ module Vertx
     def EventBus.send(address, message, &reply_handler)
       raise "An address must be specified" if !address
       raise "A message must be specified" if !message
-      json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
+      message = org.vertx.java.core.json.JsonObject.new(JSON.generate(message)) if message.is_a? Hash
       if reply_handler != nil
-        org.vertx.java.core.eventbus.EventBus.instance.send(address, json_obj, InternalHandler.new(nil, reply_handler))
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, message, InternalHandler.new(nil, reply_handler))
       else
-        org.vertx.java.core.eventbus.EventBus.instance.send(address, json_obj)
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, message)
       end
     end
+
+    #method to register a handler on a generated address, for when you don't care about address name
+#this is actually useful in java too
 
     # Register a handler.
     # @param address [String] The address to register for. Any messages sent to that address will be
@@ -100,8 +103,8 @@ module Vertx
         @hndlr = hndlr
       end
 
-      def handle(json_message)
-        @hndlr.call(Message.new(json_message))
+      def handle(message)
+        @hndlr.call(Message.new(message))
       end
     end
 
@@ -114,9 +117,9 @@ module Vertx
     attr_reader :json_object
 
     # @private
-    def initialize(json_msg)
-      @j_del = json_msg
-      @json_object = JSON.parse(json_msg.jsonObject.encode)
+    def initialize(message)
+      @j_del = message
+      @json_object = JSON.parse(message.body.encode) if message.body.is_a? org.vertx.java.core.json.JsonObject
     end
 
     # Reply to this message. If the message was sent specifying a receipt handler, that handler will be
@@ -127,8 +130,8 @@ module Vertx
     # @param [Hash] Message send as reply
     def reply(reply)
       raise "A reply message must be specified" if !reply
-      json_obj = org.vertx.java.core.json.JsonObject.new(JSON.generate(reply))
-      @j_del.reply(json_obj)
+      reply = org.vertx.java.core.json.JsonObject.new(JSON.generate(reply)) if reply.is_a? Hash
+      @j_del.reply(reply)
     end
 
   end
@@ -162,6 +165,5 @@ module Vertx
     end
 
   end
-
 
 end

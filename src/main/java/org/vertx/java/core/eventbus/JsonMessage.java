@@ -8,7 +8,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonMessage extends Message<JsonObject> {
+class JsonMessage extends Message<JsonObject> {
 
   private static final Logger log = Logger.getLogger(JsonMessage.class);
 
@@ -22,28 +22,43 @@ public class JsonMessage extends Message<JsonObject> {
     super(readBuff);
   }
 
-  protected JsonObject readBody(int pos, Buffer readBuff) {
-    int strLength = readBuff.getInt(pos);
-    pos += 4;
-    byte[] bytes = readBuff.getBytes(pos, pos + strLength);
-    String str = new String(bytes, CharsetUtil.UTF_8);
-    return new JsonObject(str);
+  protected void readBody(int pos, Buffer readBuff) {
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      int strLength = readBuff.getInt(pos);
+      pos += 4;
+      byte[] bytes = readBuff.getBytes(pos, pos + strLength);
+      String str = new String(bytes, CharsetUtil.UTF_8);
+      body = new JsonObject(str);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-    buff.appendInt(encoded.length);
-    buff.appendBytes(encoded);
-    encoded = null;
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendInt(encoded.length);
+      buff.appendBytes(encoded);
+    }
   }
 
   protected int getBodyLength() {
-    String strJson = body.encode();
-    encoded = strJson.getBytes(CharsetUtil.UTF_8);
-    return 4 + encoded.length;
+    if (body == null) {
+      return 1;
+    } else {
+      String strJson = body.encode();
+      encoded = strJson.getBytes(CharsetUtil.UTF_8);
+      return 1 + 4 + encoded.length;
+    }
   }
 
   protected Message copy() {
-    return new JsonMessage(address, body.copy());
+    Message copied = new JsonMessage(address, body == null ? null : body.copy());
+    copied.replyAddress = this.replyAddress;
+    copied.bus = this.bus;
+    copied.sender = this.sender;
+    return copied;
   }
 
   protected byte type() {
@@ -51,7 +66,7 @@ public class JsonMessage extends Message<JsonObject> {
   }
 
   protected void handleReply(JsonObject reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

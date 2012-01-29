@@ -178,16 +178,11 @@ module Vertx
     def initialize(j_socket)
       @j_del = j_socket
 
-      #
-
-      Should registering handlers return an id???????
-
-
-      @write_handler_id = EventBus::register_handler { |buffer|
+      @write_handle = EventBus::register_handler { |buffer|
         write_buffer(buffer)
       }
       @j_del.closedHandler(Proc.new {
-        Vertx::unregister_handler(@write_handler_id)
+        Vertx::unregister_handler(@write_handle)
         @closed_handler.call if @closed_handler
       })
     end

@@ -18,8 +18,6 @@ package org.vertx.java.core;
 
 import org.vertx.java.core.buffer.Buffer;
 
-import java.math.BigDecimal;
-
 /*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -1,9 +1,6 @@
 package vertx.tests.core.globalhandlers;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
 /**

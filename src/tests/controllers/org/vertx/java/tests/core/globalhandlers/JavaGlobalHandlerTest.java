@@ -1,14 +1,9 @@
 package org.vertx.java.tests.core.globalhandlers;
 
-import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
-import vertx.tests.core.globalhandlers.HandlerServer;
 import vertx.tests.core.globalhandlers.TestClient;
-import vertx.tests.core.globalhandlers.UnregisteringServer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

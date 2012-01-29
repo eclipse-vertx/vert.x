@@ -8,6 +8,9 @@ if (!vertx.EventBus) {
 
     var jEventBus = org.vertx.java.core.eventbus.EventBus.instance;
 
+    // Get ref to the Java class of the JsonObject
+    var jsonObjectClass = new org.vertx.java.core.json.JsonObject('{}').getClass();
+
     function checkHandlerParams(address, handler) {
       if (!address) {
         throw "address must be specified";
@@ -23,32 +26,30 @@ if (!vertx.EventBus) {
       }
     }
 
-    function bufferToStr(jBuffer) {
-      var str;
-      if (jBuffer.length() == 0) {
-        str = "{}";
-      } else {
-        str = '' + jBuffer.toString();
-      }
-      return str;
+    function wrappedHandler(handler) {
+      return new org.vertx.java.core.Handler({
+        handle: function(jMsg) {
+          var body = jMsg.body;
+          if (body && body.getClass() === jsonObjectClass) {
+            // Convert to JS JSON object
+            body = JSON.parse(jMsg.body.encode());
+          }
+
+          handler(body, function(reply) {
+            if (!reply) {
+              throw "Reply message must be specified";
+            }
+            reply = convertMessage(reply);
+            jMsg.reply(reply);
+          })
+        }
+      });
     }
 
     that.registerHandler = function(address, handler) {
       checkHandlerParams(address, handler);
-      var wrapped = new org.vertx.java.core.Handler({
-        handle: function(jMsg) {
-          var bodyStr = bufferToStr(jMsg.body);
-          var json = JSON.parse(bodyStr);
-          handler(json, function(reply) {
-            if (!reply) {
-              throw "Reply message must be specified";
-            }
-            var bodyStr = JSON.stringify(reply);
-            var body = org.vertx.java.core.buffer.Buffer.create(bodyStr);
-            jMsg.reply(body);
-          })
-        }
-      });
+
+      var wrapped = wrappedHandler(handler);
 
       // This is a bit more complex than it should be because we have to wrap the handler - therefore we
       // have to keep track of it :(
@@ -67,6 +68,24 @@ if (!vertx.EventBus) {
       }
     };
 
+    function convertMessage(message) {
+      var msgType = typeof message;
+      switch (msgType) {
+        case 'string':
+        case 'number':
+        case 'boolean':
+        case 'undefined':
+          break;
+        case 'object':
+          // Assume JSON message
+          message = new org.vertx.java.core.json.JsonObject(JSON.stringify(message));
+          break;
+        default:
+          throw 'Invalid type for message';
+      }
+      return message;
+    }
+
     /*
     Message should be a JSON object
     It should have a property "address"
@@ -81,19 +100,12 @@ if (!vertx.EventBus) {
       if (replyHandler && typeof replyHandler != "function") {
         throw "replyHandler must be a function";
       }
-      var bodyStr = JSON.stringify(message);
-      var body = org.vertx.java.core.buffer.Buffer.create(bodyStr);
+      message = convertMessage(message);
       if (replyHandler) {
-        var hndlr = new org.vertx.java.core.Handler({
-          handle: function(jMessage) {
-            var bodyStr = bufferToStr(jMessage.body);
-            var json = JSON.parse(bodyStr);
-            replyHandler(json);
-          }
-        });
-        jEventBus.send(address, body, hndlr);
+        var wrapped = wrappedHandler(replyHandler);
+        jEventBus.send(address, message, wrapped);
       } else {
-        jEventBus.send(address, body);
+        jEventBus.send(address, message);
       }
     };
 

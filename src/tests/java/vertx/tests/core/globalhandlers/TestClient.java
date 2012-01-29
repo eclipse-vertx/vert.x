@@ -1,13 +1,6 @@
 package vertx.tests.core.globalhandlers;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Immutable;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestClientBase;
-
-import java.util.HashMap;
 
 
 /**
