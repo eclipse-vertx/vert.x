@@ -6,7 +6,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FloatMessage extends Message<Float> {
+class FloatMessage extends Message<Float> {
 
   private static final Logger log = Logger.getLogger(FloatMessage.class);
 
@@ -18,16 +18,24 @@ public class FloatMessage extends Message<Float> {
     super(readBuff);
   }
 
-  protected Float readBody(int pos, Buffer readBuff) {
-    return readBuff.getFloat(pos);
+  protected void readBody(int pos, Buffer readBuff) {
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      body = readBuff.getFloat(pos);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-    buff.appendFloat(body);
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendFloat(body);
+    }
   }
 
   protected int getBodyLength() {
-    return 4;
+    return 1 + (body == null ? 0 : 4);
   }
 
   protected Message copy() {
@@ -40,7 +48,7 @@ public class FloatMessage extends Message<Float> {
   }
 
   protected void handleReply(Float reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

@@ -6,7 +6,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BufferMessage extends Message<Buffer> {
+class BufferMessage extends Message<Buffer> {
 
   private static final Logger log = Logger.getLogger(BufferMessage.class);
 
@@ -18,28 +18,41 @@ public class BufferMessage extends Message<Buffer> {
     super(readBuff);
   }
 
-  protected Buffer readBody(int pos, Buffer readBuff) {
-    int buffLength = readBuff.getInt(pos);
-    pos += 4;
-    byte[] payload = readBuff.getBytes(pos, pos + buffLength);
-    return Buffer.create(payload);
+  protected void readBody(int pos, Buffer readBuff) {
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      pos++;
+      int buffLength = readBuff.getInt(pos);
+      pos += 4;
+      byte[] payload = readBuff.getBytes(pos, pos + buffLength);
+      body = Buffer.create(payload);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-   buff.appendInt(body.length());
-   buff.appendBuffer(body);
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendInt(body.length());
+      buff.appendBuffer(body);
+    }
   }
 
   protected int getBodyLength() {
-    return 4 + body.length();
+    return 1 + (body == null ? 0 : 4 + body.length());
   }
 
   protected Message copy() {
-    BufferMessage copied = new BufferMessage(address, body.copy());
-    copied.replyAddress = this.replyAddress;
-    copied.bus = this.bus;
-    copied.sender = this.sender;
-    return copied;
+    if (body == null) {
+      return this;
+    } else {
+      BufferMessage copied = new BufferMessage(address, body.copy());
+      copied.replyAddress = this.replyAddress;
+      copied.bus = this.bus;
+      copied.sender = this.sender;
+      return copied;
+    }
   }
 
   protected byte type() {
@@ -47,7 +60,7 @@ public class BufferMessage extends Message<Buffer> {
   }
 
   protected void handleReply(Buffer reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

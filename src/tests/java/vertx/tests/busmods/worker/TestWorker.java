@@ -3,7 +3,6 @@ package vertx.tests.busmods.worker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonMessage;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;

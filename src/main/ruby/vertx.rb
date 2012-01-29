@@ -14,7 +14,6 @@
 
 include Java
 
-require 'core/global_handlers'
 require 'core/timers'
 require 'core/buffer'
 require 'core/file_system'

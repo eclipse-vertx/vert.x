@@ -16,6 +16,7 @@ void testIsolation() {
 }
 
 tu.registerTests(this)
+
 tu.appReady()
 
 void vertxStop() {

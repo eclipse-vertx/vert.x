@@ -1,7 +1,6 @@
 package vertx.tests.busmods.mailer;
 
 import org.vertx.java.busmods.mailer.Mailer;
-import org.vertx.java.core.eventbus.JsonMessage;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.newtests.TestUtils;

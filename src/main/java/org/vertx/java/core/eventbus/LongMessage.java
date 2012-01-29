@@ -6,7 +6,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class LongMessage extends Message<Long> {
+class LongMessage extends Message<Long> {
 
   private static final Logger log = Logger.getLogger(LongMessage.class);
 
@@ -18,16 +18,24 @@ public class LongMessage extends Message<Long> {
     super(readBuff);
   }
 
-  protected Long readBody(int pos, Buffer readBuff) {
-    return readBuff.getLong(pos);
+  protected void readBody(int pos, Buffer readBuff) {
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      body = readBuff.getLong(pos);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-    buff.appendLong(body);
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendLong(body);
+    }
   }
 
   protected int getBodyLength() {
-    return 8;
+    return 1 + (body == null ? 0 : 8);
   }
 
   protected Message copy() {
@@ -40,7 +48,7 @@ public class LongMessage extends Message<Long> {
   }
 
   protected void handleReply(Long reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

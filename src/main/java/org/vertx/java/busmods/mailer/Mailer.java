@@ -3,7 +3,6 @@ package org.vertx.java.busmods.mailer;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VertxApp;
-import org.vertx.java.core.eventbus.JsonMessage;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;

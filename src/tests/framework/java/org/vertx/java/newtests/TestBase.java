@@ -8,7 +8,6 @@ import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.AppManager;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.JsonMessage;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -126,7 +125,7 @@ public class TestBase extends TestCase {
         latch.countDown();
       }
     });
-    latch.await(5, TimeUnit.SECONDS);
+    latch.await(10, TimeUnit.SECONDS);
   }
 
   @Override
@@ -148,7 +147,7 @@ public class TestBase extends TestCase {
             latch.countDown();
           }
         });
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(10, TimeUnit.SECONDS);
       } catch (Exception e) {
         e.printStackTrace();
         throw e;
@@ -214,7 +213,7 @@ public class TestBase extends TestCase {
 
     startedApps.add(appName);
 
-    if (!doneLatch.await(5, TimeUnit.SECONDS)) {
+    if (!doneLatch.await(10, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
     }
 
@@ -235,7 +234,7 @@ public class TestBase extends TestCase {
         latch.countDown();
       }
     });
-    if (!latch.await(5, TimeUnit.SECONDS)) {
+    if (!latch.await(10, TimeUnit.SECONDS)) {
         throw new IllegalStateException("Timedout waiting for app to stop");
     }
     for (int i = 0; i < instances; i++) {

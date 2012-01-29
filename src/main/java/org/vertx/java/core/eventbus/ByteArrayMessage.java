@@ -6,7 +6,7 @@ import org.vertx.java.core.logging.Logger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ByteArrayMessage extends Message<byte[]> {
+class ByteArrayMessage extends Message<byte[]> {
 
   private static final Logger log = Logger.getLogger(ByteArrayMessage.class);
 
@@ -18,11 +18,10 @@ public class ByteArrayMessage extends Message<byte[]> {
     super(readBuff);
   }
 
-  protected byte[] readBody(int pos, Buffer readBuff) {
+  protected void readBody(int pos, Buffer readBuff) {
     int buffLength = readBuff.getInt(pos);
     pos += 4;
-    byte[] payload = readBuff.getBytes(pos, pos + buffLength);
-    return payload;
+    body = readBuff.getBytes(pos, pos + buffLength);
   }
 
   protected void writeBody(Buffer buff) {
@@ -49,7 +48,7 @@ public class ByteArrayMessage extends Message<byte[]> {
   }
 
   protected void handleReply(byte[] reply) {
-    EventBus.instance.send(replyAddress, reply);
+    bus.send(replyAddress, reply);
   }
 
 }

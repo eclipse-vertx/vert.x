@@ -242,8 +242,9 @@ public class EventBus {
         registerHandler(message.replyAddress, replyHandler, null, true);
       }
 
-      // First check if sender is in response address cache - it will be if it's a response
+      // First check if sender is in response address cache - it will be if it's a reply
       ServerID theServerID = replyAddressCache.remove(message.address);
+
       if (theServerID != null) {
         // Yes, it's a response to a particular server
         if (!theServerID.equals(this.serverID)) {
@@ -345,7 +346,7 @@ public class EventBus {
    * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public <T> void unregisterHandler(String address, Handler<Message<T>> handler,
+  public void unregisterHandler(String address, Handler<? extends Message> handler,
                                 CompletionHandler<Void> completionHandler) {
     Set<HandlerHolder> set = handlers.get(address);
     if (set != null) {
@@ -363,7 +364,7 @@ public class EventBus {
     }
   }
 
-  public <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
+  public void unregisterHandler(String address, Handler<? extends Message> handler) {
     unregisterHandler(address, handler, null);
   }
 
@@ -403,16 +404,27 @@ public class EventBus {
     server.close(doneHandler);
   }
 
-  public <T> void registerHandler(String address, Handler<Message<T>> handler,
+  public void registerHandler(String address, Handler<? extends Message> handler,
                                CompletionHandler<Void> completionHandler) {
     registerHandler(address, handler, completionHandler, false);
   }
 
-  public <T> void registerHandler(String address, Handler<Message<T>> handler) {
+  public void registerHandler(String address, Handler<? extends Message> handler) {
     registerHandler(address, handler, null, false);
   }
 
-  private <T> void registerHandler(String address, Handler<Message<T>> handler,
+  // Register handler on generated address
+  // @returns a unique id, also used for address
+  // We should also always return a unique id which can be used to remove handler
+  public String registerHandler(Handler<? extends Message> handler) {
+    return null;
+  }
+
+  public void unregisterHandler(String handlerID) {
+
+  }
+
+  private void registerHandler(String address, Handler<? extends Message> handler,
                                  CompletionHandler<Void> completionHandler,
                                boolean replyHandler) {
     Set<HandlerHolder> set = handlers.get(address);
