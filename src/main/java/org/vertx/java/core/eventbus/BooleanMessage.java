@@ -48,7 +48,7 @@ class BooleanMessage extends Message<Boolean> {
   }
 
   protected void handleReply(Boolean reply) {
-    bus.send(replyAddress, reply == reply);
+    bus.send(replyAddress, reply);
   }
 
 }

@@ -53,7 +53,7 @@ module Vertx
     # It will be called when the reply from a receiver is received.
     def EventBus.send(address, message, &reply_handler)
       raise "An address must be specified" if !address
-      raise "A message must be specified" if !message
+      raise "A message must be specified" if message == nil
       message = convert_msg(message)
       if reply_handler != nil
         org.vertx.java.core.eventbus.EventBus.instance.send(address, message, InternalHandler.new(reply_handler))
@@ -99,6 +99,10 @@ module Vertx
         message = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
       elsif message.is_a? Buffer
         message = message._to_java_buffer
+      elsif message.is_a? Fixnum
+        message = java.lang.Long.new(message)
+      elsif message.is_a? Float
+        message = java.lang.Double.new(message)
       end
       message
     end
@@ -127,6 +131,7 @@ module Vertx
 
     # @private
     def initialize(message)
+
       @j_del = message
       if message.body.is_a? org.vertx.java.core.json.JsonObject
         @body = JSON.parse(message.body.encode)
@@ -144,7 +149,7 @@ module Vertx
     # of the original message.
     # @param [Hash] Message send as reply
     def reply(reply)
-      raise "A reply message must be specified" if !reply
+      raise "A reply message must be specified" if reply == nil
       reply = EventBus::convert_msg(reply)
       @j_del.reply(reply)
     end

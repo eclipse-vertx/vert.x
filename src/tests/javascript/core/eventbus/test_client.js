@@ -150,24 +150,21 @@ function testEchoJson() {
 
 function echo(msg) {
   eb.registerHandler(address, function MyHandler(received, replier) {
-//    log.println("sent msg: " + msg);
-//    log.println("sent msg type: " + typeof msg);
-//    log.println("received msg: " + received);
-//    log.println("received msg type: " + typeof received);
-
-    if (typeof msg != 'object') {
-      tu.azzert(msg === received);
-    } else {
-      //Json object
-      for (field in msg) {
-        tu.azzert(msg.field === received.field);
-      }
-    }
     tu.checkContext();
     eb.unregisterHandler(address, MyHandler);
     replier(received);
   });
   eb.send(address, msg, function (reply){
+
+    if (typeof msg != 'object') {
+      tu.azzert(msg === reply);
+    } else {
+      //Json object
+      for (field in reply) {
+        tu.azzert(msg.field === reply.field);
+      }
+    }
+
     tu.testComplete();
   });
 }
