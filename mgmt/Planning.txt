@@ -109,6 +109,8 @@ network)
 42) Currently apps not undeployed when server stops or vertxrun is CTRL-C
 43) context not destroyed after app stop is called. - this is tricky - we don't want to destroy the context until
 the application has stopped completely - this might be asynchronous (e.g. server.close) - this means we will have to pass
+44) Allow vertxbus.js to send non json object data, i.e. strings, numbers etc (same as normal eventbus api)
+45) eventbus interop test between JS, Java and Ruby
 
 
 
