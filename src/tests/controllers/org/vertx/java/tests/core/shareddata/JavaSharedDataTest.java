@@ -20,7 +20,6 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Immutable;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.shareddata.SharedCounter;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
@@ -111,45 +110,7 @@ public class JavaSharedDataTest extends TestCase {
     assert (set4 != set3);
   }
 
-  @Test
-  public void testCounter() throws Exception {
 
-    SharedCounter counter = SharedData.getCounter("foo");
-
-    SharedCounter counter2 = SharedData.getCounter("foo");
-
-    assert (counter == counter2);
-
-    SharedCounter counter3 = SharedData.getCounter("bar");
-
-    assert (counter3 != counter2);
-
-    assert (SharedData.removeCounter("foo"));
-
-    SharedCounter counter4 = SharedData.getCounter("foo");
-
-    assert (counter4 != counter3);
-  }
-
-//  @Test
-//  public void testQueue() throws Exception {
-//
-//    SharedQueue<String> queue = SharedData.getQueue("foo");
-//
-//    SharedQueue<String> queue2 = SharedData.getQueue("foo");
-//
-//    assert (queue == queue2);
-//
-//    SharedQueue<String> queue3 = SharedData.getQueue("bar");
-//
-//    assert (queue3 != queue2);
-//
-//    assert (SharedData.removeQueue("foo"));
-//
-//    SharedQueue<String> queue4 = SharedData.getQueue("foo");
-//
-//    assert (queue4 != queue3);
-//  }
 
 }
 

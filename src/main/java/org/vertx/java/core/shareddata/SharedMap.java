@@ -16,18 +16,18 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.cliffc.high_scale_lib.NonBlockingHashMap;
 import org.vertx.java.core.Utils;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
-  private final ConcurrentMap<K, V> map = new NonBlockingHashMap<>();
+  private final ConcurrentMap<K, V> map = new ConcurrentHashMap<>();
 
   public V putIfAbsent(K k, V v) {
     k = Utils.checkShareableObject(k);

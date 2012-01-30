@@ -132,14 +132,14 @@ public class JavaWebsocketTest extends TestBase {
         appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getCounter("connections").set(0);
-      SharedData.getCounter("servers").set(0);
+      SharedData.getSet("connections").clear();
+      SharedData.getSet("servers").clear();
       SharedData.getSet("instances").clear();
       SharedData.getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 
-      assertEquals(numConnections, SharedData.getCounter("connections").get());
+      assertEquals(numConnections, SharedData.getSet("connections").size());
       // And make sure connection requests are distributed amongst them
       assertEquals(initialServers, SharedData.getSet("instances").size());
 
@@ -150,8 +150,8 @@ public class JavaWebsocketTest extends TestBase {
       }
     }
 
-    SharedData.getCounter("connections").set(0);
-    SharedData.getCounter("servers").set(0);
+    SharedData.getSet("connections").clear();
+    SharedData.getSet("servers").clear();
     SharedData.getSet("instances").clear();
     SharedData.getMap("params").put("numConnections", numConnections);
 
@@ -167,12 +167,9 @@ public class JavaWebsocketTest extends TestBase {
 
     startTest(testName);
 
-    assertEquals(numConnections, SharedData.getCounter("connections").get());
+    assertEquals(numConnections, SharedData.getSet("connections").size());
     // And make sure connection requests are distributed amongst them
     assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
   }
 
-//  public void testFoo() throws Exception {
-//    super.runTestInLoop("testSharedServersMultipleInstances3StartAllStopAll", 10);
-//  }
 }

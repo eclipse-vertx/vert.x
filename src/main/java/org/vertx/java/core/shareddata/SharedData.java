@@ -16,11 +16,12 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.cliffc.high_scale_lib.NonBlockingHashMap;
+import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -55,18 +56,17 @@ public class SharedData {
 
   private static final Logger log = Logger.getLogger(SharedData.class);
 
+  private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
+  private static ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
 
-  private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new NonBlockingHashMap<>();
-  private static ConcurrentMap<Object, SharedSet<?>> sets = new NonBlockingHashMap<>();
-  private static ConcurrentMap<Object, SharedCounter> counters = new NonBlockingHashMap<>();
-  private static ConcurrentMap<Object, SharedQueue> queues = new NonBlockingHashMap<>();
+  private static ClusterManager clusterManager;
 
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    * The Map instance returned is a lock free Map which supports a very high degree of concurrency.
    */
-  public static <K, V> Map<K, V> getMap(Object name) {
+  public static <K, V> ConcurrentMap<K, V> getMap(String name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
     if (map == null) {
       map = new SharedMap<>();
@@ -83,7 +83,7 @@ public class SharedData {
    * are guaranteed to return the same {@code Set} instance. <p>
    * The Set instance returned is a lock free Map which supports a very high degree of concurrency.
    */
-  public static <E> Set<E> getSet(Object name) {
+  public static <E> Set<E> getSet(String name) {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
     if (set == null) {
       set = new SharedSet<>();
@@ -95,30 +95,6 @@ public class SharedData {
     }
     return set;
   }
-
-  public static SharedCounter getCounter(Object name) {
-    SharedCounter counter = counters.get(name);
-    if (counter == null) {
-      counter = new SharedCounter();
-      SharedCounter prev = counters.putIfAbsent(name, counter);
-      if (prev != null) {
-        counter = prev;
-      }
-    }
-    return counter;
-  }
-
-//  public static <E> SharedQueue<E> getQueue(Object name) {
-//    SharedQueue<E> queue = (SharedQueue<E>) queues.get(name);
-//    if (queue == null) {
-//      queue = new SharedQueue<>();
-//      SharedQueue prev = queues.putIfAbsent(name, queue);
-//      if (prev != null) {
-//        queue = prev;
-//      }
-//    }
-//    return queue;
-//  }
 
   /**
    * Remove the {@code Map} with the specifiec {@code name}.
@@ -134,11 +110,4 @@ public class SharedData {
     return sets.remove(name) != null;
   }
 
-  public static boolean removeCounter(Object name) {
-    return counters.remove(name) != null;
-  }
-//
-//  public static boolean removeQueue(Object name) {
-//    return queues.remove(name) != null;
-//  }
 }
