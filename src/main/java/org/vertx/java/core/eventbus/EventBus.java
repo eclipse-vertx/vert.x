@@ -1,6 +1,6 @@
 package org.vertx.java.core.eventbus;
 
-import com.hazelcast.util.ConcurrentHashSet;
+import org.mozilla.javascript.Context;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -17,13 +17,11 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
-import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -120,100 +118,338 @@ public class EventBus {
     }).listen(serverID.port, serverID.host);
   }
 
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
     send(new JsonMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, JsonObject message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler) {
     send(new BufferMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Buffer message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler) {
     send(new ByteArrayMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, byte[] message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, String message, final Handler<Message<String>> replyHandler) {
     send(new StringMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, String message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Integer message, final Handler<Message<Integer>> replyHandler) {
     send(new IntMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Integer message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Long message, final Handler<Message<Long>> replyHandler) {
     send(new LongMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Long message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Float message, final Handler<Message<Float>> replyHandler) {
     send(new FloatMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Float message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Double message, final Handler<Message<Double>> replyHandler) {
     send(new DoubleMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Double message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) {
     send(new BooleanMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Boolean message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Short message, final Handler<Message<Short>> replyHandler) {
     send(new ShortMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Short message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Character message, final Handler<Message<Character>> replyHandler) {
     send(new CharacterMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Character message) {
     send(address, message, null);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   public void send(String address, Byte message, final Handler<Message<Byte>> replyHandler) {
     send(new ByteMessage(address, message), replyHandler);
   }
-  
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
   public void send(String address, Byte message) {
     send(address, message, null);
+  }
+
+  /**
+   * Unregisters a handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
+  public void unregisterHandler(String address, Handler<? extends Message> handler,
+                                CompletionHandler<Void> completionHandler) {
+    Map<HandlerHolder, String> map = handlers.get(address);
+    if (map != null) {
+      String handlerID = map.remove(new HandlerHolder(handler, false));
+      if (handlerID != null) {
+        handlersByID.remove(handlerID);
+      }
+      if (map.isEmpty()) {
+        handlers.remove(address);
+        if (subs != null) {
+          removeSub(address, serverID, completionHandler);
+        } else if (completionHandler != null) {
+          callCompletionHandler(completionHandler);
+        }
+      } else if (completionHandler != null) {
+        callCompletionHandler(completionHandler);
+      }
+    }
+  }
+
+  /**
+   * Unregister a handler
+   * @param address The address the handler was registered aty
+   * @param handler The handler
+   */
+  public void unregisterHandler(String address, Handler<? extends Message> handler) {
+    unregisterHandler(address, handler, null);
+  }
+
+  /**
+   * Unregister a handler given a handler id
+   * @param id The handler id
+   */
+  public void unregisterHandler(String id) {
+    unregisterHandler(id, (CompletionHandler<Void>) null);
+  }
+
+  /**
+   * Unregister a handler given a handler id
+   * @param id The handler id
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
+  public void unregisterHandler(String id, CompletionHandler<Void> completionHandler) {
+    HandlerInfo info = handlersByID.get(id);
+    if (info != null) {
+      unregisterHandler(info.address, info.handler, completionHandler);
+    }
+  }
+
+  /**
+   * Registers a handler against a uniquely generated address, the address is returned as the id
+   * @param handler
+   * @return The handler id which is the same as the address
+   */
+  public String registerHandler(Handler<? extends Message> handler) {
+    return registerHandler(handler, null);
+  }
+
+  /**
+   * Registers a handler against a uniquely generated address, the address is returned as the id
+   * @param handler
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   * @return The handler id which is the same as the address
+   */
+  public String registerHandler(Handler<? extends Message> handler,
+                               CompletionHandler<Void> completionHandler) {
+    return registerHandler(null, handler, completionHandler, false);
+  }
+
+  /**
+   * Registers a handler against the specified address
+   * @param address The address top register it at
+   * @param handler The handler
+   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   * @return The handler id which is the same as the address
+   */
+  public String registerHandler(String address, Handler<? extends Message> handler,
+                               CompletionHandler<Void> completionHandler) {
+    return registerHandler(address, handler, completionHandler, false);
+  }
+
+  /**
+   * Registers a handler against the specified address
+   * @param address The address top register it at
+   * @param handler The handler
+   * @return The handler id which is the same as the address
+   */
+  public String registerHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, null);
+  }
+
+  protected void close(Handler<Void> doneHandler) {
+    server.close(doneHandler);
   }
 
   private void send(final Message message, final Handler replyHandler) {
@@ -265,71 +501,6 @@ public class EventBus {
         VertxInternal.instance.setContextID(contextID);
       }
     }
-  }
-
-  /**
-   * Unregisters a handler
-   * @param address The address the handler was registered to
-   * @param handler The handler
-   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   */
-  public void unregisterHandler(String address, Handler<? extends Message> handler,
-                                CompletionHandler<Void> completionHandler) {
-    Map<HandlerHolder, String> map = handlers.get(address);
-    if (map != null) {
-      String handlerID = map.remove(new HandlerHolder(handler, false));
-      if (handlerID != null) {
-        handlersByID.remove(handlerID);
-      }
-      if (map.isEmpty()) {
-        handlers.remove(address);
-        if (subs != null) {
-          removeSub(address, serverID, completionHandler);
-        } else if (completionHandler != null) {
-          callCompletionHandler(completionHandler);
-        }
-      } else if (completionHandler != null) {
-        callCompletionHandler(completionHandler);
-      }
-    }
-  }
-
-  public void unregisterHandler(String address, Handler<? extends Message> handler) {
-    unregisterHandler(address, handler, null);
-  }
-
-  public void unregisterHandler(String id) {
-    unregisterHandler(id, (CompletionHandler<Void>) null);
-  }
-
-  public void unregisterHandler(String id, CompletionHandler<Void> completionHandler) {
-    HandlerInfo info = handlersByID.get(id);
-    if (info != null) {
-      unregisterHandler(info.address, info.handler, completionHandler);
-    }
-  }
-
-  protected void close(Handler<Void> doneHandler) {
-    server.close(doneHandler);
-  }
-
-  public String registerHandler(Handler<? extends Message> handler) {
-    return registerHandler(handler, null);
-  }
-
-  public String registerHandler(Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler) {
-    return registerHandler(null, handler, completionHandler, false);
-  }
-
-  public String registerHandler(String address, Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler) {
-    return registerHandler(address, handler, completionHandler, false);
-  }
-
-  public String registerHandler(String address, Handler<? extends Message> handler) {
-    return registerHandler(address, handler, null);
   }
 
   private String registerHandler(String address, Handler<? extends Message> handler,
