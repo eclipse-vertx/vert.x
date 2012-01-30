@@ -95,13 +95,14 @@ module Vertx
     # @private
     def initialize(j_sock)
       @j_del = j_sock
-      @handler_id = Vertx::register_handler { |buffer|
+      @handler_id = EventBus::register_simple_handler { |buffer|
         write_buffer(buffer)
       }
     end
 
     # Close the socket
     def close
+      EventBus::unregister_handler(@handler_id)
       @j_del.close
     end
 

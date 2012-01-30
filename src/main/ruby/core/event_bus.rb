@@ -45,9 +45,7 @@ module Vertx
   # @author {http://tfox.org Tim Fox}
   class EventBus
 
-    # These could actually be normal map/counters since no concurrency here
     @@handler_map = {}
-    @@handler_seq = 0
 
     # Send a message on the event bus
     # @param message [Hash] The message to send
@@ -56,16 +54,13 @@ module Vertx
     def EventBus.send(address, message, &reply_handler)
       raise "An address must be specified" if !address
       raise "A message must be specified" if !message
-      message = org.vertx.java.core.json.JsonObject.new(JSON.generate(message)) if message.is_a? Hash
+      message = convert_msg(message)
       if reply_handler != nil
-        org.vertx.java.core.eventbus.EventBus.instance.send(address, message, InternalHandler.new(nil, reply_handler))
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, message, InternalHandler.new(reply_handler))
       else
         org.vertx.java.core.eventbus.EventBus.instance.send(address, message)
       end
     end
-
-    #method to register a handler on a generated address, for when you don't care about address name
-#this is actually useful in java too
 
     # Register a handler.
     # @param address [String] The address to register for. Any messages sent to that address will be
@@ -75,10 +70,16 @@ module Vertx
     def EventBus.register_handler(address, &message_hndlr)
       raise "An address must be specified" if !address
       raise "A message handler must be specified" if !message_hndlr
-      internal = InternalHandler.new(address, message_hndlr)
-      org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
-      id = @@handler_seq
-      @@handler_seq += 1
+      internal = InternalHandler.new(message_hndlr)
+      id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
+      @@handler_map[id] = internal
+      id
+    end
+
+    def EventBus.register_simple_handler(&message_hndlr)
+      raise "A message handler must be specified" if !message_hndlr
+      internal = InternalHandler.new(message_hndlr)
+      id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(internal)
       @@handler_map[id] = internal
       id
     end
@@ -89,17 +90,25 @@ module Vertx
       raise "A handler_id must be specified" if !handler_id
       handler = @@handler_map.delete(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler.address, handler)
+      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler_id)
     end
+
+    # @private
+    def EventBus.convert_msg(message)
+      if message.is_a? Hash
+        message = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
+      elsif message.is_a? Buffer
+        message = message._to_java_buffer
+      end
+      message
+    end
+
 
     # @private
     class InternalHandler
       include org.vertx.java.core.Handler
 
-      attr_reader :address
-
-      def initialize(address, hndlr)
-        @address = address
+      def initialize(hndlr)
         @hndlr = hndlr
       end
 
@@ -114,12 +123,18 @@ module Vertx
   # @author {http://tfox.org Tim Fox}
   class Message
 
-    attr_reader :json_object
+    attr_reader :body
 
     # @private
     def initialize(message)
       @j_del = message
-      @json_object = JSON.parse(message.body.encode) if message.body.is_a? org.vertx.java.core.json.JsonObject
+      if message.body.is_a? org.vertx.java.core.json.JsonObject
+        @body = JSON.parse(message.body.encode)
+      elsif message.body.is_a? org.vertx.java.core.buffer.Buffer
+        @body = Buffer.new(message.body)
+      else
+        @body = message.body
+      end
     end
 
     # Reply to this message. If the message was sent specifying a receipt handler, that handler will be
@@ -130,7 +145,7 @@ module Vertx
     # @param [Hash] Message send as reply
     def reply(reply)
       raise "A reply message must be specified" if !reply
-      reply = org.vertx.java.core.json.JsonObject.new(JSON.generate(reply)) if reply.is_a? Hash
+      reply = EventBus::convert_msg(reply)
       @j_del.reply(reply)
     end
 
@@ -167,3 +182,4 @@ module Vertx
   end
 
 end
+
