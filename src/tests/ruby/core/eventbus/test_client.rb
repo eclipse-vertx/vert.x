@@ -11,7 +11,7 @@ def test_simple_send
   address = "some-address"
 
   id = EventBus.register_handler(address) do |msg|
-    @tu.azzert(msg.json_object['message'] == json['message'])
+    @tu.azzert(msg.body['message'] == json['message'])
     EventBus.unregister_handler(id)
     @tu.test_complete
   end
@@ -27,7 +27,7 @@ def test_send_empty
   address = "some-address"
 
   id = EventBus.register_handler(address) do |msg|
-    @tu.azzert(msg.json_object.empty?)
+    @tu.azzert(msg.body.empty?)
     EventBus.unregister_handler(id)
     @tu.test_complete
   end
@@ -44,14 +44,14 @@ def test_reply
   reply = {'cheese' => 'stilton!'}
 
   id = EventBus.register_handler(address) do |msg|
-    @tu.azzert(msg.json_object['message'] == json['message'])
+    @tu.azzert(msg.body['message'] == json['message'])
     msg.reply(reply)
   end
 
   @tu.azzert(id != nil)
 
   EventBus.send(address, json) do |msg|
-    @tu.azzert(msg.json_object['cheese'] == reply['cheese'])
+    @tu.azzert(msg.body['cheese'] == reply['cheese'])
     EventBus.unregister_handler(id)
     @tu.test_complete
   end
@@ -65,14 +65,14 @@ def test_empty_reply
   reply = {}
 
   id = EventBus.register_handler(address) do |msg|
-    @tu.azzert(msg.json_object['message'] == json['message'])
+    @tu.azzert(msg.body['message'] == json['message'])
     msg.reply(reply)
   end
 
   @tu.azzert(id != nil)
 
   EventBus.send(address, json) do |msg|
-    @tu.azzert(msg.json_object.empty?)
+    @tu.azzert(msg.body.empty?)
     EventBus.unregister_handler(id)
     @tu.test_complete
   end
@@ -88,7 +88,7 @@ def test_send_unregister_send
 
   id = EventBus.register_handler(address) do |msg|
     @tu.azzert(false, "handler already called") if received
-    @tu.azzert(msg.json_object['message'] == json['message'])
+    @tu.azzert(msg.body['message'] == json['message'])
     EventBus.unregister_handler(id)
     received = true
     # End test on a timer to give time for other messages to arrive
@@ -97,7 +97,7 @@ def test_send_unregister_send
 
   @tu.azzert(id != nil)
 
-  (1..10).each do
+  (1..2).each do
     EventBus.send(address, json)
   end
 end
@@ -112,7 +112,7 @@ def test_send_multiple_matching_handlers
 
   (1..num_handlers).each do
     id = EventBus.register_handler(address) do |msg|
-      @tu.azzert(msg.json_object['message'] == json['message'])
+      @tu.azzert(msg.body['message'] == json['message'])
       EventBus.unregister_handler(id)
       count += 1
       @tu.test_complete if count == num_handlers

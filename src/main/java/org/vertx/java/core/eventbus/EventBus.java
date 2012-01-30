@@ -72,9 +72,9 @@ public class EventBus {
   private final NetServer server;
   private final AsyncMultiMap<String, ServerID> subs;  // Multimap name -> Collection<node ids>
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, Set<HandlerHolder>> handlers = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Map<HandlerHolder, String>> handlers = new ConcurrentHashMap<>();
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
-  //private final Map<Handler<Message<JsonObject>>, Handler<Message<Buffer>>> jsonHandlerMap = new ConcurrentHashMap<>();
+  private final Map<String, HandlerInfo> handlersByID = new ConcurrentHashMap<>();
 
   /*
   Non clustered event bus
@@ -118,24 +118,6 @@ public class EventBus {
       }
     }).listen(serverID.port, serverID.host);
   }
-
-//  public void send(String address, final JsonObject jsonObject, final Handler<Message<JsonObject>> replyHandler) {
-//    Handler<Message<Buffer>> rHandler = replyHandler == null ? null : new Handler<Message<Buffer>>() {
-//      public void handle(Message<Buffer> message) {
-//        replyHandler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
-//      }
-//    };
-//    send(address, Buffer.create(jsonObject.encode()), rHandler);
-//  }
-
-//  /**
-//   * Send a Json message on the event bus
-//   * @param address The address to be send it to
-//   * @param jsonObject The message
-//   */
-//  public void send(String address, JsonObject jsonObject) {
-//    send(address, jsonObject, null);
-//  }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
     send(new JsonMessage(address, message), replyHandler);
@@ -283,62 +265,6 @@ public class EventBus {
     }
   }
 
-//  /**
-//   * Send a message on the event bus
-//   * @param body
-//   */
-//  public <T> void send(String address, T body) {
-//    send(address, body, null);
-//  }
-
-//  /**
-//   * Register a handler.
-//   * @param address The address to register for. Any messages sent to that address will be
-//   * received by the handler. A single handler can be registered against many addresses.
-//   * @param handler The handler
-//   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
-//   * propagated to all nodes of the event bus, the handler will be called.
-//   */
-//  public <T> void registerHandler(String address, Handler<Message<T>> handler, CompletionHandler<Void> completionHandler) {
-//    registerHandler(address, handler, completionHandler, false);
-//  }
-//
-//  /**
-//   * Registers handler
-//   *
-//   * The same as {@link #registerHandler(String, Handler, CompletionHandler)} with a null completionHandler
-//   */
-//  public <T> void registerHandler(String address, Handler<Message<T>> handler) {
-//    registerHandler(address, handler, null);
-//  }
-//
-//  /**
-//   * Register a handler for Json messages.
-//   * @param address The address to register for. Any messages sent to that address will be
-//   * received by the handler. A single handler can be registered against many addresses.
-//   * @param handler The handler
-//   * @param completionHandler  Optional completion handler. If specified, then when the subscription information has been
-//   * propagated to all nodes of the event bus, the handler will be called.
-//   */
-//  public void registerHandler(String address, final Handler<Message<JsonObject>> handler, CompletionHandler<Void> completionHandler) {
-//    Handler<Message<Buffer>> mHandler = new Handler<Message<Buffer>>() {
-//      public void handle(Message<Buffer> message) {
-//        handler.handle(new JsonMessage(new JsonObject(message.body.toString()), EventBus.this, message.replyAddress));
-//      }
-//    };
-//    registerHandler(address, mHandler, completionHandler, false);
-//    jsonHandlerMap.put(handler, mHandler);
-//  }
-//
-//  /**
-//   * Registers handler
-//   *
-//   * The same as {@link #registerHandler(String, Handler, CompletionHandler)} with a null completionHandler
-//   */
-//  public void registerHandler(String address, final Handler<Message<JsonObject>> handler) {
-//    registerHandler(address, handler, null);
-//  }
-
   /**
    * Unregisters a handler
    * @param address The address the handler was registered to
@@ -348,10 +274,13 @@ public class EventBus {
    */
   public void unregisterHandler(String address, Handler<? extends Message> handler,
                                 CompletionHandler<Void> completionHandler) {
-    Set<HandlerHolder> set = handlers.get(address);
-    if (set != null) {
-      set.remove(new HandlerHolder(handler, false));
-      if (set.isEmpty()) {
+    Map<HandlerHolder, String> map = handlers.get(address);
+    if (map != null) {
+      String handlerID = map.remove(new HandlerHolder(handler, false));
+      if (handlerID != null) {
+        handlersByID.remove(handlerID);
+      }
+      if (map.isEmpty()) {
         handlers.remove(address);
         if (subs != null) {
           removeSub(address, serverID, completionHandler);
@@ -368,71 +297,53 @@ public class EventBus {
     unregisterHandler(address, handler, null);
   }
 
-//  /**
-//   * Unregisters a handler
-//   * @param address The address the handler was registered to
-//   * @param handler The handler
-//   */
-//  public <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
-//    unregisterHandler(address, handler, null);
-//  }
-//
-//  /**
-//   * Unregisters a handler
-//   * @param address The address the handler was registered to
-//   * @param handler The handler
-//   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
-//   * propagated to all nodes of the event bus, the handler will be called.
-//   */
-//  public void unregisterHandler(String address, Handler<Message<JsonObject>> handler, CompletionHandler<Void> completionHandler) {
-//    Handler<Message<Buffer>> mHandler = jsonHandlerMap.remove(handler);
-//    if (mHandler != null) {
-//      unregisterHandler(address, mHandler, completionHandler);
-//    }
-//  }
+  public void unregisterHandler(String id) {
+    unregisterHandler(id, (CompletionHandler<Void>)null);
+  }
 
-//  /**
-//   * Unregisters a handler
-//   * @param address The address the handler was registered to
-//   * @param handler The handler
-//   */
-//  public void unregisterHandler(String address, Handler<Message<JsonObject>> handler) {
-//    unregisterHandler(address, handler, null);
-//  }
+  public void unregisterHandler(String id, CompletionHandler<Void> completionHandler) {
+    HandlerInfo info = handlersByID.get(id);
+    if (info != null) {
+      unregisterHandler(info.address, info.handler, completionHandler);
+    }
+  }
 
   protected void close(Handler<Void> doneHandler) {
     server.close(doneHandler);
   }
 
-  public void registerHandler(String address, Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler) {
-    registerHandler(address, handler, completionHandler, false);
-  }
-
-  public void registerHandler(String address, Handler<? extends Message> handler) {
-    registerHandler(address, handler, null, false);
-  }
-
-  // Register handler on generated address
-  // @returns a unique id, also used for address
-  // We should also always return a unique id which can be used to remove handler
   public String registerHandler(Handler<? extends Message> handler) {
-    return null;
+    return registerHandler(handler, null);
   }
 
-  public void unregisterHandler(String handlerID) {
-
+  public String registerHandler(Handler<? extends Message> handler,
+                               CompletionHandler<Void> completionHandler) {
+    return registerHandler(null, handler, completionHandler, false);
   }
 
-  private void registerHandler(String address, Handler<? extends Message> handler,
-                                 CompletionHandler<Void> completionHandler,
+  public String registerHandler(String address, Handler<? extends Message> handler,
+                               CompletionHandler<Void> completionHandler) {
+    return registerHandler(address, handler, completionHandler, false);
+  }
+
+  public String registerHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, null);
+  }
+
+  private String registerHandler(String address, Handler<? extends Message> handler,
+                               CompletionHandler<Void> completionHandler,
                                boolean replyHandler) {
-    Set<HandlerHolder> set = handlers.get(address);
-    if (set == null) {
-      set = new ConcurrentHashSet<>();
-      Set<HandlerHolder> prevSet = handlers.putIfAbsent(address, set);
-      if (prevSet != null) {
-        set = prevSet;
+    String id = UUID.randomUUID().toString();
+    if (address == null) {
+      address = id;
+    }
+    handlersByID.put(id, new HandlerInfo(address, handler));
+    Map<HandlerHolder, String> map = handlers.get(address);
+    if (map == null) {
+      map = new ConcurrentHashMap<>();
+      Map<HandlerHolder, String> prevMap = handlers.putIfAbsent(address, map);
+      if (prevMap != null) {
+        map = prevMap;
       }
       if (completionHandler == null) {
         completionHandler = new CompletionHandler<Void>() {
@@ -451,13 +362,14 @@ public class EventBus {
           callCompletionHandler(completionHandler);
         }
       }
-      set.add(new HandlerHolder(handler, replyHandler));
+      map.put(new HandlerHolder(handler, replyHandler), id);
     } else {
-      set.add(new HandlerHolder(handler, replyHandler));
+      map.put(new HandlerHolder(handler, replyHandler), id);
       if (completionHandler != null) {
         callCompletionHandler(completionHandler);
       }
     }
+    return id;
   }
 
   private void callCompletionHandler(CompletionHandler<Void> completionHandler) {
@@ -533,10 +445,10 @@ public class EventBus {
       replyAddressCache.put(msg.replyAddress, msg.sender);
     }
     msg.bus = this;
-    final Set<HandlerHolder> set = handlers.get(msg.address);
-    if (set != null) {
+    final Map<HandlerHolder, String> map = handlers.get(msg.address);
+    if (map != null) {
       boolean replyHandler = false;
-      for (final HandlerHolder holder: set) {
+      for (final HandlerHolder holder: map.keySet()) {
         if (holder.replyHandler) {
           replyHandler = true;
         }
@@ -548,7 +460,7 @@ public class EventBus {
             try {
               // Need to check handler is still there - the handler might have been removed after the message were sent but
               // before it was received
-              if (set.contains(holder)) {
+              if (map.containsKey(holder)) {
                 VertxInternal.instance.setContextID(holder.contextID);
                 holder.handler.handle(copied);
               }
@@ -564,40 +476,12 @@ public class EventBus {
     }
   }
 
-//  private <T> Message createMessage(String address, T payload) {
-//    Message msg;
-//    if (payload instanceof String) {
-//      msg = new StringMessage(address, (String)payload);
-//    } else if (payload instanceof Buffer) {
-//      msg =  new BufferMessage(address, (Buffer)payload);
-//    } else if (payload instanceof Boolean) {
-//      msg =  new BooleanMessage(address, (Boolean)payload);
-//    } else if (payload instanceof byte[]) {
-//      msg =  new ByteArrayMessage(address, (byte[])payload);
-//    } else if (payload instanceof Character) {
-//      msg = new CharacterMessage(address, (Character)payload);
-//    } else if (payload instanceof Double) {
-//      msg = new DoubleMessage(address, (Double)payload);
-//    } else if (payload instanceof Float) {
-//      msg = new FloatMessage(address, (Float)payload);
-//    } else if (payload instanceof Integer) {
-//      msg = new IntMessage(address, (Integer)payload);
-//    } else if (payload instanceof Long) {
-//      msg = new LongMessage(address, (Long)payload);
-//    } else if (payload instanceof Short) {
-//      msg = new ShortMessage(address, (Short)payload);
-//    } else {
-//      throw new IllegalArgumentException("Invalid type to send as message: " + payload.getClass());
-//    }
-//    return msg;
-//  }
-
-  private class HandlerHolder {
+  private static class HandlerHolder {
     final long contextID;
     final Handler handler;
     final boolean replyHandler;
 
-    private HandlerHolder(Handler handler, boolean replyHandler) {
+    HandlerHolder(Handler handler, boolean replyHandler) {
       this.contextID = Vertx.instance.getContextID();
       this.handler = handler;
       this.replyHandler = replyHandler;
@@ -626,5 +510,16 @@ public class EventBus {
       this.client = client;
     }
   }
+
+  private static class HandlerInfo {
+    final String address;
+    final Handler<? extends Message> handler;
+
+    private HandlerInfo(String address, Handler<? extends Message> handler) {
+      this.address = address;
+      this.handler = handler;
+    }
+  }
+
 }
 

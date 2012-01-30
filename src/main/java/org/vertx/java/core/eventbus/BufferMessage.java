@@ -44,15 +44,11 @@ class BufferMessage extends Message<Buffer> {
   }
 
   protected Message copy() {
-    if (body == null) {
-      return this;
-    } else {
-      BufferMessage copied = new BufferMessage(address, body.copy());
-      copied.replyAddress = this.replyAddress;
-      copied.bus = this.bus;
-      copied.sender = this.sender;
-      return copied;
-    }
+    BufferMessage copied = new BufferMessage(address, body == null ? null : body.copy());
+    copied.replyAddress = this.replyAddress;
+    copied.bus = this.bus;
+    copied.sender = this.sender;
+    return copied;
   }
 
   protected byte type() {
