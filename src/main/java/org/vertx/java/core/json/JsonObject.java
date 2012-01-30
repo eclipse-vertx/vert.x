@@ -118,4 +118,29 @@ public class JsonObject {
   public JsonObject copy() {
     return new JsonObject(encode());
   }
+
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    JsonObject that = (JsonObject) o;
+
+    if (this.map.size() != that.map.size()) return false;
+
+    for (Map.Entry<String, Object> entry: this.map.entrySet()) {
+      Object val = entry.getValue();
+      if (val == null) {
+        if (that.map.get(entry.getKey()) != null) {
+          return false;
+        }
+      } else {
+        if (!entry.getValue().equals(that.map.get(entry.getKey()))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
 }

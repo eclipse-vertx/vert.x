@@ -112,4 +112,23 @@ public class JsonArray implements Iterable<Object> {
   public String encode() throws EncodeException {
     return Json.encode(this.list);
   }
+
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    JsonArray that = (JsonArray) o;
+
+    if (this.list.size() != that.list.size()) return false;
+
+    Iterator iter = that.iterator();
+    for (Object entry: this.list) {
+      Object other = iter.next();
+      if (!entry.equals(other)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

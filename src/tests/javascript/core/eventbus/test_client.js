@@ -124,6 +124,54 @@ function testEmptyReply() {
   eb.send(address, sent);
 }
 
+function testEchoString() {
+  echo("foo");
+}
+
+function testEchoNumber1() {
+  echo(1234);
+}
+
+function testEchoNumber2() {
+  echo(1.2345);
+}
+
+function testEchoBooleanTrue() {
+  echo(true);
+}
+
+function testEchoBooleanFalse() {
+  echo(false);
+}
+
+function testEchoJson() {
+  echo(sent);
+}
+
+function echo(msg) {
+  eb.registerHandler(address, function MyHandler(received, replier) {
+//    log.println("sent msg: " + msg);
+//    log.println("sent msg type: " + typeof msg);
+//    log.println("received msg: " + received);
+//    log.println("received msg type: " + typeof received);
+
+    if (typeof msg != 'object') {
+      tu.azzert(msg === received);
+    } else {
+      //Json object
+      for (field in msg) {
+        tu.azzert(msg.field === received.field);
+      }
+    }
+    tu.checkContext();
+    eb.unregisterHandler(address, MyHandler);
+    replier(received);
+  });
+  eb.send(address, msg, function (reply){
+    tu.testComplete();
+  });
+}
+
 tu.registerTests(this);
 tu.appReady();
 

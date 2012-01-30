@@ -3,12 +3,15 @@ package vertx.tests.core.eventbus;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -159,4 +162,80 @@ public class LocalPeer extends EventBusAppBase {
     );
     SharedData.getSet("addresses").add(address);
   }
+
+  public void testEchoStringInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoBooleanTrueInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoBooleanFalseInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoBufferInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoByteArrayInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoCharacterInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoDoubleInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoFloatInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoIntInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoJsonInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoLongInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoShortInitialise() {
+    echoInitialise();
+  }
+
+  private void echoInitialise() {
+    final String address = UUID.randomUUID().toString();
+    eb.registerHandler(address, new Handler<Message>() {
+          boolean handled = false;
+          public void handle(Message msg) {
+            tu.checkContext();
+            tu.azzert(!handled);
+            eb.unregisterHandler(address, this);
+            handled = true;
+            msg.reply(msg);
+          }
+        }, new CompletionHandler<Void>() {
+      public void handle(Future<Void> event) {
+        if (event.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    }
+    );
+    SharedData.getSet("addresses").add(address);
+  }
+
+
+
+
 }

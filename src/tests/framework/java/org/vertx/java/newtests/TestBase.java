@@ -248,6 +248,7 @@ public class TestBase extends TestCase {
   }
 
   protected void startTest(String testName, boolean wait) {
+    log.info("Starting test: " + testName);
     tu.startTest(testName);
     if (wait) {
       waitTestComplete();

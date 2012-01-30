@@ -9,7 +9,7 @@ if (!vertx.EventBus) {
     var jEventBus = org.vertx.java.core.eventbus.EventBus.instance;
 
     // Get ref to the Java class of the JsonObject
-    var jsonObjectClass = new org.vertx.java.core.json.JsonObject('{}').getClass();
+    //var jsonObjectClass = new org.vertx.java.core.json.JsonObject('{}').getClass();
 
     function checkHandlerParams(address, handler) {
       if (!address) {
@@ -30,13 +30,18 @@ if (!vertx.EventBus) {
       return new org.vertx.java.core.Handler({
         handle: function(jMsg) {
           var body = jMsg.body;
-          if (body && body.getClass() === jsonObjectClass) {
+
+          if (typeof body === 'object') {
             // Convert to JS JSON object
-            body = JSON.parse(jMsg.body.encode());
+            if (jMsg.body) {
+              body = JSON.parse(jMsg.body.encode());
+            } else {
+              body = undefined;
+            }
           }
 
           handler(body, function(reply) {
-            if (!reply) {
+            if (typeof reply === 'undefined') {
               throw "Reply message must be specified";
             }
             reply = convertMessage(reply);
@@ -58,7 +63,6 @@ if (!vertx.EventBus) {
       jEventBus.registerHandler(address, wrapped);
     };
 
-
     that.unregisterHandler = function(address, handler) {
       checkHandlerParams(address, handler);
       var wrapped = handlerMap[handler];
@@ -68,20 +72,23 @@ if (!vertx.EventBus) {
       }
     };
 
+
     function convertMessage(message) {
       var msgType = typeof message;
       switch (msgType) {
         case 'string':
-        case 'number':
         case 'boolean':
         case 'undefined':
+          break;
+        case 'number':
+          message = new java.lang.Double(message);
           break;
         case 'object':
           // Assume JSON message
           message = new org.vertx.java.core.json.JsonObject(JSON.stringify(message));
           break;
         default:
-          throw 'Invalid type for message';
+          throw 'Invalid type for message: ' + msgType;
       }
       return message;
     }

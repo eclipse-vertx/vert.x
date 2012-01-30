@@ -9,7 +9,6 @@ import vertx.tests.core.eventbus.LocalPeer;
 
 /**
  *
- * TODO - test Json API as well as binary API
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -78,12 +77,122 @@ public class JavaEventBusTest extends TestBase {
   }
 
   @Test
-  public void testStringMessage() {
+  public void testEchoString() {
     startTest(getMethodName());
   }
 
   @Test
-  public void testLongMessage() {
+  public void testEchoNullString() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoBooleanTrue() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoBooleanFalse() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullBoolean() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoBuffer() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullBuffer() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoByteArray() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullByte() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoCharacter() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullCharacter() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoDouble() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullDouble() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoFloat() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullFloat() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoInt() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullInt() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoJson() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullJson() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoLong() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullLong() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoShort() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullShort() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testRegisterNoAddress() {
     startTest(getMethodName());
   }
 
