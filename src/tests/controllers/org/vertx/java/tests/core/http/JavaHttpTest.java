@@ -578,14 +578,14 @@ public class JavaHttpTest extends TestBase {
         appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getCounter("requests").set(0);
-      SharedData.getCounter("servers").set(0);
+      SharedData.getSet("requests").clear();
+      SharedData.getSet("servers").clear();
       SharedData.getSet("instances").clear();
       SharedData.getMap("params").put("numRequests", numRequests);
 
       startTest(testName);
 
-      assertEquals(numRequests, SharedData.getCounter("requests").get());
+      assertEquals(numRequests, SharedData.getSet("requests").size());
       // And make sure connection requests are distributed amongst them
       assertEquals(initialServers, SharedData.getSet("instances").size());
 
@@ -596,8 +596,8 @@ public class JavaHttpTest extends TestBase {
       }
     }
 
-    SharedData.getCounter("requests").set(0);
-    SharedData.getCounter("servers").set(0);
+    SharedData.getSet("requests").clear();
+    SharedData.getSet("servers").clear();
     SharedData.getSet("instances").clear();
     SharedData.getMap("params").put("numRequests", numRequests);
 
@@ -613,7 +613,7 @@ public class JavaHttpTest extends TestBase {
 
     startTest(testName);
 
-    assertEquals(numRequests, SharedData.getCounter("requests").get());
+    assertEquals(numRequests, SharedData.getSet("requests").size());
     // And make sure connection requests are distributed amongst them
     assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
   }

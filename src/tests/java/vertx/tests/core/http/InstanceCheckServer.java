@@ -28,9 +28,8 @@ public class InstanceCheckServer implements VertxApp {
         tu.checkContext();
 
          //We add the object id of the server to the set
-        Set<String> set = SharedData.getSet("instances");
-        set.add(id);
-        SharedData.getCounter("requests").increment();
+        SharedData.getSet("instances").add(id);
+        SharedData.getSet("requests").add(UUID.randomUUID().toString());
 
         req.response.end();
 

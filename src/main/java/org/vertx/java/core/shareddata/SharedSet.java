@@ -16,81 +16,90 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.cliffc.high_scale_lib.NonBlockingHashSet;
 import org.vertx.java.core.Utils;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 class SharedSet<E> implements Set<E> {
 
-  private final Set<E> set = new NonBlockingHashSet<>();
+  private final Map<E, Object> map = new ConcurrentHashMap<>();
+
+  private static final Object O = new Object();
 
   public int size() {
-    return set.size();
+    return map.size();
   }
 
   public boolean isEmpty() {
-    return set.isEmpty();
+    return map.isEmpty();
   }
 
   public boolean contains(Object o) {
-    return set.contains(o);
+    return map.containsKey(o);
   }
 
   public Iterator<E> iterator() {
-    return set.iterator();
+    return map.keySet().iterator();
   }
 
   public Object[] toArray() {
-    return set.toArray();
+    return map.keySet().toArray();
   }
 
   public <T> T[] toArray(T[] ts) {
-    return set.toArray(ts);
+    return map.keySet().toArray(ts);
   }
 
   public boolean add(E e) {
     e = Utils.checkShareableObject(e);
-    return set.add(e);
+    return map.put(e, O) != null;
   }
 
   public boolean remove(Object o) {
-    return set.remove(o);
+    return map.remove(o) != null;
   }
 
   public boolean containsAll(Collection<?> objects) {
-    return set.containsAll(objects);
+    return map.keySet().containsAll(objects);
   }
 
   public boolean addAll(Collection<? extends E> es) {
     for (E e : es) {
       e = Utils.checkShareableObject(e);
-      set.add(e);
+      map.put(e, O);
     }
     return true;
   }
 
   public boolean retainAll(Collection<?> objects) {
-    return set.retainAll(objects);
+    return false;
   }
 
   public boolean removeAll(Collection<?> objects) {
-    return set.removeAll(objects);
+    boolean removed = false;
+    for (Object obj: objects) {
+      if (map.remove(obj) != null) {
+        removed = true;
+      }
+    }
+    return removed;
   }
 
   public void clear() {
-    set.clear();
+    map.clear();
   }
 
   @Override
   public boolean equals(Object o) {
-    return set.equals(o);
+    return map.equals(o);
   }
 
   @Override
   public int hashCode() {
-    return set.hashCode();
+    return map.hashCode();
   }
 }

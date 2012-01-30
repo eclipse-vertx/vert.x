@@ -15,7 +15,7 @@ done
 
 DIRNAME=`dirname "$PRG"`
 
-CLASSPATH=$DIRNAME/../../target/vert.x.jar:$DIRNAME/../../lib/core/netty.jar:$DIRNAME/../../lib/core/high-scale-lib.jar:\
+CLASSPATH=$DIRNAME/../../target/vert.x.jar:$DIRNAME/../../lib/core/netty.jar:\
 :$DIRNAME/../../lib/opt/hazelcast-all-1.9.4.4.jar:$DIRNAME/../../lib/core/jackson-all-1.9.2.jar:\
 $DIRNAME/../../conf:$DIRNAME/../../lib/opt/js.jar:$DIRNAME/../../lib/opt/groovy-all-1.8.3.jar:\
 $DIRNAME/../../lib/opt/mongo.jar:$DIRNAME/../../lib/opt/mail.jar:\

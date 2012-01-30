@@ -19,4 +19,4 @@ done
 
 DIRNAME=`dirname "$PRG"`
 
-jruby -J-Djava.util.logging.config.file=$DIRNAME/src/main/resources/logging.properties -I$DIRNAME/src/main/resources/jars:$DIRNAME/src/main/ruby:$DIRNAME/target -rvert.x.jar -rnetty.jar -rhigh-scale-lib.jar src/main/ruby/vmm/cli.rb "$@"
+jruby -J-Djava.util.logging.config.file=$DIRNAME/src/main/resources/logging.properties -I$DIRNAME/src/main/resources/jars:$DIRNAME/src/main/ruby:$DIRNAME/target -rvert.x.jar -rnetty.jar src/main/ruby/vmm/cli.rb "$@"
