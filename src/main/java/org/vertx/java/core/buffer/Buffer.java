@@ -449,4 +449,12 @@ public class Buffer {
     }
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Buffer buffer1 = (Buffer) o;
+    return buffer.equals(buffer1.buffer);
+  }
+
 }

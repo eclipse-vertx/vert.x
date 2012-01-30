@@ -39,4 +39,28 @@ public class JavaScriptEventBusTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testEchoString() {
+    startTest(getMethodName());
+  }
+
+  public void testEchoNumber1() {
+    startTest(getMethodName());
+  }
+
+  public void testEchoNumber2() {
+    startTest(getMethodName());
+  }
+
+  public void testEchoBooleanTrue() {
+    startTest(getMethodName());
+  }
+
+  public void testEchoBooleanFalse() {
+    startTest(getMethodName());
+  }
+
+  public void testEchoJson() {
+    startTest(getMethodName());
+  }
+
 }

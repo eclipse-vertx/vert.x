@@ -17,6 +17,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
+import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -298,7 +299,7 @@ public class EventBus {
   }
 
   public void unregisterHandler(String id) {
-    unregisterHandler(id, (CompletionHandler<Void>)null);
+    unregisterHandler(id, (CompletionHandler<Void>) null);
   }
 
   public void unregisterHandler(String id, CompletionHandler<Void> completionHandler) {
@@ -462,7 +463,19 @@ public class EventBus {
               // before it was received
               if (map.containsKey(holder)) {
                 VertxInternal.instance.setContextID(holder.contextID);
-                holder.handler.handle(copied);
+
+                // This is fucked up
+                Context ctx = Context.getCurrentContext();
+                if (ctx == null) {
+                  ctx = Context.enter();
+                }
+                ctx.getWrapFactory().setJavaPrimitiveWrap(false);
+
+                try {
+                  holder.handler.handle(copied);
+                } finally {
+                  Context.exit();
+                }
               }
             } catch (Throwable t) {
               log.error("Unhandled exception in event bus handler", t);

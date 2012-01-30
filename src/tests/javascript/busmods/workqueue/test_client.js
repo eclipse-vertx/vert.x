@@ -20,7 +20,6 @@ function testWorkQueue() {
 
   for (var i = 0; i < numMessages; i++) {
     eb.send('test.orderQueue', {
-      action: "send",
       blah: "somevalue: " + i
     })
   }
