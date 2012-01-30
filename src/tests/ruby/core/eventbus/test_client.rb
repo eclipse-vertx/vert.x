@@ -122,6 +122,53 @@ def test_send_multiple_matching_handlers
   EventBus.send(address, json)
 end
 
+def test_echo_string
+  echo("foo")
+end
+
+def test_echo_fixnum
+  echo(12345)
+end
+
+def test_echo_float
+  echo(1.2345)
+end
+
+def test_echo_boolean_true
+  echo(true)
+end
+
+def test_echo_boolean_false
+  echo(false)
+end
+
+def test_echo_json
+  json = {"foo" => "bar", "x" => 1234, "y" => 3.45355, "z" => true, "a" => false}
+  echo(json)
+end
+
+def echo(msg)
+  address = "some-address"
+
+  id = EventBus.register_handler(address) { |received|
+   # puts "received: #{received.body}"
+    @tu.check_context
+    EventBus.unregister_handler(id)
+    received.reply(received.body)
+  }
+  EventBus.send(address, msg) { |reply|
+    # puts "received reply #{reply.body}"
+    if reply.body.is_a? Hash
+      reply.body.each do |k, v|
+        @tu.azzert(msg[k] == v)
+      end
+    else
+      @tu.azzert(msg == reply.body)
+    end
+    @tu.test_complete
+  }
+end
+
 def vertx_stop
   @tu.check_context
   @tu.unregister_all

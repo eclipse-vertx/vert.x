@@ -43,4 +43,30 @@ public class RubyEventBusTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void test_echo_string() {
+    startTest(getMethodName());
+  }
+
+  public void test_echo_fixnum() {
+    startTest(getMethodName());
+  }
+
+  public void test_echo_float() {
+    startTest(getMethodName());
+  }
+
+  public void test_echo_boolean_true() {
+    startTest(getMethodName());
+  }
+
+  public void test_echo_boolean_false() {
+    startTest(getMethodName());
+  }
+
+  public void test_echo_json() {
+    startTest(getMethodName());
+  }
+
+
+
 }

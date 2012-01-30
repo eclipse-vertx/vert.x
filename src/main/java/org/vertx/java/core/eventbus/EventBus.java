@@ -217,6 +217,7 @@ public class EventBus {
   }
 
   private void send(final Message message, final Handler replyHandler) {
+
     Long contextID = Vertx.instance.getContextID();
     try {
       message.sender = serverID;
