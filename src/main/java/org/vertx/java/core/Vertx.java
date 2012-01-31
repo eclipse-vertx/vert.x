@@ -18,9 +18,6 @@ package org.vertx.java.core;
 
 /**
  *
- * <p>An instance of {@code Vertx} is available to all event loops in a running application.</p>
- *
- * <p>It handles such things as setting and cancelling timers, global event handlers, amongst other things.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
