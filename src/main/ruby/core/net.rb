@@ -230,7 +230,7 @@ module Vertx
       @j_del.close
     end
 
-    #  When a NetSocket is created it automatically registers a global event handler with the system. The ID of that
+    #  When a NetSocket is created it automatically registers an event handler with the system. The address of that
     # handler is given by {#write_handler_id}.
     # Given this ID, a different event loop can send a buffer to that event handler using {send_to_handler} and
     # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
