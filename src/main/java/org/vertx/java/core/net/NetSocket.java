@@ -56,16 +56,19 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    */
   public final String writeHandlerID;
 
-
   NetSocket(Channel channel, long contextID, Thread th) {
     super(channel, contextID, th);
-    writeHandlerID = UUID.randomUUID().toString();
-    writeHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> msg) {
-        writeBuffer(msg.body);
-      }
-    };
-    EventBus.instance.registerHandler(writeHandlerID, writeHandler);
+    if (EventBus.instance != null) {
+      writeHandlerID = UUID.randomUUID().toString();
+      writeHandler = new Handler<Message<Buffer>>() {
+        public void handle(Message<Buffer> msg) {
+          writeBuffer(msg.body);
+        }
+      };
+      EventBus.instance.registerHandler(writeHandlerID, writeHandler);
+    } else {
+      writeHandlerID = null;
+    }
   }
 
   /**
@@ -195,7 +198,9 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
       }
     }
     super.handleClosed();
-    EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
+    if (EventBus.instance != null) {
+      EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
+    }
   }
 
   protected void handleException(Exception e) {
