@@ -43,9 +43,6 @@ import java.util.concurrent.ConcurrentMap;
  *   {@code byte[]} - this will be automatically copied, and the copy will be stored in the structure.
  *   {@link org.vertx.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.
- *   {@link org.vertx.java.core.Immutable} - if you mark your own class as {@code Immutable} you will be able to
- *   store it in a shareddata data structure. Use this at your own risk. You need to make sure your class really is
- *   immutable before you mark it.
  * </pre>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
