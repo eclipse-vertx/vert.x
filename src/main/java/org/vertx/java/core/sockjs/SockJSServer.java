@@ -19,6 +19,7 @@ import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -63,7 +64,7 @@ public class SockJSServer {
 
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
-  private final Map<String, Session> sessions = SharedData.getMap("sockjs_sessions");
+  private final Map<String, Session> sessions = new HashMap<>();
 
   /**
    * Create a new SockJSServer.

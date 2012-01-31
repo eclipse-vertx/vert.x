@@ -1,6 +1,5 @@
 package org.vertx.java.core.eventbus;
 
-import org.mozilla.javascript.Context;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -527,6 +526,7 @@ public class EventBus {
           }
         };
       }
+      map.put(new HandlerHolder(handler, replyHandler), id);
       if (subs != null && !replyHandler) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
@@ -535,7 +535,6 @@ public class EventBus {
           callCompletionHandler(completionHandler);
         }
       }
-      map.put(new HandlerHolder(handler, replyHandler), id);
     } else {
       map.put(new HandlerHolder(handler, replyHandler), id);
       if (completionHandler != null) {
@@ -635,21 +634,10 @@ public class EventBus {
               // before it was received
               if (map.containsKey(holder)) {
                 VertxInternal.instance.setContextID(holder.contextID);
-
-                // This is fucked up
-                Context ctx = Context.getCurrentContext();
-                if (ctx == null) {
-                  ctx = Context.enter();
-                }
-                ctx.getWrapFactory().setJavaPrimitiveWrap(false);
-
-                try {
-                  holder.handler.handle(copied);
-                } finally {
-                  Context.exit();
-                }
+                holder.handler.handle(copied);
               }
             } catch (Throwable t) {
+              t.printStackTrace();
               log.error("Unhandled exception in event bus handler", t);
             }
           }

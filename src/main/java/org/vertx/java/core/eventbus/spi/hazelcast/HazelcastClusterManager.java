@@ -1,7 +1,6 @@
 package org.vertx.java.core.eventbus.spi.hazelcast;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
 import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
 

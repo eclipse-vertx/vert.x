@@ -22,8 +22,10 @@ def test_hash
   key = 'wibble'
 
   hash1[key] = 'hello'
+
   @tu.azzert(hash1[key] == 'hello')
   @tu.azzert(hash2[key] == 'hello')
+  @tu.azzert(hash1[key].is_a? String) # Make sure it's not a Java String
 
   hash1[key] = 12
   @tu.azzert(hash1[key] == 12)
@@ -37,7 +39,9 @@ def test_hash
   @tu.azzert(hash1[key] == true)
   @tu.azzert(hash2[key] == true)
 
-  hash1[key] = ImmutableClass.new
+  hash1[key] = false
+  @tu.azzert(hash1[key] == false)
+  @tu.azzert(hash2[key] == false)
 
   succeeded = false
   begin
@@ -49,9 +53,10 @@ def test_hash
   @tu.azzert(!succeeded, 'Should throw exception')
 
   # Make sure it deals with Ruby buffers ok, and copies them
-  buff1 = Buffer.create(0)
+  buff1 = TestUtils::gen_buffer(100)
   hash1[key] = buff1
   buff2 = hash1[key]
+  @tu.azzert(buff2.is_a? Buffer)
   @tu.azzert(buff1 != buff2)
   @tu.azzert(TestUtils::buffers_equal(buff1, buff2))
 
@@ -113,15 +118,54 @@ def test_set
   @tu.azzert(set2.include?("bar"))
   @tu.azzert(set2.include?("quux"))
 
+  set1.clear
+  set1.add(12)
+  set1.each { |elem| @tu.azzert(elem == 12) }
+
+  set1.clear
+  set1.add(1.234)
+  set1.each { |elem| @tu.azzert(elem == 1.234) }
+
+  set1.clear
+  set1.add("foo")
+  set1.each { |elem|
+    @tu.azzert(elem == "foo")
+    @tu.azzert(elem.is_a? String)
+  }
+
+  set1.clear
+  set1.add(true)
+  set1.each { |elem| @tu.azzert(elem == true) }
+
+  set1.clear
+  set1.add(false)
+  set1.each { |elem| @tu.azzert(elem == false) }
+
+  buff = TestUtils::gen_buffer(100)
+  set1.clear
+  set1.add(buff)
+  set1.each { |elem|
+    @tu.azzert(TestUtils::buffers_equal(buff, elem))
+    @tu.azzert(buff != elem)
+    @tu.azzert(elem.is_a? Buffer)
+  }
+
+  set1.clear
+  succeeded = false
+  begin
+    set1.add = SomeOtherClass.new
+    succeeded = true
+  rescue Exception => e
+    # OK
+  end
+  @tu.azzert(!succeeded, 'Should throw exception')
+
+
   @tu.azzert(SharedData::remove_set("set1"))
   @tu.azzert(!SharedData::remove_set("set1"))
   @tu.azzert(SharedData::remove_set("set3"))
 
   @tu.test_complete
-end
-
-class ImmutableClass
-  include SharedData::Immutable
 end
 
 class SomeOtherClass

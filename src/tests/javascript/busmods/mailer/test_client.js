@@ -9,6 +9,8 @@ var user = 'tim@localhost';
 
 function testMailer() {
 
+  log.println("in testmailer");
+
   var msg = {
     from: user,
     to: user,
@@ -18,8 +20,11 @@ function testMailer() {
 
   eb.send("test.mailer", msg, function(msg) {
     tu.azzert(msg.status == 'ok');
+    log.println("Got reply")
     tu.testComplete();
   });
+
+  log.println("Sent mail");
 }
 
 function testMailerError() {

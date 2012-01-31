@@ -4,7 +4,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
 
-import java.util.Set;
 import java.util.UUID;
 
 /**

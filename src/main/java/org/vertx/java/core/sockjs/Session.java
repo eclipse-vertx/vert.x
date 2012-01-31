@@ -2,7 +2,6 @@ package org.vertx.java.core.sockjs;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Immutable;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
@@ -13,7 +12,7 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Session extends SockJSSocket implements Immutable {
+class Session extends SockJSSocket {
 
   private static final Logger log = Logger.getLogger(Session.class);
 

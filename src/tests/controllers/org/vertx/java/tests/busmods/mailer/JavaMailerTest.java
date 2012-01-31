@@ -69,4 +69,20 @@ public class JavaMailerTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testNoSubject() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testNoBody() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testNoTo() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testNoFrom() throws Exception {
+    startTest(getMethodName());
+  }
+
 }

@@ -54,6 +54,7 @@ public class LocalClient extends EventBusAppBase {
     for (String address: addresses) {
       eb.send(address, buff);
     }
+
   }
 
   public void testReply() {

@@ -16,14 +16,6 @@ require 'delegate'
 
 module Vertx
 
-  # A mixin module which marks a class as immutable and therefore allows it to be stored in any shareddata data structure.
-  # Use this at your own risk. You need to make sure your class really is
-  # immutable before you mark it.
-  # @author {http://tfox.org Tim Fox}
-  module Immutable
-    include org.vertx.java.core.Immutable
-  end
-
   # Sometimes it is desirable to share immutable data between different event loops, for example to implement a
   # cache of data.
   #
@@ -37,7 +29,6 @@ module Vertx
   #   FixNum
   #   Float
   #   {Buffer} this will be automatically copied, and the copy will be stored in the structure.
-  #   {Immutable}
   #
   # @author {http://tfox.org Tim Fox}
   class SharedData
@@ -62,10 +53,6 @@ module Vertx
       SharedSet.new(set)
     end
 
-#    def SharedData.get_counter(key)
-#      org.vertx.java.core.shareddata.SharedData.getCounter(key)
-#    end
-
     # Remove the hash
     # @param [String] key. The key of the hash.
     def SharedData.remove_hash(key)
@@ -78,14 +65,11 @@ module Vertx
       org.vertx.java.core.shareddata.SharedData.removeSet(key)
     end
 
-#    def SharedData.remove_counter(key)
-#      org.vertx.java.core.shareddata.SharedData.removeCounter(key)
-#    end
-
-    # We need to copy certain objects because they're not immutable
-    def SharedData.check_copy(obj)
+    # Convert to corresponding Java objects
+    # And make copies where appropriate (the underlying java map will also make copies for some data types too)
+    def SharedData.check_obj(obj)
       if obj.is_a?(Buffer)
-        obj = obj.copy
+        obj = obj._to_java_buffer.copy
       elsif obj.is_a?(String)
         obj = String.new(obj)
       end
@@ -103,8 +87,8 @@ module Vertx
 
       def []=(key, val)
 
-        key = SharedData.check_copy(key)
-        val = SharedData.check_copy(val)
+        key = SharedData.check_obj(key)
+        val = SharedData.check_obj(val)
 
         # We call the java class directly - otherwise RubyHash does a scan of the whole map!! :(
         # This will be fixed in JRuby 1.6.5
@@ -115,7 +99,9 @@ module Vertx
 
       def [](key)
         # We call the java class directly
-        @hash.get(key)
+        obj = @hash.get(key)
+        obj = Buffer.new(obj) if obj.is_a? org.vertx.java.core.buffer.Buffer
+        obj
       end
 
       def ==(other)
@@ -130,12 +116,10 @@ module Vertx
         @hash
       end
 
-
     end
 
-    # A highly concurrent set
     #
-    # @author {http://tfox.org Tim Fox}
+    # @private
     class SharedSet
 
       # @private
@@ -160,7 +144,7 @@ module Vertx
       # @param [Object] obj. The object to add
       # @return [SharedSet} self
       def add(obj)
-        obj = SharedData.check_copy(obj)
+        obj = SharedData.check_obj(obj)
         @j_set.add(obj)
         self
       end
@@ -169,7 +153,7 @@ module Vertx
       # @param [Object] obj. The object to add
       # @return [SharedSet] self if the object is not already in the set, otherwise nil
       def add?(obj)
-        obj = SharedData.check_copy(obj)
+        obj = SharedData.check_obj(obj)
         if !@j_set.contains(obj)
           @j_set.add(obj)
           self
@@ -206,7 +190,9 @@ module Vertx
       def each(&block)
         iter = @j_set.iterator
         while iter.hasNext do
-          block.call(iter.next)
+          obj = iter.next
+          obj = Buffer.new(obj) if obj.is_a? org.vertx.java.core.buffer.Buffer
+          block.call(obj)
         end
       end
 
@@ -219,6 +205,7 @@ module Vertx
       # @param [Object] obj, the object to check if the set contains
       # @return [Boolean] true if the object is contained in the set
       def include?(obj)
+        obj = obj._to_java_buffer if obj.is_a? Buffer
         @j_set.contains(obj)
       end
 
