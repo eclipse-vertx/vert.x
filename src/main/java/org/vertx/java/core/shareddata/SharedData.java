@@ -16,10 +16,8 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.logging.Logger;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -59,8 +57,6 @@ public class SharedData {
   private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
   private static ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
 
-  private static ClusterManager clusterManager;
-
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
@@ -87,7 +83,6 @@ public class SharedData {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
     if (set == null) {
       set = new SharedSet<>();
-      //set = Collections.synchronizedSet(new HashSet<E>());
       SharedSet prev = sets.putIfAbsent(name, set);
       if (prev != null) {
         set = prev;

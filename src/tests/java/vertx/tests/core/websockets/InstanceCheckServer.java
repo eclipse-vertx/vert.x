@@ -8,7 +8,6 @@ import org.vertx.java.core.http.WebSocketHandler;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
-import java.util.Set;
 import java.util.UUID;
 
 /**

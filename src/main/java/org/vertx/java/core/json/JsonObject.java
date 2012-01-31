@@ -102,6 +102,10 @@ public class JsonObject {
     }
   }
 
+  public Object removeField(String fieldName) {
+    return map.remove(fieldName) != null;
+  }
+
   public int size() {
     return map.size();
   }

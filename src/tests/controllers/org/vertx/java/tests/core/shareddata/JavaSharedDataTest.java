@@ -18,12 +18,12 @@ package org.vertx.java.tests.core.shareddata;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import org.vertx.java.core.Immutable;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -35,20 +35,13 @@ public class JavaSharedDataTest extends TestCase {
   public void testMap() throws Exception {
 
     Map<String, String> map = SharedData.getMap("foo");
-
     Map<String, String> map2 = SharedData.getMap("foo");
-
-    assert (map == map2);
-
+    assertTrue(map == map2);
     Map<String, String> map3 = SharedData.getMap("bar");
-
-    assert (map3 != map2);
-
-    assert (SharedData.removeMap("foo"));
-
+    assertFalse(map3 == map2);
+    assertTrue(SharedData.removeMap("foo"));
     Map<String, String> map4 = SharedData.getMap("foo");
-
-    assert (map4 != map3);
+    assertFalse(map4 == map3);
   }
 
   @Test
@@ -58,31 +51,142 @@ public class JavaSharedDataTest extends TestCase {
 
     String key = "key";
 
-    class MyImmutable implements Immutable {
-    }
+    double d = new Random().nextDouble();
+    map.put(key, d);
+    assertEquals(d, map.get(key));
 
-    class SomeOtherClass {
-    }
+    float f = new Random().nextFloat();
+    map.put(key, f);
+    assertEquals(f, map.get(key));
 
-    map.put(key, 1.2d);
-    map.put(key, 3.2f);
-    map.put(key, (byte) 1);
-    map.put(key, (short) 23);
-    map.put(key, 23);
-    map.put(key, 123l);
+    byte b = (byte)new Random().nextInt();
+    map.put(key, b);
+    assertEquals(b, map.get(key));
+
+    short s = (short)new Random().nextInt();
+    map.put(key, s);
+    assertEquals(s, map.get(key));
+
+    int i = new Random().nextInt();
+    map.put(key, i);
+    assertEquals(i, map.get(key));
+
+    long l = new Random().nextLong();
+    map.put(key, l);
+    assertEquals(l, map.get(key));
+
     map.put(key, true);
-    map.put(key, (char) 12);
-    map.put(key, new MyImmutable());
-    Buffer buff = Buffer.create(0);
+    assertTrue((Boolean)map.get(key));
+
+    map.put(key, false);
+    assertFalse((Boolean) map.get(key));
+
+    char c = (char)new Random().nextLong();
+    map.put(key, c);
+    assertEquals(c, map.get(key));
+
+    Buffer buff = TestUtils.generateRandomBuffer(100);
     map.put(key, buff);
-    assertTrue(map.get(key) != buff); // Make sure it's copied
+    Buffer got1 = (Buffer)map.get(key);
+    assertTrue(got1 != buff); // Make sure it's copied
+    assertEquals(buff, map.get(key));
+    Buffer got2 = (Buffer)map.get(key);
+    assertTrue(got1 == got2); // Shouldn't be copied on each get though
+    assertTrue(got2 != buff);
+    assertEquals(buff, map.get(key));
+
+
     byte[] bytes = TestUtils.generateRandomByteArray(100);
     map.put(key, bytes);
-    byte[] got = (byte[]) map.get(key);
-    assertTrue(got != bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, got));
+    byte[] bgot1 = (byte[]) map.get(key);
+    assertTrue(bgot1 != bytes);
+    assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
+    byte[] bgot2 = (byte[]) map.get(key);
+    assertTrue(bgot2 != bytes);
+    assertTrue(bgot1 == bgot2);
+    assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
+
     try {
       map.put(key, new SomeOtherClass());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+  }
+  
+  @Test
+  public void testSetTypes() throws Exception {
+
+    Set set = SharedData.getSet("foo");
+
+    double d = new Random().nextDouble();
+    set.add(d);
+    assertEquals(d, set.iterator().next());
+    set.clear();
+
+    float f = new Random().nextFloat();
+    set.add(f);
+    assertEquals(f, set.iterator().next());
+    set.clear();
+
+    byte b = (byte)new Random().nextInt();
+    set.add(b);
+    assertEquals(b, set.iterator().next());
+    set.clear();
+
+    short s = (short)new Random().nextInt();
+    set.add(s);
+    assertEquals(s, set.iterator().next());
+    set.clear();
+
+    int i = new Random().nextInt();
+    set.add(i);
+    assertEquals(i, set.iterator().next());
+    set.clear();
+
+    long l = new Random().nextLong();
+    set.add(l);
+    assertEquals(l, set.iterator().next());
+    set.clear();
+
+    set.add(true);
+    assertTrue((Boolean)set.iterator().next());
+    set.clear();
+
+    set.add(false);
+    assertFalse((Boolean) set.iterator().next());
+    set.clear();
+
+    char c = (char)new Random().nextLong();
+    set.add(c);
+    assertEquals(c, set.iterator().next());
+    set.clear();
+
+    Buffer buff = TestUtils.generateRandomBuffer(100);
+    set.add(buff);
+    Buffer got1 = (Buffer)set.iterator().next();
+    assertTrue(got1 != buff); // Make sure it's copied
+    assertEquals(buff, set.iterator().next());
+    Buffer got2 = (Buffer)set.iterator().next();
+    assertTrue(got1 == got2); // Shouldn't be copied on each get though
+    assertTrue(got2 != buff);
+    assertEquals(buff, set.iterator().next());
+    set.clear();
+
+
+    byte[] bytes = TestUtils.generateRandomByteArray(100);
+    set.add(bytes);
+    byte[] bgot1 = (byte[]) set.iterator().next();
+    assertTrue(bgot1 != bytes);
+    assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
+    byte[] bgot2 = (byte[]) set.iterator().next();
+    assertTrue(bgot2 != bytes);
+    assertTrue(bgot1 == bgot2);
+    assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
+    set.clear();
+
+    try {
+      set.add(new SomeOtherClass());
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       //OK
@@ -94,23 +198,17 @@ public class JavaSharedDataTest extends TestCase {
   public void testSet() throws Exception {
 
     Set<String> set = SharedData.getSet("foo");
-
     Set<String> set2 = SharedData.getSet("foo");
-
     assert (set == set2);
-
     Set<String> set3 = SharedData.getSet("bar");
-
     assert (set3 != set2);
-
     assert (SharedData.removeSet("foo"));
-
     Set<String> set4 = SharedData.getSet("foo");
-
     assert (set4 != set3);
   }
 
-
+  class SomeOtherClass {
+  }
 
 }
 

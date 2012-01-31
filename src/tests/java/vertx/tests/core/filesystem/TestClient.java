@@ -833,7 +833,7 @@ public class TestClient extends TestClientBase {
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     final Buffer buff = Buffer.create(content);
 
-    FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, false, true, true, true).handler(new CompletionHandler<AsyncFile>() {
       int count;
       public void handle(Future<AsyncFile> completion) {
         tu.checkContext();
@@ -844,17 +844,17 @@ public class TestClient extends TestClientBase {
             completion.result().write(chunk, i * chunkSize).handler(new CompletionHandler<Void>() {
               public void handle(Future<Void> completion) {
                 if (completion.succeeded()) {
-                  tu.azzert(fileExists(fileName));
-                  byte[] readBytes;
-                  try {
-                    readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-                  } catch (IOException e) {
-                    tu.exception(e, "Failed to read file");
-                    return;
-                  }
-                  Buffer read = Buffer.create(readBytes);
-                  tu.azzert(TestUtils.buffersEqual(buff, read));
                   if (++count == chunks) {
+                    tu.azzert(fileExists(fileName));
+                    byte[] readBytes;
+                    try {
+                      readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                    } catch (IOException e) {
+                      tu.exception(e, "Failed to read file");
+                      return;
+                    }
+                    Buffer read = Buffer.create(readBytes);
+                    tu.azzert(TestUtils.buffersEqual(buff, read));
                     tu.testComplete();
                   }
                 } else {

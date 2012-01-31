@@ -12,7 +12,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
-import org.vertx.java.tests.core.TLSTestParams;
+import vertx.tests.core.http.TLSTestParams;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -597,7 +597,7 @@ public class TestClient extends TestClientBase {
   }
 
   void tls() {
-    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 

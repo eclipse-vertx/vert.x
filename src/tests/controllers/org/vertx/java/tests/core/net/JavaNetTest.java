@@ -7,7 +7,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
-import org.vertx.java.tests.core.TLSTestParams;
+import vertx.tests.core.http.TLSTestParams;
 import vertx.tests.core.net.CloseHandlerServer;
 import vertx.tests.core.net.CloseHandlerServerCloseFromServer;
 import vertx.tests.core.net.CloseSocketServer;
@@ -222,7 +222,7 @@ public class JavaNetTest extends TestBase {
     //Put the params in shared-data
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
-    SharedData.getMap("TLSTest").put("params", params);
+    SharedData.getMap("TLSTest").put("params", params.serialize());
     startApp(AppType.JAVA, TLSServer.class.getName());
     startTest(testName);
   }

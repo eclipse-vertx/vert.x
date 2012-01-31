@@ -3,6 +3,7 @@ package org.vertx.java.tests.core.eventbus;
 import org.junit.Test;
 import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.eventbus.LocalClient;
 import vertx.tests.core.eventbus.LocalPeer;
@@ -21,6 +22,7 @@ public class JavaEventBusTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+    SharedData.getSet("addresses").clear();
     for (int i = 0; i < numPeers; i++) {
       startApp(AppType.JAVA, getLocalPeerClassName());
     }
@@ -65,6 +67,10 @@ public class JavaEventBusTest extends TestBase {
   public void testPointToPoint() {
     runPeerTest(getMethodName());
   }
+
+//  public void testFoo() throws Exception {
+//    super.runTestInLoop("testPointToPoint", 100000);
+//  }
 
   @Test
   public void testReply() {

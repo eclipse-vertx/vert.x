@@ -16,7 +16,6 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.newtests.TestUtils;
-import org.vertx.java.tests.core.TLSTestParams;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -1983,7 +1982,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void tls() {
-    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 

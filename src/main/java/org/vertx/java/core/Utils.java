@@ -23,8 +23,7 @@ import org.vertx.java.core.buffer.Buffer;
  */
 public class Utils {
   public static <T> T checkShareableObject(T obj) {
-    if (obj instanceof Immutable ||
-        obj instanceof String ||
+    if (obj instanceof String ||
         obj instanceof Integer ||
         obj instanceof Long ||
         obj instanceof Boolean ||

@@ -38,13 +38,6 @@ module Vertx
   # @author {http://tfox.org Tim Fox}
   class Buffer
 
-    private_class_method :new
-
-    # We include this so we can put a buffer in a shareddata data structure.
-    # This class isn't actually immutable but it doesn't matter since it will get copied automatically
-    # as it is added to the map
-    include Immutable
-
     # @private
     def initialize(j_buffer)
       @buffer = j_buffer

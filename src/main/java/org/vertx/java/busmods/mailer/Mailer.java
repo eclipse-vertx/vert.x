@@ -69,7 +69,6 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message<Json
     props.put("mail.smtp.auth", String.valueOf(auth));
     //props.put("mail.smtp.quitwait", "false");
 
-
     session = Session.getInstance(props,
         new javax.mail.Authenticator() {
           protected PasswordAuthentication getPasswordAuthentication() {
@@ -132,6 +131,7 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message<Json
   }
 
   public void handle(Message<JsonObject> message) {
+
     String from = message.body.getString("from");
 
     if (from == null) {
@@ -155,7 +155,15 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message<Json
     InternetAddress[] bcc = parseAddresses(message, "bcc", false);
 
     String subject = message.body.getString("subject");
-    String body = message.body.getString("payload");
+    if (subject == null) {
+      sendError(message, "subject must be specified");
+      return;
+    }
+    String body = message.body.getString("body");
+    if (body == null) {
+      sendError(message, "body must be specified");
+      return;
+    }
 
     javax.mail.Message msg = new MimeMessage(session);
 
@@ -164,17 +172,16 @@ public class Mailer extends BusModBase implements VertxApp, Handler<Message<Json
       msg.setRecipients(javax.mail.Message.RecipientType.TO, recipients);
       msg.setRecipients(javax.mail.Message.RecipientType.CC, cc);
       msg.setRecipients(javax.mail.Message.RecipientType.BCC, bcc);
-      if (subject != null) {
-        msg.setSubject(subject);
-      }
-      if (body != null) {
-        msg.setText(body);
-      }
+      msg.setSubject(subject);
+      msg.setText(body);
       msg.setSentDate(new Date());
       transport.send(msg);
       sendOK(message);
     } catch (MessagingException e) {
+
       sendError(message, "Failed to send message", e);
+    } catch (Throwable t) {
+      t.printStackTrace();
     }
   }
 

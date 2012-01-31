@@ -8,7 +8,6 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
-import org.vertx.java.tests.core.TLSTestParams;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -20,7 +19,7 @@ public class TLSServer implements VertxApp {
   private HttpServer server;
 
   public void start() {
-    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.<String, byte[]>getMap("TLSTest").get("params"));
 
     server = new HttpServer();
 
