@@ -1982,7 +1982,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void tls() {
-    TLSTestParams params = TLSTestParams.deserialize(SharedData.<String, byte[]>getMap("TLSTest").get("params"));
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 
@@ -2064,7 +2064,7 @@ public class HttpTestClient extends TestClientBase {
     //Make sure connections aren't reused
     client.setKeepAlive(false);
     // Make a bunch of requests
-    final int numRequests = SharedData.<String, Integer>getMap("params").get("numRequests");
+    final int numRequests = SharedData.instance.<String, Integer>getMap("params").get("numRequests");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numRequests; i++) {
 

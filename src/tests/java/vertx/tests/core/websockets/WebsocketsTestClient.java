@@ -174,7 +174,7 @@ public class WebsocketsTestClient extends TestClientBase {
   }
 
   public void testSharedServersMultipleInstances1() {
-    final int numConnections = SharedData.<String, Integer>getMap("params").get("numConnections");
+    final int numConnections = SharedData.instance.<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connectWebsocket("someurl", new WebSocketHandler() {

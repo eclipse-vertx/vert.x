@@ -105,7 +105,7 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testPointToPointInitialise() {
     final String address = UUID.randomUUID().toString();
-    SharedData.getSet("addresses").add(address);
+    SharedData.instance.getSet("addresses").add(address);
     eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
           public void handle(Message<Buffer> msg) {
@@ -137,7 +137,7 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testReplyInitialise() {
     final String address = UUID.randomUUID().toString();
-    Set<String> addresses = SharedData.getSet("addresses");
+    Set<String> addresses = SharedData.instance.getSet("addresses");
     addresses.add(address);
     eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
@@ -212,7 +212,7 @@ public class LocalPeer extends EventBusAppBase {
 
   private void echoInitialise() {
     final String address = UUID.randomUUID().toString();
-    SharedData.getSet("addresses").add(address);
+    SharedData.instance.getSet("addresses").add(address);
     eb.registerHandler(address, new Handler<Message>() {
           boolean handled = false;
           public void handle(Message msg) {

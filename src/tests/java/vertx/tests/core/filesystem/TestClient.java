@@ -44,10 +44,10 @@ public class TestClient extends TestClientBase {
   @Override
   public void start() {
     super.start();
-    params = SharedData.getMap("params");
+    params = SharedData.instance.getMap("params");
     java.nio.file.FileSystem fs = FileSystems.getDefault();
     pathSep = fs.getSeparator();
-    params = SharedData.getMap("params");
+    params = SharedData.instance.getMap("params");
 
     testDir = new File(TEST_DIR);
     if (testDir.exists()) {

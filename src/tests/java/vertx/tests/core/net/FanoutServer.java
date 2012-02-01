@@ -23,7 +23,7 @@ public class FanoutServer implements VertxApp {
 
   public void start() {
 
-    final Set<String> connections = SharedData.getSet("conns");
+    final Set<String> connections = SharedData.instance.getSet("conns");
 
     server = new NetServer();
     server.connectHandler(new Handler<NetSocket>() {

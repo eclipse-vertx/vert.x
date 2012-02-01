@@ -24,8 +24,8 @@ public class InstanceCheckServer extends BaseServer {
 
         tu.checkContext();
         //We add the object id of the server to the set
-        SharedData.getSet("instances").add(id);
-        SharedData.getSet("connections").add(UUID.randomUUID().toString());
+        SharedData.instance.getSet("instances").add(id);
+        SharedData.instance.getSet("connections").add(UUID.randomUUID().toString());
 
         socket.close();
       }

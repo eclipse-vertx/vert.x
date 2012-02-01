@@ -23,7 +23,7 @@ public class JavaFileSystemTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    params = SharedData.getMap("params");
+    params = SharedData.instance.getMap("params");
     startApp(AppType.JAVA, TestClient.class.getName());
   }
 

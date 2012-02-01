@@ -50,7 +50,7 @@ public class LocalClient extends EventBusAppBase {
   public void testPointToPoint() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    Set<String> addresses = SharedData.getSet("addresses");
+    Set<String> addresses = SharedData.instance.getSet("addresses");
     for (String address: addresses) {
       eb.send(address, buff);
     }
@@ -60,7 +60,7 @@ public class LocalClient extends EventBusAppBase {
   public void testReply() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    Set<String> addresses = SharedData.getSet("addresses");
+    Set<String> addresses = SharedData.instance.getSet("addresses");
     for (final String address: addresses) {
       eb.send(address, buff, new Handler<Message<Buffer>>() {
         public void handle(Message<Buffer> reply) {

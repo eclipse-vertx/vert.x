@@ -35,7 +35,7 @@ public abstract class EventBusAppBase extends TestClientBase {
   public void start() {
     super.start();
 
-    data = SharedData.getMap("data");
+    data = SharedData.instance.getMap("data");
 
     if (isLocal()) {
       eb = EventBus.instance;

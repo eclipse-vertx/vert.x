@@ -22,7 +22,7 @@ public class JavaEventBusTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    SharedData.getSet("addresses").clear();
+    SharedData.instance.getSet("addresses").clear();
     for (int i = 0; i < numPeers; i++) {
       startApp(AppType.JAVA, getLocalPeerClassName());
     }

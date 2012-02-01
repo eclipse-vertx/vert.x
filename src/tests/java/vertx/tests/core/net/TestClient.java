@@ -597,7 +597,7 @@ public class TestClient extends TestClientBase {
   }
 
   void tls() {
-    TLSTestParams params = TLSTestParams.deserialize(SharedData.<String, byte[]>getMap("TLSTest").get("params"));
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 
@@ -662,7 +662,7 @@ public class TestClient extends TestClientBase {
 
   public void testSharedServersMultipleInstances1() {
     // Create a bunch of connections
-    final int numConnections = SharedData.<String, Integer>getMap("params").get("numConnections");
+    final int numConnections = SharedData.instance.<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", new Handler<NetSocket>() {

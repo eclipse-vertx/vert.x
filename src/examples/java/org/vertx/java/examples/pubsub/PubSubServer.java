@@ -39,12 +39,12 @@ public class PubSubServer implements VertxApp {
             String line = frame.toString().trim();
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {
-              Set<String> set = SharedData.getSet(parts[1]);
+              Set<String> set = SharedData.instance.getSet(parts[1]);
               set.add(socket.writeHandlerID);
             } else if (line.startsWith("unsubscribe")) {
-              SharedData.getSet(parts[1]).remove(socket.writeHandlerID);
+              SharedData.instance.getSet(parts[1]).remove(socket.writeHandlerID);
             } else if (line.startsWith("publish")) {
-              Set<String> actorIDs = SharedData.getSet(parts[1]);
+              Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
               for (String actorID : actorIDs) {
                 EventBus.instance.send(actorID, Buffer.create(parts[2]));
               }
