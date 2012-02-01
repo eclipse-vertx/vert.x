@@ -22,7 +22,7 @@ public class TLSServer implements VertxApp {
   public void start() {
     server = new NetServer();
 
-    TLSTestParams params = TLSTestParams.deserialize(SharedData.<String, byte[]>getMap("TLSTest").get("params"));
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 
     server.setSSL(true);
 

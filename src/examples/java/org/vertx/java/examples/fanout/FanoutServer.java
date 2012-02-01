@@ -32,7 +32,7 @@ public class FanoutServer implements VertxApp {
   private NetServer server;
 
   public void start()  {
-    final Set<String> connections = SharedData.getSet("conns");
+    final Set<String> connections = SharedData.instance.getSet("conns");
 
     System.out.println("connections is " + System.identityHashCode(connections));
 

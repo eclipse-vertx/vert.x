@@ -39,7 +39,7 @@ module Vertx
     # @param [String] key. Get the hash with the key.
     # @return [Hash] the hash.
     def SharedData.get_hash(key)
-      map = org.vertx.java.core.shareddata.SharedData.getMap(key)
+      map = org.vertx.java.core.shareddata.SharedData.instance.getMap(key)
       SharedHash.new(map)
     end
 
@@ -49,20 +49,20 @@ module Vertx
     # @param [String] key. Get the set with the key.
     # @return [SharedSet] the set.
     def SharedData.get_set(key)
-      set = org.vertx.java.core.shareddata.SharedData.getSet(key)
+      set = org.vertx.java.core.shareddata.SharedData.instance.getSet(key)
       SharedSet.new(set)
     end
 
     # Remove the hash
     # @param [String] key. The key of the hash.
     def SharedData.remove_hash(key)
-      org.vertx.java.core.shareddata.SharedData.removeMap(key)
+      org.vertx.java.core.shareddata.SharedData.instance.removeMap(key)
     end
 
     # Remove the set
     # @param [String] key. The key of the set.
     def SharedData.remove_set(key)
-      org.vertx.java.core.shareddata.SharedData.removeSet(key)
+      org.vertx.java.core.shareddata.SharedData.instance.removeSet(key)
     end
 
     # Convert to corresponding Java objects

@@ -26,7 +26,7 @@ public abstract class BaseServer implements VertxApp {
   public void start() {
     server = new NetServer();
     server.connectHandler(getConnectHandler());
-    Integer port = SharedData.<String, Integer>getMap("params").get("listenport");
+    Integer port = SharedData.instance.<String, Integer>getMap("params").get("listenport");
     int p = port == null ? 1234: port;
     server.listen(p);
 

@@ -59,7 +59,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * as pipelines for HTTP requests.</p>
  * <p>It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
  * used as a factory for HTML5 {@link WebSocket websockets}.</p>
- * <p>The client is thread-safe and can be safely shareddata my different event loops.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

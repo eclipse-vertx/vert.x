@@ -51,15 +51,20 @@ public class SharedData {
 
   private static final Logger log = Logger.getLogger(SharedData.class);
 
-  private static ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
-  private static ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
+  public static final SharedData instance = new SharedData();
+
+  private SharedData() {
+  }
+
+  private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
+  private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
 
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    * The Map instance returned is a lock free Map which supports a very high degree of concurrency.
    */
-  public static <K, V> ConcurrentMap<K, V> getMap(String name) {
+  public <K, V> ConcurrentMap<K, V> getMap(String name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
     if (map == null) {
       map = new SharedMap<>();
@@ -76,7 +81,7 @@ public class SharedData {
    * are guaranteed to return the same {@code Set} instance. <p>
    * The Set instance returned is a lock free Map which supports a very high degree of concurrency.
    */
-  public static <E> Set<E> getSet(String name) {
+  public <E> Set<E> getSet(String name) {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
     if (set == null) {
       set = new SharedSet<>();
@@ -91,14 +96,14 @@ public class SharedData {
   /**
    * Remove the {@code Map} with the specifiec {@code name}.
    */
-  public static boolean removeMap(Object name) {
+  public boolean removeMap(Object name) {
     return maps.remove(name) != null;
   }
 
   /**
    * Remove the {@code Set} with the specifiec {@code name}.
    */
-  public static boolean removeSet(Object name) {
+  public boolean removeSet(Object name) {
     return sets.remove(name) != null;
   }
 

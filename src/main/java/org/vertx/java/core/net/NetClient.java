@@ -49,8 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * <p>NetClient is an asynchronous factory for TCP or SSL connections</p>
  *
- * <p>Multiple connections to different servers can be made using the same instance. Instances of this class can be shareddata by different
- * event loops.</p>
+ * <p>Multiple connections to different servers can be made using the same instance. .</p>
  *
  * <p>This client supports a configurable number of connection attempts and a configurable delay between attempts.</p>
  *

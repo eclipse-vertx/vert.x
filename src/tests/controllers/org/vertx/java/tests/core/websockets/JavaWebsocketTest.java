@@ -132,16 +132,16 @@ public class JavaWebsocketTest extends TestBase {
         appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getSet("connections").clear();
-      SharedData.getSet("servers").clear();
-      SharedData.getSet("instances").clear();
-      SharedData.getMap("params").put("numConnections", numConnections);
+      SharedData.instance.getSet("connections").clear();
+      SharedData.instance.getSet("servers").clear();
+      SharedData.instance.getSet("instances").clear();
+      SharedData.instance.getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 
-      assertEquals(numConnections, SharedData.getSet("connections").size());
+      assertEquals(numConnections, SharedData.instance.getSet("connections").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.getSet("instances").size());
+      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
 
       // Then stop some
 
@@ -150,10 +150,10 @@ public class JavaWebsocketTest extends TestBase {
       }
     }
 
-    SharedData.getSet("connections").clear();
-    SharedData.getSet("servers").clear();
-    SharedData.getSet("instances").clear();
-    SharedData.getMap("params").put("numConnections", numConnections);
+    SharedData.instance.getSet("connections").clear();
+    SharedData.instance.getSet("servers").clear();
+    SharedData.instance.getSet("instances").clear();
+    SharedData.instance.getMap("params").put("numConnections", numConnections);
 
     //Now start some more
 
@@ -167,9 +167,9 @@ public class JavaWebsocketTest extends TestBase {
 
     startTest(testName);
 
-    assertEquals(numConnections, SharedData.getSet("connections").size());
+    assertEquals(numConnections, SharedData.instance.getSet("connections").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
   }
 
 }

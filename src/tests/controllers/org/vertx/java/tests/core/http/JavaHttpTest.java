@@ -494,7 +494,7 @@ public class JavaHttpTest extends TestBase {
     //Put the params in shared-data
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
-    SharedData.getMap("TLSTest").put("params", params.serialize());
+    SharedData.instance.getMap("TLSTest").put("params", params.serialize());
     startApp(AppType.JAVA, TLSServer.class.getName());
     startTest(testName);
   }
@@ -578,16 +578,16 @@ public class JavaHttpTest extends TestBase {
         appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getSet("requests").clear();
-      SharedData.getSet("servers").clear();
-      SharedData.getSet("instances").clear();
-      SharedData.getMap("params").put("numRequests", numRequests);
+      SharedData.instance.getSet("requests").clear();
+      SharedData.instance.getSet("servers").clear();
+      SharedData.instance.getSet("instances").clear();
+      SharedData.instance.getMap("params").put("numRequests", numRequests);
 
       startTest(testName);
 
-      assertEquals(numRequests, SharedData.getSet("requests").size());
+      assertEquals(numRequests, SharedData.instance.getSet("requests").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.getSet("instances").size());
+      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
 
       // Then stop some
 
@@ -596,10 +596,10 @@ public class JavaHttpTest extends TestBase {
       }
     }
 
-    SharedData.getSet("requests").clear();
-    SharedData.getSet("servers").clear();
-    SharedData.getSet("instances").clear();
-    SharedData.getMap("params").put("numRequests", numRequests);
+    SharedData.instance.getSet("requests").clear();
+    SharedData.instance.getSet("servers").clear();
+    SharedData.instance.getSet("instances").clear();
+    SharedData.instance.getMap("params").put("numRequests", numRequests);
 
     //Now start some more
 
@@ -613,9 +613,9 @@ public class JavaHttpTest extends TestBase {
 
     startTest(testName);
 
-    assertEquals(numRequests, SharedData.getSet("requests").size());
+    assertEquals(numRequests, SharedData.instance.getSet("requests").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
   }
 
 

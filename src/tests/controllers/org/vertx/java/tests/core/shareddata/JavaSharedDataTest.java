@@ -34,20 +34,20 @@ public class JavaSharedDataTest extends TestCase {
   @Test
   public void testMap() throws Exception {
 
-    Map<String, String> map = SharedData.getMap("foo");
-    Map<String, String> map2 = SharedData.getMap("foo");
+    Map<String, String> map = SharedData.instance.getMap("foo");
+    Map<String, String> map2 = SharedData.instance.getMap("foo");
     assertTrue(map == map2);
-    Map<String, String> map3 = SharedData.getMap("bar");
+    Map<String, String> map3 = SharedData.instance.getMap("bar");
     assertFalse(map3 == map2);
-    assertTrue(SharedData.removeMap("foo"));
-    Map<String, String> map4 = SharedData.getMap("foo");
+    assertTrue(SharedData.instance.removeMap("foo"));
+    Map<String, String> map4 = SharedData.instance.getMap("foo");
     assertFalse(map4 == map3);
   }
 
   @Test
   public void testMapTypes() throws Exception {
 
-    Map map = SharedData.getMap("foo");
+    Map map = SharedData.instance.getMap("foo");
 
     String key = "key";
 
@@ -117,7 +117,7 @@ public class JavaSharedDataTest extends TestCase {
   @Test
   public void testSetTypes() throws Exception {
 
-    Set set = SharedData.getSet("foo");
+    Set set = SharedData.instance.getSet("foo");
 
     double d = new Random().nextDouble();
     set.add(d);
@@ -197,13 +197,13 @@ public class JavaSharedDataTest extends TestCase {
   @Test
   public void testSet() throws Exception {
 
-    Set<String> set = SharedData.getSet("foo");
-    Set<String> set2 = SharedData.getSet("foo");
+    Set<String> set = SharedData.instance.getSet("foo");
+    Set<String> set2 = SharedData.instance.getSet("foo");
     assert (set == set2);
-    Set<String> set3 = SharedData.getSet("bar");
+    Set<String> set3 = SharedData.instance.getSet("bar");
     assert (set3 != set2);
-    assert (SharedData.removeSet("foo"));
-    Set<String> set4 = SharedData.getSet("foo");
+    assert (SharedData.instance.removeSet("foo"));
+    Set<String> set4 = SharedData.instance.getSet("foo");
     assert (set4 != set3);
   }
 

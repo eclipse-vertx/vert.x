@@ -91,7 +91,6 @@ module Vertx
   # as pipelines for HTTP requests.
   # It is used as a factory for {HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
   # used as a factory for HTML5 {Websocket websockets}.
-  # The client is thread-safe and can be safely shareddata by different event loops.
   #
   # @author {http://tfox.org Tim Fox}
   class HttpClient

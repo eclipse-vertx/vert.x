@@ -368,7 +368,7 @@ public class SockJSServer {
       }
     });
     installApp(new AppConfig().setPrefix("/broadcast"), new Handler<SockJSSocket>() {
-      final Set<String> connections = SharedData.getSet("conns");
+      final Set<String> connections = SharedData.instance.getSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID);
         sock.dataHandler(new Handler<Buffer>() {
