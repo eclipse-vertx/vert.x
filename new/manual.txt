@@ -1,0 +1,51 @@
+h1. Introduction
+
+<br><br>
+
+h2. What is vert.x ?
+
+<br>
+
+vert.x is a framework for creating scalable, concurrent, real-time, web-enabled applications.
+
+Some other features:
+
+* Polyglot. Write your application in JavaScript, Java, Ruby or Groovy. It's up to you. Or mix and match several programming languages in a single application.
+
+* No more worrying about concurrency. vert.x allows you to write all your code as single threaded. Yet, still allows you to scale your applicatin across available cores.
+
+* Has an elegant event based API
+
+h2. Code example
+
+<pre class="prettyprint">
+  var server = new vertx.HttpServer();
+
+  // Also serve the static resources
+  server.requestHandler(function(req) {
+    if (req.path == '/') {
+      req.response.sendFile('web/index.html');
+    } else if (req.path.indexOf('..') == -1) {
+      req.response.sendFile('web' + req.path);
+    }
+  }).listen(8080, 'localhost');
+
+  function vertxStop() {
+    server.close();
+  }
+</pre>
+
+
+p. After the code
+
+h2. The vert.x Model
+
+
+
+
+<br>
+
+
+
+
+
