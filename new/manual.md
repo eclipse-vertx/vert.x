@@ -4,17 +4,126 @@
    
 ### What is vert.x? 
       
-vert.x is a framework for creating scalable, concurrent, real-time, web-enabled applications.  
+vert.x is a framework for creating massively scalable, concurrent, real-time, web-enabled applications.  
 
 Some key features:
 
 * Polyglot. Write your application in JavaScript, Java, Ruby or Groovy. It's up to you. Or mix and match several programming languages in a single application.
 
-* No more worrying about concurrency. vert.x allows you to write all your code as single threaded. Yet, still allows you to scale your applicatin across available cores.
+* No more worrying about concurrency. vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.
 
-* Has an elegant event based API
+* An asynchronous, event based API so your applications can scale seamlessly across many cores with just a few threads.
 
-### Why vert.x ?
+* Distributed event bus that spans the client and server side so your applications components can communicate incredibly easily.
+
+## Concepts in vert.x
+
+In this section I'd like to give an overview of what the different conceptual part of vert.x are and how they hang together. Many of this concepts will be discussed in more depth later on in this manual.
+
+### Verticle
+
+The atomic unit in vert.x is called a *verticle* (Like a particle, but in vert.x). Verticles can be written in JavaScript, Ruby, Java or Groovy. A verticle is defined by having a *main* which is just the script (or class in the case of Java) to run to start the verticle.
+
+Your application may contain just one verticle, or it could consist of a whole set of verticles communicating with each other using the event bus.
+
+Verticles run inside *vert.x server instance*. 
+
+**TODO details on how to write a verticle in each language and vertxStop()**
+
+### Vert.x Instances
+
+Verticles run inside vert.x instances. A single vert.x instance is basically an operating system process running a JVM. There can be many verticle instances running inside a single vert.x instance at any time. vert.x makes sure each vert.x instance is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.
+
+There can be many vert.x instances running on the same host, or on different hosts on the network at the same time. The instances can be configured to cluster with each other forming a distributed event bus over which verticle instances can communicate.
+
+### Polyglot
+
+We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. vert.x allows you to mix and match verticles written in different languages in the same application. Currently we support JavaScript, Ruby, Groovy and Java, but we aim to support Clojure, Scala and Python going ahead.
+
+### Message Passing
+
+Verticles can communicate with other verticles running in the same, or different, vert.x instance using the event bus. Each verticle instance is single threaded so in some ways it resembles the [actor model](http://en.wikipedia.org/wiki/Actor_model) popularised by the Erlang programming language. However there are some difference, for example, each verticle can set multiple event handlers, rather than having a single mail-box. You can think of the vert.x model as a superset of the actor model.
+
+By having many verticle instances in a vert.x server instance and allowing message passing allows the system to scale well over available cores without having to allow multi-threaded execution of any verticle code.
+
+### Shared data
+
+Message passing is great, but its not always the best approach to concurrency for certain applications. Consider an application that wishes to provide an in memory web cache. As requests come in to the server, the server looks up the request in the cache and returns it from there if the item is present, if the item is not present it loads it from disk and places it in the cache for the next time.
+
+We want this system to scale across available cores. Modelling this using message passing is problematic. At one end of the scale we could have a single verticle that manages the cache, but this means all requests to the cache will be serialized through a single threaded verticle instance. We could improve things by having multiple instances of the verticle managing different parts of the cache, but it quickly gets ugly and complicated.
+
+Such a use case is better solved by providing a shared map structure that can be accessed directly by different verticle instances in the same vert.x instance. As requests come in, the data can be efficiently looked up in the cache with a single line of code and returned to the user.
+
+It's fashionable these days to deride shared data. But shared data is only dangerous if the data that you share is mutable.
+
+vert.x provides a shared map and shared set facility which allows only *immutable* data to be shared between verticles.
+
+### Concurrency
+
+The vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief!
+
+Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. 
+
+### Event Loops
+
+Internally, the vert.x instance manages a small set of threads, typically matching the number of threads to the available cores on the server. We call these threads event loops, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, e.g. reading some data from a socket, or executing a timer.
+
+When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.
+
+### Event-based Programming Model
+
+Most things you do in vert.x involve setting event handlers. E.g. to receive data from a TCP socket you set a handler - the handler is then called when data arrives. You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.
+
+In other words, vert.x provides an event-based programming model. 
+
+Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.
+
+*Why is it done this way?*
+
+The answer is: If we want our application to scale with many connections, *we don't have a choice*.
+
+Let's imagine that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.
+
+For such a blocking model to work and the system to remain responsive, each verticle instance would need to be assigned its own thread. Now consider what happens when we have thousands, 10s of thousands, or 100s of thousands of verticles running. We clearly can't have that many threads - the overhead due to context switching and stack space would be horrendous. It's clear to see such a blocking model just doesn't scale.
+
+The only way to make it scale is have a 100% non blocking api. There are two ways to do this:
+
+* Used an asynchronous, event based API. Let the system call you when events occur. Do not block waiting for things to happen.
+
+* Use some kind of co-routine approach. Co-routines allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However co-routines are not currently supported across the different languages, or versions of languages that we support in vert.x
+
+vert.x currently takes the event-based api approach. As support for coroutines in various languages matures we will consider also supporting a co-routine based approach in the api.
+
+### Blocking and Long Running Operations
+
+Considering vert.x uses only a small number of event loop threads, and considering that vert.x has to dispatch events to potentially thousands of verticles, and remain responsive, it's pretty clear that those threads can't hang around in any verticle event handler for too long - if they do it means that event loop can't service events for any other verticle, and everything can grind to a halt.
+
+What does *hanging around* mean? It means anything that can take more than a few milliseconds of *wall-clock* time. (That's real actual time, not CPU time). That includes things like  the thread sleeping or blocking on a database operation which don't involve much CPU time, but it also involves *busy waits* such as a computationally intensive operation, e.g. factorising prime numbers.
+
+### Worker Verticles
+
+By default verticles event handlers should not take a long time to execute, however there are cases where you can't avoid blocking, or you genuinely have computationally intensive operations to perform.
+
+An example of the former would be calling a third-party blocking database API from a verticle. In this case you don't have control of the client library you are using so you just have to block until you get the result back.
+
+Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time, and event handlers set to continue the calculation the next time around the event loop, but this is awkward, and just a little bit silly ;)
+
+For cases like these, vert.x allows you to mark a particular verticle instance as a *worker verticle*. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, but instead it executes on a thread from an internal thread pool that vert.x maintains called the *background pool*. 
+
+Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.
+
+Worker verticles should be kept to a minimum, since a blocking approach doesn't scale if you want to deal with many concurrent connections. We'll talk more about worker verticles later on.
+
+**TODO more stuff on how to write a worker**
+
+### Code is Config
+
+**TODO**
+
+### Core and BusMods
+
+**TODO**
+
 
 ## Installation
 
@@ -36,7 +145,7 @@ The easiest way is to download a distro from the download page [link]. Alternati
 
 * Ruby. If you want to deploy Ruby verticles then you will need JRuby 1.6.4 later installed. Please set the `JRUBY_HOME` environment variable to point at the base of the JRuby installation. If you don't intend to deploy Ruby verticles you can ignore this.
 
-### Install it
+### Install vert.x
 
 Once you've got the pre-requisites installed, you install vert.x by;
 
@@ -177,7 +286,7 @@ The `vertx deploy` command can take a few optional parameters, (some have the sa
 
 #### Undeploying Verticles
 
-To undeploy Verticles previously deployed using `vertx deploy` you simply type: `vertx undeploy <name>`, where `name` is the name the deployment that you specified using the `-name` parameter, or was generated for you, at deployment time.
+To undeploy verticles previously deployed using `vertx deploy` you simply type: `vertx undeploy <name>`, where `name` is the name the deployment that you specified using the `-name` parameter, or was generated for you, at deployment time.
 
     tim@Ethel:~/example$ vertx undeploy app-f49609fb-927c-43ef-8dda-34ed174c066f
     OK
@@ -197,77 +306,108 @@ The `vertx stop` command can take an optional parameter:
 
 * `-port` This specifies which port it will attempt to connect to the server on, to stop the server. Default is `25571`. 
 
-## The vert.x Model.
+## Writing Verticles
 
-In this section I'd like to give a brief overview of what the different conceptual part of vert.x are and how they hang together.
+We previously discussed how a Verticle was the atomic unit in vert.x, and the unit of deployment. We discussed that verticles can be written in several different programming languages and deployed to the same or different servers. Let's look in more detail about how to write a verticle.
 
-### Verticle
+Take a look at the simple TCP echo server verticle again.
 
-The component of deployment in vert.x is called a *verticle* (Like a particle, but in vert.x). Verticles can be written in JavaScript, Ruby, Java or Groovy. A verticle is defined by having a *main* which is just the script (or class in the case of Java) to run to start the verticle.
+### JavaScript
 
-Your application may contain just one verticle, or it could consist of a whole set of verticles communicating with each other using the event bus.
+The main JavaScript script must call `load('vertx.js')` to load the vert.x object api.
 
-Verticles run inside *vert.x server instance*. 
+The `load` function is also used if you want to load any other JavaScript scripts you have in your verticle.
 
-### Vert.x Instances
+The main script is simply run when the verticle is deployed.
 
-Verticles run inside vert.x instances. A single vert.x instance is basically an operating system process running a JVM. There can be many verticle instances running inside a single vert.x instance at any time. vert.x makes sure each vert.x instance is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.
+The optional function `vertxStop` is called when the verticle is undeployed. This is an optional function that should be used if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers. 
 
-### Concurrency
+    load('vertx.js')
 
-The vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief!
+    var server = new vertx.NetServer();
 
-Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. 
+    server.connectHandler(function(sock) {
+      new vertx.Pump(sock, sock).start();
+    })
 
-### Event Loops
+    server.listen(1234, 'localhost');
 
-Internally, the vert.x instance manages a small set of threads, typically matching the number of threads to the available cores on the server. We call these threads event loops, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, e.g. reading some data from a socket, or executing a timer.
+    function vertxStop() {
+      server.close();
+    }
+    
+### Ruby
 
-When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.
+All scripts in your Ruby verticle should `require 'vertx'` in order to load the vert.x api  
 
-### Event-based Programming Model
+The main script is simply run when the verticle is deployed.
 
-Most things you do in vert.x involve setting event handlers. E.g. to receive data from a TCP socket you set a handler - the handler is then called when data arrives. You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.
+The optional method `vertx_stop` is called when the verticle is undeployed. This is an optional function that should be used if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers.   
+    
+    require "vertx"
+    include Vertx
 
-In other words, vert.x provides an event-based programming model. 
+    @server = NetServer.new.connect_handler { |socket|
+      Pump.new(socket, socket).start
+    }.listen(1234)
 
-Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.
+    def vertx_stop
+      @server.close
+    end
 
-Why is it done this way?
 
-The answer is: If we want our application to scale with many connections, we don't have a choice.
+### Groovy
 
-Let's imagine that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.
+The main script is simply run when the verticle is deployed.
 
-For such a blocking model to work and the system to remain responsive, each verticle instance would need to be assigned its own thread. Now consider what happens when we have thousands, 10s of thousands, or 100s of thousands of verticles running. We clearly can't have that many threads - the overhead due to context switching and stack space would be horrendous. It's clear to see such a blocking model just doesn't scale.
+The optional method `vertxStop` is called when the verticle is undeployed. This is an optional function that should be used if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers.  
 
-The only way to make it scale is have a 100% non blocking api. There are two ways to do this:
+    package echo
 
-* Used an asynchronous, event based API. Let the system call you when events occur. Do not block waiting for things to happen.
+    import org.vertx.groovy.core.net.NetServer
+    import org.vertx.java.core.streams.Pump
 
-* Use some kind of co-routine approach. Co-routines allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However co-routines are not currently supported across the different languages, or versions of languages that we support in vert.x
+    server = new NetServer().connectHandler { socket ->
+      new Pump(socket, socket).start()
+    }.listen(1234)
 
-vert.x currently takes the event-based api approach. As support for coroutines in various languages matures we will consider also supporting a co-routine based approach in the api.
 
-### Blocking and Long Running Operations
+    void vertxStop() {
+      server.close()
+    }
+    
+### Java  
 
-Considering vert.x uses only a small number of event loop threads, and considering that vert.x has to dispatch events to potentially thousands of verticles, and remain responsive, it's pretty clear that those threads can't hang around in any verticle event handler for too long - if they do it means that event loop can't service events for any other verticle, and everything can grind to a halt.
+Java is not a scripting language so vert.x can't just *execute the class* in order to start the verticle. All Java verticles must implement the interface `org.vertx.java.core.app.VertxApp`. This interface has a method `start()` which is called when the verticle is deployed and a method `stop()` which is called when the verticle is undeployed.
 
-What does *hanging around* mean? It means anything that can take more than a few milliseconds of *wall-clock* time. (That's real actual time, not CPU time). That includes things like  the thread sleeping or blocking on a database operation which don't involve much CPU time, but it also involves *busy waits* such as a computationally intensive operation, e.g. factorising prime numbers.
+    import org.vertx.java.core.Handler;
+    import org.vertx.java.core.app.VertxApp;
+    import org.vertx.java.core.net.*;
+    import org.vertx.java.core.streams.Pump; 
 
-### Worker Verticles
+    public class EchoServer implements VertxApp {
 
-By default verticles event handlers should not take a long time to execute, however there are cases where you can't avoid blocking, or you genuinely have computationally intensive operations to perform.
+      private NetServer server;
 
-An example of the former would be calling a third-party blocking database API from a verticle. In this case you don't have control of the client library you are using so you just have to block until you get the result back.
+      public void start() {
+        server = new NetServer().connectHandler(new Handler<NetSocket>() {
+          public void handle(final NetSocket socket) {
+            new Pump(socket, socket).start();
+          }
+        }).listen(1234);
+      }
 
-Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time, and event handlers set to continue the calculation the next time around the event loop, but this is awkward, and just a little bit silly ;)
+      public void stop() {
+        server.close();
+      }
+    }
 
-For cases like these, vert.x allows you to mark a particular verticle instance as a *worker verticle*. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, but instead it executes on a thread from an internal thread pool that vert.x maintains called the *background pool*. 
+    
 
-Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.
 
-Worker verticles should be kept to a minimum, since a blocking approach doesn't scale if you want to deal with many concurrent connections. We'll talk more about worker verticles later on.
+
+
+
 
 
 
