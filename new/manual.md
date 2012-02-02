@@ -11,12 +11,21 @@ User Manual
 
 blah blah blah
 
-  public Map<String, String> getHeaders() {
-    if (headers == null) {
-      headers = HeaderUtils.simplifyHeaders(request.getHeaders());
+    public Map<String, String> getHeaders() {
+      if (headers == null) {
+        headers = HeaderUtils.simplifyHeaders(request.getHeaders());
+      }
+      return headers;
     }
-    return headers;
-  }
+    
+    public Map<String, String> getHeaders() {
+      if (headers == null) {
+        headers = HeaderUtils.simplifyHeaders(request.getHeaders());
+      }
+      return headers;
+    }
+    
+    
 
 eokfopkefopkweffqw
 wef
