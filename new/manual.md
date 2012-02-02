@@ -16,6 +16,7 @@ Some key features:
 
 * Distributed event bus that spans the client and server side so your applications components can communicate incredibly easily.
 
+
 ## Concepts in vert.x
 
 In this section I'd like to give an overview of what the different conceptual part of vert.x are and how they hang together. Many of this concepts will be discussed in more depth later on in this manual.
@@ -314,7 +315,7 @@ Take a look at the simple TCP echo server verticle again.
 
 ### JavaScript
 
-The main JavaScript script must call `load('vertx.js')` to load the vert.x object api.
+The main JavaScript script must call `load('vertx.js')` to load the vertx global which contains the api.
 
 The `load` function is also used if you want to load any other JavaScript scripts you have in your verticle.
 
@@ -328,9 +329,7 @@ The optional function `vertxStop` is called when the verticle is undeployed. Thi
 
     server.connectHandler(function(sock) {
       new vertx.Pump(sock, sock).start();
-    })
-
-    server.listen(1234, 'localhost');
+    }).listen(1234, 'localhost');
 
     function vertxStop() {
       server.close();
@@ -361,8 +360,6 @@ The optional method `vertx_stop` is called when the verticle is undeployed. This
 The main script is simply run when the verticle is deployed.
 
 The optional method `vertxStop` is called when the verticle is undeployed. This is an optional function that should be used if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers.  
-
-    package echo
 
     import org.vertx.groovy.core.net.NetServer
     import org.vertx.java.core.streams.Pump
@@ -401,6 +398,51 @@ Java is not a scripting language so vert.x can't just *execute the class* in ord
         server.close();
       }
     }
+    
+## The Event Bus
+
+The event bus is the nervous system of vert.x. It allows verticles to communicate each other irrespective of whether they're in the same vert.x instance, or in a different vert.x instance. It even allows client side JavaScript running in a browser to communicate with verticles. More on that later.
+
+The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending messages.
+
+First some preliminaries:
+
+### Addressing
+
+Messages are sent on the event bus to an *address*. vert.x doesn't bother with any fancy addressing schemes. In vert.x an address is simply an arbitrary string, although it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace
+
+Valid addresses include `europe.news.feed1`, `acme.games.pacman`, and `sausages`. 
+
+### Handlers
+
+You register a handler at an address. The handler will be called when any messages which have been sent to that address have been received. Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.
+
+When a message is received in a handler, and has been *processed*, the receiver can optionally decide to reply to the message. If they do so, and the message was sent specifying a reply handler, that reply handler will be called.
+
+### Sending messages
+
+You send a message by specifying the address and telling the event bus to send it there. The event bus will then deliver the message to any handlers registered at that address. If multiple vert.x instances are clustered together, the message will be delivered to any matching handlers irrespective of what vert.x instance they reside on.  
+
+The vert.x event bus is therefore an implementation of *Publish-Subscribe Messaging*.
+
+When sending a message you can specify an optional reply handler which will be invoked once the message has reached a handler and the recipient has replied to it.
+
+The vert.x event bus therefore also implements the *Request-Response* messaging pattern.
+
+All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is every chance the message will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.
+
+Messages that can be sent on the event bus include the following types: numbers, strings, booleans, buffers, and JSON messages
+
+## 
+
+    
+## Writing TCP Servers and Clients
+
+In this chapter we're going to discuss how you can use vert.x to create TCP clients and servers.
+
+    
+    
+    
 
     
 
