@@ -1,23 +1,20 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
-<xsl:template match="/">
+<xsl:output omit-xml-declaration="yes" indent="yes"/>
+
+<xsl:template match="*">
   <xsl:copy>
-    <xsl:apply-templates />
+    <xsl:copy-of select="@*"/>
+    <xsl:apply-templates/>
   </xsl:copy>
 </xsl:template>
 
-<!-- Add a class attribute to pre tags for pretty printing code -->
-<xsl:template match="pre">
-  <xsl:copy>
+<!-- remove any code elements nested in pre elements since Twitter Bootstrap
+requires just pre elements. Also add a prettyprint class to the pre -->
+<xsl:template match="pre/code">
     <xsl:attribute name="class">prettyprint</xsl:attribute>
-    <xsl:apply-templates />
-  </xsl:copy>
+    <xsl:apply-templates/>
 </xsl:template>
 
-<!-- We need to remove the code tags since the Twitter bootstrap CSS doesn't
-like them for code blocks -->
-<xsl:template match="code">
-  <xsl:apply-templates />
-</xsl:template>
 
 </xsl:stylesheet>

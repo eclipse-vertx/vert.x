@@ -1,33 +1,26 @@
-User Manual
-===========
+# User Manual
 
-* Introduction
+## Introduction
 
-* What is vert.x?
+### What is vert.x?
 
-* Why vert.x ?
+vert.x is a framework for creating scalable, concurrent, real-time, web-enabled applications.
 
-* TCP
+Some other features:
 
-blah blah blah
+* Polyglot. Write your application in JavaScript, Java, Ruby or Groovy. It's up to you. Or mix and match several programming languages in a single application.
 
-    public Map<String, String> getHeaders() {
-      if (headers == null) {
-        headers = HeaderUtils.simplifyHeaders(request.getHeaders());
-      }
-      return headers;
-    }
-    
-    public Map<String, String> getHeaders() {
-      if (headers == null) {
-        headers = HeaderUtils.simplifyHeaders(request.getHeaders());
-      }
-      return headers;
-    }
-    
-    
+* No more worrying about concurrency. vert.x allows you to write all your code as single threaded. Yet, still allows you to scale your applicatin across available cores.
 
-eokfopkefopkweffqw
-wef
-qwefqwef
-qwefqwef
+* Has an elegant event based API
+
+### Why vert.x ?
+
+## Installation
+
+## Running it
+
+
+
+
+

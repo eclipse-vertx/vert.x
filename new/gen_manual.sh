@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Run markdown on the .md
-perl Markdown.pl manual.md >> manual1.tmp
+perl Markdown.pl manual.md > manual1.tmp
 
 # Add a root element so it's well formed xml
 echo "<div>" > top.tmp
