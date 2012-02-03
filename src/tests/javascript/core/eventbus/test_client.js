@@ -148,6 +148,11 @@ function testEchoJson() {
   echo(sent);
 }
 
+function testEchoNull() {
+  echo(null);
+}
+
+
 function echo(msg) {
   eb.registerHandler(address, function MyHandler(received, replier) {
     tu.checkContext();
@@ -156,13 +161,17 @@ function echo(msg) {
   });
   eb.send(address, msg, function (reply){
 
-    if (typeof msg != 'object') {
-      tu.azzert(msg === reply);
-    } else {
-      //Json object
-      for (field in reply) {
-        tu.azzert(msg.field === reply.field);
+    if (msg != null) {
+      if (typeof msg != 'object') {
+        tu.azzert(msg === reply);
+      } else {
+        //Json object
+        for (field in reply) {
+          tu.azzert(msg.field === reply.field);
+        }
       }
+    } else {
+      tu.azzert(reply == null);
     }
 
     tu.testComplete();
