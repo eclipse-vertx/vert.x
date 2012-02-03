@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.stdio;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.stdio.TestClient;
 
@@ -13,7 +13,7 @@ public class JavaStdioTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(VerticleType.JAVA, TestClient.class.getName());
   }
 
   @Override

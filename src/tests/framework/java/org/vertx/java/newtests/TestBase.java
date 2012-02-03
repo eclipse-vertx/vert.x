@@ -5,8 +5,8 @@ import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.AppManager;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -32,7 +32,7 @@ public class TestBase extends TestCase {
 
   public static final String EVENTS_ADDRESS = "__test_events";
 
-  private AppManager appManager;
+  private VerticleManager appManager;
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils();
   private long contextID;
@@ -60,7 +60,7 @@ public class TestBase extends TestCase {
   @Override
   protected void setUp() throws Exception {
 
-    appManager = AppManager.instance;
+    appManager = VerticleManager.instance;
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -155,45 +155,45 @@ public class TestBase extends TestCase {
     }
   }
 
-  protected String startApp(AppType type, String main) throws Exception {
+  protected String startApp(VerticleType type, String main) throws Exception {
     return startApp(false, type, main, true);
   }
 
-  protected String startApp(AppType type, String main, boolean await) throws Exception {
+  protected String startApp(VerticleType type, String main, boolean await) throws Exception {
     return startApp(false, type, main, 1, await);
   }
 
-  protected String startApp(AppType type, String main, int instances) throws Exception {
+  protected String startApp(VerticleType type, String main, int instances) throws Exception {
     return startApp(false, type, main, instances, true);
   }
 
-  protected String startApp(boolean worker, AppType type, String main) throws Exception {
+  protected String startApp(boolean worker, VerticleType type, String main) throws Exception {
     return startApp(worker, type, main, true);
   }
 
-  protected String startApp(boolean worker, AppType type, String main, boolean await) throws Exception {
+  protected String startApp(boolean worker, VerticleType type, String main, boolean await) throws Exception {
     return startApp(worker, type, main, 1, await);
   }
 
-  protected String startApp(boolean worker, AppType type, String main, int instances) throws Exception {
+  protected String startApp(boolean worker, VerticleType type, String main, int instances) throws Exception {
     return startApp(worker, type, main, instances, true);
   }
 
-  protected String startApp(boolean worker, AppType type, String main, int instances, boolean await) throws Exception {
+  protected String startApp(boolean worker, VerticleType type, String main, int instances, boolean await) throws Exception {
     String appName = UUID.randomUUID().toString();
 
     URL url = null;
-    if (type == AppType.JAVA) {
+    if (type == VerticleType.JAVA) {
       String classDir = main.replace('.', '/') + ".class";
       url = getClass().getClassLoader().getResource(classDir);
       String surl = url.toString();
       String surlroot = surl.substring(0, surl.length() - classDir.length());
       url = new URL(surlroot);
-    } else if (type == AppType.JS) {
+    } else if (type == VerticleType.JS) {
       url = getClass().getClassLoader().getResource(main);
-    } else if (type == AppType.RUBY) {
+    } else if (type == VerticleType.RUBY) {
       url = getClass().getClassLoader().getResource(main);
-    } else if (type == AppType.GROOVY) {
+    } else if (type == VerticleType.GROOVY) {
       url = getClass().getClassLoader().getResource(main);
     }
 

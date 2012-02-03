@@ -17,7 +17,7 @@
 package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;
@@ -27,7 +27,7 @@ import org.vertx.java.core.shareddata.SharedData;
 
 import java.util.Set;
 
-public class PubSubServer implements VertxApp {
+public class PubSubServer implements Verticle {
 
   private NetServer server;
 

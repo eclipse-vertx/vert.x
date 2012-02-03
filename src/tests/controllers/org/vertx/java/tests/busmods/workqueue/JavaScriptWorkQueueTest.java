@@ -1,7 +1,7 @@
 package org.vertx.java.tests.busmods.workqueue;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -22,12 +22,12 @@ public class JavaScriptWorkQueueTest extends TestBase {
 
   @Test
   public void testWorkQueue() throws Exception {
-    startApp(AppType.JS, "busmods/workqueue/order_queue.js");
+    startApp(VerticleType.JS, "busmods/workqueue/order_queue.js");
     int numProcessors = 10;
     for (int i = 0; i < numProcessors; i++) {
-      startApp(true, AppType.JS, "busmods/workqueue/order_processor.js");
+      startApp(true, VerticleType.JS, "busmods/workqueue/order_processor.js");
     }
-    startApp(AppType.JS, "busmods/workqueue/test_client.js");
+    startApp(VerticleType.JS, "busmods/workqueue/test_client.js");
     startTest(getMethodName());
   }
 

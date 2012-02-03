@@ -2,7 +2,7 @@ package org.vertx.java.core.app.jruby;
 
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.IOException;
@@ -11,15 +11,15 @@ import java.io.InputStream;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JRubyApp implements VertxApp {
+public class JRubyVerticle implements Verticle {
 
-  private static final Logger log = Logger.getLogger(JRubyApp.class);
+  private static final Logger log = Logger.getLogger(JRubyVerticle.class);
 
   private final ScriptingContainer container;
   private final ClassLoader cl;
   private final String scriptName;
 
-  JRubyApp(String scriptName, ClassLoader cl) {
+  JRubyVerticle(String scriptName, ClassLoader cl) {
     this.container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
     container.setClassLoader(cl);
     this.cl = cl;

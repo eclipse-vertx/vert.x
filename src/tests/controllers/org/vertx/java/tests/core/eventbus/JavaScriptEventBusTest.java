@@ -1,6 +1,6 @@
 package org.vertx.java.tests.core.eventbus;
 
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +11,7 @@ public class JavaScriptEventBusTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JS, "core/eventbus/test_client.js");
+    startApp(VerticleType.JS, "core/eventbus/test_client.js");
   }
 
   @Override

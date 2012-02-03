@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.isolation;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -23,9 +23,9 @@ public class JavaScriptIsolationTest extends TestBase {
   public void testIsolation() throws Exception {
     int numInstances = 10;
     for (int i = 0; i < numInstances; i++) {
-      startApp(AppType.JS, "core/isolation/test_client.js");
+      startApp(VerticleType.JS, "core/isolation/test_client.js");
     }
-    startApp(AppType.JS, "core/isolation/test_client.js", numInstances);
+    startApp(VerticleType.JS, "core/isolation/test_client.js", numInstances);
     startTest(getMethodName(), false);
     for (int i = 0; i < numInstances * 2; i++) {
       waitTestComplete();

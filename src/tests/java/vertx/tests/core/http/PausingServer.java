@@ -2,7 +2,7 @@ package vertx.tests.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -13,7 +13,7 @@ import org.vertx.java.newtests.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class PausingServer implements VertxApp {
+public class PausingServer implements Verticle {
 
   protected TestUtils tu = new TestUtils();
 

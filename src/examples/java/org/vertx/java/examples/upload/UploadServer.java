@@ -20,7 +20,7 @@ import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpServer;
@@ -29,7 +29,7 @@ import org.vertx.java.core.streams.Pump;
 
 import java.util.UUID;
 
-public class UploadServer implements VertxApp {
+public class UploadServer implements Verticle {
 
   private HttpServer server;
 

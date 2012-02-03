@@ -5,6 +5,6 @@ import java.io.Serializable;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public enum AppType implements Serializable {
+public enum VerticleType implements Serializable {
   JAVA, RUBY, GROOVY, JS
 }

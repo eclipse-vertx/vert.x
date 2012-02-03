@@ -1,6 +1,6 @@
 package org.vertx.java.core.app.cli;
 
-import org.vertx.java.core.app.AppManager;
+import org.vertx.java.core.app.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -16,7 +16,7 @@ public class UndeployCommand extends VertxCommand {
   public UndeployCommand() {
   }
 
-  public void execute(AppManager appMgr) throws Exception {
-    appMgr.undeploy(name, null);
+  public String execute(VerticleManager appMgr) throws Exception {
+    return appMgr.undeploy(name, null);
   }
 }

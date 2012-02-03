@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.scriptloading;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -21,7 +21,7 @@ public class RubyScriptLoadingTest extends TestBase {
 
   @Test
   public void test_scriptloading() throws Exception {
-    startApp(AppType.RUBY, "core/scriptloading/test_client.rb");
+    startApp(VerticleType.RUBY, "core/scriptloading/test_client.rb");
     startTest(getMethodName());
   }
 

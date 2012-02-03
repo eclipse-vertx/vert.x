@@ -17,12 +17,12 @@
 package org.vertx.java.examples.echo;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
 
-public class EchoServer implements VertxApp {
+public class EchoServer implements Verticle {
 
   private NetServer server;
 

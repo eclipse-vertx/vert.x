@@ -2,7 +2,7 @@ package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -13,7 +13,7 @@ import vertx.tests.core.http.TLSTestParams;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TLSServer implements VertxApp {
+public class TLSServer implements Verticle {
 
   protected TestUtils tu = new TestUtils();
 

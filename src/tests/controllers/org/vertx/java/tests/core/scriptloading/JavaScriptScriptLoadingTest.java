@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.scriptloading;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -21,7 +21,7 @@ public class JavaScriptScriptLoadingTest extends TestBase {
 
   @Test
   public void testScriptLoading() throws Exception {
-    startApp(AppType.JS, "core/scriptloading/test_client.js");
+    startApp(VerticleType.JS, "core/scriptloading/test_client.js");
     startTest(getMethodName());
   }
 

@@ -1,7 +1,7 @@
 package org.vertx.java.tests.busmods.mailer;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -16,8 +16,8 @@ public class JavaScriptMailerTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(true, AppType.JS, "busmods/mailer/test_mailer.js");
-    startApp(AppType.JS, "busmods/mailer/test_client.js");
+    startApp(true, VerticleType.JS, "busmods/mailer/test_mailer.js");
+    startApp(VerticleType.JS, "busmods/mailer/test_client.js");
   }
 
   @Override

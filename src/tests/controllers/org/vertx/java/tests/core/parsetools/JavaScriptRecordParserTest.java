@@ -1,6 +1,6 @@
 package org.vertx.java.tests.core.parsetools;
 
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +11,7 @@ public class JavaScriptRecordParserTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JS, "core/parsetools/test_client.js");
+    startApp(VerticleType.JS, "core/parsetools/test_client.js");
   }
 
   @Override

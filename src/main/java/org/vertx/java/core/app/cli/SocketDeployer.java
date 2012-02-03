@@ -3,7 +3,7 @@ package org.vertx.java.core.app.cli;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.AppManager;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetServer;
@@ -21,10 +21,10 @@ public class SocketDeployer {
 
   private long serverContextID;
   private volatile NetServer server;
-  private final AppManager appManager;
+  private final VerticleManager appManager;
   private final int port;
 
-  public SocketDeployer(AppManager appManager, int port) {
+  public SocketDeployer(VerticleManager appManager, int port) {
     this.appManager = appManager;
     this.port = port == -1 ? DEFAULT_PORT: port;
   }
@@ -46,8 +46,12 @@ public class SocketDeployer {
                 } else {
                   try {
                     VertxCommand cmd = VertxCommand.read(buff);
-                    cmd.execute(appManager);
-                    socket.write("OK\n");
+                    String err = cmd.execute(appManager);
+                    if (err == null) {
+                      socket.write("OK\n");
+                    } else {
+                      socket.write("ERR: " + err + "\n");
+                    }
                   } catch (Exception e) {
                     log.error("Failed to execute command", e);
                     socket.write("ERR: " + e.getMessage() + "\n");

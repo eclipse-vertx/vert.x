@@ -1,6 +1,6 @@
 package org.vertx.java.tests.redis;
 
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.redis.ReconnectTestClient;
 
@@ -16,7 +16,7 @@ public class JavaReconnectTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, ReconnectTestClient.class.getName());
+    startApp(VerticleType.JAVA, ReconnectTestClient.class.getName());
   }
 
   @Override

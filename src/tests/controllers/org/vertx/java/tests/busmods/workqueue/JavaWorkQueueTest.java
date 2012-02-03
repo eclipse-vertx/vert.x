@@ -1,7 +1,7 @@
 package org.vertx.java.tests.busmods.workqueue;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.busmods.workqueue.OrderProcessor;
 import vertx.tests.busmods.workqueue.OrderQueue;
@@ -25,12 +25,12 @@ public class JavaWorkQueueTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(AppType.JAVA, OrderQueue.class.getName());
+    startApp(VerticleType.JAVA, OrderQueue.class.getName());
     int numProcessors = 10;
     for (int i = 0; i < numProcessors; i++) {
-      startApp(AppType.JAVA, OrderProcessor.class.getName());
+      startApp(VerticleType.JAVA, OrderProcessor.class.getName());
     }
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(VerticleType.JAVA, TestClient.class.getName());
     startTest(getMethodName());
   }
 
