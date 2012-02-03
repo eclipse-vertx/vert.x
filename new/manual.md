@@ -538,6 +538,7 @@ Creating TCP servers and clients is incredibly easy with vert.x.
 
 ### Net Server
 
+
 #### Creating a Net Server
 
 To create a TCP server we simply create an instance of vertx.net.NetServer.
@@ -583,7 +584,7 @@ This is a common pattern throughout the vert.x api.
 
 To close a net server just call the `close` function.
 
-`   server.close();
+    server.close();
 
 The close is actually asynchronous and might not complete until some time after the `close` function has returned. If you want to be notified when the actual close has completed then you can pass in a function to the `close` function. This handler will then be called when the close has fully completed.
  
@@ -666,11 +667,11 @@ Putting it all together here's an example of a simple TCP echo server which simp
       
     }).listen(1234, 'localhost');
     
-##### Closing a socket
+#### Closing a socket
 
 You can close a socket by invoking the `close` method. This will close the underlying TCP connection.
 
-##### Closed Handler
+#### Closed Handler
 
 If you want to be notified when a socket is closed, you can set the `closedHandler':
 
@@ -688,7 +689,7 @@ If you want to be notified when a socket is closed, you can set the `closedHandl
 
 The closed handler will be called irrespective of whether the close was initiated by the client or server.
 
-##### Exception handler
+#### Exception handler
 
 You can set an exception handler on the socket that will be called if an exception occurs:
 
@@ -704,12 +705,175 @@ You can set an exception handler on the socket that will be called if an excepti
     });
 
     
-##### Read and Write Streams
+#### Read and Write Streams
 
 NetSocket also can at as a `ReadStream` and a `WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, websockets and asynchronous files.
 
-This will be discussed in depth in the chapter on streams [LINK]    
+This will be discussed in depth in the chapter on streams [LINK] 
+
+#### Scaling TCP Servers
+
+A verticle instance is strictly single threaded. If I create a simple TCP server and deploy a single instance of it then all the handlers for that server are always executed on the same event loop (thread). This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! That's not very good.
+
+To remedy this you can simply deploy more instances of the verticle in the server, e.g.
+
+    vertx deploy echo_server.js -instances 20
     
+Would deploy 20 instances of echo_server.js to a locally running vert.x instance. Once you do this you will find the echo server works functionally identically to before, but, as if by magic all your cores on your server can be utilised and more work can be handled.
+
+By this point you might be asking yourself *'Hang on a second, how can you have more than one server listening on the same host and port? Surely you will get port conflicts as soon as they try and deploy more than one instance?'*
+
+*Vert.x does a little magic here*. When you deploy another server on the same host and port as an existing server it doesn't actually try and create a new server listening on the same host/port, instead it internally maintains just a single server, and, as incoming connections arrive it distributes them in a round-robin fashion to any of the connect handlers set by the verticles. Consequently vert.x TCP servers can scale over available cores while each vert.x verticle instance remains strictly single threaded :)
+
+    
+
+ 
+
+### NetClient
+
+A NetClient is used to make TCP connections to servers.
+
+#### Creating a Net Client
+
+To create a TCP server we simply create an instance of vertx.net.NetClient.
+
+    var client = new vertx.NetClient();
+
+#### Making a Connection
+
+To actually connect to a server you invoke the `connect` method:
+
+    var client = new vertx.NetClient();
+    
+    client.connect(1234, 'localhost', function(sock) {
+        log.println('We have connected');
+    });
+    
+The connect method takes the port number as the first parameter, followed by the hostname or ipaddress of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
+
+The argument passed into the connect handler is an instance of `NetSocket`, exactly the same as what is passed into the server side connect handler. Once given the `NetSocket` you can read and write data from the socket in exactly the same way as you do on the server side.
+
+You can also close it, set the closed handler, set the exception handler and use it as a `ReadStream` or `WriteStream` exactly the same as the server side `NetSocket`.
+
+#### Catching exceptions on the Net Client
+
+You can set a connection handler on the NetClient. This will catch any exceptions that occur during connection.
+
+    var client = new vertx.NetClient();
+    
+    client.exceptionHandler(function(ex) {
+      log.println('Cannot connect since the host was made up!');
+    });
+    
+    client.connect(4242, 'host-that-doesnt-exist', function(sock) {
+      log.println('this won't get called');
+    });
+
+
+#### Configuring Reconnection
+
+A NetClient can be configured to automatically retry connecting to the server in the event that it cannot connect or has lost its connection. This is done by invoking the functions `setReconnectAttempts` and `setReconnectInterval`
+
+    var client = new vertx.NetClient();
+    
+    client.setReconnectAttempts(1000);
+    
+    client.setReconnectInterval(500);
+    
+`ReconnectAttempts` determines how many times the client will try to connect to the server before giving up. A value of `-1` represents an infinite number of times.
+
+`ReconnectInterval` detemines how long, in milliseconds, the client will wait between reconnect attempts.
+
+The default value for `ReconnectAttempts` is `0`. I.e. no reconnection is attempted.
+
+If an exception handler is set on the client, and reconnect attempts is not equal to `0`. Then the exception handler will not be called until the client gives up reconnecting.
+
+
+#### NetClient Properties
+
+Just like NetServer, NetClient also has a set of TCP properties you can set which affect its behaviour. They have the same meaning as those on NetServer.
+
+NetServer also has a further set of properties which are used to configure SSL. We'll discuss those later on.
+
+### SSL Servers
+
+Net Servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
+
+When a Net Server is working as an SSL Server the api of the NetServer and NetSocket is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the Net Server before listen is called.
+
+To enabled ssl the function `setSSL(true)` must be called on the Net Server.
+
+The server must also be configured with a *key store* and an optional *trust store*. These are both *Java keystores* which can be managed using the [keytool](http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html) utility which ships with the JDK. keytool allows you to create keystores, and import and export certificates from them.
+
+The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over ssl if the server does not have a certificate.
+
+The key store is configured on the server using the `setKeyStorePath` and `setKeyStorePassword` functions.
+
+The trust store is optional and contains the certificates of any clients it should trust. This is only used if client authentication is required. 
+
+To configure a server to use server certificates only:
+
+    var server = new vertx.NetServer()
+                   .setSSL(true)
+                   .setKeyStorePath('/path/to/your/keystore/server-keystore.jks')
+                   .setKeyStorePassword('password');
+    
+Making sure that `server-keystore.jks` contains the server certificate.
+
+To configure a server to also require client certificates:
+
+    var server = new vertx.NetServer()
+                   .setSSL(true)
+                   .setKeyStorePath('/path/to/your/keystore/server-keystore.jks')
+                   .setKeyStorePassword('password')
+                   .setTrustStorePath('/path/to/your/keystore/server-truststore.jks')
+                   .setTrustStorePassword('password')
+                   .setClientAuthRequired(true);
+    
+Making sure that `server-truststore.jks` contains the certificates of any clients who the server trusts. If `clientAuthRequired` is set to `true` and the client cannot provide a certificate, or it provides a certificate that the server does not trust then the connection attempt will not succeed.
+
+### SSL Clients
+
+Net Clients can also be easily configured to use SSL. They have the exact same api when using SSL as when using standard sockets.
+
+To enable SSL on a Net Client the function `setSSL(true)` is called.
+
+If the `setTrustAll(true)` is invoked on the client, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is `false`.
+
+If `setTrustAll(true)` has not been invoked then a client trust store must be configured and should contain the certificates of the servers that the client trusts. The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function `setTrustStorePath` on the Net Client. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
+
+If the server requires that clients authentication is required then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the Net Client. 
+
+To configure a client to trust all server certificates (dangerous):
+
+    var client = new vertx.NetClient()
+                   .setSSL(true)
+                   .setTrustAll(true)
+    
+To configure a client to only trust those certificates it has in its trust store:
+
+    var client = new vertx.NetClient()
+                   .setSSL(true)
+                   .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
+                   .setTrustStorePassword('password');
+                   
+To configure a client to only trust those certificates it has in its trust store, and also to supply a client certificate:
+
+    var client = new vertx.NetClient()
+                   .setSSL(true)
+                   .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
+                   .setTrustStorePassword('password')
+                   .setKeyStorePath('/path/to/keystore/holding/client/cert/client-keystore.jks')
+                   .setKeyStorePassword('password');
+                     
+As easy as pie.    
+
+
+
+
+
+
+
 
     
 
