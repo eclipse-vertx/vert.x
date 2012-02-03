@@ -21,7 +21,7 @@ class LongMessage extends Message<Long> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getLong(pos);
+      body = readBuff.getLong(++pos);
     }
   }
 

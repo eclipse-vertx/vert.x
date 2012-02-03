@@ -56,11 +56,6 @@ public class VerticleManager {
                                   final Handler<Void> doneHandler)
     throws Exception {
 
-    if (instances == -1) {
-      // Default to number of cores
-      instances = Runtime.getRuntime().availableProcessors();
-    }
-
     log.debug("Deploying name : " + appName + " type: " + type + " main: " + main +
              " instances: " + instances);
 

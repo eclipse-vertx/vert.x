@@ -8,6 +8,7 @@ import org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestClientBase;
+import org.vertx.java.tests.core.eventbus.Counter;
 import org.vertx.java.tests.core.eventbus.JavaClusteredEventBusTest;
 
 import java.util.Map;
@@ -44,7 +45,7 @@ public abstract class EventBusAppBase extends TestClientBase {
       // We force each application to have its own instance of the event bus so we can test them clustering
       // you wouldn't do this in real life (programmatically)
 
-      int port = JavaClusteredEventBusTest.portCounter.getAndIncrement();
+      int port = Counter.portCounter.getAndIncrement();
       ServerID serverID = new ServerID(port, "localhost");
       ClusterManager cm = new HazelcastClusterManager();
       eb = new TestEventBus(serverID, cm);

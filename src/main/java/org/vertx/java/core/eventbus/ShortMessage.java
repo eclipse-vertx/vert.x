@@ -21,7 +21,7 @@ class ShortMessage extends Message<Short> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getShort(pos);
+      body = readBuff.getShort(++pos);
     }
   }
 

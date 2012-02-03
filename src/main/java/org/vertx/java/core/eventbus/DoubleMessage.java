@@ -21,7 +21,7 @@ class DoubleMessage extends Message<Double> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getDouble(pos);
+      body = readBuff.getDouble(++pos);
     }
   }
 

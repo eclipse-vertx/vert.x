@@ -21,7 +21,7 @@ class ByteMessage extends Message<Byte> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getByte(pos);
+      body = readBuff.getByte(++pos);
     }
   }
 
