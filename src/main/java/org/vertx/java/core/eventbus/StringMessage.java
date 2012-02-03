@@ -24,6 +24,7 @@ class StringMessage extends Message<String> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
+      pos++;
       int strLength = readBuff.getInt(pos);
       pos += 4;
       byte[] bytes = readBuff.getBytes(pos, pos + strLength);
@@ -47,7 +48,7 @@ class StringMessage extends Message<String> {
       return 1;
     } else {
       encoded = body.getBytes(CharsetUtil.UTF_8);
-      return 1 +4 + encoded.length;
+      return 1 + 4 + encoded.length;
     }
   }
 

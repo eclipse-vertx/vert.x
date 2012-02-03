@@ -25,6 +25,7 @@ class JsonMessage extends Message<JsonObject> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
+      pos++;
       int strLength = readBuff.getInt(pos);
       pos += 4;
       byte[] bytes = readBuff.getBytes(pos, pos + strLength);

@@ -160,7 +160,7 @@ public class VertxMgr {
         return null;
       }
     } else {
-      instances = Runtime.getRuntime().availableProcessors();
+      instances = 1;
     }
 
     String[] parts;
@@ -292,8 +292,7 @@ public class VertxMgr {
 "                               Used later if you want to undeploy. A name will\n" +
 "                               be auto-generated if it is not specified.\n" +
 "        -instances <instances> specifies how many instances of the verticle will\n" +
-"                               be deployed. Defaults to the number of available\n" +
-"                               cores on the system.\n" +
+"                               be deployed. Default is 1.\n" +
 "        -worker                if specified then the verticle is a worker\n" +
 "                               verticle.\n" +
 "        -port                  if specified then use the specified port for\n" +

@@ -21,7 +21,7 @@ class CharacterMessage extends Message<Character> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = (char)readBuff.getShort(pos);
+      body = (char)readBuff.getShort(++pos);
     }
   }
 

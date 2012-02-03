@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
@@ -19,24 +20,38 @@ class ByteArrayMessage extends Message<byte[]> {
   }
 
   protected void readBody(int pos, Buffer readBuff) {
-    int buffLength = readBuff.getInt(pos);
-    pos += 4;
-    body = readBuff.getBytes(pos, pos + buffLength);
+    boolean isNull = readBuff.getByte(pos) == (byte)0;
+    if (!isNull) {
+      pos++;
+      int buffLength = readBuff.getInt(pos);
+      pos += 4;
+      body = readBuff.getBytes(pos, pos + buffLength);
+    }
   }
 
   protected void writeBody(Buffer buff) {
-   buff.appendInt(body.length);
-   buff.appendBytes(body);
+    if (body == null) {
+      buff.appendByte((byte)0);
+    } else {
+      buff.appendByte((byte)1);
+      buff.appendInt(body.length);
+      buff.appendBytes(body);
+    }
   }
 
   protected int getBodyLength() {
-    return 4 + body.length;
+    return body == null ? 1 : 1 + 4 + body.length;
   }
 
   protected Message copy() {
-    byte[] copiedBytes = new byte[body.length];
-    System.arraycopy(body, 0, copiedBytes, 0, copiedBytes.length);
-    ByteArrayMessage copied = new ByteArrayMessage(address, copiedBytes);
+    byte[] bod;
+    if (body != null) {
+      bod = new byte[body.length];
+      System.arraycopy(body, 0, bod, 0, bod.length);
+    } else {
+      bod = null;
+    }
+    ByteArrayMessage copied = new ByteArrayMessage(address, bod);
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
     copied.sender = this.sender;

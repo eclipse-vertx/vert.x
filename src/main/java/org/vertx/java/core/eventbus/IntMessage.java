@@ -21,7 +21,7 @@ class IntMessage extends Message<Integer> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getInt(pos);
+      body = readBuff.getInt(++pos);
     }
   }
 
