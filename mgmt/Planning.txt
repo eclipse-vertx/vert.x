@@ -114,6 +114,7 @@ the application has stopped completely - this might be asynchronous (e.g. server
 46) json sending via JS can be optimised, by not converting to and from Java JsonObject, instead create new message type
 which just encodes as string
 47) core/json tests
+48) Error reporting on deploy/undeploy etc from the command line is inconsistent
 
 
 

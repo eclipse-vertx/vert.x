@@ -1,7 +1,7 @@
 package vertx.tests.busmods.worker;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;
@@ -14,7 +14,7 @@ import org.vertx.java.newtests.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TestWorker implements VertxApp, Handler<Message<JsonObject>> {
+public class TestWorker implements Verticle, Handler<Message<JsonObject>> {
 
   private TestUtils tu = new TestUtils();
 

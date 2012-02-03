@@ -1,7 +1,7 @@
 package vertx.tests.busmods.workqueue;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -12,7 +12,7 @@ import java.util.UUID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class OrderProcessor implements VertxApp, Handler<Message<JsonObject>> {
+public class OrderProcessor implements Verticle, Handler<Message<JsonObject>> {
 
   private TestUtils tu = new TestUtils();
 

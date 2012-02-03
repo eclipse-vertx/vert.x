@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
 
@@ -15,7 +15,7 @@ public class GroovyNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.GROOVY, "core/net/testclient.groovy");
+    startApp(VerticleType.GROOVY, "core/net/testclient.groovy");
   }
 
   @Override
@@ -25,7 +25,7 @@ public class GroovyNetTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(AppType.GROOVY, "core/net/EchoServer.groovy");
+    startApp(VerticleType.GROOVY, "core/net/EchoServer.groovy");
     startTest(getMethodName());
   }
 

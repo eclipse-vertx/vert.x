@@ -1,7 +1,7 @@
 package org.vertx.java.tests.busmods.mailer;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.busmods.mailer.TestClient;
 import vertx.tests.busmods.mailer.TestMailer;
@@ -18,8 +18,8 @@ public class JavaMailerTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(true, AppType.JAVA, TestMailer.class.getName());
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(true, VerticleType.JAVA, TestMailer.class.getName());
+    startApp(VerticleType.JAVA, TestClient.class.getName());
   }
 
   @Override

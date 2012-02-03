@@ -1,12 +1,12 @@
 package org.vertx.java.newtests;
 
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.logging.Logger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class TestClientBase implements VertxApp {
+public abstract class TestClientBase implements Verticle {
 
   private static final Logger log = Logger.getLogger(TestClientBase.class);
 

@@ -17,11 +17,11 @@
 package org.vertx.java.examples.sendfile;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-public class SendFileExample implements VertxApp {
+public class SendFileExample implements Verticle {
 
   private static final String webroot = "sendfile/";
 

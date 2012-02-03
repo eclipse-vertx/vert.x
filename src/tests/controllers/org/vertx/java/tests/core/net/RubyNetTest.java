@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
 
@@ -24,19 +24,19 @@ public class RubyNetTest extends TestBase {
 
   @Test
   public void test_echo() throws Exception {
-    startApp(AppType.RUBY, "core/net/test_client.rb");
+    startApp(VerticleType.RUBY, "core/net/test_client.rb");
     startTest(getMethodName());
   }
 
   @Test
   public void test_echo_ssl() throws Exception {
-    startApp(AppType.RUBY, "core/net/test_client.rb");
+    startApp(VerticleType.RUBY, "core/net/test_client.rb");
     startTest(getMethodName());
   }
 
   @Test
   public void test_methods() throws Exception {
-    startApp(AppType.RUBY, "core/net/test_client.rb");
+    startApp(VerticleType.RUBY, "core/net/test_client.rb");
     startTest(getMethodName());
   }
 

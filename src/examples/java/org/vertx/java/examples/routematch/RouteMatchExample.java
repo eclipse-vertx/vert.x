@@ -17,12 +17,12 @@
 package org.vertx.java.examples.routematch;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 
-public class RouteMatchExample implements VertxApp {
+public class RouteMatchExample implements Verticle {
 
   private HttpServer server;
 

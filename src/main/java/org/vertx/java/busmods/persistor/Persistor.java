@@ -9,7 +9,7 @@ import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -22,7 +22,7 @@ import java.net.UnknownHostException;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Persistor extends BusModBase implements VertxApp, Handler<Message<JsonObject>> {
+public class Persistor extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
 
   private static final Logger log = Logger.getLogger(Persistor.class);
 

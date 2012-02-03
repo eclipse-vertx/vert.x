@@ -3,7 +3,7 @@ package org.vertx.java.core.app.rhino;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.logging.Logger;
 
 import java.io.BufferedReader;
@@ -15,9 +15,9 @@ import java.io.InputStreamReader;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class RhinoApp implements VertxApp {
+public class RhinoVerticle implements Verticle {
 
-  private static final Logger log = Logger.getLogger(RhinoApp.class);
+  private static final Logger log = Logger.getLogger(RhinoVerticle.class);
 
   private final ClassLoader cl;
   private final String scriptName;
@@ -27,7 +27,7 @@ public class RhinoApp implements VertxApp {
   private static ThreadLocal<ScriptableObject> scopeThreadLocal = new ThreadLocal<>();
   private static ThreadLocal<ClassLoader> clThreadLocal = new ThreadLocal<>();
 
-  RhinoApp(String scriptName, ClassLoader cl) {
+  RhinoVerticle(String scriptName, ClassLoader cl) {
     this.cl = cl;
     this.scriptName = scriptName;
   }
@@ -63,7 +63,7 @@ public class RhinoApp implements VertxApp {
       scope = cx.initStandardObjects();
 
       addStandardObjectsToScope(scope);
-      scope.defineFunctionProperties(new String[] { "load" }, RhinoApp.class, ScriptableObject.DONTENUM);
+      scope.defineFunctionProperties(new String[] { "load" }, RhinoVerticle.class, ScriptableObject.DONTENUM);
 
       // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and
       // classloader in the load() method - this is because Rhino insists load() must be static

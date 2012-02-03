@@ -1,7 +1,7 @@
 package org.vertx.java.tests.busmods.worker;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -21,8 +21,8 @@ public class JavaScriptWorkerTest extends TestBase {
 
   @Test
   public void testWorker() throws Exception {
-    startApp(AppType.JS, "busmods/worker/test_client.js");
-    startApp(true, AppType.JS, "busmods/worker/test_worker.js");
+    startApp(VerticleType.JS, "busmods/worker/test_client.js");
+    startApp(true, VerticleType.JS, "busmods/worker/test_worker.js");
     startTest(getMethodName());
   }
 

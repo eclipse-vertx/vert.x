@@ -1,6 +1,6 @@
 package org.vertx.java.tests.core.composition;
 
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +11,7 @@ public class RubyCompositionTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.RUBY, "core/composition/test_client.rb");
+    startApp(VerticleType.RUBY, "core/composition/test_client.rb");
   }
 
   @Override

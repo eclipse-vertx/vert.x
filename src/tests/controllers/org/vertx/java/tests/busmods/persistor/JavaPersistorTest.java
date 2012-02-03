@@ -1,7 +1,7 @@
 package org.vertx.java.tests.busmods.persistor;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.busmods.persistor.TestClient;
 import vertx.tests.busmods.persistor.TestPersistor;
@@ -16,8 +16,8 @@ public class JavaPersistorTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(true, AppType.JAVA, TestPersistor.class.getName());
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(true, VerticleType.JAVA, TestPersistor.class.getName());
+    startApp(VerticleType.JAVA, TestClient.class.getName());
   }
 
   @Override

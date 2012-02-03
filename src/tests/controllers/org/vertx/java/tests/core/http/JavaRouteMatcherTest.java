@@ -1,6 +1,6 @@
 package org.vertx.java.tests.core.http;
 
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.http.RouteMatcherTestClient;
 
@@ -12,7 +12,7 @@ public class JavaRouteMatcherTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, RouteMatcherTestClient.class.getName());
+    startApp(VerticleType.JAVA, RouteMatcherTestClient.class.getName());
   }
 
   @Override

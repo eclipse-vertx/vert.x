@@ -17,12 +17,12 @@
 package org.vertx.java.examples.eventbus;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 
-public class EBApp implements VertxApp {
+public class EBApp implements Verticle {
 
   public void start() {
 

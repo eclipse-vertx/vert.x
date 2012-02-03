@@ -17,11 +17,11 @@
 package org.vertx.java.examples.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 
-public class ServerExample implements VertxApp {
+public class ServerExample implements Verticle {
 
   private HttpServer server;
 

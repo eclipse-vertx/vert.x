@@ -3,8 +3,8 @@ package org.vertx.java.core.app.cli;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.AppManager;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.app.Args;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
+ *
+ * TODO This class is pretty ugly - tidy up and simplify the validation code
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class VertxMgr {
@@ -38,7 +41,7 @@ public class VertxMgr {
     Args args = new Args(sargs);
 
     if (sargs.length == 0) {
-      displayHelp();
+      displaySyntax();
     } else {
 
       int port = args.getInt("-port");
@@ -46,29 +49,31 @@ public class VertxMgr {
 
       VertxCommand cmd = null;
 
-      if (sargs[0].equalsIgnoreCase("start")) {
+      if (sargs[0].equalsIgnoreCase("version")) {
+        System.out.println("vert.x 1.0.0.beta.1");
+      } else if (sargs[0].equalsIgnoreCase("start")) {
         startServer(args);
       } else if (sargs[0].equalsIgnoreCase("run")) {
-        runApplication(args);
+        runApplication(sargs[1], args);
       } else if (sargs[0].equalsIgnoreCase("stop")) {
         cmd = new StopCommand();
         System.out.println("Stopped vert.x server");
       } else if (sargs[0].equalsIgnoreCase("deploy")) {
-        DeployCommand dc = createDeployCommand(args, "deploy");
+        DeployCommand dc = createDeployCommand(sargs[1], args, "deploy");
         if (dc == null) {
           return;
         }
         System.out.println("Deploying application name: " + dc.name + " instances: " + dc.instances);
         cmd = dc;
       } else if (sargs[0].equalsIgnoreCase("undeploy")) {
-        String name = args.map.get("-name");
+        String name = sargs[1];
         if (name == null) {
-          displayUndeploySyntax();
+          displaySyntax();
           return;
         }
         cmd = new UndeployCommand(name);
       } else {
-        displayHelp();
+        displaySyntax();
       }
 
       if (cmd != null) {
@@ -78,10 +83,10 @@ public class VertxMgr {
     }
   }
 
-  private void runApplication(Args args) {
+  private void runApplication(String main, Args args) {
     if (startCluster(args)) {
-      AppManager mgr = AppManager.instance;
-      DeployCommand dc = createDeployCommand(args, "run");
+      VerticleManager mgr = VerticleManager.instance;
+      DeployCommand dc = createDeployCommand(main, args, "run");
       if (dc != null) {
         try {
           mgr.deploy(dc.worker, dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
@@ -97,53 +102,46 @@ public class VertxMgr {
   private void startServer(Args args) {
     if (startCluster(args)) {
       System.out.println("vert.x server started");
-      AppManager mgr = AppManager.instance;
+      VerticleManager mgr = VerticleManager.instance;
       SocketDeployer sd = new SocketDeployer(mgr, args.getInt("-deploy-port"));
       sd.start();
       mgr.block();
     }
   }
 
-  private DeployCommand createDeployCommand(Args args, String command) {
-    /*
-    Deploy syntax:
+  private DeployCommand createDeployCommand(String main, Args args, String command) {
 
-    deploy -<java|ruby|groovy|js> -name <name> -main <main> -cp <classpath> -instances <instances>
-
-    type is mandatory
-    name is optional, system will generate one if not provided
-    main is mandatory
-    cp is mandatory
-    instances is optional, defaults to number of cores on server
-     */
+    if (main == null) {
+      displaySyntax();
+      return null;
+    }
 
     boolean worker = args.map.get("-worker") != null;
-
-    AppType type = AppType.JAVA;
-    String flag = args.map.get("-ruby");
-    if (flag != null) {
-      type  = AppType.RUBY;
-    }
-    flag = args.map.get("-js");
-    if (flag != null) {
-      type = AppType.JS;
-    }
-    flag = args.map.get("-groovy");
-    if (flag != null) {
-      type = AppType.GROOVY;
-    }
 
     String name = args.map.get("-name");
     if (name == null) {
       name = "app-" + UUID.randomUUID().toString();
     }
 
-    String main = args.map.get("-main");
     String cp = args.map.get("-cp");
+    if (cp == null) {
+      cp = "."; // Defaults to current directory
+    }
 
-    if (main == null || cp == null) {
-      displayDeploySyntax(command);
+    if (main == null) {
+      displaySyntax();
       return null;
+    }
+
+    //Infer the app type
+
+    VerticleType type = VerticleType.JAVA;
+    if (main.endsWith(".js")) {
+      type = VerticleType.JS;
+    } else if (main.endsWith(".rb")) {
+      type = VerticleType.RUBY;
+    } else if (main.endsWith(".groovy")) {
+      type = VerticleType.GROOVY;
     }
 
     String sinstances = args.map.get("-instances");
@@ -154,15 +152,15 @@ public class VertxMgr {
 
         if (instances != -1 && instances < 1) {
           System.err.println("Invalid number of instances");
-          displayDeploySyntax(command);
+          displaySyntax();
           return null;
         }
       } catch (NumberFormatException e) {
-        displayDeploySyntax(command);
+        displaySyntax();
         return null;
       }
     } else {
-      instances = -1;
+      instances = Runtime.getRuntime().availableProcessors();
     }
 
     String[] parts;
@@ -253,57 +251,86 @@ public class VertxMgr {
     return true;
   }
 
+  // TODO need to reqwrite the deploy syntax
 
-  private void displayHelp() {
-    System.out.println("vertx command help\n------------------\n");
-    displayStartSyntax();
-    System.out.println("------------------\n");
-    displayStopSyntax();
-    System.out.println("------------------\n");
-    displayDeploySyntax("run");
-    System.out.println("------------------\n");
-    displayDeploySyntax("deploy");
-    System.out.println("------------------\n");
-    displayUndeploySyntax();
-  }
 
-  private void displayStopSyntax() {
-    String msg =
-    "Stop a vert.x server:\n\n" +
-    "vertx stop -port <port>\n" +
-    "<port> - the port to connect to the server at. Defaults to 25571";
-    System.out.println(msg);
-  }
+  private void displaySyntax() {
 
-  private void displayStartSyntax() {
-    String msg =
-    "Start a vert.x server:\n\n" +
-    "vertx start -port <port>\n" +
-    "<port> - the port the server will listen at. Defaults to 25571";
-    System.out.println(msg);
-  }
+    String usage =
+"Usage: vertx [run|deploy|undeploy|start|stop] [main] [-options]\n\n" +
 
-  private void displayDeploySyntax(String command) {
-    String msg =
-    "Deploy an application:\n\n" +
-    "vertx " + command + " -[java|ruby|groovy|js] -name <name> -main <main> -cp <classpath> -instances <instances> -port <port>\n" +
-    "-[java|ruby|groovy|js] depending on the language of the application\n" +
-    "<name> - unique name of the application. If this ommitted the server will generate a name\n" +
-    "<main> - main class or script for the application\n" +
-    "<classpath> - classpath to use\n" +
-    "<instances> - number of instances of the application to start. Must be > 0 or -1.\n" +
-    "              if -1 then instances will be default to number of cores on the server\n" +
-    "<port> - the port to connect to the server at. Defaults to 25571";
-    System.out.println(msg);
-  }
+"    vertx run <main> [-options]\n" +
+"        runs a verticle called <main> in its own instance of vert.x.\n" +
+"        <main> can be a JavaScript script, a Ruby script, A Groovy script, or a\n" +
+"        Java class.\n\n" +
+"    valid options are:\n" +
+"        -cp <path>             specifies the path on which to search for <main>\n" +
+"                               and any referenced resources.\n" +
+"                               Defaults to '.' (current directory).\n" +
+"        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
+"                               be deployed. Defaults to the number of available\n" +
+"                               cores on the system.\n" +
+"        -worker                if specified then the verticle is a worker\n" +
+"                               verticle.\n" +
+"        -cluster               if specified then the vert.x instance will form a\n" +
+"                               cluster with any other vert.x instances on the\n" +
+"                               network.\n" +
+"        -cluster-port          port to use for cluster communication.\n" +
+"                               Default is 25500.\n" +
+"        -cluster-host          host to bind to for cluster communication.\n" +
+"                               Default is 0.0.0.0 (all interfaces).\n\n\n" +
 
-  private void displayUndeploySyntax() {
-    String msg =
-    "Undeploy an application:\n\n" +
-    "vertx undeploy -name <name> -port <port>\n" +
-    "<name> - unique name of the application.\n" +
-    "<port> - the port to connect to the server at. Defaults to 25571\n";
-    System.out.println(msg);
+"    vertx deploy <main> [-options]\n" +
+"        deploys a verticle called <main> to a standalone local vert.x server.\n" +
+"        <main> can be a JavaScript script, a Ruby script, A Groovy script,\n" +
+"        or a Java class.\n\n" +
+"    valid options are:\n" +
+"        -cp <path>             specifies the path on which to search for <main>\n" +
+"                               and any referenced resources.\n" +
+"                               Defaults to '.' (current directory).\n" +
+"        -name <name>           specifies a unique name to give the deployment.\n" +
+"                               Used later if you want to undeploy. A name will\n" +
+"                               be auto-generated if it is not specified.\n" +
+"        -instances <instances> specifies how many instances of the verticle will\n" +
+"                               be deployed. Defaults to the number of available\n" +
+"                               cores on the system.\n" +
+"        -worker                if specified then the verticle is a worker\n" +
+"                               verticle.\n" +
+"        -port                  if specified then use the specified port for\n" +
+"                               connecting to the server for deployment.\n" +
+"                               Default is 25571.\n\n\n" +
+
+"    vertx undeploy <name>\n" +
+"        undeploys verticles from a standalone local vert.x server.\n" +
+"        <name> is the unique name of the deployment specified when deploying.\n\n" +
+"    valid options are:\n" +
+"        -port                  if specified then use the specified port for\n" +
+"                               connecting to the server for undeployment.\n" +
+"                               Default is 25571.\n" +
+
+"    vertx start\n" +
+"        starts a standalone local vert.x server.\n\n" +
+"    valid options are:\n" +
+"        -port                  if specified then use the specified port for\n" +
+"                               listening for deployments. Default is 25571.\n" +
+"        -cluster               if specified then the vert.x instance will form a\n" +
+"                               cluster with any other vert.x instances on the\n" +
+"                               network.\n" +
+"        -cluster-port          port to use for cluster communication.\n" +
+"                               Default is 25500.\n" +
+"        -cluster-host          host to bind to for cluster communication.\n" +
+"                               Default is 0.0.0.0 (all interfaces).\n\n\n" +
+
+"    vertx stop\n" +
+"        stops a standalone local vert.x server.\n\n" +
+"    valid options are:\n" +
+"        -port                  if specified then connect to the server at the\n" +
+"                               specified port to stop it. Default is 25571.\n\n" +
+
+"    vertx version\n" +
+"        displays the version";
+
+     System.out.println(usage);
   }
 
   private String sendCommand(final int port, final VertxCommand command) {

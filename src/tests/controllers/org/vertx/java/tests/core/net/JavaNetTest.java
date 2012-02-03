@@ -1,7 +1,7 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
+import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -30,7 +30,7 @@ public class JavaNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(VerticleType.JAVA, TestClient.class.getName());
   }
 
   @Override
@@ -60,37 +60,37 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testEchoBytes() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringDefaultEncoding() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringUTF8() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringUTF16() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testConnectDefaultHost() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testConnectLocalHost() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
@@ -106,43 +106,43 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testWriteWithCompletion() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testClientCloseHandlersCloseFromClient() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(VerticleType.JAVA, EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testClientCloseHandlersCloseFromServer() throws Exception {
-    startApp(AppType.JAVA, CloseSocketServer.class.getName());
+    startApp(VerticleType.JAVA, CloseSocketServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testServerCloseHandlersCloseFromClient() throws Exception {
-    startApp(AppType.JAVA, CloseHandlerServer.class.getName());
+    startApp(VerticleType.JAVA, CloseHandlerServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testServerCloseHandlersCloseFromServer() throws Exception {
-    startApp(AppType.JAVA, CloseHandlerServerCloseFromServer.class.getName());
+    startApp(VerticleType.JAVA, CloseHandlerServerCloseFromServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testClientDrainHandler() throws Exception {
-    startApp(AppType.JAVA, PausingServer.class.getName());
+    startApp(VerticleType.JAVA, PausingServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testServerDrainHandler() throws Exception {
-    startApp(AppType.JAVA, DrainingServer.class.getName());
+    startApp(VerticleType.JAVA, DrainingServer.class.getName());
     startTest(getMethodName());
   }
 
@@ -169,7 +169,7 @@ public class JavaNetTest extends TestBase {
   void reconnectAttempts() throws Exception {
     // Wait a little while then start the server
     Thread.sleep(1000);
-    startApp(AppType.JAVA, EchoServerNoReady.class.getName(), false);
+    startApp(VerticleType.JAVA, EchoServerNoReady.class.getName(), false);
     waitTestComplete();
   }
 
@@ -223,7 +223,7 @@ public class JavaNetTest extends TestBase {
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
     SharedData.instance.getMap("TLSTest").put("params", params.serialize());
-    startApp(AppType.JAVA, TLSServer.class.getName());
+    startApp(VerticleType.JAVA, TLSServer.class.getName());
     startTest(testName);
   }
 
@@ -289,7 +289,7 @@ public class JavaNetTest extends TestBase {
     // on different ports
 
     SharedData.instance.getMap("params").put("listenport", 8181);
-    startApp(AppType.JAVA, EchoServer.class.getName(), true);
+    startApp(VerticleType.JAVA, EchoServer.class.getName(), true);
     SharedData.instance.getMap("params").remove("listenport");
 
     //We initially start then stop them to make sure the shared server cleanup code works ok
@@ -301,7 +301,7 @@ public class JavaNetTest extends TestBase {
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
-        appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        appNames[i] = startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
 
       SharedData.instance.getSet("connections").clear();
@@ -330,10 +330,10 @@ public class JavaNetTest extends TestBase {
     //Now start some more
 
     if (multipleInstances) {
-      startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+      startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), numInstances);
     } else {
       for (int i = 0; i < numInstances; i++) {
-        startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), 1);
       }
     }
 
@@ -366,7 +366,7 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testFanout() throws Exception {
-    startApp(AppType.JAVA, FanoutServer.class.getName());
+    startApp(VerticleType.JAVA, FanoutServer.class.getName());
     startTest(getMethodName());
   }
 }

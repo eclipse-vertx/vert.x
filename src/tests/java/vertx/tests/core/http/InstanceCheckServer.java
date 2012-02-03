@@ -2,7 +2,7 @@ package vertx.tests.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.shareddata.SharedData;
@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class InstanceCheckServer implements VertxApp {
+public class InstanceCheckServer implements Verticle {
 
   protected TestUtils tu = new TestUtils();
 

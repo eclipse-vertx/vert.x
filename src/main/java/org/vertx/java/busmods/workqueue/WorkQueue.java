@@ -3,7 +3,7 @@ package org.vertx.java.busmods.workqueue;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -16,7 +16,7 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkQueue extends BusModBase implements VertxApp  {
+public class WorkQueue extends BusModBase implements Verticle {
 
   private static final Logger log = Logger.getLogger(WorkQueue.class);
 

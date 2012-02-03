@@ -1,7 +1,7 @@
 package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.AppManager;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetSocket;
@@ -19,7 +19,7 @@ public abstract class VertxCommand implements Serializable {
 
   private static final Logger log = Logger.getLogger(VertxCommand.class);
 
-  public abstract void execute(AppManager appMgr) throws Exception;
+  public abstract String execute(VerticleManager appMgr) throws Exception;
 
   public boolean isBlock() {
     return true;

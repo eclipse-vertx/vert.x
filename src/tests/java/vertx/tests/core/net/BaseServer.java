@@ -2,7 +2,7 @@ package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
@@ -11,7 +11,7 @@ import org.vertx.java.newtests.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BaseServer implements VertxApp {
+public abstract class BaseServer implements Verticle {
 
   protected TestUtils tu = new TestUtils();
 

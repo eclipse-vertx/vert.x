@@ -17,14 +17,14 @@
 package org.vertx.java.examples.websockets;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketHandler;
 
-public class WebsocketsExample implements VertxApp {
+public class WebsocketsExample implements Verticle {
 
   private HttpServer server;
 

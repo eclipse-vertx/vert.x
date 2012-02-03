@@ -1,7 +1,7 @@
 package org.vertx.java.examples.eventbusbridge;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.SockJSBridgeHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -11,7 +11,7 @@ import org.vertx.java.core.sockjs.SockJSServer;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BridgeServer implements VertxApp {
+public class BridgeServer implements Verticle {
 
   HttpServer server;
 
