@@ -67,6 +67,8 @@ Gone are the days of worrying about race conditions, locks, mutexes, volatile va
 
 ### Event Loops
 
+[Talk about multi-reactor - hybrid of reactor and actor]
+
 Internally, the vert.x instance manages a small set of threads, typically matching the number of threads to the available cores on the server. We call these threads event loops, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, e.g. reading some data from a socket, or executing a timer.
 
 When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.
