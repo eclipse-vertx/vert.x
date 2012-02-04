@@ -41,37 +41,11 @@ There can be many vert.x instances running on the same host, or on different hos
 
 We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. vert.x allows you to mix and match verticles written in different languages in the same application. Currently we support JavaScript, Ruby and Java, but we aim to support Groovy, Clojure, Scala and Python going ahead.
 
-### Message Passing
-
-Verticles can communicate with other verticles running in the same, or different, vert.x instance using the event bus. Each verticle instance is single threaded so in some ways it resembles the [actor model](http://en.wikipedia.org/wiki/Actor_model) popularised by the Erlang programming language. However there are some difference, for example, each verticle can set multiple event handlers, rather than having a single mail-box. You can think of the vert.x model as a superset of the actor model.
-
-By having many verticle instances in a vert.x server instance and allowing message passing allows the system to scale well over available cores without having to allow multi-threaded execution of any verticle code.
-
-### Shared data
-
-Message passing is great, but its not always the best approach to concurrency for certain applications. Consider an application that wishes to provide an in memory web cache. As requests come in to the server, the server looks up the request in the cache and returns it from there if the item is present, if the item is not present it loads it from disk and places it in the cache for the next time.
-
-We want this system to scale across available cores. Modelling this using message passing is problematic. At one end of the scale we could have a single verticle that manages the cache, but this means all requests to the cache will be serialized through a single threaded verticle instance. We could improve things by having multiple instances of the verticle managing different parts of the cache, but it quickly gets ugly and complicated.
-
-Such a use case is better solved by providing a shared map structure that can be accessed directly by different verticle instances in the same vert.x instance. As requests come in, the data can be efficiently looked up in the cache with a single line of code and returned to the user.
-
-It's fashionable these days to deride shared data. But shared data is only dangerous if the data that you share is mutable.
-
-vert.x provides a shared map and shared set facility which allows only *immutable* data to be shared between verticles.
-
 ### Concurrency
 
 The vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief!
 
 Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. 
-
-### Event Loops
-
-[Talk about multi-reactor - hybrid of reactor and actor]
-
-Internally, the vert.x instance manages a small set of threads, typically matching the number of threads to the available cores on the server. We call these threads event loops, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, e.g. reading some data from a socket, or executing a timer.
-
-When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.
 
 ### Event-based Programming Model
 
@@ -96,6 +70,33 @@ The only way to make it scale is have a 100% non blocking api. There are two way
 * Use some kind of co-routine approach. Co-routines allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However co-routines are not currently supported across the different languages, or versions of languages that we support in vert.x
 
 vert.x currently takes the event-based api approach. As support for coroutines in various languages matures we will consider also supporting a co-routine based approach in the api.
+
+### Event Loops
+
+Internally, the vert.x instance manages a small set of threads, typically matching the number of threads to the available cores on the server. We call these threads event loops, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, e.g. reading some data from a socket, or executing a timer.
+
+When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.
+
+We call this the *multi-reactor pattern*. It's like the [reactor pattern] (http://en.wikipedia.org/wiki/Reactor_pattern) but there's more than one event loop.
+
+### Message Passing
+
+Verticles can communicate with other verticles running in the same, or different, vert.x instance using the event bus. Each verticle instance is single threaded so in some ways it resembles the [actor model](http://en.wikipedia.org/wiki/Actor_model) popularised by the Erlang programming language. However there are some difference, for example, each verticle can set multiple event handlers, rather than having a single mail-box. You can think of the vert.x model as a superset of the actor model.
+
+By having many verticle instances in a vert.x server instance and allowing message passing allows the system to scale well over available cores without having to allow multi-threaded execution of any verticle code.
+
+### Shared data
+
+Message passing is great, but its not always the best approach to concurrency for certain applications. Consider an application that wishes to provide an in memory web cache. As requests come in to the server, the server looks up the request in the cache and returns it from there if the item is present, if the item is not present it loads it from disk and places it in the cache for the next time.
+
+We want this system to scale across available cores. Modelling this using message passing is problematic. At one end of the scale we could have a single verticle that manages the cache, but this means all requests to the cache will be serialized through a single threaded verticle instance. We could improve things by having multiple instances of the verticle managing different parts of the cache, but it quickly gets ugly and complicated.
+
+Such a use case is better solved by providing a shared map structure that can be accessed directly by different verticle instances in the same vert.x instance. As requests come in, the data can be efficiently looked up in the cache with a single line of code and returned to the user.
+
+It's fashionable these days to deride shared data. But shared data is only dangerous if the data that you share is mutable.
+
+vert.x provides a shared map and shared set facility which allows only *immutable* data to be shared between verticles.
+
 
 ### Blocking and Long Running Operations
 
