@@ -47,7 +47,6 @@ class VertxImpl implements VertxInternal {
   private Map<Long, NioWorker> workerMap = new ConcurrentHashMap<>();
   private Map<Long, Executor> backgroundExecutors = new ConcurrentHashMap<>();
   private static final ThreadLocal<Long> contextIDTL = new ThreadLocal<>();
-  private Map<Long, ActorHolder> actors = new ConcurrentHashMap<>();
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
@@ -55,9 +54,6 @@ class VertxImpl implements VertxInternal {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong contextIDSeq = new AtomicLong(10); // Start at 10 for easier debugging
-  private final AtomicLong actorSeq = new AtomicLong(10); // Start at 10 for easier debugging
-
-
 
   // Public API ------------------------------------------------
 
@@ -81,51 +77,6 @@ class VertxImpl implements VertxInternal {
 
   public synchronized int getBackgroundThreadPoolSize() {
     return backgroundPoolSize;
-  }
-
-  public <T> long registerHandler(Handler<T> actor) {
-    Long contextID = getContextID();
-    if (contextID == null) {
-      throw new IllegalStateException("Cannot register handler with no context");
-    }
-    long actorID = actorSeq.getAndIncrement();
-    actors.put(actorID, new ActorHolder(actor, getContextID()));
-    return actorID;
-  }
-
-  public boolean unregisterHandler(long handlerID) {
-    long contextID = getContextID();
-    ActorHolder holder = actors.remove(handlerID);
-    if (holder != null) {
-      if (contextID != holder.contextID) {
-        actors.put(handlerID, holder);
-        throw new IllegalStateException("Cannot unregister handler from different context");
-      } else {
-        return true;
-      }
-    } else {
-      return false;
-    }
-  }
-
-  public <T> boolean sendToHandler(long handlerID, T message) {
-    if (getContextID() == null) {
-      throw new IllegalStateException("Cannot send to handler with no context");
-    }
-    final T msg = Utils.checkShareableObject(message);
-    final ActorHolder holder = actors.get(handlerID);
-    if (holder != null) {
-      final Handler<T> actor = (Handler<T>) holder.actor; // FIXME - unchecked cast
-      executeOnContext(holder.contextID, new Runnable() {
-        public void run() {
-          setContextID(holder.contextID);
-          actor.handle(msg);
-        }
-      });
-      return true;
-    } else {
-      return false;
-    }
   }
 
   public long startOnEventLoop(final Runnable runnable) {

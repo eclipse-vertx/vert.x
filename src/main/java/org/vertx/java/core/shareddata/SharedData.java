@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.shareddata;
 
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.Set;
@@ -58,6 +59,38 @@ public class SharedData {
 
   private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
   private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
+
+  static void checkType(Object obj) {
+    if (obj instanceof String ||
+        obj instanceof Integer ||
+        obj instanceof Long ||
+        obj instanceof Boolean ||
+        obj instanceof Double ||
+        obj instanceof Float ||
+        obj instanceof Short ||
+        obj instanceof Byte ||
+        obj instanceof Character ||
+        obj instanceof byte[] ||
+        obj instanceof Buffer) {
+    } else {
+      throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
+    }
+  }
+
+  static <T> T copyIfRequired(T obj) {
+    if (obj instanceof byte[]) {
+      //Copy it
+      byte[] bytes = (byte[]) obj;
+      byte[] copy = new byte[bytes.length];
+      System.arraycopy(bytes, 0, copy, 0, bytes.length);
+      return (T) copy;
+    } else if (obj instanceof Buffer) {
+      //Copy it
+      return (T) ((Buffer) obj).copy();
+    } else {
+      return obj;
+    }
+  }
 
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}

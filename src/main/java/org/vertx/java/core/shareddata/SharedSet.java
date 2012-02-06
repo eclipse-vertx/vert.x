@@ -16,19 +16,16 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.vertx.java.core.Utils;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 class SharedSet<E> implements Set<E> {
 
-  private final Map<E, Object> map = new ConcurrentHashMap<>();
+  private final Map<E, Object> map = new SharedMap<>();
 
-  private static final Object O = new Object();
+  private static final Object O = "wibble";
 
   public int size() {
     return map.size();
@@ -55,7 +52,6 @@ class SharedSet<E> implements Set<E> {
   }
 
   public boolean add(E e) {
-    e = Utils.checkShareableObject(e);
     return map.put(e, O) != null;
   }
 
@@ -69,7 +65,6 @@ class SharedSet<E> implements Set<E> {
 
   public boolean addAll(Collection<? extends E> es) {
     for (E e : es) {
-      e = Utils.checkShareableObject(e);
       map.put(e, O);
     }
     return true;

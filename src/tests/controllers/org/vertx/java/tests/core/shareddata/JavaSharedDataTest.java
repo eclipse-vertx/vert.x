@@ -91,7 +91,7 @@ public class JavaSharedDataTest extends TestCase {
     assertTrue(got1 != buff); // Make sure it's copied
     assertEquals(buff, map.get(key));
     Buffer got2 = (Buffer)map.get(key);
-    assertTrue(got1 == got2); // Shouldn't be copied on each get though
+    assertTrue(got1 != got2); // Should be copied each time
     assertTrue(got2 != buff);
     assertEquals(buff, map.get(key));
 
@@ -103,7 +103,7 @@ public class JavaSharedDataTest extends TestCase {
     assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
     byte[] bgot2 = (byte[]) map.get(key);
     assertTrue(bgot2 != bytes);
-    assertTrue(bgot1 == bgot2);
+    assertTrue(bgot1 != bgot2);
     assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
 
     try {
@@ -168,7 +168,7 @@ public class JavaSharedDataTest extends TestCase {
     assertTrue(got1 != buff); // Make sure it's copied
     assertEquals(buff, set.iterator().next());
     Buffer got2 = (Buffer)set.iterator().next();
-    assertTrue(got1 == got2); // Shouldn't be copied on each get though
+    assertTrue(got1 != got2); // Should be copied on each get
     assertTrue(got2 != buff);
     assertEquals(buff, set.iterator().next());
     set.clear();
@@ -181,7 +181,7 @@ public class JavaSharedDataTest extends TestCase {
     assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
     byte[] bgot2 = (byte[]) set.iterator().next();
     assertTrue(bgot2 != bytes);
-    assertTrue(bgot1 == bgot2);
+    assertTrue(bgot1 != bgot2);
     assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
     set.clear();
 
