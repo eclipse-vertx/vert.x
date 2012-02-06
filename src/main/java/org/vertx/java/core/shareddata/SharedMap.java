@@ -16,8 +16,7 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.vertx.java.core.Utils;
-
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,8 +29,8 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   private final ConcurrentMap<K, V> map = new ConcurrentHashMap<>();
 
   public V putIfAbsent(K k, V v) {
-    k = Utils.checkShareableObject(k);
-    v = Utils.checkShareableObject(v);
+    SharedData.checkType(k);
+    SharedData.checkType(v);
     return map.putIfAbsent(k, v);
   }
 
@@ -40,15 +39,14 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public boolean replace(K k, V v, V v1) {
-    k = Utils.checkShareableObject(k);
-    v1 = Utils.checkShareableObject(v1);
+    SharedData.checkType(v1);
     return map.replace(k, v, v1);
   }
 
   public V replace(K k, V v) {
-    k = Utils.checkShareableObject(k);
-    v = Utils.checkShareableObject(v);
-    return map.replace(k, v);
+    SharedData.checkType(v);
+    V ret = map.replace(k, v);
+    return SharedData.copyIfRequired(ret);
   }
 
   public int size() {
@@ -68,24 +66,24 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public V get(Object o) {
-    return map.get(o);
+    return SharedData.copyIfRequired(map.get(o));
   }
 
   public V put(K k, V v) {
-    k = Utils.checkShareableObject(k);
-    v = Utils.checkShareableObject(v);
+    SharedData.checkType(k);
+    SharedData.checkType(v);
     return map.put(k, v);
   }
 
   public V remove(Object o) {
-    return map.remove(o);
+    return SharedData.copyIfRequired(map.remove(o));
   }
 
   public void putAll(Map<? extends K, ? extends V> map) {
     for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-      K k = Utils.checkShareableObject(entry.getKey());
-      V v = Utils.checkShareableObject(entry.getValue());
-      this.map.put(k, v);
+      SharedData.checkType(entry.getKey());
+      SharedData.checkType(entry.getValue());
+      this.map.put(entry.getKey(), entry.getValue());
     }
   }
 
@@ -94,11 +92,19 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public Set<K> keySet() {
-    return map.keySet();
+    Set<K> copied = new HashSet<>();
+    for (K k: map.keySet()) {
+      copied.add(SharedData.copyIfRequired(k));
+    }
+    return copied;
   }
 
   public Collection<V> values() {
-    return map.values();
+    Collection<V> copied = new ArrayList<>();
+    for (V v: map.values()) {
+      copied.add(SharedData.copyIfRequired(v));
+    }
+    return copied;
   }
 
   public Set<Map.Entry<K, V>> entrySet() {
@@ -128,16 +134,16 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
     }
 
     public K getKey() {
-      return internalEntry.getKey();
+      return SharedData.copyIfRequired(internalEntry.getKey());
     }
 
     public V getValue() {
-      return internalEntry.getValue();
+      return SharedData.copyIfRequired(internalEntry.getValue());
     }
 
     public V setValue(V value) {
       V old = internalEntry.getValue();
-      value = Utils.checkShareableObject(value);
+      SharedData.checkType(value);
       internalEntry.setValue(value);
       return old;
     }
