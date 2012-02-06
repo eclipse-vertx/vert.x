@@ -532,7 +532,13 @@ The sender:
         log.println('I received a reply ' + reply);
     });
     
-It is legal also to send an empty reply or null reply.    
+It is legal also to send an empty reply or null reply.
+
+#### Distributed event bus
+
+To make each vert.x instance on your network participate on the same event bus, start each vert.x instance with the `-cluster` command line switch.
+
+See the chatper on *running vert.x* [LINK] for more information on this.    
       
     
 ## Writing TCP Servers and Clients
@@ -729,9 +735,6 @@ By this point you might be asking yourself *'Hang on a second, how can you have 
 *Vert.x does a little magic here*. When you deploy another server on the same host and port as an existing server it doesn't actually try and create a new server listening on the same host/port, instead it internally maintains just a single server, and, as incoming connections arrive it distributes them in a round-robin fashion to any of the connect handlers set by the verticles. Consequently vert.x TCP servers can scale over available cores while each vert.x verticle instance remains strictly single threaded :)
 
     
-
- 
-
 ### NetClient
 
 A NetClient is used to make TCP connections to servers.
@@ -1008,6 +1011,641 @@ Instances of `Pump` have the following methods:
 * `stop(). Stops the pump. Resumes the `ReadStream`.
 * `setWriteQueueMaxSize()`. This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
 * `getBytesPumped()`. Returns total number of bytes pumped.
+
+## Shared Data
+
+Sometimes it makes sense to allow different verticles instances to share data in a safe way. vert.x allows simple *Map* and *Set* data structures to be shared between verticles.
+
+There is a caveat: To prevent issues due to mutable data, vert.x only simple immutable types such as number, boolean and string, or Buffer to be used in shared data. With a Buffer, it is automatically copied when retrieved from the shared data.
+
+TODO - a bit more here
+
+API - atomic updates etc
+
+## Writing HTTP Servers and Clients
+
+
+### Writing HTTP servers
+
+Writing full featured, highly performant and scalable HTTP servers is child's play with vert.x
+
+#### Creating a Net Server
+
+To create an HTTP server we simply create an instance of vertx.net.HttpServer.
+
+    var server = new vertx.HttpServer();
+    
+#### Start the Server Listening    
+    
+To tell that server to listen on for incoming requests we do:    
+
+    var server = new vertx.HttpServer();
+
+    server.listen(8080, 'myhost');
+    
+The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+
+
+#### Getting Notified of Incoming Requests
+    
+To be notified when a request arrives we need call the `requestHandler` function of the server, passing in a handler:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(request) {
+      log.println('An HTTP request has been received');
+    })  
+
+    server.listen(8080, 'localhost');
+    
+This displays 'An HTTP request has been received!' every time am HTTP request arrives on the server. You can try it by running the verticle and pointing your browser at http://localhost:8080.
+
+Similarly to Net Server, the return value of the `requestHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(request) {
+      log.println('An HTTP request has been received');
+    }).listen(8080, 'localhost');
+       
+#### Handling HTTP Requests
+
+So far we have seen how to create an HTTPServer and be notified of requests but not how to do anything interesting with the requests. 
+
+When a request arrives, the request handler is called passing in an instance of `HttpServerRequest`. This object represents the server side HTTP request. It contains functions to get the uri, path, request headers and request parameters. It also contains a `response` property which is a reference to an object that represents the server side HTTP response for the object.
+
+##### Request Method
+
+The request object has a property `method` which is a string representing what HTTP method was requested. Possible values are GET, PUT, POST, DELETE, HEAD, OPTIONS, CONNECT, TRACE, PATCH.
+
+##### Request URI
+
+The request object has a property `uri` which contains the full uri of the request. For example, if the request uri was:
+
+    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
+    
+Then `request.uri` would contain the string `http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz`.
+
+##### Request Path
+
+The request object has a property `path` which contains the path of the request. For example, if the request uri was:
+
+    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
+    
+Then `request.path` would contain the string `/a/b/c/page.html`
+   
+##### Request Query
+
+The request object has a property `query` which contains the query of the request. For example, if the request uri was:
+
+    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
+    
+Then `request.query` would contain the string `param1=abc&param2=xyz`    
+        
+##### Request Headers
+
+The request headers are available using the `headers()` function on the request object. The return value of the function is just a JavaScript hash. Here's an example that echoes the headers to the output of the response. Run it and point your browser at http://localhost:8080 to see the headers.
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(request) {
+    
+      var headers = request.headers();  
+    
+      var str = '';
+      for (var k in headers) {
+        str = str.concat(k, ': ', headers[k], '\n');
+      }
+      
+      request.response.end(str);
+      
+    }).listen(8080, 'localhost');
+    
+##### Request params
+
+Similarly to the headers, the request parameters are available using the `params()` function on the request object. The return value of the function is just a JavaScript hash.     
+
+Request parameters are sent on the request uri, after the path. For example if the uri was:
+
+    http://localhost:8080/page.html?param1=abc&param2=xyz
+    
+Then the params hash would be the following object:
+
+    { param1: 'abc', param2: 'xyz' }
+    
+##### Reading Data from the Request Body
+
+Sometimes an HTTP request contains a request body that we want to read. The request body is not passed fully read with the HTTP request since it may be very large and we don't want to have problems with available memory.
+
+Instead you set a `dataHandler` on the request object which gets called as parts of the HTTP request arrive. Here's an example:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(request) {
+    
+      request.dataHandler(function(buffer) {
+        log.println('I received ' + buffer.length() + ' bytes');
+      });
+      
+    }).listen(8080, 'localhost'); 
+
+
+The request object implements the `ReadStream` interface so you can pump the request body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation. You'll notice this is very similar to how data from NetSocket is read.   
+
+If you wanted to read the entire request body before doing something with it you could do something like the following:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(request) {
+    
+      var body = new vertx.Buffer();  
+    
+      request.dataHandler(function(buffer) {
+        body.appendBuffer(buffer);
+      });
+      
+      request.endHandler(function() {
+        log.println('The total body received was ' + body.length() + ' bytes');
+      });
+      
+    }).listen(8080, 'localhost');   
+    
+Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the request.
+
+If the HTTP request is using HTTP chunking, then each chunk of the request body will be received in a different call ti the data handler.
+
+Since it's such a common use case to want to read the entire body before processing it, vert.x allows a `bodyHandler` to be set on the request object. The body handler does is called when the *entire* request body has been read. Beware of doing this with very large requests since the entire request body will be stored in memory.
+
+Here's an example using `bodyHandler`:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(request) {
+    
+      request.bodyHandler(function(body) {
+        log.println('The total body received was ' + body.length() + ' bytes');
+      });
+      
+    }).listen(8080, 'localhost');  
+    
+#### Writing HTTP Responses 
+
+As previously mentioned, the HTTP request object contains a property `response`. This is the HTTP response for the request. You use it to write the response back to the client.
+
+To write data to an http response, you invoke the `write` function. This function can be invoked in a few ways:
+
+With a single buffer:
+
+    var myBuffer = ...
+    request.response.write(myBuffer);
+    
+A string. In this case the string will encoded using UTF-8 and the result written to the wire.
+
+    request.response.write('hello');    
+    
+A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
+
+    request.response.write('hello', 'UTF-16');
+    
+The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a function as a final argument. This function will then be invoked when the write has completed:
+
+    request.response.write('hello', function() {
+        log.println('It has actually been written');
+    });  
+    
+If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` function.   
+
+The first call to `write` results in the response header being being written to the response. Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
+   
+#### Ending HTTP responses
+
+Once you have finished with the HTTP response you must call the `end()` function on it.
+
+This function can be invoked in several ways:
+
+With no arguments, the response is simply ended. 
+
+    request.response.end();
+    
+The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
+
+You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
+
+#### Response headers
+
+Individual response headers can be written using the `putHeader` method. For example:
+
+    request.response.putHeader('Content-Length', '0');    
+    
+Response headers must all be added before any parts of the response body are written.
+
+If you wish to add several headers in one operation, just call `putHeaders` with a hash of the headers:
+
+    request.response.putHeaders({ 'Content-Length' : '0', 'Some-Other-Header': 'abc'});
+    
+#### Chunked HTTP Responses and Trailers
+
+vert.x also supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding). This allows the HTTP response body to be written in chunks, and is normally used when a large response body is being streamed to a client, whose size is not known in advance.
+
+You put the HTTP response into chunked mode as follows:
+
+    req.response.setChunked(true);
+    
+Default is non-chunked. When in chunked mode, each call to `response.write(...)` will result in a new HTTP chunk being written out.  
+
+When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.  
+
+To write an individual trailer use the `putTrailer` method:
+
+    request.response.putTrailer('Some-Trailer', 'some value'); 
+    
+If you wish to add several trailers in one operation, just call `putTrailers` with a hash of the trailers:
+
+    request.response.putTrailers({ 'Some-Trailer' : 'some value', 'Some-Other-Trailer': 'wibble'});    
+
+
+#### Serving files directly disk
+
+You could stream a file from disk to a HTTP response by opening an `AsyncFile` using the file system and pumping it to the response, or you could load it in one go using the file system and write that to the response.
+
+Alternatively, vert.x provides a feature where you can stream files directly from disk to the response bypassing userspace altogether. This functionality is OS dependent and leverages the `sendfile` operation to tell the kernel to directly serve the file. Using this operation can greatly reduce CPU utilisation.
+
+To do this use the `sendfile` function on the HTTP response, for example here's a simple HTTP web server that serves static files from the local `web` directory:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(req) {
+      var file = '';
+      if (req.path == '/') {
+        file = 'index.html';
+      } else if (req.path.indexOf('..') == -1) {
+        file = req.path;
+      }
+      req.response.sendFile('web/' + file);   
+    }).listen(8080, 'localhost');
+
+**If you're going to write web servers using vert.x be careful that users can exploit the path to access files outside the directory from which you want to serve them.**
+
+#### Pumping Responses
+
+Since the HTTP Response implements `WriteStream` you can pump to it from any `ReadStream`, e.g. an `AsyncFile`, `NetSocket` or `HttpServerRequest`. Here's an example which simply echoes an HttpRequest headers and body back in the HttpResponse. Since it uses a pump for the body, it will work even if the HTTP request body is much larger than can fit in memory at any one time:
+
+    var server = new vertx.HttpServer();
+
+    server.requestHandler(function(req) {
+      
+      req.response.putHeaders(req.headers());
+      
+      var p = new Pump(req, req.response);
+      p.start();
+      
+    }).listen(8080, 'localhost');
+    
+### Writing HTTP Clients
+
+#### Creating an HTTP Client
+
+To create an HTTP client you simply create an instance of vertx.HttpClient
+
+    var client = new vertx.HttpClient();
+    
+You can set the port and hostname (or ip address) that the client will connect to be using the `setHost` and `setPort` functions:
+
+    var client = new vertx.HttpClient();
+    client.setPort(8181);
+    client.setHost('foo.com');
+    
+This, of course can be chained:
+
+    var client = new vertx.HttpClient()
+                   .setPort(8181);
+                   .setHost('foo.com');
+                   
+A single http client always connects to the same host and port. If you want to connect to different servers, create more instances of http client.
+
+The default value for hostname is `localhost`, and the default value for port is `80`.  
+
+#### Pooling and Keep Alive
+
+By default the HTTP client pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response returns.
+
+If you do not want connections to be pooled you can set keep alive to false on the pool:
+
+    var client = new vertx.HttpClient()
+                   .setPort(8181);
+                   .setHost('foo.com').
+                   .setKeepAlive(false);
+
+In this case a new connection will be created for each HTTP request and closed once the response has returned.
+
+You can set the maximum number of connections that the client will pool as follows:
+
+    var client = new vertx.HttpClient()
+                   .setPort(8181);
+                   .setHost('foo.com').
+                   .setMaxPoolSize(10);
+                   
+The default value is 1.         
+
+#### Closing the client
+
+Once you have finished with an HTTP client, you should close it:
+
+    client.close();             
+
+                         
+#### Making Requests
+
+To make a request using the client you invoke one the methods named after the HTTP methods. For example, to make a POST request:
+
+    var client = new vertx.HttpClient();
+    
+    var request = client.post('http://localhost:8080/some-uri', function(resp) {
+        log.println('Got a response, status code: ' + resp.statusCode);
+    });
+    
+    request.end();
+    
+To make a PUT request use the `put` method, to make a GET request use the `get` method, etc.
+
+The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
+
+The return value from the appropriate request method is a client request object. You can use this to add headers to the request, and to write to the request body.
+
+Once you have finished with the request you must call the `end` function.
+
+If you don't know the name of the request method in advance there is a general request method which takes the method name as a parameter:
+
+    var client = new vertx.HttpClient();
+    
+    var request = client.request('POST', 'http://localhost:8080/some-uri', function(resp) {
+        log.println('Got a response, status code: ' + resp.statusCode);
+    });
+    
+    request.end();
+    
+There is a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
+
+    var client = new vertx.HttpClient();
+    
+    client.getNow('http://localhost:8080/some-uri', function(resp) {
+        log.println('Got a response, status code: ' + resp.statusCode);
+    });
+
+With `getNow` there is no return value.
+
+##### Writing to the request body
+
+Writing to the client request body has a very similar API to writing to the server response body.
+
+To write data to an http client request, you invoke the `write` function. This function can be invoked in a few ways:
+
+With a single buffer:
+
+    var myBuffer = ...
+    request.write(myBuffer);
+    
+A string. In this case the string will encoded using UTF-8 and the result written to the wire.
+
+    request.write('hello');    
+    
+A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
+
+    request.write('hello', 'UTF-16');
+    
+The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a function as a final argument. This function will then be invoked when the write has completed:
+
+    request.response.write('hello', function() {
+        log.println('It has actually been written');
+    });  
+    
+If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` function.   
+
+The first call to `write` results in the request header being being written to the request. Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
+
+
+#### Ending HTTP requests
+
+Once you have finished with the HTTP request you must call the `end` function on it.
+
+This function can be invoked in several ways:
+
+With no arguments, the response is simply ended. 
+
+    request.end();
+    
+The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
+
+You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
+
+##### Writing Request Headers
+
+To write headers to the request, use the `putHeader` method.
+
+    var client = new vertx.HttpClient();
+    
+    var request = client.post('http://localhost:8080/some-uri', function(resp) {
+        log.println('Got a response, status code: ' + resp.statusCode);
+    });
+    
+    request.putHeader('Some-Header', 'Some-Value');
+    
+These can be chained together as per the common vert.x API pattern:
+
+    client.post('http://localhost:8080/some-uri', function(resp) {
+        log.println('Got a response, status code: ' + resp.statusCode);
+    }).putHeader('Some-Header', 'Some-Value')
+      .putHeader('Some-Other-Header', 'Some-Other-Value')
+      .end();
+
+If you want to put more than one header at the same time, you can instead use the `putHeaders` function.
+  
+  client.post('http://localhost:8080/some-uri', function(resp) {
+        log.println('Got a response, status code: ' + resp.statusCode);
+    }).putHeaders({'Some-Header': 'Some-Value',
+                   'Some-Other-Header': 'Some-Other-Value'})
+      .end(); 
+
+**[[ TODO putHeaders currently not implemented ]]**
+
+
+##### HTTP chunked requests
+
+vert.x also supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding) for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.
+
+You put the HTTP request into chunked mode as follows:
+
+    request.setChunked(true);
+    
+Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out.  
+
+##### Reading Data from the Response Body
+
+The api for reading a client http response body is very similar to the api for read a server http request body.
+
+Sometimes an HTTP response contains a request body that we want to read. The response body is not passed fully read with the HTTP response since it may be very large and we don't want to have problems with available memory.
+
+Instead you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
+
+
+    var client = new vertx.HttpClient();
+    
+    client.getNow('http://localhost:8080/some-uri', function(resp) {
+      resp.dataHandler(function(buffer) {
+        log.println('I received ' + buffer.length() + ' bytes');
+      });    
+    });
+
+The response object implements the `ReadStream` interface so you can pump the response body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation. 
+
+If you wanted to read the entire response body before doing something with it you could do something like the following:
+
+    var client = new vertx.HttpClient();
+    
+    client.getNow('http://localhost:8080/some-uri', function(resp) {
+      
+      var body = new vertx.Buffer();  
+    
+      resp.dataHandler(function(buffer) {
+        body.appendBuffer(buffer);
+      });
+      
+      resp.endHandler(function() {
+        log.println('The total body received was ' + body.length() + ' bytes');
+      });
+      
+    });
+    
+Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the response.
+
+If the HTTP response is using HTTP chunking, then each chunk of the response body will be received in a different call to the data handler.
+
+Since it's such a common use case to want to read the entire body before processing it, vert.x allows a `bodyHandler` to be set on the response object. The body handler is called when the *entire* response body has been read. Beware of doing this with very large responses since the entire response body will be stored in memory.
+
+Here's an example using `bodyHandler`:
+
+    var client = new vertx.HttpClient();
+    
+    client.getNow('http://localhost:8080/some-uri', function(resp) {
+      
+      resp.bodyHandler(function() {
+        log.println('The total body received was ' + body.length() + ' bytes');
+      });
+      
+    }); 
+    
+#### Pumping Responses
+
+Like several other objects in vert.x, the HTTP client request implements `WriteStream` you can pump to it from any `ReadStream`, e.g. an `AsyncFile`, `NetSocket` or `HttpServerRequest`. Here's a very simple proxy server which forwards a request to another server and forwards the response back to the client. It uses two pumps - one to pump the server request to the client request, and another to pump the client response back to the server response. Since it uses pumps it will work even if the HTTP request body is much larger than can fit in memory at any one time:
+
+    var server = new vertx.HttpServer();
+    
+    var client = new vertx.HttpClient().setHost('some-other-server.com');
+
+    server.requestHandler(function(req) {
+    
+        var clientReq = client.request(req.method, req.uri, function(clientResp) {
+    
+            req.response.status_code = clientResp.statusCode;
+            req.response.putAllHeaders(clientResp.headers());
+            
+            var respPump = new Pump(clientResp, req.response);
+            respPump.start();
+            
+            clientResp.endHandler(function() { req.response.end() });
+        }
+
+        clientReq.putAllHeaders(req.headers());
+        
+        var reqPump = new Pump(req, clientReq);
+        
+        reqPump.start();
+        
+        req.endHandler(function { clientReq.end() } );
+      
+    }).listen(8080, 'localhost');
+    
+### 100-Continue Handling
+
+According to the [HTTP 1.1 specification] (http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html) a client can set a header `Expect: 100-Continue` and send the request header before sending the rest of the request body. The server can then respond with an interim response status `Status: 100 (Continue)` to signify the client is ok to send the rest of the body. The idea here is it allows the server to reject the request before large amounts of data has already been sent, which would be a waste of bandwidth.
+
+The vert.x allows you to set a continue handler on the client request object. This will be called if the server sends back a `Status: 100 (Continue)` response to signify it is ok to send the rest of the request. This is used in conjunction with the `sendHead` function to send the head of the request.
+
+An example will illustrate this:
+
+    var client = new vertx.HttpClient();
+    
+    var request = client.put('http://localhost:8080/some-uri', function(resp) {
+      
+      resp.bodyHandler(function(resp) {
+        log.println('Got a response ' + resp.statusCode);
+      });
+      
+    });     
+    
+    request.putHeader('Expect', '100-Continue');
+    
+    request.continueHandler(function() {
+        // OK to send rest of body
+        
+        request.write('Some data').end();
+    });
+    
+    request.sendHead();
+
+### HTTPS Servers
+
+HTTP Servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
+
+When an HTTP Server is working as an HTTPS Server the api of the server is identical compared to when it working with standard HTTP. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before listen is called.
+
+Configuration of an HTTPS server is exactly the same as configuring a Net Server for SSL. Please see SSL server chapter for detailed instructions.
+
+### HTTPS Clients
+
+HTTP Clients can also be easily configured to use HTTPS.
+
+Configuration of an HTTPS client is exactly the same as configuring a Net Client for SSL. Please see SSL client chapter for detailed instructions. 
+
+### Scaling HTTP servers
+
+Scaling an HTTP server over multiple cores is as simple as deploying more instances of the verticle. For example:
+
+    vertx deploy http_server.js -instances 20
+    
+The scaling works in the same way as scaling a Net Server. Please see the section on scaling Net Servers for a detailed explanation [LINK].    
+
+## WebSockets
+
+[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a new feature in HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
+
+vert.x implements the most common versions of websockets on both the server and client side.
+
+[[VERSION NUMBERS]]
+
+### WebSockets on the server
+
+### WebSockets on the HTTP client
+
+### WebSockets in the browser
+
+
+## SockJS
+
+
+
+
+
+
+
+    
+            
+    
+
+
+
+
+
 
 
 
