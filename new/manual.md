@@ -1617,21 +1617,346 @@ The scaling works in the same way as scaling a Net Server. Please see the sectio
 
 ## WebSockets
 
-[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a new feature in HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
-
-vert.x implements the most common versions of websockets on both the server and client side.
-
-[[VERSION NUMBERS]]
+[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a feature of HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
 
 ### WebSockets on the server
 
+To use WebSockets on the server you create an HTTP server as normal [LINK], but instead of setting a `requestHandler` you set a `websocketHandler` on the server.
+
+    var server = new vertx.HttpServer();
+
+    server.websocketHandler(function(websocket) {
+      
+      // A WebSocket has connected!
+      
+    }).listen(8080, 'localhost');
+    
+The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, and has a very similar interface to `NetSocket`, so you can write and write data to it in the normal ways. See chapter on streams [LINK] for more information.
+
+For example, to echo anything received on a WebSocket:
+
+    var server = new vertx.HttpServer();
+
+    server.websocketHandler(function(websocket) {
+      
+      var p = new Pump(websocket, websocket);
+      p.start();
+      
+    }).listen(8080, 'localhost');
+
+
+Sometimes you may only want to accept WebSockets which connect at a specific path, to check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
+
+    var server = new vertx.HttpServer();
+
+    server.websocketHandler(function(websocket) {
+      
+      if (websocket.path === '/services/echo') {
+        var p = new vertx.Pump(websocket, websocket);
+        p.start();  
+      } else {
+        websocket.reject();
+      }        
+    }).listen(8080, 'localhost');    
+    
+
 ### WebSockets on the HTTP client
+
+To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the uri that you want to connect at, and a handler. The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
+
+Here's an example of WebSocket connection;
+
+    var client = new vertx.HttpClient();
+    
+    client.connectWebsocket('http://localhost:8080/some-uri', function(websocket) {
+      
+      // WebSocket has connected!
+      
+    }); 
+    
+Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object. 
+
+WebSocket also implements the convenience method `writeTextFrame` for writing text frames, and `writeBinaryFrame` for writing binary frames.   
 
 ### WebSockets in the browser
 
 
+To use WebSockets from a compliant browser, you use the standard WebSocket api. Here's some example client side JavaScript which uses a WebSocket. 
+
+    <script>
+    
+        var socket = new WebSocket("ws://localhost:8080/services/echo");
+
+        socket.onmessage = function(event) {
+            alert("Received data from websocket: " + event.data);
+        }
+        
+        socket.onopen = function(event) {
+            alert("Web Socket opened");
+            socket.send("Hello World");
+        };
+        
+        socket.onclose = function(event) {
+            alert("Web Socket closed");
+        };
+    
+    </script>
+    
+For more information see the [WebSocket API documentation](http://dev.w3.org/html5/websockets/)    
+    
 ## SockJS
 
+WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older versions. Moreover, websockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a websocket connection is going to succeed for every user.
+
+Enter SockJS. SockJS is a client side JavaScript library and protocol which provides a simple WebSocket-like interface to you the developer irrespective of whether the actual browser or network will allow real WebSockets.
+
+It does this by supporting various different transports between browser and server, and choosing one at runtime according to browser and network capabilities. All this is transparent to you - you are simply presented with the WebSocket-like interface which *just works*.
+
+Please see the [SockJS website](https://github.com/sockjs/sockjs-client) for more information.
+
+### SockJS Server
+
+vert.x provides a complete server side SockJS implementationl, enabling vert.x to be used for modern *real-time* web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
+
+To create a SockJS server you simply create a HTTP server as normal [LINK] and pass it in to the constructor of the SockJS server.
+
+    var httpServer = new vertx.HttpServer();
+    
+    var sockJSServer = new vertx.SockJSServer(httpServer);
+    
+Each SockJS server can host multiple *applications*. Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.     
+
+For example, to create a SockJS echo application:
+
+    var httpServer = new vertx.HttpServer();
+    
+    var sockJSServer = new vertx.SockJSServer(httpServer);
+    
+    var config = { prefix: '/echo' };
+    
+    sockJSServer.installApp(config, function(sock) {
+    
+        var p = new.vertx.Pump(sock, sock);
+        
+        p.start();
+    });
+    
+    httpServer.listen(8080);
+    
+The configuration can take the following fields:
+
+* prefix: A url prefix for the application. All http requests which paths begins with selected prefix will be handled by the application. This property is mandatory.
+* insert_JSESSIONID: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
+* session_timeout: The server sends a `close` event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the `close` event will be emitted when a receiving connection wasn't seen for 5 seconds.
+* heartbeat_period: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.
+* max_bytes_streaming: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    
+* library_url: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.1.min.js`
+
+### Reading and writing data from a SockJS server
+
+The object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard api for reading and writing to the SockJS socket or using it in pumps.
+
+See the chapter on Streams and Pumps for more information.
+
+var httpServer = new vertx.HttpServer();
+    
+    var sockJSServer = new vertx.SockJSServer(httpServer);
+    
+    var config = { prefix: '/echo' };
+    
+    sockJSServer.installApp(config, function(sock) {
+    
+        sock.dataHandler(function(buff) {
+            sock.writeBuffer(buff);
+        });
+    });
+    
+    httpServer.listen(8080);
+    
+### SockJS client
+
+For full information on using the SockJS client library please see the SockJS website. A simple example:
+
+    <script>
+       var sock = new SockJS('http://mydomain.com/my_prefix');
+       
+       sock.onopen = function() {
+           console.log('open');
+       };
+       
+       sock.onmessage = function(e) {
+           console.log('message', e.data);
+       };
+       
+       sock.onclose = function() {
+           console.log('close');
+       };
+    </script>   
+    
+## SockJS - Event Bus Bridge
+
+### Setting up the Bridge
+
+By connecting up SockJS and the vert.x Event Bus we can create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers. We can therefore create a huge distributed event space encompassing many browsers and servers. The browsers don't have to be connected to the same server as long as the servers are connected.
+
+On the server side we have already discussed the event bus api. We also provide a client side JavaScript library called `vertxbus.js` which provides the same event bus API on the client side. This library internally uses SockJS to send and receive data from a SockJS vert.x server called the SockJS Bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus.
+
+Creating a Sock JS bridge is simple. You just create a SockJS Server as described in the last chapter, and install an app with a handler which is a `SockJSBridgeHandler`. The following example creates and starts a SockJS bridge which will bridge any events sent to path `eventbus` on to the event bus.
+
+    var server = new vertx.HttpServer();
+
+    var sockJSServer = new vertx.SockJSServer(server);
+    
+    var handler = new vertx.SockJSBridgeHandler();
+    
+    sockJSServer.installApp({prefix : '/eventbus'}, handler);
+    
+    server.listen(8080);
+    
+The SockJS bridge currently only works with JSON event bus messages.    
+    
+### Securing the Bridge
+
+Actually, if you started a server like in the previous example and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?
+
+For most applications you probably don't want client side JavaScript being able to send just any message to any component on the server side or in other browsers. For example, you may have a persistor component on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!
+
+To deal with this, by default, a SockJS bridge will refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through. In other words the bridge acts like a kind of firewall.
+
+Configuring the bridge to tell it what messages it should pass through is easy. You just call the function `addPermitted` on the bridge handler and pass in any number of JSON objects that represent matches.
+
+Each match has two fields:
+
+1. `address`. This represents the address the message is being sent to. If you want to filter messages based on destination you will use this field.
+2. `match`. This allows you to filter messages based on their stricture. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
+
+When a message arrives from the client, the bridge will look through the available permitted entries. If an address has been specified then the address must match with the address in the message for it to be considered matched. If a match has been specified, then also the structure of the message must match.
+
+Here is an example:
+
+    var server = new vertx.HttpServer();
+
+    var sockJSServer = new vertx.SockJSServer(server);
+    
+    var handler = new vertx.SockJSBridgeHandler();
+
+    handler.addPermitted(
+      // Let through any messages sent to 'demo.orderMgr'
+      {
+        address : 'demo.orderMgr'
+      },
+      // Allow calls to the address 'demo.persistor' as long as the messages
+      // have an action field with value 'find' and a collection field with value
+      // 'albums'
+      {
+        address : 'demo.persistor',
+        match : {
+          action : 'find',
+          collection : 'albums'
+        }
+      },
+      // Allow through any message with a field `wibble` with value `foo`.
+      {
+        match : {
+          wibble: 'foo'
+        }
+      }
+     
+    );
+    
+    sockJSServer.installApp({prefix : '/eventbus'}, handler);
+    
+    server.listen(8080);
+    
+To let all messages through you can add an empty permitted entry:
+
+     handler.addPermitted({});
+     
+**Be very careful!**
+    
+### Using the Event Bus from client-side JavaScript    
+    
+To use the event bus from the client side you need to load the script `vertxbus.js`, and do something like:
+
+    <script type='text/javascript' src='vertxbus.js'></script>
+    
+    <script>
+
+        var eb = new vertx.EventBus('http://localhost:8080/eventbus'); 
+        
+        eb.registerHandler('some-address', function(message) {
+        
+            console.log('received a message: ' + JSON.stringify(message);
+            
+        });   
+        
+        eb.send('some-address', {name: 'tim', age: 587});
+    
+    </script>
+    
+You can now communicate seamlessly between different browsers and server side components using the event bus.    
+    
+For a full description of the event bus API, please see the chapter on Event Bus [LINK].    
+    
+## Delayed and Periodic Tasks
+
+It's very common to want to perform an action after a delay, or periodically.
+
+In standard verticles you can't just call `Thread.sleep` if you want to introduce a delay, since that will block the event loop thread. Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+
+### One-shot Timers
+
+A one shot timer calls a supplied event handler after a certain delay, expressed in milliseconds. 
+
+To set a timer to fire once you use the `vertx.setTimer` function passing in the delay and the handler
+
+    vertx.setTimer(1000, function() {
+        log.println('And one second later this is printed'); 
+    });
+    
+    log.println('First this is printed');
+    
+### Periodic Timers
+
+You can also set a timer to fire periodically by using the `setPeriodic` function. There will be an initial delay equal to the period. The return value of `setPeriodic` is a unique timer id (number). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:
+
+    var id = vertx.setTimer(1000, function(id) {
+        log.println('And every second this is printed'); 
+    });
+    
+    log.println('First this is printed');
+    
+### Cancelling timers
+
+To cancel a periodic timer, call the `cancelTimer` function specifying the timer id. For example:
+
+    var id = vertx.setTimer(1000, function(id) {        
+    });
+    
+    // And immediately cancel it
+    
+    vertx.cancelTimer(id);
+    
+Or you can cancel it from inside the event handler. The following example cancels the timer after it has fired 10 times.
+
+    var count = 0;
+    
+    vertx.setTimer(1000, function(id) {
+        log.println('In event handler ' + count); 
+        count++;
+        if (count === 10) {
+            vertx.cancelTimer(id);
+        }
+    });
+    
+    log.println('First this is printed');
+    
+    
+    
+        
+    
+        
+    
 
 
 
