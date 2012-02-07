@@ -8,7 +8,7 @@ vert.x is a framework for creating massively scalable, concurrent, real-time, we
 
 Some key features:
 
-* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application.
+* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single /Users/timfox/projects/vert.x-ghpages/new/manual.mdapplication.
 
 * No more worrying about concurrency. vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.
 
@@ -1659,7 +1659,6 @@ Sometimes you may only want to accept WebSockets which connect at a specific pat
       }        
     }).listen(8080, 'localhost');    
     
-
 ### WebSockets on the HTTP client
 
 To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the uri that you want to connect at, and a handler. The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
@@ -1951,27 +1950,7 @@ Or you can cancel it from inside the event handler. The following example cancel
     
     log.println('First this is printed');
     
-    
-    
-        
-    
-        
-    
-
-
-
-
-
-
-    
-            
-    
-
-
-
-
-
-
+   
 
 
     
