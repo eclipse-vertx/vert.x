@@ -8,7 +8,7 @@ vert.x is a framework for creating massively scalable, concurrent, real-time, we
 
 Some key features:
 
-* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application.
+* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single /Users/timfox/projects/vert.x-ghpages/new/manual.mdapplication.
 
 * No more worrying about concurrency. vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.
 
@@ -1624,6 +1624,23 @@ vert.x implements the most common versions of websockets on both the server and 
 [[VERSION NUMBERS]]
 
 ### WebSockets on the server
+
+To receive WebSocket connections on the server, you create an HTTP server instance as normal, but instead of setting a `requestHandler`, you set a `websocketHandler`. For details on how to create an HTTP server please see the [LINK chapter.
+
+    var server = new vertx.HttpServer();
+
+    server.websocketHandler(function(request) {
+    
+    }).listen(8080, 'localhost');   
+
+Hmmm, need to pass in two params - or should we pass in 1??
+
+******
+
+CAN'T WE JUST HAVE A METHOD REJECT ON WEBSOCKET, IF CALLED WITHIN WEBSOCKETHANDLER THEN WEBSOCKET WILL BE REJECTED.
+
+WE CAN JUST CHECK IF REJECT HAS BEEN CALLED BY THE TIME THE HANDLER HAS BEEN CALLED, AND IF SO REJECT IT. WRITING FROM THE HANLER AUTOMATICALLY ACCEPTS IT, REJECT CAN'T BE CALLED AFTER THAT.we've got to do it this way
+
 
 ### WebSockets on the HTTP client
 
