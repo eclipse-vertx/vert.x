@@ -1,10 +1,10 @@
 package vertx.tests.core.websockets;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.core.http.WebSocketHandler;
+import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
@@ -23,8 +23,8 @@ public class InstanceCheckServer implements Verticle {
 
   public void start() {
 
-    server = new HttpServer().websocketHandler(new WebSocketHandler() {
-      public void handle(final WebSocket ws) {
+    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+      public void handle(final ServerWebSocket ws) {
         tu.checkContext();
 
         //We add the object id of the server to the set
@@ -32,10 +32,6 @@ public class InstanceCheckServer implements Verticle {
         SharedData.instance.getSet("connections").add(UUID.randomUUID().toString());
 
         ws.close();
-      }
-
-      public boolean accept(String path) {
-        return true;
       }
     }).listen(8080);
 

@@ -1,7 +1,7 @@
 package org.vertx.java.core.app.jruby;
 
-import org.vertx.java.core.app.VerticleFactory;
 import org.vertx.java.core.app.Verticle;
+import org.vertx.java.core.app.VerticleFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

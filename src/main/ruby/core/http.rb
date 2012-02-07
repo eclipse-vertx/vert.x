@@ -48,11 +48,7 @@ module Vertx
     def websocket_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.websocketHandler do |param|
-        if param.is_a? String
-          hndlr.call(param)
-        else
-          hndlr.call(Websocket.new(param))
-        end
+        hndlr.call(ServerWebSocket.new(param))
       end
 
       self
@@ -164,7 +160,7 @@ module Vertx
     # @param [String] uri. A relative URI where to connect the websocket on the host, e.g. /some/path
     # @param [Block] hndlr. The handler to be called with the {Websocket}
     def connect_web_socket(uri, &hndlr)
-      @j_del.connectWebsocket(uri) { |j_ws| hndlr.call(Websocket.new(j_ws)) }
+      @j_del.connectWebsocket(uri) { |j_ws| hndlr.call(WebSocket.new(j_ws)) }
     end
 
     # This is a quick version of the {#get} method where you do not want to do anything with the request
@@ -754,7 +750,7 @@ module Vertx
   # Instances of this class can only be used from the event loop thread which created it.
   #
   # @author {http://tfox.org Tim Fox}
-  class Websocket
+  class WebSocket
 
     include ReadStream, WriteStream
 
@@ -772,12 +768,6 @@ module Vertx
         EventBus::unregister_handler(@text_handler_id)
         @closed_handler.call if @closed_handler
       })
-    end
-
-    # @return [String] The uri the websocket was created on. When a websocket is first received on the server, the uri can be checked and
-    # the websocket can be closed if you want to restrict which uris you wish to accept websockets on.
-    def uri
-      @j_del.uri
     end
 
     # Write data to the websocket as a binary frame
@@ -823,6 +813,23 @@ module Vertx
       @closed_handler = hndlr;
     end
 
+  end
+
+  class ServerWebSocket < WebSocket
+
+    # @private
+    def initialize(j_ws)
+      super(j_ws)
+      @j_del = j_ws
+    end
+
+    def reject
+      @j_del.reject
+    end
+
+    def path
+      @j_del.path
+    end
   end
 
   # This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar

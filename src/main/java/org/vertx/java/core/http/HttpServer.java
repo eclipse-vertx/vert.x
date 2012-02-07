@@ -100,7 +100,7 @@ public class HttpServer extends NetServerBase {
   private static final Map<ServerID, HttpServer> servers = new HashMap<>();
 
   private Handler<HttpServerRequest> requestHandler;
-  private WebSocketHandler wsHandler;
+  private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -109,7 +109,7 @@ public class HttpServer extends NetServerBase {
   private HttpServer actualServer;
   private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
-  private HandlerManager<WebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
   /**
    * Create an {@code HttpServer}
@@ -145,7 +145,7 @@ public class HttpServer extends NetServerBase {
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer websocketHandler(WebSocketHandler wsHandler) {
+  public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     checkThread();
     this.wsHandler = wsHandler;
     return this;
@@ -155,7 +155,7 @@ public class HttpServer extends NetServerBase {
    * Get the websocket handler
    * @return The websocket handler
    */
-  public WebSocketHandler websocketHandler() {
+  public Handler<ServerWebSocket> websocketHandler() {
     checkThread();
     return wsHandler;
   }
@@ -451,11 +451,11 @@ public class HttpServer extends NetServerBase {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-      NioSocketChannel ch = (NioSocketChannel) e.getChannel();
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       Object msg = e.getMessage();
       ServerConnection conn = connectionMap.get(ch);
       if (msg instanceof HttpRequest) {
-        HttpRequest request = (HttpRequest) msg;
+        final HttpRequest request = (HttpRequest) msg;
 
         if (HttpHeaders.is100ContinueExpected(request)) {
           ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
@@ -476,7 +476,7 @@ public class HttpServer extends NetServerBase {
             return;
           }
 
-          Handshake shake;
+          final Handshake shake;
           if (Handshake17.matches(request)) {
             shake = new Handshake17();
           } else if (Handshake08.matches(request)) {
@@ -489,10 +489,10 @@ public class HttpServer extends NetServerBase {
             return;
           }
 
-          HandlerHolder<WebSocket> firstHandler = null;
+          HandlerHolder<ServerWebSocket> firstHandler = null;
 
           while (true) {
-            HandlerHolder<WebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
+            HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.getWorker());
             if (wsHandler == null || firstHandler == wsHandler) {
               break;
             }
@@ -503,24 +503,32 @@ public class HttpServer extends NetServerBase {
             } catch (URISyntaxException e2) {
               throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
             }
-            WebSocketHandler wsh = (WebSocketHandler)wsHandler.handler;
-            if (wsh.accept(theURI.getPath())) {
-              conn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
-              conn.wsHandler(wsHandler.handler);
-              connectionMap.put(ch, conn);
-              HttpResponse resp = shake.generateResponse(request);
-              ChannelPipeline p = ch.getPipeline();
-              p.replace("decoder", "wsdecoder", shake.getDecoder());
-              ch.write(resp);
-              p.replace("encoder", "wsencoder", shake.getEncoder(true));
 
-              WebSocket ws = new WebSocket(conn);
-              conn.handleWebsocketConnect(ws);
+            final ServerConnection wsConn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
+            wsConn.wsHandler(wsHandler.handler);
+            Runnable connectRunnable = new Runnable() {
+              public void run() {
+                connectionMap.put(ch, wsConn);
+                try {
+                  HttpResponse resp = shake.generateResponse(request);
+                  ChannelPipeline p = ch.getPipeline();
+                  p.replace("decoder", "wsdecoder", shake.getDecoder());
+                  ch.write(resp);
+                  p.replace("encoder", "wsencoder", shake.getEncoder(true));
+                } catch (Exception e) {
+                  log.error("Failed to generate shake response", e);
+                }
+              }
+            };
+            ServerWebSocket ws = new ServerWebSocket(theURI.getPath(), wsConn, connectRunnable);
+            wsConn.handleWebsocketConnect(ws);
+            if (ws.rejected) {
+              if (firstHandler == null) {
+                firstHandler = wsHandler;
+              }
+            } else {
+              ws.connectNow();
               return;
-            }
-
-            if (firstHandler == null) {
-              firstHandler = wsHandler;
             }
           }
           ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));

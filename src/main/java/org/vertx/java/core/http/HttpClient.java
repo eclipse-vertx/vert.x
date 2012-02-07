@@ -385,6 +385,14 @@ public class HttpClient extends NetClientBase {
     pool.returnConnection(conn);
   }
 
+  void handleException(Exception e) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(e);
+    } else {
+      log.error("Unhandled exception", e);
+    }
+  }
+
   private void internalConnect(final Handler<ClientConnection> connectHandler, final long contextID) {
 
     if (bootstrap == null) {
