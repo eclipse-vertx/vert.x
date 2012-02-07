@@ -1649,6 +1649,12 @@ WE CAN JUST CHECK IF REJECT HAS BEEN CALLED BY THE TIME THE HANDLER HAS BEEN CAL
 
 ## SockJS
 
+---------
+
+Two things
+1) Sort out websocket api
+2) sort out filesystem, deferrers and completion handlers
+
 
 
 
