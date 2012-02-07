@@ -26,6 +26,14 @@ public class JavaWebsocketTest extends TestBase {
     super.tearDown();
   }
 
+  public void testRejectHybi00() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testRejectHybi08() throws Exception {
+    startTest(getMethodName());
+  }
+
   public void testWSBinaryHybi00() throws Exception {
     startTest(getMethodName());
   }

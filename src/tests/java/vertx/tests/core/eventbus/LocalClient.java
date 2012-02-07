@@ -4,11 +4,9 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestUtils;
 
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;

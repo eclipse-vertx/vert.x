@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class WebSocketMatcher implements WebSocketHandler {
+public class WebSocketMatcher implements Handler<ServerWebSocket> {
 
   private static final Logger log = Logger.getLogger(RouteMatcher.class);
 
@@ -22,14 +22,8 @@ public class WebSocketMatcher implements WebSocketHandler {
   private Handler<Match> handler;
 
   @Override
-  public void handle(WebSocket ws) {
-    handler.handle(new Match(params, ws));
-    params = null;
-    handler = null;
-  }
-
-  @Override
-  public boolean accept(String path) {
+  public void handle(ServerWebSocket ws) {
+    String path = ws.path;
     for (PatternBinding binding: bindings) {
       Matcher m = binding.pattern.matcher(path);
       if (m.matches()) {
@@ -46,10 +40,13 @@ public class WebSocketMatcher implements WebSocketHandler {
           }
         }
         handler = binding.handler;
-        return true;
+        handler.handle(new Match(params, ws));
+        params = null;
+        handler = null;
+        return;
       }
     }
-    return false;
+    ws.reject();
   }
 
   public void addRegEx(String regex, Handler<Match> handler) {
@@ -90,9 +87,9 @@ public class WebSocketMatcher implements WebSocketHandler {
 
   public static class Match {
     public final Map<String, String> params;
-    public final WebSocket ws;
+    public final ServerWebSocket ws;
 
-    public Match(Map<String, String> params, WebSocket ws) {
+    public Match(Map<String, String> params, ServerWebSocket ws) {
       this.params = params;
       this.ws = ws;
     }

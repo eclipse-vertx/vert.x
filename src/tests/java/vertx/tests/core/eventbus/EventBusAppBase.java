@@ -9,7 +9,6 @@ import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestClientBase;
 import org.vertx.java.tests.core.eventbus.Counter;
-import org.vertx.java.tests.core.eventbus.JavaClusteredEventBusTest;
 
 import java.util.Map;
 

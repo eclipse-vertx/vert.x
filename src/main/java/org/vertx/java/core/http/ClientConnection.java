@@ -32,6 +32,7 @@ import org.vertx.java.core.http.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.ws.hybi17.Handshake17;
 import org.vertx.java.core.logging.Logger;
 
+import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -91,21 +92,25 @@ class ClientConnection extends AbstractConnection {
       // Create a raw request
       HttpClientRequest req = new HttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
         public void handle(HttpClientResponse resp) {
-          try {
-            shake.onComplete(resp, new CompletionHandler<Void>() {
-              public void handle(Future<Void> fut) {
-                if (fut.succeeded()) {
-                  //We upgraded ok
-                  p.replace("encoder", "wsencoder", shake.getEncoder(false));
-                  ws = new WebSocket(ClientConnection.this);
-                  wsConnect.handle(ws);
-                } else {
-                  handleException(fut.exception());
+          if (resp.statusCode == 101) {
+            try {
+              shake.onComplete(resp, new CompletionHandler<Void>() {
+                public void handle(Future<Void> fut) {
+                  if (fut.succeeded()) {
+                    //We upgraded ok
+                    p.replace("encoder", "wsencoder", shake.getEncoder(false));
+                    ws = new WebSocket(ClientConnection.this);
+                    wsConnect.handle(ws);
+                  } else {
+                    client.handleException(fut.exception());
+                  }
                 }
-              }
-            });
-          } catch (Exception e) {
-            handleException(e);
+              });
+            } catch (Exception e) {
+              client.handleException(e);
+            }
+          } else {
+            client.handleException(new IOException("Websocket connection attempt returned HTTP status code " + resp.statusCode));
           }
         }
       }, contextID, Thread.currentThread(), this);
@@ -215,8 +220,7 @@ class ClientConnection extends AbstractConnection {
 
     if (currentRequest != null) {
       currentRequest.handleException(e);
-    }
-    if (currentResponse != null) {
+    } else if (currentResponse != null) {
       currentResponse.handleException(e);
     }
   }
