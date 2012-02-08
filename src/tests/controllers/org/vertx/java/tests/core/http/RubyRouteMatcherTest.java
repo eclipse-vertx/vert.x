@@ -1,6 +1,5 @@
 package org.vertx.java.tests.core.http;
 
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +10,7 @@ public class RubyRouteMatcherTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.RUBY, "core/routematcher/test_client.rb");
+    startApp("core/routematcher/test_client.rb");
   }
 
   @Override
@@ -19,11 +18,79 @@ public class RubyRouteMatcherTest extends TestBase {
     super.tearDown();
   }
 
-  public void test_route_with_pattern() {
+  public void test_get_with_pattern() {
     startTest(getMethodName());
   }
 
-  public void test_route_with_regex() {
+  public void test_get_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_put_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_put_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_post_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_post_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_delete_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_delete_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_options_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_options_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_head_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_head_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_trace_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_trace_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_patch_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_patch_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_connect_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_connect_with_regex() {
+    startTest(getMethodName());
+  }
+
+  public void test_route_no_match() {
     startTest(getMethodName());
   }
 }

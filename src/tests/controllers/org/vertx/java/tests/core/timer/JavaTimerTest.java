@@ -3,7 +3,6 @@ package org.vertx.java.tests.core.timer;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.timer.TestClient;
@@ -18,7 +17,7 @@ private static final Logger log = Logger.getLogger(JavaTimerTest.class);
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JAVA, TestClient.class.getName());
+    startApp(TestClient.class.getName());
   }
 
   @Override

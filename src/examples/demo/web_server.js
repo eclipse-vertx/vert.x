@@ -34,6 +34,8 @@ server.requestHandler(function(req) {
   }
 }).listen(8080, 'localhost');
 
+log.println("app deployed and running!");
+
 function vertxStop() {
   server.close();
 }

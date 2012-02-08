@@ -1,6 +1,5 @@
 package org.vertx.java.tests.core.shareddata;
 
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +10,7 @@ public class JavaScriptSharedDataTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JS, "core/shareddata/test_client.js");
+    startApp("core/shareddata/test_client.js");
   }
 
   @Override

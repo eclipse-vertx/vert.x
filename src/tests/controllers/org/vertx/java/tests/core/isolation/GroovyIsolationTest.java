@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.isolation;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -23,9 +22,9 @@ public class GroovyIsolationTest extends TestBase {
   public void testIsolation() throws Exception {
     int numInstances = 10;
     for (int i = 0; i < numInstances; i++) {
-      startApp(VerticleType.GROOVY, "core/isolation/testclient.groovy");
+      startApp("core/isolation/testclient.groovy");
     }
-    startApp(VerticleType.GROOVY, "core/isolation/testclient.groovy", numInstances);
+    startApp("core/isolation/testclient.groovy", numInstances);
     startTest(getMethodName(), false);
     for (int i = 0; i < numInstances * 2; i++) {
       waitTestComplete();

@@ -27,9 +27,14 @@ function testWorkQueue() {
 }
 
 tu.registerTests(this);
-tu.appReady();
+var queueConfig = {address: 'test.orderQueue'}
+var queueID = vertx.deployWorkerVerticle('busmods/work_queue.js', queueConfig, 1, function() {
+  tu.appReady();
+});
 
 function vertxStop() {
   tu.unregisterAll();
-  tu.appStopped();
+  vertx.undeployVerticle(queueID, function() {
+    tu.appStopped();
+  });
 }

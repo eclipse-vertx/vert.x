@@ -12,18 +12,92 @@ require "test_utils"
 @client = HttpClient.new
 @client.port = 8080;
 
-def test_route_with_pattern
-  params = { "name" => "foo", "version" => "v0.1"}
-  route(false, "/:name/:version", params, "/foo/v0.1")
+@params = { "name" => "foo", "version" => "v0.1"}
+@re_params = { "param0" => "foo", "param1" => "v0.1"}
+@regex = "\\/([^\\/]+)\\/([^\\/]+)"
+
+
+def test_get_with_pattern
+  route('get', false, "/:name/:version", @params, "/foo/v0.1")
 end
 
-def test_route_with_regex
-  params = { "param0" => "foo", "param1" => "v0.1"}
-  regex = "\\/([^\\/]+)\\/([^\\/]+)"
-  route(true, regex, params, "/foo/v0.1")
+def test_get_with_regex
+  route('get', true, @regex, @re_params, "/foo/v0.1")
 end
 
-def route(regex, pattern, params, uri)
+def test_put_with_pattern
+  route('put', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_put_with_regex
+  route('put', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_post_with_pattern
+  route('post', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_post_with_regex
+  route('post', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_delete_with_pattern
+  route('delete', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_delete_with_regex
+  route('delete', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_options_with_pattern
+  route('options', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_options_with_regex
+  route('options', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_head_with_pattern
+  route('head', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_head_with_regex
+  route('head', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_trace_with_pattern
+  route('trace', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_trace_with_regex
+  route('trace', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_patch_with_pattern
+  route('patch', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_patch_with_regex
+  route('patch', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_connect_with_pattern
+  route('connect', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_connect_with_regex
+  route('connect', true, @regex, @re_params, "/foo/v0.1")
+end
+
+def test_route_no_match
+  @client.send('get', 'some-uri') do |resp|
+    @tu.azzert(404 == resp.status_code)
+    @tu.test_complete
+  end.end
+end
+
+
+def route(method, regex, pattern, params, uri)
 
   handler = Proc.new do |req|
     @tu.azzert(req.params.size == params.size)
@@ -34,12 +108,12 @@ def route(regex, pattern, params, uri)
   end
 
   if regex
-    @rm.get_re(pattern, handler)
+    @rm.send(method + '_re', pattern, handler)
   else
-    @rm.get(pattern, handler)
+    @rm.send(method, pattern, handler)
   end
 
-  @client.get(uri) do |resp|
+  @client.send(method, uri) do |resp|
     @tu.azzert(200 == resp.status_code)
     @tu.test_complete
   end.end

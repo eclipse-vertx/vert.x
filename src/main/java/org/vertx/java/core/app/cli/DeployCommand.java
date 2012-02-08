@@ -1,9 +1,6 @@
 package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.app.VerticleManager;
-import org.vertx.java.core.app.VerticleType;
-
-import java.net.URL;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -11,18 +8,16 @@ import java.net.URL;
 public class DeployCommand extends VertxCommand {
 
   public boolean worker;
-  public VerticleType type;
   public String name;
   public String main;
-  public URL[] urls;
+  public String path;
   public int instances;
 
-  public DeployCommand(boolean worker, VerticleType type, String name, String main, URL[] urls, int instances) {
+  public DeployCommand(boolean worker, String name, String main, String path, int instances) {
     this.worker = worker;
-    this.type = type;
     this.name = name;
     this.main = main;
-    this.urls = urls;
+    this.path = path;
     this.instances = instances;
   }
 
@@ -30,7 +25,7 @@ public class DeployCommand extends VertxCommand {
   }
 
   public String execute(VerticleManager appMgr) throws Exception {
-    appMgr.deploy(worker, type, name, main, urls, instances, null);
-    return null;
+    String appName = appMgr.deploy(worker, name, main, null, path, instances, null);
+    return "Deployment: " + appName;
   }
 }

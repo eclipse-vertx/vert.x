@@ -35,26 +35,22 @@ public class Mailer extends BusModBase implements Verticle, Handler<Message<Json
   private String username;
   private String password;
 
-  public Mailer(String address, String host) {
-    this(address, host, 25, false, false, null, null);
+  public Mailer() {
+    super(true); // The Mailer must always be run as a worker
   }
 
-  public Mailer(String address, String host, int port) {
-    this(address, host, port, false, false, null, null);
-  }
-
-  public Mailer(String address, String host, int port, boolean ssl,boolean auth, String username, String password) {
-    super(address, true);
-    this.ssl = ssl;
-    this.host = host;
-    this.port = port;
-    this.auth = auth;
-    this.username = username;
-    this.password = password;
-  }
 
   @Override
   public void start() {
+    super.start();
+
+    ssl = super.getOptionalBooleanConfig("ssl", false);
+    host = super.getOptionalStringConfig("host", "localhost");
+    port = super.getOptionalIntConfig("port", 25);
+    auth = super.getOptionalBooleanConfig("auth", false);
+    username = super.getOptionalStringConfig("username", null);
+    password = super.getOptionalStringConfig("password", null);
+
     eb.registerHandler(address, this);
 
     Properties props = new Properties();

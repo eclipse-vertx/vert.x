@@ -46,12 +46,8 @@ public class SocketDeployer {
                 } else {
                   try {
                     VertxCommand cmd = VertxCommand.read(buff);
-                    String err = cmd.execute(appManager);
-                    if (err == null) {
-                      socket.write("OK\n");
-                    } else {
-                      socket.write("ERR: " + err + "\n");
-                    }
+                    String res = cmd.execute(appManager);
+                    socket.write("OK: " + res + "\n");
                   } catch (Exception e) {
                     log.error("Failed to execute command", e);
                     socket.write("ERR: " + e.getMessage() + "\n");

@@ -115,7 +115,7 @@ public class JsonObject {
     return this;
   }
 
-  public String encode() throws EncodeException {
+  public String encode() {
     return Json.encode(this.map);
   }
 

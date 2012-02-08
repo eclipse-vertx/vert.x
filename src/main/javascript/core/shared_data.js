@@ -1,21 +1,22 @@
 var vertx = vertx || {};
 
-vertx.shareddata = vertx.shareddata || {};
+if (!vertx.getMap) {
 
-vertx.shareddata.getMap = function(name) {
-  return org.vertx.java.core.shareddata.SharedData.instance.getMap(name);
-}
+  vertx.getMap = function(name) {
+    return org.vertx.java.core.shareddata.SharedData.instance.getMap(name);
+  }
 
-vertx.shareddata.getSet = function(name) {
-  return org.vertx.java.core.shareddata.SharedData.instance.getSet(name);
-}
+  vertx.getSet = function(name) {
+    return org.vertx.java.core.shareddata.SharedData.instance.getSet(name);
+  }
 
-vertx.shareddata.removeMap = function(name) {
-  return org.vertx.java.core.shareddata.SharedData.instance.removeMap(name);
-}
+  vertx.removeMap = function(name) {
+    return org.vertx.java.core.shareddata.SharedData.instance.removeMap(name);
+  }
 
-vertx.shareddata.removeSet = function(name) {
-  return org.vertx.java.core.shareddata.SharedData.instance.removeSet(name);
+  vertx.removeSet = function(name) {
+    return org.vertx.java.core.shareddata.SharedData.instance.removeSet(name);
+  }
 }
 
 

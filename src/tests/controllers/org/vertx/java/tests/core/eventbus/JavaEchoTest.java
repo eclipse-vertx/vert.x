@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.eventbus;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.eventbus.LocalEchoClient;
@@ -19,8 +18,8 @@ public class JavaEchoTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JAVA, getPeerClassName());
-    startApp(VerticleType.JAVA, getClientClassName());
+    startApp(getPeerClassName());
+    startApp(getClientClassName());
   }
 
   protected String getPeerClassName() {

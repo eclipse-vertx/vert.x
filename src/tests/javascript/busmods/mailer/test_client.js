@@ -42,9 +42,15 @@ function testMailerError() {
 }
 
 tu.registerTests(this);
-tu.appReady();
+
+var mailerConfig = {address: 'test.mailer'}
+var mailerID = vertx.deployWorkerVerticle('busmods/mailer.js', mailerConfig, 1, function() {
+  tu.appReady();
+});
 
 function vertxStop() {
   tu.unregisterAll();
-  tu.appStopped();
+  vertx.undeployVerticle(mailerID, function() {
+    tu.appStopped();
+  });
 }

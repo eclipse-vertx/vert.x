@@ -239,6 +239,14 @@ module Vertx
       HttpClientRequest.new(@j_del.connect(uri, resp_handler(hndlr)))
     end
 
+    # This method returns an {HttpClientRequest} instance which represents an HTTP PATCH request with the specified uri.
+    # When an HTTP response is received from the server the handler is called passing in the response.
+    # @param [String] uri. A relative URI where to perform the PATCH on the server.
+    # @param [Block] hndlr. The handler to be called with the {HttpClientResponse}
+    def patch(uri, &hndlr)
+      HttpClientRequest.new(@j_del.patch(uri, resp_handler(hndlr)))
+    end
+
     # This method returns an {HttpClientRequest} instance which represents an HTTP request with the specified method and uri.
     # When an HTTP response is received from the server the handler is called passing in the response.
     # @param [String] method. The HTTP method. Can be one of OPTIONS, HEAD, GET, POST, PUT, DELETE, TRACE, CONNECT.
@@ -917,6 +925,51 @@ module Vertx
       @j_del.delete(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP OPTIONS
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def options(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.options(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP HEAD
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def head(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.head(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP TRACE
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def trace(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.trace(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP PATCH
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def patch(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.patch(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP CONNECT
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def connect(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.connect(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
     # Specify a handler that will be called for a matching HTTP GET
     # @param [String] A regular expression for a pattern
     # @param [Proc] proc A proc to be used as the handler
@@ -951,6 +1004,53 @@ module Vertx
     def delete_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.deleteWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    #
+
+    # Specify a handler that will be called for a matching HTTP OPTIONS
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def options_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.optionsWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP HEAD
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def head_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.headWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP TRACE
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def trace_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.traceWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP PATCH
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def patch_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.patchWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP CONNECT
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def connect_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.connectWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
   end

@@ -1,7 +1,6 @@
 package org.vertx.java.tests.busmods.auth;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -19,9 +18,7 @@ public class JavaScriptAuthTest extends TestBase {
   }
 
   private void startApps() throws Exception {
-    startApp(true, VerticleType.JS, "busmods/auth/test_persistor.js");
-    startApp(VerticleType.JS, "busmods/auth/test_authmgr.js");
-    startApp(VerticleType.JS, "busmods/auth/test_client.js");
+    startApp("busmods/auth/test_client.js");
   }
 
   @Override
@@ -109,9 +106,7 @@ public class JavaScriptAuthTest extends TestBase {
 
   @Test
   public void testSessionTimeout() throws Exception {
-    startApp(true, VerticleType.JS, "busmods/auth/test_persistor.js");
-    startApp(VerticleType.JS, "busmods/auth/test_authmgr_timeout.js");
-    startApp(VerticleType.JS, "busmods/auth/test_client.js");
+    startApp("busmods/auth/test_client_timeout.js");
     startTest(getMethodName());
   }
 }

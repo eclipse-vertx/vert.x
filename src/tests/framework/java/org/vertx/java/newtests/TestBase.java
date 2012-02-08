@@ -6,7 +6,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.VerticleManager;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -155,50 +154,54 @@ public class TestBase extends TestCase {
     }
   }
 
-  protected String startApp(VerticleType type, String main) throws Exception {
-    return startApp(false, type, main, true);
+  protected String startApp(String main) throws Exception {
+    return startApp(false, main, true);
   }
 
-  protected String startApp(VerticleType type, String main, boolean await) throws Exception {
-    return startApp(false, type, main, 1, await);
+  protected String startApp(String main, JsonObject config) throws Exception {
+    return startApp(false, main, config, 1, true);
   }
 
-  protected String startApp(VerticleType type, String main, int instances) throws Exception {
-    return startApp(false, type, main, instances, true);
+  protected String startApp(String main, boolean await) throws Exception {
+    return startApp(false, main, null, 1, await);
   }
 
-  protected String startApp(boolean worker, VerticleType type, String main) throws Exception {
-    return startApp(worker, type, main, true);
+  protected String startApp(String main, int instances) throws Exception {
+    return startApp(false, main, null, instances, true);
   }
 
-  protected String startApp(boolean worker, VerticleType type, String main, boolean await) throws Exception {
-    return startApp(worker, type, main, 1, await);
+  protected String startApp(boolean worker, String main) throws Exception {
+    return startApp(worker, main, true);
   }
 
-  protected String startApp(boolean worker, VerticleType type, String main, int instances) throws Exception {
-    return startApp(worker, type, main, instances, true);
+  protected String startApp(boolean worker, String main, JsonObject config) throws Exception {
+    return startApp(worker, main, config, 1, true);
   }
 
-  protected String startApp(boolean worker, VerticleType type, String main, int instances, boolean await) throws Exception {
+  protected String startApp(boolean worker, String main, boolean await) throws Exception {
+    return startApp(worker, main, null, 1, await);
+  }
+
+  protected String startApp(boolean worker, String main, int instances) throws Exception {
+    return startApp(worker, main, null, instances, true);
+  }
+
+  protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
     String appName = UUID.randomUUID().toString();
 
-    URL url = null;
-    if (type == VerticleType.JAVA) {
+    URL url;
+    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy")) {
+      url = getClass().getClassLoader().getResource(main);
+    } else {
       String classDir = main.replace('.', '/') + ".class";
       url = getClass().getClassLoader().getResource(classDir);
       String surl = url.toString();
       String surlroot = surl.substring(0, surl.length() - classDir.length());
       url = new URL(surlroot);
-    } else if (type == VerticleType.JS) {
-      url = getClass().getClassLoader().getResource(main);
-    } else if (type == VerticleType.RUBY) {
-      url = getClass().getClassLoader().getResource(main);
-    } else if (type == VerticleType.GROOVY) {
-      url = getClass().getClassLoader().getResource(main);
     }
 
     if (url == null) {
-      throw new IllegalArgumentException("Can't find main: " + main);
+      throw new IllegalArgumentException("Cannot find verticle: " + main);
     }
 
     final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -209,7 +212,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    appManager.deploy(worker, type, appName, main, new URL[] { url }, instances, doneHandler);
+    appManager.deploy(worker, appName, main, config, url.getPath(), instances, doneHandler);
 
     startedApps.add(appName);
 

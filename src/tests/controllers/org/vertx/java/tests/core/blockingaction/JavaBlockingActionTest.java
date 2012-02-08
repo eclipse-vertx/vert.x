@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.blockingaction;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.blockingaction.TestClient;
 
@@ -22,7 +21,7 @@ public class JavaBlockingActionTest extends TestBase {
 
   @Test
   public void testBlockingAction() throws Exception {
-    startApp(VerticleType.JAVA, TestClient.class.getName());
+    startApp(TestClient.class.getName());
     startTest(getMethodName());
   }
 

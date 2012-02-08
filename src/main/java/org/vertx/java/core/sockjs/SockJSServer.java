@@ -71,7 +71,6 @@ public class SockJSServer {
    * @param httpServer - you must pass in an HttpServer instance
    */
   public SockJSServer(HttpServer httpServer) {
-
     Handler<HttpServerRequest> prevHandler = httpServer.requestHandler();
     final Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
 

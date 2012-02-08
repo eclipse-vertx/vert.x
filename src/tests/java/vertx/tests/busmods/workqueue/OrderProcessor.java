@@ -24,7 +24,7 @@ public class OrderProcessor implements Verticle, Handler<Message<JsonObject>> {
   public void start() throws Exception {
     eb.registerHandler(address, this);
     JsonObject msg = new JsonObject().putString("processor", address);
-    eb.send("orderQueue.register", msg);
+    eb.send("test.orderQueue.register", msg);
     tu.appReady();
   }
 
@@ -33,7 +33,7 @@ public class OrderProcessor implements Verticle, Handler<Message<JsonObject>> {
   public void stop() throws Exception {
 
     JsonObject msg = new JsonObject().putString("processor", address);
-    eb.send("orderQueue.unregister", msg);
+    eb.send("test.orderQueue.unregister", msg);
 
     eb.unregisterHandler(address, this);
 

@@ -1,7 +1,6 @@
 package org.vertx.java.tests.busmods.worker;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.busmods.worker.TestClient;
 import vertx.tests.busmods.worker.TestWorker;
@@ -24,8 +23,8 @@ public class JavaWorkerTest extends TestBase {
 
   @Test
   public void testWorker() throws Exception {
-    startApp(VerticleType.JAVA, TestClient.class.getName());
-    startApp(true, VerticleType.JAVA, TestWorker.class.getName());
+    startApp(TestClient.class.getName());
+    startApp(true, TestWorker.class.getName());
     startTest(getMethodName());
   }
 

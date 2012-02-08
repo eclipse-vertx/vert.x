@@ -216,9 +216,21 @@ function deleteAll() {
 
 
 tu.registerTests(this);
-tu.appReady();
+
+var persistorConfig = {address: 'test.persistor', 'db_name' : 'test_db'}
+var authMgrConfig = {address: 'test.authMgr', 'persistor_address' : 'test.persistor', 'user_collection': 'users'}
+var authMgrID = null
+var persistorID = vertx.deployWorkerVerticle('busmods/persistor.js', persistorConfig, 1, function() {
+  authMgrID = vertx.deployVerticle('busmods/auth_mgr.js', authMgrConfig, 1, function() {
+    tu.appReady();
+  });
+});
 
 function vertxStop() {
   tu.unregisterAll();
-  tu.appStopped();
+  vertx.undeployVerticle(authMgrID, function() {
+    vertx.undeployVerticle(persistorID, function() {
+      tu.appStopped();
+    });
+  });
 }

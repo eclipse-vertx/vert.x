@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.eventbus;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
@@ -24,9 +23,9 @@ public class JavaEventBusTest extends TestBase {
     super.setUp();
     SharedData.instance.getSet("addresses").clear();
     for (int i = 0; i < numPeers; i++) {
-      startApp(VerticleType.JAVA, getPeerClassName());
+      startApp(getPeerClassName());
     }
-    startApp(VerticleType.JAVA, getClientClassName());
+    startApp(getClientClassName());
   }
 
   protected String getPeerClassName() {

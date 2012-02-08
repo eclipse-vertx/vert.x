@@ -1,6 +1,5 @@
 package org.vertx.java.tests.core.timer;
 
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +10,7 @@ public class RubyTimerTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.RUBY, "core/timer/test_client.rb");
+    startApp("core/timer/test_client.rb");
   }
 
   @Override

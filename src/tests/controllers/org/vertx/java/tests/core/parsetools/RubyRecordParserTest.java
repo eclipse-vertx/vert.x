@@ -1,6 +1,5 @@
 package org.vertx.java.tests.core.parsetools;
 
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +10,7 @@ public class RubyRecordParserTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.RUBY, "core/parsetools/test_client.rb");
+    startApp("core/parsetools/test_client.rb");
   }
 
   @Override

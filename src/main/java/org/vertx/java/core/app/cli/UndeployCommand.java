@@ -17,6 +17,7 @@ public class UndeployCommand extends VertxCommand {
   }
 
   public String execute(VerticleManager appMgr) throws Exception {
-    return appMgr.undeploy(name, null);
+    appMgr.undeploy(name, null);
+    return "";
   }
 }

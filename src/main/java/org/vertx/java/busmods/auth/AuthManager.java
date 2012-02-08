@@ -19,17 +19,16 @@ public class AuthManager extends BusModBase implements Verticle {
 
   private static final Logger log = Logger.getLogger(AuthManager.class);
 
-  private static final long DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 mins
-
   private Handler<Message<JsonObject>> loginHandler;
   private Handler<Message<JsonObject>> logoutHandler;
   private Handler<Message<JsonObject>> validateHandler;
 
-  private final String userCollection;
-  private final String persistorAddress;
   private final Map<String, String> sessions = new HashMap<>();
   private final Map<String, LoginInfo> logins = new HashMap<>();
-  private final long sessionTimeout;
+
+  private String userCollection;
+  private String persistorAddress;
+  private long sessionTimeout;
 
   private static final class LoginInfo {
     final long timerID;
@@ -41,19 +40,26 @@ public class AuthManager extends BusModBase implements Verticle {
     }
   }
 
-  public AuthManager(final String address, final String userCollection, final String persistorAddress) {
-    this(address, userCollection, persistorAddress, DEFAULT_SESSION_TIMEOUT);
-  }
-
-  public AuthManager(final String address, final String userCollection, final String persistorAddress,
-                     final long sessionTimeout) {
-    super(address, false);
-    this.userCollection = userCollection;
-    this.persistorAddress = persistorAddress;
-    this.sessionTimeout = sessionTimeout;
+  public AuthManager() {
+    super(false);
   }
 
   public void start() {
+    super.start();
+
+    this.userCollection = super.getMandatoryStringConfig("user_collection");
+    this.persistorAddress = super.getMandatoryStringConfig("persistor_address");
+    Number timeout = config.getNumber("session_timeout");
+    if (timeout != null) {
+      if (timeout instanceof Long) {
+        this.sessionTimeout = (Long)timeout;
+      } else if (timeout instanceof Integer) {
+        this.sessionTimeout = (Integer)timeout;
+      }
+    } else {
+      this.sessionTimeout = 30 * 60 * 1000;
+    }
+
     loginHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         doLogin(message);

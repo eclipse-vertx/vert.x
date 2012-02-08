@@ -21,6 +21,8 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
+import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.Map;
@@ -133,7 +135,64 @@ class VertxImpl implements VertxInternal {
     }, false);
   }
 
+  public String deployWorkerVerticle(String main) {
+    return deployWorkerVerticle(main, null, 1);
+  }
 
+  public String deployWorkerVerticle(String main, int instances) {
+    return deployWorkerVerticle(main, null, 1);
+  }
+
+  public String deployWorkerVerticle(String main, JsonObject config) {
+    return deployWorkerVerticle(main, config, 1);
+  }
+
+  public String deployWorkerVerticle(String main, JsonObject config, int instances) {
+    return deployWorkerVerticle(main, config, instances, null);
+  }
+
+  public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
+    return VerticleManager.instance.deploy(true, null, main, config, ".", instances, doneHandler);
+  }
+
+  public String deployVerticle(String main) {
+    return deployVerticle(main, null, 1);
+  }
+
+  public String deployVerticle(String main, int instances) {
+    return deployVerticle(main, null, 1);
+  }
+
+  public String deployVerticle(String main, JsonObject config) {
+    return deployVerticle(main, config, 1);
+  }
+
+  public String deployVerticle(String main, JsonObject config, int instances) {
+    return deployVerticle(main, config, instances, null);
+  }
+
+  public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
+    String currPath = VerticleManager.instance.getAppPath();
+    return VerticleManager.instance.deploy(false, null, main, config, currPath, instances, doneHandler);
+  }
+
+  public void undeployVerticle(String deploymentID) {
+    undeployVerticle(deploymentID, null);
+  }
+
+  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
+    VerticleManager.instance.undeploy(deploymentID, doneHandler);
+  }
+
+  public void exit() {
+    VerticleManager vm  = VerticleManager.instance;
+    String appName = vm.getAppName();
+    vm.undeploy(appName, null);
+  }
+
+  public JsonObject getConfig() {
+    return VerticleManager.instance.getConfig();
+  }
 
   // Internal API -----------------------------------------------------------------------------------------
 

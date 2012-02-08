@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.filesystem;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.logging.Logger;
@@ -24,7 +23,7 @@ public class JavaFileSystemTest extends TestBase {
   protected void setUp() throws Exception {
     super.setUp();
     params = SharedData.instance.getMap("params");
-    startApp(VerticleType.JAVA, TestClient.class.getName());
+    startApp(TestClient.class.getName());
   }
 
   @Override

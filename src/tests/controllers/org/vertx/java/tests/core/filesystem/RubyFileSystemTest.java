@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.filesystem;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
 
@@ -15,7 +14,7 @@ public class RubyFileSystemTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.RUBY, "core/filesystem/test_client.rb");
+    startApp("core/filesystem/test_client.rb");
   }
 
   @Override
