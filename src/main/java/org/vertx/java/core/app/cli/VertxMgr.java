@@ -5,7 +5,6 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.Args;
 import org.vertx.java.core.app.VerticleManager;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
@@ -15,10 +14,6 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,7 +58,6 @@ public class VertxMgr {
         if (dc == null) {
           return;
         }
-        System.out.println("Deploying application name: " + dc.name + " instances: " + dc.instances);
         cmd = dc;
       } else if (sargs[0].equalsIgnoreCase("undeploy")) {
         String name = sargs[1];
@@ -89,7 +83,7 @@ public class VertxMgr {
       DeployCommand dc = createDeployCommand(main, args, "run");
       if (dc != null) {
         try {
-          mgr.deploy(dc.worker, dc.type, dc.name, dc.main, dc.urls, dc.instances, null);
+          mgr.deploy(dc.worker, dc.name, dc.main, null, dc.path, dc.instances, null);
           mgr.block();
         } catch (Exception e) {
           System.err.println("Failed to deploy application");
@@ -119,29 +113,12 @@ public class VertxMgr {
     boolean worker = args.map.get("-worker") != null;
 
     String name = args.map.get("-name");
-    if (name == null) {
-      name = "app-" + UUID.randomUUID().toString();
-    }
 
     String cp = args.map.get("-cp");
-    if (cp == null) {
-      cp = "."; // Defaults to current directory
-    }
 
     if (main == null) {
       displaySyntax();
       return null;
-    }
-
-    //Infer the app type
-
-    VerticleType type = VerticleType.JAVA;
-    if (main.endsWith(".js")) {
-      type = VerticleType.JS;
-    } else if (main.endsWith(".rb")) {
-      type = VerticleType.RUBY;
-    } else if (main.endsWith(".groovy")) {
-      type = VerticleType.GROOVY;
     }
 
     String sinstances = args.map.get("-instances");
@@ -163,31 +140,7 @@ public class VertxMgr {
       instances = 1;
     }
 
-    String[] parts;
-    if (cp.contains(":")) {
-      parts = cp.split(":");
-    } else {
-      parts = new String[] { cp };
-    }
-    int index = 0;
-    URL[] urls = new URL[parts.length];
-    for (String part: parts) {
-      File file = new File(part);
-      part = file.getAbsolutePath();
-      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
-        //It's a directory - need to add trailing slash
-        part += "/";
-      }
-      URL url;
-      try {
-        url = new URL("file://" + part);
-      } catch (MalformedURLException e) {
-        System.err.println("Invalid directory/jar: " + part);
-        return null;
-      }
-      urls[index++] = url;
-    }
-    return new DeployCommand(worker, type, name, main, urls, instances);
+    return new DeployCommand(worker, name, main, cp, instances);
   }
 
 

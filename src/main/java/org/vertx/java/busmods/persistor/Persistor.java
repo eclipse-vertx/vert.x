@@ -26,28 +26,26 @@ public class Persistor extends BusModBase implements Verticle, Handler<Message<J
 
   private static final Logger log = Logger.getLogger(Persistor.class);
 
-  private final String hostName;
-  private final int port;
-  private final String dbName;
-
-  public Persistor(String address, String dbName) {
-    this(address, dbName, "localhost", 27017);
-  }
-
-  public Persistor(String address, String dbName, String hostName, int port) {
-    super(address, true);
-    this.hostName = hostName;
-    this.port = port;
-    this.dbName = dbName;
-  }
+  private String host;
+  private int port;
+  private String dbName;
 
   private Mongo mongo;
   private DB db;
 
+  public Persistor() {
+    super(true); // Persistor must be run as a worker
+  }
+
   public void start() {
+    super.start();
+
+    host = super.getOptionalStringConfig("host", "localhost");
+    port = super.getOptionalIntConfig("port", 27017);
+    dbName = super.getMandatoryStringConfig("db_name");
 
     try {
-      mongo = new Mongo(hostName, port);
+      mongo = new Mongo(host, port);
       db = mongo.getDB(dbName);
       eb.registerHandler(address, this);
     } catch (UnknownHostException e) {

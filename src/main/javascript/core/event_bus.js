@@ -117,22 +117,22 @@ if (!vertx.EventBus) {
     };
 
   })();
-}
 
-vertx.SockJSBridgeHandler = function() {
-  var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
-  var server = new org.vertx.java.core.Handler({
-    handle: function(sock) {
-      jHandler.handle(sock);
+  vertx.SockJSBridgeHandler = function() {
+    var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
+    var server = new org.vertx.java.core.Handler({
+      handle: function(sock) {
+        jHandler.handle(sock);
+      }
+    });
+    server.addPermitted = function() {
+      for (var i = 0; i < arguments.length; i++) {
+        var match = arguments[i];
+        var json_str = JSON.stringify(match);
+        var jJson = new org.vertx.java.core.json.JsonObject(json_str);
+        jHandler.addPermitted(jJson);
+      }
     }
-  });
-  server.addPermitted = function() {
-    for (var i = 0; i < arguments.length; i++) {
-      var match = arguments[i];
-      var json_str = JSON.stringify(match);
-      var jJson = new org.vertx.java.core.json.JsonObject(json_str);
-      jHandler.addPermitted(jJson);
-    }
+    return server;
   }
-  return server;
 }

@@ -178,8 +178,8 @@ module Vertx
 
     def add_permitted(*permitted)
       permitted.each do |match|
-        json_str = JSON.generate(match);
-        j_json = new org.vertx.java.core.json.JsonObject(json_str);
+        json_str = JSON.generate(match)
+        j_json = new org.vertx.java.core.json.JsonObject(json_str)
         addPermitted(j_json);
       end
     end

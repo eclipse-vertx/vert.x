@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.newtests.TestBase;
 
@@ -15,7 +14,7 @@ public class JavaScriptNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JS, "core/net/test_client.js");
+    startApp("core/net/test_client.js");
   }
 
   @Override
@@ -25,7 +24,7 @@ public class JavaScriptNetTest extends TestBase {
 
   @Test
   public void test1() throws Exception {
-    startApp(VerticleType.JS, "core/net/echo_server.js");
+    startApp("core/net/echo_server.js");
     startTest(getMethodName());
   }
 

@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.sockjs;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.sockjs.TestClient;
 
@@ -13,7 +12,7 @@ public class JavaSockJSTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JAVA, TestClient.class.getName());
+    startApp(TestClient.class.getName());
   }
 
   @Override

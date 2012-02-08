@@ -1,6 +1,5 @@
 package org.vertx.java.tests.redis;
 
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +10,7 @@ public class RubyRedisTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.RUBY, "redis/test_client.rb");
+    startApp("redis/test_client.rb");
   }
 
   @Override

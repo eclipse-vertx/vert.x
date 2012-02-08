@@ -16,6 +16,8 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.json.JsonObject;
+
 /**
  *
  *
@@ -60,4 +62,32 @@ public interface Vertx {
    * @return true if current thread is an event loop thread
    */
   boolean isEventLoop();
+
+
+  String deployWorkerVerticle(String main);
+
+  String deployWorkerVerticle(String main, int instances);
+
+  String deployWorkerVerticle(String main, JsonObject config);
+
+  String deployWorkerVerticle(String main, JsonObject config, int instances);
+
+  String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler);
+
+
+  String deployVerticle(String main);
+
+  String deployVerticle(String main, int instances);
+
+  String deployVerticle(String main, JsonObject config);
+
+  String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler);
+
+  void undeployVerticle(String deploymentID);
+
+  void undeployVerticle(String deploymentID, Handler<Void> doneHandler);
+
+  void exit();
+
+  JsonObject getConfig();
 }

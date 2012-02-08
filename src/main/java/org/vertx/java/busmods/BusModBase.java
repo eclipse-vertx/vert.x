@@ -14,14 +14,22 @@ public abstract class BusModBase {
 
   private static final Logger log = Logger.getLogger(BusModBase.class);
 
-  protected final String address;
   protected final EventBus eb = EventBus.instance;
+  protected JsonObject config;
+  protected String address;
 
-  protected BusModBase(final String address, final boolean worker) {
+  protected BusModBase(boolean worker) {
     if (worker && Vertx.instance.isEventLoop()) {
       throw new IllegalStateException("Worker busmod can only be created inside a worker application (user -worker when deploying");
     }
-    this.address = address;
+  }
+
+  protected void start() {
+    config = Vertx.instance.getConfig();
+    address = config.getString("address");
+    if (address == null) {
+      throw new IllegalArgumentException("address must be specified in config for busmod");
+    }
   }
 
   protected void sendOK(Message<JsonObject> message) {
@@ -68,5 +76,33 @@ public abstract class BusModBase {
       sendError(message, field + " must be specified");
     }
     return val;
+  }
+
+  protected boolean getOptionalBooleanConfig(String fieldName, boolean defaultValue) {
+    Boolean b = config.getBoolean(fieldName);
+    return b == null ? defaultValue : b.booleanValue();
+  }
+
+  protected String getOptionalStringConfig(String fieldName, String defaultValue) {
+    String b = config.getString(fieldName);
+    return b == null ? defaultValue : b;
+  }
+
+  protected int getOptionalIntConfig(String fieldName, int defaultValue) {
+    Integer b = (Integer)config.getNumber(fieldName);
+    return b == null ? defaultValue : b.intValue();
+  }
+
+  protected long getOptionalLongConfig(String fieldName, int defaultValue) {
+    Long l = (Long)config.getNumber(fieldName);
+    return l == null ? defaultValue : l.longValue();
+  }
+
+  protected String getMandatoryStringConfig(String fieldName) {
+    String b = config.getString(fieldName);
+    if (b == null) {
+      throw new IllegalArgumentException(fieldName + " must be specified in config for busmod");
+    }
+    return b;
   }
 }

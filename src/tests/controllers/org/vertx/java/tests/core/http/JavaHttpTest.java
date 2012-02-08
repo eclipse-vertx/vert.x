@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.http;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.shareddata.SharedData;
@@ -22,7 +21,7 @@ public class JavaHttpTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JAVA, HttpTestClient.class.getName());
+    startApp(HttpTestClient.class.getName());
   }
 
   @Override
@@ -426,22 +425,22 @@ public class JavaHttpTest extends TestBase {
   }
 
   public void testClientDrainHandler() throws Exception {
-    startApp(VerticleType.JAVA, PausingServer.class.getName());
+    startApp(PausingServer.class.getName());
     startTest(getMethodName());
   }
 
   public void testServerDrainHandler() throws Exception {
-    startApp(VerticleType.JAVA, DrainingServer.class.getName());
+    startApp(DrainingServer.class.getName());
     startTest(getMethodName());
   }
 
   public void testPooling() throws Exception {
-    startApp(VerticleType.JAVA, CountServer.class.getName());
+    startApp(CountServer.class.getName());
     startTest(getMethodName());
   }
 
   public void testPoolingNoKeepAlive() throws Exception {
-    startApp(VerticleType.JAVA, CountServer.class.getName());
+    startApp(CountServer.class.getName());
     startTest(getMethodName());
   }
 
@@ -495,7 +494,7 @@ public class JavaHttpTest extends TestBase {
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
     SharedData.instance.getMap("TLSTest").put("params", params.serialize());
-    startApp(VerticleType.JAVA, TLSServer.class.getName());
+    startApp(TLSServer.class.getName());
     startTest(testName);
   }
 
@@ -575,7 +574,7 @@ public class JavaHttpTest extends TestBase {
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
-        appNames[i] = startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), 1);
+        appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
       SharedData.instance.getSet("requests").clear();
@@ -604,10 +603,10 @@ public class JavaHttpTest extends TestBase {
     //Now start some more
 
     if (multipleInstances) {
-      startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+      startApp(InstanceCheckServer.class.getName(), numInstances);
     } else {
       for (int i = 0; i < numInstances; i++) {
-        startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), 1);
+        startApp(InstanceCheckServer.class.getName(), 1);
       }
     }
 

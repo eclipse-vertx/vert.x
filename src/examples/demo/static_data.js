@@ -1,5 +1,7 @@
 load('vertx.js');
 
+log.println("inserting static data");
+
 var eb = vertx.EventBus;
 
 var pa = 'demo.persistor';
@@ -59,4 +61,6 @@ eb.send(pa, {
     username: 'tim',
     password: 'password'
   }
-});
+}, function() { log.println("ALl inserted!")});
+
+log.println("inserted static data");

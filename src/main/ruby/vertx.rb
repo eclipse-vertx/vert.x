@@ -27,6 +27,7 @@ require 'core/composition'
 require 'core/logger'
 require 'core/event_bus'
 require 'core/sock_js'
+require 'core/deploy'
 
 require 'addons/redis'
 

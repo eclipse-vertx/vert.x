@@ -1,9 +1,9 @@
-var vertx = vertx || {};
+// This is just a wrapper around the Java work queue
 
-vertx.WorkQueue = function(address, timeout, persistorAddress, collection) {
-  if (typeof persistorAddress === 'undefined') {
-    return new org.vertx.java.busmods.workqueue.WorkQueue(address, timeout);
-  } else {
-    return new org.vertx.java.busmods.workqueue.WorkQueue(address, timeout, persistorAddress, collection);
-  }
+var j_q = new org.vertx.java.busmods.workqueue.WorkQueue();
+
+j_q.start();
+
+function vertxStop() {
+  j_q.stop();
 }

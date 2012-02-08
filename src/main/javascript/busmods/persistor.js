@@ -1,9 +1,9 @@
-var vertx = vertx || {};
+// This is just a wrapper around the Java persistor
 
-vertx.Persistor = function(address, dbName, host, port) {
-  if (typeof host === 'undefined') {
-    return new org.vertx.java.busmods.persistor.Persistor(address, dbName);
-  } else {
-    return new org.vertx.java.busmods.persistor.Persistor(address, dbName, host, port);
-  }
+var j_pers = new org.vertx.java.busmods.persistor.Persistor();
+
+j_pers.start();
+
+function vertxStop() {
+  j_pers.stop();
 }

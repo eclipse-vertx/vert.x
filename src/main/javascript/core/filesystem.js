@@ -1,3 +1,5 @@
 var vertx = vertx || {};
 
-vertx.FileSystem = vertx.FileSystem || org.vertx.java.core.file.FileSystem.instance;
+if (!vertx.FileSystem) {
+  vertx.FileSystem = vertx.FileSystem || org.vertx.java.core.file.FileSystem.instance;
+}

@@ -20,29 +20,28 @@ public class WorkQueue extends BusModBase implements Verticle {
 
   private static final Logger log = Logger.getLogger(WorkQueue.class);
 
-  private final long processTimeout;
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
   private final Queue<JsonObject> messages = new LinkedList<>();
   private Handler<Message<JsonObject>> registerHandler;
   private Handler<Message<JsonObject>> unregisterHandler;
   private Handler<Message<JsonObject>> sendHandler;
+
+  private long processTimeout;
   private String persistorAddress;
   private String collection;
 
-  public WorkQueue(final String address, long processTimeout) {
-    super(address, false);
-    this.processTimeout = processTimeout;
-  }
-
-  public WorkQueue(final String address, long processTimeout, String persistorAddress,
-                   String collection) {
-    this(address, processTimeout);
-    this.persistorAddress = persistorAddress;
-    this.collection = collection;
+  public WorkQueue() {
+    super(false);
   }
 
   public void start() {
+    super.start();
+
+    processTimeout = super.getOptionalLongConfig("process_timeout", 5 * 60 * 1000);
+    persistorAddress = super.getOptionalStringConfig("persistor_address", null);
+    collection = super.getOptionalStringConfig("collection", null);
+
     registerHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         doRegister(message);

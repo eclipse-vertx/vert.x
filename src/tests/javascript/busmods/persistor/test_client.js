@@ -5,8 +5,6 @@ var tu = new TestUtils();
 
 var eb = vertx.EventBus;
 
-deleteAll();
-
 function deleteAll() {
   eb.send('test.persistor', {
     collection: 'testcoll',
@@ -202,6 +200,9 @@ function testDelete() {
       name: 'tim'
     }
   }, function(reply) {
+
+    log.println("got reply " + JSON.stringify(reply));
+
     tu.azzert(reply.status === 'ok');
     tu.azzert(reply.number === 1);
 
@@ -221,9 +222,15 @@ function testDelete() {
 }
 
 tu.registerTests(this);
-tu.appReady();
+var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
+var persistorID = vertx.deployWorkerVerticle('busmods/persistor.js', persistorConfig, 1, function() {
+  deleteAll();
+  tu.appReady();
+});
 
 function vertxStop() {
   tu.unregisterAll();
-  tu.appStopped();
+  vertx.undeployVerticle(persistorID, function() {
+    tu.appStopped();
+  });
 }

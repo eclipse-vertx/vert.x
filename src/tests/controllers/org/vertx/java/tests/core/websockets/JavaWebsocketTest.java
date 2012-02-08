@@ -1,7 +1,6 @@
 package org.vertx.java.tests.core.websockets;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
@@ -18,7 +17,7 @@ public class JavaWebsocketTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.JAVA, WebsocketsTestClient.class.getName());
+    startApp(WebsocketsTestClient.class.getName());
   }
 
   @Override
@@ -137,7 +136,7 @@ public class JavaWebsocketTest extends TestBase {
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
-        appNames[i] = startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), 1);
+        appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
       SharedData.instance.getSet("connections").clear();
@@ -166,10 +165,10 @@ public class JavaWebsocketTest extends TestBase {
     //Now start some more
 
     if (multipleInstances) {
-      startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+      startApp(InstanceCheckServer.class.getName(), numInstances);
     } else {
       for (int i = 0; i < numInstances; i++) {
-        startApp(VerticleType.JAVA, InstanceCheckServer.class.getName(), 1);
+        startApp(InstanceCheckServer.class.getName(), 1);
       }
     }
 

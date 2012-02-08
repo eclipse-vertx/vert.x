@@ -1,7 +1,6 @@
 package org.vertx.java.tests.busmods.persistor;
 
 import org.junit.Test;
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -14,8 +13,7 @@ public class JavaScriptPersistorTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(true, VerticleType.JS, "busmods/persistor/test_persistor.js");
-    startApp(VerticleType.JS, "busmods/persistor/test_client.js");
+    startApp("busmods/persistor/test_client.js");
   }
 
   @Override

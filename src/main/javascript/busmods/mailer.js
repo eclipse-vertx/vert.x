@@ -1,14 +1,9 @@
-var vertx = vertx || {};
+// This is just a wrapper around the Java mailer
 
-vertx.Mailer = function(address, host, port, ssl, auth, username, password) {
+var j_mailer = new org.vertx.java.busmods.mailer.Mailer();
 
-  if (typeof ssl === 'undefined') {
-    if (typeof port == 'undefined') {
-      return new org.vertx.java.busmods.mailer.Mailer(address, host);
-    } else {
-      return new org.vertx.java.busmods.mailer.Mailer(address, host, port);
-    }
-  } else {
-    return new org.vertx.java.busmods.mailer.Mailer(address, host, port, ssl, auth, username, password);
-  }
+j_mailer.start();
+
+function vertxStop() {
+  j_mailer.stop();
 }

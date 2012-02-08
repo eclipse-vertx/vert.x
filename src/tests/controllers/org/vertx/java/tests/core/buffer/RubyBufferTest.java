@@ -1,6 +1,5 @@
 package org.vertx.java.tests.core.buffer;
 
-import org.vertx.java.core.app.VerticleType;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -11,7 +10,7 @@ public class RubyBufferTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(VerticleType.RUBY, "core/buffer/test_client.rb");
+    startApp("core/buffer/test_client.rb");
   }
 
   @Override

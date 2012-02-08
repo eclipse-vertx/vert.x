@@ -16,9 +16,10 @@ public class JavaVerticleFactory implements VerticleFactory {
 
     // Sanity check - make sure app class didn't get loaded by the parent or system classloader
     // This might happen if it's been put on the server classpath
+    // Out of the box busmods are ok though
     ClassLoader system = ClassLoader.getSystemClassLoader();
     ClassLoader appCL = clazz.getClassLoader();
-    if (appCL == cl.getParent() || (system != null && appCL == system)) {
+    if (!main.startsWith("org.vertx.java.busmods") && (appCL == cl.getParent() || (system != null && appCL == system))) {
       throw new IllegalStateException("Do not add application classes to the vert.x classpath");
     }
 
