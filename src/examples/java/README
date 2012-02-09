@@ -260,6 +260,15 @@ To run it, open one or more browsers and point them to http://localhost:8080.
 
 Try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
 
+Resource Load
+=============
+
+This example shows how you can access various resources on your classpath from within your verticle.
+
+Run it with
+
+vertx run org.vertx.java.examples.resourceload.ResourceLoadExample -cp "classes:resourceload:resourceload/quux.jar"
+
 
 
 
