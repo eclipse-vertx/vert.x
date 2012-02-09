@@ -1,0 +1,12 @@
+{
+    "name": "tim",
+    "age": 123123,
+    "male": true,
+    "pi": 3.14159,
+    "normal": false,
+    "null-value": null,
+    "nested": {
+        "blah": "wibble"
+    }
+}
+
