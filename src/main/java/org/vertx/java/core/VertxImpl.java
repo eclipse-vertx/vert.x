@@ -25,6 +25,7 @@ import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
+import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -152,7 +153,8 @@ class VertxImpl implements VertxInternal {
   }
 
   public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    return VerticleManager.instance.deploy(true, null, main, config, ".", instances, doneHandler);
+    URL[] currURLs = VerticleManager.instance.getDeploymentURLs();
+    return VerticleManager.instance.deploy(true, null, main, config, currURLs, instances, doneHandler);
   }
 
   public String deployVerticle(String main) {
@@ -172,8 +174,8 @@ class VertxImpl implements VertxInternal {
   }
 
   public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    String currPath = VerticleManager.instance.getDeploymentPath();
-    return VerticleManager.instance.deploy(false, null, main, config, currPath, instances, doneHandler);
+    URL[] currURLs = VerticleManager.instance.getDeploymentURLs();
+    return VerticleManager.instance.deploy(false, null, main, config, currURLs, instances, doneHandler);
   }
 
   public void undeployVerticle(String deploymentID) {

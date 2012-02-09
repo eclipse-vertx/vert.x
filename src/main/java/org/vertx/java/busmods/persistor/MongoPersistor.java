@@ -7,6 +7,7 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
+import org.bson.types.ObjectId;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.Verticle;
@@ -16,15 +17,16 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
 import java.net.UnknownHostException;
+import java.util.UUID;
 
 /**
  * TODO max batch sizes
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Persistor extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
+public class MongoPersistor extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
 
-  private static final Logger log = Logger.getLogger(Persistor.class);
+  private static final Logger log = Logger.getLogger(MongoPersistor.class);
 
   private String host;
   private int port;
@@ -33,7 +35,7 @@ public class Persistor extends BusModBase implements Verticle, Handler<Message<J
   private Mongo mongo;
   private DB db;
 
-  public Persistor() {
+  public MongoPersistor() {
     super(true); // Persistor must be run as a worker
   }
 
@@ -95,9 +97,23 @@ public class Persistor extends BusModBase implements Verticle, Handler<Message<J
     if (doc == null) {
       return;
     }
+    String genID;
+    if (doc.getField("_id") == null) {
+      genID = UUID.randomUUID().toString();
+      doc.putString("_id", genID);
+    } else {
+      genID = null;
+    }
     DBCollection coll = db.getCollection(collection);
-    coll.save(jsonToDBObject(doc));
-    sendOK(message);
+    DBObject obj = jsonToDBObject(doc);
+    coll.save(obj);
+    if (genID != null) {
+      JsonObject reply = new JsonObject();
+      reply.putString("_id", genID);
+      sendOK(message, reply);
+    } else {
+      sendOK(message);
+    }
   }
 
   private void doFind(Message<JsonObject> message) {

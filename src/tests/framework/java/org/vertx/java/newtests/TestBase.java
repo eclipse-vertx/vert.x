@@ -209,7 +209,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    String deploymentName = verticleManager.deploy(worker, null, main, config, url.getPath(), instances, doneHandler);
+    String deploymentName = verticleManager.deploy(worker, null, main, config, new URL[] {url}, instances, doneHandler);
 
     startedApps.add(deploymentName);
 

@@ -55,7 +55,7 @@ var persistorConfig = {address: 'test.persistor', 'db_name' : 'test_db'}
 var authMgrConfig = {address: 'test.authMgr', 'persistor_address' : 'test.persistor', 'user_collection': 'users',
                      session_timeout: 500}
 var authMgrID = null
-var persistorID = vertx.deployWorkerVerticle('busmods/persistor.js', persistorConfig, 1, function() {
+var persistorID = vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConfig, 1, function() {
   authMgrID = vertx.deployWorkerVerticle('busmods/auth_mgr.js', authMgrConfig, 1, function() {
     tu.appReady();
   });

@@ -39,7 +39,7 @@ if (!vertx.deployVerticle) {
 
     vertx.getConfig = function() {
       var j_conf = org.vertx.java.core.Vertx.instance.getConfig();
-      return JSON.parse(j_conf.encode());
+      return j_conf == null ? null : JSON.parse(j_conf.encode());
     }
 
   })();

@@ -41,14 +41,14 @@ public class VerticleManager {
 
   private static class Deployment {
     final JsonObject config;
-    final String path;
+    final URL[] urls;
     final List<VerticleHolder> verticles = new ArrayList<>();
     final List<String> childDeployments = new ArrayList<>();
     final String parentDeploymentName;
 
-    private Deployment(JsonObject config, String path, String parentDeploymentName) {
+    private Deployment(JsonObject config, URL[] urls, String parentDeploymentName) {
       this.config = config;
-      this.path = path;
+      this.urls = urls;
       this.parentDeploymentName = parentDeploymentName;
     }
   }
@@ -87,19 +87,19 @@ public class VerticleManager {
     return contextID == null ? null : contextMap.get(contextID);
   }
 
-  public String getDeploymentPath() {
+  public URL[] getDeploymentURLs() {
     String deploymentName = getDeploymentName();
     if (deploymentName != null) {
       Deployment deployment = deployments.get(deploymentName);
       if (deployment != null) {
-        return deployment.path;
+        return deployment.urls;
       }
     }
     return null;
   }
 
   public synchronized String deploy(boolean worker, String name, final String main,
-                                    final JsonObject config, final String thePath,
+                                    final JsonObject config, final URL[] urls,
                                     int instances,
                                     final Handler<Void> doneHandler)
   {
@@ -107,7 +107,7 @@ public class VerticleManager {
       throw new IllegalStateException("There is already a deployment with name: " + name);
     }
 
-    final String path = thePath == null ? "." : thePath;
+    //final String path = thePath == null ? "." : thePath;
 
     //Infer the main type
 
@@ -122,29 +122,29 @@ public class VerticleManager {
 
     // Convert to URL[]
 
-    String[] parts;
-    if (path.contains(":")) {
-      parts = path.split(":");
-    } else {
-      parts = new String[] { path };
-    }
-    int index = 0;
-    final URL[] urls = new URL[parts.length];
-    for (String part: parts) {
-      File file = new File(part);
-      part = file.getAbsolutePath();
-      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
-        //It's a directory - need to add trailing slash
-        part += "/";
-      }
-      URL url;
-      try {
-        url = new URL("file://" + part);
-      } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid path: " + path) ;
-      }
-      urls[index++] = url;
-    }
+//    String[] parts;
+//    if (path.contains(":")) {
+//      parts = path.split(":");
+//    } else {
+//      parts = new String[] { path };
+//    }
+//    int index = 0;
+//    final URL[] urls = new URL[parts.length];
+//    for (String part: parts) {
+//      File file = new File(part);
+//      part = file.getAbsolutePath();
+//      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
+//        //It's a directory - need to add trailing slash
+//        part += "/";
+//      }
+//      URL url;
+//      try {
+//        url = new URL("file://" + part);
+//      } catch (MalformedURLException e) {
+//        throw new IllegalArgumentException("Invalid path: " + path) ;
+//      }
+//      urls[index++] = url;
+//    }
 
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
 
@@ -186,7 +186,7 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    Deployment deployment = new Deployment(config == null ? null : config.copy(), path, parentDeploymentName);
+    Deployment deployment = new Deployment(config == null ? null : config.copy(), urls, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);

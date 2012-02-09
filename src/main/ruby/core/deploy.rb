@@ -34,6 +34,12 @@ module Vertx
     org.vertx.java.core.Vertx.instance.undeployVerticle(id)
   end
 
+  def Vertx.getConfig
+    j_conf = org.vertx.java.core.Vertx.instance.getConfig
+    j_conf = JSON.parse(j_conf.encode) if j_conf
+    j_conf
+  end
+
   def Vertx.exit
     org.vertx.java.core.Vertx.instance.exit
   end
