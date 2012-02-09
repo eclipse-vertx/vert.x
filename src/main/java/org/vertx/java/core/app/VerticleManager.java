@@ -95,7 +95,7 @@ public class VerticleManager {
     log.debug("Deploying name : " + name  + " main: " + main +
              " instances: " + instances);
 
-    final String path = thePath == null ? null : thePath;
+    final String path = thePath == null ? "." : thePath;
 
     //Infer the app type
 
