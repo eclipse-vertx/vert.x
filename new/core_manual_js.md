@@ -74,6 +74,109 @@ Java is not a scripting language so vert.x can't just *execute the class* in ord
       }
     }
     
+# Getting Configuration in a Verticle
+
+If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle using the `vertx.getConfiguration` function. For example:
+
+    var config = vertx.getConfig();
+    
+    // Do something with config
+    
+The config returned is a JSON object.    
+   
+# Deploying and Undeploying Verticles Programmatically
+
+You can also deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle. 
+
+
+## Deploying a simple verticle
+
+To deploy a verticle programmatically call the function `vertx.deployVerticle`. The return value of `vertx.deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+
+To deploy a single instance of a verticle :
+
+    vertx.deployVerticle('my_verticle.js');    
+    
+## Passing configuration to a verticle programmatically   
+  
+JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `vertx.getConfig` function. For example:
+
+    var config = { name: 'foo', age: 234 };
+    vertx.deployVerticle('my_verticle.js', config); 
+            
+Then, in the `my_verticle.js` you can access the config via `vertx.getConfig` as previously explained.
+    
+## Using a Verticle to co-ordinate loading of an Application
+
+If you have an appplication that is composed of multiple verticles that all need to be started at startup, then you can use another verticle that maintains the applicaton configuration and starts all the other verticles as your application starter. 
+
+For example, you could create a verticle `app.js` as follows:
+
+    // Application config
+    
+    var appConfig = {
+        verticle1Config: {
+            // Config for verticle1
+        },
+        verticle2Config: {
+            // Config for verticle2
+        }, 
+        verticle3Config: {
+            // Config for verticle3
+        },
+        verticle4Config: {
+            // Config for verticle4
+        },
+        verticle5Config: {
+            // Config for verticle5
+        }  
+    }  
+    
+    // Start the verticles that make up the app  
+    
+    vertx.deployVerticle("verticle1.js", appConfig.verticle1Config);
+    vertx.deployVerticle("verticle2.js", appConfig.verticle2Config, 5);
+    vertx.deployVerticle("verticle3.js", appConfig.verticle3Config);
+    vertx.deployWorkerVerticle("verticle4.js", appConfig.verticle4Config);
+    vertx.deployWorkerVerticle("verticle5.js", appConfig.verticle5Config, 10);
+        
+        
+Then you can start your entire application by simply running:
+
+    vertx run app.js
+    
+or
+    vertx deploy app.js
+            
+## Specifying number of instances
+
+By default only one instance of the verticle is deployed. If you want to specify more than one instance you can specify the number of instances as follows:
+
+    vertx.deployVerticle('my_verticle.js', null, 10);   
+  
+The above example would deploy 10 instances.
+
+## Getting Notified when Deployment is complete
+
+Actually deploying the verticle is asynchronous and might not occur until some time after the call to `deployVerticle` has returned. If you want to be notified when the verticle has actually been deployed, you can pass a handler as the final argument to `deployVerticle`:
+
+    vertx.deployVerticle('my_verticle.js', null, 10, function() {
+        log.println("It's been deployed!");
+    });  
+    
+## Deploying Worker Verticles
+
+The `vertx.deployVerticle` method deploys standard (non worker) verticles. If you want to deploy worker verticles use the `vertx.deployWorkerVerticle` function. This function takes the same parameters as `vertx.deployVerticle` with the same meanings.
+
+## Undeploying a Verticle
+
+To undeploy a verticle call the `vertx.undeployVerticle` function passing in the deployment id that was returned from the call to `vertx.deployVerticle`
+
+    var deploymentID = vertx.deployVerticle('my_verticle.js');    
+    
+    vertx.undeployVerticle(deploymentID);
+
+            
 # The Event Bus
 
 The event bus is the nervous system of vert.x. It allows verticles to communicate each other irrespective of whether they're in the same vert.x instance, or in a different vert.x instance. It even allows client side JavaScript running in a browser to communicate with verticles. More on that later.
@@ -1462,6 +1565,15 @@ Regular Expressions can also be used to extract more complex matches. In this ca
         var second = req.params().param1;
         // Do something
         req.response.end();
+    });    
+    
+## Catch all
+
+**[TODO]* finish this off
+
+    // Catch all - serve the index page
+    routeMatcher.get('.*', function(req) {
+      req.response.sendFile("route_match/index.html");
     });    
 
 # WebSockets
