@@ -3,12 +3,12 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +16,7 @@ public class WebSocketMatcher implements Handler<ServerWebSocket> {
 
   private static final Logger log = Logger.getLogger(RouteMatcher.class);
 
-  private List<PatternBinding> bindings = new CopyOnWriteArrayList<>();
+  private List<PatternBinding> bindings = new ArrayList<>();
 
   private Map<String, String> params;
   private Handler<Match> handler;
