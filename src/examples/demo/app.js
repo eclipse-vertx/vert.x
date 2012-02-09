@@ -33,7 +33,7 @@ var app_conf = {
 // Deploy the busmods
 
 vertx.deployWorkerVerticle('busmods/mailer.js', app_conf.mailer_conf);
-vertx.deployWorkerVerticle('busmods/persistor.js', app_conf.persistor_conf);
+vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf);
 vertx.deployVerticle('busmods/auth_mgr.js', app_conf.auth_mgr_conf);
 vertx.deployVerticle('busmods/work_queue.js', app_conf.order_queue_conf);
 

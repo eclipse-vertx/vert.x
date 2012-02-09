@@ -26,6 +26,7 @@ public class JsonObject {
     try {
       map = Json.mapper.readValue(jsonString, Map.class);
       } catch (Exception e) {
+      e.printStackTrace();
       throw new DecodeException("Failed to decode JSON object from string: " + jsonString);
     }
   }

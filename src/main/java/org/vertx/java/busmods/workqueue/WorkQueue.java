@@ -97,7 +97,7 @@ public class WorkQueue extends BusModBase implements Verticle {
     }
     processors.add(processor);
     checkWork();
-    message.reply();
+    sendOK(message);
   }
 
   private void doUnregister(Message<JsonObject> message) {
@@ -106,7 +106,7 @@ public class WorkQueue extends BusModBase implements Verticle {
       return;
     }
     processors.remove(processor);
-    message.reply();
+    sendOK(message);
   }
 
   private void doSend(final Message<JsonObject> message) {

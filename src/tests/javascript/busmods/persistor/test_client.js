@@ -28,7 +28,34 @@ function testSave() {
     }
   }, function(reply) {
     tu.azzert(reply.status === 'ok');
-    tu.testComplete();
+    var id  = reply._id;
+    tu.azzert(id != undefined);
+
+    // Now update it
+    eb.send('test.persistor', {
+      collection: 'testcoll',
+      action: 'save',
+      document: {
+        _id: id,
+        name: 'tim',
+        age: 1000
+      }
+    }, function(reply) {
+      tu.azzert(reply.status === 'ok');
+
+       eb.send('test.persistor', {
+          collection: 'testcoll',
+          action: 'findone',
+          document: {
+            _id: id
+          }
+        }, function(reply) {
+          tu.azzert(reply.status === 'ok');
+          tu.azzert(reply.result.name === 'tim');
+          tu.azzert(reply.result.age === 1000);
+          tu.testComplete();
+       });
+    });
   });
 }
 
@@ -201,8 +228,6 @@ function testDelete() {
     }
   }, function(reply) {
 
-    log.println("got reply " + JSON.stringify(reply));
-
     tu.azzert(reply.status === 'ok');
     tu.azzert(reply.number === 1);
 
@@ -223,7 +248,7 @@ function testDelete() {
 
 tu.registerTests(this);
 var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
-var persistorID = vertx.deployWorkerVerticle('busmods/persistor.js', persistorConfig, 1, function() {
+var persistorID = vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConfig, 1, function() {
   deleteAll();
   tu.appReady();
 });

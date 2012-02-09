@@ -8,19 +8,26 @@ import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
- * TODO This class is pretty ugly - tidy up and simplify the validation code
+ * TODO tidy up and simplify the validation code
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -82,13 +89,19 @@ public class VertxMgr {
       VerticleManager mgr = VerticleManager.instance;
       DeployCommand dc = createDeployCommand(main, args, "run");
       if (dc != null) {
-        try {
-          mgr.deploy(dc.worker, dc.name, dc.main, null, dc.path, dc.instances, null);
-          mgr.block();
-        } catch (Exception e) {
-          System.err.println("Failed to deploy application");
-          e.printStackTrace();
+        JsonObject jsonConf;
+        if (dc.conf != null) {
+          try {
+            jsonConf = new JsonObject(dc.conf);
+          } catch (DecodeException e) {
+            System.err.println("Configuration file does not contain a valid JSON object");
+            return;
+          }
+        } else {
+          jsonConf = null;
         }
+        mgr.deploy(dc.worker, dc.name, dc.main, jsonConf, dc.urls, dc.instances, null);
+        mgr.block();
       }
     }
   }
@@ -115,6 +128,35 @@ public class VertxMgr {
     String name = args.map.get("-name");
 
     String cp = args.map.get("-cp");
+    if (cp == null) {
+      cp = ".";
+    }
+
+    // Convert to URL[]
+
+    String[] parts;
+    if (cp.contains(":")) {
+      parts = cp.split(":");
+    } else {
+      parts = new String[] { cp };
+    }
+    int index = 0;
+    final URL[] urls = new URL[parts.length];
+    for (String part: parts) {
+      File file = new File(part);
+      part = file.getAbsolutePath();
+      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
+        //It's a directory - need to add trailing slash
+        part += "/";
+      }
+      URL url;
+      try {
+        url = new URL("file://" + part);
+      } catch (MalformedURLException e) {
+        throw new IllegalArgumentException("Invalid path: " + cp) ;
+      }
+      urls[index++] = url;
+    }
 
     if (main == null) {
       displaySyntax();
@@ -140,7 +182,21 @@ public class VertxMgr {
       instances = 1;
     }
 
-    return new DeployCommand(worker, name, main, cp, instances);
+    String configFile = args.map.get("-conf");
+
+    String conf;
+    if (configFile != null) {
+      try {
+        conf = new Scanner(new File(configFile)).useDelimiter("\\A").next();
+      } catch (FileNotFoundException e) {
+        System.err.println("Config file " + configFile + " does not exist");
+        return null;
+      }
+    } else {
+      conf = null;
+    }
+
+    return new DeployCommand(worker, name, main, conf, urls, instances);
   }
 
 
