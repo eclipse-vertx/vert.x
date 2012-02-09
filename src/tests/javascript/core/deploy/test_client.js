@@ -7,8 +7,9 @@ var eb = vertx.EventBus;
 
 function testDeploy() {
   eb.registerHandler("test-handler", function(message) {
-    tu.azzert("started" === message);
-    tu.testComplete();
+    if ("started" === message) {
+      tu.testComplete();
+    }
   });
 
   vertx.deployVerticle("core/deploy/child.js");
@@ -20,8 +21,9 @@ function testUndeploy() {
 
   vertx.setTimer(100, function() {
     eb.registerHandler("test-handler", function(message) {
-      tu.azzert("stopped" === message);
-      tu.testComplete();
+      if ("stopped" === message) {
+        tu.testComplete();
+      }
     });
     vertx.undeployVerticle(id);
   });
