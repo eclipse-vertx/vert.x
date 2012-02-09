@@ -15,7 +15,6 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,7 +30,7 @@ public class TestBase extends TestCase {
 
   public static final String EVENTS_ADDRESS = "__test_events";
 
-  private VerticleManager appManager;
+  private VerticleManager verticleManager;
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils();
   private long contextID;
@@ -59,7 +58,7 @@ public class TestBase extends TestCase {
   @Override
   protected void setUp() throws Exception {
 
-    appManager = VerticleManager.instance;
+    verticleManager = VerticleManager.instance;
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -187,8 +186,6 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
-    String appName = UUID.randomUUID().toString();
-
     URL url;
     if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy")) {
       url = getClass().getClassLoader().getResource(main);
@@ -212,9 +209,9 @@ public class TestBase extends TestCase {
       }
     };
 
-    appManager.deploy(worker, appName, main, config, url.getPath(), instances, doneHandler);
+    String deploymentName = verticleManager.deploy(worker, null, main, config, url.getPath(), instances, doneHandler);
 
-    startedApps.add(appName);
+    startedApps.add(deploymentName);
 
     if (!doneLatch.await(10, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
@@ -226,13 +223,13 @@ public class TestBase extends TestCase {
       }
     }
 
-    return appName;
+    return deploymentName;
   }
 
   protected void stopApp(String appName) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    int instances = appManager.listInstances().get(appName);
-    appManager.undeploy(appName, new SimpleHandler() {
+    int instances = verticleManager.listInstances().get(appName);
+    verticleManager.undeploy(appName, new SimpleHandler() {
       public void handle() {
         latch.countDown();
       }

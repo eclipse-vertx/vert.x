@@ -172,7 +172,7 @@ class VertxImpl implements VertxInternal {
   }
 
   public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    String currPath = VerticleManager.instance.getAppPath();
+    String currPath = VerticleManager.instance.getDeploymentPath();
     return VerticleManager.instance.deploy(false, null, main, config, currPath, instances, doneHandler);
   }
 
@@ -186,7 +186,7 @@ class VertxImpl implements VertxInternal {
 
   public void exit() {
     VerticleManager vm  = VerticleManager.instance;
-    String appName = vm.getAppName();
+    String appName = vm.getDeploymentName();
     vm.undeploy(appName, null);
   }
 
