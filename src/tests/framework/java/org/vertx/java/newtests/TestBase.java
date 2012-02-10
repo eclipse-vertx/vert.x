@@ -78,7 +78,7 @@ public class TestBase extends TestCase {
 
               String type = message.body.getString("type");
 
-              //log.info("******************* Got message: " + type);
+              //System.out.println("******************* Got message: " + type);
 
               switch (type) {
                 case EventFields.TRACE_EVENT:
@@ -212,6 +212,7 @@ public class TestBase extends TestCase {
     String deploymentName = verticleManager.deploy(worker, null, main, config, new URL[] {url}, instances, doneHandler);
 
     startedApps.add(deploymentName);
+
 
     if (!doneLatch.await(10, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");

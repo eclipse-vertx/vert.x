@@ -239,7 +239,7 @@ public class VerticleManager {
     }
     int count;
     Handler<Void> doneHandler;
-    public void handle() {
+    public synchronized void handle() {
       if (--count == 0) {
         doneHandler.handle(null); // All undeployed
       }
