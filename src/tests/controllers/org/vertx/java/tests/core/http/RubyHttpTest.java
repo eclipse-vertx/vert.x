@@ -89,4 +89,78 @@ public class RubyHttpTest extends TestBase {
   public void test_patch_ssl() {
     startTest(getMethodName());
   }
+
+
+
+  public void test_get_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_get_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_put_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_put_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_post_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_post_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_head_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_head_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_options_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_options_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_delete_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_delete_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_trace_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_trace_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_connect_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_connect_ssl_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_patch_chunked() {
+    startTest(getMethodName());
+  }
+
+  public void test_patch_ssl_chunked() {
+    startTest(getMethodName());
+  }
 }

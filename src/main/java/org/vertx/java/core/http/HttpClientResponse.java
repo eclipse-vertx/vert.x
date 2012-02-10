@@ -102,7 +102,7 @@ public class HttpClientResponse extends HttpReadStreamBase {
    * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
    * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
    */
-  public Map<String, String> getHeaders() {
+  public Map<String, String> getAllHeaders() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(response.getHeaders());
     }
@@ -115,7 +115,7 @@ public class HttpClientResponse extends HttpReadStreamBase {
    * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.<p>
    * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
    */
-  public Map<String, String> getTrailers() {
+  public Map<String, String> getAllTrailers() {
     if (trailers == null) {
       if (trailer == null) {
         trailers = new HashMap<>();

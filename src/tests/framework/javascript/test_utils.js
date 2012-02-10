@@ -48,4 +48,8 @@ var TestUtils = function() {
     return jutils.generateRandomBuffer(size);
   }
 
+  that.buffersEqual = function(buff1, buff2) {
+    return jutils.buffersEqual(buff1, buff2);
+  }
+
 }

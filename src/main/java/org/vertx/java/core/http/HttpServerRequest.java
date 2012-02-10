@@ -20,6 +20,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.logging.Logger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -45,12 +46,14 @@ import java.util.Set;
  */
 public class HttpServerRequest extends HttpReadStreamBase {
 
+  private static final Logger log = Logger.getLogger(HttpServerRequest.class);
+
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
   private final ServerConnection conn;
   private final HttpRequest request;
-  private final Map<String, String> params;
+  private Map<String, String> params;
   //Cache this for performance
   private Map<String, String> headers;
 
@@ -69,16 +72,6 @@ public class HttpServerRequest extends HttpReadStreamBase {
     this.conn = conn;
     this.request = request;
     this.response = new HttpServerResponse(conn);
-    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
-    Map<String, List<String>> prms = queryStringDecoder.getParameters();
-    if (prms.isEmpty()) {
-      params = new HashMap<>();
-    } else {
-      params = new HashMap<>(prms.size());
-      for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
-        params.put(entry.getKey(), entry.getValue().get(0));
-      }
-    }
   }
 
   /**
@@ -126,7 +119,7 @@ public class HttpServerRequest extends HttpReadStreamBase {
    * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
    * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
    */
-  public Map<String, String> getHeaders() {
+  public Map<String, String> getAllHeaders() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(request.getHeaders());
     }
@@ -136,7 +129,19 @@ public class HttpServerRequest extends HttpReadStreamBase {
   /**
    * Returns a map of all the parameters in the request
    */
-  public Map<String, String> getParams() {
+  public Map<String, String> getAllParams() {
+    if (params == null) {
+      QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
+      Map<String, List<String>> prms = queryStringDecoder.getParameters();
+      if (prms.isEmpty()) {
+        params = new HashMap<>();
+      } else {
+        params = new HashMap<>(prms.size());
+        for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
+          params.put(entry.getKey(), entry.getValue().get(0));
+        }
+      }
+    }
     return params;
   }
 

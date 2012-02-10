@@ -470,8 +470,8 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(query.equals(req.query));
-        tu.azzert(req.getParams().size() == params.size());
-        for (Map.Entry<String, String> entry : req.getParams().entrySet()) {
+        tu.azzert(req.getAllParams().size() == params.size());
+        for (Map.Entry<String, String> entry : req.getAllParams().entrySet()) {
           tu.azzert(entry.getValue().equals(params.get(entry.getKey())));
         }
         req.response.end();
@@ -491,7 +491,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(req.query == null);
-        tu.azzert(req.getParams().isEmpty());
+        tu.azzert(req.getAllParams().isEmpty());
         req.response.end();
       }
     });
@@ -508,9 +508,9 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.getHeaders().size() == 1);
+        tu.azzert(req.getAllHeaders().size() == 1);
         tu.azzert(req.getHeader("Host").equals("localhost:8080"));
-        tu.azzert(req.getHeaders().get("Host").equals("localhost:8080"));
+        tu.azzert(req.getAllHeaders().get("Host").equals("localhost:8080"));
         req.response.end();
       }
     });
@@ -536,7 +536,7 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.getHeaders().size() == 1 + headers.size());
+        tu.azzert(req.getAllHeaders().size() == 1 + headers.size());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(req.getHeader(entry.getKey())));
         }
@@ -1104,7 +1104,7 @@ public class HttpTestClient extends TestClientBase {
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkContext();
-        tu.azzert(resp.getHeaders().size() == headers.size() + 1);
+        tu.azzert(resp.getAllHeaders().size() == headers.size() + 1);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(resp.getHeader(entry.getKey())));
         }
@@ -1145,7 +1145,7 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.azzert(resp.getTrailers().size() == trailers.size());
+            tu.azzert(resp.getAllTrailers().size() == trailers.size());
             for (Map.Entry<String, String> entry : trailers.entrySet()) {
               tu.azzert(entry.getValue().equals(resp.getTrailer(entry.getKey())));
             }
@@ -1172,7 +1172,7 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.azzert(resp.getTrailers().isEmpty());
+            tu.azzert(resp.getAllTrailers().isEmpty());
             tu.testComplete();
           }
         });

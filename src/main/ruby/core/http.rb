@@ -449,7 +449,7 @@ module Vertx
     # @return [Hash]. A Hash of headers.
     def headers
       if @headers == nil
-        hdrs = @j_del.getHeaders
+        hdrs = @j_del.getAllHeaders
         iter = hdrs.entrySet.iterator
         @headers = {}
         while iter.hasNext
@@ -494,12 +494,12 @@ module Vertx
     # @return [Hash]. A Hash of trailers.
     def trailers
       if @trailers == nil
-        hdrs = @j_del.getHeaders
-        iter = hdrs.iterator
+        trlrs = @j_del.getAllTrailers
+        iter = trlrs.entrySet.iterator
         @trailers = {}
         while iter.hasNext
           entry = iter.next
-          @trailers[entry.getkey] = entry.getValue
+          @trailers[entry.getKey] = entry.getValue
         end
       end
       @trailers
@@ -561,9 +561,26 @@ module Vertx
       @j_del.uri
     end
 
+    def path
+      @j_del.path
+    end
+
+    def query
+      @j_del.query
+    end
+
     # @return [Hash] The request parameters
     def params
-      @j_del.getParams
+      if (@params == nil)
+        prms = @j_del.getAllParams
+        iter = prms.entrySet.iterator
+        @params = {}
+        while iter.hasNext
+          entry = iter.next
+          @params[entry.getKey] = entry.getValue
+        end
+      end
+      @params
     end
 
     # @return [HttpServerResponse] The response. Each instance of this class has an {HttpServerResponse} instance attached to it. This is used
@@ -586,7 +603,7 @@ module Vertx
     # @return [Hash]. A Hash of headers.
     def headers
       if (@headers == nil)
-        hdrs = @j_del.getHeaders
+        hdrs = @j_del.getAllHeaders
         iter = hdrs.entrySet.iterator
         @headers = {}
         while iter.hasNext

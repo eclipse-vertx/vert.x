@@ -50,7 +50,7 @@ class XhrTransport extends BaseTransport {
     rm.postWithRegEx(xhrSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
-        String sessionID = req.getParams().get("param0");
+        String sessionID = req.getAllParams().get("param0");
 
         final Session session = sessions.get(sessionID);
 
@@ -69,7 +69,7 @@ class XhrTransport extends BaseTransport {
                                final boolean streaming, final AppConfig config) {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        String sessionID = req.getParams().get("param0");
+        String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
 
         session.register(streaming? new XhrStreamingListener(config.getMaxBytesStreaming(), req, session) : new XhrPollingListener(req, session));
