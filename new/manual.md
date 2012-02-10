@@ -126,6 +126,15 @@ Worker verticles should be kept to a minimum, since a blocking approach doesn't 
 
 ### Core and BusMods
 
+List the elements of core:
+
+vert.x core comprises:
+
+* Net - writing TCP servers and clients
+* HTTP
+
+etc
+
 **TODO**
 
 
