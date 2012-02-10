@@ -45,6 +45,10 @@ class TestUtils
     Buffer.new(j_buff)
   end
 
+  def TestUtils.random_unicode_string(size)
+    org.vertx.java.newtests.TestUtils.randomUnicodeString(size)
+  end
+
   def TestUtils.buffers_equal(buff1, buff2)
     org.vertx.java.newtests.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end

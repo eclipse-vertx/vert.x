@@ -5,12 +5,12 @@ import org.vertx.java.newtests.TestBase;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class RubyWebsocketTest extends TestBase {
+public class JavaScriptWebsocketTest extends TestBase {
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp("core/websocket/test_client.rb");
+    startApp("core/websocket/test_client.js");
   }
 
   @Override
@@ -18,23 +18,23 @@ public class RubyWebsocketTest extends TestBase {
     super.tearDown();
   }
 
-  public void test_echo_binary() {
+  public void testEchoBinary() {
     startTest(getMethodName());
   }
 
-  public void test_echo_text() {
+  public void testEchoText() {
     startTest(getMethodName());
   }
 
-  public void test_write_from_connect_handler() {
+  public void testWriteFromConnectHandler() {
     startTest(getMethodName());
   }
 
-  public void test_close() {
+  public void testClose() {
     startTest(getMethodName());
   }
 
-  public void test_close_from_connect() {
+  public void testCloseFromConnectHandler() {
     startTest(getMethodName());
   }
 
