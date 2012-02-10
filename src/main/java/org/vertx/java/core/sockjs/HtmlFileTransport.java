@@ -49,9 +49,9 @@ class HtmlFileTransport extends BaseTransport {
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
-        String callback = req.getParams().get("callback");
+        String callback = req.getAllParams().get("callback");
         if (callback == null) {
-          callback = req.getParams().get("c");
+          callback = req.getAllParams().get("c");
           if (callback == null) {
             req.response.statusCode = 500;
             req.response.end("\"callback\" parameter required\n");
@@ -59,7 +59,7 @@ class HtmlFileTransport extends BaseTransport {
           }
         }
 
-        String sessionID = req.getParams().get("param0");
+        String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
         session.register(new HtmlFileListener(req, callback));
       }

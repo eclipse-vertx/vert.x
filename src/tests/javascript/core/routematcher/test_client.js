@@ -101,8 +101,9 @@ function route(method, regex, pattern, params, uri) {
 
   var handler = function(req) {
     log.println("in handler");
-    tu.azzert(req.pparams().length === params.length);
-    for (k in req.pparams()) {
+    log.println("req.params is " + req.params());
+    tu.azzert(req.params().length === params.length);
+    for (k in req.params()) {
       tu.azzert(params[k] === req.pparams()[k]);
     }
     req.response.end();

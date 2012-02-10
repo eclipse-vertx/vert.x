@@ -22,7 +22,7 @@ class EventSourceTransport extends BaseTransport {
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        String sessionID = req.getParams().get("param0");
+        String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
         session.register(new EventSourceListener(req));
       }

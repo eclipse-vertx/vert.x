@@ -332,7 +332,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
             params.put("param" + i, m.group(i + 1));
           }
         }
-        request.getParams().putAll(params);
+        request.getAllParams().putAll(params);
         binding.handler.handle(request);
         return;
       }
