@@ -366,7 +366,33 @@ And then, in a different verticle:
     
 TODO - a bit more here
 
-API - atomic updates etc      
+API - atomic updates etc    
+
+# Buffers
+
+**TODO**
+
+# JSON
+
+**TODO**
+
+# Delayed and Periodic Tasks
+
+It's very common to want to perform an action after a delay, or periodically.
+
+In standard verticles you can't just call `Thread.sleep` if you want to introduce a delay, since that will block the event loop thread. Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+
+## One-shot Timers
+
+A one shot timer calls a supplied event handler after a certain delay, expressed in milliseconds. 
+
+To set a timer to fire once you use the `vertx.setTimer` function passing in the delay and the handler
+
+    vertx.setTimer(1000, function() {
+        log.println('And one second later this is printed'); 
+    });
+    
+    log.println('First this is printed');
      
 ## Periodic Timers
 
@@ -1662,7 +1688,11 @@ To use WebSockets from a compliant browser, you use the standard WebSocket api. 
     
     </script>
     
-For more information see the [WebSocket API documentation](http://dev.w3.org/html5/websockets/)    
+For more information see the [WebSocket API documentation](http://dev.w3.org/html5/websockets/) 
+
+## Routing WebSockets with Pattern Matching
+
+**TODO**   
     
 # SockJS
 
@@ -1856,25 +1886,24 @@ To use the event bus from the client side you need to load the script `vertxbus.
     
 You can now communicate seamlessly between different browsers and server side components using the event bus.    
     
-For a full description of the event bus API, please see the chapter on Event Bus [LINK].    
+For a full description of the event bus API, please see the chapter on Event Bus [LINK]. 
+
+# File System
+
+**TODO**
+
+# Parse Tools
+
+**TODO**
+
+# Performance Tuning
+
+**TODO**
+
+
+   
     
-# Delayed and Periodic Tasks
 
-It's very common to want to perform an action after a delay, or periodically.
-
-In standard verticles you can't just call `Thread.sleep` if you want to introduce a delay, since that will block the event loop thread. Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
-
-## One-shot Timers
-
-A one shot timer calls a supplied event handler after a certain delay, expressed in milliseconds. 
-
-To set a timer to fire once you use the `vertx.setTimer` function passing in the delay and the handler
-
-    vertx.setTimer(1000, function() {
-        log.println('And one second later this is printed'); 
-    });
-    
-    log.println('First this is printed');
     
 
    
