@@ -36,6 +36,7 @@ public class RhinoVerticle implements Verticle {
     ScriptableObject scope = scopeThreadLocal.get();
     ClassLoader cl = clThreadLocal.get();
     Context cx = Context.getCurrentContext();
+    cx.setOptimizationLevel(0);
     loadScript(cl, cx, scope, moduleName);
   }
 

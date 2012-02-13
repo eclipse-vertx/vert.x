@@ -18,7 +18,7 @@ package org.vertx.java.core.logging;
  */
 public class SLF4JLogDelegateFactory implements LogDelegateFactory
 {
-   public LogDelegate createDelegate(final Class<?> clazz)
+   public LogDelegate createDelegate(final String clazz)
    {
       return new SLF4JLogDelegate(clazz);
    }

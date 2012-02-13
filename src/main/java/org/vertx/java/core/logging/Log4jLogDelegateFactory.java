@@ -22,9 +22,9 @@ package org.vertx.java.core.logging;
  */
 public class Log4jLogDelegateFactory implements LogDelegateFactory
 {
-   public LogDelegate createDelegate(final Class<?> clazz)
+   public LogDelegate createDelegate(final String name)
    {
-      return new Log4jLogDelegate(clazz);
+      return new Log4jLogDelegate(name);
    }
 
 }

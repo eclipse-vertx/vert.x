@@ -15,62 +15,8 @@
 
 module Vertx
 
-  # @author {http://tfox.org Tim Fox}
-  class Logger
-
-    def Logger.get_logger(clazz)
-      raise "Please provide a class to get_logger method" if !clazz.is_a? Class
-      Logger.new(org.vertx.java.core.logging.Logger.getLogger(clazz))
-    end
-
-    def initialize(j_del)
-      @j_del = j_del
-    end
-
-    def info_enabled?
-      @j_del.infoEnabled
-    end
-
-    def debug_enabled?
-      @j_del.debugEnabled
-    end
-
-    def trace_enabled?
-      @j_del.traceEnabled
-    end
-
-    def fatal
-
-    end
-
-    def error(msg, ex = nil)
-
-      if ex == nil
-        @j_del.error(msg)
-      elsif ex.is_a? java.lang.Throwable
-        @j_del.error(msg, ex)
-      elsif ex.is_a? Exception
-        @j_del.error(obj.message)
-        trace = ''
-        obj.backtrace.each { |line| trace << line << "\n" }
-        @j_del.error(trace)
-      end
-    end
-
-
-    def warn
-
-    end
-
-    def info
-
-    end
-
-    def trace
-
-    end
-
-
-
+  def Vertx.logger
+    org.vertx.java.core.Vertx.instance.getLogger
   end
+
 end

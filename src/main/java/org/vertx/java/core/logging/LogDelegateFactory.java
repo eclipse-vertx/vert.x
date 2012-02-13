@@ -19,5 +19,5 @@ package org.vertx.java.core.logging;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public interface LogDelegateFactory {
-  LogDelegate createDelegate(Class<?> clazz);
+  LogDelegate createDelegate(String name);
 }

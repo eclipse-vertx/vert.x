@@ -39,7 +39,7 @@ public class Logger {
 
   private static volatile LogDelegateFactory delegateFactory;
 
-  private static final ConcurrentMap<Class<?>, Logger> loggers = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, Logger> loggers = new ConcurrentHashMap<>();
 
   static {
     Logger.initialise();
@@ -74,14 +74,18 @@ public class Logger {
   }
 
   public static Logger getLogger(final Class<?> clazz) {
-    Logger logger = Logger.loggers.get(clazz);
+    return getLogger(clazz.getCanonicalName());
+  }
+
+  public static Logger getLogger(final String name) {
+    Logger logger = Logger.loggers.get(name);
 
     if (logger == null) {
-      LogDelegate delegate = Logger.delegateFactory.createDelegate(clazz);
+      LogDelegate delegate = Logger.delegateFactory.createDelegate(name);
 
       logger = new Logger(delegate);
 
-      Logger oldLogger = Logger.loggers.putIfAbsent(clazz, logger);
+      Logger oldLogger = Logger.loggers.putIfAbsent(name, logger);
 
       if (oldLogger != null) {
         logger = oldLogger;
@@ -89,6 +93,10 @@ public class Logger {
     }
 
     return logger;
+  }
+
+  public static void removeLogger(String name) {
+    loggers.remove(name);
   }
 
   private final LogDelegate delegate;

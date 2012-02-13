@@ -2,8 +2,10 @@ package org.vertx.java.core.app.groovy;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
+import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.app.VerticleFactory;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 
 import java.lang.reflect.Method;
@@ -13,8 +15,6 @@ import java.net.URL;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class GroovyVerticleFactory implements VerticleFactory {
-
-  private static final Logger log = Logger.getLogger(GroovyVerticleFactory.class);
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
 
@@ -48,22 +48,26 @@ public class GroovyVerticleFactory implements VerticleFactory {
     return new Verticle() {
       public void start() {
         try {
-            mrun.invoke(verticle, (Object[])null);
-          } catch (Exception e) {
-            log.error("Failed to run Groovy verticle", e);
-          }
+          mrun.invoke(verticle, (Object[])null);
+        } catch (Throwable t) {
+          reportException(t);
+        }
       }
 
       public void stop() {
         if (mstop != null) {
           try {
             mstop.invoke(verticle, (Object[])null);
-          } catch (Exception e) {
-            log.error("Failed to stop Groovy verticle", e);
+          } catch (Throwable t) {
+            reportException(t);
           }
         }
       }
     };
+  }
+
+  public void reportException(Throwable t) {
+    VerticleManager.instance.getLogger().error("Exception in Groovy verticle", t);
   }
 }
 

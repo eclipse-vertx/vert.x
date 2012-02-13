@@ -23,8 +23,8 @@ import java.util.logging.Level;
 public class JULLogDelegate implements LogDelegate {
   private final java.util.logging.Logger logger;
 
-  JULLogDelegate(final Class<?> clazz) {
-    logger = java.util.logging.Logger.getLogger(clazz.getName());
+  JULLogDelegate(final String name) {
+    logger = java.util.logging.Logger.getLogger(name);
   }
 
   public boolean isInfoEnabled() {

@@ -21,8 +21,8 @@ package org.vertx.java.core.logging;
 public class Log4jLogDelegate implements LogDelegate {
   private final org.apache.log4j.Logger logger;
 
-  Log4jLogDelegate(final Class<?> clazz) {
-    logger = org.apache.log4j.Logger.getLogger(clazz);
+  Log4jLogDelegate(final String name) {
+    logger = org.apache.log4j.Logger.getLogger(name);
   }
 
   public boolean isInfoEnabled() {
