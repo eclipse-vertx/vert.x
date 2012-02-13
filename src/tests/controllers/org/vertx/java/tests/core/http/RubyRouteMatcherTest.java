@@ -90,7 +90,16 @@ public class RubyRouteMatcherTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void test_all_with_pattern() {
+    startTest(getMethodName());
+  }
+
+  public void test_all_with_regex() {
+    startTest(getMethodName());
+  }
+
   public void test_route_no_match() {
     startTest(getMethodName());
   }
+
 }

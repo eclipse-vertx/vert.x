@@ -111,7 +111,6 @@ class ServerConnection extends AbstractConnection {
     try {
       this.currentRequest = req;
       pendingResponse = req.response;
-
       if (requestHandler != null) {
         requestHandler.handle(req);
       }
@@ -230,6 +229,7 @@ class ServerConnection extends AbstractConnection {
 
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
+
       HttpRequest request = (HttpRequest) msg;
       HttpServerRequest req = new HttpServerRequest(this, request);
       handleRequest(req);

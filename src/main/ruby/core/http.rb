@@ -987,6 +987,15 @@ module Vertx
       @j_del.connect(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for any matching HTTP request
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def all(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.all(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
     # Specify a handler that will be called for a matching HTTP GET
     # @param [String] A regular expression for a pattern
     # @param [Proc] proc A proc to be used as the handler
@@ -1068,6 +1077,15 @@ module Vertx
     def connect_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.connectWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for any matching HTTP request
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def all_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.allWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
   end

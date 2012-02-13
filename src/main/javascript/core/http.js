@@ -12,6 +12,50 @@ if (!vertx.HttpServer) {
     return map;
   }
 
+  function wrappedRequestHandler(handler) {
+    return function(req) {
+
+      //We need to add some functions to the request and the response
+
+      var reqHeaders = null;
+      var reqParams = null;
+
+      var reqProto = {
+
+        headers: function() {
+          if (!reqHeaders) {
+            reqHeaders = convertMap(req.getAllHeaders());
+          }
+          return reqHeaders;
+        },
+        params: function() {
+          if (!reqParams) {
+            reqParams = convertMap(req.getAllParams());
+          }
+          return reqParams;
+        }
+      };
+
+      var respProto = {
+        putHeaders: function(hash) {
+          for (k in hash) {
+            req.response.putHeader(k, hash[k]);
+          }
+        },
+        putTrailers: function(hash) {
+          for (k in hash) {
+            req.response.putTrailer(k, hash[k]);
+          }
+        }
+      }
+
+      req.__proto__ = reqProto;
+      req.response.__proto__ = respProto;
+
+      handler(req);
+    }
+  }
+
   vertx.HttpServer = function() {
 
     var j_server = new org.vertx.java.core.http.HttpServer();
@@ -22,60 +66,14 @@ if (!vertx.HttpServer) {
 
       if (handler) {
 
-        var theHandler;
-        if (handler.handle) {
-
-          theHandler = function(req) {
-            handler.handle(req);
-          }
-
+        if (typeof handler === 'function') {
+          handler = wrappedRequestHandler(handler);
         } else {
-          theHandler = handler;
+          // It's a route matcher
+          handler = handler._to_java_handler();
         }
 
-        var wrappedHandler = function(req) {
-
-          //We need to add some functions to the request and the response
-
-          var reqHeaders = null;
-          var reqParams = null;
-
-          var reqProto = {
-
-            headers: function() {
-              if (!reqHeaders) {
-                reqHeaders = convertMap(req.getAllHeaders());
-              }
-              return reqHeaders;
-            },
-            params: function() {
-              if (!reqParams) {
-                reqParams = convertMap(req.getAllParams());
-              }
-              return reqParams;
-            }
-          };
-
-          var respProto = {
-            putHeaders: function(hash) {
-              for (k in hash) {
-                req.response.putHeader(k, hash[k]);
-              }
-            },
-            putTrailers: function(hash) {
-              for (k in hash) {
-                req.response.putTrailer(k, hash[k]);
-              }
-            }
-          }
-
-          req.__proto__ = reqProto;
-          req.response.__proto__ = respProto;
-
-          theHandler(req);
-        }
-
-        j_server.requestHandler(wrappedHandler);
+        j_server.requestHandler(handler);
       }
       return that;
     };
@@ -406,6 +404,92 @@ if (!vertx.HttpServer) {
   }
 
   vertx.RouteMatcher = function() {
-    return new org.vertx.java.core.http.RouteMatcher();
+
+    var j_rm = new org.vertx.java.core.http.RouteMatcher();
+
+    this.get = function(pattern, handler) {
+      j_rm.get(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.put = function(pattern, handler) {
+      j_rm.put(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.post = function(pattern, handler) {
+      j_rm.post(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.delete = function(pattern, handler) {
+      j_rm.delete(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.options = function(pattern, handler) {
+      j_rm.options(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.head = function(pattern, handler) {
+      j_rm.head(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.trace = function(pattern, handler) {
+      j_rm.trace(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.connect = function(pattern, handler) {
+      j_rm.connect(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.patch = function(pattern, handler) {
+      j_rm.patch(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.all = function(pattern, handler) {
+      j_rm.all(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.getWithRegEx = function(pattern, handler) {
+      j_rm.getWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.putWithRegEx = function(pattern, handler) {
+      j_rm.putWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.postWithRegEx = function(pattern, handler) {
+      j_rm.postWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.deleteWithRegEx = function(pattern, handler) {
+      j_rm.deleteWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.optionsWithRegEx = function(pattern, handler) {
+      j_rm.optionsWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.headWithRegEx = function(pattern, handler) {
+      j_rm.headWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.traceWithRegEx = function(pattern, handler) {
+      j_rm.traceWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.connectWithRegEx = function(pattern, handler) {
+      j_rm.connectWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.patchWithRegEx = function(pattern, handler) {
+      j_rm.patchWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this.allWithRegEx = function(pattern, handler) {
+      j_rm.allWithRegEx(pattern, wrappedRequestHandler(handler));
+    }
+
+    this._to_java_handler = function() {
+      return j_rm;
+    }
+
   }
 }

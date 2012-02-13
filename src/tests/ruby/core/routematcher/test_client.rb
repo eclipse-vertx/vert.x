@@ -89,8 +89,16 @@ def test_connect_with_regex
   route('connect', true, @regex, @re_params, "/foo/v0.1")
 end
 
+def test_all_with_pattern
+  route('all', false, "/:name/:version", @params, "/foo/v0.1")
+end
+
+def test_all_with_regex
+  route('all', true, @regex, @re_params, "/foo/v0.1")
+end
+
 def test_route_no_match
-  @client.send('get', 'some-uri') do |resp|
+  @client.get('some-uri') do |resp|
     @tu.azzert(404 == resp.status_code)
     @tu.test_complete
   end.end
@@ -112,6 +120,8 @@ def route(method, regex, pattern, params, uri)
   else
     @rm.send(method, pattern, handler)
   end
+
+  method = 'get' if method == 'all'
 
   @client.send(method, uri) do |resp|
     @tu.azzert(200 == resp.status_code)
