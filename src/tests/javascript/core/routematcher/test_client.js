@@ -17,109 +17,116 @@ var regex = "\\/([^\\/]+)\\/([^\\/]+)";
 
 
 function testGetWithPattern() {
-  log.println("in test get with pattern");
   route('get', false, "/:name/:version", params, "/foo/v0.1")
 }
 
-//def test_get_with_regex
-//  route('get', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_put_with_pattern
-//  route('put', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_put_with_regex
-//  route('put', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_post_with_pattern
-//  route('post', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_post_with_regex
-//  route('post', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_delete_with_pattern
-//  route('delete', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_delete_with_regex
-//  route('delete', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_options_with_pattern
-//  route('options', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_options_with_regex
-//  route('options', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_head_with_pattern
-//  route('head', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_head_with_regex
-//  route('head', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_trace_with_pattern
-//  route('trace', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_trace_with_regex
-//  route('trace', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_patch_with_pattern
-//  route('patch', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_patch_with_regex
-//  route('patch', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_connect_with_pattern
-//  route('connect', false, "/:name/:version", @params, "/foo/v0.1")
-//end
-//
-//def test_connect_with_regex
-//  route('connect', true, @regex, @re_params, "/foo/v0.1")
-//end
-//
-//def test_route_no_match
-//  @client.send('get', 'some-uri') do |resp|
-//    @tu.azzert(404 == resp.status_code)
-//    @tu.test_complete
-//  end.end
-//end
+function testGetWithRegEx() {
+  route('get', true, regex, re_params, "/foo/v0.1");
+}
 
+function testPutWithPattern() {
+  route('put', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testPutWithRegEx() {
+  route('put', true, regex, re_params, "/foo/v0.1");
+}
+
+function testPostWithPattern() {
+  route('post', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testPostWithRegEx() {
+  route('post', true, regex, re_params, "/foo/v0.1");
+}
+
+function testDeleteWithPattern() {
+  route('delete', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testDeleteWithRegEx() {
+  route('delete', true, regex, re_params, "/foo/v0.1");
+}
+
+function testOptionsWithPattern() {
+  route('options', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testOptionsWithRegEx() {
+  route('options', true, regex, re_params, "/foo/v0.1");
+}
+
+function testHeadWithPattern() {
+  route('head', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testHeadWithRegEx() {
+  route('head', true, regex, re_params, "/foo/v0.1");
+}
+
+function testTraceWithPattern() {
+  route('trace', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testTraceWithRegEx() {
+  route('trace', true, regex, re_params, "/foo/v0.1");
+}
+
+function testPatchWithPattern() {
+  route('patch', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testPatchWithRegEx() {
+  route('patch', true, regex, re_params, "/foo/v0.1");
+}
+
+function testConnectWithPattern() {
+  route('connect', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testConnectWithRegEx() {
+  route('connect', true, regex, re_params, "/foo/v0.1");
+}
+
+function testAllWithPattern() {
+  route('all', false, "/:name/:version", params, "/foo/v0.1");
+}
+
+function testAllWithRegEx() {
+  route('all', true, regex, re_params, "/foo/v0.1");
+}
+
+function testRouteNoMatch() {
+  client.get('some-uri', function(resp) {
+    tu.azzert(404 === resp.statusCode);
+    tu.testComplete();
+  }).end();
+}
 
 function route(method, regex, pattern, params, uri) {
 
   var handler = function(req) {
-    log.println("in handler");
-    log.println("req.params is " + req.params());
     tu.azzert(req.params().length === params.length);
     for (k in req.params()) {
-      tu.azzert(params[k] === req.pparams()[k]);
+      tu.azzert(params[k] === req.params()[k]);
     }
     req.response.end();
   }
 
   if (regex) {
-    rm[method + '_re'](pattern, handler);
+    rm[method + 'WithRegEx'](pattern, handler);
   } else {
     rm[method](pattern, handler);
+  }
+
+  if (method === 'all') {
+    method = 'get';
   }
 
   client[method](uri, function(resp) {
     tu.azzert(200 == resp.statusCode)
     tu.testComplete();
   }).end();
-  log.println("Sent request");
 }
 
 tu.registerTests(this);

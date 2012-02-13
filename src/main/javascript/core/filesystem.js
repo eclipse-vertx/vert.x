@@ -201,21 +201,47 @@ if (!vertx.FileSystem) {
       if (fut.succeeded) {
         var j_af = fut.result();
 
-        /*
-        TODO - we need to somehow override the read and write methods on
-        AsyncFile and provide versions which take a handler as final argument
-        This is currently tricky with Rhino
-        var wrapped =  ....
+        var wrapped = {
+          close: function(handler) {
+            if (handler) {
+              j_af.closeDeferred().handler(handler).execute();
+            } else {
+              j_af.close();
+            }
+          },
 
-        */
+          write: function(buffer, position, handler) {
+            var fut = j_af.write(buffer, position);
+            wrapHandler(handler, fut);
+          },
 
-        handler(null,j_af);
+          read: function(buffer, offset, position, length, handler) {
+            var fut = j_af.read(buffer, offset, position, length);
+            wrapHandler(handler, fut);
+          },
+
+          getWriteStream: function() {
+            return j_af.getWriteStream();
+          },
+
+          getReadStream: function() {
+            return j_af.getReadStream();
+          },
+
+          flush: function(handler) {
+            if (handler) {
+              j_af.flushDeferred().handler(handler).execute();
+            } else {
+              j_af.flush();
+            }
+          }
+        }
+
+        handler(null, wrapped);
       } else {
         handler(fut.exception(), null);
       }
     });
-
-    wrapHandler(handler, fut);
   }
 
   vertx.FileSystem.createFile = function(path, handler) {

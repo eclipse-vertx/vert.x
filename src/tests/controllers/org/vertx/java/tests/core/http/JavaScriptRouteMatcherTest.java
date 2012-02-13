@@ -18,84 +18,89 @@ public class JavaScriptRouteMatcherTest extends TestBase {
     super.tearDown();
   }
 
-
-  public void testFoo() {
-
+  public void testGetWithPattern() {
+    startTest(getMethodName());
   }
 
-//  public void testGetWithPattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_get_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_put_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_put_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_post_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_post_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_delete_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_delete_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_options_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_options_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_head_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_head_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_trace_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_trace_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_patch_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_patch_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_connect_with_pattern() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_connect_with_regex() {
-//    startTest(getMethodName());
-//  }
-//
-//  public void test_route_no_match() {
-//    startTest(getMethodName());
-//  }
+  public void testGetWithRegEx() {
+  startTest(getMethodName());
+  }
+
+  public void testPutWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testPutWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testPostWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testPostWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testDeleteWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testDeleteWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testOptionsWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testOptionsWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testHeadWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testHeadWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testTraceWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testTraceWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testPatchWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testPatchWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testConnectWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testConnectWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testAllWithPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testAllWithRegEx() {
+    startTest(getMethodName());
+  }
+
+  public void testRouteNoMatch() {
+    startTest(getMethodName());
+  }
+  
+  
 }

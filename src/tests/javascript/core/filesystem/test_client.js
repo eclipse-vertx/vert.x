@@ -80,15 +80,15 @@ function testPumpFile() {
           // TODO For now using handler() - this will disappear when we can wrap
           // AsyncFile properly and have a close method which takes a handler
           //TODO TODO
-          file1.closeDeferred().handler(function() {
-            file2.closeDeferred().handler(function() {
+          file1.close(function() {
+            file2.close(function() {
               fs.readFile(to, function(err, res) {
                 tu.azzert(err === null);
                 tu.azzert(tu.buffersEqual(content, res));
                 tu.testComplete();
               });
-            }).execute();
-          }).execute();
+            });
+          });
         });
       });
     });
