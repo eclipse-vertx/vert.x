@@ -19,7 +19,7 @@ package org.vertx.java.core.logging;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public class JULLogDelegateFactory implements LogDelegateFactory {
-  public LogDelegate createDelegate(final Class<?> clazz) {
-    return new JULLogDelegate(clazz);
+  public LogDelegate createDelegate(final String name) {
+    return new JULLogDelegate(name);
   }
 }

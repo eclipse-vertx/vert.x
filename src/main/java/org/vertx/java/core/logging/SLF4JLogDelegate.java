@@ -26,8 +26,8 @@ public class SLF4JLogDelegate implements LogDelegate{
 
   private final Logger logger;
 
-  SLF4JLogDelegate(final Class<?> clazz) {
-    logger = LoggerFactory.getLogger(clazz);
+  SLF4JLogDelegate(final String name) {
+    logger = LoggerFactory.getLogger(name);
   }
 
   public boolean isInfoEnabled() {

@@ -196,6 +196,10 @@ class VertxImpl implements VertxInternal {
     return VerticleManager.instance.getConfig();
   }
 
+  public Logger getLogger() {
+    return VerticleManager.instance.getLogger();
+  }
+
   // Internal API -----------------------------------------------------------------------------------------
 
   //The worker pool is used for making blocking calls to legacy synchronous APIs

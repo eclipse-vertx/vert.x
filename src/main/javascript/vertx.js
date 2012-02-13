@@ -10,3 +10,4 @@ load('core/parse_tools.js');
 load('core/shared_data.js');
 load('core/filesystem.js');
 load('core/deploy.js');
+load('core/logger.js');

@@ -7,6 +7,7 @@ require "test_utils"
 @server = HttpServer.new
 @client = HttpClient.new
 @client.port = 8080
+@logger = Vertx.logger
 
 # This is just a basic test. Most testing occurs in the Java tests
 
@@ -158,6 +159,8 @@ def test_patch_ssl_chunked
 end
 
 def http_method(ssl, method, chunked)
+
+  # @logger.info("in http method #{method}")
 
   if ssl
     @server.ssl = true

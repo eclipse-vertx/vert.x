@@ -5,6 +5,7 @@ var tu = new TestUtils();
 
 var server = new vertx.HttpServer();
 var client = new vertx.HttpClient().setPort(8080);
+var logger = vertx.getLogger();
 
 // This is just a basic test. Most testing occurs in the Java tests
 
@@ -156,6 +157,8 @@ function testPATCHSSLChunked() {
 
 
 function httpMethod(ssl, method, chunked) {
+
+  // logger.info("In method " + method);
 
   if (ssl) {
     server.setSSL(true);

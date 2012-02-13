@@ -1,5 +1,6 @@
 package org.vertx.java.core.app;
 
+import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -11,8 +12,6 @@ import org.vertx.java.core.app.rhino.RhinoVerticleFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
-import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,19 +33,22 @@ public class VerticleManager {
 
   public static VerticleManager instance = new VerticleManager();
 
-  private Map<String, Deployment> deployments = new HashMap();
-  private final Map<Long, String> contextMap = new ConcurrentHashMap<>();
+  private final Map<String, Deployment> deployments = new HashMap();
+  private final Map<Long, String> contextDeploymentNameMap = new ConcurrentHashMap<>();
+  private final Map<Long, VerticleHolder> contextVerticleMap = new ConcurrentHashMap<>();
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
 
   private static class Deployment {
+    final VerticleFactory factory;
     final JsonObject config;
     final URL[] urls;
     final List<VerticleHolder> verticles = new ArrayList<>();
     final List<String> childDeployments = new ArrayList<>();
     final String parentDeploymentName;
 
-    private Deployment(JsonObject config, URL[] urls, String parentDeploymentName) {
+    private Deployment(VerticleFactory factory, JsonObject config, URL[] urls, String parentDeploymentName) {
+      this.factory = factory;
       this.config = config;
       this.urls = urls;
       this.parentDeploymentName = parentDeploymentName;
@@ -84,7 +86,7 @@ public class VerticleManager {
 
   public String getDeploymentName() {
     Long contextID = Vertx.instance.getContextID();
-    return contextID == null ? null : contextMap.get(contextID);
+    return contextID == null ? null : contextDeploymentNameMap.get(contextID);
   }
 
   public URL[] getDeploymentURLs() {
@@ -98,6 +100,27 @@ public class VerticleManager {
     return null;
   }
 
+  public Logger getLogger() {
+    VerticleHolder holder = contextVerticleMap.get(Vertx.instance.getContextID());
+    if (holder != null) {
+      return holder.logger;
+    } else {
+      return null;
+    }
+  }
+
+  public void reportException(Throwable t) {
+    String deploymentName = getDeploymentName();
+    if (deploymentName != null) {
+      Deployment deployment = deployments.get(deploymentName);
+      if (deployment != null) {
+        deployment.factory.reportException(t);
+        return;
+      }
+    }
+    log.error("Unhandled exception", t);
+  }
+
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
                                     int instances,
@@ -106,8 +129,6 @@ public class VerticleManager {
     if (deployments.containsKey(name)) {
       throw new IllegalStateException("There is already a deployment with name: " + name);
     }
-
-    //final String path = thePath == null ? "." : thePath;
 
     //Infer the main type
 
@@ -119,32 +140,6 @@ public class VerticleManager {
     } else if (main.endsWith(".groovy")) {
       type = VerticleType.GROOVY;
     }
-
-    // Convert to URL[]
-
-//    String[] parts;
-//    if (path.contains(":")) {
-//      parts = path.split(":");
-//    } else {
-//      parts = new String[] { path };
-//    }
-//    int index = 0;
-//    final URL[] urls = new URL[parts.length];
-//    for (String part: parts) {
-//      File file = new File(part);
-//      part = file.getAbsolutePath();
-//      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
-//        //It's a directory - need to add trailing slash
-//        part += "/";
-//      }
-//      URL url;
-//      try {
-//        url = new URL("file://" + part);
-//      } catch (MalformedURLException e) {
-//        throw new IllegalArgumentException("Invalid path: " + path) ;
-//      }
-//      urls[index++] = url;
-//    }
 
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
 
@@ -186,7 +181,7 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    Deployment deployment = new Deployment(config == null ? null : config.copy(), urls, parentDeploymentName);
+    Deployment deployment = new Deployment(verticleFactory, config == null ? null : config.copy(), urls, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
@@ -214,7 +209,7 @@ public class VerticleManager {
             addVerticle(deploymentName, verticle);
             verticle.start();
           } catch (Throwable t) {
-            log.error("Unhandled exception in verticle start", t);
+            reportException(t);
             internalUndeploy(deploymentName, doneHandler);
           }
           aggHandler.started();
@@ -266,7 +261,7 @@ public class VerticleManager {
   }
 
   private void internalUndeploy(String name, final Handler<Void> doneHandler) {
-    Deployment deployment = deployments.remove(name);
+    final Deployment deployment = deployments.remove(name);
 
     // Depth first - undeploy children first        TODO
 //    for (String childDeployment: deployment.childDeployments) {
@@ -293,9 +288,13 @@ public class VerticleManager {
             }
 
             // Remove context mapping
-            contextMap.remove(holder.contextID);
+            contextDeploymentNameMap.remove(holder.contextID);
+            contextVerticleMap.remove(holder.contextID);
+
+            Logger.removeLogger(holder.loggerName);
           }
         });
+
       }
     }
 
@@ -316,20 +315,31 @@ public class VerticleManager {
     return map;
   }
 
-  // Must be synchronized since called directlyfrom different thread
+  // Must be synchronized since called directly from different thread
   private synchronized void addVerticle(String name, Verticle verticle) {
     Deployment deployment = deployments.get(name);
-    deployment.verticles.add(new VerticleHolder(Vertx.instance.getContextID(), verticle));
-    contextMap.put(Vertx.instance.getContextID(), name);
+    String loggerName = name + "-" + deployment.verticles.size();
+    Logger logger = Logger.getLogger(loggerName);
+    Long contextID = Vertx.instance.getContextID();
+    VerticleHolder holder = new VerticleHolder(contextID, verticle,
+                                               loggerName, logger);
+    deployment.verticles.add(holder);
+    contextDeploymentNameMap.put(contextID, name);
+    contextVerticleMap.put(contextID, holder);
   }
 
   private static class VerticleHolder {
     final long contextID;
     final Verticle verticle;
+    final String loggerName;
+    final Logger logger;
 
-    private VerticleHolder(long contextID, Verticle verticle) {
+    private VerticleHolder(long contextID, Verticle verticle, String loggerName,
+                           Logger logger) {
       this.contextID = contextID;
       this.verticle = verticle;
+      this.loggerName = loggerName;
+      this.logger = logger;
     }
   }
 }
