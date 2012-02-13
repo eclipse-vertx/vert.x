@@ -26,9 +26,7 @@ end
 
 def teardown
   FileSystem::delete_recursive(FILEDIR).handler do
-    FileSystem::mkdir(FILEDIR).handler do
-      yield
-    end
+    yield
   end
 end
 
