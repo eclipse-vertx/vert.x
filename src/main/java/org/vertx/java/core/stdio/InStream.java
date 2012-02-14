@@ -18,6 +18,7 @@ package org.vertx.java.core.stdio;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 
@@ -103,7 +104,11 @@ public class InStream extends StreamBase implements ReadStream {
               public void run() {
                 vertx.setContextID(contextID);
                 if (!paused && dataHandler != null) {
-                  dataHandler.handle(ret);
+                  try {
+                    dataHandler.handle(ret);
+                  } catch (Throwable t) {
+                    VerticleManager.instance.reportException(t);
+                  }
                   if (!paused && dataHandler != null) {
                     doRead();
                   }

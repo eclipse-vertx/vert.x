@@ -277,8 +277,8 @@ public class VerticleManager {
             VertxInternal.instance.setContextID(holder.contextID);
             try {
               holder.verticle.stop();
-            } catch (Exception e) {
-              log.error("Unhandled exception in verticle stop", e);
+            } catch (Throwable t) {
+              reportException(t);
             }
             //FIXME - we need to destroy the context, but not until after the deployment has fully stopped which may
             //be asynchronous, e.g. if the deployment needs to close servers

@@ -203,10 +203,6 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     }
   }
 
-  protected void handleException(Exception e) {
-    super.handleException(e);
-  }
-
   void handleInterestedOpsChanged() {
     setContextID();
     callDrainHandler();

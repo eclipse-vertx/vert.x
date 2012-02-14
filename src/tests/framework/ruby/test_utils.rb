@@ -4,10 +4,15 @@ class TestUtils
   end
 
   def azzert(result, message = nil)
-    if message
-      @j_tu.azzert(result, message)
-    else
-      @j_tu.azzert(result)
+    begin
+      if message
+        @j_tu.azzert(result, message)
+      else
+        @j_tu.azzert(result)
+      end
+    rescue java.lang.AssertionError
+      # Rethrow as a ruby exception so we see nice Ruby backtrace
+      raise "Assertion Failed #{message}"
     end
   end
 

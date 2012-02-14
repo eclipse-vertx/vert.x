@@ -24,6 +24,7 @@ import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.streams.ReadStream;
@@ -420,8 +421,12 @@ public class AsyncFile {
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               VertxInternal.instance.setContextID(contextID);
-              writesOutstanding -= buff.limit();
-              deferred.setResult(null);
+               writesOutstanding -= buff.limit();
+              try {
+                deferred.setResult(null);
+              } catch (Throwable t) {
+                VerticleManager.instance.reportException(t);
+              }
             }
           });
         }
@@ -433,7 +438,11 @@ public class AsyncFile {
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               VertxInternal.instance.setContextID(contextID);
-              deferred.setException(e);
+              try {
+                deferred.setException(e);
+              } catch (Throwable t) {
+                VerticleManager.instance.reportException(t);
+              }
             }
           });
         } else {
@@ -467,7 +476,11 @@ public class AsyncFile {
             setContextID();
             buff.flip();
             writeBuff.setBytes(offset, buff);
-            deferred.setResult(writeBuff);
+            try {
+              deferred.setResult(writeBuff);
+            } catch (Throwable t) {
+              VerticleManager.instance.reportException(t);
+            }
           }
         });
       }
@@ -493,11 +506,15 @@ public class AsyncFile {
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               setContextID();
-              deferred.setException(e);
+              try {
+                deferred.setException(e);
+              } catch (Throwable t) {
+                VerticleManager.instance.reportException(t);
+              }
             }
           });
         } else {
-          log.error("Error occurred", exc);
+          VerticleManager.instance.reportException(exc);
         }
       }
     });

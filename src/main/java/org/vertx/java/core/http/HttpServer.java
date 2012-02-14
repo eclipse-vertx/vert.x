@@ -49,6 +49,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.ws.Handshake;
 import org.vertx.java.core.http.ws.WebSocketFrame;
@@ -428,7 +429,11 @@ public class HttpServer extends NetServerBase {
     VertxInternal.instance.executeOnContext(closeContextID, new Runnable() {
       public void run() {
         VertxInternal.instance.setContextID(closeContextID);
-        done.handle(null);
+        try {
+          done.handle(null);
+        } catch (Throwable t) {
+          VerticleManager.instance.reportException(t);
+        }
       }
     });
   }
@@ -444,7 +449,6 @@ public class HttpServer extends NetServerBase {
         resp.setContent(buff);
       } else {
         resp.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
-        //resp.setContent(ChannelBuffers.EMPTY_BUFFER);
       }
       ch.write(resp);
     }
@@ -579,7 +583,11 @@ public class HttpServer extends NetServerBase {
       if (conn != null && t instanceof Exception) {
         VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
           public void run() {
-            conn.handleException((Exception) t);
+            try {
+              conn.handleException((Exception) t);
+            } catch (Throwable t) {
+              VerticleManager.instance.reportException(t);
+            }
           }
         });
       } else {
@@ -600,7 +608,11 @@ public class HttpServer extends NetServerBase {
       if (conn != null) {
         VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
           public void run() {
-            conn.handleClosed();
+            try {
+              conn.handleClosed();
+            } catch (Throwable t) {
+              VerticleManager.instance.reportException(t);
+            }
           }
         });
       }

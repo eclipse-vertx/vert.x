@@ -16,6 +16,7 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 
 /**
@@ -41,19 +42,26 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               VertxInternal.instance.setContextID(contextID);
-              setResult(result);
+              try {
+                setResult(result);
+              } catch (Throwable t) {
+                VerticleManager.instance.reportException(t);
+              }
             }
           });
         } catch (final Exception e) {
           VertxInternal.instance.executeOnContext(contextID, new Runnable() {
             public void run() {
               VertxInternal.instance.setContextID(contextID);
-              setException(e);
+              try {
+                setException(e);
+              } catch (Throwable t) {
+                VerticleManager.instance.reportException(t);
+              }
             }
           });
         } catch (Throwable t) {
-          //Not much we can do, just log it
-          log.error(t);
+          VerticleManager.instance.reportException(t);
         }
       }
     };

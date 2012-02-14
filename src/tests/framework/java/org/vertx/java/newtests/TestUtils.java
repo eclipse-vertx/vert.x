@@ -47,8 +47,9 @@ public class TestUtils {
     }
     sendMessage(jsonObject);
     if (!result) {
+      log.info("Throwing assertion");
       Error err = new AssertionError(message);
-      log.error("Assertion failed", err);
+      //log.error("Assertion failed", err);
       throw err;
     }
   }
