@@ -17,6 +17,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -243,23 +244,17 @@ public class WebSocket implements ReadStream, WriteStream {
   void handleException(Exception e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
+    } else {
+      VerticleManager.instance.reportException(e);
     }
   }
 
   void handleClosed() {
     if (endHandler != null) {
-      try {
-        endHandler.handle(null);
-      } catch (Exception e) {
-        handleException(e);
-      }
+      endHandler.handle(null);
     }
     if (closedHandler != null) {
-      try {
-        closedHandler.handle(null);
-      } catch (Exception e) {
-        handleException(e);
-      }
+      closedHandler.handle(null);
     }
   }
 }

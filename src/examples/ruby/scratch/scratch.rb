@@ -1,17 +1,12 @@
-puts "in ruby verticle"
-
-def foo
-  bar
-end
-
-def bar
-  quux
-end
 
 
-def quux
-  raise "Foo"
-end
+require "vertx"
+include Vertx
 
-foo()
-
+#@server = HttpServer.new.request_handler do |req|
+#  raise "Foo"
+#end.listen(8080)
+#
+#def vertx_stop
+#  @server.close
+#end

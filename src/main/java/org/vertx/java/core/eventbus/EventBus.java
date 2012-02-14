@@ -6,6 +6,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleFuture;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
@@ -637,8 +638,7 @@ public class EventBus {
                 holder.handler.handle(copied);
               }
             } catch (Throwable t) {
-              t.printStackTrace();
-              log.error("Unhandled exception in event bus handler", t);
+              VerticleManager.instance.reportException(t);
             }
           }
         });

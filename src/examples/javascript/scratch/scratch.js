@@ -1,4 +1,3 @@
 load('vertx.js');
 
-log.println("in scratch");
-
+throw "Foo"

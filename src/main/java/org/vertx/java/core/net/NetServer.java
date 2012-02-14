@@ -42,6 +42,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 
@@ -366,7 +367,11 @@ public class NetServer extends NetServerBase {
     VertxInternal.instance.executeOnContext(closeContextID, new Runnable() {
       public void run() {
         VertxInternal.instance.setContextID(closeContextID);
-        done.handle(null);
+        try {
+          done.handle(null);
+        } catch (Throwable t) {
+          VerticleManager.instance.reportException(t);
+        }
       }
     });
   }
@@ -413,7 +418,11 @@ public class NetServer extends NetServerBase {
           VertxInternal.instance.setContextID(handler.contextID);
           NetSocket sock = new NetSocket(ch, handler.contextID, Thread.currentThread());
           socketMap.put(ch, sock);
-          handler.handler.handle(sock);
+          try {
+            handler.handler.handle(sock);
+          } catch (Throwable t) {
+            VerticleManager.instance.reportException(t);
+          }
         }
       });
     }

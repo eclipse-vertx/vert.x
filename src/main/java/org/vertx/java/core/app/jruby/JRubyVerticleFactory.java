@@ -1,10 +1,12 @@
 package org.vertx.java.core.app.jruby;
 
 import org.jruby.RubyException;
+import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.app.VerticleFactory;
@@ -13,6 +15,7 @@ import org.vertx.java.core.logging.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -30,24 +33,52 @@ public class JRubyVerticleFactory implements VerticleFactory {
   public void reportException(Throwable t) {
     Logger logger = VerticleManager.instance.getLogger();
 
+    logger.error("Handling throwable " + t.getClass().getName());
+
+    RaiseException je = null;
     if (t instanceof EvalFailedException) {
-      EvalFailedException je = (EvalFailedException)t;
-      Throwable cause = je.getCause();
+      EvalFailedException e = (EvalFailedException)t;
+      Throwable cause = e.getCause();
       if (cause instanceof RaiseException) {
-        // Gosh, this is a bit long winded!
-        RaiseException re = (RaiseException)cause;
-        RubyException rbe = re.getException();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(baos);
-        rbe.printBacktrace(ps);
-        ps.flush();
-        String stack = baos.toString();
-        logger.error("Exception in Ruby verticle: " + rbe.message +
-          "\n" + stack);
+        je = (RaiseException)cause;
       }
+    } else if (t instanceof RaiseException) {
+      je = (RaiseException)t;
     }
 
+    if (je != null) {
 
-    logger.error("Exception in Ruby verticle", t);
+      logger.info("je type is " + je.getClass().getName());
+
+      RubyException re = je.getException();
+
+      String msg;
+      if (re instanceof RubyNameError) {
+        RubyNameError rne = (RubyNameError)re;
+        msg = "Invalid or undefined name: " + rne.name().toString();
+      } else {
+        msg = re.message.toString();
+      }
+      logger.info("re type is " + re.getClass().getName());
+
+      StringBuilder backtrace = new StringBuilder();
+      IRubyObject bt = re.backtrace();
+      if (bt instanceof List) {
+        for (Object obj : (List)bt) {
+          if (obj instanceof String) {
+            String line = (String)obj;
+            if (line.contains(".rb")) {
+              //We filter out any Java stack trace
+              backtrace.append(line).append('\n');
+            }
+          }
+        }
+      }
+
+      logger.error("Exception in Ruby verticle: " + msg +
+        "\n" + backtrace);
+    } else {
+      logger.error("Unexpected exception in Ruby verticle", t);
+    }
   }
 }

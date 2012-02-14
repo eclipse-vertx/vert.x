@@ -90,7 +90,7 @@ class VertxImpl implements VertxInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-          log.error("Failed to run on event loop", t);
+          VerticleManager.instance.reportException(t);
         }
       }
     });
@@ -105,7 +105,7 @@ class VertxImpl implements VertxInternal {
         try {
           runnable.run();
         } catch (Throwable t) {
-          log.error("Failed to run in worker", t);
+          VerticleManager.instance.reportException(t);
         }
       }
     });
@@ -353,7 +353,11 @@ class VertxImpl implements VertxInternal {
   private long scheduleTimeout(long id, final long contextID, final Runnable task, long delay) {
     TimerTask ttask = new TimerTask() {
       public void run(Timeout timeout) throws Exception {
-        VertxInternal.instance.executeOnContext(contextID, task);
+        try {
+          executeOnContext(contextID, task);
+        } catch (Throwable t) {
+          VerticleManager.instance.reportException(t);
+        }
       }
     };
     if (id != -1 && timeouts.get(id) == null) {

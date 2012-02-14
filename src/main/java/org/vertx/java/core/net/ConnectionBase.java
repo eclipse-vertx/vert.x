@@ -28,6 +28,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
@@ -180,8 +181,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleHandlerException(Throwable t) {
-    //We log errors otherwise they will get swallowed
-    log.error("Unhandled exception", t);
+    VerticleManager.instance.reportException(t);
   }
 
   protected boolean isSSL() {
