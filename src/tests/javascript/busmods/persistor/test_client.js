@@ -255,7 +255,8 @@ var persistorID = vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persi
 
 function vertxStop() {
   tu.unregisterAll();
-  vertx.undeployVerticle(persistorID, function() {
-    tu.appStopped();
-  });
+  tu.appStopped();
+//  vertx.undeployVerticle(persistorID, function() {
+//    tu.appStopped();
+//  });
 }

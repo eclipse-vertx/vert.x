@@ -38,12 +38,12 @@ public class TestClient extends TestClientBase {
 
   @Override
   public void stop() {
-
-    Vertx.instance.undeployVerticle(persistorID, new SimpleHandler() {
-      public void handle() {
-        TestClient.super.stop();
-      }
-    });
+    super.stop();
+//    Vertx.instance.undeployVerticle(persistorID, new SimpleHandler() {
+//      public void handle() {
+//        TestClient.super.stop();
+//      }
+//    });
 
   }
 

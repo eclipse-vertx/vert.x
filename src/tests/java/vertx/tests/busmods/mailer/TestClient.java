@@ -33,12 +33,12 @@ public class TestClient extends TestClientBase {
 
   @Override
   public void stop() {
-
-    Vertx.instance.undeployVerticle(mailerID, new SimpleHandler() {
-      public void handle() {
-        TestClient.super.stop();
-      }
-    });
+    super.stop();
+//    Vertx.instance.undeployVerticle(mailerID, new SimpleHandler() {
+//      public void handle() {
+//        TestClient.super.stop();
+//      }
+//    });
 
   }
 

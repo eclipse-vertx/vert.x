@@ -1,6 +1,5 @@
 package org.vertx.java.core.app;
 
-import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -201,7 +200,7 @@ public class VerticleManager {
                 .getClassLoader()));
           } catch (Throwable t) {
             log.error("Failed to create verticle", t);
-            internalUndeploy(deploymentName, doneHandler);
+            doUndeploy(deploymentName, doneHandler);
             return;
           }
 
@@ -210,7 +209,7 @@ public class VerticleManager {
             verticle.start();
           } catch (Throwable t) {
             reportException(t);
-            internalUndeploy(deploymentName, doneHandler);
+            doUndeploy(deploymentName, doneHandler);
           }
           aggHandler.started();
         }
@@ -257,21 +256,56 @@ public class VerticleManager {
     if (deployments.get(name) == null) {
       throw new IllegalArgumentException("There is no deployment with name " + name);
     }
-    internalUndeploy(name, doneHandler);
+    doUndeploy(name, doneHandler);
   }
 
-  private void internalUndeploy(String name, final Handler<Void> doneHandler) {
+  class UndeployCount {
+    int count;
+    int required;
+    Handler<Void> doneHandler;
+
+    synchronized void undeployed() {
+      count++;
+      checkDone();
+    }
+
+    synchronized void incRequired() {
+      required++;
+    }
+
+    synchronized void setHandler(Handler<Void> doneHandler) {
+      this.doneHandler = doneHandler;
+      checkDone();
+    }
+
+    void checkDone() {
+      if (doneHandler != null && count == required) {
+        doneHandler.handle(null);
+      }
+    }
+
+  }
+
+  private void doUndeploy(String name, final Handler<Void> doneHandler) {
+    UndeployCount count = new UndeployCount();
+    doUndeploy(name, count);
+    if (doneHandler != null) {
+      count.setHandler(doneHandler);
+    }
+  }
+
+  private void doUndeploy(String name, final UndeployCount count) {
     final Deployment deployment = deployments.remove(name);
 
-    // Depth first - undeploy children first        TODO
-//    for (String childDeployment: deployment.childDeployments) {
-//      internalUndeploy(childDeployment, null); //TODO agg handler doesn't wait for all children
-//    }
+    // Depth first - undeploy children first
+    for (String childDeployment: deployment.childDeployments) {
+      doUndeploy(childDeployment, count);
+    }
 
     if (!deployment.verticles.isEmpty()) {
-      final AggHandler aggHandler = doneHandler == null ? null : new AggHandler(deployment.verticles.size(), doneHandler);
 
       for (final VerticleHolder holder: deployment.verticles) {
+        count.incRequired();
         VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
           public void run() {
             VertxInternal.instance.setContextID(holder.contextID);
@@ -283,9 +317,7 @@ public class VerticleManager {
             //FIXME - we need to destroy the context, but not until after the deployment has fully stopped which may
             //be asynchronous, e.g. if the deployment needs to close servers
             //VertxInternal.instance.destroyContext(holder.contextID);
-            if (aggHandler != null) {
-              aggHandler.handle(null);
-            }
+            count.undeployed();
 
             // Remove context mapping
             contextDeploymentNameMap.remove(holder.contextID);

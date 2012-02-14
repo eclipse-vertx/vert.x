@@ -34,7 +34,8 @@ var queueID = vertx.deployWorkerVerticle('busmods/work_queue.js', queueConfig, 1
 
 function vertxStop() {
   tu.unregisterAll();
-  vertx.undeployVerticle(queueID, function() {
-    tu.appStopped();
-  });
+  tu.appStopped();
+//  vertx.undeployVerticle(queueID, function() {
+//    tu.appStopped();
+//  });
 }

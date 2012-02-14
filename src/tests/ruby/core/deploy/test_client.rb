@@ -29,7 +29,6 @@ end
 
 def vertx_stop
   EventBus.unregister_handler(@handler_id)
-  Vertx.undeploy_verticle(@verticle_id) if @verticle_id
   @tu.unregister_all
   @tu.app_stopped
 end
