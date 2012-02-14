@@ -28,8 +28,9 @@ public class TestClient extends TestClientBase {
   public void testDeploy() {
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
-        tu.azzert("started".equals(message.body));
-        tu.testComplete();
+        if ("started".equals(message.body)) {
+          tu.testComplete();
+        }
       }
     });
 
@@ -44,8 +45,9 @@ public class TestClient extends TestClientBase {
       public void handle(Long tid) {
         eb.registerHandler("test-handler", new Handler<Message<String>>() {
           public void handle(Message<String> message) {
-            tu.azzert("stopped".equals(message.body));
-            tu.testComplete();
+            if ("stopped".equals(message.body)) {
+              tu.testComplete();
+            }
           }
         });
         Vertx.instance.undeployVerticle(id);
