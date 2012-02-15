@@ -34,11 +34,6 @@ public class TestClient extends TestClientBase {
   @Override
   public void stop() {
     super.stop();
-//     Vertx.instance.undeployVerticle(queueID, new SimpleHandler() {
-//       public void handle() {
-//         TestClient.super.stop();
-//       }
-//     });
   }
 
   int count;

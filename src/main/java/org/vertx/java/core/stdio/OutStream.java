@@ -92,17 +92,12 @@ public class OutStream extends StreamBase implements WriteStream {
 
   private void checkDrain(int queueSize) {
     if (queueSize <= writeQueueMaxSize / 2 && drainHandler != null) {
-      VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+      context.execute(new Runnable() {
         public void run() {
           Handler<Void> dh = drainHandler;
           if (dh != null) {
-            VertxInternal.instance.setContextID(contextID);
             drainHandler = null;
-            try {
-              dh.handle(null);
-            } catch (Throwable t) {
-              VerticleManager.instance.reportException(t);
-            }
+            dh.handle(null);
           }
         }
       });

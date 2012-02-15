@@ -47,6 +47,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.VerticleManager;
@@ -206,7 +207,7 @@ public class HttpServer extends NetServerBase {
             ChannelPipeline pipeline = Channels.pipeline();
 
             if (ssl) {
-              SSLEngine engine = context.createSSLEngine();
+              SSLEngine engine = sslContext.createSSLEngine();
               engine.setUseClientMode(false);
               switch (clientAuth) {
                 case REQUEST: {
@@ -390,18 +391,18 @@ public class HttpServer extends NetServerBase {
       if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
         // The actual server still has handlers so we don't actually close it
         if (done != null) {
-          executeCloseDone(contextID, done);
+          executeCloseDone(context, done);
         }
       } else {
         // No Handlers left so close the actual server
         // The done handler needs to be executed on the context that calls close, NOT the context
         // of the actual server
-        actualServer.actualClose(contextID, done);
+        actualServer.actualClose(context, done);
       }
     }
   }
 
-  private void actualClose(final long closeContextID, final Handler<Void> done) {
+  private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
       servers.remove(id);
     }
@@ -413,27 +414,22 @@ public class HttpServer extends NetServerBase {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    VertxInternal.instance.setContextID(closeContextID);
+    VertxInternal.instance.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
       fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          executeCloseDone(closeContextID, done);
+          executeCloseDone(closeContext, done);
         }
       });
     }
   }
 
-  private void executeCloseDone(final long closeContextID, final Handler<Void> done) {
-    VertxInternal.instance.executeOnContext(closeContextID, new Runnable() {
+  private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
+    closeContext.execute(new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(closeContextID);
-        try {
-          done.handle(null);
-        } catch (Throwable t) {
-          VerticleManager.instance.reportException(t);
-        }
+        done.handle(null);
       }
     });
   }
@@ -508,7 +504,7 @@ public class HttpServer extends NetServerBase {
               throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
             }
 
-            final ServerConnection wsConn = new ServerConnection(ch, wsHandler.contextID, ch.getWorker().getThread());
+            final ServerConnection wsConn = new ServerConnection(ch, wsHandler.context, ch.getWorker().getThread());
             wsConn.wsHandler(wsHandler.handler);
             Runnable connectRunnable = new Runnable() {
               public void run() {
@@ -541,7 +537,7 @@ public class HttpServer extends NetServerBase {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
-              conn = new ServerConnection(ch, reqHandler.contextID, ch.getWorker().getThread());
+              conn = new ServerConnection(ch, reqHandler.context, ch.getWorker().getThread());
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -581,13 +577,9 @@ public class HttpServer extends NetServerBase {
       ch.close();
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
-        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
+        conn.getContext().execute(new Runnable() {
           public void run() {
-            try {
-              conn.handleException((Exception) t);
-            } catch (Throwable t) {
-              VerticleManager.instance.reportException(t);
-            }
+            conn.handleException((Exception) t);
           }
         });
       } else {
@@ -606,13 +598,9 @@ public class HttpServer extends NetServerBase {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.remove(ch);
       if (conn != null) {
-        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
+        conn.getContext().execute(new Runnable() {
           public void run() {
-            try {
-              conn.handleClosed();
-            } catch (Throwable t) {
-              VerticleManager.instance.reportException(t);
-            }
+            conn.handleClosed();
           }
         });
       }
@@ -624,7 +612,7 @@ public class HttpServer extends NetServerBase {
       final ServerConnection conn = connectionMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        VertxInternal.instance.executeOnContext(conn.getContextID(), new Runnable() {
+        conn.getContext().execute(new Runnable() {
           public void run() {
             conn.handleInterestedOpsChanged();
           }

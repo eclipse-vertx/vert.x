@@ -49,11 +49,6 @@ public interface Vertx {
   boolean cancelTimer(long id);
 
   /**
-   * Returns the context ID for the current event loop. The context ID uniquely identifies the event loop.
-   */
-  Long getContextID();
-
-  /**
    * Call the specified event handler asynchronously on the next "tick" of the event loop.
    */
   void nextTick(Handler<Void> handler);

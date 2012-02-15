@@ -1,5 +1,6 @@
 package org.vertx.java.core.app.cli;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
@@ -19,7 +20,7 @@ public class SocketDeployer {
 
   public static final int DEFAULT_PORT = 25571;
 
-  private long serverContextID;
+  private Context serverContext;
   private volatile NetServer server;
   private final VerticleManager appManager;
   private final int port;
@@ -32,7 +33,7 @@ public class SocketDeployer {
   public void start() {
     VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
-        serverContextID = Vertx.instance.getContextID();
+        serverContext= VertxInternal.instance.getContext();
         server = new NetServer().connectHandler(new Handler<NetSocket>() {
           public void handle(final NetSocket socket) {
             final RecordParser parser = RecordParser.newFixed(4, null);
@@ -66,9 +67,8 @@ public class SocketDeployer {
   }
 
   public void stop(final Handler<Void> doneHandler) {
-    VertxInternal.instance.executeOnContext(serverContextID, new Runnable() {
+    serverContext.execute(new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(serverContextID);
         if (doneHandler != null) {
           server.close(doneHandler);
         } else {

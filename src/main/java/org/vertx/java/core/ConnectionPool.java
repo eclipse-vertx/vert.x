@@ -54,13 +54,8 @@ public abstract class ConnectionPool<T> {
     log.trace("available: " + available.size() + " connection count: " + connectionCount + " waiters: " + waiters.size());
   }
 
-  /**
-   * Get a connection from the pool. The connection is returned in the handler, some time in the future if a
-   * connection becomes available.
-   * @param handler The handler
-   * @param contextID The context id
-   */
-  public void getConnection(Handler<T> handler, long contextID) {
+
+  public void getConnection(Handler<T> handler, Context context) {
     boolean connect = false;
     T conn;
     outer: synchronized (this) {
@@ -75,7 +70,7 @@ public abstract class ConnectionPool<T> {
           break outer;
         }
         // Add to waiters
-        waiters.add(new Waiter(handler, contextID));
+        waiters.add(new Waiter(handler, context));
       }
     }
     // We do this outside the sync block to minimise the critical section
@@ -83,7 +78,7 @@ public abstract class ConnectionPool<T> {
       handler.handle(conn);
     }
     else if (connect) {
-      connect(handler, contextID);
+      connect(handler, context);
     }
   }
 
@@ -107,7 +102,7 @@ public abstract class ConnectionPool<T> {
     }
     // We do the actual connect outside the sync block to minimise the critical section
     if (waiter != null) {
-      connect(waiter.handler, waiter.contextID);
+      connect(waiter.handler, waiter.context);
     }
   }
 
@@ -125,9 +120,8 @@ public abstract class ConnectionPool<T> {
     }
     if (waiter != null) {
       final Waiter w = waiter;
-      VertxInternal.instance.executeOnContext(w.contextID, new Runnable() {
+      w.context.execute(new Runnable() {
         public void run() {
-          VertxInternal.instance.setContextID(w.contextID);
           w.handler.handle(conn);
         }
       });
@@ -145,15 +139,15 @@ public abstract class ConnectionPool<T> {
   /**
    * Implement this method in a sub-class to implement the actual connection creation for the specific type of connection
    */
-  protected abstract void connect(final Handler<T> connectHandler, final long contextID);
+  protected abstract void connect(final Handler<T> connectHandler, final Context context);
 
   private class Waiter {
     final Handler<T> handler;
-    final long contextID;
+    final Context context;
 
-    private Waiter(Handler<T> handler, long contextID) {
+    private Waiter(Handler<T> handler, Context context) {
       this.handler = handler;
-      this.contextID = contextID;
+      this.context = context;
     }
   }
 }

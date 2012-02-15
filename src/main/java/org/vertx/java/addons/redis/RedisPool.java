@@ -17,6 +17,7 @@
 package org.vertx.java.addons.redis;
 
 import org.vertx.java.core.ConnectionPool;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.net.NetClient;
@@ -40,8 +41,8 @@ public class RedisPool {
 
   private final NetClient client = new NetClient();
   private final ConnectionPool<InternalConnection> pool = new ConnectionPool<InternalConnection>() {
-    protected void connect(Handler<InternalConnection> connectHandler, long contextID) {
-      internalConnect(connectHandler, contextID);
+    protected void connect(Handler<InternalConnection> connectHandler, Context context) {
+      internalConnect(connectHandler, context);
     }
   };
   private String host = "localhost";
@@ -146,7 +147,7 @@ public class RedisPool {
     client.close();
   }
 
-  private void internalConnect(final Handler<InternalConnection> connectHandler, long contextID) {
+  private void internalConnect(final Handler<InternalConnection> connectHandler, Context context) {
     client.connect(port, host, new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
         connectHandler.handle(new InternalConnection(pool, socket));

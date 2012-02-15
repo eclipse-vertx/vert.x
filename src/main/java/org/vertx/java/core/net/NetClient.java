@@ -34,6 +34,8 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.Context;
+import org.vertx.java.core.EventLoopContext;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
@@ -85,8 +87,8 @@ public class NetClient extends NetClientBase {
 
   private NetClient connect(final int port, final String host, final Handler<NetSocket> connectHandler,
                             final int remainingAttempts) {
-    final Long contextID = Vertx.instance.getContextID();
-    if (contextID == null) {
+    final Context context = VertxInternal.instance.getContext();
+    if (context == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
     }
 
@@ -102,7 +104,7 @@ public class NetClient extends NetClientBase {
         public ChannelPipeline getPipeline() throws Exception {
           ChannelPipeline pipeline = Channels.pipeline();
           if (ssl) {
-            SSLEngine engine = context.createSSLEngine();
+            SSLEngine engine = sslContext.createSSLEngine();
             engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }
@@ -114,7 +116,14 @@ public class NetClient extends NetClientBase {
     }
 
     //Client connections share context with caller
-    channelFactory.setWorker(VertxInternal.instance.getWorkerForContextID(contextID));
+    EventLoopContext ectx;
+    if (context instanceof EventLoopContext) {
+      //It always will be
+      ectx = (EventLoopContext)context;
+    } else {
+      ectx = null;
+    }
+    channelFactory.setWorker(ectx.getWorker());
 
     bootstrap.setOptions(generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
@@ -147,7 +156,7 @@ public class NetClient extends NetClientBase {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             runOnCorrectThread(ch, new Runnable() {
               public void run() {
-                VertxInternal.instance.setContextID(contextID);
+                VertxInternal.instance.setContext(context);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
                 //Set a timer to retry connection
                 Vertx.instance.setTimer(reconnectInterval, new Handler<Long>() {
@@ -170,8 +179,8 @@ public class NetClient extends NetClientBase {
   private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
     runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(contextID);
-        NetSocket sock = new NetSocket(ch, contextID, Thread.currentThread());
+        VertxInternal.instance.setContext(context);
+        NetSocket sock = new NetSocket(ch, context, Thread.currentThread());
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
       }
@@ -182,7 +191,7 @@ public class NetClient extends NetClientBase {
     if (t instanceof Exception && exceptionHandler != null) {
       runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          VertxInternal.instance.setContextID(contextID);
+          VertxInternal.instance.setContext(context);
           exceptionHandler.handle((Exception) t);
         }
       });

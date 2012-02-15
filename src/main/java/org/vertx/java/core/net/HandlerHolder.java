@@ -1,16 +1,17 @@
 package org.vertx.java.core.net;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HandlerHolder<T> {
-  public final long contextID;
+  public final Context context;
   public final Handler<T> handler;
 
-  HandlerHolder(long contextID, Handler<T> handler) {
-    this.contextID = contextID;
+  HandlerHolder(Context context, Handler<T> handler) {
+    this.context = context;
     this.handler = handler;
   }
 
@@ -21,7 +22,7 @@ public class HandlerHolder<T> {
 
     HandlerHolder that = (HandlerHolder) o;
 
-    if (contextID != that.contextID) return false;
+    if (context != that.context) return false;
     if (handler != null ? !handler.equals(that.handler) : that.handler != null) return false;
 
     return true;
@@ -29,8 +30,8 @@ public class HandlerHolder<T> {
 
   @Override
   public int hashCode() {
-    int result = (int) (contextID ^ (contextID >>> 32));
-    result = 31 * result + (handler != null ? handler.hashCode() : 0);
+    int result = context.hashCode();
+    result = 31 * result + handler.hashCode();
     return result;
   }
 }
