@@ -251,7 +251,7 @@ class VertxImpl implements VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    VertxInternal.instance.reportException(t);
+    VerticleManager.instance.reportException(t);
   }
 
   VertxImpl() {

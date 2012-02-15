@@ -199,6 +199,48 @@ function testFindWithSort() {
   });
 }
 
+function testFindBatched() {
+
+  var num = 103;
+
+  for (var i = 0; i < num; i++) {
+    eb.send('test.persistor', {
+      collection: 'testcoll',
+      action: 'save',
+      document: {
+        name: 'tim',
+        age: i
+      }
+    }, function(reply) {
+      tu.azzert(reply.status === 'ok');
+    });
+  }
+
+  var received = 0;
+
+  function createReplyHandler() {
+    return function(reply, replier) {
+      received += reply.results.length;
+      if (received < num) {
+        tu.azzert(reply.results.length === 10);
+        tu.azzert(reply.status === 'more-exist');
+        replier({}, createReplyHandler());
+      } else {
+        tu.azzert(reply.results.length === 3);
+        tu.azzert(reply.status === 'ok');
+        tu.testComplete();
+      }
+    }
+  }
+
+  eb.send('test.persistor', {
+    collection: 'testcoll',
+    action: 'find',
+    matcher: {},
+    batch_size: 10
+  }, createReplyHandler());
+}
+
 function testDelete() {
 
   eb.send('test.persistor', {

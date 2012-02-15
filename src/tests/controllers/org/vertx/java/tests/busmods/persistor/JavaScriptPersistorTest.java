@@ -51,5 +51,10 @@ public class JavaScriptPersistorTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testFindBatched() throws Exception {
+    startTest(getMethodName());
+  }
+
 
 }

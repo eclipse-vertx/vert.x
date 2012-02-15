@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -62,8 +63,8 @@ class ByteArrayMessage extends Message<byte[]> {
     return TYPE_BYTEARRAY;
   }
 
-  protected void handleReply(byte[] reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(byte[] reply, Handler<Message<byte[]>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

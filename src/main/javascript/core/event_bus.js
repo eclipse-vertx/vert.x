@@ -40,12 +40,17 @@ if (!vertx.EventBus) {
             }
           }
 
-          handler(body, function(reply) {
+          handler(body, function(reply, replyHandler) {
             if (typeof reply === 'undefined') {
               throw "Reply message must be specified";
             }
             reply = convertMessage(reply);
-            jMsg.reply(reply);
+            if (replyHandler) {
+              var wrapped = wrappedHandler(replyHandler);
+              jMsg.reply(reply, wrapped);
+            } else {
+              jMsg.reply(reply);
+            }
           })
         }
       });

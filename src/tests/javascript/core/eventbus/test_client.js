@@ -102,7 +102,26 @@ function testWithReply() {
     assertReply(reply);
     tu.testComplete();
   });
-  eb.send(address, sent);
+}
+
+function testReplyOfReplyOfReply() {
+
+  eb.registerHandler(address, function MyHandler(msg, replier) {
+    tu.azzert("message" === msg);
+    replier("reply", function(reply, replier) {
+      tu.azzert("reply-of-reply" === reply);
+      replier("reply-of-reply-of-reply");
+      eb.unregisterHandler(address, MyHandler);
+    });
+  });
+
+  eb.send(address, "message", function(reply, replier) {
+    tu.azzert("reply" === reply);
+    replier("reply-of-reply", function(reply) {
+      tu.azzert("reply-of-reply-of-reply" === reply);
+      tu.testComplete();
+    });
+  });
 }
 
 function testEmptyReply() {

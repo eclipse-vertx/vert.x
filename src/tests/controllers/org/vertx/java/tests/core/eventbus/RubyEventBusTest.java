@@ -66,6 +66,8 @@ public class RubyEventBusTest extends TestBase {
     startTest(getMethodName());
   }
 
-
+  public void test_reply_of_reply_of_reply() {
+    startTest(getMethodName());
+  }
 
 }

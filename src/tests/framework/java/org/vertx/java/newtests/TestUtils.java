@@ -49,10 +49,9 @@ public class TestUtils {
     }
     sendMessage(jsonObject);
     if (!result) {
-      log.info("Throwing assertion");
-      Error err = new AssertionError(message);
-      //log.error("Assertion failed", err);
-      throw err;
+      // We throw a RTE not an AssertFailedError since Rhino cannot catch errors in
+      // test_utils.js
+      throw new RuntimeException("Assertion failed: " + message);
     }
   }
 

@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -48,8 +49,8 @@ class FloatMessage extends Message<Float> {
     return TYPE_FLOAT;
   }
 
-  protected void handleReply(Float reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(Float reply, Handler<Message<Float>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

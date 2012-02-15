@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -48,8 +49,8 @@ class CharacterMessage extends Message<Character> {
     return TYPE_CHARACTER;
   }
 
-  protected void handleReply(Character reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(Character reply, Handler<Message<Character>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

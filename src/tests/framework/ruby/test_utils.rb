@@ -10,7 +10,7 @@ class TestUtils
       else
         @j_tu.azzert(result)
       end
-    rescue java.lang.AssertionError
+    rescue java.lang.RuntimeException
       # Rethrow as a ruby exception so we see nice Ruby backtrace
       raise "Assertion Failed #{message}"
     end

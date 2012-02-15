@@ -9,6 +9,7 @@ import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
@@ -125,6 +126,10 @@ public class MongoPersistor extends BusModBase implements Verticle, Handler<Mess
     if (limit == null) {
       limit = -1;
     }
+    Integer batchSize = (Integer)message.body.getNumber("batch_size");
+    if (batchSize == null) {
+      batchSize = 100;
+    }
     JsonObject matcher = getMandatoryObject("matcher", message);
     if (matcher == null) {
       return;
@@ -138,17 +143,62 @@ public class MongoPersistor extends BusModBase implements Verticle, Handler<Mess
     if (sort != null) {
       cursor.sort(jsonToDBObject(sort));
     }
-    JsonObject reply = new JsonObject();
+    sendBatch(message, cursor, batchSize);
+  }
+
+  private void sendBatch(Message<JsonObject> message, final DBCursor cursor, final int max) {
+    int count = 0;
     JsonArray results = new JsonArray();
-    while (cursor.hasNext()) {
+    while (cursor.hasNext() && count < max) {
       DBObject obj = cursor.next();
       String s = obj.toString();
       JsonObject m = new JsonObject(s);
       results.add(m);
+      count++;
     }
-    cursor.close();
+    if (cursor.hasNext()) {
+      JsonObject reply = createBatchMessage("more-exist", results);
+
+      // Set a timeout, if the user doesn't reply within 10 secs, close the cursor
+      final long timerID = Vertx.instance.setTimer(10000, new Handler<Long>() {
+        public void handle(Long timerID) {
+          Vertx.instance.getLogger().warn("Closing DB cursor on timeout");
+          try {
+            cursor.close();
+          } catch (Exception ignore) {
+          }
+        }
+      });
+
+      message.reply(reply, new Handler<Message<JsonObject>>() {
+        public void handle(Message msg) {
+          Vertx.instance.cancelTimer(timerID);
+          // Get the next batch
+          sendBatch(msg, cursor, max);
+        }
+      });
+
+    } else {
+      JsonObject reply = createBatchMessage("ok", results);
+      message.reply(reply);
+      cursor.close();
+    }
+  }
+
+  private JsonObject createBatchMessage(String status, JsonArray results) {
+    JsonObject reply = new JsonObject();
     reply.putArray("results", results);
-    sendOK(message, reply);
+    reply.putString("status", status);
+    return reply;
+  }
+
+  protected void sendMoreExist(String status, Message<JsonObject> message, JsonObject json) {
+    json.putString("status", status);
+    message.reply(json, new Handler<Message<JsonObject>>() {
+      public void handle(Message msg) {
+
+      }
+    });
   }
 
   private void doFindOne(Message<JsonObject> message) {
