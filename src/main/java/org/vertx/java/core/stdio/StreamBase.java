@@ -18,7 +18,6 @@ package org.vertx.java.core.stdio;
 
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 
 /**

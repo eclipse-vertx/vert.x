@@ -1,17 +1,18 @@
-package org.vertx.java.tests.core.deploy;
+package org.vertx.java.tests.core.logger;
 
 import org.junit.Test;
 import org.vertx.java.newtests.TestBase;
+import vertx.tests.core.logger.TestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaScriptDeployTest extends TestBase {
+public class JavaLoggerTest extends TestBase {
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp("core/deploy/test_client.js");
+    startApp(TestClient.class.getName());
   }
 
   @Override
@@ -20,12 +21,7 @@ public class JavaScriptDeployTest extends TestBase {
   }
 
   @Test
-  public void testDeploy() throws Exception {
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testUndeploy() throws Exception {
+  public void testLogger() throws Exception {
     startTest(getMethodName());
   }
 

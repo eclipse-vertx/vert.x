@@ -3,7 +3,6 @@ package org.vertx.java.tests.core.deploy;
 import org.junit.Test;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.deploy.TestClient;
-import vertx.tests.core.http.HttpTestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

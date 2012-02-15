@@ -5,8 +5,8 @@ import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
 import org.vertx.java.core.app.Verticle;
-import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +17,7 @@ import java.io.Writer;
  */
 public class JRubyVerticle implements Verticle {
 
-  private static final Logger log = Logger.getLogger(JRubyVerticle.class);
+  private static final Logger log = LoggerFactory.getLogger(JRubyVerticle.class);
 
   private final ScriptingContainer container;
   private final ClassLoader cl;

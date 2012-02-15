@@ -19,6 +19,7 @@ package org.vertx.java.addons.redis;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.parsetools.RecordParser;
 
 /**
@@ -28,7 +29,7 @@ import org.vertx.java.core.parsetools.RecordParser;
  */
 public class ReplyParser implements Handler<Buffer> {
 
-  private static final Logger log = Logger.getLogger(ReplyParser.class);
+  private static final Logger log = LoggerFactory.getLogger(ReplyParser.class);
 
   static final byte[] CRLF = new byte[]{'\r', '\n'};
   static final byte STAR = (byte)'*';

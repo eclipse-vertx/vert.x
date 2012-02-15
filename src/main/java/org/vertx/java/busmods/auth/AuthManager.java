@@ -7,6 +7,7 @@ import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,7 @@ import java.util.UUID;
  */
 public class AuthManager extends BusModBase implements Verticle {
 
-  private static final Logger log = Logger.getLogger(AuthManager.class);
+  private static final Logger log = LoggerFactory.getLogger(AuthManager.class);
 
   private Handler<Message<JsonObject>> loginHandler;
   private Handler<Message<JsonObject>> logoutHandler;

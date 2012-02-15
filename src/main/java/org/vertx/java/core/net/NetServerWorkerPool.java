@@ -3,6 +3,7 @@ package org.vertx.java.core.net;
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
  */
 public class NetServerWorkerPool extends NioWorkerPool {
 
-  private static final Logger log = Logger.getLogger(NetServerWorkerPool.class);
+  private static final Logger log = LoggerFactory.getLogger(NetServerWorkerPool.class);
 
   public NetServerWorkerPool() {
     super(0, null);

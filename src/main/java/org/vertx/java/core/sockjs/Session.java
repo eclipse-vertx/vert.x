@@ -5,6 +5,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -14,7 +15,7 @@ import java.util.Queue;
  */
 class Session extends SockJSSocket {
 
-  private static final Logger log = Logger.getLogger(Session.class);
+  private static final Logger log = LoggerFactory.getLogger(Session.class);
 
   private final Queue<String> pendingWrites = new LinkedList<>();
   private final Queue<String> pendingReads = new LinkedList<>();

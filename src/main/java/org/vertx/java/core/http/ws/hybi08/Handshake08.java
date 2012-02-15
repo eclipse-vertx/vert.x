@@ -33,6 +33,7 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.ws.Handshake;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.security.NoSuchAlgorithmException;
 
@@ -44,7 +45,7 @@ import java.security.NoSuchAlgorithmException;
  */
 public class Handshake08 implements Handshake {
 
-  private static Logger log = Logger.getLogger(Handshake08.class);
+  private static Logger log = LoggerFactory.getLogger(Handshake08.class);
 
   protected WebSocketChallenge08 challenge;
 

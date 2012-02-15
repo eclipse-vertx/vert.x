@@ -18,7 +18,6 @@ package org.vertx.java.core.net;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.Context;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 
 import javax.net.ssl.SSLContext;

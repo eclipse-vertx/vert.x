@@ -32,6 +32,7 @@ import org.vertx.java.core.http.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.ws.hybi17.Handshake17;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Queue;
@@ -39,7 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 class ClientConnection extends AbstractConnection {
 
-  private static final Logger log = Logger.getLogger(ClientConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
   ClientConnection(HttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,

@@ -17,6 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -39,7 +40,7 @@ import java.security.cert.X509Certificate;
  */
 public class TLSHelper {
 
-  private static final Logger log = Logger.getLogger(TLSHelper.class);
+  private static final Logger log = LoggerFactory.getLogger(TLSHelper.class);
 
   /*
   If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file

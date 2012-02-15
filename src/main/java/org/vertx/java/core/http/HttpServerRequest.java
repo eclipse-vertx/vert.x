@@ -21,6 +21,7 @@ import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,7 +47,7 @@ import java.util.Set;
  */
 public class HttpServerRequest extends HttpReadStreamBase {
 
-  private static final Logger log = Logger.getLogger(HttpServerRequest.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpServerRequest.class);
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;

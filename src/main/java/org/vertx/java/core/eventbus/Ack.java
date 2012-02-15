@@ -5,7 +5,7 @@ package org.vertx.java.core.eventbus;
  */
 public class Ack {//extends Sendable {
 
-//  private static final Logger log = Logger.getLogger(Ack.class);
+//  private static final Logger log = LoggerFactory.getLogger(Ack.class);
 //
 //  final String messageID;
 //

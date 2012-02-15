@@ -22,6 +22,7 @@ import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +80,7 @@ import java.util.List;
  */
 public class Composer {
 
-  private static final Logger log = Logger.getLogger(Composer.class);
+  private static final Logger log = LoggerFactory.getLogger(Composer.class);
 
   private List<WaitingBatch> batches = new ArrayList<>();
   private WaitingBatch currentBatch;

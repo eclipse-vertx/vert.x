@@ -25,6 +25,7 @@ import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
@@ -115,6 +116,6 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
     return null;
   }
 
-  private static final Logger log = Logger.getLogger(WebSocketFrameDecoder08.class);
+  private static final Logger log = LoggerFactory.getLogger(WebSocketFrameDecoder08.class);
 
 }

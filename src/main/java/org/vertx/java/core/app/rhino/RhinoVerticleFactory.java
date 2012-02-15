@@ -1,7 +1,6 @@
 package org.vertx.java.core.app.rhino;
 
 import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.RhinoException;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.app.VerticleFactory;

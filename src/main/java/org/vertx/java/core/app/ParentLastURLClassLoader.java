@@ -1,6 +1,7 @@
 package org.vertx.java.core.app;
 
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +19,7 @@ public class ParentLastURLClassLoader extends URLClassLoader {
 
   private ClassLoader system;
 
-  private static final Logger log = Logger.getLogger(ParentLastURLClassLoader.class);
+  private static final Logger log = LoggerFactory.getLogger(ParentLastURLClassLoader.class);
 
   public ParentLastURLClassLoader(URL[] classpath, ClassLoader parent) {
     super(classpath, parent);
@@ -28,10 +29,10 @@ public class ParentLastURLClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
-    if (name.startsWith("org.vertx.java.core.logging.Logger")) {
+    if (name.startsWith("org.vertx.java.core.logging.LoggerFactory")) {
       // Don't allow system logger to be used from within app since it maintains static references which hang around
       // after app is undeployed
-      throw new ClassNotFoundException("Do not use org.vertx.java.core.logging.Logger from within application");
+      throw new ClassNotFoundException("Do not use org.vertx.java.core.logging.LoggerFactory from within application");
     }
     Class<?> c = findLoadedClass(name);
     if (c == null) {

@@ -5,6 +5,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import java.util.Map;
  */
 public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
-  private static final Logger log = Logger.getLogger(SockJSBridgeHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(SockJSBridgeHandler.class);
 
   private final EventBus eb = EventBus.instance;
   private List<JsonObject> permitted = new ArrayList<>();

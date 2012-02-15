@@ -2,6 +2,7 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +15,7 @@ import java.util.regex.Pattern;
 
 public class WebSocketMatcher implements Handler<ServerWebSocket> {
 
-  private static final Logger log = Logger.getLogger(RouteMatcher.class);
+  private static final Logger log = LoggerFactory.getLogger(RouteMatcher.class);
 
   private List<PatternBinding> bindings = new ArrayList<>();
 

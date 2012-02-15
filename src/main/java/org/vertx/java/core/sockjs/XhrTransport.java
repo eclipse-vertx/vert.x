@@ -5,6 +5,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.Map;
 
@@ -13,7 +14,7 @@ import java.util.Map;
  */
 class XhrTransport extends BaseTransport {
 
-  private static final Logger log = Logger.getLogger(XhrTransport.class);
+  private static final Logger log = LoggerFactory.getLogger(XhrTransport.class);
 
   private static final Buffer H_BLOCK;
 

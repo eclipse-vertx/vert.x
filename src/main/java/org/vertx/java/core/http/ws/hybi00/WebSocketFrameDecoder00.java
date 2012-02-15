@@ -9,6 +9,7 @@ import org.jboss.netty.handler.codec.replay.VoidEnum;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
@@ -17,7 +18,7 @@ import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
  */
 public class WebSocketFrameDecoder00 extends ReplayingDecoder<VoidEnum> {
 
-  private static final Logger log = Logger.getLogger(WebSocketFrameDecoder00.class);
+  private static final Logger log = LoggerFactory.getLogger(WebSocketFrameDecoder00.class);
 
   public static final int DEFAULT_MAX_FRAME_SIZE = 128 * 1024;
 

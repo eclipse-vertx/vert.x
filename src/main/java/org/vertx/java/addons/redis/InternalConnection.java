@@ -22,6 +22,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 
 import java.util.LinkedList;
@@ -39,7 +40,7 @@ import java.util.Queue;
  */
 public class InternalConnection implements Handler<RedisReply>{
 
-  private static final Logger log = Logger.getLogger(InternalConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(InternalConnection.class);
 
   private final LinkedList<ReplyHandler> deferredQueue = new LinkedList<>();
   private final NetSocket socket;

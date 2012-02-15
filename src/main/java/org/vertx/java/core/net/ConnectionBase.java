@@ -29,8 +29,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -45,7 +45,7 @@ import java.io.RandomAccessFile;
  */
 public abstract class ConnectionBase {
 
-  private static final Logger log = Logger.getLogger(ConnectionBase.class);
+  private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
   protected ConnectionBase(Channel channel, Context context, Thread th) {
     this.channel = channel;

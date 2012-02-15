@@ -29,6 +29,7 @@ import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.util.LinkedList;
@@ -77,7 +78,7 @@ import java.util.Map;
  */
 public class HttpClientRequest implements WriteStream {
 
-  private static final Logger log = Logger.getLogger(HttpClient.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,

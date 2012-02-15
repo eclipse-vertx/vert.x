@@ -20,13 +20,14 @@ import org.vertx.java.core.Deferred;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class RedisDeferred<T> extends DeferredAction<T> implements ReplyHandler {
 
-  private static final Logger log = Logger.getLogger(RedisDeferred.class);
+  private static final Logger log = LoggerFactory.getLogger(RedisDeferred.class);
 
   static enum DeferredType {
     VOID, BOOLEAN, INTEGER, BULK, MULTI_BULK, DOUBLE, STRING

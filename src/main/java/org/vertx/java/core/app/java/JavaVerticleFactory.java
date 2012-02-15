@@ -1,10 +1,8 @@
 package org.vertx.java.core.app.java;
 
-import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.app.VerticleFactory;
 import org.vertx.java.core.app.VerticleManager;
-import org.vertx.java.core.logging.Logger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

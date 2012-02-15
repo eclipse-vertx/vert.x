@@ -17,6 +17,7 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -28,7 +29,7 @@ import java.util.Queue;
  */
 public abstract class ConnectionPool<T> {
 
-  private static final Logger log = Logger.getLogger(ConnectionPool.class);
+  private static final Logger log = LoggerFactory.getLogger(ConnectionPool.class);
 
   private final Queue<T> available = new LinkedList<>();
   private int maxPoolSize = 1;

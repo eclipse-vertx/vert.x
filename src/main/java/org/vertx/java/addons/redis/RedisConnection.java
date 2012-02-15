@@ -25,6 +25,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.LinkedList;
@@ -95,7 +96,7 @@ import java.util.Map;
  */
 public class RedisConnection {
 
-  private static final Logger log = Logger.getLogger(RedisConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(RedisConnection.class);
 
   private static final Charset UTF8 = Charset.forName("UTF-8");
 

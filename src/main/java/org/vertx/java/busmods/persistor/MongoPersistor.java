@@ -7,7 +7,6 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
-import org.bson.types.ObjectId;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.Verticle;
@@ -15,6 +14,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.util.UUID;
@@ -26,7 +26,7 @@ import java.util.UUID;
  */
 public class MongoPersistor extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
 
-  private static final Logger log = Logger.getLogger(MongoPersistor.class);
+  private static final Logger log = LoggerFactory.getLogger(MongoPersistor.class);
 
   private String host;
   private int port;

@@ -6,6 +6,7 @@ import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * These shenanigans are necessary so we can switch out the response decoder to the websocket decoder
@@ -18,7 +19,7 @@ import org.vertx.java.core.logging.Logger;
  */
 public class SwitchingHttpResponseDecoder extends HttpResponseDecoder {
 
-  private static final Logger log = Logger.getLogger(SwitchingHttpResponseDecoder.class);
+  private static final Logger log = LoggerFactory.getLogger(SwitchingHttpResponseDecoder.class);
 
   private volatile String name;
   private volatile ChannelHandler switchTo;

@@ -11,6 +11,7 @@ import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class VertxMgr {
 
-  private static final Logger log = Logger.getLogger(VertxMgr.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxMgr.class);
 
   public static void main(String[] args) {
     new VertxMgr(args);

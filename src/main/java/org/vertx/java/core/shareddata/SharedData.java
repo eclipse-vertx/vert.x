@@ -18,6 +18,7 @@ package org.vertx.java.core.shareddata;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,7 +51,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SharedData {
 
-  private static final Logger log = Logger.getLogger(SharedData.class);
+  private static final Logger log = LoggerFactory.getLogger(SharedData.class);
 
   public static final SharedData instance = new SharedData();
 

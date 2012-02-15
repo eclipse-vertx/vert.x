@@ -22,13 +22,14 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 public class SockJSExample implements Verticle {
 
-  private static final Logger log = Logger.getLogger(SockJSExample.class);
+  private static final Logger log = LoggerFactory.getLogger(SockJSExample.class);
 
   private HttpServer server;
 

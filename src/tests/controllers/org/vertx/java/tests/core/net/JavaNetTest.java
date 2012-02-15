@@ -2,6 +2,7 @@ package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
@@ -24,7 +25,7 @@ import vertx.tests.core.net.TestClient;
  */
 public class JavaNetTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaNetTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaNetTest.class);
 
   @Override
   protected void setUp() throws Exception {

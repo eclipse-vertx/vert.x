@@ -41,11 +41,11 @@ import org.vertx.java.core.Context;
 import org.vertx.java.core.EventLoopContext;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetClientBase;
 
 import javax.net.ssl.SSLEngine;
@@ -66,7 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class HttpClient extends NetClientBase {
 
-  private static final Logger log = Logger.getLogger(HttpClientRequest.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;

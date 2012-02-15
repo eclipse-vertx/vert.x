@@ -13,6 +13,7 @@ import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.WebSocketMatcher;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
 
 import java.security.MessageDigest;
@@ -60,7 +61,7 @@ import java.util.Set;
  */
 public class SockJSServer {
 
-  private static final Logger log = Logger.getLogger(SockJSServer.class);
+  private static final Logger log = LoggerFactory.getLogger(SockJSServer.class);
 
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();

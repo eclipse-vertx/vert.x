@@ -30,6 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.io.File;
@@ -60,7 +61,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class HttpServerResponse implements WriteStream {
 
-  private static final Logger log = Logger.getLogger(HttpServerResponse.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpServerResponse.class);
 
   private final ServerConnection conn;
   private final HttpResponse response;

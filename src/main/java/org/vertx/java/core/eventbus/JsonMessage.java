@@ -4,13 +4,14 @@ import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class JsonMessage extends Message<JsonObject> {
 
-  private static final Logger log = Logger.getLogger(JsonMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonMessage.class);
 
   private byte[] encoded;
 
