@@ -159,12 +159,16 @@ To find documents send a JSON message to the busmod main address:
     {
         "action": "find",
         "collection": <collection>,
-        "match": <match>
+        "match": <match>,
+        "limit": <limit>,
+        "batch_size": <batch_size>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
 * `match` is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
+* `limit` is a number which determines the maximum total number of documents to return. This is optional. By default all documents are returned.
+* `batch_size` is a number which determines how many documents to return in each reply JSON message. It's optional and the default value is `100`. Batching is discussed in more detail below.
 
 An example would be:
 
@@ -216,6 +220,43 @@ If an error occurs in finding the documents a reply is returned:
     }
     
 Where `message` is an error message. 
+
+###### Batching
+
+If a find returns many documents we do not want to load them all up into memory at once and send them in a single JSON message since this could result in the server running out of RAM.
+
+Instead, if there are more than `batch_size` documents to be found, the busmod will send a maxium of `batch_size` documents in each reply, and send multiple replies.
+
+When you receive a reply to the find message containing `batch_size` documents the `status` field of the reply will be set to `more-exist` if there are more documents available.
+
+To get the next batch of documents you just reply to the reply with an empty JSON message, and specify a reply handler in which to receive the next batch.
+
+For instance, in JavaScript you might do something like:
+
+    function processResults(results) {
+        // Process the data
+    }
+
+    function createReplyHandler() {
+        return new function(reply, replier) {
+            // Got some results - process them
+            processResults(reply.results);
+            if (reply.status === 'more-exist') {
+                // Get next batch
+                replier({}, createReplyHandler());
+            }
+        }
+    }
+
+    // Send the find request
+    eb.send('foo.myPersistor', {
+        action: 'find',
+        collection: 'items',
+        matcher: {}        
+    }, createReplyHandler());
+    
+If there is more data to be requested and you do not reply to get the next batch within a timeout (10 seconds), then the underlying MongoDB cursor will be closed, and any further attempts to request more will fail.    
+    
 
 ##### Find One  
 

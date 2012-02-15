@@ -326,6 +326,22 @@ The `vertx stop` command can take an optional parameter:
 
 * `-port` This specifies which port it will attempt to connect to the server on, to stop the server. Default is `25571`. If you have more than one vert.x server on localhost then you use this parameter to determine which one to stop.
 
+# Logging
+
+Each verticle gets its own logger which can be retrieved from inside the verticle. For information on how to get the logger please see the core guide for the language you are using.
+
+The log files by default go in a file called `vertx.log` in the system temp directory. On my Linux box this is `\tmp`.
+
+By default [JUL] (http://docs.oracle.com/javase/1.4.2/docs/guide/util/logging/overview.html) logging is used. This can be configured using the file `VERTX_HOME\conf\logging.properties`. Where `VERTX_HOME` is the directory in which you installed vert.x.
+
+Advanced note: If you'd rather use a different logging framework, e.g. log4j you can do this by specifying a system property when running vert.x (edit the vertx.sh script), e.g.
+
+    -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.Log4jLogDelegateFactory
+    
+or
+
+    -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.SLF4JLogDelegateFactory    
+
 # JavaScript Core Guide
 
 [JavaScript Core Guide here](core_manual_js.html)

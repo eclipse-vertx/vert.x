@@ -82,7 +82,30 @@ If JSON configuration has been passed when deploying a verticle from either the 
     
     // Do something with config
     
-The config returned is a JSON object.    
+The config returned is a JSON object. 
+
+# Logging from a Verticle
+
+Each verticle is given its own logger, to get a reference to it invoke the `vertx.getLogger` function:
+
+    var logger = vertx.getLogger;
+    
+    logger.info("I am logging something");
+    
+The logger has the functions:
+
+* trace
+* debug
+* info
+* warn
+* error
+* fatal           
+
+Which have the normal meanings you would expect.
+
+The log files by default go in a file called `vertx.log` in the system temp directory. On my Linux box this is `\tmp`.
+
+For more information on configuring logging, please see the main manual.
    
 # Deploying and Undeploying Verticles Programmatically
 
