@@ -87,6 +87,7 @@ public class VertxMgr {
 
   private void runApplication(String main, Args args) {
     if (startCluster(args)) {
+      addShutdownHook();
       VerticleManager mgr = VerticleManager.instance;
       DeployCommand dc = createDeployCommand(main, args, "run");
       if (dc != null) {
@@ -109,12 +110,37 @@ public class VertxMgr {
 
   private void startServer(Args args) {
     if (startCluster(args)) {
-      System.out.println("vert.x server started");
+      addShutdownHook();
       VerticleManager mgr = VerticleManager.instance;
       SocketDeployer sd = new SocketDeployer(mgr, args.getInt("-deploy-port"));
       sd.start();
+      System.out.println("vert.x server started");
       mgr.block();
     }
+  }
+
+  private void addShutdownHook() {
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        final CountDownLatch latch = new CountDownLatch(1);
+        VerticleManager.instance.undeployAll(new SimpleHandler() {
+          public void handle() {
+            latch.countDown();
+          }
+        });
+        while (true) {
+          try {
+            if (!latch.await(30, TimeUnit.SECONDS)) {
+              log.error("Timed out waiting to undeploy");
+            }
+            break;
+          } catch (InterruptedException e) {
+            //OK - can get spurious interupts
+          }
+        }
+      }
+    });
+
   }
 
   private DeployCommand createDeployCommand(String main, Args args, String command) {
@@ -260,9 +286,6 @@ public class VertxMgr {
     }
     return true;
   }
-
-  // TODO need to reqwrite the deploy syntax
-
 
   private void displaySyntax() {
 
