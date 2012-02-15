@@ -21,6 +21,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -56,8 +57,8 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    */
   public final String writeHandlerID;
 
-  NetSocket(Channel channel, long contextID, Thread th) {
-    super(channel, contextID, th);
+  NetSocket(Channel channel, Context context, Thread th) {
+    super(channel, context, th);
     if (EventBus.instance != null) {
       writeHandlerID = UUID.randomUUID().toString();
       writeHandler = new Handler<Message<Buffer>>() {
@@ -183,12 +184,12 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
     super.sendFile(f);
   }
 
-  protected long getContextID() {
-    return super.getContextID();
+  protected Context getContext() {
+    return super.getContext();
   }
 
   protected void handleClosed() {
-    setContextID();
+    setContext();
 
     if (endHandler != null) {
       try {
@@ -204,13 +205,13 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
   }
 
   void handleInterestedOpsChanged() {
-    setContextID();
+    setContext();
     callDrainHandler();
   }
 
   void handleDataReceived(Buffer data) {
     if (dataHandler != null) {
-      setContextID();
+      setContext();
       try {
         dataHandler.handle(data);
       } catch (Throwable t) {

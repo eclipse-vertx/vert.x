@@ -34,34 +34,24 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
    * Run the blocking action using a thread from the worker pool.
    */
   protected void run() {
-    final long contextID = Vertx.instance.getContextID();
+    final Context context = VertxInternal.instance.getContext();
     Runnable runner = new Runnable() {
       public void run() {
         try {
           final T result = action();
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              VertxInternal.instance.setContextID(contextID);
-              try {
-                setResult(result);
-              } catch (Throwable t) {
-                VerticleManager.instance.reportException(t);
-              }
+              setResult(result);
             }
           });
         } catch (final Exception e) {
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              VertxInternal.instance.setContextID(contextID);
-              try {
-                setException(e);
-              } catch (Throwable t) {
-                VerticleManager.instance.reportException(t);
-              }
+              setException(e);
             }
           });
         } catch (Throwable t) {
-          VerticleManager.instance.reportException(t);
+          VertxInternal.instance.reportException(t);
         }
       }
     };

@@ -100,15 +100,10 @@ public class InStream extends StreamBase implements ReadStream {
               buff = buff2;
             }
             final Buffer ret = Buffer.create(buff);
-            vertx.executeOnContext(contextID, new Runnable() {
+            context.execute(new Runnable() {
               public void run() {
-                vertx.setContextID(contextID);
                 if (!paused && dataHandler != null) {
-                  try {
-                    dataHandler.handle(ret);
-                  } catch (Throwable t) {
-                    VerticleManager.instance.reportException(t);
-                  }
+                  dataHandler.handle(ret);
                   if (!paused && dataHandler != null) {
                     doRead();
                   }

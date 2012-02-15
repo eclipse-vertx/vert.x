@@ -37,6 +37,8 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.ConnectionPool;
+import org.vertx.java.core.Context;
+import org.vertx.java.core.EventLoopContext;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -73,8 +75,8 @@ public class HttpClient extends NetClientBase {
   private int port = 80;
   private String host = "localhost";
   private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
-    protected void connect(Handler<ClientConnection> connectHandler, long contextID) {
-      internalConnect(connectHandler, contextID);
+    protected void connect(Handler<ClientConnection> connectHandler, Context context) {
+      internalConnect(connectHandler, context);
     }
   };
   private boolean keepAlive = true;
@@ -207,7 +209,7 @@ public class HttpClient extends NetClientBase {
       public void handle(final ClientConnection conn) {
         conn.toWebSocket(uri, wsConnect, wsVersion);
       }
-    }, Vertx.instance.getContextID());
+    }, VertxInternal.instance.getContext());
   }
 
   /**
@@ -311,11 +313,11 @@ public class HttpClient extends NetClientBase {
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    final Long cid = Vertx.instance.getContextID();
-    if (cid == null) {
+    final Context ctx = VertxInternal.instance.getContext();
+    if (ctx == null) {
       throw new IllegalStateException("Requests must be made from inside an event loop");
     }
-    return new HttpClientRequest(this, method, uri, responseHandler, cid, Thread.currentThread());
+    return new HttpClientRequest(this, method, uri, responseHandler, ctx, Thread.currentThread());
   }
 
   /**
@@ -377,8 +379,8 @@ public class HttpClient extends NetClientBase {
     return (HttpClient) super.setTrafficClass(trafficClass);
   }
 
-  void getConnection(Handler<ClientConnection> handler, long contextID) {
-    pool.getConnection(handler, contextID);
+  void getConnection(Handler<ClientConnection> handler, Context context) {
+    pool.getConnection(handler, context);
   }
 
   void returnConnection(final ClientConnection conn) {
@@ -393,7 +395,7 @@ public class HttpClient extends NetClientBase {
     }
   }
 
-  private void internalConnect(final Handler<ClientConnection> connectHandler, final long contextID) {
+  private void internalConnect(final Handler<ClientConnection> connectHandler, final Context context) {
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
@@ -407,7 +409,7 @@ public class HttpClient extends NetClientBase {
         public ChannelPipeline getPipeline() throws Exception {
           ChannelPipeline pipeline = Channels.pipeline();
           if (ssl) {
-            SSLEngine engine = context.createSSLEngine();
+            SSLEngine engine = sslContext.createSSLEngine();
             engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }
@@ -418,8 +420,14 @@ public class HttpClient extends NetClientBase {
         }
       });
     }
-
-    channelFactory.setWorker(VertxInternal.instance.getWorkerForContextID(contextID));
+    EventLoopContext ectx;
+    if (context instanceof EventLoopContext) {
+      //It always will be
+      ectx = (EventLoopContext)context;
+    } else {
+      ectx = null;
+    }
+    channelFactory.setWorker(ectx.getWorker());
     bootstrap.setOptions(generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -460,7 +468,7 @@ public class HttpClient extends NetClientBase {
     runOnCorrectThread(ch, new Runnable() {
       public void run() {
         final ClientConnection conn = new ClientConnection(HttpClient.this, ch,
-            host + ":" + port, ssl, keepAlive, contextID,
+            host + ":" + port, ssl, keepAlive, context,
             Thread.currentThread());
         conn.closedHandler(new SimpleHandler() {
           public void handle() {
@@ -468,7 +476,7 @@ public class HttpClient extends NetClientBase {
           }
         });
         connectionMap.put(ch, conn);
-        VertxInternal.instance.setContextID(contextID);
+        VertxInternal.instance.setContext(context);
         connectHandler.handle(conn);
       }
     });
@@ -478,7 +486,7 @@ public class HttpClient extends NetClientBase {
     if (t instanceof Exception && exceptionHandler != null) {
       runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          VertxInternal.instance.setContextID(contextID);
+          VertxInternal.instance.setContext(context);
           exceptionHandler.handle((Exception) t);
         }
       });

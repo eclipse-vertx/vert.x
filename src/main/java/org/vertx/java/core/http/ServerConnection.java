@@ -23,6 +23,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -52,8 +53,8 @@ class ServerConnection extends AbstractConnection {
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
 
-  ServerConnection(Channel channel, long contextID, Thread th) {
-    super(channel, contextID, th);
+  ServerConnection(Channel channel, Context context, Thread th) {
+    super(channel, context, th);
   }
 
   @Override
@@ -107,7 +108,7 @@ class ServerConnection extends AbstractConnection {
   }
 
   private void handleRequest(HttpServerRequest req) {
-    setContextID();
+    setContext();
     try {
       this.currentRequest = req;
       pendingResponse = req.response;
@@ -121,7 +122,7 @@ class ServerConnection extends AbstractConnection {
 
   private void handleChunk(Buffer chunk) {
     try {
-      setContextID();
+      setContext();
       currentRequest.handleData(chunk);
     } catch (Throwable t) {
       handleHandlerException(t);
@@ -130,7 +131,7 @@ class ServerConnection extends AbstractConnection {
 
   private void handleEnd() {
     try {
-      setContextID();
+      setContext();
       currentRequest.handleEnd();
       currentRequest = null;
     } catch (Throwable t) {
@@ -141,7 +142,7 @@ class ServerConnection extends AbstractConnection {
   void handleInterestedOpsChanged() {
     try {
       if (channel.isWritable()) {
-        setContextID();
+        setContext();
         if (pendingResponse != null) {
           pendingResponse.handleDrained();
         } else if (ws != null) {
@@ -156,7 +157,7 @@ class ServerConnection extends AbstractConnection {
   void handleWebsocketConnect(ServerWebSocket ws) {
     try {
       if (wsHandler != null) {
-        setContextID();
+        setContext();
         wsHandler.handle(ws);
         this.ws = ws;
       }
@@ -168,7 +169,7 @@ class ServerConnection extends AbstractConnection {
   private void handleWsFrame(WebSocketFrame frame) {
     try {
       if (ws != null) {
-        setContextID();
+        setContext();
         ws.handleFrame(frame);
       }
     } catch (Throwable t) {
@@ -186,8 +187,8 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  protected long getContextID() {
-    return super.getContextID();
+  protected Context getContext() {
+    return super.getContext();
   }
 
   protected void handleException(Exception e) {

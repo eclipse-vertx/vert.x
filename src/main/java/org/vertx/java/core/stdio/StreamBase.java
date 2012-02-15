@@ -16,24 +16,26 @@
 
 package org.vertx.java.core.stdio;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class StreamBase {
 
-  protected final long contextID;
+  protected final Context context;
   protected final Thread th;
   protected Handler<Exception> exceptionHandler;
 
   protected StreamBase() {
-    Long contextID = Vertx.instance.getContextID();
-    if (contextID == null) {
+    Context context = VertxInternal.instance.getContext();
+    if (context == null) {
       throw new IllegalStateException("Can only be used inside an event loop");
     }
-    this.contextID = contextID;
+    this.context = context;
     this.th = Thread.currentThread();
   }
 

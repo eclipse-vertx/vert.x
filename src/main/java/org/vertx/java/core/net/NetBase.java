@@ -17,6 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 
@@ -46,25 +47,25 @@ public abstract class NetBase {
   protected Boolean soLinger;
   protected Integer trafficClass;
 
-  protected SSLContext context;
+  protected SSLContext sslContext;
   protected Thread th;
-  protected long contextID;
+  protected Context context;
 
   protected NetBase() {
-    Long cid = Vertx.instance.getContextID();
-    if (cid == null) {
+    Context ctx = VertxInternal.instance.getContext();
+    if (ctx == null) {
       throw new IllegalStateException("Can only be used from an event loop");
     }
     if (!VertxInternal.instance.isEventLoop()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
-    this.contextID = cid;
+    this.context = ctx;
     this.th = Thread.currentThread();
   }
 
   protected void checkSSL() {
     if (ssl) {
-      context = TLSHelper.createContext(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+      sslContext = TLSHelper.createContext(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
   }
 
@@ -74,7 +75,7 @@ public abstract class NetBase {
       throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
 
-    if (Vertx.instance.getContextID() != contextID) {
+    if (VertxInternal.instance.getContext() != context) {
       throw new IllegalStateException("Invoked with wrong contextID");
     }
   }

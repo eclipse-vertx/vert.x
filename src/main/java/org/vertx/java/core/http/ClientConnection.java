@@ -22,6 +22,7 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -42,8 +43,8 @@ class ClientConnection extends AbstractConnection {
 
   ClientConnection(HttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,
-                   long contextID, Thread th) {
-    super(channel, contextID, th);
+                   Context context, Thread th) {
+    super(channel, context, th);
     this.client = client;
     this.hostHeader = hostHeader;
     this.ssl = ssl;
@@ -113,7 +114,7 @@ class ClientConnection extends AbstractConnection {
             client.handleException(new IOException("Websocket connection attempt returned HTTP status code " + resp.statusCode));
           }
         }
-      }, contextID, Thread.currentThread(), this);
+      }, context, Thread.currentThread(), this);
       shake.fillInRequest(req, (ssl ? "http://" : "https://") + hostHeader);
       req.end();
     } catch (Exception e) {
@@ -148,7 +149,7 @@ class ClientConnection extends AbstractConnection {
   void handleInterestedOpsChanged() {
     try {
       if (currentRequest != null && channel.isWritable()) {
-        setContextID();
+        setContext();
         currentRequest.handleDrained();
       }
     } catch (Throwable t) {
@@ -168,14 +169,14 @@ class ClientConnection extends AbstractConnection {
     if (req == null) {
       throw new IllegalStateException("No response handler");
     }
-    setContextID();
+    setContext();
     HttpClientResponse nResp = new HttpClientResponse(this, resp, req.th);
     currentResponse = nResp;
     req.handleResponse(nResp);
   }
 
   void handleResponseChunk(Buffer buff) {
-    setContextID();
+    setContext();
     try {
       currentResponse.handleChunk(buff);
     } catch (Throwable t) {
@@ -211,8 +212,8 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  protected long getContextID() {
-    return super.getContextID();
+  protected Context getContext() {
+    return super.getContext();
   }
 
   protected void handleException(Exception e) {

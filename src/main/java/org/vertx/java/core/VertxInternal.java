@@ -37,17 +37,15 @@ public interface VertxInternal extends Vertx {
 
   Executor getAcceptorPool();
 
-  void executeOnContext(long contextID, Runnable runnable);
+  Context getContext();
 
-  boolean destroyContext(long contextID);
-
-  void setContextID(long contextID);
+  void setContext(Context context);
 
   ExecutorService getBackgroundPool();
 
-  NioWorker getWorkerForContextID(long contextID);
+  Context startOnEventLoop(Runnable runnable);
 
-  long startOnEventLoop(Runnable runnable);
+  Context startInBackground(Runnable runnable);
 
-  long startInBackground(Runnable runnable);
+  void reportException(Throwable t);
 }

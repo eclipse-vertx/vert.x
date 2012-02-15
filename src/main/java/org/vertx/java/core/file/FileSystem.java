@@ -17,9 +17,11 @@
 package org.vertx.java.core.file;
 
 import org.vertx.java.core.BlockingAction;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 
 import java.io.File;
@@ -828,15 +830,14 @@ public class FileSystem {
    */
   public Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
-    Long cid = Vertx.instance.getContextID();
-    if (cid == null) {
+    final Context ctx = VertxInternal.instance.getContext();
+    if (ctx == null) {
       throw new IllegalStateException("Can't use file system from outside an event loop");
     }
-    final long contextID = cid;
     final Thread th = Thread.currentThread();
     return new BlockingAction<AsyncFile>() {
       public AsyncFile action() throws Exception {
-        return doOpen(path, perms, read, write, createNew, flush, contextID, th);
+        return doOpen(path, perms, read, write, createNew, flush, ctx, th);
       }
     };
   }
@@ -858,9 +859,9 @@ public class FileSystem {
   }
 
   private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                           final boolean flush, final long contextID,
+                           final boolean flush, final Context context,
                            final Thread th) throws Exception {
-    return new AsyncFile(path, perms, read, write, createNew, flush, contextID, th);
+    return new AsyncFile(path, perms, read, write, createNew, flush, context, th);
   }
 
   /**
@@ -961,7 +962,7 @@ public class FileSystem {
   }
 
   private void checkContext() {
-    if (Vertx.instance.getContextID() == null) {
+    if (VertxInternal.instance.getContext() == null) {
       throw new IllegalStateException("Can't use file system outside an event loop");
     }
   }

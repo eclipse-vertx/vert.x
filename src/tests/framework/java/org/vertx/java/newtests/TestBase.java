@@ -2,6 +2,7 @@ package org.vertx.java.newtests;
 
 import junit.framework.TestCase;
 import org.junit.Test;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
@@ -33,7 +34,7 @@ public class TestBase extends TestCase {
   private VerticleManager verticleManager;
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils();
-  private long contextID;
+  private Context context;
   private volatile Handler<Message<JsonObject>> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
   private List<String> startedApps = new ArrayList<>();
@@ -62,7 +63,7 @@ public class TestBase extends TestCase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    contextID = VertxInternal.instance.startOnEventLoop(new Runnable() {
+    context = VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
 
         if (EventBus.instance == null) {
@@ -138,9 +139,8 @@ public class TestBase extends TestCase {
         }
         events.clear();
         final CountDownLatch latch = new CountDownLatch(1);
-        VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+        context.execute(new Runnable() {
           public void run() {
-            VertxInternal.instance.setContextID(contextID);
             EventBus.instance.unregisterHandler(EVENTS_ADDRESS, handler);
             latch.countDown();
           }

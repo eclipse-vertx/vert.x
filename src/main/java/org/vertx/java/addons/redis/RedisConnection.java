@@ -1091,7 +1091,7 @@ public class RedisConnection {
         public void handle(InternalConnection conn) {
           setConnection(conn);
         }
-      }, VertxInternal.instance.getContextID());
+      }, VertxInternal.instance.getContext());
       connectionRequested = true;
     }
   }

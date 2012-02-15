@@ -1,5 +1,6 @@
 package org.vertx.java.core.app;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -32,27 +33,10 @@ public class VerticleManager {
 
   public static VerticleManager instance = new VerticleManager();
 
+  // deployment name --> deployment
   private final Map<String, Deployment> deployments = new HashMap();
-  private final Map<Long, String> contextDeploymentNameMap = new ConcurrentHashMap<>();
-  private final Map<Long, VerticleHolder> contextVerticleMap = new ConcurrentHashMap<>();
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
-
-  private static class Deployment {
-    final VerticleFactory factory;
-    final JsonObject config;
-    final URL[] urls;
-    final List<VerticleHolder> verticles = new ArrayList<>();
-    final List<String> childDeployments = new ArrayList<>();
-    final String parentDeploymentName;
-
-    private Deployment(VerticleFactory factory, JsonObject config, URL[] urls, String parentDeploymentName) {
-      this.factory = factory;
-      this.config = config;
-      this.urls = urls;
-      this.parentDeploymentName = parentDeploymentName;
-    }
-  }
 
   private VerticleManager() {
   }
@@ -84,40 +68,27 @@ public class VerticleManager {
   }
 
   public String getDeploymentName() {
-    Long contextID = Vertx.instance.getContextID();
-    return contextID == null ? null : contextDeploymentNameMap.get(contextID);
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.deployment.name;
   }
 
   public URL[] getDeploymentURLs() {
-    String deploymentName = getDeploymentName();
-    if (deploymentName != null) {
-      Deployment deployment = deployments.get(deploymentName);
-      if (deployment != null) {
-        return deployment.urls;
-      }
-    }
-    return null;
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.deployment.urls;
   }
 
   public Logger getLogger() {
-    VerticleHolder holder = contextVerticleMap.get(Vertx.instance.getContextID());
-    if (holder != null) {
-      return holder.logger;
-    } else {
-      return null;
-    }
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.logger;
   }
 
   public void reportException(Throwable t) {
-    String deploymentName = getDeploymentName();
-    if (deploymentName != null) {
-      Deployment deployment = deployments.get(deploymentName);
-      if (deployment != null) {
-        deployment.factory.reportException(t);
-        return;
-      }
+    VerticleHolder holder = getVerticleHolder();
+    if (holder != null) {
+      holder.deployment.factory.reportException(t);
+    } else {
+      log.error("Unhandled exception", t);
     }
-    log.error("Unhandled exception", t);
   }
 
   public synchronized String deploy(boolean worker, String name, final String main,
@@ -127,6 +98,10 @@ public class VerticleManager {
   {
     if (deployments.containsKey(name)) {
       throw new IllegalStateException("There is already a deployment with name: " + name);
+    }
+
+    if (urls == null) {
+      throw new IllegalStateException("urls cannot be null");
     }
 
     //Infer the main type
@@ -180,7 +155,7 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    Deployment deployment = new Deployment(verticleFactory, config == null ? null : config.copy(), urls, parentDeploymentName);
+    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? null : config.copy(), urls, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
@@ -205,7 +180,7 @@ public class VerticleManager {
           }
 
           try {
-            addVerticle(deploymentName, verticle);
+            addVerticle(deployment, verticle);
             verticle.start();
           } catch (Throwable t) {
             reportException(t);
@@ -283,8 +258,38 @@ public class VerticleManager {
         doneHandler.handle(null);
       }
     }
-
   }
+
+
+  public synchronized Map<String, Integer> listInstances() {
+    Map<String, Integer> map = new HashMap<>();
+    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+      map.put(entry.getKey(), entry.getValue().verticles.size());
+    }
+    return map;
+  }
+
+  // Must be synchronized since called directly from different thread
+  private synchronized void addVerticle(Deployment deployment, Verticle verticle) {
+    String loggerName = deployment.name + "-" + deployment.verticles.size();
+    Logger logger = Logger.getLogger(loggerName);
+    Context context = VertxInternal.instance.getContext();
+    VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
+                                               loggerName, logger);
+    deployment.verticles.add(holder);
+    context.setExtraData(holder);
+  }
+
+  private VerticleHolder getVerticleHolder() {
+    Context context = VertxInternal.instance.getContext();
+    if (context != null) {
+      VerticleHolder holder = (VerticleHolder)context.getExtraData();
+      return holder;
+    } else {
+      return null;
+    }
+  }
+
 
   private void doUndeploy(String name, final Handler<Void> doneHandler) {
     UndeployCount count = new UndeployCount();
@@ -306,22 +311,14 @@ public class VerticleManager {
 
       for (final VerticleHolder holder: deployment.verticles) {
         count.incRequired();
-        VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
+        holder.context.execute(new Runnable() {
           public void run() {
-            VertxInternal.instance.setContextID(holder.contextID);
             try {
               holder.verticle.stop();
             } catch (Throwable t) {
               reportException(t);
             }
-            //FIXME - we need to destroy the context, but not until after the deployment has fully stopped which may
-            //be asynchronous, e.g. if the deployment needs to close servers
-            //VertxInternal.instance.destroyContext(holder.contextID);
             count.undeployed();
-
-            // Remove context mapping
-            contextDeploymentNameMap.remove(holder.contextID);
-            contextVerticleMap.remove(holder.contextID);
 
             Logger.removeLogger(holder.loggerName);
           }
@@ -338,40 +335,38 @@ public class VerticleManager {
     }
   }
 
-
-  public synchronized Map<String, Integer> listInstances() {
-    Map<String, Integer> map = new HashMap<>();
-    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
-      map.put(entry.getKey(), entry.getValue().verticles.size());
-    }
-    return map;
-  }
-
-  // Must be synchronized since called directly from different thread
-  private synchronized void addVerticle(String name, Verticle verticle) {
-    Deployment deployment = deployments.get(name);
-    String loggerName = name + "-" + deployment.verticles.size();
-    Logger logger = Logger.getLogger(loggerName);
-    Long contextID = Vertx.instance.getContextID();
-    VerticleHolder holder = new VerticleHolder(contextID, verticle,
-                                               loggerName, logger);
-    deployment.verticles.add(holder);
-    contextDeploymentNameMap.put(contextID, name);
-    contextVerticleMap.put(contextID, holder);
-  }
-
   private static class VerticleHolder {
-    final long contextID;
+    final Deployment deployment;
+    final Context context;
     final Verticle verticle;
     final String loggerName;
     final Logger logger;
 
-    private VerticleHolder(long contextID, Verticle verticle, String loggerName,
+    private VerticleHolder(Deployment deployment, Context context, Verticle verticle, String loggerName,
                            Logger logger) {
-      this.contextID = contextID;
+      this.deployment = deployment;
+      this.context = context;
       this.verticle = verticle;
       this.loggerName = loggerName;
       this.logger = logger;
+    }
+  }
+
+  private static class Deployment {
+    final String name;
+    final VerticleFactory factory;
+    final JsonObject config;
+    final URL[] urls;
+    final List<VerticleHolder> verticles = new ArrayList<>();
+    final List<String> childDeployments = new ArrayList<>();
+    final String parentDeploymentName;
+
+    private Deployment(String name, VerticleFactory factory, JsonObject config, URL[] urls, String parentDeploymentName) {
+      this.name = name;
+      this.factory = factory;
+      this.config = config;
+      this.urls = urls;
+      this.parentDeploymentName = parentDeploymentName;
     }
   }
 }

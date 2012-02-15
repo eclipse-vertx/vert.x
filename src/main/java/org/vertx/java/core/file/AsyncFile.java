@@ -18,6 +18,7 @@ package org.vertx.java.core.file;
 
 import org.vertx.java.core.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Future;
@@ -56,7 +57,7 @@ public class AsyncFile {
 
   private final AsynchronousFileChannel ch;
   private final Thread th;
-  private final long contextID;
+  private final Context context;
   private boolean closed;
   private ReadStream readStream;
   private WriteStream writeStream;
@@ -64,7 +65,7 @@ public class AsyncFile {
   private long writesOutstanding;
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final long contextID, final Thread th) throws Exception {
+            final boolean flush, final Context context, final Thread th) throws Exception {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -80,7 +81,7 @@ public class AsyncFile {
     } else {
       ch = AsynchronousFileChannel.open(file, options, VertxInternal.instance.getBackgroundPool());
     }
-    this.contextID = contextID;
+    this.context = context;
     this.th = th;
   }
 
@@ -418,15 +419,10 @@ public class AsyncFile {
           doWrite(buff, pos, deferred);
         } else {
           // It's been fully written
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              VertxInternal.instance.setContextID(contextID);
-               writesOutstanding -= buff.limit();
-              try {
-                deferred.setResult(null);
-              } catch (Throwable t) {
-                VerticleManager.instance.reportException(t);
-              }
+              writesOutstanding -= buff.limit();
+              deferred.setResult(null);
             }
           });
         }
@@ -435,14 +431,9 @@ public class AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           final Exception e = (Exception) exc;
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              VertxInternal.instance.setContextID(contextID);
-              try {
-                deferred.setException(e);
-              } catch (Throwable t) {
-                VerticleManager.instance.reportException(t);
-              }
+              deferred.setException(e);
             }
           });
         } else {
@@ -471,16 +462,11 @@ public class AsyncFile {
       int pos = position;
 
       private void done() {
-        VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+        context.execute(new Runnable() {
           public void run() {
-            setContextID();
             buff.flip();
             writeBuff.setBytes(offset, buff);
-            try {
-              deferred.setResult(writeBuff);
-            } catch (Throwable t) {
-              VerticleManager.instance.reportException(t);
-            }
+            deferred.setResult(writeBuff);
           }
         });
       }
@@ -503,18 +489,13 @@ public class AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           final Exception e = (Exception) exc;
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              setContextID();
-              try {
-                deferred.setException(e);
-              } catch (Throwable t) {
-                VerticleManager.instance.reportException(t);
-              }
+              deferred.setException(e);
             }
           });
         } else {
-          VerticleManager.instance.reportException(exc);
+          VertxInternal.instance.reportException(exc);
         }
       }
     });
@@ -531,17 +512,8 @@ public class AsyncFile {
     }
   }
 
-  private void setContextID() {
-    // Sanity checkClosed
-    // All ops should always be invoked on same thread
-    if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread");
-    }
-    VertxInternal.instance.setContextID(contextID);
-  }
-
   private void checkContext() {
-    if (!Vertx.instance.getContextID().equals(contextID)) {
+    if (!VertxInternal.instance.getContext().equals(context)) {
       throw new IllegalStateException("AsyncFile must only be used in the context that created it");
     }
   }

@@ -25,6 +25,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
@@ -80,29 +81,29 @@ public class HttpClientRequest implements WriteStream {
 
   HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,
-                    final long contextID, final Thread th) {
-    this(client, method, uri, respHandler, contextID, th, false);
+                    final Context context, final Thread th) {
+    this(client, method, uri, respHandler, context, th, false);
   }
 
   // Raw request - used by websockets
   // Raw requests won't have any headers set automatically, like Content-Length and Connection
   HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,
-                    final long contextID, final Thread th,
+                    final Context context, final Thread th,
                     final ClientConnection conn) {
-    this(client, method, uri, respHandler, contextID, th, true);
+    this(client, method, uri, respHandler, context, th, true);
     this.conn = conn;
     conn.setCurrentRequest(this);
   }
 
   private HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,
-                    final long contextID, final Thread th, final boolean raw) {
+                    final Context context, final Thread th, final boolean raw) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.chunked = false;
     this.respHandler = respHandler;
-    this.contextID = contextID;
+    this.context = context;
     this.th = th;
     this.raw = raw;
   }
@@ -111,7 +112,7 @@ public class HttpClientRequest implements WriteStream {
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
   private Handler<Void> continueHandler;
-  private final long contextID;
+  private final Context context;
   private final boolean raw;
   final Thread th;
 
@@ -439,7 +440,7 @@ public class HttpClientRequest implements WriteStream {
         public void handle(ClientConnection conn) {
           connected(conn);
         }
-      }, contextID);
+      }, context);
 
       connecting = true;
     }

@@ -1,6 +1,8 @@
 package org.vertx.java.core.net;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
+import org.vertx.java.core.Context;
+import org.vertx.java.core.EventLoopContext;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
@@ -37,23 +39,35 @@ public class HandlerManager<T> {
     return handlers.chooseHandler();
   }
 
+  private NioWorker getWorker(Context context) {
+    EventLoopContext ectx;
+    if (context instanceof EventLoopContext) {
+      //It always will be
+      ectx = (EventLoopContext)context;
+    } else {
+      ectx = null;
+    }
+    NioWorker worker = ectx.getWorker();
+    return worker;
+  }
+
   public synchronized void addHandler(Handler<T> handler) {
-    long contextID = Vertx.instance.getContextID();
-    NioWorker worker = VertxInternal.instance.getWorkerForContextID(contextID);
+    Context context = VertxInternal.instance.getContext();
+    NioWorker worker = getWorker(context);
     availableWorkers.addWorker(worker);
     Handlers handlers = handlerMap.get(worker);
     if (handlers == null) {
       handlers = new Handlers();
       handlerMap.put(worker, handlers);
     }
-    handlers.addHandler(new HandlerHolder<>(contextID, handler));
+    handlers.addHandler(new HandlerHolder<>(context, handler));
   }
 
   public synchronized void removeHandler(Handler<T> handler) {
-    long contextID = Vertx.instance.getContextID();
-    NioWorker worker = VertxInternal.instance.getWorkerForContextID(contextID);
+    Context context = VertxInternal.instance.getContext();
+    NioWorker worker = getWorker(context);
     Handlers handlers = handlerMap.get(worker);
-    if (!handlers.removeHandler(new HandlerHolder<>(contextID, handler))) {
+    if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
       throw new IllegalStateException("Can't find handler");
     }
     if (handlers.isEmpty()) {

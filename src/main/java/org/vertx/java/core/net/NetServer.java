@@ -40,6 +40,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.VerticleManager;
@@ -249,7 +250,7 @@ public class NetServer extends NetServerBase {
           public ChannelPipeline getPipeline() {
             ChannelPipeline pipeline = Channels.pipeline();
             if (ssl) {
-              SSLEngine engine = context.createSSLEngine();
+              SSLEngine engine = sslContext.createSSLEngine();
               engine.setUseClientMode(false);
               switch (clientAuth) {
                 case REQUEST: {
@@ -324,18 +325,18 @@ public class NetServer extends NetServerBase {
       if (actualServer.handlerManager.hasHandlers()) {
         // The actual server still has handlers so we don't actually close it
         if (done != null) {
-          executeCloseDone(contextID, done);
+          executeCloseDone(context, done);
         }
       } else {
         // No Handlers left so close the actual server
         // The done handler needs to be executed on the context that calls close, NOT the context
         // of the actual server
-        actualServer.actualClose(contextID, done);
+        actualServer.actualClose(context, done);
       }
     }
   }
 
-  private void actualClose(final long closeContextID, final Handler<Void> done) {
+  private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
       servers.remove(id);
     }
@@ -347,13 +348,13 @@ public class NetServer extends NetServerBase {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    VertxInternal.instance.setContextID(closeContextID);
+    VertxInternal.instance.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
       fut.addListener(new ChannelGroupFutureListener() {
         public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          executeCloseDone(closeContextID, done);
+          executeCloseDone(closeContext, done);
         }
       });
     }
@@ -363,15 +364,10 @@ public class NetServer extends NetServerBase {
     //TODO check configs are the same
   }
 
-  private void executeCloseDone(final long closeContextID, final Handler<Void> done) {
-    VertxInternal.instance.executeOnContext(closeContextID, new Runnable() {
+  private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
+    closeContext.execute(new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(closeContextID);
-        try {
-          done.handle(null);
-        } catch (Throwable t) {
-          VerticleManager.instance.reportException(t);
-        }
+        done.handle(null);
       }
     });
   }
@@ -413,16 +409,11 @@ public class NetServer extends NetServerBase {
     }
 
     private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
-      VertxInternal.instance.executeOnContext(handler.contextID, new Runnable() {
+      handler.context.execute(new Runnable() {
         public void run() {
-          VertxInternal.instance.setContextID(handler.contextID);
-          NetSocket sock = new NetSocket(ch, handler.contextID, Thread.currentThread());
+          NetSocket sock = new NetSocket(ch, handler.context, Thread.currentThread());
           socketMap.put(ch, sock);
-          try {
-            handler.handler.handle(sock);
-          } catch (Throwable t) {
-            VerticleManager.instance.reportException(t);
-          }
+          handler.handler.handle(sock);
         }
       });
     }
@@ -433,7 +424,7 @@ public class NetServer extends NetServerBase {
       final NetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        VertxInternal.instance.executeOnContext(sock.getContextID(), new Runnable() {
+        sock.getContext().execute(new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -446,7 +437,7 @@ public class NetServer extends NetServerBase {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       if (sock != null) {
-        VertxInternal.instance.executeOnContext(sock.getContextID(), new Runnable() {
+        sock.getContext().execute(new Runnable() {
           public void run() {
             sock.handleClosed();
           }
@@ -471,7 +462,7 @@ public class NetServer extends NetServerBase {
       ch.close();
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        VertxInternal.instance.executeOnContext(sock.getContextID(), new Runnable() {
+        sock.getContext().execute(new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
           }

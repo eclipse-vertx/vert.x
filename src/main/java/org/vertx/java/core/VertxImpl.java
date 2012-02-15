@@ -47,16 +47,14 @@ class VertxImpl implements VertxInternal {
   private ExecutorService corePool;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
-  private Map<Long, NioWorker> workerMap = new ConcurrentHashMap<>();
-  private Map<Long, Executor> backgroundExecutors = new ConcurrentHashMap<>();
-  private static final ThreadLocal<Long> contextIDTL = new ThreadLocal<>();
+
+  private static final ThreadLocal<Context> contextTL = new ThreadLocal<>();
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
       TimeUnit.MILLISECONDS);
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
-  private final AtomicLong contextIDSeq = new AtomicLong(10); // Start at 10 for easier debugging
 
   // Public API ------------------------------------------------
 
@@ -82,38 +80,32 @@ class VertxImpl implements VertxInternal {
     return backgroundPoolSize;
   }
 
-  public long startOnEventLoop(final Runnable runnable) {
-    final long contextID = createEventLoopContext();
-    executeOnContext(contextID, new Runnable() {
-      public void run() {
-        VertxInternal.instance.setContextID(contextID);
-        try {
-          runnable.run();
-        } catch (Throwable t) {
-          VerticleManager.instance.reportException(t);
-        }
-      }
-    });
-    return contextID;
+  public Context startOnEventLoop(final Runnable runnable) {
+    Context context  = createEventLoopContext();
+    runOnContext(context, runnable);
+    return context;
   }
 
-  public long startInBackground(final Runnable runnable) {
-    final long contextID = createBackgroundContext();
-    executeOnContext(contextID, new Runnable() {
+  public Context startInBackground(final Runnable runnable) {
+    Context context  = createWorkerContext();
+    runOnContext(context, runnable);
+    return context;
+  }
+
+  private void runOnContext(final Context context, final Runnable runnable) {
+    context.execute(new Runnable() {
       public void run() {
-        VertxInternal.instance.setContextID(contextID);
-        try {
-          runnable.run();
-        } catch (Throwable t) {
-          VerticleManager.instance.reportException(t);
-        }
+        runnable.run();
       }
     });
-    return contextID;
   }
 
   public boolean isEventLoop() {
-    return workerMap.containsKey(getContextID());
+    Context context = getContext();
+    if (context != null) {
+      return context instanceof EventLoopContext;
+    }
+    return false;
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {
@@ -125,15 +117,15 @@ class VertxImpl implements VertxInternal {
   }
 
   public void nextTick(final Handler<Void> handler) {
-    Long contextID = getContextID();
-    if (contextID == null) {
+    Context context = getContext();
+    if (context == null) {
       throw new IllegalStateException("No context id");
     }
-    executeOnContext(contextID, new Runnable() {
+    context.execute(new Runnable() {
       public void run() {
         handler.handle(null);
       }
-    }, false);
+    });
   }
 
   public String deployWorkerVerticle(String main) {
@@ -249,52 +241,16 @@ class VertxImpl implements VertxInternal {
     return result;
   }
 
-  public boolean destroyContext(long contextID) {
-    return workerMap.remove(contextID) != null || backgroundExecutors.remove(contextID) != null;
+  public void setContext(Context context) {
+    contextTL.set(context);
   }
 
-  public void setContextID(long contextID) {
-    contextIDTL.set(contextID);
+  public Context getContext() {
+    return contextTL.get();
   }
 
-  public Long getContextID() {
-    return contextIDTL.get();
-  }
-
-  public NioWorker getWorkerForContextID(long contextID) {
-    NioWorker worker = workerMap.get(contextID);
-    if (worker == null) {
-      throw new IllegalStateException("Context is not registered " + contextID);
-    }
-    return worker;
-  }
-
-  public void executeOnContext(long contextID, Runnable runnable) {
-    executeOnContext(contextID, runnable, false);
-  }
-
-  private void executeOnContext(final long contextID, final Runnable runnable, boolean sameThreadOptimise) {
-    NioWorker worker = workerMap.get(contextID);
-    if (worker != null) {
-      // Will be run on an event loop
-      if (sameThreadOptimise && (worker.getThread() == Thread.currentThread())) {
-        runnable.run();
-      } else {
-        worker.scheduleOtherTask(runnable);
-      }
-    } else {
-      // Will be run using a worker executor
-      Executor bgExec = backgroundExecutors.get(contextID);
-      if (bgExec != null) {
-        bgExec.execute(new Runnable() {
-          public void run() {
-            runnable.run();
-          }
-        });
-      } else {
-        throw new IllegalStateException("Context is not registered " + contextID + " has it been destroyed?");
-      }
-    }
+  public void reportException(Throwable t) {
+    VertxInternal.instance.reportException(t);
   }
 
   VertxImpl() {
@@ -303,32 +259,32 @@ class VertxImpl implements VertxInternal {
 
   // Private --------------------------------------------------------------------------------------------------
 
-  private long checkContextID() {
-    Long contextID = getContextID();
+  private Context checkContext() {
+    Context contextID = getContext();
     if (contextID == null) throw new IllegalStateException("No context id");
     return contextID;
   }
 
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
-    final long contextID = checkContextID();
+    final Context context = checkContext();
 
     InternalTimerHandler myHandler;
     if (periodic) {
-      myHandler = new InternalTimerHandler(contextID, handler) {
+      myHandler = new InternalTimerHandler(handler) {
         public void run() {
           super.run();
-          scheduleTimeout(timerID, contextID, this, delay); // And reschedule
+          scheduleTimeout(timerID, context, this, delay); // And reschedule
         }
       };
     } else {
-      myHandler = new InternalTimerHandler(contextID, handler) {
+      myHandler = new InternalTimerHandler(handler) {
         public void run() {
           super.run();
           timeouts.remove(timerID);
         }
       };
     }
-    long timerID = scheduleTimeout(-1, contextID, myHandler, delay);
+    long timerID = scheduleTimeout(-1, context, myHandler, delay);
     myHandler.timerID = timerID;
     return timerID;
   }
@@ -340,7 +296,7 @@ class VertxImpl implements VertxInternal {
   private boolean cancelTimeout(long id, boolean check) {
     TimeoutHolder holder = timeouts.remove(id);
     if (holder != null) {
-      if (check && holder.contextID != checkContextID()) {
+      if (check && holder.context != checkContext()) {
         throw new IllegalStateException("Timer can only be cancelled in the context that set it");
       }
       holder.timeout.cancel();
@@ -350,14 +306,10 @@ class VertxImpl implements VertxInternal {
     }
   }
 
-  private long scheduleTimeout(long id, final long contextID, final Runnable task, long delay) {
+  private long scheduleTimeout(long id, final Context context, final Runnable task, long delay) {
     TimerTask ttask = new TimerTask() {
       public void run(Timeout timeout) throws Exception {
-        try {
-          executeOnContext(contextID, task);
-        } catch (Throwable t) {
-          VerticleManager.instance.reportException(t);
-        }
+        context.execute(task);
       }
     };
     if (id != -1 && timeouts.get(id) == null) {
@@ -366,57 +318,40 @@ class VertxImpl implements VertxInternal {
     }
     Timeout timeout = timer.newTimeout(ttask, delay, TimeUnit.MILLISECONDS);
     id = id != -1 ? id : timeoutCounter.getAndIncrement();
-    timeouts.put(id, new TimeoutHolder(timeout, contextID));
+    timeouts.put(id, new TimeoutHolder(timeout, context));
     return id;
   }
 
-  private long createEventLoopContext() {
-    long contextID = contextIDSeq.getAndIncrement();
+  private Context createEventLoopContext() {
     NioWorker worker = getWorkerPool().nextWorker();
-    workerMap.put(contextID, worker);
-    return contextID;
+    return new EventLoopContext(worker);
   }
 
-  private long createBackgroundContext() {
+  private Context createWorkerContext() {
     getBackgroundPool();
-    long contextID = contextIDSeq.getAndIncrement();
-    backgroundExecutors.put(contextID, orderedFact.getExecutor());
-    return contextID;
+    return new WorkerContext(orderedFact.getExecutor());
   }
 
   private static class InternalTimerHandler implements Runnable {
-    final long contextID;
     final Handler<Long> handler;
     long timerID;
 
-    InternalTimerHandler(long contextID, Handler<Long> runnable) {
-      this.contextID = contextID;
+    InternalTimerHandler(Handler<Long> runnable) {
       this.handler = runnable;
     }
 
     public void run() {
-      VertxInternal.instance.setContextID(contextID);
       handler.handle(timerID);
     }
   }
 
   private static class TimeoutHolder {
     final Timeout timeout;
-    final long contextID;
+    final Context context;
 
-    TimeoutHolder(Timeout timeout, long contextID) {
+    TimeoutHolder(Timeout timeout, Context context) {
       this.timeout = timeout;
-      this.contextID = contextID;
-    }
-  }
-
-  private static class ActorHolder {
-    final Handler<?> actor;
-    final long contextID;
-
-    ActorHolder(Handler<?> actor, long contextID) {
-      this.actor = actor;
-      this.contextID = contextID;
+      this.context = context;
     }
   }
 

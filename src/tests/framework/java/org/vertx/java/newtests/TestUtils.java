@@ -1,8 +1,10 @@
 package org.vertx.java.newtests;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -24,12 +26,12 @@ public class TestUtils {
   private static final Logger log = Logger.getLogger(TestUtils.class);
 
   private final Thread th;
-  private final Long contextID;
+  private final Context context;
   private Map<String, Handler<Message<JsonObject>>> handlers = new HashMap<>();
 
   public TestUtils() {
     this.th = Thread.currentThread();
-    this.contextID = Vertx.instance.getContextID();
+    this.context = VertxInternal.instance.getContext();
   }
 
   public void azzert(boolean result) {
@@ -209,12 +211,12 @@ public class TestUtils {
   }
 
   public void checkContext() {
-    if (contextID == null) {
+    if (context == null) {
       throw new IllegalStateException("Don't call checkContext if utils were created with a null context");
     }
     azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
-    azzert(contextID.equals(Vertx.instance.getContextID()), "Expected:" + contextID + " Actual:" + Vertx.instance
-        .getContextID());
+    azzert(context.equals(VertxInternal.instance.getContext()), "Expected:" + context + " Actual:" + VertxInternal.instance
+        .getContext());
   }
 
 }

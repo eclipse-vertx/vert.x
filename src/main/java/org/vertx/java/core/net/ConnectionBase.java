@@ -24,6 +24,7 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -46,14 +47,14 @@ public abstract class ConnectionBase {
 
   private static final Logger log = Logger.getLogger(ConnectionBase.class);
 
-  protected ConnectionBase(Channel channel, long contextID, Thread th) {
+  protected ConnectionBase(Channel channel, Context context, Thread th) {
     this.channel = channel;
-    this.contextID = contextID;
+    this.context = context;
     this.th = th;
   }
 
   protected final Channel channel;
-  protected final long contextID;
+  protected final Context context;
   //For sanity checks
   protected final Thread th;
 
@@ -118,13 +119,13 @@ public abstract class ConnectionBase {
     this.closedHandler = handler;
   }
 
-  protected long getContextID() {
-    return contextID;
+  protected Context getContext() {
+    return context;
   }
 
   protected void handleException(Exception e) {
     if (exceptionHandler != null) {
-      setContextID();
+      setContext();
       try {
         exceptionHandler.handle(e);
       } catch (Throwable t) {
@@ -137,7 +138,7 @@ public abstract class ConnectionBase {
 
   protected void handleClosed() {
     if (closedHandler != null) {
-      setContextID();
+      setContext();
       try {
         closedHandler.handle(null);
       } catch (Throwable t) {
@@ -149,7 +150,7 @@ public abstract class ConnectionBase {
   protected void addFuture(final Handler<Void> doneHandler, final ChannelFuture future) {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
-        setContextID();
+        setContext();
         Vertx.instance.nextTick(new SimpleHandler() {
           public void handle() {
             if (channelFuture.isSuccess()) {
@@ -175,13 +176,13 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void setContextID() {
+  protected void setContext() {
     checkThread();
-    VertxInternal.instance.setContextID(contextID);
+    VertxInternal.instance.setContext(context);
   }
 
   protected void handleHandlerException(Throwable t) {
-    VerticleManager.instance.reportException(t);
+    VertxInternal.instance.reportException(t);
   }
 
   protected boolean isSSL() {

@@ -1,6 +1,7 @@
 package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleFuture;
@@ -454,7 +455,7 @@ public class EventBus {
 
   private void send(final Message message, final Handler replyHandler) {
 
-    Long contextID = Vertx.instance.getContextID();
+    Context context = VertxInternal.instance.getContext();
     try {
       message.sender = serverID;
       if (replyHandler != null) {
@@ -497,8 +498,8 @@ public class EventBus {
     } finally {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
       // of the current thread can change
-      if (contextID != null) {
-        VertxInternal.instance.setContextID(contextID);
+      if (context != null) {
+        VertxInternal.instance.setContext(context);
       }
     }
   }
@@ -628,17 +629,12 @@ public class EventBus {
         // Each handler gets a fresh copy
         final Message copied = msg.copy();
 
-        VertxInternal.instance.executeOnContext(holder.contextID, new Runnable() {
+        holder.context.execute(new Runnable() {
           public void run() {
-            try {
-              // Need to check handler is still there - the handler might have been removed after the message were sent but
-              // before it was received
-              if (map.containsKey(holder)) {
-                VertxInternal.instance.setContextID(holder.contextID);
-                holder.handler.handle(copied);
-              }
-            } catch (Throwable t) {
-              VerticleManager.instance.reportException(t);
+            // Need to check handler is still there - the handler might have been removed after the message were sent but
+            // before it was received
+            if (map.containsKey(holder)) {
+              holder.handler.handle(copied);
             }
           }
         });
@@ -650,12 +646,12 @@ public class EventBus {
   }
 
   private static class HandlerHolder {
-    final long contextID;
+    final Context context;
     final Handler handler;
     final boolean replyHandler;
 
     HandlerHolder(Handler handler, boolean replyHandler) {
-      this.contextID = Vertx.instance.getContextID();
+      this.context = VertxInternal.instance.getContext();
       this.handler = handler;
       this.replyHandler = replyHandler;
     }
