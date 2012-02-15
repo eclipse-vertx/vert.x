@@ -29,5 +29,21 @@ public class JavaScriptWorkQueueTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testPersistentWorkQueue() throws Exception {
+    startApp("busmods/workqueue/persistent_test_client.js");
+    int numProcessors = 10;
+    for (int i = 0; i < numProcessors; i++) {
+      startApp(true, "busmods/workqueue/order_processor.js");
+    }
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testPersistentReloadWorkQueue() throws Exception {
+    startApp("busmods/workqueue/persistent_reload_test_client.js");
+    startTest(getMethodName());
+  }
+
 
 }

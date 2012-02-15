@@ -23,7 +23,6 @@ function testWorkQueue() {
       blah: "somevalue: " + i
     })
   }
-
 }
 
 tu.registerTests(this);
@@ -35,7 +34,4 @@ var queueID = vertx.deployWorkerVerticle('busmods/work_queue.js', queueConfig, 1
 function vertxStop() {
   tu.unregisterAll();
   tu.appStopped();
-//  vertx.undeployVerticle(queueID, function() {
-//    tu.appStopped();
-//  });
 }
