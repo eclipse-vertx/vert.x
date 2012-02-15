@@ -1,6 +1,7 @@
 package org.vertx.java.core.eventbus;
 
 import org.jboss.netty.util.CharsetUtil;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -92,8 +93,12 @@ public abstract class Message<T>  {
    * of the original message.
    */
   public void reply(T message) {
+    reply(message, null);
+  }
+
+  public void reply(T message, Handler<Message<T>> replyHandler) {
     if (bus != null && replyAddress != null) {
-      handleReply(message);
+      handleReply(message, replyHandler);
     }
   }
 
@@ -167,5 +172,5 @@ public abstract class Message<T>  {
 
   protected abstract int getBodyLength();
 
-  protected abstract void handleReply(T reply);
+  protected abstract void handleReply(T reply, Handler<Message<T>> replyHandler);
 }

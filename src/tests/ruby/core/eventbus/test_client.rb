@@ -169,6 +169,28 @@ def echo(msg)
   }
 end
 
+def test_reply_of_reply_of_reply
+
+  address = "some-address"
+
+  id = EventBus.register_handler(address) do |msg|
+    @tu.azzert("message" == msg.body)
+    msg.reply("reply") do |reply|
+      @tu.azzert("reply-of-reply" == reply.body)
+      reply.reply("reply-of-reply-of-reply")
+    end
+  end
+
+  EventBus.send(address, "message") do |reply|
+    @tu.azzert("reply" == reply.body);
+    reply.reply("reply-of-reply") do |reply|
+      @tu.azzert("reply-of-reply-of-reply" == reply.body);
+      EventBus.unregister_handler(id)
+      @tu.test_complete
+    end
+  end
+end
+
 def vertx_stop
   @tu.check_context
   @tu.unregister_all

@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -48,8 +49,8 @@ class LongMessage extends Message<Long> {
     return TYPE_LONG;
   }
 
-  protected void handleReply(Long reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(Long reply, Handler<Message<Long>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

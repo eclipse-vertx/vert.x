@@ -1,6 +1,7 @@
 package org.vertx.java.core.eventbus;
 
 import org.jboss.netty.util.CharsetUtil;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -62,8 +63,8 @@ class StringMessage extends Message<String> {
     return TYPE_STRING;
   }
 
-  protected void handleReply(String reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(String reply, Handler<Message<String>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

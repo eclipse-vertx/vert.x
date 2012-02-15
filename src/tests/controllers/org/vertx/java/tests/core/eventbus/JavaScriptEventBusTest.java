@@ -66,5 +66,8 @@ public class JavaScriptEventBusTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testReplyOfReplyOfReply() {
+    startTest(getMethodName());
+  }
 
 }

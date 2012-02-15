@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -48,8 +49,8 @@ class ShortMessage extends Message<Short> {
     return TYPE_SHORT;
   }
 
-  protected void handleReply(Short reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(Short reply, Handler<Message<Short>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

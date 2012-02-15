@@ -107,20 +107,19 @@ module Vertx
       message
     end
 
+  end
 
-    # @private
-    class InternalHandler
-      include org.vertx.java.core.Handler
+  # @private
+  class InternalHandler
+    include org.vertx.java.core.Handler
 
-      def initialize(hndlr)
-        @hndlr = hndlr
-      end
-
-      def handle(message)
-        @hndlr.call(Message.new(message))
-      end
+    def initialize(hndlr)
+      @hndlr = hndlr
     end
 
+    def handle(message)
+      @hndlr.call(Message.new(message))
+    end
   end
 
   # Represents a message received from the event bus
@@ -148,10 +147,14 @@ module Vertx
     # Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
     # of the original message.
     # @param [Hash] Message send as reply
-    def reply(reply)
+    def reply(reply, &reply_handler)
       raise "A reply message must be specified" if reply == nil
       reply = EventBus::convert_msg(reply)
-      @j_del.reply(reply)
+      if reply_handler != nil
+        @j_del.reply(reply, InternalHandler.new(reply_handler))
+      else
+        @j_del.reply(reply)
+      end
     end
 
   end

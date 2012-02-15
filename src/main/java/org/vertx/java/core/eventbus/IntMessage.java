@@ -1,5 +1,6 @@
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -48,8 +49,8 @@ class IntMessage extends Message<Integer> {
     return TYPE_INT;
   }
 
-  protected void handleReply(Integer reply) {
-    bus.send(replyAddress, reply);
+  protected void handleReply(Integer reply, Handler<Message<Integer>> replyHandler) {
+    bus.send(replyAddress, reply, replyHandler);
   }
 
 }

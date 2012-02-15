@@ -22,7 +22,9 @@ public class RhinoVerticleFactory implements VerticleFactory {
   }
 
   public void reportException(Throwable t) {
+
     Logger logger = VerticleManager.instance.getLogger();
+
     if (t instanceof RhinoException) {
       RhinoException je = (RhinoException)t;
 
