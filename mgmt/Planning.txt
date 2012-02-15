@@ -1,45 +1,18 @@
 vert.x planning/ideas/TODO
 ==========================
 
-Modules
-=========
-
-Core modules
-============
-
-Net - done
-HTTP (incl websockets)
-UDP ??
-DNS ??
-STDIO
-Buffer
-Composition
-Shared data
-Vertx (including Timers, registering handlers)
-FileSystem
-ParseTools
-SockJS
-App Manager
-Sinatra/Express REST style routing
-Event bus
-
-Add on modules ideas
-====================
-Module manager
+Busmods suggestions
+===================
 AMQP
 Redis
 STOMP
-SMTP
 JDBC
-MongoDB
 Memcached
-Spawn
 Twitter
 FB
 Google+
 Supervisors
 Remote Actors
-Socket-IO ?
 Web framework
 JNDI
 JMS
@@ -49,38 +22,17 @@ ZeroMQ
 Gemfire
 Webmachine style
 
-Supported Languages
-===================
+Issues/Ideas
+============
 
-Initially:
-
-Java
-Ruby
-Groovy
-JavaScript (Initially Rhino, then hopefully moving to DynJS as it matures)
-
-
-Going ahead:
-                                                      7
-Clojure
-Python
-Scala
-
-
-TODO
-====
 1) Consider wrapping libev in Java API
 2) Consider using disruptor https://code.google.com/p/disruptor/ as alternative to concurrent queues
-3) SSL exceptions aren't very nice
-4) StartTLS
-5) endHandler handlers not currently being called - check this
-7) Synchronous versions of filesystem ops ??
-8) Filesystem lock + watch
-12) Netty needs to implement event loop
-13) HTTP server side 100-continue handling
-15) Netty should build timers into event loop
-19) Make Java vertx methods static ??
-21) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
+3) StartTLS
+4) Synchronous versions of filesystem ops ??
+5) Filesystem lock + watch
+6) Netty needs to implement event loop
+7) HTTP server side 100-continue handling
+8) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.
 
 For people who don't care about pipelining, then all the request methods should ALSO live on the pool - this is a
@@ -90,32 +42,22 @@ Websockets should also be obtained immediately from a call to websocket() on the
 a ClientWebsocket instance, which will try and connect() immediately. If anything is written before being connected
 it will go into a pending list, like with HttpClientRequest
 
-22) Per thread connection pools. If we can have multiple connection pools, one for each core thread then they don't
-need any synchronization.
-23) HTTP connection reconnection.
-24) Look at Redis cluster support in client
-25) Core JSON support - wrap Jackson?
-28) Cleanup package config and core vs optional dependencies
-29) Event bus should be paritioned into "application groups" for isolation.
-30) DHT
-31) JSON API for Event bus
-34) Think about combining distributed event bus and in vm event bus (register_handler/send_to_handler)
-35) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
+9) HTTP connection reconnection.
+10) Look at Redis cluster support in client
+11) Cleanup package config and core vs optional dependencies
+12) Event bus should be paritioned into "application groups" for isolation.
+13) DHT
+14) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
 (We could even define a wire format gossip protocol to distribute topology to non JVM members, they could then join the
 network)
-38) Redo website
-39) Rewrite readme
-41) bodyHandler helper method in Net module too?
-42) Currently apps not undeployed when server stops or vertxrun is CTRL-C
-43) context not destroyed after app stop is called. - this is tricky - we don't want to destroy the context until
-the application has stopped completely - this might be asynchronous (e.g. server.close) - this means we will have to pass
-44) Allow vertxbus.js to send non json object data, i.e. strings, numbers etc (same as normal eventbus api)
-45) eventbus interop test between JS, Java and Ruby
-46) json sending via JS can be optimised, by not converting to and from Java JsonObject, instead create new message type
+15) bodyHandler helper method in Net module too?
+17) eventbus interop test between JS, Java and Ruby
+18) json sending via JS can be optimised, by not converting to and from Java JsonObject, instead create new message type
 which just encodes as string
-47) core/json tests
-48) Error reporting on deploy/undeploy etc from the command line is inconsistent
-49) ruby routematcher is missing methods
+19) core/json tests
+20) Error reporting on deploy/undeploy etc from the command line is inconsistent
+21) consider using sitebricks pop3 mail
+
 
 
 

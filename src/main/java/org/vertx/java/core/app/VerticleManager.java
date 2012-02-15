@@ -259,7 +259,6 @@ public class VerticleManager {
     }
   }
 
-
   public synchronized Map<String, Integer> listInstances() {
     Map<String, Integer> map = new HashMap<>();
     for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
@@ -318,11 +317,9 @@ public class VerticleManager {
               reportException(t);
             }
             count.undeployed();
-
             LoggerFactory.removeLogger(holder.loggerName);
           }
         });
-
       }
     }
 
