@@ -5,10 +5,12 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -43,6 +45,10 @@ public class WorkQueue extends BusModBase implements Verticle {
     persistorAddress = super.getOptionalStringConfig("persistor_address", null);
     collection = super.getOptionalStringConfig("collection", null);
 
+    if (persistorAddress != null) {
+      loadMessages();
+    }
+
     registerHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         doRegister(message);
@@ -61,6 +67,37 @@ public class WorkQueue extends BusModBase implements Verticle {
       }
     };
     eb.registerHandler(address, sendHandler);
+  }
+
+  // Load all the message into memory
+  // TODO - we could limit the amount we load at startup
+  private void loadMessages() {
+    JsonObject msg = new JsonObject().putString("action", "find").putString("collection", collection)
+                                             .putObject("matcher", new JsonObject());
+    eb.send(persistorAddress, msg, createLoadReplyHandler());
+  }
+
+  private void processLoadBatch(JsonArray toLoad) {
+    Iterator iter = toLoad.iterator();
+    while (iter.hasNext()) {
+      Object obj = iter.next();
+      if (obj instanceof JsonObject) {
+        messages.add((JsonObject)obj);
+      }
+    }
+    checkWork();
+  }
+
+  private Handler<Message<JsonObject>> createLoadReplyHandler() {
+    return new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> reply) {
+        processLoadBatch(reply.body.getArray("results"));
+        if (reply.body.getString("status").equals("more-exist")) {
+          // Get next batch
+          reply.reply(null, createLoadReplyHandler());
+        }
+      }
+    };
   }
 
   public void stop() {
@@ -84,10 +121,22 @@ public class WorkQueue extends BusModBase implements Verticle {
         public void handle(Message<JsonObject> reply) {
           Vertx.instance.cancelTimer(timeoutID);
           processors.add(address);
-          checkWork();
+          if (persistorAddress != null) {
+            JsonObject msg = new JsonObject().putString("action", "delete").putString("collection", collection)
+                                             .putObject("matcher", message);
+            eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
+              public void handle(Message<JsonObject> reply) {
+                if (!reply.body.getString("status").equals("ok"))                 {
+                  log.error("Failed to delete document from queue: " + reply.body.getString("message"));
+                }
+                checkWork();
+              }
+            });
+          } else {
+            checkWork();
+          }
         }
       });
-
     }
   }
 

@@ -290,7 +290,7 @@ function testDelete() {
 
 tu.registerTests(this);
 var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
-var persistorID = vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConfig, 1, function() {
+vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConfig, 1, function() {
   deleteAll();
   tu.appReady();
 });
@@ -298,7 +298,4 @@ var persistorID = vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persi
 function vertxStop() {
   tu.unregisterAll();
   tu.appStopped();
-//  vertx.undeployVerticle(persistorID, function() {
-//    tu.appStopped();
-//  });
 }

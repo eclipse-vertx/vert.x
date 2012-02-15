@@ -56,14 +56,18 @@ public class VerticleManager {
   }
 
   public JsonObject getConfig() {
+    JsonObject conf = null;
     String deploymentName = getDeploymentName();
     if (deploymentName != null) {
       Deployment deployment = deployments.get(deploymentName);
       if (deployment != null) {
-        return deployment.config;
+        conf = deployment.config;
       }
     }
-    return null;
+    if (conf == null) {
+      conf = new JsonObject();
+    }
+    return conf;
   }
 
   public String getDeploymentName() {

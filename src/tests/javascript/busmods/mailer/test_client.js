@@ -51,7 +51,4 @@ var mailerID = vertx.deployWorkerVerticle('busmods/mailer.js', mailerConfig, 1, 
 function vertxStop() {
   tu.unregisterAll();
   tu.appStopped();
-//  vertx.undeployVerticle(mailerID, function() {
-//    tu.appStopped();
-//  });
 }

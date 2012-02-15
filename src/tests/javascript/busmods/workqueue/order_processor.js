@@ -7,6 +7,8 @@ var eb = vertx.EventBus;
 
 var id = vertx.generateUUID();
 
+var dontsendAppLifeCycle = vertx.getConfig().dont_send_app_lifecycle;
+
 var handler = function(message, replier) {
   tu.azzert(message.blah != "undefined");
   replier({});
@@ -18,7 +20,9 @@ eb.registerHandler(id, handler);
 eb.send('test.orderQueue.register', {
   processor: id
 }, function() {
-  tu.appReady();
+  if (!dontsendAppLifeCycle) {
+    tu.appReady();
+  }
 });
 
 function vertxStop() {
@@ -27,7 +31,9 @@ function vertxStop() {
   });
   eb.unregisterHandler(id, handler);
   tu.checkContext();
-  tu.appStopped();
+  if (!dontsendAppLifeCycle) {
+    tu.appStopped();
+  }
 }
 
 
