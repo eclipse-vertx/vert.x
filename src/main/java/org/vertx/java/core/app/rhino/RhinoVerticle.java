@@ -5,6 +5,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -17,7 +18,7 @@ import java.io.InputStreamReader;
  */
 public class RhinoVerticle implements Verticle {
 
-  private static final Logger log = Logger.getLogger(RhinoVerticle.class);
+  private static final Logger log = LoggerFactory.getLogger(RhinoVerticle.class);
 
   private final ClassLoader cl;
   private final String scriptName;

@@ -11,6 +11,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class TestBase extends TestCase {
 
-  private static final Logger log = Logger.getLogger(TestBase.class);
+  private static final Logger log = LoggerFactory.getLogger(TestBase.class);
   private static final int DEFAULT_TIMEOUT = 30;
 
   public static final String EVENTS_ADDRESS = "__test_events";

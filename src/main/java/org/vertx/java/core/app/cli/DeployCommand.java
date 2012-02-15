@@ -1,7 +1,6 @@
 package org.vertx.java.core.app.cli;
 
 import org.vertx.java.core.app.VerticleManager;
-import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 
 import java.net.URL;

@@ -6,6 +6,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
 
@@ -14,7 +15,7 @@ import static org.vertx.java.core.http.ws.WebSocketFrame.FrameType;
  */
 public class WebSocketFrameEncoder00 extends OneToOneEncoder {
 
-  private static final Logger log = Logger.getLogger(WebSocketFrameDecoder00.class);
+  private static final Logger log = LoggerFactory.getLogger(WebSocketFrameDecoder00.class);
 
   protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
     if (msg instanceof WebSocketFrame) {

@@ -43,9 +43,9 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
@@ -66,7 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NetServer extends NetServerBase {
 
-  private static final Logger log = Logger.getLogger(NetServer.class);
+  private static final Logger log = LoggerFactory.getLogger(NetServer.class);
 
   //For debug only
   public static int numServers() {

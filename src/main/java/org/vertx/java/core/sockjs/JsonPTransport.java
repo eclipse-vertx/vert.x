@@ -5,6 +5,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -15,7 +16,7 @@ import java.util.Map;
  */
 class JsonPTransport extends BaseTransport {
 
-  private static final Logger log = Logger.getLogger(JsonPTransport.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonPTransport.class);
 
   JsonPTransport(RouteMatcher rm, String basePath, final Map<String, Session> sessions, final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {

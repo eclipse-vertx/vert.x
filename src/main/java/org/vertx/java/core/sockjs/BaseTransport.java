@@ -6,6 +6,7 @@ import org.vertx.java.core.StringEscapeUtils;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -16,7 +17,7 @@ import java.util.Map;
  */
 class BaseTransport {
 
-  private static final Logger log = Logger.getLogger(BaseTransport.class);
+  private static final Logger log = LoggerFactory.getLogger(BaseTransport.class);
 
   protected final Map<String, Session> sessions;
   protected AppConfig config;

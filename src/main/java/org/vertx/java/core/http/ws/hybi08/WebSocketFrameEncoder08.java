@@ -23,6 +23,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.nio.ByteOrder;
 import java.security.SecureRandom;
@@ -128,7 +129,7 @@ public class WebSocketFrameEncoder08 extends OneToOneEncoder {
     return (this.random != null);
   }
 
-  private static Logger log = Logger.getLogger(WebSocketFrameEncoder08.class);
+  private static Logger log = LoggerFactory.getLogger(WebSocketFrameEncoder08.class);
   private SecureRandom random;
 
 }

@@ -23,11 +23,10 @@ import org.vertx.java.core.Deferred;
 import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -51,7 +50,7 @@ import java.util.HashSet;
   */
 public class AsyncFile {
 
-  private static final Logger log = Logger.getLogger(AsyncFile.class);
+  private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 
   public static final int BUFFER_SIZE = 8192;
 

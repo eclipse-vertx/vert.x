@@ -3,6 +3,7 @@ package org.vertx.java.core.eventbus;
 import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 
@@ -13,7 +14,7 @@ import org.vertx.java.core.net.ServerID;
  */
 public abstract class Message<T>  {
 
-  private static final Logger log = Logger.getLogger(Message.class);
+  private static final Logger log = LoggerFactory.getLogger(Message.class);
 
   static final byte TYPE_BUFFER = 1;
   static final byte TYPE_BOOLEAN = 2;

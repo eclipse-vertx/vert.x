@@ -2,6 +2,7 @@ package org.vertx.java.tests.core.eventbus;
 
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.eventbus.LocalClient;
@@ -14,7 +15,7 @@ import vertx.tests.core.eventbus.LocalPeer;
  */
 public class JavaEventBusTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaEventBusTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaEventBusTest.class);
 
   private int numPeers = 4;
 

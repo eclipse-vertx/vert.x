@@ -2,13 +2,14 @@ package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class LongMessage extends Message<Long> {
 
-  private static final Logger log = Logger.getLogger(LongMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(LongMessage.class);
 
   LongMessage(String address, Long payload) {
     super(address, payload);

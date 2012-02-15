@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.filesystem.TestClient;
@@ -15,7 +16,7 @@ import java.util.Map;
  */
 public class JavaFileSystemTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaFileSystemTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaFileSystemTest.class);
 
   private Map<String, Object> params;
 

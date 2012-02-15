@@ -7,6 +7,7 @@ import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -18,7 +19,7 @@ import java.util.Queue;
  */
 public class WorkQueue extends BusModBase implements Verticle {
 
-  private static final Logger log = Logger.getLogger(WorkQueue.class);
+  private static final Logger log = LoggerFactory.getLogger(WorkQueue.class);
 
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();

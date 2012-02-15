@@ -2,13 +2,14 @@ package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class FloatMessage extends Message<Float> {
 
-  private static final Logger log = Logger.getLogger(FloatMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(FloatMessage.class);
 
   FloatMessage(String address, Float payload) {
     super(address, payload);

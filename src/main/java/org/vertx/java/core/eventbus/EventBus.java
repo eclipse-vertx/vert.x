@@ -5,14 +5,13 @@ import org.vertx.java.core.Context;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleFuture;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
 import org.vertx.java.core.eventbus.spi.ClusterManager;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -54,7 +53,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class EventBus {
 
-  private static final Logger log = Logger.getLogger(EventBus.class);
+  private static final Logger log = LoggerFactory.getLogger(EventBus.class);
 
   /**
    * The event bus instance. Use this to obtain an instance of the event bus from within application code.

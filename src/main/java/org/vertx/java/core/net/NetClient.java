@@ -41,6 +41,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
@@ -59,7 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NetClient extends NetClientBase {
 
-  private static final Logger log = Logger.getLogger(NetClient.class);
+  private static final Logger log = LoggerFactory.getLogger(NetClient.class);
 
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;

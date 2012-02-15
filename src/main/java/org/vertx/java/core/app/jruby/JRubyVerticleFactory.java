@@ -4,17 +4,12 @@ import org.jruby.RubyException;
 import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.backtrace.BacktraceData;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.app.VerticleFactory;
 import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.List;
 
 /**

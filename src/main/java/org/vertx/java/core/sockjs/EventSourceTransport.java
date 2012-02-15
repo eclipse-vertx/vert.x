@@ -4,6 +4,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.Map;
 
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 class EventSourceTransport extends BaseTransport {
 
-  private static final Logger log = Logger.getLogger(EventSourceTransport.class);
+  private static final Logger log = LoggerFactory.getLogger(EventSourceTransport.class);
 
   EventSourceTransport(RouteMatcher rm, String basePath, Map<String, Session> sessions, final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {

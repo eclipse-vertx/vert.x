@@ -50,7 +50,6 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.ws.Handshake;
 import org.vertx.java.core.http.ws.WebSocketFrame;
@@ -58,6 +57,7 @@ import org.vertx.java.core.http.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.ws.hybi17.Handshake17;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.HandlerHolder;
 import org.vertx.java.core.net.HandlerManager;
 import org.vertx.java.core.net.NetServerBase;
@@ -92,7 +92,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class HttpServer extends NetServerBase {
 
-  private static final Logger log = Logger.getLogger(HttpServer.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
 
   //For debug only
   public static int numServers() {

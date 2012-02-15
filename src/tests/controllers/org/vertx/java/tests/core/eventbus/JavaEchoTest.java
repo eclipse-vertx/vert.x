@@ -2,6 +2,7 @@ package org.vertx.java.tests.core.eventbus;
 
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.eventbus.LocalEchoClient;
 import vertx.tests.core.eventbus.LocalEchoPeer;
@@ -13,7 +14,7 @@ import vertx.tests.core.eventbus.LocalEchoPeer;
  */
 public class JavaEchoTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaEchoTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaEchoTest.class);
 
   @Override
   protected void setUp() throws Exception {

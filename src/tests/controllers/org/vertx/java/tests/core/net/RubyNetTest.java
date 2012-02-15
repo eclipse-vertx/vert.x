@@ -2,6 +2,7 @@ package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.newtests.TestBase;
 
 /**
@@ -9,7 +10,7 @@ import org.vertx.java.newtests.TestBase;
  */
 public class RubyNetTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(RubyNetTest.class);
+  private static final Logger log = LoggerFactory.getLogger(RubyNetTest.class);
 
   @Override
   protected void setUp() throws Exception {

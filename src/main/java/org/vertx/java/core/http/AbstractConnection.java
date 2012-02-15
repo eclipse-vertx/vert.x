@@ -20,11 +20,12 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.ConnectionBase;
 
 public abstract class AbstractConnection extends ConnectionBase {
 
-  private static final Logger log = Logger.getLogger(AbstractConnection.class);
+  private static final Logger log = LoggerFactory.getLogger(AbstractConnection.class);
 
   protected AbstractConnection(Channel channel, Context context, Thread th) {
     super(channel, context, th);

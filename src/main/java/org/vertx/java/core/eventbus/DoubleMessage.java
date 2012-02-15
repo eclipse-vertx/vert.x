@@ -2,13 +2,14 @@ package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class DoubleMessage extends Message<Double> {
 
-  private static final Logger log = Logger.getLogger(DoubleMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(DoubleMessage.class);
 
   DoubleMessage(String address, Double payload) {
     super(address, payload);

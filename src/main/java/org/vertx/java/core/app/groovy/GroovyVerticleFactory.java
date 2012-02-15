@@ -2,11 +2,9 @@ package org.vertx.java.core.app.groovy;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
-import org.mozilla.javascript.JavaScriptException;
 import org.vertx.java.core.app.Verticle;
 import org.vertx.java.core.app.VerticleFactory;
 import org.vertx.java.core.app.VerticleManager;
-import org.vertx.java.core.logging.Logger;
 
 import java.lang.reflect.Method;
 import java.net.URL;

@@ -4,6 +4,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 
 import java.io.ByteArrayInputStream;
@@ -17,7 +18,7 @@ import java.io.Serializable;
  */
 public abstract class VertxCommand implements Serializable {
 
-  private static final Logger log = Logger.getLogger(VertxCommand.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxCommand.class);
 
   public abstract String execute(VerticleManager appMgr) throws Exception;
 

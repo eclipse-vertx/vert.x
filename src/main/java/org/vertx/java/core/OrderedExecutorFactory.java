@@ -14,6 +14,7 @@ package org.vertx.java.core;
  */
 
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
@@ -26,7 +27,7 @@ import java.util.concurrent.Executor;
  * @version <tt>$Revision$</tt>
  */
 public class OrderedExecutorFactory {
-  private static final Logger log = Logger.getLogger(OrderedExecutorFactory.class);
+  private static final Logger log = LoggerFactory.getLogger(OrderedExecutorFactory.class);
 
   private final Executor parent;
 

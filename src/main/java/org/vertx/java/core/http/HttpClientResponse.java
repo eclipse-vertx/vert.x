@@ -21,6 +21,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +39,7 @@ import java.util.Set;
  */
 public class HttpClientResponse extends HttpReadStreamBase {
 
-  private static final Logger log = Logger.getLogger(HttpClientResponse.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpClientResponse.class);
 
   private final ClientConnection conn;
   private final Thread th;

@@ -7,6 +7,7 @@ import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketMatcher;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.util.Map;
 
@@ -15,7 +16,7 @@ import java.util.Map;
  */
 class WebSocketTransport extends BaseTransport {
 
-  private static final Logger log = Logger.getLogger(WebSocketTransport.class);
+  private static final Logger log = LoggerFactory.getLogger(WebSocketTransport.class);
 
   WebSocketTransport(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, Map<String, Session> sessions,
                      final AppConfig config,

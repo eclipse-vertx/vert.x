@@ -3,7 +3,6 @@ package org.vertx.java.core.app;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.app.groovy.GroovyVerticleFactory;
 import org.vertx.java.core.app.java.JavaVerticleFactory;
@@ -11,6 +10,7 @@ import org.vertx.java.core.app.jruby.JRubyVerticleFactory;
 import org.vertx.java.core.app.rhino.RhinoVerticleFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class VerticleManager {
 
-  private static final Logger log = Logger.getLogger(VerticleManager.class);
+  private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
 
   public static VerticleManager instance = new VerticleManager();
 
@@ -272,7 +271,7 @@ public class VerticleManager {
   // Must be synchronized since called directly from different thread
   private synchronized void addVerticle(Deployment deployment, Verticle verticle) {
     String loggerName = deployment.name + "-" + deployment.verticles.size();
-    Logger logger = Logger.getLogger(loggerName);
+    Logger logger = LoggerFactory.getLogger(loggerName);
     Context context = VertxInternal.instance.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger);
@@ -320,7 +319,7 @@ public class VerticleManager {
             }
             count.undeployed();
 
-            Logger.removeLogger(holder.loggerName);
+            LoggerFactory.removeLogger(holder.loggerName);
           }
         });
 

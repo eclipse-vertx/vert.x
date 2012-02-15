@@ -17,6 +17,7 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -48,7 +49,7 @@ import java.util.Locale;
  */
 public class StringEscapeUtils {
 
-  private static final Logger log = Logger.getLogger(StringEscapeUtils.class);
+  private static final Logger log = LoggerFactory.getLogger(StringEscapeUtils.class);
 
   /**
    * <p><code>StringEscapeUtils</code> instances should NOT be constructed in

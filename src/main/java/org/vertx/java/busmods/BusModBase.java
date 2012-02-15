@@ -5,6 +5,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 
 /**
@@ -12,7 +13,7 @@ import org.vertx.java.core.logging.Logger;
  */
 public abstract class BusModBase {
 
-  private static final Logger log = Logger.getLogger(BusModBase.class);
+  private static final Logger log = LoggerFactory.getLogger(BusModBase.class);
 
   protected final EventBus eb = EventBus.instance;
   protected JsonObject config;

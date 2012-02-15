@@ -2,6 +2,7 @@ package org.vertx.java.tests.core.websockets;
 
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.newtests.TestBase;
 import vertx.tests.core.websockets.InstanceCheckServer;
@@ -12,7 +13,7 @@ import vertx.tests.core.websockets.WebsocketsTestClient;
  */
 public class JavaWebsocketTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaWebsocketTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaWebsocketTest.class);
 
   @Override
   protected void setUp() throws Exception {

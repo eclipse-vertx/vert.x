@@ -24,6 +24,7 @@ import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.app.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 import java.net.URL;
 import java.util.Map;
@@ -38,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 class VertxImpl implements VertxInternal {
 
-  private static final Logger log = Logger.getLogger(VertxImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
   private int backgroundPoolSize = 1;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();

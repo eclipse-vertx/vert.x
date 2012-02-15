@@ -2,13 +2,14 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServerWebSocket extends WebSocket {
 
-  private static final Logger log = Logger.getLogger(ServerWebSocket.class);
+  private static final Logger log = LoggerFactory.getLogger(ServerWebSocket.class);
 
   private final Runnable connectRunnable;
 
