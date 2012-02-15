@@ -193,11 +193,11 @@ The `vertx.deployVerticle` method deploys standard (non worker) verticles. If yo
 
 ## Undeploying a Verticle
 
-To undeploy a verticle call the `vertx.undeployVerticle` function passing in the deployment id that was returned from the call to `vertx.deployVerticle`
+The entire tree of child verticles created from within a verticle are automatically undeployed when the parent (creating) verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `vertx.undeployVerticle` passing in the deployment id that was returned from the call to `vertx.deployVerticle`
 
     var deploymentID = vertx.deployVerticle('my_verticle.js');    
     
-    vertx.undeployVerticle(deploymentID);
+    vertx.undeployVerticle(deploymentID);    
 
             
 # The Event Bus

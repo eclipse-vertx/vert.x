@@ -337,8 +337,11 @@ This would delete the item with the specified id.
 When the find complete successfully, a reply message is sent back to the sender with the following data:
 
     {
-        "status": "ok"
+        "status": "ok",
+        "number": <number>
     }       
+    
+Where `number` is the number of documents deleted.    
     
 If an error occurs in finding the documents a reply is returned:
 
