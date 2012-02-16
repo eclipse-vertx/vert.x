@@ -1,5 +1,7 @@
 load('vertx.js')
 
-log.println("in child.js, config is " + vertx.getConfig());
+var log = vertx.getLogger();
 
-log.println(JSON.stringify(vertx.getConfig()));
+log.info("in child.js, config is " + vertx.getConfig());
+
+log.info(JSON.stringify(vertx.getConfig()));

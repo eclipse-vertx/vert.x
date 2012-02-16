@@ -54,17 +54,11 @@ public class RhinoVerticle implements Verticle {
     }
   }
 
-  private static void addStandardObjectsToScope(ScriptableObject scope) {
-    Object jsLog = Context.javaToJS(System.out, scope);
-    ScriptableObject.putProperty(scope, "log", jsLog);
-  }
-
   public void start() throws Exception {
     Context cx = Context.enter();
     try {
       scope = cx.initStandardObjects();
 
-      addStandardObjectsToScope(scope);
       scope.defineFunctionProperties(new String[] { "load" }, RhinoVerticle.class, ScriptableObject.DONTENUM);
 
       // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and

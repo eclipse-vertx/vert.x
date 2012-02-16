@@ -133,10 +133,6 @@
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
     <exclude name="org/vertx/java/tests/redis/*Test.class"/>
-    <!-- Exclude mailer since not everyone has a localhost mailserver -->
-    <exclude name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
-    <!-- Exclude persistor since it requires a local MongoDB server -->
-    <exclude name="org/vertx/java/tests/busmods/persistor/*Test.class"/>
   </fileset>
 
   <fileset id="redis-tests.fs" dir="${tests-target}">
@@ -155,6 +151,8 @@
     <include name="**/${test.name}.class"/>
   </fileset>
 
+  <!-- You will need a MongoDB instance running locally and a mailer (use sendmail)
+  running on localhost:25 -->
   <target name="tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="main-tests.fs"/>

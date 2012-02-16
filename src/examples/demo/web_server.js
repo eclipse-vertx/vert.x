@@ -1,5 +1,7 @@
 load('vertx.js')
 
+var log = vertx.getLogger();
+
 var server = new vertx.HttpServer();
 
 // Link up the client side to the server side event bus
@@ -34,7 +36,7 @@ server.requestHandler(function(req) {
   }
 }).listen(8080, 'localhost');
 
-log.println("app deployed and running!");
+log.info("app deployed and running!");
 
 function vertxStop() {
   server.close();

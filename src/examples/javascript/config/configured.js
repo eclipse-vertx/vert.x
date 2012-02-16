@@ -2,4 +2,6 @@ load('vertx.js')
 
 var config = vertx.getConfig();
 
-log.println('Config is ' + JSON.stringify(config));
+var log = vertx.getLogger();
+
+log.info('Config is ' + JSON.stringify(config));
