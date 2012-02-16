@@ -50,7 +50,6 @@ it will go into a pending list, like with HttpClientRequest
 14) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
 (We could even define a wire format gossip protocol to distribute topology to non JVM members, they could then join the
 network)
-15) bodyHandler helper method in Net module too?
 17) eventbus interop test between JS, Java and Ruby
 18) json sending via JS can be optimised, by not converting to and from Java JsonObject, instead create new message type
 which just encodes as string
