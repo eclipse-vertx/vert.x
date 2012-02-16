@@ -56,6 +56,7 @@ which just encodes as string
 19) core/json tests
 20) Error reporting on deploy/undeploy etc from the command line is inconsistent
 21) consider using sitebricks pop3 mail
+22) better error checking on parameters in ruby and js core layer
 
 
 
