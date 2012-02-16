@@ -15,14 +15,18 @@ done
 
 DIRNAME=`dirname "$PRG"`
 
-# Change this if you are using a different Groovy version
-GROOVY_VERSION=1.8.1
-
-CLASSPATH=$DIRNAME/../conf:$DIRNAME/../lib/java/vert.x.jar:$DIRNAME/../lib/java/netty.jar:\
-$DIRNAME/../lib/java/hazelcast.jar:$DIRNAME/../lib/java/jackson-core.jar:\
-$DIRNAME/../lib/java/jackson-mapper.jar:\
-$DIRNAME/../lib/java/js.jar:$DIRNAME/../lib/ruby:$DIRNAME/../lib/javascript:\
-$JRUBY_HOME/lib/jruby.jar:$GROOVY_HOME/embeddable/groovy-all-$GROOVY_VERSION.jar
+CLASSPATH=\
+$DIRNAME/../conf:\
+$DIRNAME/../lib/jars/vert.x.jar:$DIRNAME/../lib/jars/netty.jar:\
+$DIRNAME/../lib/jars/jackson-core.jar:$DIRNAME/../lib/jars/jackson-mapper.jar:\
+$DIRNAME/../lib/jars/hazelcast.jar:\
+$DIRNAME/../lib/jars/jruby.jar:\
+$DIRNAME/../lib/jars/groovy.jar:\
+$DIRNAME/../lib/jars/js.jar:\
+$DIRNAME/../lib/jars/mailer.jar:\
+$DIRNAME/../lib/jars/mongo.jar:\
+$DIRNAME/../lib/ruby:\
+$DIRNAME/../lib/javascript
 
 java -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties -Djruby.home=$JRUBY_HOME\
  -cp $CLASSPATH org.vertx.java.core.app.cli.VertxMgr "$@"
