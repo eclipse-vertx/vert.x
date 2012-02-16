@@ -63,7 +63,7 @@ public class RhinoVerticle implements Verticle {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
     }
     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-    cx.evaluateReader(scope, reader, scriptName, 0, null);
+    cx.evaluateReader(scope, reader, scriptName, 1, null);
     try {
       is.close();
     } catch (IOException ignore) {
