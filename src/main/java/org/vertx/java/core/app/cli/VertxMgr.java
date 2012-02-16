@@ -228,8 +228,10 @@ public class VertxMgr {
 
 
   private boolean startCluster(Args args) {
-    if (args.map.get("-cluster") != null) {
-      System.out.println("Starting clustering");
+    final CountDownLatch latch = new CountDownLatch(1);
+    boolean clustered = args.map.get("-cluster") != null;
+    if (clustered) {
+      System.out.print("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
         clusterPort = 25500;
@@ -250,7 +252,6 @@ public class VertxMgr {
         return false;
       }
       final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
-      final CountDownLatch latch = new CountDownLatch(1);
       VertxInternal.instance.startOnEventLoop(new Runnable() {
         public void run() {
           ClusterManager mgr;
@@ -267,13 +268,9 @@ public class VertxMgr {
           latch.countDown();
         }
       });
-      try {
-        latch.await();
-      } catch (InterruptedException ignore) {
-      }
     } else {
       // This is ugly - tidy it up!
-      final CountDownLatch latch = new CountDownLatch(1);
+
       VertxInternal.instance.startOnEventLoop(new Runnable() {
         public void run() {
           // Start non clustered event bus
@@ -283,6 +280,19 @@ public class VertxMgr {
           latch.countDown();
         }
       });
+    }
+    while (true) {
+      try {
+        if (!latch.await(10000, TimeUnit.SECONDS)) {
+          log.warn("Timed out waiting for clustering to start");
+        }
+        break;
+      } catch (InterruptedException ignore) {
+        //OK - spurious wakeup
+      }
+    }
+    if (clustered) {
+      System.out.println("Started");
     }
     return true;
   }

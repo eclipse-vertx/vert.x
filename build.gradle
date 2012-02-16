@@ -79,7 +79,7 @@ distSpec = copySpec {
     include '**/*.groovy'
   }
   into('conf') {
-    from "conf/logging.properties", "conf/hazelcast.xml"
+    from "conf/logging.properties", "conf/cluster.xml"
   }
   into('docs/java/api') {
     from javadoc

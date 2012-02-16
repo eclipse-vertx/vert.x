@@ -84,6 +84,7 @@
     <pathelement location="${tests-base}/groovy"/>
     <pathelement location="${tests-base}/framework/groovy"/>
     <pathelement location="src/main/groovy"/>
+    <pathelement location="${conf-dir}"/>
   </path>
 
   <taskdef name="groovyc"
@@ -227,7 +228,7 @@
     <mkdir dir="${dist-build}/conf"/>
 
     <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
-    <copy file="conf/hazelcast.xml" todir="${dist-build}/conf"/>
+    <copy file="conf/cluster.xml" todir="${dist-build}/conf"/>
 
     <copy todir="${dist-build}/lib/java">
       <fileset dir="${core-lib}">
