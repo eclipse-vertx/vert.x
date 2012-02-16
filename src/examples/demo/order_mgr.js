@@ -2,8 +2,10 @@ load('vertx.js');
 
 var eb = vertx.EventBus;
 
+var log = vertx.getLogger();
+
 var handler = function(order, replier) {
-  log.println('Received order in order manager ' + JSON.stringify(order));
+  log.info('Received order in order manager ' + JSON.stringify(order));
   var sessionID = order.sessionID;
   eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
     if (reply.status === 'ok') {
@@ -23,7 +25,7 @@ var handler = function(order, replier) {
         });
     } else {
       // Invalid session id
-      log.println('invalid session id');
+      log.info('invalid session id');
     }
   });
 }

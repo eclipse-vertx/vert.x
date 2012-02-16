@@ -1,6 +1,8 @@
 load('vertx.js')
 
-log.println("running http server")
+var log = vertx.getLogger();
+
+log.info("running http server")
 
 var server = new vertx.HttpServer();
 
@@ -10,7 +12,7 @@ server.requestHandler(function(req) {
 
 server.listen(8181, 'localhost');
 
-log.println("server listening");
+log.info("server listening");
 
 function vertxStop() {
   server.close

@@ -2,10 +2,12 @@ load('vertx.js');
 
 var eb = vertx.EventBus;
 
+var log = vertx.getLogger();
+
 var id = vertx.generateUUID();
 
 var handler = function(order, replier) {
-  log.println('Received order for processing ' + JSON.stringify(order));
+  log.info('Received order for processing ' + JSON.stringify(order));
 
   var email = order.email;
   var items = order.items;
@@ -35,7 +37,7 @@ var handler = function(order, replier) {
 
   replier({});
 
-  log.println("Order successfully processed");
+  log.info("Order successfully processed");
 }
 
 eb.registerHandler(id, handler);

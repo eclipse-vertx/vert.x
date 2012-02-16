@@ -1,6 +1,8 @@
 load('vertx.js');
 
-log.println("inserting static data");
+var log = vertx.getLogger();
+
+log.info("inserting static data");
 
 var eb = vertx.EventBus;
 
@@ -61,6 +63,6 @@ eb.send(pa, {
     username: 'tim',
     password: 'password'
   }
-}, function() { log.println("ALl inserted!")});
+}, function() { log.info("ALl inserted!")});
 
-log.println("inserted static data");
+log.info("inserted static data");
