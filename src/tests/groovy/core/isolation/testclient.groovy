@@ -1,7 +1,7 @@
 package core.isolation
 
 import java.util.concurrent.atomic.AtomicInteger
-import org.vertx.groovy.newtests.TestUtils
+import org.vertx.groovy.framework.TestUtils
 
 tu = new TestUtils()
 tu.checkContext()

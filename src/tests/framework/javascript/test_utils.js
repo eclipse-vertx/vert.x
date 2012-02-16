@@ -1,7 +1,7 @@
 var TestUtils = function() {
 
   var that = this;
-  var jutils = new org.vertx.java.newtests.TestUtils();
+  var jutils = new org.vertx.java.framework.TestUtils();
 
   that.azzert = function(result, message) {
     if (message) {

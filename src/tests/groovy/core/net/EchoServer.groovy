@@ -1,7 +1,7 @@
 package core.net
 
 import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.newtests.TestUtils
+import org.vertx.groovy.framework.TestUtils
 
 tu = new TestUtils()
 tu.checkContext()
