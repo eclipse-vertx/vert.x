@@ -1,7 +1,7 @@
 package core.net
 
 import org.vertx.groovy.core.net.NetClient
-import org.vertx.groovy.newtests.TestUtils
+import org.vertx.groovy.framework.TestUtils
 import org.vertx.java.core.buffer.Buffer
 
 tu = new TestUtils()
