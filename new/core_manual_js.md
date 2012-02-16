@@ -805,25 +805,33 @@ To configure a client to only trust those certificates it has in its trust store
 
 # Flow Control - Streams and Pumps
 
-There are several objects in vert.x that allow data to be read from and written to in the form of Buffers. All operations in the vert.x API are non blocking, calls to write return immediately and writes are internally queued. It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound eventually resulting in exhausting available memory.
+There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.
 
-To solve this problem a simple flow control capability is provided by some objects in the vert.x API. Any flow control aware object that can be written to is said to implement `ReadStream`, and any flow control object that can be read from is said to implement `WriteStream`.
+All operations in the vert.x API are non blocking, calls to write data return immediately and writes are internally queued.
 
-Let's take an example where we want to read from one `ReadStream` and write the data to a `WriteStream`. An example would be reading from a `NetSocket` and writing to an `AsyncFile` on disk. A naive way to do this would be to directly take the data read and immediately write it to the NetSocket, as follows:
+It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound - eventually resulting in exhausting available memory.
+
+To solve this problem a simple flow control capability is provided by some objects in the vert.x API.
+
+Any flow control aware object that can be written to is said to implement `ReadStream`, and any flow control object that can be read from is said to implement `WriteStream`.
+
+Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
+
+An example would be reading from a `NetSocket` and writing to an `AsyncFile` on disk. A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
     var server = new vertx.NetServer();
 
     server.connectHandler(function(sock) {
     
-      var asyncFile = vertx.FileSystem.open('some_file.dat');
-    
-      sock.dataHandler(function(buffer) {
+        vertx.FileSystem.open('some_file.dat', function(err, res) {
+            sock.dataHandler(function(buffer) {
       
-        // Stream all data directly to the disk file:
-      
-        asyncFile.write(buffer); 
-      });
-      
+                // Stream all data directly to the disk file:
+                      
+                asyncFile.write(buffer); 
+            });
+        });
+        
     }).listen(1234, 'localhost');
     
 There's a problem with the above example: If data is read from the socket faster than it can be written to the underlying disk file, it will build up in the write queue of the AsyncFile, eventually running out of RAM.
@@ -834,16 +842,15 @@ It just so happens that `AsyncFile` implements `WriteStream`, so we can check if
 
     server.connectHandler(function(sock) {
     
-      var asyncFile = vertx.FileSystem.open('some_file.dat');
-    
-      sock.dataHandler(function(buffer) {
+        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
+            sock.dataHandler(function(buffer) {
       
-        // Stream all data directly to the disk file:
-        if (!asyncFile.writeQueueFull()) {      
-            asyncFile.writeBuffer(buffer); 
-        }
-      });
-      
+                if (!asyncFile.writeQueueFull()) {      
+                    asyncFile.writeBuffer(buffer); 
+                }
+            });
+        });
+          
     }).listen(1234, 'localhost');
     
 This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the `AsyncFile` `WriteQueue` is full. Let's do that:
@@ -852,15 +859,17 @@ This example won't run out of RAM but we'll end up losing data if the write queu
 
     server.connectHandler(function(sock) {
     
-      var asyncFile = vertx.FileSystem.open('some_file.dat');
-    
-      sock.dataHandler(function(buffer) {
+        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
+            sock.dataHandler(function(buffer) {
       
-        if (!asyncFile.writeQueueFull()) {      
-            asyncFile.writeBuffer(buffer); 
-        } else {
-           sock.pause();
-        }
+                if (!asyncFile.writeQueueFull()) {      
+                    asyncFile.writeBuffer(buffer); 
+                } else {
+                    sock.pause();
+                }
+            });
+        });
+        
       });
       
     }).listen(1234, 'localhost');
@@ -871,40 +880,39 @@ We're almost there, but not quite. The `NetSocket` now gets paused when the file
 
     server.connectHandler(function(sock) {
     
-      var asyncFile = vertx.FileSystem.open('some_file.dat');
-    
-      sock.dataHandler(function(buffer) {
+        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
+            sock.dataHandler(function(buffer) {
       
-        if (!asyncFile.writeQueueFull()) {      
-            asyncFile.writeBuffer(buffer); 
-        } else {
-           sock.pause();
-           
-           asyncFile.drainHandler(function() {
-             sock.resume();
-           });
-        }
-      });
+                if (!asyncFile.writeQueueFull()) {      
+                    asyncFile.writeBuffer(buffer); 
+                } else {
+                    sock.pause();
+                    
+                    asyncFile.drainHandler(function() {
+                        sock.resume();
+                    });
+                }
+            });
+        });    
       
     }).listen(1234, 'localhost');
 
 And there we have it. The `drainHandler` event handler will get called when the write queue is ready to accept more data, this resumes the `NetSocket` which allows it to read more data.
 
-The above API usage pattern is common when writing vert.x applications, so we provide a helper class called `Pump` which does all this hard work for you. You just feed it that `ReadStream` and the `WriteStream` and it tell it to start:
+It's very common to want to do this when writing vert.x applications, so we provide a helper class called `Pump` which does all this hard work for you. You just feed it the `ReadStream` and the `WriteStream` and it tell it to start:
 
     var server = new vertx.NetServer();
 
     server.connectHandler(function(sock) {
     
-      var asyncFile = vertx.FileSystem.open('some_file.dat');
-    
-      var pump = new vertx.Pump(sock, asyncFile);
-      
-      pump.start();
+        var asyncFile = vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {        
+            var pump = new vertx.Pump(sock, asyncFile);      
+            pump.start();
+        });        
       
     }).listen(1234, 'localhost');
     
-The above does exactly the same thing as the previous example.
+Which does exactly the same thing as the more verbose example.
 
 Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
@@ -918,7 +926,7 @@ Functions:
 * `pause()`: pause the handler. When paused no data will be received in the `dataHandler`.
 * `resume()`: resume the handler. The handler will be called if any data arrives.
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `ReadStream`.
-* `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if its an HTTP request, or when the connection is closed if its a TCP socket.
+* `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
 ## WriteStream
 
@@ -929,15 +937,15 @@ Functions:
 * `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
 * `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
 * `writeQueueFull()`: returns `true` if the write queue is considered full.
-* `exceptionHandler(handler)`: Will be called if an exception occurs on the `ReadStream`.
-* `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if its an HTTP request, or when the connection is closed if its a TCP socket.
+* `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
+* `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
 
 ## Pump
 
 Instances of `Pump` have the following methods:
 
-* `start()`. The start the pump. When the pump is not started, the `ReadStream` is paused.
-* `stop(). Stops the pump. Resumes the `ReadStream`.
+* `start()`. Start the pump. When the pump is not started, the `ReadStream` is paused.
+* `stop(). Stops the pump. Pauses the `ReadStream`.
 * `setWriteQueueMaxSize()`. This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
 * `getBytesPumped()`. Returns total number of bytes pumped.
 
