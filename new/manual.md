@@ -8,7 +8,7 @@
       
 Some of the key highlights include:
 
-* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojur support is scheduled too).
+* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).
 
 * No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.
 
