@@ -1,3 +1,7 @@
 load('vertx.js');
 
-throw "Foo"
+foo();
+
+function foo() {
+  throw "foo"
+}
