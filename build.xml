@@ -217,18 +217,23 @@
   <target name="dist" depends="clean, jar-core">
     <mkdir dir="${dist-build}"/>
 
-    <copy file="${target}/${jar-file}" todir="${dist-build}/lib/java"/>
+    <copy file="${target}/${jar-file}" todir="${dist-build}/lib/jars"/>
 
     <mkdir dir="${dist-build}/conf"/>
 
     <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
     <copy file="conf/cluster.xml" todir="${dist-build}/conf"/>
 
-    <copy file="${core-lib}/netty.jar" tofile="${dist-build}/lib/java/netty.jar"/>
-    <copy file="${core-lib}/jackson-core-asl-1.9.4.jar" tofile="${dist-build}/lib/java/jackson-core.jar"/>
-    <copy file="${core-lib}/jackson-mapper-asl-1.9.4.jar" tofile="${dist-build}/lib/java/jackson-mapper.jar"/>
-    <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/java/js.jar"/>
-    <copy file="${core-lib}/hazelcast-1.9.4.4.jar" tofile="${dist-build}/lib/java/hazelcast.jar"/>
+    <copy file="${core-lib}/netty.jar" tofile="${dist-build}/lib/jars/netty.jar"/>
+    <copy file="${core-lib}/jackson-core-asl-1.9.4.jar" tofile="${dist-build}/lib/jars/jackson-core.jar"/>
+    <copy file="${core-lib}/jackson-mapper-asl-1.9.4.jar" tofile="${dist-build}/lib/jars/jackson-mapper.jar"/>
+    <copy file="${core-lib}/hazelcast-1.9.4.4.jar" tofile="${dist-build}/lib/jars/hazelcast.jar"/>
+    <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/>
+    <copy file="${core-lib}/groovy-all-1.8.6.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
+    <copy file="${core-lib}/jruby.jar" tofile="${dist-build}/lib/jars/jruby.jar"/>
+    <copy file="${core-lib}/mail.jar" tofile="${dist-build}/lib/jars/mail.jar"/>
+    <copy file="${core-lib}/mongo.jar" tofile="${dist-build}/lib/jars/mongo.jar"/>
+    <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
     <copy todir="${dist-build}/lib/ruby">
       <fileset dir="src/main/ruby">
