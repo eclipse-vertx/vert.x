@@ -323,6 +323,9 @@ public class VertxMgr {
 "        <main> can be a JavaScript script, a Ruby script, A Groovy script, or a\n" +
 "        Java class.\n\n" +
 "    valid options are:\n" +
+"        -conf <config_file>    Specifies configuration that should be provided \n" +
+"                               to the verticle. <config_file> should reference \n" +
+"                               a text file containing a valid JSON object.\n" +
 "        -cp <path>             specifies the path on which to search for <main>\n" +
 "                               and any referenced resources.\n" +
 "                               Defaults to '.' (current directory).\n" +
@@ -344,6 +347,9 @@ public class VertxMgr {
 "        <main> can be a JavaScript script, a Ruby script, A Groovy script,\n" +
 "        or a Java class.\n\n" +
 "    valid options are:\n" +
+"        -conf <config_file>    Specifies configuration that should be provided \n" +
+"                               to the verticle. <config_file> should reference \n" +
+"                               a text file containing a valid JSON object.\n" +
 "        -cp <path>             specifies the path on which to search for <main>\n" +
 "                               and any referenced resources.\n" +
 "                               Defaults to '.' (current directory).\n" +
