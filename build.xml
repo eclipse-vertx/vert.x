@@ -31,8 +31,7 @@
   <property name="core-target" value="${target}/core/classes"/>
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
-  <property name="core-lib" value="${lib-dir}/core"/>
-  <property name="opt-lib" value="${lib-dir}/opt"/>
+  <property name="core-lib" value="${lib-dir}/build"/>
   <property name="test-results" value="test-results"/>
   <property name="test-tmp" value="test-tmp"/>
 
@@ -58,9 +57,6 @@
 
   <path id="core-lib-classpath">
     <fileset dir="${core-lib}">
-      <include name="*.jar"/>
-    </fileset>
-    <fileset dir="${opt-lib}">
       <include name="*.jar"/>
     </fileset>
   </path>
@@ -228,20 +224,11 @@
     <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
     <copy file="conf/cluster.xml" todir="${dist-build}/conf"/>
 
-    <copy todir="${dist-build}/lib/java">
-      <fileset dir="${core-lib}">
-        <include name="netty.jar"/>
-        <include name="high-scale-lib.jar"/>
-        <include name="jackson-all-1.9.2.jar"/>
-        <!-- <include name="jruby.jar"/> -->
-      </fileset>
-      <fileset dir="${opt-lib}">
-        <!-- <include name="jruby.jar"/> -->
-        <include name="js.jar"/>
-        <include name="groovy-all-*.jar"/>
-        <include name="hazelcast-all-1.9.4.4.jar"/>
-      </fileset>
-    </copy>
+    <copy file="${core-lib}/netty.jar" tofile="${dist-build}/lib/java/netty.jar"/>
+    <copy file="${core-lib}/jackson-core-asl-1.9.4.jar" tofile="${dist-build}/lib/java/jackson-core.jar"/>
+    <copy file="${core-lib}/jackson-mapper-asl-1.9.4.jar" tofile="${dist-build}/lib/java/jackson-mapper.jar"/>
+    <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/java/js.jar"/>
+    <copy file="${core-lib}/hazelcast-1.9.4.4.jar" tofile="${dist-build}/lib/java/hazelcast.jar"/>
 
     <copy todir="${dist-build}/lib/ruby">
       <fileset dir="src/main/ruby">
