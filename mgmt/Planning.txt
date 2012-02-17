@@ -57,6 +57,8 @@ which just encodes as string
 20) Error reporting on deploy/undeploy etc from the command line is inconsistent
 21) consider using sitebricks pop3 mail
 22) better error checking on parameters in ruby and js core layer
+23) Consider busmods (with dependencies) living in their own directory from "busmod" in the distro. Users can then install their own by copying busmod and deps
+into dir. This will be available to all other verticles.
 
 
 

@@ -235,6 +235,8 @@
     <copy file="${core-lib}/mongo.jar" tofile="${dist-build}/lib/jars/mongo.jar"/>
     <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/client/"/>
+
     <copy todir="${dist-build}/lib/ruby">
       <fileset dir="src/main/ruby">
         <include name="**/*.rb"/>

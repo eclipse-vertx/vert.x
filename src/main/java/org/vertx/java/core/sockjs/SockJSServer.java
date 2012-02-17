@@ -98,7 +98,7 @@ public class SockJSServer {
     // will be called
 
     if (prevHandler != null) {
-      rm.all(".*", prevHandler);
+      rm.allWithRegEx(".*", prevHandler);
     }
 
     if (wsHandler != null) {
