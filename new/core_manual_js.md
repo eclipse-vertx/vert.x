@@ -492,7 +492,15 @@ The return value of the `connectHandler` method is the server itself, so multipl
         log.info('A client has connected!');
     }).listen(1234, 'localhost');
     
-This is a common pattern throughout the vert.x API.    
+or 
+
+    new vertx.NetServer().connectHandler(function(sock) {
+        log.info('A client has connected!');
+    }).listen(1234, 'localhost');
+    
+    
+This is a common pattern throughout the vert.x API.  
+ 
 
 ### Closing a Net Server
 
@@ -944,26 +952,28 @@ Functions:
 
 Instances of `Pump` have the following methods:
 
-* `start()`. Start the pump. When the pump is not started, the `ReadStream` is paused.
-* `stop(). Stops the pump. Pauses the `ReadStream`.
+* `start()`. Start the pump.
+* `stop()`. Stops the pump. When the pump starts it is in stopped mode.
 * `setWriteQueueMaxSize()`. This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
 * `getBytesPumped()`. Returns total number of bytes pumped.
+
+A pump can be started and stopped multiple times.
 
 # Writing HTTP Servers and Clients
 
 ## Writing HTTP servers
 
-Writing full featured, highly performant and scalable HTTP servers is child's play with vert.x
+Vert.x allows you to easily write full featured, highly performant and scalable HTTP servers.
 
 ### Creating an HTTP Server
 
-To create an HTTP server we simply create an instance of vertx.net.HttpServer.
+To create an HTTP server you simply create an instance of vertx.net.HttpServer.
 
     var server = new vertx.HttpServer();
     
 ### Start the Server Listening    
     
-To tell that server to listen on for incoming requests we do:    
+To tell that server to listen for incoming requests you use the `listen` method:
 
     var server = new vertx.HttpServer();
 
@@ -974,7 +984,7 @@ The first parameter to `listen` is the port. The second parameter is the hostnam
 
 ### Getting Notified of Incoming Requests
     
-To be notified when a request arrives we need call the `requestHandler` function of the server, passing in a handler:
+To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` function of the server, passing in the handler:
 
     var server = new vertx.HttpServer();
 
@@ -984,29 +994,40 @@ To be notified when a request arrives we need call the `requestHandler` function
 
     server.listen(8080, 'localhost');
     
-This displays 'An HTTP request has been received!' every time am HTTP request arrives on the server. You can try it by running the verticle and pointing your browser at http://localhost:8080.
+This displays 'An HTTP request has been received!' every time an HTTP request arrives on the server. You can try it by running the verticle and pointing your browser at `http://localhost:8080`.
 
-Similarly to Net Server, the return value of the `requestHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
+Similarly to `NetServer`, the return value of the `requestHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
 
     var server = new vertx.HttpServer();
 
     server.requestHandler(function(request) {
       log.info('An HTTP request has been received');
     }).listen(8080, 'localhost');
+    
+Or:
+
+    new vertx.HttpServer().requestHandler(function(request) {
+      log.info('An HTTP request has been received');
+    }).listen(8080, 'localhost');
+    
        
 ### Handling HTTP Requests
 
-So far we have seen how to create an HTTPServer and be notified of requests but not how to do anything interesting with the requests. 
+So far we have seen how to create an HTTPServer and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
 
-When a request arrives, the request handler is called passing in an instance of `HttpServerRequest`. This object represents the server side HTTP request. It contains functions to get the uri, path, request headers and request parameters. It also contains a `response` property which is a reference to an object that represents the server side HTTP response for the object.
+When a request arrives, the request handler is called passing in an instance of `HttpServerRequest`. This object represents the server side HTTP request.
+
+The handler is called when the headers of the request have been fully read. If the request contains a body, that body may arrive at the server some time after the request handler has been called.
+
+It contains functions to get the URI, path, request headers and request parameters. It also contains a `response` property which is a reference to an object that represents the server side HTTP response for the object.
 
 #### Request Method
 
-The request object has a property `method` which is a string representing what HTTP method was requested. Possible values are GET, PUT, POST, DELETE, HEAD, OPTIONS, CONNECT, TRACE, PATCH.
+The request object has a property `method` which is a string representing what HTTP method was requested. Possible values for `method` are: `GET`, `PUT`, `POST`, `DELETE`, `HEAD`, `OPTIONS`, `CONNECT`, `TRACE`, `PATCH`.
 
 #### Request URI
 
-The request object has a property `uri` which contains the full uri of the request. For example, if the request uri was:
+The request object has a property `uri` which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:
 
     http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
     
@@ -1014,7 +1035,7 @@ Then `request.uri` would contain the string `http://localhost:8080/a/b/c/page.ht
 
 #### Request Path
 
-The request object has a property `path` which contains the path of the request. For example, if the request uri was:
+The request object has a property `path` which contains the path of the request. For example, if the request URI was:
 
     http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
     
@@ -1022,7 +1043,7 @@ Then `request.path` would contain the string `/a/b/c/page.html`
    
 #### Request Query
 
-The request object has a property `query` which contains the query of the request. For example, if the request uri was:
+The request object has a property `query` which contains the query of the request. For example, if the request URI was:
 
     http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
     
@@ -1030,7 +1051,9 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
         
 #### Request Headers
 
-The request headers are available using the `headers()` function on the request object. The return value of the function is just a JavaScript hash. Here's an example that echoes the headers to the output of the response. Run it and point your browser at http://localhost:8080 to see the headers.
+The request headers are available using the `headers()` function on the request object. The return value of the function is just a JavaScript object. As we all know JavaScript objects are just hashes (associative arrays).
+
+Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
     var server = new vertx.HttpServer();
 
@@ -1049,21 +1072,21 @@ The request headers are available using the `headers()` function on the request 
     
 #### Request params
 
-Similarly to the headers, the request parameters are available using the `params()` function on the request object. The return value of the function is just a JavaScript hash.     
+Similarly to the headers, the request parameters are available using the `params()` function on the request object. The return value of the function is just a hash too.     
 
-Request parameters are sent on the request uri, after the path. For example if the uri was:
+Request parameters are sent on the request URI, after the path. For example if the URI was:
 
     http://localhost:8080/page.html?param1=abc&param2=xyz
     
-Then the params hash would be the following object:
+Then the params hash would be the following JS object:
 
     { param1: 'abc', param2: 'xyz' }
     
 #### Reading Data from the Request Body
 
-Sometimes an HTTP request contains a request body that we want to read. The request body is not passed fully read with the HTTP request since it may be very large and we don't want to have problems with available memory.
+Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HTTPServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
 
-Instead you set a `dataHandler` on the request object which gets called as parts of the HTTP request arrive. Here's an example:
+To receive the body, you set the `dataHandler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
 
     var server = new vertx.HttpServer();
 
@@ -1074,23 +1097,29 @@ Instead you set a `dataHandler` on the request object which gets called as parts
       });
       
     }).listen(8080, 'localhost'); 
+    
+The `dataHandler` may be called more than once depending on the size of the body.    
 
+You'll notice this is very similar to how data from `NetSocket` is read. 
 
-The request object implements the `ReadStream` interface so you can pump the request body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation. You'll notice this is very similar to how data from NetSocket is read.   
+The request object implements the `ReadStream` interface so you can pump the request body to a `WriteStream`. See the chapter on streams and pumps for a detailed explanation. 
 
-If you wanted to read the entire request body before doing something with it you could do something like the following:
+In many cases, you know the body is not large and you just one to receive it in one go. To do this you could do something like the following:
 
     var server = new vertx.HttpServer();
 
     server.requestHandler(function(request) {
     
+      // Create a buffer to hold the body
       var body = new vertx.Buffer();  
     
       request.dataHandler(function(buffer) {
+        // Append the chunk to the buffer
         body.appendBuffer(buffer);
       });
       
       request.endHandler(function() {
+        // The entire body has now been received
         log.info('The total body received was ' + body.length() + ' bytes');
       });
       
@@ -1098,9 +1127,13 @@ If you wanted to read the entire request body before doing something with it you
     
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the request.
 
-If the HTTP request is using HTTP chunking, then each chunk of the request body will be received in a different call ti the data handler.
+If the HTTP request is using HTTP chunking, then each HTTP chunk of the request body will correspond to a single call of the data handler.
 
-Since it's such a common use case to want to read the entire body before processing it, vert.x allows a `bodyHandler` to be set on the request object. The body handler does is called when the *entire* request body has been read. Beware of doing this with very large requests since the entire request body will be stored in memory.
+It's a very common use case to want to read the entire body before processing it, so vert.x allows a `bodyHandler` to be set on the request object.
+
+The body handler is called only once when the *entire* request body has been read.
+
+*Beware of doing this with very large requests since the entire request body will be stored in memory.*
 
 Here's an example using `bodyHandler`:
 
@@ -1113,6 +1146,8 @@ Here's an example using `bodyHandler`:
       });
       
     }).listen(8080, 'localhost');  
+    
+Simples, innit?    
     
 ### HTTP Server Responses 
 
@@ -1135,7 +1170,7 @@ You can also use the `statusMessage` property to set the status message. If you 
 
 #### Writing HTTP responses
 
-To write data to an http response, you invoke the `write` function. This function can be invoked in a few ways:
+To write data to an HTTP response, you invoke the `write` function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:
 
 With a single buffer:
 
@@ -1150,7 +1185,9 @@ A string and an encoding. In this case the string will encoded using the specifi
 
     request.response.write('hello', 'UTF-16');
     
-The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a function as a final argument. This function will then be invoked when the write has completed:
+The `write` function is asynchronous and always returns immediately after the write has been queued.
+
+The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will then be invoked when the write has completed:
 
     request.response.write('hello', function() {
         log.info('It has actually been written');
@@ -1158,7 +1195,9 @@ The `write` function is asynchronous and always returns immediately after the wr
     
 If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` function.   
 
-The first call to `write` results in the response header being being written to the response. Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
+The first call to `write` results in the response header being being written to the response.
+
+Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
    
 #### Ending HTTP responses
 
@@ -1170,13 +1209,24 @@ With no arguments, the response is simply ended.
 
     request.response.end();
     
-The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
+The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments. For example:
+
+    request.response.end("That's all folks");
 
 You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
 
+    // End response and close connection
+    request.response.end(true);
+    
+Or:
+
+    // Write something, end response and close connection
+    request.response.end("That's really all folks", true);
+    
+
 #### Response headers
 
-Individual response headers can be written using the `putHeader` method. For example:
+Individual HTTP response headers can be written using the `putHeader` method. For example:
 
     request.response.putHeader('Content-Length', '0');    
     
@@ -1188,7 +1238,7 @@ If you wish to add several headers in one operation, just call `putHeaders` with
     
 #### Chunked HTTP Responses and Trailers
 
-vert.x also supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding). This allows the HTTP response body to be written in chunks, and is normally used when a large response body is being streamed to a client, whose size is not known in advance.
+Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding). This allows the HTTP response body to be written in chunks, and is normally used when a large response body is being streamed to a client, whose size is not known in advance.
 
 You put the HTTP response into chunked mode as follows:
 
@@ -1209,11 +1259,13 @@ If you wish to add several trailers in one operation, just call `putTrailers` wi
 
 ### Serving files directly disk
 
-You could stream a file from disk to a HTTP response by opening an `AsyncFile` using the file system and pumping it to the response, or you could load it in one go using the file system and write that to the response.
+If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, vert.x provides a feature where you can stream files directly from disk to the response bypassing userspace altogether. This functionality is OS dependent and leverages the `sendfile` operation to tell the kernel to directly serve the file. Using this operation can greatly reduce CPU utilisation.
+Alternatively, vert.x provides a feature where you can stream files directly from disk to the response bypassing user-space altogether.
 
-To do this use the `sendfile` function on the HTTP response, for example here's a simple HTTP web server that serves static files from the local `web` directory:
+This functionality is OS dependent and leverages the `sendfile` function to tell the kernel to directly serve the file. Using this operation can greatly reduce CPU utilisation.
+
+To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
     var server = new vertx.HttpServer();
 
@@ -1226,12 +1278,16 @@ To do this use the `sendfile` function on the HTTP response, for example here's 
       }
       req.response.sendFile('web/' + file);   
     }).listen(8080, 'localhost');
+    
+*Note: If you use `sendfile` while using HTTPS it won't actually use the kernel `sendfile` function, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
-**If you're going to write web servers using vert.x be careful that users can exploit the path to access files outside the directory from which you want to serve them.**
+**If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
 
 ### Pumping Responses
 
-Since the HTTP Response implements `WriteStream` you can pump to it from any `ReadStream`, e.g. an `AsyncFile`, `NetSocket` or `HttpServerRequest`. Here's an example which simply echoes an HttpRequest headers and body back in the HttpResponse. Since it uses a pump for the body, it will work even if the HTTP request body is much larger than can fit in memory at any one time:
+Since the HTTP Response implements `WriteStream` you can pump to it from any `ReadStream`, e.g. an `AsyncFile`, `NetSocket` or `HttpServerRequest`.
+
+Here's an example which echoes HttpRequest headers and body back in the HttpResponse. It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
 
     var server = new vertx.HttpServer();
 
@@ -1252,34 +1308,34 @@ To create an HTTP client you simply create an instance of vertx.HttpClient
 
     var client = new vertx.HttpClient();
     
-You can set the port and hostname (or ip address) that the client will connect to be using the `setHost` and `setPort` functions:
+You set the port and hostname (or ip address) that the client will connect to using the `setHost` and `setPort` functions:
 
     var client = new vertx.HttpClient();
     client.setPort(8181);
     client.setHost('foo.com');
     
-This, of course can be chained:
+This, of course, can be chained:
 
     var client = new vertx.HttpClient()
                    .setPort(8181);
                    .setHost('foo.com');
                    
-A single http client always connects to the same host and port. If you want to connect to different servers, create more instances of http client.
+A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
 The default value for hostname is `localhost`, and the default value for port is `80`.  
 
 ### Pooling and Keep Alive
 
-By default the HTTP client pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response returns.
+By default the `HTTPClient` pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.
 
-If you do not want connections to be pooled you can set keep alive to false on the pool:
+If you do not want connections to be pooled you can call `setKeepAlive` with `false`:
 
     var client = new vertx.HttpClient()
                    .setPort(8181);
                    .setHost('foo.com').
                    .setKeepAlive(false);
 
-In this case a new connection will be created for each HTTP request and closed once the response has returned.
+In this case a new connection will be created for each HTTP request and closed once the response has ended.
 
 You can set the maximum number of connections that the client will pool as follows:
 
@@ -1288,7 +1344,7 @@ You can set the maximum number of connections that the client will pool as follo
                    .setHost('foo.com').
                    .setMaxPoolSize(10);
                    
-The default value is 1.         
+The default value is `1`.         
 
 ### Closing the client
 
@@ -1298,11 +1354,13 @@ Once you have finished with an HTTP client, you should close it:
                          
 ### Making Requests
 
-To make a request using the client you invoke one the methods named after the HTTP methods. For example, to make a POST request:
+To make a request using the client you invoke one the methods named after the HTTP method that you want to invoke.
+
+For example, to make a `POST` request:
 
     var client = new vertx.HttpClient();
     
-    var request = client.post('http://localhost:8080/some-uri', function(resp) {
+    var request = client.post('http://localhost:8080/some-path/', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
     
@@ -1310,27 +1368,29 @@ To make a request using the client you invoke one the methods named after the HT
     
 To make a PUT request use the `put` method, to make a GET request use the `get` method, etc.
 
+Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `connect`, `trace` and `patch`.
+
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
-The return value from the appropriate request method is a client request object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
+The return value from the appropriate request method is an `HTTPClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
 Once you have finished with the request you must call the `end` function.
 
-If you don't know the name of the request method in advance there is a general request method which takes the method name as a parameter:
+If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
 
     var client = new vertx.HttpClient();
     
-    var request = client.request('POST', 'http://localhost:8080/some-uri', function(resp) {
+    var request = client.request('POST', 'http://localhost:8080/some-path', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
     
     request.end();
     
-There is a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
+There is also a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
     var client = new vertx.HttpClient();
     
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
+    client.getNow('http://localhost:8080/some-path', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
 
@@ -1340,7 +1400,7 @@ With `getNow` there is no return value.
 
 Writing to the client request body has a very similar API to writing to the server response body.
 
-To write data to an http client request, you invoke the `write` function. This function can be invoked in a few ways:
+To write data to an `HttpClientRequest` object, you invoke the `write` function. This function can be called multiple times before the request has ended. It can be invoked in a few ways:
 
 With a single buffer:
 
@@ -1355,7 +1415,9 @@ A string and an encoding. In this case the string will encoded using the specifi
 
     request.write('hello', 'UTF-16');
     
-The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a function as a final argument. This function will then be invoked when the write has completed:
+The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
+
+If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will be invoked when the write has completed:
 
     request.response.write('hello', function() {
         log.info('It has actually been written');
@@ -1363,7 +1425,9 @@ The `write` function is asynchronous and always returns immediately after the wr
     
 If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` function.   
 
-The first call to `write` results in the request header being being written to the request. Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
+The first call to `write` results in the request header being being written to the request.
+
+Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
 
 
 #### Ending HTTP requests
@@ -1386,7 +1450,7 @@ To write headers to the request, use the `putHeader` method.
 
     var client = new vertx.HttpClient();
     
-    var request = client.post('http://localhost:8080/some-uri', function(resp) {
+    var request = client.post('http://localhost:8080/some-path', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
     
@@ -1402,18 +1466,18 @@ These can be chained together as per the common vert.x API pattern:
 
 If you want to put more than one header at the same time, you can instead use the `putHeaders` function.
   
-  client.post('http://localhost:8080/some-uri', function(resp) {
+    client.post('http://localhost:8080/some-uri', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     }).putHeaders({'Some-Header': 'Some-Value',
-                   'Some-Other-Header': 'Some-Other-Value'})
+                   'Some-Other-Header': 'Some-Other-Value',
+                   'Yet-Another-Header': 'Yet-Another-Value'})
       .end(); 
-
-**[[ TODO putHeaders currently not implemented ]]**
-
+       
+      
 
 #### HTTP chunked requests
 
-vert.x also supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding) for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.
+Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding) for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.
 
 You put the HTTP request into chunked mode as follows:
 
@@ -1425,27 +1489,29 @@ Default is non-chunked. When in chunked mode, each call to `request.write(...)` 
 
 Client responses are received as an argument to the response handler that is passed into one of the request methods on the HTTP client.
 
-The response object implements `ReadStream`. To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
+The response object implements `ReadStream`, so it can be pumped to a `WriteStream` like any other `ReadStream`.
+
+To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
 
  var client = new vertx.HttpClient();
     
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
+    client.getNow('http://localhost:8080/some-path', function(resp) {
       log.info('server returned status code: ' + resp.statusCode);   
       log.info('server returned status message: ' + resp.statusMessage);   
     });
 
 #### Reading Data from the Response Body
 
-The API for reading a client http response body is very similar to the API for read a server http request body.
+The API for reading a http client response body is very similar to the API for reading a http server request body.
 
-Sometimes an HTTP response contains a request body that we want to read. The response body is not passed fully read with the HTTP response since it may be very large and we don't want to have problems with available memory.
+Sometimes an HTTP response contains a request body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.
 
-Instead you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
+To receive the response body, you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
 
 
     var client = new vertx.HttpClient();
     
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
+    client.getNow('http://localhost:8080/some-path', function(resp) {
       resp.dataHandler(function(buffer) {
         log.info('I received ' + buffer.length() + ' bytes');
       });    
@@ -1453,19 +1519,24 @@ Instead you set a `dataHandler` on the response object which gets called as part
 
 The response object implements the `ReadStream` interface so you can pump the response body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation. 
 
-If you wanted to read the entire response body before doing something with it you could do something like the following:
+The `dataHandler` can be called multiple times for a single HTTP response.
+
+As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
     var client = new vertx.HttpClient();
     
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
+    client.getNow('http://localhost:8080/some-path', function(resp) {
       
+      // Create a buffer to hold the entire response body
       var body = new vertx.Buffer();  
     
       resp.dataHandler(function(buffer) {
+        // Add chunk to the buffer
         body.appendBuffer(buffer);
       });
       
       resp.endHandler(function() {
+        // The entire response body has been received
         log.info('The total body received was ' + body.length() + ' bytes');
       });
       
@@ -1473,9 +1544,13 @@ If you wanted to read the entire response body before doing something with it yo
     
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the response.
 
-If the HTTP response is using HTTP chunking, then each chunk of the response body will be received in a different call to the data handler.
+If the HTTP response is using HTTP chunking, then each chunk of the response body will correspond to a single call to the `dataHandler`.
 
-Since it's such a common use case to want to read the entire body before processing it, vert.x allows a `bodyHandler` to be set on the response object. The body handler is called when the *entire* response body has been read. Beware of doing this with very large responses since the entire response body will be stored in memory.
+It's a very common use case to want to read the entire body in one go, so vert.x allows a `bodyHandler` to be set on the response object.
+
+The body handler is called only once when the *entire* response body has been read.
+
+*Beware of doing this with very large responses since the entire response body will be stored in memory.*
 
 Here's an example using `bodyHandler`:
 
@@ -1489,9 +1564,13 @@ Here's an example using `bodyHandler`:
       
     }); 
     
-#### Pumping Responses
+## Pumping Requests and Responses
 
-Like several other objects in vert.x, the HTTP client request implements `WriteStream` you can pump to it from any `ReadStream`, e.g. an `AsyncFile`, `NetSocket` or `HttpServerRequest`. Here's a very simple proxy server which forwards a request to another server and forwards the response back to the client. It uses two pumps - one to pump the server request to the client request, and another to pump the client response back to the server response. Since it uses pumps it will work even if the HTTP request body is much larger than can fit in memory at any one time:
+The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them.
+
+Here's a very simple proxy server which forwards a request to another server and forwards the response back to the client.
+
+It uses two pumps - one to pump the server request to the client request, and another to pump the client response back to the server response. It uses pumps so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
 
     var server = new vertx.HttpServer();
     
@@ -1522,15 +1601,21 @@ Like several other objects in vert.x, the HTTP client request implements `WriteS
     
 ### 100-Continue Handling
 
-According to the [HTTP 1.1 specification] (http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html) a client can set a header `Expect: 100-Continue` and send the request header before sending the rest of the request body. The server can then respond with an interim response status `Status: 100 (Continue)` to signify the client is ok to send the rest of the body. The idea here is it allows the server to reject the request before large amounts of data has already been sent, which would be a waste of bandwidth.
+According to the [HTTP 1.1 specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html) a client can set a header `Expect: 100-Continue` and send the request header before sending the rest of the request body.
 
-The vert.x allows you to set a continue handler on the client request object. This will be called if the server sends back a `Status: 100 (Continue)` response to signify it is ok to send the rest of the request. This is used in conjunction with the `sendHead` function to send the head of the request.
+The server can then respond with an interim response status `Status: 100 (Continue)` to signify the client is ok to send the rest of the body.
+
+The idea here is it allows the server to authorise and accept/reject the request before large amounts of data is sent. Sending large amounts of data if the request might not be accepted is a waste of bandwidth and ties up the server in reading data that it will just discard.
+
+Vert.x allows you to set a `continueHandler` on the client request object. This will be called if the server sends back a `Status: 100 (Continue)` response to signify it is ok to send the rest of the request.
+
+This is used in conjunction with the `sendHead` function to send the head of the request.
 
 An example will illustrate this:
 
     var client = new vertx.HttpClient();
     
-    var request = client.put('http://localhost:8080/some-uri', function(resp) {
+    var request = client.put('http://localhost:8080/some-path', function(resp) {
       
       resp.bodyHandler(function(resp) {
         log.info('Got a response ' + resp.statusCode);
@@ -1550,31 +1635,33 @@ An example will illustrate this:
 
 ## HTTPS Servers
 
-HTTP Servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
+HTTPS servers are very easy to write using vert.x.
 
-When an HTTP Server is working as an HTTPS Server the API of the server is identical compared to when it working with standard HTTP. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before listen is called.
+An HTTPS server has an identical API to a standard HTTP server. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before `listen` is called.
 
-Configuration of an HTTPS server is exactly the same as configuring a Net Server for SSL. Please see SSL server chapter for detailed instructions.
+Configuration of an HTTPS server is done in exactly the same way as configuring a `NetServer` for SSL. Please see SSL server chapter for detailed instructions.
 
 ## HTTPS Clients
 
-HTTP Clients can also be easily configured to use HTTPS.
+HTTPS clients can also be very easily written with vert.x
 
-Configuration of an HTTPS client is exactly the same as configuring a Net Client for SSL. Please see SSL client chapter for detailed instructions. 
+Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a `NetClient` for SSL. Please see SSL client chapter for detailed instructions. 
 
 ## Scaling HTTP servers
 
-Scaling an HTTP server over multiple cores is as simple as deploying more instances of the verticle. For example:
+Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:
 
     vertx deploy http_server.js -instances 20
     
-The scaling works in the same way as scaling a Net Server. Please see the section on scaling Net Servers for a detailed explanation [LINK].   
+The scaling works in the same way as scaling a `NetServer`. Please see the chapter on scaling Net Servers for a detailed explanation of how this works.
 
 # Routing HTTP requests with Pattern Matching
 
-With vert.x you can also route HTTP requests to different handlers based on pattern matching on the request path. It also enables you to extract values from the path and use them as parameters in the request. This is particularly useful when developing REST-style web applications.
+Vert.x lets you route HTTP requests to different handlers based on pattern matching on the request path. It also enables you to extract values from the path and use them as parameters in the request.
 
-To do this you simply create an instance of `vertx.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers.
+This is particularly useful when developing REST-style web applications.
+
+To do this you simply create an instance of `vertx.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
 
     var server = new vertx.HttpServer();
     
@@ -1582,7 +1669,7 @@ To do this you simply create an instance of `vertx.RouteMatcher` and use it as h
         
     server.requestHandler(routeMatcher).listen(8080, 'localhost');
     
-## Routing with Static Paths    
+## Specifying matches.    
     
 You can then add different matches to the route matcher. For example, to send all GET requests with path `/animals/dogs` to one handler and all GET requests with path `/animals/cats` to another handler you would do:
 
@@ -1600,9 +1687,15 @@ You can then add different matches to the route matcher. For example, to send al
         
     server.requestHandler(routeMatcher).listen(8080, 'localhost');
     
-Corresponding methods exist for each HTTP method - get, post, put, delete, head, etc.
+Corresponding methods exist for each HTTP method - `get`, `post`, `put`, `delete`, `head`, `options`, `trace`, `connect` and `patch`.
+
+There's also an `all` method which applies the match to any HTTP request method.
 
 The handler specified to the method is just a normal HTTP server request handler, the same as you would supply to the `requestHandler` method of the HTTP server.
+
+You can provide as many matches as you like and they are evaulated in the order you added them, the first matching one will receive the request.
+
+A request is sent to at most one handler.
 
 ## Extracting parameters from the path
 
@@ -1615,19 +1708,26 @@ If you want to extract parameters from the path, you can do this too, by using t
     routeMatcher.put('/:blogname/:post', function(req) {        
         var blogName = req.params().blogname;
         var post = req.params().post;
-        // Do something
-        req.response.end();
+        req.response.end('blogname is ' + blogName + ', post is ' + post);
     });
     
     server.requestHandler(routeMatcher).listen(8080, 'localhost');
     
 Any params extracted by pattern matching are added to the map of request parameters.
 
-In the above example, a PUT request to `/myblog/post1` would result in the variable `blogName` getting the value `myblog` and the variable `post` getting the value `post`.
+In the above example, a PUT request to `/myblog/post1` would result in the variable `blogName` getting the value `myblog` and the variable `post` getting the value `post1`.
+
+Valid parameter names must start with a letter of the alphabet and be followed by any letters of the alphabet or digits.
 
 ## Extracting params using Regular Expressions
 
-Regular Expressions can also be used to extract more complex matches. In this case capture groups can be used to capture any parameters. Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc.
+Regular Expressions can be used to extract more complex matches. In this case capture groups are used to capture any parameters.
+
+Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc. For example:
+
+Corresponding methods exist for each HTTP method - `getWithRegEx`, `postWithRegEx`, `putWithRegEx`, `deleteWithRegEx`, `headWithRegEx`, `optionsWithRegEx`, `traceWithRegEx`, `connectWithRegEx` and `patchWithRegEx`.
+
+There's also an `allWithRegEx` method which applies the match to any HTTP request method.
 
     var server = new vertx.HttpServer();
     
@@ -1640,12 +1740,10 @@ Regular Expressions can also be used to extract more complex matches. In this ca
         req.response.end();
     });    
     
-## Catch all
-
-**[TODO]* finish this off
+You can use regular expressions as catch all when no other matches apply, e.g.
 
     // Catch all - serve the index page
-    routeMatcher.get('.*', function(req) {
+    routeMatcher.getWithRegEx('.*', function(req) {
       req.response.sendFile("route_match/index.html");
     });    
 
@@ -1655,7 +1753,7 @@ Regular Expressions can also be used to extract more complex matches. In this ca
 
 ## WebSockets on the server
 
-To use WebSockets on the server you create an HTTP server as normal [LINK], but instead of setting a `requestHandler` you set a `websocketHandler` on the server.
+To use WebSockets on the server you create an HTTP server as normal, but instead of setting a `requestHandler` you set a `websocketHandler` on the server.
 
     var server = new vertx.HttpServer();
 
@@ -1665,9 +1763,13 @@ To use WebSockets on the server you create an HTTP server as normal [LINK], but 
       
     }).listen(8080, 'localhost');
     
-The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, and has a very similar interface to `NetSocket`, so you can write and write data to it in the normal ways. See chapter on streams [LINK] for more information.
+### Reading from and Writing to WebSockets    
+    
+The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways. I.e by setting a `dataHandler` and calling the `writeBuffer` method.
 
-For example, to echo anything received on a WebSocket:
+See the chapter on `NetSocket` and streams and pumps for more information.
+
+For example, to echo all data received on a WebSocket:
 
     var server = new vertx.HttpServer();
 
@@ -1677,9 +1779,18 @@ For example, to echo anything received on a WebSocket:
       p.start();
       
     }).listen(8080, 'localhost');
+    
+The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
 
+Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling 
 
-Sometimes you may only want to accept WebSockets which connect at a specific path, to check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
+    websocket.writeBuffer(new vertx.Buffer('some-string'));    
+
+### Rejecting WebSockets
+
+Sometimes you may only want to accept WebSockets which connect at a specific path.
+
+To check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
 
     var server = new vertx.HttpServer();
 
@@ -1695,7 +1806,9 @@ Sometimes you may only want to accept WebSockets which connect at a specific pat
     
 ## WebSockets on the HTTP client
 
-To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the uri that you want to connect at, and a handler. The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
+To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the URI that you wish to connect to at the server, and a handler.
+
+The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
 
 Here's an example of WebSocket connection;
 
@@ -1709,10 +1822,7 @@ Here's an example of WebSocket connection;
     
 Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object. 
 
-WebSocket also implements the convenience method `writeTextFrame` for writing text frames, and `writeBinaryFrame` for writing binary frames.   
-
 ## WebSockets in the browser
-
 
 To use WebSockets from a compliant browser, you use the standard WebSocket API. Here's some example client side JavaScript which uses a WebSocket. 
 
@@ -1743,9 +1853,13 @@ For more information see the [WebSocket API documentation](http://dev.w3.org/htm
     
 # SockJS
 
-WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older versions. Moreover, websockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a websocket connection is going to succeed for every user.
+WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.
 
-Enter SockJS. SockJS is a client side JavaScript library and protocol which provides a simple WebSocket-like interface to you the developer irrespective of whether the actual browser or network will allow real WebSockets.
+Moreover, websockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a websocket connection is going to succeed for every user.
+
+Enter SockJS.
+
+SockJS is a client side JavaScript library and protocol which provides a simple WebSocket-like interface to the client side JavaScript developer irrespective of whether the actual browser or network will allow real WebSockets.
 
 It does this by supporting various different transports between browser and server, and choosing one at runtime according to browser and network capabilities. All this is transparent to you - you are simply presented with the WebSocket-like interface which *just works*.
 
@@ -1753,15 +1867,19 @@ Please see the [SockJS website](https://github.com/sockjs/sockjs-client) for mor
 
 ## SockJS Server
 
-vert.x provides a complete server side SockJS implementationl, enabling vert.x to be used for modern *real-time* web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
+Vert.x provides a complete server side SockJS implementation.
 
-To create a SockJS server you simply create a HTTP server as normal [LINK] and pass it in to the constructor of the SockJS server.
+This enables vert.x to be used for modern, so-called *real-time* (this is the *modern* meaning of *real-time*, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
+
+To create a SockJS server you simply create a HTTP server as normal and pass it in to the constructor of the SockJS server.
 
     var httpServer = new vertx.HttpServer();
     
     var sockJSServer = new vertx.SockJSServer(httpServer);
     
-Each SockJS server can host multiple *applications*. Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.     
+Each SockJS server can host multiple *applications*.
+
+Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.     
 
 For example, to create a SockJS echo application:
 
@@ -1782,12 +1900,12 @@ For example, to create a SockJS echo application:
     
 The configuration can take the following fields:
 
-* prefix: A url prefix for the application. All http requests which paths begins with selected prefix will be handled by the application. This property is mandatory.
-* insert_JSESSIONID: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
-* session_timeout: The server sends a `close` event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the `close` event will be emitted when a receiving connection wasn't seen for 5 seconds.
-* heartbeat_period: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.
-* max_bytes_streaming: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    
-* library_url: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.1.min.js`
+* `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
+* `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
+* `session_timeout`: The server sends a `close` event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the `close` event will be emitted when a receiving connection wasn't seen for 5 seconds.
+* `heartbeat_period`: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.
+* `max_bytes_streaming`: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    
+* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.1.min.js`
 
 ## Reading and writing data from a SockJS server
 
@@ -1795,7 +1913,7 @@ The object passed into the SockJS handler implements `ReadStream` and `WriteStre
 
 See the chapter on Streams and Pumps for more information.
 
-var httpServer = new vertx.HttpServer();
+    var httpServer = new vertx.HttpServer();
     
     var sockJSServer = new vertx.SockJSServer(httpServer);
     
@@ -1830,15 +1948,25 @@ For full information on using the SockJS client library please see the SockJS we
        };
     </script>   
     
-# SockJS -- EventBus Bridge
+# SockJS - EventBus Bridge
 
 ## Setting up the Bridge
 
-By connecting up SockJS and the vert.x Event Bus we can create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers. We can therefore create a huge distributed event space encompassing many browsers and servers. The browsers don't have to be connected to the same server as long as the servers are connected.
+By connecting up SockJS and the vert.x event bus we create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers.
 
-On the server side we have already discussed the event bus API. We also provide a client side JavaScript library called `vertxbus.js` which provides the same event bus API on the client side. This library internally uses SockJS to send and receive data from a SockJS vert.x server called the SockJS Bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus.
+We can therefore create a huge distributed bus encompassing many browsers and servers. The browsers don't have to be connected to the same server as long as the servers are connected.
 
-Creating a Sock JS bridge is simple. You just create a SockJS Server as described in the last chapter, and install an app with a handler which is a `SockJSBridgeHandler`. The following example creates and starts a SockJS bridge which will bridge any events sent to path `eventbus` on to the event bus.
+On the server side we have already discussed the event bus API.
+
+We also provide a client side JavaScript library called `vertxbus.js` which provides the same event bus API, but on the client side.
+
+This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
+
+Creating a Sock JS bridge is simple. You just create a SockJS server as described in the last chapter, and install an application in the SockJS server with a pre-made handler called the `SockJSBridgeHandler`. 
+
+You will also need to secure the bridge (see below).
+
+The following example creates and starts a SockJS bridge which will bridge any events sent to the path `eventbus` on to the server side event bus.
 
     var server = new vertx.HttpServer();
 
@@ -1851,23 +1979,65 @@ Creating a Sock JS bridge is simple. You just create a SockJS Server as describe
     server.listen(8080);
     
 The SockJS bridge currently only works with JSON event bus messages.    
+
+## Using the Event Bus from client side JavaScript
+
+Once you've set up a bridge, you can use the event bus from the client side as follows:
+
+In your web page, you need to load the script `vertxbus.js`, then you can access the vert.x event bus API. Here's an example:
+
+    <script type='text/javascript' src='vertxbus.js'></script>
     
+    <script>
+
+        var eb = new vertx.EventBus('http://localhost:8080/eventbus'); 
+        
+        eb.registerHandler('some-address', function(message) {
+        
+            console.log('received a message: ' + JSON.stringify(message);
+            
+        });   
+        
+        eb.send('some-address', {name: 'tim', age: 587});
+    
+    </script>
+    
+You can now communicate seamlessly between different browsers and server side components using the event bus. 
+
+You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
+
+The first thing the example does is to create a instance of the event bus
+
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus'); 
+    
+The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix `eventbus` we will connect there.
+
+The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.    
+        
 ## Securing the Bridge
 
-Actually, if you started a server like in the previous example and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?
+If you started a bridge like in the above example without securing it, and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?
 
-For most applications you probably don't want client side JavaScript being able to send just any message to any component on the server side or in other browsers. For example, you may have a persistor component on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!
+For most applications you probably don't want client side JavaScript being able to send just any message to any verticle on the server side or to all other browsers.
 
-To deal with this, by default, a SockJS bridge will refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through. In other words the bridge acts like a kind of firewall.
+For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!
 
-Configuring the bridge to tell it what messages it should pass through is easy. You just call the function `addPermitted` on the bridge handler and pass in any number of JSON objects that represent matches.
+To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.
+
+In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
+
+Configuring the bridge to tell it what messages it should pass through is easy. You just call the function `addPermitted` on the bridge handler and pass in any number of JSON objects that represent *matches*.
 
 Each match has two fields:
 
-1. `address`. This represents the address the message is being sent to. If you want to filter messages based on destination you will use this field.
-2. `match`. This allows you to filter messages based on their stricture. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
+1. `address`. This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
+2. `match`. This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
 
-When a message arrives from the client, the bridge will look through the available permitted entries. If an address has been specified then the address must match with the address in the message for it to be considered matched. If a match has been specified, then also the structure of the message must match.
+When a message arrives from the client, the bridge will look through the available permitted entries.
+
+* If an address has been specified then the address must match with the address in the message for it to be considered matched.
+
+* If a match has been specified, then also the structure of the message must match.
 
 Here is an example:
 
@@ -1911,30 +2081,6 @@ To let all messages through you can add an empty permitted entry:
      
 **Be very careful!**
     
-# Using the Event Bus from client-side JavaScript    
-    
-To use the event bus from the client side you need to load the script `vertxbus.js`, and do something like:
-
-    <script type='text/javascript' src='vertxbus.js'></script>
-    
-    <script>
-
-        var eb = new vertx.EventBus('http://localhost:8080/eventbus'); 
-        
-        eb.registerHandler('some-address', function(message) {
-        
-            console.log('received a message: ' + JSON.stringify(message);
-            
-        });   
-        
-        eb.send('some-address', {name: 'tim', age: 587});
-    
-    </script>
-    
-You can now communicate seamlessly between different browsers and server side components using the event bus.    
-    
-For a full description of the event bus API, please see the chapter on Event Bus [LINK]. 
-
 # File System
 
 **TODO**
