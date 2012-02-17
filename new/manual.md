@@ -156,42 +156,6 @@ We also encourage the community to create and contribute their own busmods for o
 
 For more information on busmods please see the busmod manual.
 
-# Installation
-
-Before you can do anything with vert.x you need to install it, so let's describe how to do that.
-
-## Getting a distro
-
-You can't install it if you haven't got it, so first you need to download it.  
-
-The easiest way is to download a distro from the download page [link]. Alternatively you can build from source. To do that see the instructions on the github wiki [link].
-
-## Pre-requisites  
-
-* Operating System. vert.x runs out of the box on Linux or OSX. If you are running Windows, the best way to run vert.x is to create a Linux (I recommend Ubuntu) vitrtual machine using your favourite virtualisation software (VMware Workstation, of course!) and run it in that.
-
-* JDK. Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your `PATH`.
-
-* Apache Ant. If you want to run the Java examples you will need Apache Ant installed. Otherwise you don't need it.
-
-* Ruby Gems. If you want to use Ruby Gems inside your Ruby verticles you'll need to have the `JRUBY_HOME` environment variable pointing at the base of your JRuby installation.
-
-## Install vert.x
-
-Once you've got the pre-requisites installed, you install vert.x as follows:
-
-1. Unzip the distro somewhere sensible (e.g. your home directory) 
-2. Add the vert.x `bin` directory to your `PATH`.
-
-To make sure you've installed it correctly, open another console and type:
-
-    tim@Ethel:~/example$ vertx version
-    vert.x 1.0.0.beta.1
-    
-You should see output something like the above.    
-
-That's it, the boring stuff is out of the way. Now you're ready to go!
-
 # Running vert.x
 
 There are various ways vert.x verticles can be run, let's describe them.
