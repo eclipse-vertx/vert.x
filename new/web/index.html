@@ -4,12 +4,9 @@
 <head>
   <link rel="stylesheet/less" href="bootstrap/less/bootstrap.less">
   <script src="less-1.2.1.min.js"></script>
-  <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
-      }
-    </style>
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
   <!--
   <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
   <script type='text/javascript' src='css/bootstrap-tabs.js'></script>
@@ -17,71 +14,286 @@
   <title>vert.x</title>
 </head>
 
- <body>
+<body onload="prettyPrint()">
 
-    <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="i-bar"></span>
-            <span class="i-bar"></span>
-            <span class="i-bar"></span>
-          </a>
-          <a class="brand" href="#">vert.x</a>
-          <div class="nav-collapse">
-            <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
-              <li><a href="#about">About</a></li>
-              <li><a href="#contact">Contact</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li class="active"><a href="/">Home</a></li>
+          <li><a href="#download">Download/Install</a></li>
+          <li><a href="#tutorials">Tutorials</a></li>
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="#community">Community</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="hero-unit" style="padding: 30px;">
+        <h1>vert.x</h1>
+
+        <p>Effortless asynchronous application development for the modern web</p>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+
+    <div class="span3">
+      <div class="well">
+        <h3 style="color: #A84900">Polyglot</h3>
+
+        <p>Write your application components in <strong>JavaScript</strong>, <strong>Java</strong> or <strong>Ruby</strong>.
+          It's up to you. Or mix and match several programming languages in a single
+          application. (Groovy, Scala and Clojure support is scheduled
+          too).</p>
+      </div>
+    </div>
+    <div class="span3">
+      <div class="well">
+        <h3 style="color: #A84900">Simplicity</h3>
+
+        <p>Without being simplistic. Create real, scalable applications in
+          just a
+          few lines of code. Wave goodbye to boilerplate.</p>
+        <br/><br/><br/>
+      </div>
+    </div>
+    <div class="span3">
+      <div class="well">
+        <h3 style="color: #A84900">Scalability</h3>
+
+        <p>Natural scalability using messaging passing and immutable shared
+          data to to scale over
+          all the cores on your network.</p>
+        <br/><br/><br/>
+      </div>
+    </div>
+    <div class="span3">
+      <div class="well">
+        <h3 style="color: #A84900">Concurrency</h3>
+
+        <p>High concurrency with no locks, no race conditions and no
+          visibility issues.</p>
+        <br/><br/><br/><br/><br/>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="span3">
+      <div class="well">
+        <h3 style="color: #A84900">Features</h3>
+        <br/>
+        <ul>
+          <li>
+            <p><strong>Distributed Event Bus</strong> which spans the server
+              and
+              even penetrates into client side JavaScript.</p>
+          </li>
+          <li>
+            <p><strong>TCP/SSL servers/clients</strong></p>
+          </li>
+          <li>
+            <p><strong>HTTP/HTTPS servers/clients</strong></p>
+          </li>
+          <li>
+            <p><strong>WebSockets servers/clients</strong></p>
+          </li>
+          <li>
+            <p><strong>SockJS implementation</strong></p>
+          </li>
+          <li>
+            <p><strong>Full documentation</strong></p>
+          </li>
+          <li>
+            <p><strong>Open Source. ASL 2.0</strong></p>
+          </li>
+          <li>
+            <p><strong>Sinatra/Express style web request routing</strong></p>
+          </li>
+        </ul>
       </div>
     </div>
 
-    <div class="container">
+    <div class="span9">
 
-      <!-- Main hero unit for a primary marketing message or call to action -->
-      <div class="hero-unit">
-        <h1>vert.x</h1>
-        <p>This is a template for a simple marketing or informational website. It includes a large callout called the hero unit and three supporting pieces of content. Use it as a starting point to create something more unique.</p>
-        <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+      <div class="well">
+
+        <div class="row">
+          <div class="span6">
+            <h3 style="color: #A84900">Show me the code</h3>
+            <br/>
+            <h3>Web server.</h3>
+            <p>It serves files from the <code>webroot</code> directory.</p>
+
+
+            <ul class="nav nav-tabs">
+              <li><a href="#ws_java" data-toggle="tab">Java</a></li>
+              <li><a href="#ws_ruby" data-toggle="tab">Ruby</a></li>
+              <li><a href="#ws_js" data-toggle="tab">JavaScript</a></li>
+            </ul>
+
+            <div class="tab-content">
+              <div class="tab-pane active" id="ws_js">
+
+                <p>Save the following in <code>server.js</code></p>
+                <pre class="prettyprint">
+load('vert.js');
+
+var server = new vertx.HttpServer();
+
+server.requestHandler(function(req) {
+    var file = req.path === '/' ? 'index.html' : req.path;
+    req.response.sendFile('webroot/' + file);
+  }).listen(8080, 'localhost');
+
+                </pre>
+                <p>Run it with:</p>
+                <p><code>vertx run server.js</code></p>
+
+                <p>Have 32 cores on your server and want to use them all?</p>
+                <p><code>vertx run server.js -instances 32</code></p>
+
+              </div>
+              <div class="tab-pane" id="ws_ruby">
+
+                <p>Save the following in <code>server.rb</code></p>
+                <pre class="prettyprint">
+require "vertx"
+include Vertx
+
+@server = HttpServer.new.request_handler do |req|
+  file = req.uri == "/" ? "index.html" : req.uri
+  req.response.send_file('webroot/' << file)
+end.listen(8080)
+
+                </pre>
+
+                <p>Run it with:</p>
+                <p><code>vertx run server.rb</code></p>
+
+                <p>Have 32 cores on your server and want to use them all?</p>
+                <p><code>vertx run server.rb -instances 32</code></p>
+
+
+              </div>
+              <div class="tab-pane" id="ws_java">
+                <p>Save the following in <code>Server.java</code></p>
+                <pre class="prettyprint">
+public class SendFileExample implements Verticle {
+
+  public void start() {
+    new HttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
+      public void handle(HttpServerRequest req) {
+        String file = req.path.equals("/") ? "index.html" : req.path;
+        req.response.sendFile("webroot/" + req.path);
+      }
+    }).listen(8080);
+
+  }
+
+                </pre>
+
+                <p>Compile it:</p>
+                <p><code>javac Server.java</code></p>
+
+                <p>Run it with:</p>
+                <p><code>vertx run Server</code></p>
+
+                <p>Have 32 cores on your server and want to use them all?</p>
+                <p><code>vertx run Server -instances 32</code></p>
+
+
+              </div>
+            </div>
+
+
+
+            <h3>TCP echo server</h3>
+
+            <ul class="nav nav-tabs">
+              <li><a href="#echo_java" data-toggle="tab">Java</a></li>
+              <li><a href="#echo_ruby" data-toggle="tab">Ruby</a></li>
+              <li><a href="#echo_js" data-toggle="tab">JavaScript</a></li>
+            </ul>
+
+            <div class="tab-content">
+              <div class="tab-pane active" id="echo_js">
+
+                <p>Save the following in <code>server.js</code></p>
+                  <pre class="prettyprint">
+load('vert.js');
+
+var server = new vertx.NetServer();
+
+server.connectHandler(function(sock) {
+
+      var pump = new Pump(sock, sock);
+      pump.start();
+
+    }).listen(8080, 'localhost');
+
+                </pre>
+                <p>Run it with:</p>
+                <p><code>vertx run server.js</code></p>
+
+                <p>Want it to run on more than one core?</p>
+                <p>Scale the server over all cores
+                of your web server:</p>
+                <p><code>vertx run server.js -instances 32</code></p>
+
+              </div>
+              <div class="tab-pane" id="echo_ruby">Ruby</div>
+              <div class="tab-pane" id="echo_java">Java</div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="span6">
+            <p>Event bus</p>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Example row of columns -->
-      <div class="row">
-        <div class="span4">
-          <h2>Heading</h2>
-           <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-          <p><a class="btn" href="#">View details &raquo;</a></p>
-        </div>
-        <div class="span4">
-          <h2>Heading</h2>
-           <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-          <p><a class="btn" href="#">View details &raquo;</a></p>
-       </div>
-        <div class="span4">
-          <h2>Heading</h2>
-          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-          <p><a class="btn" href="#">View details &raquo;</a></p>
-        </div>
-      </div>
+    </div>
+  </div>
 
-      <hr>
+  <footer>
+    <p>&copy; VMware 2012</p>
+  </footer>
 
-      <footer>
-        <p>&copy; Company 2012</p>
-      </footer>
+</div>
 
-    </div> <!-- /container -->
+<script src="js/jquery-1.7.1.min.js"></script>
+<script src="bootstrap/js/bootstrap-tab.js"></script>
+<script>
+  $(function () {
+    $('.tabs a:last').tab('show')
+  })
+</script>
 
-    <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <!--
-    <script src="../assets/js/tests/vendor/jquery.js"></script>
-    <script src="../assets/js/bootstrap-transition.js"></script>
-    <script src="../assets/js/bootstrap-collapse.js"></script>
-     -->
-  </body>
+</body>
 </html>

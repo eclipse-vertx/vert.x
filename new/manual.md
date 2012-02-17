@@ -4,11 +4,11 @@
    
 ## What is vert.x? 
       
-**Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications for the modern web.**       
+**Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**       
       
 Some of the key highlights include:
 
-* Polyglot. Write your application in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).
+* Polyglot. Write your application components in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).
 
 * No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.
 
@@ -16,7 +16,7 @@ Some of the key highlights include:
 
 * Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless *real-time* applications.
 
-* Vert.x is a pleasure to use. No more boilerplate. Vert.x provides real power and simplicity.
+* Vert.x provides real power and simplicity, without being simplistic. No more boilerplate. 
 
 ## Concepts in vert.x
 
@@ -380,29 +380,6 @@ or
 # Configuring clustering
 
 To configure clustering use the file `conf/cluster.xml` in the distribution.
-
-# JavaScript Core Guide
-
-[JavaScript Core Guide here](core_manual_js.html)
-
-# Ruby Core Guide
-
-[Ruby Core Guide here](core_manual_ruby.html)
-
-# Java Core Guide
-
-[Java Core Guide here](core_manual_java.html)
-
-# Bus Modules Guide
-
-[Bus Modules Guide here](bus_mods_manual.html)
-
-
-    
-    
-
-    
-
 
 
 
