@@ -192,11 +192,15 @@ Here are some examples of `vertx run`:
 
 Run a JavaScript verticle server.js with default settings
 
-    vertx run server.js
+<pre class="prettyprint lang-html">
+vertx run server.js
+</pre>
     
 Run 10 instances of a Java verticle specifying classpath
-    
-    vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+
+<pre class="prettyprint lang-html">
+vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+</pre>
     
 Run 20 instances of a ruby worker verticle    
     
