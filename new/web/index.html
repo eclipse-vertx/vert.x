@@ -7,6 +7,7 @@
   <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
   <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
   <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
   <title>vert.x</title>
 </head>
 
@@ -47,7 +48,8 @@
       <div class="hero-unit" style="padding: 30px;">
         <h1>vert.x</h1>
 
-        <p>Effortless asynchronous application development for the modern web</p>
+        <p class="title">Effortless asynchronous application development for the modern
+          web</p>
       </div>
     </div>
   </div>
@@ -57,8 +59,8 @@
 
     <div class="span3">
       <div class="well">
-        <h3 style="color: #A84900">Polyglot</h3>
-
+        <h4 class="title">Polyglot</h4>
+        <br/>
         <p>Write your application components in <strong>JavaScript</strong>, <strong>Java</strong> or <strong>Ruby</strong>.
           It's up to you. Or mix and match several programming languages in a single
           application. (Groovy, Scala and Clojure support is scheduled
@@ -67,9 +69,9 @@
     </div>
     <div class="span3">
       <div class="well">
-        <h3 style="color: #A84900">Simplicity</h3>
-
-        <p>Without being simplistic. Create real, scalable applications in
+        <h3 class="title">Simplicity</h3>
+        <br/>
+        <p>...without being simplistic. Create real, scalable applications in
           just a
           few lines of code. Wave goodbye to boilerplate.</p>
         <br/><br/><br/>
@@ -77,8 +79,8 @@
     </div>
     <div class="span3">
       <div class="well">
-        <h3 style="color: #A84900">Scalability</h3>
-
+        <h3 class="title">Scalability</h3>
+        <br/>
         <p>Natural scalability using messaging passing and immutable shared
           data to to scale over
           all the cores on your network.</p>
@@ -87,8 +89,8 @@
     </div>
     <div class="span3">
       <div class="well">
-        <h3 style="color: #A84900">Concurrency</h3>
-
+        <h3 class="title">Concurrency</h3>
+        <br/>
         <p>High concurrency with no locks, no race conditions and no
           visibility issues.</p>
         <br/><br/><br/><br/><br/>
@@ -100,7 +102,7 @@
 
     <div class="span3">
       <div class="well">
-        <h3 style="color: #A84900">Features</h3>
+        <h3 class="title">Features</h3>
         <br/>
         <ul>
           <li>
@@ -139,7 +141,7 @@
 
         <div class="row">
           <div class="span6">
-            <h3 style="color: #A84900">Show me the code</h3>
+            <h3 class="title">Show me the code</h3>
             <br/>
             <h3>Web server.</h3>
             <p>It serves files from the <code>webroot</code> directory.</p>
@@ -155,7 +157,7 @@
               <div class="tab-pane active" id="ws_js">
 
                 <p>Save the following in <code>server.js</code></p>
-                <pre class="prettyprint">
+                <pre class="prettyprint" style="font-size: 11px">
 load('vert.js');
 
 var server = new vertx.HttpServer();
@@ -176,7 +178,7 @@ server.requestHandler(function(req) {
               <div class="tab-pane" id="ws_ruby">
 
                 <p>Save the following in <code>server.rb</code></p>
-                <pre class="prettyprint">
+                <pre class="prettyprint" style="font-size: 11px">
 require "vertx"
 include Vertx
 
@@ -197,8 +199,13 @@ end.listen(8080)
               </div>
               <div class="tab-pane" id="ws_java">
                 <p>Save the following in <code>Server.java</code></p>
-                <pre class="prettyprint">
-public class SendFileExample implements Verticle {
+                <pre class="prettyprint" style="font-size: 11px">
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.app.Verticle;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
+
+public class Server implements Verticle {
 
   public void start() {
     new HttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
@@ -207,13 +214,16 @@ public class SendFileExample implements Verticle {
         req.response.sendFile("webroot/" + req.path);
       }
     }).listen(8080);
-
   }
+
+  public void stop() {
+  }
+}
 
                 </pre>
 
                 <p>Compile it:</p>
-                <p><code>javac Server.java</code></p>
+                <p><code>javac Server.java -cp /path/to/vertx/install/lib/jars/vert.x.jar</code></p>
 
                 <p>Run it with:</p>
                 <p><code>vertx run Server</code></p>
@@ -239,7 +249,7 @@ public class SendFileExample implements Verticle {
               <div class="tab-pane active" id="echo_js">
 
                 <p>Save the following in <code>server.js</code></p>
-                  <pre class="prettyprint">
+                  <pre class="prettyprint" style="font-size: 11px">
 load('vert.js');
 
 var server = new vertx.NetServer();

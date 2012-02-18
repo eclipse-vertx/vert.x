@@ -3,3 +3,9 @@ body {
   padding-bottom: 40px;
   background-color: #230526;
 }
+
+.title {
+  font-size: 18px;
+  font-weight: 200;
+  color: #6600cc;
+}
