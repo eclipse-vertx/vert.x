@@ -95,8 +95,8 @@
 </div>
 <h1 id="introduction">Introduction</h1><br/>
 <h2 id="what-is-vertx">What is vert.x?</h2><br/>
-<p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong>     <br/>
-</p>
+<p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
+<p>Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby and Java too.</p>
 <p>Some of the key highlights include:</p>
 <ul>
 <li>
@@ -106,10 +106,10 @@
 <p>No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.</p>
 </li>
 <li>
-<p>Vert.x has a super simple, asynchronous programming model for writing truly scalable applications that never block. </p>
+<p>Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.</p>
 </li>
 <li>
-<p>Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless <em>real-time</em> applications.</p>
+<p>Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless so-called <em>real-time</em> web applications.</p>
 </li>
 <li>
 <p>Vert.x provides real power and simplicity, without being simplistic. No more boilerplate. </p>
@@ -130,8 +130,9 @@
 <p>A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief!</p>
 <p>Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. </p>
 <h3 id="event-based-programming-model">Event-based Programming Model</h3><br/>
-<p>Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives. You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.</p>
-<p>In other words, vert.x provides an event-based programming model, and takes inspiration from frameworks such as node.js.</p>
+<p>Vert.x provides an event-based programming model, similar to frameworks such as node.js.</p>
+<p>Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives.</p>
+<p>You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.</p>
 <p>Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.</p>
 <p>Why have been chosen an event based approach? The answer is, if we want our application to scale with many connections, <em>we don't have a choice</em>.</p>
 <p>Let's imagine for a minute that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.</p>

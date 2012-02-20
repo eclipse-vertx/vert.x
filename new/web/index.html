@@ -136,16 +136,17 @@
     </div>
 
     <div class="span9">
-
-      <div class="well">
-
-        <div class="row">
-          <div class="span6">
+      
+      <div class="row">
+        <div class="span9">
+          
+          <div class="well">
+          
             <h3 class="title">Show me the code</h3>
             <br/>
-            <h3>Web server.</h3>
-            <p>It serves files from the <code>webroot</code> directory.</p>
 
+            <p>Here's a highly scalable web server. It serves files from the <code>webroot</code> directory.</p>
+            <p>(Click on the tab below for your preferred language)</p>
 
             <ul class="nav nav-tabs">
               <li><a href="#ws_java" data-toggle="tab">Java</a></li>
@@ -157,32 +158,31 @@
               <div class="tab-pane active" id="ws_js">
 
                 <p>Save the following in <code>server.js</code></p>
-                <pre class="prettyprint" style="font-size: 11px">
+                <pre class="prettyprint">
 load('vert.js');
 
-var server = new vertx.HttpServer();
-
-server.requestHandler(function(req) {
+new vertx.HttpServer().requestHandler(function(req) {
     var file = req.path === '/' ? 'index.html' : req.path;
     req.response.sendFile('webroot/' + file);
-  }).listen(8080, 'localhost');
+}).listen(8080);
 
                 </pre>
                 <p>Run it with:</p>
                 <p><code>vertx run server.js</code></p>
 
-                <p>Have 32 cores on your server and want to use them all?</p>
+                <p>Have 32 cores on your server and want to use them all? Just spin up more instances.
+                Vert.x will do the magic to ensure the requests are distributed amongst the instances.</p>
                 <p><code>vertx run server.js -instances 32</code></p>
 
               </div>
               <div class="tab-pane" id="ws_ruby">
 
                 <p>Save the following in <code>server.rb</code></p>
-                <pre class="prettyprint" style="font-size: 11px">
+                <pre class="prettyprint">
 require "vertx"
 include Vertx
 
-@server = HttpServer.new.request_handler do |req|
+HttpServer.new.request_handler do |req|
   file = req.uri == "/" ? "index.html" : req.uri
   req.response.send_file('webroot/' << file)
 end.listen(8080)
@@ -192,18 +192,16 @@ end.listen(8080)
                 <p>Run it with:</p>
                 <p><code>vertx run server.rb</code></p>
 
-                <p>Have 32 cores on your server and want to use them all?</p>
+                <p>Have 32 cores on your server and want to use them all? Just spin up more instances.
+                Vert.x will do the magic to ensure the requests are distributed amongst the instances.</p>
                 <p><code>vertx run server.rb -instances 32</code></p>
-
 
               </div>
               <div class="tab-pane" id="ws_java">
                 <p>Save the following in <code>Server.java</code></p>
-                <pre class="prettyprint" style="font-size: 11px">
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.Verticle;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
+                <pre class="prettyprint">
+import org.vertx.java.core.*;
+import org.vertx.java.core.http.*;
 
 public class Server implements Verticle {
 
@@ -228,64 +226,25 @@ public class Server implements Verticle {
                 <p>Run it with:</p>
                 <p><code>vertx run Server</code></p>
 
-                <p>Have 32 cores on your server and want to use them all?</p>
+                <p>Have 32 cores on your server and want to use them all? Just spin up more instances.
+                Vert.x will do the magic to ensure the requests are distributed amongst the instances.</p>
                 <p><code>vertx run Server -instances 32</code></p>
 
 
               </div>
             </div>
 
-
-
-            <h3>TCP echo server</h3>
-
-            <ul class="nav nav-tabs">
-              <li><a href="#echo_java" data-toggle="tab">Java</a></li>
-              <li><a href="#echo_ruby" data-toggle="tab">Ruby</a></li>
-              <li><a href="#echo_js" data-toggle="tab">JavaScript</a></li>
-            </ul>
-
-            <div class="tab-content">
-              <div class="tab-pane active" id="echo_js">
-
-                <p>Save the following in <code>server.js</code></p>
-                  <pre class="prettyprint" style="font-size: 11px">
-load('vert.js');
-
-var server = new vertx.NetServer();
-
-server.connectHandler(function(sock) {
-
-      var pump = new Pump(sock, sock);
-      pump.start();
-
-    }).listen(8080, 'localhost');
-
-                </pre>
-                <p>Run it with:</p>
-                <p><code>vertx run server.js</code></p>
-
-                <p>Want it to run on more than one core?</p>
-                <p>Scale the server over all cores
-                of your web server:</p>
-                <p><code>vertx run server.js -instances 32</code></p>
-
-              </div>
-              <div class="tab-pane" id="echo_ruby">Ruby</div>
-              <div class="tab-pane" id="echo_java">Java</div>
-            </div>
-
           </div>
-        </div>
 
-        <div class="row">
-          <div class="span6">
-            <p>Event bus</p>
+          <div class="well">
+            <p>OK, that's pretty cool, but it's just a Hello World. Show me something
+            more substantial.</p>
+            <p>Follow the tutorial to see how to make a modern real-time web application.</p>
           </div>
+          
+          
         </div>
-
       </div>
-
     </div>
   </div>
 

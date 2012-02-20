@@ -4,7 +4,9 @@
    
 ## What is vert.x? 
       
-**Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**       
+**Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
+
+Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby and Java too.
       
 Some of the key highlights include:
 
@@ -12,11 +14,11 @@ Some of the key highlights include:
 
 * No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.
 
-* Vert.x has a super simple, asynchronous programming model for writing truly scalable applications that never block. 
+* Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.
 
-* Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless *real-time* applications.
+* Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless so-called *real-time* web applications.
 
-* Vert.x provides real power and simplicity, without being simplistic. No more boilerplate. 
+* Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.
 
 ## Concepts in vert.x
 
@@ -24,7 +26,7 @@ In this section I'll give an overview of the main concepts in vert.x. Many of th
 
 ### Verticle
 
-The unit of deployment in vert.x is called a *verticle* (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby or Java (We are looking to support Groovy, Scala and Clojure going ahead).
+The unit of deployment in vert.x is called a *verticle* (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby or Java (We have some partial Groovy support and we're looking to support Scala and Clojure going ahead).
 
 A verticle is defined by having a *main* which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.
 
@@ -48,9 +50,11 @@ Gone are the days of worrying about race conditions, locks, mutexes, volatile va
 
 ### Event-based Programming Model
 
-Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives. You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.
+Vert.x provides an event-based programming model, similar to frameworks such as node.js.
 
-In other words, vert.x provides an event-based programming model, and takes inspiration from frameworks such as node.js.
+Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives.
+
+You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.
 
 Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.
 
