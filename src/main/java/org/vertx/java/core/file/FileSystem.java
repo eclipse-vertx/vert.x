@@ -61,12 +61,7 @@ public class FileSystem {
   private FileSystem() {
   }
 
-  /**
-   * The same as {@link #copy(String, String)} but the copy does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> copyDeferred(String from, String to) {
+  private Deferred<Void> copyDeferred(String from, String to) {
     return copyDeferred(from, to, false);
   }
 
@@ -80,12 +75,7 @@ public class FileSystem {
     return copyDeferred(from, to).execute();
   }
 
-  /**
-   * The same as {@link #copy(String, String, boolean)} but the copy does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
+  private Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
     checkContext();
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
@@ -137,12 +127,7 @@ public class FileSystem {
     return copyDeferred(from, to, recursive).execute();
   }
 
-  /**
-   * The same as {@link #move(String, String)} but the move does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> moveDeferred(String from, String to) {
+  private Deferred<Void> moveDeferred(String from, String to) {
     checkContext();
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
@@ -171,12 +156,7 @@ public class FileSystem {
     return moveDeferred(from, to).execute();
   }
 
-  /**
-   * The same as {@link #truncate(String, long)} but the truncate does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> truncateDeferred(final String path, final long len) {
+  private Deferred<Void> truncateDeferred(final String path, final long len) {
     checkContext();
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -210,12 +190,7 @@ public class FileSystem {
     return truncateDeferred(path, len).execute();
   }
 
-  /**
-   * The same as {@link #chmod(String, String)} but the chmod does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> chmodDeferred(String path, String perms) {
+  private Deferred<Void> chmodDeferred(String path, String perms) {
     return chmodDeferred(path, perms, null);
   }
 
@@ -228,12 +203,7 @@ public class FileSystem {
     return chmodDeferred(path, perms).execute();
   }
 
-  /**
-   * The same as {@link #chmod(String, String, String)} but the chmod does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> chmodDeferred(String path, String perms, String dirPerms) {
+  private Deferred<Void> chmodDeferred(String path, String perms, String dirPerms) {
     checkContext();
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
@@ -278,12 +248,7 @@ public class FileSystem {
   }
 
 
-  /**
-   * The same as {@link #props(String)} but the props does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<FileProps> propsDeferred(String path) {
+  private Deferred<FileProps> propsDeferred(String path) {
     return props(path, true);
   }
 
@@ -296,12 +261,7 @@ public class FileSystem {
     return propsDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #lprops(String)} but the lprops does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<FileProps> lpropsDeferred(String path) {
+  private Deferred<FileProps> lpropsDeferred(String path) {
     return props(path, false);
   }
 
@@ -333,12 +293,7 @@ public class FileSystem {
     };
   }
 
-  /**
-   * The same as {@link #link(String, String)} but the link does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> linkDeferred(String link, String existing) {
+  private Deferred<Void> linkDeferred(String link, String existing) {
     return link(link, existing, false);
   }
 
@@ -350,12 +305,7 @@ public class FileSystem {
     return linkDeferred(link, existing).execute();
   }
 
-  /**
-   * The same as {@link #symlink(String, String)} but the symlink does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> symlinkDeferred(String link, String existing) {
+  private Deferred<Void> symlinkDeferred(String link, String existing) {
     return link(link, existing, true);
   }
 
@@ -387,12 +337,7 @@ public class FileSystem {
     };
   }
 
-  /**
-   * The same as {@link #unlink(String)} but the unlink does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> unlinkDeferred(String link) {
+  private Deferred<Void> unlinkDeferred(String link) {
     return deleteDeferred(link);
   }
 
@@ -404,12 +349,7 @@ public class FileSystem {
     return unlinkDeferred(link).execute();
   }
 
-  /**
-   * The same as {@link #readSymlink(String)} but the read does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<String> readSymlinkDeferred(String link) {
+  private Deferred<String> readSymlinkDeferred(String link) {
     checkContext();
     final Path source = Paths.get(link);
     return new BlockingAction<String>() {
@@ -431,12 +371,7 @@ public class FileSystem {
     return readSymlinkDeferred(link).execute();
   }
 
-  /**
-   * The same as {@link #delete(String)} but the delete does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> deleteDeferred(String path) {
+  private Deferred<Void> deleteDeferred(String path) {
     return deleteDeferred(path, false);
   }
 
@@ -448,12 +383,7 @@ public class FileSystem {
     return deleteDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #delete(String, boolean)} but the delete does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> deleteDeferred(String path, final boolean recursive) {
+  private Deferred<Void> deleteDeferred(String path, final boolean recursive) {
     checkContext();
     final Path source = Paths.get(path);
     return new BlockingAction<Void>() {
@@ -496,12 +426,7 @@ public class FileSystem {
     return deleteDeferred(path, recursive).execute();
   }
 
-  /**
-   * The same as {@link #mkdir(String)} but the mkdir does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> mkdirDeferred(String path) {
+  private Deferred<Void> mkdirDeferred(String path) {
     return mkdirDeferred(path, null, false);
   }
 
@@ -514,12 +439,7 @@ public class FileSystem {
     return mkdirDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #mkdir(String, boolean)} but the mkdir does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> mkdirDeferred(String path, boolean createParents) {
+  private Deferred<Void> mkdirDeferred(String path, boolean createParents) {
     return mkdirDeferred(path, null, createParents);
   }
 
@@ -534,12 +454,7 @@ public class FileSystem {
     return mkdirDeferred(path, createParents).execute();
   }
 
-  /**
-   * The same as {@link #mkdir(String, String)} but the mkdir does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> mkdirDeferred(String path, String perms) {
+  private Deferred<Void> mkdirDeferred(String path, String perms) {
     return mkdirDeferred(path, perms, false);
   }
 
@@ -554,12 +469,7 @@ public class FileSystem {
     return mkdirDeferred(path, perms).execute();
   }
 
-  /**
-   * The same as {@link #mkdir(String, String, boolean)} but the mkdir does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
+  private Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
     checkContext();
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
@@ -602,12 +512,7 @@ public class FileSystem {
     return mkdirDeferred(path, perms, createParents).execute();
   }
 
-  /**
-   * The same as {@link #readDir(String)} but the read does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<String[]> readDirDeferred(final String path) {
+  private Deferred<String[]> readDirDeferred(final String path) {
     return readDirDeferred(path, null);
   }
 
@@ -620,12 +525,7 @@ public class FileSystem {
     return readDirDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #readDir(String, String)} but the read does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<String[]> readDirDeferred(final String path, final String filter) {
+  private Deferred<String[]> readDirDeferred(final String path, final String filter) {
     checkContext();
     return new BlockingAction<String[]>() {
       public String[] action() throws Exception {
@@ -673,12 +573,7 @@ public class FileSystem {
     return readDirDeferred(path, filter).execute();
   }
 
-  /**
-   * The same as {@link #readFile(String)} but the read does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Buffer> readFileDeferred(final String path) {
+  private Deferred<Buffer> readFileDeferred(final String path) {
     checkContext();
     return new BlockingAction<Buffer>() {
       public Buffer action() throws Exception {
@@ -699,12 +594,7 @@ public class FileSystem {
     return readFileDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #writeFile(String, Buffer)} but the write does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
+  private Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
     checkContext();
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -739,12 +629,7 @@ public class FileSystem {
     //TODO
   }
 
-  /**
-   * The same as {@link #open(String)} but the open does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<AsyncFile> openDeferred(final String path) {
+  private Deferred<AsyncFile> openDeferred(final String path) {
     return openDeferred(path, null, true, true, true, false);
   }
 
@@ -758,12 +643,7 @@ public class FileSystem {
     return openDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #open(String, String)} but the open does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<AsyncFile> openDeferred(final String path, String perms) {
+  private Deferred<AsyncFile> openDeferred(final String path, String perms) {
     return openDeferred(path, perms, true, true, true, false);
   }
 
@@ -778,12 +658,7 @@ public class FileSystem {
     return openDeferred(path, perms).execute();
   }
 
-  /**
-   * The same as {@link #open(String, String, boolean)} but the open does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean createNew) {
+  private Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean createNew) {
     return openDeferred(path, perms, true, true, createNew, false);
   }
 
@@ -799,12 +674,7 @@ public class FileSystem {
     return openDeferred(path, perms, createNew).execute();
   }
 
-  /**
-   * The same as {@link #open(String, String, boolean, boolean, boolean)} but the open does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
+  private Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
     return openDeferred(path, perms, read, write, createNew, false);
   }
 
@@ -822,12 +692,7 @@ public class FileSystem {
     return openDeferred(path, perms, read, write, createNew).execute();
   }
 
-  /**
-   * The same as {@link #open(String, String, boolean, boolean, boolean, boolean)} but the open does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+  private Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
     final Context ctx = VertxInternal.instance.getContext();
     if (ctx == null) {
@@ -863,12 +728,7 @@ public class FileSystem {
     return new AsyncFile(path, perms, read, write, createNew, flush, context, th);
   }
 
-  /**
-   * The same as {@link #createFile(String)} but the create does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> createFileDeferred(final String path) {
+  private Deferred<Void> createFileDeferred(final String path) {
     return createFileDeferred(path, null);
   }
 
@@ -880,12 +740,7 @@ public class FileSystem {
     return createFileDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #createFile(String, String)} but the create does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> createFileDeferred(final String path, final String perms) {
+  private Deferred<Void> createFileDeferred(final String path, final String perms) {
     checkContext();
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>() {
@@ -913,12 +768,7 @@ public class FileSystem {
     return createFileDeferred(path, perms).execute();
   }
 
-  /**
-   * The same as {@link #exists(String)} but the operation does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Boolean> existsDeferred(final String path) {
+  private Deferred<Boolean> existsDeferred(final String path) {
     checkContext();
     return new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
@@ -936,12 +786,7 @@ public class FileSystem {
     return existsDeferred(path).execute();
   }
 
-  /**
-   * The same as {@link #fsProps(String)} but the check does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<FileSystemProps> fsPropsDeferred(final String path) {
+  private Deferred<FileSystemProps> fsPropsDeferred(final String path) {
     checkContext();
     return new BlockingAction<FileSystemProps>() {
       public FileSystemProps action() throws Exception {
