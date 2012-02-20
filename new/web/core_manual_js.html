@@ -222,7 +222,36 @@
 <li><a href="#securing-the-bridge">Securing the Bridge</a></li>
 </ul>
 </li>
-<li><a href="#file-system">File System</a></li>
+<li><a href="#file-system">File System</a><ul>
+<li><a href="#copy">copy</a></li>
+<li><a href="#move">move</a></li>
+<li><a href="#truncate">truncate</a></li>
+<li><a href="#chmod">chmod</a></li>
+<li><a href="#props">props</a></li>
+<li><a href="#lprops">lprops</a></li>
+<li><a href="#link">link</a></li>
+<li><a href="#symlink">symlink</a></li>
+<li><a href="#unlink">unlink</a></li>
+<li><a href="#readsymlink">readSymLink</a></li>
+<li><a href="#delete">delete</a></li>
+<li><a href="#mkdir">mkdir</a></li>
+<li><a href="#readdir">readDir</a></li>
+<li><a href="#readfile">readFile</a></li>
+<li><a href="#writefile">writeFile</a></li>
+<li><a href="#createfile">createFile</a></li>
+<li><a href="#exists">exists</a></li>
+<li><a href="#fsprops">fsProps</a></li>
+<li><a href="#open">open</a></li>
+<li><a href="#asyncfile">AsyncFile</a><ul>
+<li><a href="#random-access-writes">Random access writes</a></li>
+<li><a href="#random-access-reads">Random access reads</a></li>
+<li><a href="#flushing-data-to-underlying-storage">Flushing data to underlying storage.</a></li>
+<li><a href="#using-asyncfile-as-readstream-and-writestream">Using AsyncFile as ReadStream and WriteStream</a></li>
+<li><a href="#closing-an-asyncfile">Closing an AsyncFile</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#parse-tools">Parse Tools</a></li>
 <li><a href="#performance-tuning">Performance Tuning</a></li>
 </ul>
@@ -1795,7 +1824,320 @@ server.listen(8080);
 </pre>
 <p><strong>Be very careful!</strong></p>
 <h1 id="file-system">File System</h1><br/>
-<p><strong>TODO</strong></p>
+<p>Vert.x lets you manipulate files on the file system. All file system operations are asynchronous and take a handler function as the last argument.</p>
+<p>This function will be called when the operation is complete, or an error has occurred.</p>
+<p>The first argument passed into the callback is an exception, if an error occurred. This will be <code>null</code> if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.</p>
+<h2 id="copy">copy</h2><br/>
+<p>Copies a file.</p>
+<p>This function can be called in two different ways:</p>
+<ul>
+<li><code>copy(source, destination, handler)</code></li>
+</ul>
+<p>Non recursive file copy. <code>source</code> is the source file name. <code>destination</code> is the destination file name.</p>
+<p>Here's an example:</p>
+<pre class="prettyprint">vertx.FileSystem.copy('foo.dat', 'bar.dat', function(err) {
+    if (!err) {
+        log.info('Copy was successful');
+    }
+});
+</pre>
+<ul>
+<li><code>copy(source, destination, recursive, handler)</code></li>
+</ul>
+<p>Recursive copy. <code>source</code> is the source file name. <code>destination</code> is the destination file name. <code>recursive</code> is a boolean flag - if <code>true</code> and source is a directory, then a recursive copy of the directory and all its contents will be attempted.</p>
+<h2 id="move">move</h2><br/>
+<p>Moves a file.</p>
+<p><code>move(source, destination, handler)</code></p>
+<p><code>source</code> is the source file name. <code>destination</code> is the destination file name.</p>
+<h2 id="truncate">truncate</h2><br/>
+<p>Truncates a file.</p>
+<p><code>truncate(file, len, handler)</code></p>
+<p><code>file</code> is the file name of the file to truncate. <code>len</code> is the length in bytes to truncate it to.</p>
+<h2 id="chmod">chmod</h2><br/>
+<p>Changes permissions on a file or directory.</p>
+<p>This function can be called in two different ways:</p>
+<ul>
+<li><code>chmod(file, perms, handler)</code>.</li>
+</ul>
+<p>Change permissions on a file.</p>
+<p><code>file</code> is the file name. <code>perms</code> is a Unix style permissions string made up of 9 characters. The first three are the owner's permissions. The second three are the group's permissions and the third three are others permissions. In each group of three if the first character is <code>r</code> then it represents a read permission. If the second character is <code>w</code>  it represents write permission. If the third character is <code>x</code> it represents execute permission. If the entity does not have the permission the letter is replaced with <code>-</code>. Some examples:</p>
+<pre class="prettyprint">rwxr-xr-x
+r--r--r--
+</pre>
+<ul>
+<li><code>chmod(file, perms, dirPerms, handler)</code>.<br/>
+</li>
+</ul>
+<p>Recursively change permissionson a directory. <code>file</code> is the directory name. <code>perms</code> is a Unix style permissions to apply recursively to any files in the directory. <code>dirPerms</code> is a Unix style permissions string to apply to the directory and any other child directories recursively.</p>
+<h2 id="props">props</h2><br/>
+<p>Retrieve properties of a file.</p>
+<p><code>props(file, handler)</code></p>
+<p><code>file</code> is the file name. The props are returned in the handler. The results is an object with the following properties:</p>
+<p>TODO these are currently returning Java dates - need to wrap them.</p>
+<ul>
+<li><code>creationTime</code>. Date of file creation.</li>
+<li><code>lastAccessTime</code>. Date of last file access.</li>
+<li><code>lastModifiedTime</code>. Date file was last modified.</li>
+<li><code>isDirectory</code>. This will have the value <code>true</code> if the file is a directory.</li>
+<li><code>isRegularFile</code>. This will have the value <code>true</code> if the file is a regular file (not symlink or directory).</li>
+<li><code>isSymbolicLink</code>. This will have the value <code>true</code> if the file is a symbolic link.</li>
+<li><code>isOther</code>. This will have the value <code>true</code> if the file is another type.</li>
+</ul>
+<p>Here's an example:</p>
+<pre class="prettyprint">vertx.FileSystem.props('some-file.txt', function(err, props) {
+    if (err) {
+        log.info('Failed to retrieve file props: ' + err);
+    } else {
+        log.info('File props are:');
+        log.info('Last accessed: ' + props.lastAccessTime);
+        // etc 
+    }
+});
+</pre>
+<h2 id="lprops">lprops</h2><br/>
+<p>Retrieve properties of a link. This is like <code>props</code> but should be used when you want to retrieve properties of a link itself without following it.</p>
+<p>It takes the same arguments and provides the same results as <code>props</code>.</p>
+<h2 id="link">link</h2><br/>
+<p>Create a hard link.</p>
+<p><code>link(link, existing, handler)</code></p>
+<p><code>link</code> is the name of the link. <code>existing</code> is the exsting file (i.e. where to point the link at).</p>
+<h2 id="symlink">symlink</h2><br/>
+<p>Create a symbolic link.</p>
+<p><code>symlink(link, existing, handler)</code></p>
+<p><code>link</code> is the name of the symlink. <code>existing</code> is the exsting file (i.e. where to point the symlink at).</p>
+<h2 id="unlink">unlink</h2><br/>
+<p>Unlink (delete) a link.</p>
+<p><code>unlink(link, handler)</code></p>
+<p><code>link</code> is the name of the link to unlink.</p>
+<h2 id="readsymlink">readSymLink</h2><br/>
+<p>Reads a symbolic link. I.e returns the path representing the file that the symbolic link specified by <code>link</code> points to.</p>
+<p><code>readSymLink(link, handler)</code></p>
+<p><code>link</code> is the name of the link to read. An usage example would be:</p>
+<pre class="prettyprint">vertx.FileSystem.readSymLink('somelink', function(err, res) {
+    if (!err) {
+        log.info('Link points at ' + res);
+    }
+});
+</pre>
+<h2 id="delete">delete</h2><br/>
+<p>Deletes a file or recursively deletes a directory.</p>
+<p>This function can be called in two ways:</p>
+<ul>
+<li><code>delete(file, handler)</code></li>
+</ul>
+<p>Deletes a file. <code>file</code> is the file name.</p>
+<ul>
+<li><code>delete(file, recursive, handler)</code></li>
+</ul>
+<p>If <code>recursive</code> is <code>true</code>, it deletes a directory with name <code>file</code>, recursively. Otherwise it just deletes a file.</p>
+<h2 id="mkdir">mkdir</h2><br/>
+<p>Creates a directory.</p>
+<p>This function can be called in three ways:</p>
+<ul>
+<li><code>mkdir(dirname, handler)</code></li>
+</ul>
+<p>Makes a new empty directory with name <code>dirname</code>, and default permissions `</p>
+<ul>
+<li><code>mkdir(dirname, createParents, handler)</code></li>
+</ul>
+<p>If <code>createParents</code> is <code>true</code>, this creates a new directory and creates any of its parents too. Here's an example</p>
+<pre class="prettyprint">vertx.FileSystem.mkdir('a/b/c', true, function(err, res) {
+   if (!err) {
+     log.info('Directory created ok');
+   }
+});
+</pre>
+<ul>
+<li><code>mkdir(dirname, createParents, perms, handler)</code></li>
+</ul>
+<p>Like <code>mkdir(dirname, createParents, handler)</code>, but also allows permissions for the newly created director(ies) to be specified. <code>perms</code> is a Unix style permissions string as explained earlier.</p>
+<h2 id="readdir">readDir</h2><br/>
+<p>Reads a directory. I.e. lists the contents of the directory.</p>
+<p>This function can be called in two ways:</p>
+<ul>
+<li><code>readDir(dirName)</code></li>
+</ul>
+<p>Lists the contents of a directory</p>
+<ul>
+<li><code>readDir(dirName, filter)</code></li>
+</ul>
+<p>List only the contents of a directory which match the filter. Here's an example which only lists files with an extension <code>txt</code> in a directory.</p>
+<pre class="prettyprint">vertx.FileSystem.readDir('mydirectory', '*.txt', function(err, res) {
+  if (!err) {
+    log.info('Directory contains these .txt files');
+    for (var i = 0; i &lt; res.length; i++) {
+      log.info(res[i]);  
+    }
+  }
+});
+</pre>
+<h2 id="readfile">readFile</h2><br/>
+<p>Read the entire contents of a file in one go. <em>Be careful if using this with large files since the entire file will be stored in memory at once</em>.</p>
+<p><code>readFile(file)</code>. Where <code>file</code> is the file name of the file to read.</p>
+<p>The body of the file will be returned as a <code>Buffer</code> in the handler.</p>
+<p>Here is an example:</p>
+<pre class="prettyprint">vertx.FileSystem.readFile('myfile.dat', function(err, res) {
+    if (!err) {
+        log.info('File contains: ' + res.length() + ' bytes');
+    }
+});
+</pre>
+<h2 id="writefile">writeFile</h2><br/>
+<p>Writes an entire <code>Buffer</code> or a string into a new file on disk.</p>
+<p><code>writeFile(file, data, handler)</code> Where <code>file</code> is the file name. <code>data</code> is a <code>Buffer</code> or string.</p>
+<h2 id="createfile">createFile</h2><br/>
+<p>Creates a new empty file.</p>
+<p><code>createFile(file, handler)</code>. Where <code>file</code> is the file name.</p>
+<h2 id="exists">exists</h2><br/>
+<p>Checks if a file exists.</p>
+<p><code>exists(file, handler)</code>. Where <code>file</code> is the file name.</p>
+<p>The result is returned in the handler.</p>
+<pre class="prettyprint">vertx.FileSystem.exists('some-file.txt', function(err, res) {
+    if (!err) {
+        log.info('File ' + (res ? 'exists' : 'does not exist'));
+    }
+});
+</pre>
+<h2 id="fsprops">fsProps</h2><br/>
+<p>Get properties for the file system.</p>
+<p><code>fsProps(file, handler)</code>. Where <code>file</code> is any file on the file system.</p>
+<p>The result is returned in the handler. The result object has the following fields:</p>
+<ul>
+<li><code>totalSpace</code>. Total space on the file system in bytes.</li>
+<li><code>unallocatedSpace</code>. Unallocated space on the file system in bytes.</li>
+<li><code>usableSpace</code>. Usable space on the file system in bytes.</li>
+</ul>
+<p>Here is an example:</p>
+<pre class="prettyprint">vertx.FileSystem.fsProps('mydir', function(err, res) {
+    if (!err) {
+        log.info('total space: ' + res.totalSpace);
+        // etc
+    }
+});
+</pre>
+<h2 id="open">open</h2><br/>
+<p>Opens an asynchronous file for reading \ writing.</p>
+<p>This function can be called in four different ways:</p>
+<ul>
+<li><code>open(file, handler)</code></li>
+</ul>
+<p>Opens a file for reading and writing. <code>file</code> is the file name. It creates it if it does not already exist.</p>
+<ul>
+<li><code>open(file, openFlags, handler)</code></li>
+</ul>
+<p>Opens a file using the specified open flags. <code>file</code> is the file name. <code>openFlags</code> is an integer representing whether to open the flag for reading or writing and whether to create it if it doesn't already exist.</p>
+<p><code>openFlags</code> is constructed from a combination of these three constants.</p>
+<pre class="prettyprint">vertx.FileSystem.OPEN_READ = 1
+vertx.FileSystem.OPEN_WRITE = 2
+vertx.FileSystem.CREATE_NEW = 4
+</pre>
+<p>For example</p>
+<pre class="prettyprint">// Open for reading only
+var flags = vertx.FileSystem.OPEN_READ;
+
+ // Open for reading and writing
+var flags = vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE;
+</pre>
+<p>When the file is opened, an instance of <code>AsyncFile</code> is passed into the result handler:</p>
+<pre class="prettyprint">vertx.FileSystem.open('some-file.dat', vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE,
+    function(err, asyncFile) {
+        if (err) {
+            log.info('Failed to open file ' + err);
+        } else {
+            log.info('File opened ok');
+            asyncFile.close(); // Close it    
+        }
+    });
+</pre>
+<ul>
+<li><code>open(file, openFlags, flush, handler)</code></li>
+</ul>
+<p>This is the same as <code>open(file, openFlags, handler)</code> but you can also specify whether any file write are flushed immediately to disk (sync'd).</p>
+<p>Default is <code>flush = false</code>, so writes are just written into the OS cache.</p>
+<ul>
+<li><code>open(file, openFlags, flush, perms, handler)</code></li>
+</ul>
+<p>This is the same as <code>open(file, openFlags, flush, handler)</code> but you can also specify the file permissions to give the file if it is created. Permissions is a Unix-style permissions string as explained earlier in the chapter.</p>
+<h2 id="asyncfile">AsyncFile</h2><br/>
+<p>Instances of <code>AsyncFile</code> are returned from calls to <code>open</code> and you use them to read from and write to files asynchronously. They allow asynchronous random file access.</p>
+<p>AsyncFile can provide instances of <code>ReadStream</code> and <code>WriteStream</code> via the <code>getReadStream</code> and <code>getWriteStream</code> functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.</p>
+<p>They also allow you to read and write directly to them.</p>
+<h3 id="random-access-writes">Random access writes</h3><br/>
+<p>To use an AsyncFile for random access writing you use the write method.</p>
+<p><code>write(buffer, position, handler)</code>.</p>
+<p>The first parameter <code>buffer</code> is the buffer to write.</p>
+<p>The second parameter <code>position</code> is an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.</p>
+<p>Here is an example of random access writes:</p>
+<pre class="prettyprint">vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
+        if (err) {
+            log.info('Failed to open file ' + err);
+        } else {
+            // File open, write a buffer 5 times into a file              
+            var buff = new vertx.Buffer('foo');
+            for (var i = 0; i &lt; 5; i++) {
+                asyncFile.write(buff, buff.length() * i, function(err) {
+                    if (err) {
+                        log.info('Failed to write ' + err);
+                    } else {
+                        log.info('Written ok');
+                    }
+                });    
+            }
+        }
+    });
+</pre>
+<h3 id="random-access-reads">Random access reads</h3><br/>
+<p>To use an AsyncFile for random access reads you use the read method.</p>
+<p><code>read(buffer, offset, position, length, handler)</code>.</p>
+<p><code>buffer</code> is the buffer into which the data will be read.</p>
+<p><code>offset</code> is an integer offset into the buffer where the read data will be placed.</p>
+<p><code>position</code> is the position in the file where to read data from.</p>
+<p><code>length</code> is the number of bytes of data to read</p>
+<p>Here's an example of random access reads:</p>
+<pre class="prettyprint">vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
+    if (err) {
+        log.info('Failed to open file ' + err);
+    } else {                   
+        var buff = new vertx.Buffer(1000);
+        for (var i = 0; i &lt; 10; i++) {
+            asyncFile.read(buff, i * 100, i * 100, 100, function(err) {
+                if (err) {
+                    log.info('Failed to read ' + err);
+                } else {
+                    log.info('Read ok');
+                }
+            });    
+        }
+    }
+});
+</pre>
+<h3 id="flushing-data-to-underlying-storage">Flushing data to underlying storage.</h3><br/>
+<p>If the AsyncFile was not opened with <code>flush = true</code>, then you can manually flush any writes from the OS cache by calling the <code>flush</code> function.</p>
+<h3 id="using-asyncfile-as-readstream-and-writestream">Using AsyncFile as <code>ReadStream</code> and <code>WriteStream</code></h3><br/>
+<p>Use the functions <code>getReadStream</code> and <code>getWriteStream</code> to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.</p>
+<p>Here's an example of pumping data from a file on a client to a HTTP request:</p>
+<pre class="prettyprint">var client = new vertx.HttpClient().setHost('foo.com');
+
+vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
+    if (err) {
+        log.info('Failed to open file ' + err);
+    } else {                   
+        var request = client.put('/uploads', function(resp) {
+            log.info('resp status code ' + resp.statusCode);
+        });
+        var rs = asyncFile.getReadStream();
+        var pump = new vertx.Pump(rs, request);
+        pump.start();
+        rs.endHandler(function() {
+            // File sent, end HTTP requuest
+            request.end();
+        });
+
+    }
+});
+</pre>
+<h3 id="closing-an-asyncfile">Closing an AsyncFile</h3><br/>
+<p>To close an AsyncFuile call the <code>close</code> function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to <code>close</code>.</p>
 <h1 id="parse-tools">Parse Tools</h1><br/>
 <p><strong>TODO</strong></p>
 <h1 id="performance-tuning">Performance Tuning</h1><br/>

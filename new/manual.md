@@ -50,7 +50,7 @@ Gone are the days of worrying about race conditions, locks, mutexes, volatile va
 
 Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives. You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.
 
-In other words, vert.x provides an event-based programming model. 
+In other words, vert.x provides an event-based programming model, and takes inspiration from frameworks such as node.js.
 
 Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.
 

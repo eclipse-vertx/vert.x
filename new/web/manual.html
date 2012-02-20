@@ -131,7 +131,7 @@
 <p>Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. </p>
 <h3 id="event-based-programming-model">Event-based Programming Model</h3><br/>
 <p>Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives. You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.</p>
-<p>In other words, vert.x provides an event-based programming model. </p>
+<p>In other words, vert.x provides an event-based programming model, and takes inspiration from frameworks such as node.js.</p>
 <p>Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.</p>
 <p>Why have been chosen an event based approach? The answer is, if we want our application to scale with many connections, <em>we don't have a choice</em>.</p>
 <p>Let's imagine for a minute that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.</p>
