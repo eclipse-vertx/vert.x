@@ -189,8 +189,8 @@ public abstract class ConnectionBase {
     return channel.getPipeline().get(SslHandler.class) != null;
   }
 
-  protected ChannelFuture sendFile(File file) {
-    RandomAccessFile raf;
+  protected void sendFile(File file) {
+    final RandomAccessFile raf;
     try {
       raf = new RandomAccessFile(file, "r");
       long fileLength = file.length();
@@ -206,10 +206,13 @@ public abstract class ConnectionBase {
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
         writeFuture = channel.write(region);
       }
-      return writeFuture;
+      writeFuture.addListener(new ChannelFutureListener() {
+        public void operationComplete(ChannelFuture future) throws Exception {
+          raf.close();
+        }
+      });
     } catch (IOException e) {
       handleException(e);
-      return null;
     }
   }
 }
