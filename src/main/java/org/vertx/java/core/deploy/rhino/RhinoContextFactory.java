@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app;
+package org.vertx.java.core.deploy.rhino;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 
 /**
+ * We need to make sure any Java primitive types are passed into Rhino code as the corresponding JS types
+ * By default Rhino doesn't do this.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VerticleFactory {
+public class RhinoContextFactory extends ContextFactory {
 
-  Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
-
-  void reportException(Throwable t);
-
+  protected void onContextCreated(Context cx) {
+    super.onContextCreated(cx);
+    cx.getWrapFactory().setJavaPrimitiveWrap(false);
+  }
 }
+
+

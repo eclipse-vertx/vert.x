@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app.cli;
+package org.vertx.java.core.deploy.cli;
 
-import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.deploy.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class UndeployCommand extends VertxCommand {
+public class StopCommand extends VertxCommand {
 
-  public String name;
-
-  public UndeployCommand(String name) {
-    this.name = name;
+  public String execute(VerticleManager appMgr) {
+    appMgr.unblock();
+    return null;
   }
 
-  public UndeployCommand() {
-  }
-
-  public String execute(VerticleManager appMgr) throws Exception {
-    appMgr.undeploy(name, null);
-    return "";
+  @Override
+  public boolean isBlock() {
+    return false;
   }
 }

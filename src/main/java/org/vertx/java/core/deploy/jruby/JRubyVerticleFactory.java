@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app.jruby;
+package org.vertx.java.core.deploy.jruby;
 
 import org.jruby.RubyException;
 import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.vertx.java.core.app.Verticle;
-import org.vertx.java.core.app.VerticleFactory;
-import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.Verticle;
+import org.vertx.java.core.deploy.VerticleFactory;
+import org.vertx.java.core.deploy.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.List;

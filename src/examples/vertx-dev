@@ -22,4 +22,4 @@ $DIRNAME/../../lib/opt/mongo.jar:$DIRNAME/../../lib/opt/mail.jar:\
 $DIRNAME/../../src/main/ruby:$DIRNAME/../../src/main/javascript:$JRUBY_HOME/lib/jruby.jar
 
 java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties -Djruby.home=$JRUBY_HOME\
- -cp $CLASSPATH org.vertx.java.core.app.cli.VertxMgr "$@"
+ -cp $CLASSPATH org.vertx.java.core.deploy.cli.VertxMgr "$@"
