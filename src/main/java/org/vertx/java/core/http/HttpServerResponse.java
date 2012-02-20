@@ -67,7 +67,6 @@ public class HttpServerResponse implements WriteStream {
   private final HttpResponse response;
   private HttpChunkTrailer trailer;
   private boolean headWritten;
-  private ChannelFuture writeFuture;
   private boolean written;
   private Handler<Void> drainHandler;
   private Handler<Exception> exceptionHandler;
@@ -366,7 +365,7 @@ public class HttpServerResponse implements WriteStream {
       } else {
         nettyChunk = trailer;
       }
-      writeFuture = conn.write(nettyChunk);
+      conn.write(nettyChunk);
     }
     written = true;
     conn.responseComplete();
@@ -398,7 +397,7 @@ public class HttpServerResponse implements WriteStream {
       }
 
       conn.write(response);
-      writeFuture = conn.sendFile(file);
+      conn.sendFile(file);
       headWritten = written = true;
       conn.responseComplete();
     }
@@ -464,7 +463,7 @@ public class HttpServerResponse implements WriteStream {
       } else if (contentLength == 0) {
         response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
-      writeFuture = conn.write(response);
+      conn.write(response);
       headWritten = true;
     }
   }
@@ -480,7 +479,7 @@ public class HttpServerResponse implements WriteStream {
 
     writeHead();
     Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
-    writeFuture = conn.write(msg);
+    ChannelFuture writeFuture = conn.write(msg);
     if (doneHandler != null) {
       conn.addFuture(doneHandler, writeFuture);
     }

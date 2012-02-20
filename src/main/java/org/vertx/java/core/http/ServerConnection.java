@@ -228,8 +228,8 @@ class ServerConnection extends AbstractConnection {
     return super.isSSL();
   }
 
-  protected ChannelFuture sendFile(File file) {
-    return super.sendFile(file);
+  protected void sendFile(File file) {
+    super.sendFile(file);
   }
 
   private void processMessage(Object msg) {
