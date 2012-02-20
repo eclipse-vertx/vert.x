@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app.groovy;
+package org.vertx.java.core.deploy.groovy;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
-import org.vertx.java.core.app.Verticle;
-import org.vertx.java.core.app.VerticleFactory;
-import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.Verticle;
+import org.vertx.java.core.deploy.VerticleFactory;
+import org.vertx.java.core.deploy.VerticleManager;
 
 import java.lang.reflect.Method;
 import java.net.URL;

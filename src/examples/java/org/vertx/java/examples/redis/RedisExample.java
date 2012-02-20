@@ -21,7 +21,7 @@ import org.vertx.java.addons.redis.RedisPool;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.Verticle;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;

@@ -1,7 +1,7 @@
 package org.vertx.java.examples.eventbusbridge;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.Verticle;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.eventbus.SockJSBridgeHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;

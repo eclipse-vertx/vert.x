@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app.cli;
+package org.vertx.java.core.deploy.cli;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VerticleManager;
+import org.vertx.java.core.deploy.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;

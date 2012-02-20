@@ -15,7 +15,7 @@
  */
 package org.vertx.java.framework;
 
-import org.vertx.java.core.app.Verticle;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 

@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app;
+package org.vertx.java.core.deploy.cli;
+
+import org.vertx.java.core.deploy.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Verticle {
+public class UndeployCommand extends VertxCommand {
 
-  void start() throws Exception;
+  public String name;
 
-  void stop() throws Exception;
+  public UndeployCommand(String name) {
+    this.name = name;
+  }
+
+  public UndeployCommand() {
+  }
+
+  public String execute(VerticleManager appMgr) throws Exception {
+    appMgr.undeploy(name, null);
+    return "";
+  }
 }

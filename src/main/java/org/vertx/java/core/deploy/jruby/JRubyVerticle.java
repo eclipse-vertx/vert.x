@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app.jruby;
+package org.vertx.java.core.deploy.jruby;
 
 import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
-import org.vertx.java.core.app.Verticle;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.app;
+package org.vertx.java.core.deploy;
 
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
