@@ -270,7 +270,7 @@ Now there is some stuff to buy, you should be able to add stuff to your cart, an
 
 As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a look at the code in the client side app that requests the catalogue data and populates the shop.
 
-The client side application JavaScript is contained in the file `web/js/app.js`. If you open this in your text editor you will see the following line, towards the top of the script:
+The client side application JavaScript is contained in the file `web/js/client_app.js`. If you open this in your text editor you will see the following line, towards the top of the script:
 
     var eb = new vertx.EventBus('http://localhost:8080/eventbus');
     
@@ -408,7 +408,7 @@ Attempt to log-in with username `tim` and password `password`. A message should 
 
 Let's take a look at the client side code which does the login.
 
-Open `web/js/app/js` and scroll down to the `login` function. This gets trigged by knockout when the login button is pressed on the page.
+Open `web/js/client_app.js` and scroll down to the `login` function. This gets trigged by knockout when the login button is pressed on the page.
 
     eb.send('demo.authMgr.login', {username: that.username(), password: that.password()}, function (reply) {
         if (reply.status === 'ok') {
@@ -519,7 +519,7 @@ So, it should look like:
 
 Ok, let's take a look at the client side code which sends the order.
 
-Open up `web/js/app.js` again, and look for the function `submitOrder`.
+Open up `web/js/client_app.js` again, and look for the function `submitOrder`.
 
     that.submitOrder = function() {
 
@@ -650,8 +650,7 @@ And insert a call the `sendEmail` function, just after the order has been persis
       log.warn('Failed to persist order');
     }
 
-    
-
+   
 ## Step 10. Securing the Connection
 
 So far in this tutorial, all client-server traffic has been over an unsecured HTTP or WebSockets connection. That's not a very good idea since we've been sending login credentials and orders.
@@ -672,7 +671,7 @@ Copy the keystore from the distribution
     
 *The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java `keytool` command.*           
         
-You'll also need to edit `web/js/app.js` so the line which creates the client side event bus instance now uses `https` as the protocol:
+You'll also need to edit `web/js/client_app.js` so the line which creates the client side event bus instance now uses `https` as the protocol:
 
     var eb = new vertx.EventBus('https://localhost:8080/eventbus');
     
@@ -688,11 +687,27 @@ Now login, and place an order as before.
 
 Easy peasy. **It just works**
 
+## Step 11. Scaling the application
 
+### Scaling the web server
 
-## Step 10. Scaling the application
+Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the verticle `web_server.js` to something like:
 
-Put intensive parts in work queue
+    // Start 32 instances of the web server!
+
+    vertx.deployVerticle('web_server.js', null, 32);  
+    
+(*Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances*.)
+
+### Scaling the processing.
+
+In our trivial example it probably won't make much difference, but if you have some fairly intensive processing that needs to be done on the orders, it might make sense to maintain a farm of order processors, and as orders come into the order manager, to farm them out to one of the available processors.
+
+You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.
+
+Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called `WorkQueue` which allows you to easily create queues of work can be shared out amongst many processors.
+
+Please consult the busmods manual for more information on this.
 
        
         
