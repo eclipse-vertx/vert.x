@@ -561,7 +561,7 @@ Take a look in the console window of the application. You should see the order h
 
 ![Client Application](tutorial_4.png)
 
-Congratulations! You have just placed an order.
+** Congratulations! You have just placed an order. **
 
 ## Step 9. Sending emails
 
@@ -708,6 +708,15 @@ You can then spread the processing load not just between multiple processors on 
 Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called `WorkQueue` which allows you to easily create queues of work can be shared out amongst many processors.
 
 Please consult the busmods manual for more information on this.
+
+## Final Thoughts
+
+This tutorial gives you just a taste of the kinds of things you can do with vert.x. 
+
+With just a few lines of code you can create real, scalable web-enabled applications.
+
+With a network of verticles communicating on an event bus which spans multiple machines on both the server side and client side JavaScript, the only limit is your imagination.
+
 
        
         
