@@ -1,44 +1,42 @@
-load('vertx.js')
+load('vertx.js');
 
-var log = vertx.getLogger();
+var server = new vertx.HttpServer()
+    .setSSL(true)
+    .setKeyStorePath('server-keystore.jks')
+    .setKeyStorePassword('wibble');
 
-var server = new vertx.HttpServer();
-
-// Link up the client side to the server side event bus
-var sockJSServer = new vertx.SockJSServer(server);
-var handler = new vertx.SockJSBridgeHandler();
-handler.addPermitted(
-  // Let through orders posted to the order manager
-  {
-    address : 'demo.orderMgr'
-  },
-  // Allow calls to get static album data from the persistor
-  {
-    address : 'demo.persistor',
-    match : {
-      action : 'find',
-      collection : 'albums'
+new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+  [
+    // Allow calls to get static album data from the persistor
+    {
+      address : 'demo.persistor',
+      match : {
+        action : 'find',
+        collection : 'albums'
+      }
+    },
+    // Allow user to login
+    {
+      address : 'demo.authMgr.login'
+    },
+    // Let through orders posted to the order manager
+    {
+      address : 'demo.orderMgr'
     }
-  },
-  // Allow user to login
-  {
-    address : 'demo.authMgr.login'
-  }
+  ]
 );
-sockJSServer.installApp({prefix : '/eventbus'}, handler);
 
-// Also serve the static resources
 server.requestHandler(function(req) {
-  if (req.path == '/') {
+  if (req.path === '/') {
     req.response.sendFile('web/index.html');
-  } else if (req.path.indexOf('..') == -1) {
+  } else if (req.path.indexOf('..') === -1) {
     req.response.sendFile('web' + req.path);
+  } else {
+    req.response.statusCode = 404;
+    req.response.end;
   }
 }).listen(8080, 'localhost');
-
-log.info("app deployed and running!");
 
 function vertxStop() {
   server.close();
 }
-

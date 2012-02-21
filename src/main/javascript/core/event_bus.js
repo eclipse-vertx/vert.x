@@ -139,21 +139,15 @@ if (!vertx.EventBus) {
 
   })();
 
-  vertx.SockJSBridgeHandler = function() {
+  vertx.SockJSBridge = function(httpServer, sockJSConfig, permitted) {
+    var sockJSServer = new vertx.SockJSServer(httpServer);
     var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
-    var server = new org.vertx.java.core.Handler({
-      handle: function(sock) {
-        jHandler.handle(sock);
-      }
-    });
-    server.addPermitted = function() {
-      for (var i = 0; i < arguments.length; i++) {
-        var match = arguments[i];
-        var json_str = JSON.stringify(match);
-        var jJson = new org.vertx.java.core.json.JsonObject(json_str);
-        jHandler.addPermitted(jJson);
-      }
+    for (var i = 0; i < permitted.length; i++) {
+      var match = permitted[i];
+      var json_str = JSON.stringify(match);
+      var jJson = new org.vertx.java.core.json.JsonObject(json_str);
+      jHandler.addPermitted(jJson);
     }
-    return server;
+    sockJSServer.installApp(sockJSConfig, jHandler);
   }
 }

@@ -1,9 +1,5 @@
 load('vertx.js');
 
-var log = vertx.getLogger();
-
-log.info("inserting static data");
-
 var eb = vertx.EventBus;
 
 var pa = 'demo.persistor';
@@ -17,7 +13,7 @@ var albums = [
   },
   {
     artist: 'Vanilla Ice',
-    genre: 'Pip Hop',
+    genre: 'Hip Hop',
     title: 'Ice Ice Baby',
     price: 0.01
   },
@@ -43,6 +39,7 @@ eb.send(pa, {action: 'delete', collection: 'users', matcher: {}});
 
 // Insert albums - in real life price would probably be stored in a different collection, but, hey, this is a demo.
 
+
 for (var i = 0; i < albums.length; i++) {
   eb.send(pa, {
     action: 'save',
@@ -59,10 +56,8 @@ eb.send(pa, {
   document: {
     firstname: 'Tim',
     lastname: 'Fox',
-    email: 'tim@localhost',
+    email: 'tim@localhost.com',
     username: 'tim',
     password: 'password'
   }
-}, function() { log.info("ALl inserted!")});
-
-log.info("inserted static data");
+});
