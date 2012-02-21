@@ -637,6 +637,20 @@ Next, we can edit `order_mgr.js` to actually send the email. We'll add the follo
 
       eb.send('demo.mailer', msg);
     }
+    
+And insert a call the `sendEmail` function, just after the order has been persisted ok, so it looks like this:
+
+    if (reply.status === 'ok') {
+        replier({status: 'ok'});
+
+        // Send an email            
+        sendEmail(reply.result.email, order.items);
+
+    } else {
+      log.warn('Failed to persist order');
+    }
+
+    
 
 ## Step 10. Securing the Connection
 
