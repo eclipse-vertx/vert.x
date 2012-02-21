@@ -15,5 +15,5 @@ server.listen(8181, 'localhost');
 log.info("server listening");
 
 function vertxStop() {
-  server.close
+  server.close();
 }

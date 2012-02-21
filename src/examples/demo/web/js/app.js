@@ -1,7 +1,7 @@
 (function DemoViewModel() {
 
   var that = this;
-  var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+  var eb = new vertx.EventBus('https://localhost:8080/eventbus');
   that.items = ko.observableArray([]);
 
   eb.onopen = function() {
@@ -28,6 +28,7 @@
   };
 
   that.addToCart = function(album) {
+    console.log("Adding to cart: " + JSON.stringify(album));
     for (var i = 0; i < that.items().length; i++) {
       var compare = that.items()[i];
       if (compare.album._id === album._id) {
@@ -75,7 +76,7 @@
       if (reply.status === 'ok') {
         that.orderSubmitted(true);
         // Timeout the order confirmation box after 2 seconds
-        window.setTimeout(function() { that.orderSubmitted(false); }, 2000);
+        // window.setTimeout(function() { that.orderSubmitted(false); }, 2000);
       } else {
         console.error('Failed to accept order');
       }
@@ -100,7 +101,7 @@
 
   function Album(json) {
     var that = this;
-    that._id = json._id.$oid;
+    that._id = json._id;
     that.genre = json.genre;
     that.artist = json.artist;
     that.title = json.title;
