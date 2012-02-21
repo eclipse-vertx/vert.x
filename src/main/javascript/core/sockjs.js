@@ -19,7 +19,12 @@ var vertx = vertx || {};
 if (!vertx.SockJSServer) {
 
   vertx.SockJSServer = function(httpServer) {
-    var jserver = new org.vertx.java.core.sockjs.SockJSServer(httpServer);
+
+    if (typeof httpServer._to_java_server != 'function') {
+      throw "Please construct a vertx.SockJSServer with an instance of vert.HttpServer"
+    }
+
+    var jserver = new org.vertx.java.core.sockjs.SockJSServer(httpServer._to_java_server());
     var server = {
       installApp: function(config, handler) {
         var jConfig = new org.vertx.java.core.sockjs.AppConfig();
