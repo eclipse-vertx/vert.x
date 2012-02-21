@@ -213,6 +213,10 @@ if (!vertx.HttpServer) {
       that.isSSL = function() {
         return j_server.isSSL();
       }
+
+      that._to_java_server = function() {
+        return j_server;
+      }
     }
 
     vertx.HttpClient = function() {
