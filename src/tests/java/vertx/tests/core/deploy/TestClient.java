@@ -44,6 +44,7 @@ public class TestClient extends TestClientBase {
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
         if ("started".equals(message.body)) {
+          eb.unregisterHandler("test-handler", this);
           tu.testComplete();
         }
       }
@@ -61,6 +62,7 @@ public class TestClient extends TestClientBase {
         eb.registerHandler("test-handler", new Handler<Message<String>>() {
           public void handle(Message<String> message) {
             if ("stopped".equals(message.body)) {
+              eb.unregisterHandler("test-handler", this);
               tu.testComplete();
             }
           }
