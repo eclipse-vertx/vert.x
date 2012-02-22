@@ -1,7 +1,7 @@
 load('vertx.js');
 
 var eb = vertx.EventBus;
-var log = vertx.getLogger();
+var log = vertx.logger;
 
 var handler = function(order, replier) {
   log.info('Received order in order manager ' + JSON.stringify(order));

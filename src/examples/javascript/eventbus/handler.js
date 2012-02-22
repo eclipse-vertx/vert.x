@@ -2,7 +2,7 @@ load('vertx.js')
 
 var eb = vertx.EventBus;
 
-var log = vertx.getLogger();
+var log = vertx.logger;
 
 var handler = function(message) {
   log.info('received the message ' + message);
