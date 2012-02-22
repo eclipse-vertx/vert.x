@@ -239,11 +239,20 @@ public class VerticleManager {
     if (deployments.isEmpty()) {
       doneHandler.handle(null);
     } else {
-      AggHandler aggHandler = new AggHandler(deployments.size(), doneHandler);
-      Set<String> names = new HashSet<>(deployments.keySet()); // Avoid comod exception
-      for (String name: names) {
-        undeploy(name, aggHandler);
+      // We do it this way since undeploy is itself recursive - we don't want
+      // to attempt to undeploy the same verticle twice if it's a child of
+      // another
+      final UndeployCount count = new UndeployCount();
+      while (!deployments.isEmpty()) {
+        String name = deployments.keySet().iterator().next();
+        count.incRequired();
+        undeploy(name, new SimpleHandler() {
+          public void handle() {
+            count.undeployed();
+          }
+        });
       }
+      count.setHandler(doneHandler);
     }
   }
 
@@ -252,32 +261,6 @@ public class VerticleManager {
       throw new IllegalArgumentException("There is no deployment with name " + name);
     }
     doUndeploy(name, doneHandler);
-  }
-
-  class UndeployCount {
-    int count;
-    int required;
-    Handler<Void> doneHandler;
-
-    synchronized void undeployed() {
-      count++;
-      checkDone();
-    }
-
-    synchronized void incRequired() {
-      required++;
-    }
-
-    synchronized void setHandler(Handler<Void> doneHandler) {
-      this.doneHandler = doneHandler;
-      checkDone();
-    }
-
-    void checkDone() {
-      if (doneHandler != null && count == required) {
-        doneHandler.handle(null);
-      }
-    }
   }
 
   public synchronized Map<String, Integer> listInstances() {
@@ -319,6 +302,7 @@ public class VerticleManager {
   }
 
   private void doUndeploy(String name, final UndeployCount count) {
+
     final Deployment deployment = deployments.remove(name);
 
     // Depth first - undeploy children first
@@ -384,6 +368,32 @@ public class VerticleManager {
       this.config = config;
       this.urls = urls;
       this.parentDeploymentName = parentDeploymentName;
+    }
+  }
+
+  private static class UndeployCount {
+    int count;
+    int required;
+    Handler<Void> doneHandler;
+
+    synchronized void undeployed() {
+      count++;
+      checkDone();
+    }
+
+    synchronized void incRequired() {
+      required++;
+    }
+
+    synchronized void setHandler(Handler<Void> doneHandler) {
+      this.doneHandler = doneHandler;
+      checkDone();
+    }
+
+    void checkDone() {
+      if (doneHandler != null && count == required) {
+        doneHandler.handle(null);
+      }
     }
   }
 }

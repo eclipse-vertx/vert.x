@@ -57,6 +57,13 @@ public class RhinoVerticle implements Verticle {
     loadScript(cl, cx, scope, moduleName);
   }
 
+  private static void addStandardObjectsToScope(ScriptableObject scope) {
+    Object jsStdout = Context.javaToJS(System.out, scope);
+    ScriptableObject.putProperty(scope, "stdout", jsStdout);
+    Object jsStderr = Context.javaToJS(System.err, scope);
+    ScriptableObject.putProperty(scope, "stderr", jsStderr);
+  }
+
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
@@ -75,6 +82,7 @@ public class RhinoVerticle implements Verticle {
     try {
       scope = cx.initStandardObjects();
 
+      addStandardObjectsToScope(scope);
       scope.defineFunctionProperties(new String[] { "load" }, RhinoVerticle.class, ScriptableObject.DONTENUM);
 
       // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and

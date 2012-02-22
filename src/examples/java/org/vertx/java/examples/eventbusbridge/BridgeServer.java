@@ -2,11 +2,16 @@ package org.vertx.java.examples.eventbusbridge;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Verticle;
+import org.vertx.java.core.eventbus.SockJSBridge;
 import org.vertx.java.core.eventbus.SockJSBridgeHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -17,8 +22,10 @@ public class BridgeServer implements Verticle {
 
   public void start() throws Exception {
     server = new HttpServer();
-    SockJSServer sjsServer = new SockJSServer(server);
-    sjsServer.installApp(new AppConfig().setPrefix("/eventbus"), new SockJSBridgeHandler());
+
+    List<JsonObject> permitted = new ArrayList<>();
+    permitted.add(new JsonObject()); // Let everything through
+    new SockJSBridge(server, new AppConfig().setPrefix("/eventbus"), permitted);
 
     // Also serve the static resources. In real life this would probably be done by a CDN
     server.requestHandler(new Handler<HttpServerRequest>() {

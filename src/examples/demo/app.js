@@ -1,3 +1,8 @@
+/*
+This verticle contains the configuration for our application and co-ordinates
+start-up of the verticles that make up the application.
+ */
+
 load('vertx.js');
 
 var log = vertx.getLogger();
