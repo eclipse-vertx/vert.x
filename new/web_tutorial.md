@@ -46,7 +46,7 @@ Save it as `web-server.js`.
 Now, create a directory called web with a file `index.html` in it:
 
     tim@Ethel:~/tutorial$ mkdir web
-    echo "<html><body>Hello World</body></html>" > web/index.html
+    tim@Ethel:~/tutorial$ echo "<html><body>Hello World</body></html>" > web/index.html
     
 And run the web server:
 
