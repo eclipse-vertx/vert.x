@@ -24,9 +24,6 @@ if (!vertx.EventBus) {
 
     var jEventBus = org.vertx.java.core.eventbus.EventBus.instance;
 
-    // Get ref to the Java class of the JsonObject
-    //var jsonObjectClass = new org.vertx.java.core.json.JsonObject('{}').getClass();
-
     function checkHandlerParams(address, handler) {
       if (!address) {
         throw "address must be specified";
@@ -139,15 +136,29 @@ if (!vertx.EventBus) {
 
   })();
 
+  vertx.SockJSBridgeHandler = function() {
+    var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
+    var handler = new org.vertx.java.core.Handler({
+      handle: function(sock) {
+        jHandler.handle(sock);
+      }
+    });
+    handler.addPermitted = function(permitted) {
+      for (var i = 0; i < permitted.length; i++) {
+        var match = permitted[i];
+        var json_str = JSON.stringify(match);
+        var jJson = new org.vertx.java.core.json.JsonObject(json_str);
+        jHandler.addPermitted(jJson);
+      }
+    }
+    return handler;
+  }
+
   vertx.SockJSBridge = function(httpServer, sockJSConfig, permitted) {
     var sockJSServer = new vertx.SockJSServer(httpServer);
-    var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
-    for (var i = 0; i < permitted.length; i++) {
-      var match = permitted[i];
-      var json_str = JSON.stringify(match);
-      var jJson = new org.vertx.java.core.json.JsonObject(json_str);
-      jHandler.addPermitted(jJson);
-    }
-    sockJSServer.installApp(sockJSConfig, jHandler);
+    var handler = new vertx.SockJSBridgeHandler();
+    handler.addPermitted(permitted);
+    sockJSServer.installApp(sockJSConfig, handler);
   }
+
 }

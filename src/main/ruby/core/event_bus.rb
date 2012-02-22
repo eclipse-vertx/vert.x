@@ -189,5 +189,16 @@ module Vertx
 
   end
 
+  class SockJSBridge
+
+    def initialize(http_server, sjs_config, permitted)
+      @sjs_server = SockJSServer.new(http_server)
+      handler = SockJSBridgeHandler.new
+      handler.add_permitted(permitted)
+      @sjs_server.install_app(sjs_config, handler);
+    end
+
+  end
+
 end
 
