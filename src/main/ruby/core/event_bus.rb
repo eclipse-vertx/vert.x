@@ -182,7 +182,7 @@ module Vertx
     def add_permitted(*permitted)
       permitted.each do |match|
         json_str = JSON.generate(match)
-        j_json = new org.vertx.java.core.json.JsonObject(json_str)
+        j_json = org.vertx.java.core.json.JsonObject.new(json_str)
         addPermitted(j_json);
       end
     end
@@ -194,7 +194,7 @@ module Vertx
     def initialize(http_server, sjs_config, permitted)
       @sjs_server = SockJSServer.new(http_server)
       handler = SockJSBridgeHandler.new
-      handler.add_permitted(permitted)
+      handler.add_permitted(*permitted)
       @sjs_server.install_app(sjs_config, handler);
     end
 

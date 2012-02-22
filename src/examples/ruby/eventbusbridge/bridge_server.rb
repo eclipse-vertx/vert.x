@@ -17,7 +17,7 @@ include Vertx
 
 @server = HttpServer.new
 # Let everything through
-SockJSBridge.new(@server, {"prefix" => "/eventbus"}, [{}])
+bridge = SockJSBridge.new(@server, {"prefix" => "/eventbus"}, [{}])
 
 # Also serve the index page
 @server.request_handler do |req|
