@@ -209,7 +209,7 @@ public class Server implements Verticle {
     new HttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
       public void handle(HttpServerRequest req) {
         String file = req.path.equals("/") ? "index.html" : req.path;
-        req.response.sendFile("webroot/" + req.path);
+        req.response.sendFile("webroot/" + file);
       }
     }).listen(8080);
   }
