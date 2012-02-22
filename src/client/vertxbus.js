@@ -37,6 +37,9 @@ vertx.EventBus = function(url, options) {
     if (replyHandler && !isFunction(replyHandler)) {
       throw new Error("replyHandler must be a function");
     }
+    if (typeof message != 'object') {
+      throw new Error("Message to send must be a JSON object");
+    }
     checkOpen();
     var envelope = { type : "send",
                      address: address,
@@ -121,9 +124,9 @@ vertx.EventBus = function(url, options) {
     var address = json.address;
     var replyHandler;
     if (replyAddress) {
-      replyHandler = function(data) {
+      replyHandler = function(reply, replyHandler) {
         // Send back reply
-        that.send(replyAddress, data);
+        that.send(replyAddress, reply, replyHandler);
       };
     }
     var handlers = handlerMap[address];

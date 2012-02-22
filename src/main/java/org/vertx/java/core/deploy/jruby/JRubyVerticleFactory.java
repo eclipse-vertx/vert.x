@@ -44,8 +44,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
   public void reportException(Throwable t) {
     Logger logger = VerticleManager.instance.getLogger();
 
-    logger.error("Handling throwable " + t.getClass().getName());
-
     RaiseException je = null;
     if (t instanceof EvalFailedException) {
       EvalFailedException e = (EvalFailedException)t;
@@ -59,8 +57,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
 
     if (je != null) {
 
-      logger.info("je type is " + je.getClass().getName());
-
       RubyException re = je.getException();
 
       String msg;
@@ -70,7 +66,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
       } else {
         msg = re.message.toString();
       }
-      logger.info("re type is " + re.getClass().getName());
 
       StringBuilder backtrace = new StringBuilder();
       IRubyObject bt = re.backtrace();
