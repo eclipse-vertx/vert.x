@@ -6,7 +6,6 @@ test-output
 Scratch.java
 ScratchTest.java
 .yardoc
-build
 .gradle
 src/examples/java/classes
 src/examples/java/quux-out
