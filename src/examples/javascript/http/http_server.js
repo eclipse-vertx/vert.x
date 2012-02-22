@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var log = vertx.getLogger();
+var log = vertx.logger;
 
 log.info("running http server")
 

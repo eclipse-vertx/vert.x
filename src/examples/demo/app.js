@@ -5,7 +5,7 @@ start-up of the verticles that make up the application.
 
 load('vertx.js');
 
-var log = vertx.getLogger();
+var log = vertx.logger;
 
 // Our application config
 
