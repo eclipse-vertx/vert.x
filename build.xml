@@ -31,7 +31,7 @@
   <property name="core-target" value="${target}/core/classes"/>
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
-  <property name="core-lib" value="${lib-dir}/build"/>
+  <property name="core-lib" value="${lib-dir}/main"/>
   <property name="test-results" value="test-results"/>
   <property name="test-tmp" value="test-tmp"/>
 
