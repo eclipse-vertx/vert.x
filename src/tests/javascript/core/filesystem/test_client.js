@@ -79,6 +79,21 @@ function testReadDir() {
   });
 }
 
+function testProps() {
+  var file = fileDir + "/foo.tmp";
+  var content = "some-data";
+  fs.writeFile(file, content, function() {
+    fs.props(file, function(err, res) {
+      tu.azzert(err === null);
+      tu.azzert(res.isRegularFile);
+      tu.azzert(typeof res.creationTime === 'number');
+      tu.azzert(typeof res.lastAccessTime === 'number');
+      tu.azzert(typeof res.lastModifiedTime === 'number');
+      tu.testComplete();
+    });
+  });
+}
+
 function testPumpFile() {
   var from = fileDir + "/foo.tmp";
   var to = fileDir + "/bar.tmp";

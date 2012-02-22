@@ -24,8 +24,28 @@ if (!vertx.FileSystem) {
 
     function wrapHandler(handler, fut) {
       fut.handler(function() {
-        if (fut.succeeded) {
+        if (fut.succeeded()) {
           handler(null, fut.result());
+        } else {
+          handler(fut.exception(), null);
+        }
+      });
+    }
+
+    function wrapProps(handler, fut) {
+      fut.handler(function() {
+        if (fut.succeeded()) {
+          var j_res = fut.result();
+          var jsProps = {
+            creationTime: j_res.creationTime.getTime(),
+            lastAccessTime: j_res.lastAccessTime.getTime(),
+            lastModifiedTime: j_res.lastModifiedTime.getTime(),
+            isDirectory: j_res.isDirectory,
+            isOther: j_res.isOther,
+            isRegularFile: j_res.isRegularFile,
+            isSymbolicLink: j_res.isSymbolicLink
+          }
+          handler(null, jsProps);
         } else {
           handler(fut.exception(), null);
         }
@@ -72,12 +92,12 @@ if (!vertx.FileSystem) {
 
     vertx.FileSystem.props = function(path, handler) {
       var fut = j_fs.props(path);
-      wrapHandler(handler, fut);
+      wrapProps(handler, fut);
     }
 
     vertx.FileSystem.lprops = function(path, handler) {
       var fut = j_fs.lprops(path);
-      wrapHandler(handler, fut);
+      wrapProps(handler, fut);
     }
 
     vertx.FileSystem.link = function(link, existing, handler) {
@@ -215,7 +235,7 @@ if (!vertx.FileSystem) {
       var fut = j_fs.open(path, perms, read, write, createNew, flush);
 
       fut.handler(function() {
-        if (fut.succeeded) {
+        if (fut.succeeded()) {
           var j_af = fut.result();
 
           var wrapped = {
