@@ -1962,7 +1962,7 @@ We also provide a client side JavaScript library called `vertxbus.js` which prov
 
 This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
 
-Creating a Sock JS bridge is simple. You just create a SockJS server as described in the last chapter, and install an application in the SockJS server with a pre-made handler called the `SockJSBridgeHandler`. 
+Creating a Sock JS bridge is simple. You just create an instance of `vertx.SockJSBridge` as shown in the following example.
 
 You will also need to secure the bridge (see below).
 
@@ -1970,11 +1970,7 @@ The following example creates and starts a SockJS bridge which will bridge any e
 
     var server = new vertx.HttpServer();
 
-    var sockJSServer = new vertx.SockJSServer(server);
-    
-    var handler = new vertx.SockJSBridgeHandler();
-    
-    sockJSServer.installApp({prefix : '/eventbus'}, handler);
+    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
     
     server.listen(8080);
     
@@ -2026,7 +2022,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You just call the function `addPermitted` on the bridge handler and pass in any number of JSON objects that represent *matches*.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
 
 Each match has two fields:
 
@@ -2043,51 +2039,49 @@ Here is an example:
 
     var server = new vertx.HttpServer();
 
-    var sockJSServer = new vertx.SockJSServer(server);
-    
-    var handler = new vertx.SockJSBridgeHandler();
+    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+      [
+        // Let through any messages sent to 'demo.orderMgr'
+        {
+          address : 'demo.orderMgr'
+        },
+        // Allow calls to the address 'demo.persistor' as long as the messages
+        // have an action field with value 'find' and a collection field with value
+        // 'albums'
+        {
+          address : 'demo.persistor',
+          match : {
+            action : 'find',
+            collection : 'albums'
+          }
+        },
+        // Allow through any message with a field `wibble` with value `foo`.
+        {
+          match : {
+            wibble: 'foo'
+          }
+        }
+      ]);
 
-    handler.addPermitted(
-      // Let through any messages sent to 'demo.orderMgr'
-      {
-        address : 'demo.orderMgr'
-      },
-      // Allow calls to the address 'demo.persistor' as long as the messages
-      // have an action field with value 'find' and a collection field with value
-      // 'albums'
-      {
-        address : 'demo.persistor',
-        match : {
-          action : 'find',
-          collection : 'albums'
-        }
-      },
-      // Allow through any message with a field `wibble` with value `foo`.
-      {
-        match : {
-          wibble: 'foo'
-        }
-      }
-     
-    );
-    
-    sockJSServer.installApp({prefix : '/eventbus'}, handler);
-    
+
     server.listen(8080);
     
-To let all messages through you can add an empty permitted entry:
+To let all messages through you can specify an array with a single empty JSON object which will match all messages.
 
-     handler.addPermitted({});
+     new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [{}]);
      
 **Be very careful!**
     
 # File System
 
-Vert.x lets you manipulate files on the file system. All file system operations are asynchronous and take a handler function as the last argument.
-
-This function will be called when the operation is complete, or an error has occurred.
-
+Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
 The first argument passed into the callback is an exception, if an error occurred. This will be `null` if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.
+
+# Synchronous forms
+
+For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
+
+The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with `Sync` appended.
 
 ## copy
 
