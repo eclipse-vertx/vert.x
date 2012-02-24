@@ -33,15 +33,15 @@ end
 
 def test_undeploy
 
-  conf = {'foo' => 'bar'}
-  id = Vertx.deploy_verticle("core/deploy/child.rb", conf)
-
   @handler_id = EventBus.register_handler("test-handler") do |message|
     @tu.test_complete if "stopped" == message.body
   end
-  Vertx.set_timer(200) {
+
+  conf = {'foo' => 'bar'}
+  id = Vertx.deploy_verticle("core/deploy/child.rb", conf) {
     Vertx.undeploy_verticle(id)
   }
+
 end
 
 def vertx_stop
