@@ -23,7 +23,7 @@ var eb = vertx.EventBus;
 
 var id = vertx.generateUUID();
 
-var dontsendAppLifeCycle = vertx.getConfig().dont_send_app_lifecycle;
+var dontsendAppLifeCycle = vertx.config.dont_send_app_lifecycle;
 
 var handler = function(message, replier) {
   tu.azzert(message.blah != "undefined");

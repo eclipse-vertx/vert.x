@@ -53,10 +53,8 @@ if (!vertx.deployVerticle) {
        org.vertx.java.core.Vertx.instance.exit();
     }
 
-    vertx.getConfig = function() {
-      var j_conf = org.vertx.java.core.Vertx.instance.getConfig();
-      return j_conf == null ? null : JSON.parse(j_conf.encode());
-    }
+    var j_conf = org.vertx.java.core.Vertx.instance.getConfig();
+    vertx.config =  j_conf == null ? null : JSON.parse(j_conf.encode());
 
   })();
 }
