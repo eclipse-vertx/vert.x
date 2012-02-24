@@ -93,6 +93,7 @@ public class VerticleManager {
   }
 
   public void reportException(Throwable t) {
+    log.info("In report exception");
     VerticleHolder holder = getVerticleHolder();
     if (holder != null) {
       holder.deployment.factory.reportException(t);
