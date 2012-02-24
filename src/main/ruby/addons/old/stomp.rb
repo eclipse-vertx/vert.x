@@ -93,7 +93,7 @@ module Stomp
       end
 
       def onMessage(java_headers, java_body)
-        @message_block.call(java_headers, InternalBufferFactory::createBuffer(java_body))
+        @message_block.call(java_headers, InternalBufferFactory.createBuffer(java_body))
       end
     end
 

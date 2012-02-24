@@ -149,7 +149,7 @@ module Vertx
     # @param [Hash] Message send as reply
     def reply(reply, &reply_handler)
       raise "A reply message must be specified" if reply == nil
-      reply = EventBus::convert_msg(reply)
+      reply = EventBus.convert_msg(reply)
       if reply_handler != nil
         @j_del.reply(reply, InternalHandler.new(reply_handler))
       else

@@ -782,15 +782,15 @@ module Vertx
     # @private
     def initialize(j_ws)
       @j_del = j_ws
-      @binary_handler_id = EventBus::register_simple_handler { |msg|
+      @binary_handler_id = EventBus.register_simple_handler { |msg|
         write_binary_frame(msg.body)
       }
-      @text_handler_id = EventBus::register_simple_handler { |msg|
+      @text_handler_id = EventBus.register_simple_handler { |msg|
         write_text_frame(msg.body)
       }
       @j_del.closedHandler(Proc.new {
-        EventBus::unregister_handler(@binary_handler_id)
-        EventBus::unregister_handler(@text_handler_id)
+        EventBus.unregister_handler(@binary_handler_id)
+        EventBus.unregister_handler(@text_handler_id)
         @closed_handler.call if @closed_handler
       })
     end

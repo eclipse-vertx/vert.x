@@ -18,18 +18,20 @@ DIRNAME=`dirname "$PRG"`
 CLASSPATH=\
 $DIRNAME/../../conf:\
 $DIRNAME/../../target/vert.x.jar:\
-$DIRNAME/../../lib/build/netty.jar:\
-$DIRNAME/../../lib/build/jackson-core-asl-1.9.4.jar:\
-$DIRNAME/../../lib/build/jackson-mapper-asl-1.9.4.jar:\
-$DIRNAME/../../lib/build/hazelcast-1.9.4.4.jar:\
-$DIRNAME/../../lib/build/jruby.jar:\
-$DIRNAME/../../lib/build/js.jar:\
-$DIRNAME/../../lib/build/mail.jar:\
-$DIRNAME/../../lib/build/mongo.jar:\
-$DIRNAME/../../lib/build/groovy-all-1.8.6.jar:\
-$DIRNAME/../../lib/build/jruby.jar:\
+$DIRNAME/../../lib/main/netty.jar:\
+$DIRNAME/../../lib/main/jackson-core-asl-1.9.4.jar:\
+$DIRNAME/../../lib/main/jackson-mapper-asl-1.9.4.jar:\
+$DIRNAME/../../lib/main/hazelcast-1.9.4.4.jar:\
+$DIRNAME/../../lib/main/jruby.jar:\
+$DIRNAME/../../lib/main/js.jar:\
+$DIRNAME/../../lib/main/mail.jar:\
+$DIRNAME/../../lib/main/mongo.jar:\
+$DIRNAME/../../lib/main/groovy-all-1.8.6.jar:\
+$DIRNAME/../../lib/main/jruby.jar:\
 $DIRNAME/../../src/main/ruby:\
 $DIRNAME/../../src/main/javascript
+
+echo $CLASSPATH
 
 java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties -Djruby.home=$JRUBY_HOME\
  -cp $CLASSPATH org.vertx.java.core.deploy.cli.VertxMgr "$@"
