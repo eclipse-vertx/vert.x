@@ -165,7 +165,7 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? null : config.copy(), urls, parentDeploymentName);
+    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? new JsonObject() : config.copy(), urls, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
