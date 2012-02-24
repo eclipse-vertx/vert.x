@@ -44,6 +44,19 @@ def teardown
   end
 end
 
+def test_copy
+  filename = FILEDIR + "/test-file.txt"
+  tofile = FILEDIR + "/to-file.txt"
+  FileSystem::create_file(filename).handler do
+    @tu.check_context
+    FileSystem::copy(filename, tofile) do |err, res|
+      @tu.check_context
+      @tu.azzert(err == nil)
+      @tu.test_complete
+    end
+  end
+end
+
 def test_stats
   filename = FILEDIR + "/test-file.txt"
   FileSystem::create_file(filename).handler do

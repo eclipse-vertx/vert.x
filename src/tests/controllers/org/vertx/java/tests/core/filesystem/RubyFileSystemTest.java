@@ -40,19 +40,24 @@ public class RubyFileSystemTest extends TestBase {
   }
 
   @Test
-  public void test_stats() throws Exception {
+  public void test_copy() throws Exception {
     startTest(getMethodName());
   }
 
-  @Test
-  public void test_async_file() throws Exception {
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void test_async_file_streams() throws Exception {
-    startTest(getMethodName());
-  }
+//  @Test
+//  public void test_stats() throws Exception {
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void test_async_file() throws Exception {
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void test_async_file_streams() throws Exception {
+//    startTest(getMethodName());
+//  }
 
 
 }
