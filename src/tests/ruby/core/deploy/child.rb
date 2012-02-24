@@ -16,8 +16,13 @@ require "vertx"
 include Vertx
 require "test_utils"
 
+@tu = TestUtils.new
+
+@tu.azzert(Vertx.config['foo'] == 'bar')
+
 EventBus.send("test-handler", "started")
 
 def vertx_stop
+  puts "sending stop"
   EventBus.send("test-handler", "stopped")
 end
