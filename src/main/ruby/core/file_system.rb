@@ -100,6 +100,25 @@ module Vertx
   # @author {http://tfox.org Tim Fox}
   class AsyncFile
 
+    # TODO combine this with one on FileSystem
+    # @private
+    def AsyncFile._wrap_handler(j_fut, handler, &result_converter)
+      if handler
+        j_fut.handler do
+          if j_fut.succeeded
+            if result_converter
+              handler.call(nil, result_converter.call(j_fut.result))
+            else
+              handler.call(nil, j_fut.result)
+            end
+          else
+            handler.call(j_fut.exception, nil)
+          end
+        end
+      end
+    end
+
+
     # @private
     def initialize(j_file)
       @j_file = j_file
@@ -108,8 +127,8 @@ module Vertx
     # Close the file, asynchronously.
     # This method must be called using the same event loop the file was opened from.
     # @return [Future] a Future representing the future result of closing the file.
-    def close
-      Future.new(@j_file.close)
+    def close(&block)
+      AsyncFile._wrap_handler(@j_file.close, block)
     end
 
     # Write a {Buffer} to the file, asynchronously.
@@ -120,8 +139,8 @@ module Vertx
     # @param [FixNum] position The position in the file where to write the buffer. Position is measured in bytes and
     # starts with zero at the beginning of the file.
     # @return [Future] a Future representing the future result of the action.
-    def write(buffer, position)
-      Future.new(@j_file.write(buffer._to_java_buffer, position))
+    def write(buffer, position, &block)
+      AsyncFile._wrap_handler(@j_file.write(buffer._to_java_buffer, position), block)
     end
 
     # Reads some data from a file into a buffer, asynchronously.
@@ -133,8 +152,8 @@ module Vertx
     # @param [FixNum] position The position in the file where to read the data.
     # @param [FixNum] length The number of bytes to read.
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {Buffer}.
-    def read(buffer, offset, position, length, &hndlr)
-      Future.new(@j_file.read(buffer._to_java_buffer, offset, position, length)){ |j_buff| Buffer.new(j_buff) }
+    def read(buffer, offset, position, length, &block)
+      AsyncFile._wrap_handler(@j_file.read(buffer._to_java_buffer, offset, position, length), block){ |j_buff| Buffer.new(j_buff) }
     end
 
     # @return [WriteStream] A write stream operating on the file.
@@ -182,15 +201,17 @@ module Vertx
 
     # @private
     def FileSystem._wrap_handler(j_fut, handler, &result_converter)
-      j_fut.handler do
-        if j_fut.succeeded
-          if result_converter
-            handler.call(nil, result_converter.call(j_fut.result))
+      if handler
+        j_fut.handler do
+          if j_fut.succeeded
+            if result_converter
+              handler.call(nil, result_converter.call(j_fut.result))
+            else
+              handler.call(nil, j_fut.result)
+            end
           else
-            handler.call(nil, j_fut.result)
+            handler.call(j_fut.exception, nil)
           end
-        else
-          handler.call(j_fut.exception, nil)
         end
       end
     end
