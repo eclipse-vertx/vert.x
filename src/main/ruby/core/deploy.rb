@@ -17,7 +17,7 @@ module Vertx
   def Vertx.deploy_verticle(main, config = nil, instances = 1, &block)
     if config
       json_str = JSON.generate(config)
-      config = new org.vertx.java.core.json.JsonObject(json_str)
+      config = org.vertx.java.core.json.JsonObject.new(json_str)
     end
     org.vertx.java.core.Vertx.instance.deployVerticle(main, config, instances, block)
   end
@@ -25,7 +25,7 @@ module Vertx
   def Vertx.deploy_worker_verticle(main, config = nil, instances = 1, &block)
     if config
       json_str = JSON.generate(config)
-      config = new org.vertx.java.core.json.JsonObject(json_str)
+      config = org.vertx.java.core.json.JsonObject.new(json_str)
     end
     org.vertx.java.core.Vertx.instance.deployWorkerVerticle(main, config, instances, block)
   end
