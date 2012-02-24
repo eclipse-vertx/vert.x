@@ -35,7 +35,7 @@ module Vertx
   end
 
   def Vertx.config
-    if !@@j_conf
+    if !defined? @@j_conf
       @@j_conf = org.vertx.java.core.Vertx.instance.getConfig
       @@j_conf = JSON.parse(@@j_conf.encode) if @@j_conf
     end

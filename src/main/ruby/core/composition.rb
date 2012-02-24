@@ -120,7 +120,7 @@ module Vertx
   #
   #   comp = new Composer.new
   #   comp.parallel{ puts "copying" }
-  #   comp.parallel{ FileSystem::copy("from", "to")}
+  #   comp.parallel{ FileSystem.copy("from", "to")}
   #   comp.series{ puts "copy complete" }
   #   comp.parallel{ redis_connection.set("key1", "val1") }
   #   comp.series{ puts "set value ok" }
