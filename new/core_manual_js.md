@@ -45,11 +45,11 @@ The optional function `vertxStop` is called when the verticle is undeployed. You
         
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle using the `vertx.getConfiguration` function. For example:
+If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle in the `vertx.config` variable. For example:
 
-    var config = vertx.getConfig();
+    var config = vertx.config;
     
-    // Do something with config
+    stdout.println("Config is " + JSON.stringify(config));
     
 The config returned is a JSON object. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
@@ -95,7 +95,7 @@ JSON configuration can be passed to a verticle that is deployed programmatically
     var config = { name: 'foo', age: 234 };
     vertx.deployVerticle('my_verticle.js', config); 
             
-Then, in the `my_verticle.js` you can access the config via `vertx.getConfig` as previously explained.
+Then, in `my_verticle.js` you can access the config via `vertx.getConfig` as previously explained.
     
 ## Using a Verticle to co-ordinate loading of an application
 
@@ -291,8 +291,8 @@ Send a boolean:
 Send a JSON object:
 
     var myObj = {
-      name: 'Tim'
-      address: 'The Moon'
+      name: 'Tim',
+      address: 'The Moon',
       age: 457    
     }
     eb.send('test.address', myObj); 
@@ -395,7 +395,7 @@ API - atomic updates etc
 
 It's very common in vert.x to want to perform an action after a delay, or periodically.
 
-In standard verticles you can't just call `Thread.sleep` to introduce a delay, as that will block the event loop thread.
+In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.
 
 Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
 
@@ -765,7 +765,7 @@ To configure a server to also require client certificates:
                    .setSSL(true)
                    .setKeyStorePath('/path/to/your/keystore/server-keystore.jks')
                    .setKeyStorePassword('password')
-                   .setTrustStorePath('/path/to/your/keystore/server-truststore.jks')
+                   .setTrustStorePath('/path/to/your/truststore/server-truststore.jks')
                    .setTrustStorePassword('password')
                    .setClientAuthRequired(true);
     
@@ -785,7 +785,7 @@ If `setTrustAll(true)` has not been invoked then a client trust store must be co
 
 The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
-If the server requires that client authentication is required then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
+If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
 
 To configure a client to trust all server certificates (dangerous):
 
@@ -806,6 +806,7 @@ To configure a client to only trust those certificates it has in its trust store
                    .setSSL(true)
                    .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
                    .setTrustStorePassword('password')
+                   .setClientAuthRequired(true)
                    .setKeyStorePath('/path/to/keystore/holding/client/cert/client-keystore.jks')
                    .setKeyStorePassword('password');
                      
@@ -815,7 +816,7 @@ To configure a client to only trust those certificates it has in its trust store
 
 There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.
 
-All operations in the vert.x API are non blocking, calls to write data return immediately and writes are internally queued.
+All operations in the vert.x API are non blocking; calls to write data return immediately and writes are internally queued.
 
 It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound - eventually resulting in exhausting available memory.
 
