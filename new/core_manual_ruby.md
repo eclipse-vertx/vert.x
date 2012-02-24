@@ -917,11 +917,11 @@ Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 Functions:
 
-* `dataHandler(handler)`: set a handler which will receive data from the `ReadStream`. As data arrives the handler will be passed a Buffer.
-* `pause()`: pause the handler. When paused no data will be received in the `dataHandler`.
-* `resume()`: resume the handler. The handler will be called if any data arrives.
-* `exceptionHandler(handler)`: Will be called if an exception occurs on the `ReadStream`.
-* `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
+* `data_handler`: set a handler which will receive data from the `ReadStream`. As data arrives the handler will be passed a Buffer.
+* `pause`: pause the handler. When paused no data will be received in the `data_handler`.
+* `resume`: resume the handler. The handler will be called if any data arrives.
+* `exception_handler`: Will be called if an exception occurs on the `ReadStream`.
+* `end_handler`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
 ## WriteStream
 
@@ -929,20 +929,20 @@ Functions:
 
 Functions:
 
-* `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
-* `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
-* `writeQueueFull()`: returns `true` if the write queue is considered full.
-* `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
-* `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
+* `write_buffer`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
+* `write_queue_max_size=`: set the number of bytes at which the write queue is considered *full*, and the function `write_queue_full?` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
+* `write_queue_full?`: returns `true` if the write queue is considered full.
+* `exception_handler`: Will be called if an exception occurs on the `WriteStream`.
+* `drain_handler`: The handler will be called if the `WriteStream` is considered no longer full.
 
 ## Pump
 
 Instances of `Pump` have the following methods:
 
-* `start()`. Start the pump.
-* `stop()`. Stops the pump. When the pump starts it is in stopped mode.
-* `setWriteQueueMaxSize()`. This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
-* `getBytesPumped()`. Returns total number of bytes pumped.
+* `start`. Start the pump.
+* `stop`. Stops the pump. When the pump starts it is in stopped mode.
+* `write_queue_max_size=`. This has the same meaning as `write_queue_max_size=` on the `WriteStream`.
+* `bytes_pumped`. Returns total number of bytes pumped.
 
 A pump can be started and stopped multiple times.
 
