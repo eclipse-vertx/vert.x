@@ -205,6 +205,8 @@ module Vertx
         j_fut.handler do
           if j_fut.succeeded
             if result_converter
+              p result_converter
+              puts "result converter is #{result_converter}"
               handler.call(nil, result_converter.call(j_fut.result))
             else
               handler.call(nil, j_fut.result)
@@ -410,7 +412,7 @@ module Vertx
     # Read the contents of an entire file as a {Buffer}, asynchronously.
     # @param [String] path Path of the file to read.
     # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {Buffer}.
-    def FileSystem.read_file_as_buffer(path, block)
+    def FileSystem.read_file_as_buffer(path, &block)
       _wrap_handler(org.vertx.java.core.file.FileSystem.instance.readFile(path), block)
     end
 
@@ -422,7 +424,7 @@ module Vertx
     # @param [String] path Path of the file to write.
     # @param [String] buffer The Buffer to write
     # @return [Future] a Future representing the future result of the action.
-    def FileSystem.write_buffer_to_file(path, buffer, block)
+    def FileSystem.write_buffer_to_file(path, buffer, &block)
       _wrap_handler(org.vertx.java.core.file.FileSystem.instance.writeFile(path, buffer), block)
     end
 
