@@ -19,7 +19,6 @@ require "test_utils"
 @tu = TestUtils.new
 
 @handler_id = nil
-@verticle_id = nil;
 
 def test_deploy
 
@@ -27,18 +26,22 @@ def test_deploy
     @tu.test_complete if "started" == message.body
   end
 
-  @verticle_id = Vertx.deploy_verticle("core/deploy/child.rb")
+  conf = {'foo' => 'bar'}
+
+  Vertx.deploy_verticle("core/deploy/child.rb", conf)
 end
 
 def test_undeploy
-  id = Vertx.deploy_verticle("core/deploy/child.rb")
 
-  Vertx.set_timer(100) do
-    @handler_id = EventBus.register_handler("test-handler") do |message|
-      @tu.test_complete if "stopped" == message.body
-    end
-    Vertx.undeploy_verticle(id)
+  @handler_id = EventBus.register_handler("test-handler") do |message|
+    @tu.test_complete if "stopped" == message.body
   end
+
+  conf = {'foo' => 'bar'}
+  id = Vertx.deploy_verticle("core/deploy/child.rb", conf) {
+    Vertx.undeploy_verticle(id)
+  }
+
 end
 
 def vertx_stop

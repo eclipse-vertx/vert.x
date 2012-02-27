@@ -73,18 +73,8 @@ public class VerticleManager {
   }
 
   public JsonObject getConfig() {
-    JsonObject conf = null;
-    String deploymentName = getDeploymentName();
-    if (deploymentName != null) {
-      Deployment deployment = deployments.get(deploymentName);
-      if (deployment != null) {
-        conf = deployment.config;
-      }
-    }
-    if (conf == null) {
-      conf = new JsonObject();
-    }
-    return conf;
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.config;
   }
 
   public String getDeploymentName() {
@@ -103,6 +93,7 @@ public class VerticleManager {
   }
 
   public void reportException(Throwable t) {
+    log.info("In report exception");
     VerticleHolder holder = getVerticleHolder();
     if (holder != null) {
       holder.deployment.factory.reportException(t);
@@ -175,7 +166,7 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? null : config.copy(), urls, parentDeploymentName);
+    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? new JsonObject() : config.copy(), urls, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
@@ -221,20 +212,6 @@ public class VerticleManager {
     return deploymentName;
   }
 
-  private static class AggHandler extends SimpleHandler {
-    AggHandler(int count, Handler<Void> doneHandler) {
-      this.count = count;
-      this.doneHandler = doneHandler;
-    }
-    int count;
-    Handler<Void> doneHandler;
-    public synchronized void handle() {
-      if (--count == 0) {
-        doneHandler.handle(null); // All undeployed
-      }
-    }
-  }
-
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
     if (deployments.isEmpty()) {
       doneHandler.handle(null);
@@ -277,7 +254,7 @@ public class VerticleManager {
     Logger logger = LoggerFactory.getLogger(loggerName);
     Context context = VertxInternal.instance.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
-                                               loggerName, logger);
+                                               loggerName, logger, deployment.config);
     deployment.verticles.add(holder);
     context.setExtraData(holder);
   }
@@ -342,14 +319,18 @@ public class VerticleManager {
     final Verticle verticle;
     final String loggerName;
     final Logger logger;
+    //We put the config here too so it's still accessible to the verticle after it has been deployed
+    //(deploy is async)
+    final JsonObject config;
 
     private VerticleHolder(Deployment deployment, Context context, Verticle verticle, String loggerName,
-                           Logger logger) {
+                           Logger logger, JsonObject config) {
       this.deployment = deployment;
       this.context = context;
       this.verticle = verticle;
       this.loggerName = loggerName;
       this.logger = logger;
+      this.config = config;
     }
   }
 

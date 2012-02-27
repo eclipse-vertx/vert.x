@@ -16,10 +16,14 @@
 
 package org.vertx.java.core.file;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.BlockingAction;
+import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.Future;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.SynchronousAction;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 
@@ -61,7 +65,7 @@ public class FileSystem {
   private FileSystem() {
   }
 
-  private Deferred<Void> copyDeferred(String from, String to) {
+  private SynchronousAction<Void> copyDeferred(String from, String to) {
     return copyDeferred(from, to, false);
   }
 
@@ -75,7 +79,11 @@ public class FileSystem {
     return copyDeferred(from, to).execute();
   }
 
-  private Deferred<Void> copyDeferred(String from, String to, final boolean recursive) {
+  public void copySync(String from, String to) throws Exception {
+    copyDeferred(from, to).action();
+  }
+
+  private SynchronousAction<Void> copyDeferred(String from, String to, final boolean recursive) {
     checkContext();
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
@@ -123,11 +131,32 @@ public class FileSystem {
    * The copy will fail if the destination if the destination already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> copy(String from, String to, final boolean recursive) {
+  public Future<Void> copy(String from, String to, boolean recursive) {
     return copyDeferred(from, to, recursive).execute();
   }
 
-  private Deferred<Void> moveDeferred(String from, String to) {
+  public void copy2(String from, String to, boolean recursive, final Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = copyDeferred(from, to, recursive).execute();
+    wrapHandler(fut, handler);
+  }
+
+  private <T> void wrapHandler(Future<T> fut, final Handler<AsyncResult<T>> handler) {
+    fut.handler(new CompletionHandler<T>() {
+      public void handle(Future<T> event) {
+        if (event.succeeded()) {
+          handler.handle(new AsyncResult<T>(event.result()));
+        } else {
+          handler.handle(new AsyncResult<T>(event.exception()));
+        }
+      }
+    });
+  }
+
+  public void copySync(String from, String to, boolean recursive) throws Exception {
+    copyDeferred(from, to, recursive).action();
+  }
+
+  private SynchronousAction<Void> moveDeferred(String from, String to) {
     checkContext();
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
@@ -156,7 +185,11 @@ public class FileSystem {
     return moveDeferred(from, to).execute();
   }
 
-  private Deferred<Void> truncateDeferred(final String path, final long len) {
+  public void moveSync(String from, String to) throws Exception {
+    moveDeferred(from, to).action();
+  }
+
+  private SynchronousAction<Void> truncateDeferred(final String path, final long len) {
     checkContext();
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -186,11 +219,15 @@ public class FileSystem {
    * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> truncate(final String path, final long len) {
+  public Future<Void> truncate(String path, long len) {
     return truncateDeferred(path, len).execute();
   }
 
-  private Deferred<Void> chmodDeferred(String path, String perms) {
+  public void truncateSync(String path, long len) throws Exception {
+    truncateDeferred(path, len).action();
+  }
+
+  private SynchronousAction<Void> chmodDeferred(String path, String perms) {
     return chmodDeferred(path, perms, null);
   }
 
@@ -203,7 +240,11 @@ public class FileSystem {
     return chmodDeferred(path, perms).execute();
   }
 
-  private Deferred<Void> chmodDeferred(String path, String perms, String dirPerms) {
+  public void chmodSync(String path, String perms) throws Exception {
+    chmodDeferred(path, perms).action();
+  }
+
+  private SynchronousAction<Void> chmodDeferred(String path, String perms, String dirPerms) {
     checkContext();
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
@@ -248,7 +289,12 @@ public class FileSystem {
   }
 
 
-  private Deferred<FileProps> propsDeferred(String path) {
+  public void chmodSync(String path, String perms, String dirPerms) throws Exception {
+    chmodDeferred(path, perms, dirPerms).action();
+  }
+
+
+  private SynchronousAction<FileProps> propsDeferred(String path) {
     return props(path, true);
   }
 
@@ -261,7 +307,11 @@ public class FileSystem {
     return propsDeferred(path).execute();
   }
 
-  private Deferred<FileProps> lpropsDeferred(String path) {
+  public FileProps propsSync(String path) throws Exception {
+    return propsDeferred(path).action();
+  }
+
+  private SynchronousAction<FileProps> lpropsDeferred(String path) {
     return props(path, false);
   }
 
@@ -273,7 +323,11 @@ public class FileSystem {
     return lpropsDeferred(path).execute();
   }
 
-  private Deferred<FileProps> props(String path, final boolean followLinks) {
+  public FileProps lpropsSync(String path) throws Exception {
+    return lpropsDeferred(path).action();
+  }
+
+  private SynchronousAction<FileProps> props(String path, final boolean followLinks) {
     checkContext();
     final Path target = Paths.get(path);
     return new BlockingAction<FileProps>() {
@@ -293,7 +347,7 @@ public class FileSystem {
     };
   }
 
-  private Deferred<Void> linkDeferred(String link, String existing) {
+  private SynchronousAction<Void> linkDeferred(String link, String existing) {
     return link(link, existing, false);
   }
 
@@ -305,7 +359,11 @@ public class FileSystem {
     return linkDeferred(link, existing).execute();
   }
 
-  private Deferred<Void> symlinkDeferred(String link, String existing) {
+  public void linkSync(String link, String existing) throws Exception {
+    linkDeferred(link, existing).action();
+  }
+
+  private SynchronousAction<Void> symlinkDeferred(String link, String existing) {
     return link(link, existing, true);
   }
 
@@ -317,7 +375,11 @@ public class FileSystem {
     return symlinkDeferred(link, existing).execute();
   }
 
-  private Deferred<Void> link(String link, String existing, final boolean symbolic) {
+  public void symlinkSync(String link, String existing) throws Exception {
+    symlinkDeferred(link, existing).action();
+  }
+
+  private SynchronousAction<Void> link(String link, String existing, final boolean symbolic) {
     checkContext();
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
@@ -337,7 +399,7 @@ public class FileSystem {
     };
   }
 
-  private Deferred<Void> unlinkDeferred(String link) {
+  private SynchronousAction<Void> unlinkDeferred(String link) {
     return deleteDeferred(link);
   }
 
@@ -349,7 +411,11 @@ public class FileSystem {
     return unlinkDeferred(link).execute();
   }
 
-  private Deferred<String> readSymlinkDeferred(String link) {
+  public void unlinkSync(String link) throws Exception {
+    unlinkDeferred(link).action();
+  }
+
+  private SynchronousAction<String> readSymlinkDeferred(String link) {
     checkContext();
     final Path source = Paths.get(link);
     return new BlockingAction<String>() {
@@ -371,7 +437,11 @@ public class FileSystem {
     return readSymlinkDeferred(link).execute();
   }
 
-  private Deferred<Void> deleteDeferred(String path) {
+  public String readSymlinkSync(String link) throws Exception {
+    return readSymlinkDeferred(link).action();
+  }
+
+  private SynchronousAction<Void> deleteDeferred(String path) {
     return deleteDeferred(path, false);
   }
 
@@ -383,7 +453,11 @@ public class FileSystem {
     return deleteDeferred(path).execute();
   }
 
-  private Deferred<Void> deleteDeferred(String path, final boolean recursive) {
+  public void deleteSync(String path) throws Exception {
+    deleteDeferred(path).action();
+  }
+
+  private SynchronousAction<Void> deleteDeferred(String path, final boolean recursive) {
     checkContext();
     final Path source = Paths.get(path);
     return new BlockingAction<Void>() {
@@ -422,11 +496,15 @@ public class FileSystem {
    * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> delete(String path, final boolean recursive) {
+  public Future<Void> delete(String path, boolean recursive) {
     return deleteDeferred(path, recursive).execute();
   }
 
-  private Deferred<Void> mkdirDeferred(String path) {
+  public void deleteSync(String path, boolean recursive) throws Exception {
+    deleteDeferred(path, recursive).action();
+  }
+
+  private SynchronousAction<Void> mkdirDeferred(String path) {
     return mkdirDeferred(path, null, false);
   }
 
@@ -439,7 +517,11 @@ public class FileSystem {
     return mkdirDeferred(path).execute();
   }
 
-  private Deferred<Void> mkdirDeferred(String path, boolean createParents) {
+  public void mkdirSync(String path) throws Exception {
+    mkdirDeferred(path).action();
+  }
+
+  private SynchronousAction<Void> mkdirDeferred(String path, boolean createParents) {
     return mkdirDeferred(path, null, createParents);
   }
 
@@ -454,7 +536,11 @@ public class FileSystem {
     return mkdirDeferred(path, createParents).execute();
   }
 
-  private Deferred<Void> mkdirDeferred(String path, String perms) {
+  public void mkdirSync(String path, boolean createParents) throws Exception {
+    mkdirDeferred(path, createParents).action();
+  }
+
+  private SynchronousAction<Void> mkdirDeferred(String path, String perms) {
     return mkdirDeferred(path, perms, false);
   }
 
@@ -469,7 +555,11 @@ public class FileSystem {
     return mkdirDeferred(path, perms).execute();
   }
 
-  private Deferred<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
+  public void mkdirSync(String path, String perms) throws Exception {
+    mkdirDeferred(path, perms).action();
+  }
+
+  private SynchronousAction<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
     checkContext();
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
@@ -508,11 +598,15 @@ public class FileSystem {
    * The operation will fail if the directory already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> mkdir(String path, final String perms, final boolean createParents) {
+  public Future<Void> mkdir(String path, String perms, boolean createParents) {
     return mkdirDeferred(path, perms, createParents).execute();
   }
 
-  private Deferred<String[]> readDirDeferred(final String path) {
+  public void mkdirSync(String path, String perms, boolean createParents) throws Exception {
+    mkdirDeferred(path, perms, createParents).action();
+  }
+
+  private SynchronousAction<String[]> readDirDeferred(String path) {
     return readDirDeferred(path, null);
   }
 
@@ -521,11 +615,15 @@ public class FileSystem {
    * @return a Future representing the future result of the action.
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  public Future<String[]> readDir(final String path) {
+  public Future<String[]> readDir(String path) {
     return readDirDeferred(path).execute();
   }
 
-  private Deferred<String[]> readDirDeferred(final String path, final String filter) {
+  public String[] readDirSync(String path) throws Exception {
+    return readDirDeferred(path).action();
+  }
+
+  private SynchronousAction<String[]> readDirDeferred(final String path, final String filter) {
     checkContext();
     return new BlockingAction<String[]>() {
       public String[] action() throws Exception {
@@ -569,11 +667,15 @@ public class FileSystem {
    * @return a Future representing the future result of the action.
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  public Future<String[]> readDir(final String path, final String filter) {
+  public Future<String[]> readDir(String path, String filter) {
     return readDirDeferred(path, filter).execute();
   }
 
-  private Deferred<Buffer> readFileDeferred(final String path) {
+  public String[] readDirSync(String path, String filter) throws Exception {
+    return readDirDeferred(path, filter).action();
+  }
+
+  private SynchronousAction<Buffer> readFileDeferred(final String path) {
     checkContext();
     return new BlockingAction<Buffer>() {
       public Buffer action() throws Exception {
@@ -590,11 +692,15 @@ public class FileSystem {
    * Do not user this method to read very large files or you risk running out of available RAM.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Buffer> readFile(final String path) {
+  public Future<Buffer> readFile(String path) {
     return readFileDeferred(path).execute();
   }
 
-  private Deferred<Void> writeFileDeferred(final String path, final Buffer data) {
+  public Buffer readFileSync(String path) throws Exception {
+    return readFileDeferred(path).action();
+  }
+
+  private SynchronousAction<Void> writeFileDeferred(final String path, final Buffer data) {
     checkContext();
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -609,8 +715,12 @@ public class FileSystem {
    * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> writeFile(final String path, final Buffer data) {
+  public Future<Void> writeFile(String path, Buffer data) {
     return writeFileDeferred(path, data).execute();
+  }
+
+  public void writeFileSync(String path, Buffer data) throws Exception {
+    writeFileDeferred(path, data).action();
   }
 
   public void lock() {
@@ -629,7 +739,7 @@ public class FileSystem {
     //TODO
   }
 
-  private Deferred<AsyncFile> openDeferred(final String path) {
+  private SynchronousAction<AsyncFile> openDeferred(String path) {
     return openDeferred(path, null, true, true, true, false);
   }
 
@@ -639,11 +749,15 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(final String path) {
+  public Future<AsyncFile> open(String path) {
     return openDeferred(path).execute();
   }
 
-  private Deferred<AsyncFile> openDeferred(final String path, String perms) {
+  public AsyncFile openSync(String path) throws Exception {
+    return openDeferred(path).action();
+  }
+
+  private SynchronousAction<AsyncFile> openDeferred(String path, String perms) {
     return openDeferred(path, perms, true, true, true, false);
   }
 
@@ -654,11 +768,15 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(final String path, String perms) {
+  public Future<AsyncFile> open(String path, String perms) {
     return openDeferred(path, perms).execute();
   }
 
-  private Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean createNew) {
+  public AsyncFile openSync(String path, String perms) throws Exception {
+    return openDeferred(path, perms).action();
+  }
+
+  private SynchronousAction<AsyncFile> openDeferred(String path, String perms, boolean createNew) {
     return openDeferred(path, perms, true, true, createNew, false);
   }
 
@@ -670,11 +788,15 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(final String path, String perms, final boolean createNew) {
+  public Future<AsyncFile> open(String path, String perms, boolean createNew) {
     return openDeferred(path, perms, createNew).execute();
   }
 
-  private Deferred<AsyncFile> openDeferred(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
+  public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
+    return openDeferred(path, perms, createNew).action();
+  }
+
+  private SynchronousAction<AsyncFile> openDeferred(String path, String perms, boolean read, boolean write, boolean createNew) {
     return openDeferred(path, perms, read, write, createNew, false);
   }
 
@@ -688,11 +810,15 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(final String path, String perms, final boolean read, final boolean write, final boolean createNew) {
+  public Future<AsyncFile> open(String path, String perms, boolean read, boolean write, boolean createNew) {
     return openDeferred(path, perms, read, write, createNew).execute();
   }
 
-  private Deferred<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+  public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
+    return openDeferred(path, perms, read, write, createNew).action();
+  }
+
+  private SynchronousAction<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
     final Context ctx = VertxInternal.instance.getContext();
     if (ctx == null) {
@@ -717,18 +843,22 @@ public class FileSystem {
    * storage on each write.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean flush) {
+  public Future<AsyncFile> open(String path, String perms, boolean read, boolean write, boolean createNew,
+                   boolean flush) {
     return openDeferred(path, perms, read, write, createNew, flush).execute();
   }
 
-  private AsyncFile doOpen(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                           final boolean flush, final Context context,
-                           final Thread th) throws Exception {
+  public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
+    return openDeferred(path, perms, read, write, createNew, flush).action();
+  }
+
+  private AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
+                           boolean flush, Context context,
+                           Thread th) throws Exception {
     return new AsyncFile(path, perms, read, write, createNew, flush, context, th);
   }
 
-  private Deferred<Void> createFileDeferred(final String path) {
+  private SynchronousAction<Void> createFileDeferred(String path) {
     return createFileDeferred(path, null);
   }
 
@@ -736,11 +866,15 @@ public class FileSystem {
    * Creates an empty file with the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> createFile(final String path) {
+  public Future<Void> createFile(String path) {
     return createFileDeferred(path).execute();
   }
 
-  private Deferred<Void> createFileDeferred(final String path, final String perms) {
+  public void createFileSync(String path) throws Exception {
+    createFileDeferred(path).action();
+  }
+
+  private SynchronousAction<Void> createFileDeferred(final String path, final String perms) {
     checkContext();
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>() {
@@ -764,11 +898,15 @@ public class FileSystem {
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> createFile(final String path, final String perms) {
+  public Future<Void> createFile(String path, String perms) {
     return createFileDeferred(path, perms).execute();
   }
 
-  private Deferred<Boolean> existsDeferred(final String path) {
+  public void createFileSync(String path, String perms) throws Exception {
+    createFileDeferred(path, perms).action();
+  }
+
+  private SynchronousAction<Boolean> existsDeferred(final String path) {
     checkContext();
     return new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
@@ -782,11 +920,15 @@ public class FileSystem {
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Boolean> exists(final String path) {
+  public Future<Boolean> exists(String path) {
     return existsDeferred(path).execute();
   }
 
-  private Deferred<FileSystemProps> fsPropsDeferred(final String path) {
+  public boolean existsSync(String path) throws Exception {
+    return existsDeferred(path).action();
+  }
+
+  private SynchronousAction<FileSystemProps> fsPropsDeferred(final String path) {
     checkContext();
     return new BlockingAction<FileSystemProps>() {
       public FileSystemProps action() throws Exception {
@@ -801,8 +943,12 @@ public class FileSystem {
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<FileSystemProps> fsProps(final String path) {
+  public Future<FileSystemProps> fsProps(String path) {
     return fsPropsDeferred(path).execute();
+  }
+
+  public FileSystemProps fsPropsSync(String path) throws Exception {
+    return fsPropsDeferred(path).action();
   }
 
   private void checkContext() {

@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.deploy.jruby;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
@@ -69,22 +70,29 @@ public class JRubyVerticleFactory implements VerticleFactory {
 
       StringBuilder backtrace = new StringBuilder();
       IRubyObject bt = re.backtrace();
+
       if (bt instanceof List) {
         for (Object obj : (List)bt) {
           if (obj instanceof String) {
             String line = (String)obj;
-            if (line.contains(".rb")) {
-              //We filter out any Java stack trace
-              backtrace.append(line).append('\n');
-            }
+            addToBackTrace(backtrace, line);
           }
         }
       }
+
+      logger.error("backtrace is " + backtrace);
 
       logger.error("Exception in Ruby verticle: " + msg +
         "\n" + backtrace);
     } else {
       logger.error("Unexpected exception in Ruby verticle", t);
+    }
+  }
+
+  private void addToBackTrace(StringBuilder backtrace, String line) {
+    if (line.contains(".rb")) {
+      //We filter out any Java stack trace
+      backtrace.append(line).append('\n');
     }
   }
 }

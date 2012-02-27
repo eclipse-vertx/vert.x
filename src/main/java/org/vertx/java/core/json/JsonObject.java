@@ -140,6 +140,10 @@ public class JsonObject {
     return new JsonObject(encode());
   }
 
+  public String toString() {
+    return encode();
+  }
+
   public boolean equals(Object o) {
     if (this == o) return true;
 
