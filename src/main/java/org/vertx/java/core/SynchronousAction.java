@@ -40,5 +40,5 @@ public abstract class SynchronousAction<T> extends DeferredAction<T> {
    * return value of the method.
    * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link BlockingAction} for that.
    */
-  protected abstract T action() throws Exception;
+  public abstract T action() throws Exception;
 }

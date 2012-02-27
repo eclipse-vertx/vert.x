@@ -40,6 +40,11 @@ public class RubyFileSystemTest extends TestBase {
   }
 
   @Test
+  public void test_copy() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void test_stats() throws Exception {
     startTest(getMethodName());
   }

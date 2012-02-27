@@ -56,7 +56,7 @@ public class TestClient extends TestClientBase {
     for (int i = 0; i < numActions; i++) {
       // One that succeeeds
       new BlockingAction<String>() {
-        protected String action() throws Exception {
+        public String action() throws Exception {
           return "foo";
         }
       }.handler(new CompletionHandler<String>() {
@@ -69,7 +69,7 @@ public class TestClient extends TestClientBase {
 
       // One that throws an exception
       new BlockingAction<String>() {
-        protected String action() throws Exception {
+        public String action() throws Exception {
           throw new Exception("Wibble");
         }
       }.handler(new CompletionHandler<String>() {

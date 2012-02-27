@@ -176,11 +176,11 @@ module Vertx
     def initialize(j_socket)
       @j_del = j_socket
 
-      @write_handler_id = EventBus::register_simple_handler { |buffer|
+      @write_handler_id = EventBus.register_simple_handler { |buffer|
         write_buffer(buffer)
       }
       @j_del.closedHandler(Proc.new {
-        EventBus::unregister_handler(@write_handler_id)
+        EventBus.unregister_handler(@write_handler_id)
         @closed_handler.call if @closed_handler
       })
     end

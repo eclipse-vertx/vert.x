@@ -27,7 +27,7 @@ package org.vertx.java.core;
 public abstract class SimpleAction extends SynchronousAction<Void> {
 
   @Override
-  protected Void action() throws Exception {
+  public Void action() throws Exception {
     act();
     return null;
   }
