@@ -425,7 +425,7 @@ You can also set a timer to fire periodically by using the `setPeriodic` functio
 
 To cancel a periodic timer, call the `cancelTimer` function specifying the timer id. For example:
 
-    var id = vertx.setTimer(1000, function(id) {        
+    var id = vertx.setPeriodic(1000, function(id) {        
     });
     
     // And immediately cancel it
@@ -436,7 +436,7 @@ Or you can cancel it from inside the event handler. The following example cancel
 
     var count = 0;
     
-    vertx.setTimer(1000, function(id) {
+    vertx.setPeriodic(1000, function(id) {
         log.info('In event handler ' + count); 
         count++;
         if (count === 10) {
@@ -694,7 +694,7 @@ You can also close it, set the closed handler, set the exception handler and use
 
 ### Catching exceptions on the Net Client
 
-You can set a connection handler on the `NetClient`. This will catch any exceptions that occur during connection.
+You can set an exception handler on the `NetClient`. This will catch any exceptions that occur during connection.
 
     var client = new vertx.NetClient();
     

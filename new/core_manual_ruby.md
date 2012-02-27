@@ -426,7 +426,7 @@ You can also set a timer to fire periodically by using the `set_periodic` functi
 
 To cancel a periodic timer, call the `cancel_timer` function specifying the timer id. For example:
 
-    id = Vertx.set_timer(1000) do
+    id = Vertx.set_periodic(1000) do
         # This will never be called
     end
 
@@ -438,7 +438,7 @@ Or you can cancel it from inside the event handler. The following example cancel
 
     count = 0
 
-    Vertx.set_timer(1000) do
+    Vertx.set_periodic(1000) do
         puts "In event handler #{count}"
         count += 1
         vertx.cancelTimer(id) if count == 10        
@@ -602,7 +602,6 @@ You can close a socket by invoking the `close` method. This will close the under
 
 If you want to be notified when a socket is closed, you can set the `closed_handler':
 
-
     server = Vertx::NetServer.new
 
     server.connect_handler do |sock|
@@ -685,7 +684,7 @@ You can also close it, set the closed handler, set the exception handler and use
 
 ### Catching exceptions on the Net Client
 
-You can set a connection handler on the `NetClient`. This will catch any exceptions that occur during connection.
+You can set an exception handler on the `NetClient`. This will catch any exceptions that occur during connection.
 
     client = Vertx::NetClient.new
 
