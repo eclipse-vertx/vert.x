@@ -328,7 +328,7 @@ module Vertx
     # Inserts a Hash of headers into the request.
     # @param [Hash] headers. Headers to insert. to_s will be called on each value to determine the actual String value to insert.
     # @return [HttpClientRequest] self So multiple operations can be chained.
-    def put_all_headers(headers)
+    def put_headers(headers)
       headers.each_pair do |k, v|
         @j_del.putHeader(k, v.to_s)
       end
@@ -669,6 +669,10 @@ module Vertx
       @j_del.statusCode = val
     end
 
+    def status_message=(val)
+      @j_del.statusMessage = val
+    end
+
     # Inserts a header into the response.
     # @param [String] key The header key
     # @param [Object] value The header value. to_s will be called on the value to determine the actual String value to insert.
@@ -681,7 +685,7 @@ module Vertx
     # Inserts a Hash of headers into the response.
     # @param [Hash] headers. Headers to insert. to_s will be called on each value to determine the actual String value to insert.
     # @return [HttpServerResponse] self So multiple operations can be chained.
-    def put_all_headers(headers)
+    def put_headers(headers)
       headers.each_pair do |k, v|
         @j_del.putHeader(k, v)
       end
@@ -700,7 +704,7 @@ module Vertx
     # Inserts a Hash of trailers into the response. Trailers are only sent if you are using a HTTP chunked response.
     # @param [Hash] trailers. Trailers to insert. to_s will be called on each value to determine the actual String value to insert.
     # @return [HttpServerResponse] self So multiple operations can be chained.
-    def put_all_trailers(headers)
+    def put_trailers(trailers)
       trailers.each_pair do |k, v|
         @j_del.putTrailer(k, v)
       end

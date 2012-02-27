@@ -16,10 +16,13 @@
 
 package org.vertx.java.core.file;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.BlockingAction;
+import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.Future;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.SynchronousAction;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
@@ -130,6 +133,23 @@ public class FileSystem {
    */
   public Future<Void> copy(String from, String to, boolean recursive) {
     return copyDeferred(from, to, recursive).execute();
+  }
+
+  public void copy2(String from, String to, boolean recursive, final Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = copyDeferred(from, to, recursive).execute();
+    wrapHandler(fut, handler);
+  }
+
+  private <T> void wrapHandler(Future<T> fut, final Handler<AsyncResult<T>> handler) {
+    fut.handler(new CompletionHandler<T>() {
+      public void handle(Future<T> event) {
+        if (event.succeeded()) {
+          handler.handle(new AsyncResult<T>(event.result()));
+        } else {
+          handler.handle(new AsyncResult<T>(event.exception()));
+        }
+      }
+    });
   }
 
   public void copySync(String from, String to, boolean recursive) throws Exception {
@@ -267,6 +287,7 @@ public class FileSystem {
   public Future<Void> chmod(String path, String perms, String dirPerms) {
     return chmodDeferred(path, perms, dirPerms).execute();
   }
+
 
   public void chmodSync(String path, String perms, String dirPerms) throws Exception {
     chmodDeferred(path, perms, dirPerms).action();
