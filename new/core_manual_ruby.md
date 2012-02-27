@@ -956,46 +956,46 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 
 To create an HTTP server you simply create an instance of vertx.net.HttpServer.
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
 ### Start the Server Listening
 
 To tell that server to listen for incoming requests you use the `listen` method:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.listen(8080, 'myhost');
+    server.listen(8080, 'myhost')
 
 The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
 
 ### Getting Notified of Incoming Requests
 
-To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` function of the server, passing in the handler:
+To be notified when a request arrives you need to set a request handler. This is done by calling the `request_handler` method of the server, passing in the handler:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(request) {
-      log.info('An HTTP request has been received');
-    })
+    server.request_handler do |request|
+      puts 'An HTTP request has been received'
+    end
 
-    server.listen(8080, 'localhost');
+    server.listen(8080, 'localhost')
 
 This displays 'An HTTP request has been received!' every time an HTTP request arrives on the server. You can try it by running the verticle and pointing your browser at `http://localhost:8080`.
 
-Similarly to `NetServer`, the return value of the `requestHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
+Similarly to `NetServer`, the return value of the `request_handler` function is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(request) {
-      log.info('An HTTP request has been received');
-    }).listen(8080, 'localhost');
+    server.request_handler do |request|
+      puts 'An HTTP request has been received'
+    end.listen(8080, 'localhost')
 
 Or:
 
-    new vertx.HttpServer().requestHandler(function(request) {
-      log.info('An HTTP request has been received');
-    }).listen(8080, 'localhost');
+    server = Vertx::HttpServer.new.request_handler do |request|
+      puts 'An HTTP request has been received'
+    end.listen(8080, 'localhost')
 
 
 ### Handling HTTP Requests
@@ -1038,28 +1038,26 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
 
 #### Request Headers
 
-The request headers are available using the `headers()` function on the request object. The return value of the function is just a JavaScript object. As we all know JavaScript objects are just hashes (associative arrays).
+The request headers are available using the `headers` method on the request object. The return value of the method is a Ruby Hash.
 
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
-    var server = new vertx.HttpServer();
+    server.request_handler do |request|
 
-    server.requestHandler(function(request) {
-
-      var headers = request.headers();
-
-      var str = '';
-      for (var k in headers) {
-        str = str.concat(k, ': ', headers[k], '\n');
-      }
-
-      request.response.end(str);
-
-    }).listen(8080, 'localhost');
+      request.response.put_header('Content-Type', 'text/plain')
+         
+      str = "Headers are\n"
+      request.headers.each do |key, value|
+        str << "#{key}: #{value}\n"
+      end
+      
+      request.response.end(str)
+      
+    end.listen(8080, 'localhost')
 
 #### Request params
 
-Similarly to the headers, the request parameters are available using the `params()` function on the request object. The return value of the function is just a hash too.
+Similarly to the headers, the request parameters are available using the `params` method on the request object. The return value of the function is just a Hash too.
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
@@ -1073,19 +1071,18 @@ Then the params hash would be the following JS object:
 
 Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HTTPServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
 
-To receive the body, you set the `dataHandler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
+To receive the body, you set the `data_handler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
 
-    var server = new vertx.HttpServer();
+    server.request_handler do |request|
 
-    server.requestHandler(function(request) {
+      request.data_handler do |buffer|
+        puts "I received  #{buffer.length} bytes"
+      end
+      
+    end.listen(8080, 'localhost')
 
-      request.dataHandler(function(buffer) {
-        log.info('I received ' + buffer.length() + ' bytes');
-      });
 
-    }).listen(8080, 'localhost');
-
-The `dataHandler` may be called more than once depending on the size of the body.
+The `data_handler` may be called more than once depending on the size of the body.
 
 You'll notice this is very similar to how data from `NetSocket` is read.
 
@@ -1093,46 +1090,46 @@ The request object implements the `ReadStream` interface so you can pump the req
 
 In many cases, you know the body is not large and you just one to receive it in one go. To do this you could do something like the following:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(request) {
+    server.request_handler do |request|
 
-      // Create a buffer to hold the body
-      var body = new vertx.Buffer();
+      # Create a buffer to hold the body
+      body = Vertx::Buffer.create(0)
 
-      request.dataHandler(function(buffer) {
-        // Append the chunk to the buffer
-        body.appendBuffer(buffer);
-      });
+      request.data_handler do |buffer|
+        # Append the chunk to the buffer
+        body.append_buffer(buffer)
+      end
 
-      request.endHandler(function() {
-        // The entire body has now been received
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
+      request.end_handler do
+        # The entire body has now been received
+        puts "The total body received was #{body.length} bytes"
+      end
 
-    }).listen(8080, 'localhost');
+    end.listen(8080, 'localhost')
 
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the request.
 
 If the HTTP request is using HTTP chunking, then each HTTP chunk of the request body will correspond to a single call of the data handler.
 
-It's a very common use case to want to read the entire body before processing it, so vert.x allows a `bodyHandler` to be set on the request object.
+It's a very common use case to want to read the entire body before processing it, so vert.x allows a `body_handler` to be set on the request object.
 
 The body handler is called only once when the *entire* request body has been read.
 
 *Beware of doing this with very large requests since the entire request body will be stored in memory.*
 
-Here's an example using `bodyHandler`:
+Here's an example using `body_handler`:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(request) {
+    server.request_handler do |request|
 
-      request.bodyHandler(function(body) {
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
+      request.body_handler do |body|
+        puts "The total body received was #{body.length} bytes"
+      end
 
-    }).listen(8080, 'localhost');
+    end.listen(8080, 'localhost')
 
 Simples, innit?
 
@@ -1142,131 +1139,128 @@ As previously mentioned, the HTTP request object contains a property `response`.
 
 ### Setting Status Code and Message
 
-To set the HTTP status code for the response use the `statusCode` property, e.g.
+To set the HTTP status code for the response use the `status_code` property. You can also use the `status_message` property to set the status message. If you do not set the status message a default message will be used.
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(request) {
+    server.request_handler do |request|
 
-        request.response.statusCode = 404;
+      request.response.status_code = 404
+      request.response.status_message = "Too many gerbils"
+      request.response.end
 
-    }).listen(8080, 'localhost');
-
-You can also use the `statusMessage` property to set the status message. If you do not set the status message a default message will be used.
-
+    end.listen(8080, 'localhost')
+    
+The default value for `status_code` is `200`.    
 
 #### Writing HTTP responses
 
-To write data to an HTTP response, you invoke the `write` function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:
+To write data to an HTTP response, you invoke the `write_buffer` or `write_str` methods. These methods can be invoked multiple times before the response is ended.
 
 With a single buffer:
 
-    var myBuffer = ...
-    request.response.write(myBuffer);
+    myBuffer = ...
+    request.response.write_buffer(myBuffer)
 
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.response.write('hello');
+    request.response.write_str('hello')
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
-    request.response.write('hello', 'UTF-16');
+    request.response.write_str('hello', 'UTF-16')
 
-The `write` function is asynchronous and always returns immediately after the write has been queued.
+The write methods are asynchronous and always returns immediately after the write has been queued.
 
-The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will then be invoked when the write has completed:
+The actual write might complete some time later. If you want to be informed when the actual write has completed you can specify a block when calling the method. The block will then be invoked when the write has completed:
 
-    request.response.write('hello', function() {
-        log.info('It has actually been written');
-    });
+    request.response.write_str('hello') { puts 'It has actually been written' }
 
 If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` function.
 
-The first call to `write` results in the response header being being written to the response.
+The first call to write results in the response header being being written to the response.
 
 Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry.
 
 #### Ending HTTP responses
 
-Once you have finished with the HTTP response you must call the `end()` function on it.
+Once you have finished with the HTTP response you must call the `end` method on it.
 
-This function can be invoked in several ways:
+This method can be invoked in several ways:
 
 With no arguments, the response is simply ended.
 
-    request.response.end();
+    request.response.end
 
-The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments. For example:
+The function can also be called with a string or Buffer in the same way write is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments. For example:
 
-    request.response.end("That's all folks");
+    request.response.end('That's all folks')
 
-You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
+You can also optionally call `end` with a boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
 
-    // End response and close connection
-    request.response.end(true);
+    # End response and close connection
+    request.response.end(true)
 
 Or:
 
-    // Write something, end response and close connection
-    request.response.end("That's really all folks", true);
+    # Write something, end response and close connection
+    request.response.end('That's really all folks', true)
 
 
 #### Response headers
 
-Individual HTTP response headers can be written using the `putHeader` method. For example:
+Individual HTTP response headers can be written using the `put_header` function. For example:
 
-    request.response.putHeader('Content-Length', '0');
+    request.response.put_header('Content-Length', '0')
 
 Response headers must all be added before any parts of the response body are written.
 
-If you wish to add several headers in one operation, just call `putHeaders` with a hash of the headers:
+If you wish to add several headers in one operation, just call `put_headers` with a Hash of the headers:
 
-    request.response.putHeaders({ 'Content-Length' : '0', 'Some-Other-Header': 'abc'});
+    request.response.put_headers({ 'Content-Length' => '0', 'Some-Other-Header' => 'abc'})
 
 #### Chunked HTTP Responses and Trailers
 
 Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding). This allows the HTTP response body to be written in chunks, and is normally used when a large response body is being streamed to a client, whose size is not known in advance.
 
-You put the HTTP response into chunked mode as follows:
+You put the HTTP response into chunked mode by setting the `chunked` property.
 
-    req.response.setChunked(true);
+    req.response.chunked = true
 
-Default is non-chunked. When in chunked mode, each call to `response.write(...)` will result in a new HTTP chunk being written out.
+Default is non-chunked. When in chunked mode, each call to `response.write_buffer` or `response.write_str` will result in a new HTTP chunk being written out.
 
 When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.
 
-To write an individual trailer use the `putTrailer` method:
+To write an individual trailer use the `put_trailer` method:
 
-    request.response.putTrailer('Some-Trailer', 'some value');
+    request.response.put_trailer('Some-Trailer', 'some value')
 
-If you wish to add several trailers in one operation, just call `putTrailers` with a hash of the trailers:
+If you wish to add several trailers in one operation, just call `put_trailers` with a Hash of the trailers:
 
-    request.response.putTrailers({ 'Some-Trailer' : 'some value', 'Some-Other-Trailer': 'wibble'});
+    request.response.put_trailers({ 'Some-Trailer' => 'some value', 'Some-Other-Trailer' => 'wibble'})
 
 
 ### Serving files directly disk
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, vert.x provides a feature where you can stream files directly from disk to the response bypassing user-space altogether.
-
-This functionality is OS dependent and leverages the `sendfile` function to tell the kernel to directly serve the file. Using this operation can greatly reduce CPU utilisation.
+Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.
 
 To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(req) {
-      var file = '';
-      if (req.path == '/') {
-        file = 'index.html';
-      } else if (req.path.indexOf('..') == -1) {
-        file = req.path;
-      }
-      req.response.sendFile('web/' + file);
-    }).listen(8080, 'localhost');
+    server.request_handler do |req|
+      file = ''
+      if req.path == '/'
+        file = 'index.html'
+      elsif !req.path.include?('..')
+        file = req.path
+      end
+      req.response.send_file('web/' + file)
+    end.listen(8080, 'localhost')
 
-*Note: If you use `sendfile` while using HTTPS it won't actually use the kernel `sendfile` function, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
+*Note: If you use `sendfile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
 **If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
 
@@ -1276,16 +1270,18 @@ Since the HTTP Response implements `WriteStream` you can pump to it from any `Re
 
 Here's an example which echoes HttpRequest headers and body back in the HttpResponse. It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.requestHandler(function(req) {
+    server.request_handler do |req|
 
-      req.response.putHeaders(req.headers());
+      req.response.put_headers(req.headers)
 
-      var p = new Pump(req, req.response);
-      p.start();
+      p = Pump.new(req, req.response)
+      p.start
+      
+      req.end_handler { req.response.end }
 
-    }).listen(8080, 'localhost');
+    end.listen(8080, 'localhost')
 
 ## Writing HTTP Clients
 
@@ -1293,19 +1289,13 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
 
 To create an HTTP client you simply create an instance of vertx.HttpClient
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
 You set the port and hostname (or ip address) that the client will connect to using the `setHost` and `setPort` functions:
 
-    var client = new vertx.HttpClient();
-    client.setPort(8181);
-    client.setHost('foo.com');
-
-This, of course, can be chained:
-
-    var client = new vertx.HttpClient()
-                   .setPort(8181);
-                   .setHost('foo.com');
+    client = Vertx::HttpClient.new
+    client.port = 8181
+    client.host = 'foo.com'
 
 A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
@@ -1317,19 +1307,15 @@ By default the `HTTPClient` pools HTTP connections. As you make requests a conne
 
 If you do not want connections to be pooled you can call `setKeepAlive` with `false`:
 
-    var client = new vertx.HttpClient()
-                   .setPort(8181);
-                   .setHost('foo.com').
-                   .setKeepAlive(false);
+    client = Vertx::HttpClient.new    
+    client.keep_alive = false
 
 In this case a new connection will be created for each HTTP request and closed once the response has ended.
 
 You can set the maximum number of connections that the client will pool as follows:
 
-    var client = new vertx.HttpClient()
-                   .setPort(8181);
-                   .setHost('foo.com').
-                   .setMaxPoolSize(10);
+    client = Vertx::HttpClient.new    
+    client.max_pool_size = 10
 
 The default value is `1`.
 
@@ -1337,7 +1323,7 @@ The default value is `1`.
 
 Once you have finished with an HTTP client, you should close it:
 
-    client.close();
+    client.close
 
 ### Making Requests
 
@@ -1345,13 +1331,13 @@ To make a request using the client you invoke one the methods named after the HT
 
 For example, to make a `POST` request:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new  
 
-    var request = client.post('http://localhost:8080/some-path/', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    });
+    request = client.post('http://localhost:8080/some-path/') do |resp|
+        puts "got response #{resp.status_code}" 
+    end
 
-    request.end();
+    request.end
 
 To make a PUT request use the `put` method, to make a GET request use the `get` method, etc.
 
@@ -1361,56 +1347,54 @@ The general modus operandi is you invoke the appropriate method passing in the r
 
 The return value from the appropriate request method is an `HTTPClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
-Once you have finished with the request you must call the `end` function.
+Once you have finished with the request you must call the `end` method.
 
 If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new  
 
-    var request = client.request('POST', 'http://localhost:8080/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    });
+    request = client.request('POST', 'http://localhost:8080/some-path/') do |resp|
+        puts "got response #{resp.status_code}" 
+    end
 
-    request.end();
+    request.end
 
-There is also a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
+There is also a method called `get_now` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new  
 
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    });
+    client.get_now('http://localhost:8080/some-path/') do |resp|
+        puts "got response #{resp.status_code}" 
+    end
 
-With `getNow` there is no return value.
+With `get_now` there is no return value.
 
 #### Writing to the request body
 
 Writing to the client request body has a very similar API to writing to the server response body.
 
-To write data to an `HttpClientRequest` object, you invoke the `write` function. This function can be called multiple times before the request has ended. It can be invoked in a few ways:
+To write data to an `HttpClientRequest` object, you invoke the `write_buffer` or `write_str` methods. These methods can be called multiple times before the request has ended.
 
 With a single buffer:
 
-    var myBuffer = ...
-    request.write(myBuffer);
+    myBuffer = ...
+    request.write_buffer(myBuffer)
 
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.write('hello');
+    request.write_str('hello')
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
-    request.write('hello', 'UTF-16');
+    request.write_str('hello', 'UTF-16')
 
-The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
+The write functions are asynchronous and always return immediately after the write has been queued. The actual write might complete some time later.
 
-If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will be invoked when the write has completed:
+If you want to be informed when the actual write has completed you specify a block to the method. This block will be invoked when the write has completed:
 
-    request.response.write('hello', function() {
-        log.info('It has actually been written');
-    });
+    request.response.write('hello') { puts 'It has actually been written' }
 
-If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` function.
+If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` method.
 
 The first call to `write` results in the request header being being written to the request.
 
@@ -1419,73 +1403,74 @@ Consequently, if you are not using HTTP chunking then you must set the `Content-
 
 #### Ending HTTP requests
 
-Once you have finished with the HTTP request you must call the `end` function on it.
+Once you have finished with the HTTP request you must call the `end` method on it.
 
-This function can be invoked in several ways:
+This method can be invoked in several ways:
 
-With no arguments, the response is simply ended.
+With no arguments, the request is simply ended.
 
-    request.end();
+    request.end
 
-The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
-
-You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
+The method can also be called with a string or Buffer in the same way write is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
 
 #### Writing Request Headers
 
-To write headers to the request, use the `putHeader` method.
+To write headers to the request, use the `put_header` method.
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
-    var request = client.post('http://localhost:8080/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    });
+    request = client.post('http://localhost:8080/some-path') do |resp|
+        puts "got response #{resp.status_code}" 
+    end
 
-    request.putHeader('Some-Header', 'Some-Value');
+    request.put_header('Some-Header', 'Some-Value')
+    request.end
 
 These can be chained together as per the common vert.x API pattern:
 
-    client.post('http://localhost:8080/some-uri', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    }).putHeader('Some-Header', 'Some-Value')
-      .putHeader('Some-Other-Header', 'Some-Other-Value')
-      .end();
+    client = Vertx::HttpClient.new
 
-If you want to put more than one header at the same time, you can instead use the `putHeaders` function.
+    request = client.post('http://localhost:8080/some-path') do |resp|
+        puts "got response #{resp.status_code}" 
+    end.put_header('Some-Header', 'Some-Value').
+        put_header('Some-Other-Header', 'Some-Other-Value').
+        end
 
-    client.post('http://localhost:8080/some-uri', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    }).putHeaders({'Some-Header': 'Some-Value',
-                   'Some-Other-Header': 'Some-Other-Value',
-                   'Yet-Another-Header': 'Yet-Another-Value'})
-      .end();
+If you want to put more than one header at the same time, you can instead use the `put_headers` method.
 
+    
+    client = Vertx::HttpClient.new
 
-
+    request = client.post('http://localhost:8080/some-path') do |resp|
+        puts "got response #{resp.status_code}" 
+    end.put_headers({'Some-Header' =>'Some-Value',
+                     'Some-Other-Header' => 'Some-Other-Value',
+                     'Yet-Another-Header' => 'Yet-Another-Value'}).end
+    
 #### HTTP chunked requests
 
 Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding) for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.
 
-You put the HTTP request into chunked mode as follows:
+You put the HTTP request into chunked mode by setting the attribute `chunked`.
 
-    request.setChunked(true);
+    request.chunked = true
 
-Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out.
+Default is non-chunked. When in chunked mode, each call to `request.write_str` or `request.write_buffer` will result in a new HTTP chunk being written out.
 
 ### HTTP Client Responses
 
-Client responses are received as an argument to the response handler that is passed into one of the request methods on the HTTP client.
+Client responses are received as an argument to the response handler block that is specified when making a request.
 
 The response object implements `ReadStream`, so it can be pumped to a `WriteStream` like any other `ReadStream`.
 
-To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
+To query the status code of the response use the `status_code` property. The `status_message` property contains the status message. For example:
 
- var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-      log.info('server returned status code: ' + resp.statusCode);
-      log.info('server returned status message: ' + resp.statusMessage);
-    });
+    client.get_now('http://localhost:8080/some-path') do |resp|
+      puts "server returned status code: #{resp.status_code}"
+      puts "server returned status message: #{resp.status_message}"      
+    end
 
 #### Reading Data from the Response Body
 
@@ -1496,95 +1481,63 @@ Sometimes an HTTP response contains a request body that we want to read. Like an
 To receive the response body, you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
 
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-      resp.dataHandler(function(buffer) {
-        log.info('I received ' + buffer.length() + ' bytes');
-      });
-    });
+    client.get_now('http://localhost:8080/some-path') do |resp|
+      resp.data_handler { |buffer| puts "I received #{buffer.length} bytes" }     
+    end
+
 
 The response object implements the `ReadStream` interface so you can pump the response body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation.
 
-The `dataHandler` can be called multiple times for a single HTTP response.
+The `data_handler` can be called multiple times for a single HTTP response.
 
 As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
-    client.getNow('http://localhost:8080/some-path', function(resp) {
+    client.get_now('http://localhost:8080/some-path') do |resp|
 
-      // Create a buffer to hold the entire response body
-      var body = new vertx.Buffer();
+      # Create a buffer to hold the entire response body
+      body = Vertx::Buffer.create(0)
 
-      resp.dataHandler(function(buffer) {
-        // Add chunk to the buffer
-        body.appendBuffer(buffer);
-      });
+      resp.data_handler do |buffer|
+        # Add chunk to the buffer
+        body.append_buffer(buffer)
+      end
 
-      resp.endHandler(function() {
-        // The entire response body has been received
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
+      resp.end_handler do
+        # The entire response body has been received
+        puts "The total body received was #{body.length} bytes"
+      end
 
-    });
+    end
 
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the response.
 
-If the HTTP response is using HTTP chunking, then each chunk of the response body will correspond to a single call to the `dataHandler`.
+If the HTTP response is using HTTP chunking, then each chunk of the response body will correspond to a single call to the `data_handler`.
 
-It's a very common use case to want to read the entire body in one go, so vert.x allows a `bodyHandler` to be set on the response object.
+It's a very common use case to want to read the entire body in one go, so vert.x allows a `body_handler` to be set on the response object.
 
 The body handler is called only once when the *entire* response body has been read.
 
 *Beware of doing this with very large responses since the entire response body will be stored in memory.*
 
-Here's an example using `bodyHandler`:
+Here's an example using `body_handler`:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
+    client.get_now('http://localhost:8080/some-path') do |resp|
 
-      resp.bodyHandler(function() {
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
+      resp.body_handler do |body|
+        puts "The total body received was #{body.length} bytes"
+      end
 
-    });
+    end
 
 ## Pumping Requests and Responses
 
-The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them.
-
-Here's a very simple proxy server which forwards a request to another server and forwards the response back to the client.
-
-It uses two pumps - one to pump the server request to the client request, and another to pump the client response back to the server response. It uses pumps so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
-
-    var server = new vertx.HttpServer();
-
-    var client = new vertx.HttpClient().setHost('some-other-server.com');
-
-    server.requestHandler(function(req) {
-
-        var clientReq = client.request(req.method, req.uri, function(clientResp) {
-
-            req.response.status_code = clientResp.statusCode;
-            req.response.putAllHeaders(clientResp.headers());
-
-            var respPump = new Pump(clientResp, req.response);
-            respPump.start();
-
-            clientResp.endHandler(function() { req.response.end() });
-        }
-
-        clientReq.putAllHeaders(req.headers());
-
-        var reqPump = new Pump(req, clientReq);
-
-        reqPump.start();
-
-        req.endHandler(function { clientReq.end() } );
-
-    }).listen(8080, 'localhost');
+The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them and any other read and write streams.
 
 ### 100-Continue Handling
 
@@ -1594,31 +1547,30 @@ The server can then respond with an interim response status `Status: 100 (Contin
 
 The idea here is it allows the server to authorise and accept/reject the request before large amounts of data is sent. Sending large amounts of data if the request might not be accepted is a waste of bandwidth and ties up the server in reading data that it will just discard.
 
-Vert.x allows you to set a `continueHandler` on the client request object. This will be called if the server sends back a `Status: 100 (Continue)` response to signify it is ok to send the rest of the request.
+Vert.x allows you to set a `continue_handler` on the client request object. This will be called if the server sends back a `Status: 100 (Continue)` response to signify it is ok to send the rest of the request.
 
-This is used in conjunction with the `sendHead` function to send the head of the request.
+This is used in conjunction with the `send_head` function to send the head of the request.
 
 An example will illustrate this:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
 
-    var request = client.put('http://localhost:8080/some-path', function(resp) {
+    request = client.put('http://localhost:8080/some-path') do |resp|
+    
+      puts "Got a response: #{resp.status_code}"     
 
-      resp.bodyHandler(function(resp) {
-        log.info('Got a response ' + resp.statusCode);
-      });
+    end
 
-    });
+    request.put_header('Expect', '100-Continue')
+    request.chunked = true
 
-    request.putHeader('Expect', '100-Continue');
+    request.continue_handler do
+        # OK to send rest of body
+        
+        request.write_str('Some data').end
+    end
 
-    request.continueHandler(function() {
-        // OK to send rest of body
-
-        request.write('Some data').end();
-    });
-
-    request.sendHead();
+    request.send_head
 
 ## HTTPS Servers
 
@@ -1626,19 +1578,19 @@ HTTPS servers are very easy to write using vert.x.
 
 An HTTPS server has an identical API to a standard HTTP server. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before `listen` is called.
 
-Configuration of an HTTPS server is done in exactly the same way as configuring a `NetServer` for SSL. Please see SSL server chapter for detailed instructions.
+Configuration of an HTTPS server is done in exactly the same way as configuring a `NetServer` for SSL. Please see the SSL server chapter for detailed instructions.
 
 ## HTTPS Clients
 
 HTTPS clients can also be very easily written with vert.x
 
-Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a `NetClient` for SSL. Please see SSL client chapter for detailed instructions.
+Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a `NetClient` for SSL. Please see the SSL client chapter for detailed instructions.
 
 ## Scaling HTTP servers
 
 Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:
 
-    vertx deploy http_server.js -instances 20
+    vertx deploy http_server.rb -instances 20
 
 The scaling works in the same way as scaling a `NetServer`. Please see the chapter on scaling Net Servers for a detailed explanation of how this works.
 
@@ -1648,39 +1600,39 @@ Vert.x lets you route HTTP requests to different handlers based on pattern match
 
 This is particularly useful when developing REST-style web applications.
 
-To do this you simply create an instance of `vertx.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
+To do this you simply create an instance of `Vertx::RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    var routeMatcher = new vertx.RouteMatcher();
+    route_matcher = Vertx::RouteMatcher.new
 
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    server.request_Handler(route_matcher).listen(8080, 'localhost')
 
 ## Specifying matches.
 
 You can then add different matches to the route matcher. For example, to send all GET requests with path `/animals/dogs` to one handler and all GET requests with path `/animals/cats` to another handler you would do:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    var routeMatcher = new vertx.RouteMatcher();
+    route_matcher = Vertx::RouteMatcher.new
 
-    routeMatcher.get('/animals/dogs', function(req) {
-        req.response.end('You requested dogs');
-    });
+    route_matcher.get('/animals/dogs') do |req|
+        req.response.end('You requested dogs')
+    end
 
-    routeMatcher.get('/animals/cats', function(req) {
-        req.response.end('You requested cats');
-    });
+    route_matcher.get('/animals/cats') do |req|
+        req.response.end('You requested cats')
+    end
 
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    server.request_handler(route_matcher).listen(8080, 'localhost')
 
 Corresponding methods exist for each HTTP method - `get`, `post`, `put`, `delete`, `head`, `options`, `trace`, `connect` and `patch`.
 
 There's also an `all` method which applies the match to any HTTP request method.
 
-The handler specified to the method is just a normal HTTP server request handler, the same as you would supply to the `requestHandler` method of the HTTP server.
+The handler specified to the method is just a normal HTTP server request handler, the same as you would supply to the `request_handler` method of the HTTP server.
 
-You can provide as many matches as you like and they are evaulated in the order you added them, the first matching one will receive the request.
+You can provide as many matches as you like and they are evaluated in the order you added them, the first matching one will receive the request.
 
 A request is sent to at most one handler.
 
@@ -1688,17 +1640,17 @@ A request is sent to at most one handler.
 
 If you want to extract parameters from the path, you can do this too, by using the `:` (colon) character to denote the name of a parameter. For example:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    var routeMatcher = new vertx.RouteMatcher();
+    route_matcher = Vertx::RouteMatcher.new
 
-    routeMatcher.put('/:blogname/:post', function(req) {
-        var blogName = req.params().blogname;
-        var post = req.params().post;
-        req.response.end('blogname is ' + blogName + ', post is ' + post);
-    });
+    route_matcher.put('/:blogname/:post') do |req|
+        blogName = req.params['blogname']
+        post = req.params['post']
+        req.response.end("blogname is #{blogName} post is #{post}")
+    end
 
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    server.request_handler(route_matcher).listen(8080, 'localhost')
 
 Any params extracted by pattern matching are added to the map of request parameters.
 
@@ -1710,29 +1662,36 @@ Valid parameter names must start with a letter of the alphabet and be followed b
 
 Regular Expressions can be used to extract more complex matches. In this case capture groups are used to capture any parameters.
 
-Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc. For example:
+Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc.
 
-Corresponding methods exist for each HTTP method - `getWithRegEx`, `postWithRegEx`, `putWithRegEx`, `deleteWithRegEx`, `headWithRegEx`, `optionsWithRegEx`, `traceWithRegEx`, `connectWithRegEx` and `patchWithRegEx`.
+Corresponding methods exist for each HTTP method - `get_re`, `post_re`, `put_re`, `delete_re`, `head_re`, `options_re`, `trace_re`, `connect_re` and `patch_re`.
 
-There's also an `allWithRegEx` method which applies the match to any HTTP request method.
+There's also an `all_re` method which applies the match to any HTTP request method.
 
-    var server = new vertx.HttpServer();
+For example:
 
-    var routeMatcher = new vertx.RouteMatcher();
+    server = Vertx::HttpServer.new
 
-    routeMatcher.putWithRegEx('\\/([^\\/]+)\\/([^\\/]+)', function(req) {
-        var first = req.params().param0
-        var second = req.params().param1;
-        // Do something
-        req.response.end();
-    });
+    route_matcher = Vertx::RouteMatcher.new
+
+    route_matcher.all_re("\/([^\/]+)\/([^\/]+)") do |req|
+        first = req.params['param0']
+        second = req.params['param1']
+        req.response.end("first is #{first} second is #{second}")
+    end
+
+    server.request_handler(route_matcher).listen(8080, 'localhost')
+    
+Run the above and point your browser at `http://localhost:8080/animals/cats`.
+
+It will display 'first is animals and second is cats'.    
 
 You can use regular expressions as catch all when no other matches apply, e.g.
 
-    // Catch all - serve the index page
-    routeMatcher.getWithRegEx('.*', function(req) {
-      req.response.sendFile("route_match/index.html");
-    });
+    # Catch all - serve the index page
+    routeMatcher.get_re('.*') do |req|
+      req.response.send_file('route_match/index.html')
+    end
 
 # WebSockets
 
@@ -1740,72 +1699,75 @@ You can use regular expressions as catch all when no other matches apply, e.g.
 
 ## WebSockets on the server
 
-To use WebSockets on the server you create an HTTP server as normal, but instead of setting a `requestHandler` you set a `websocketHandler` on the server.
+To use WebSockets on the server you create an HTTP server as normal, but instead of setting a `request_handler` you set a `websocket_handler` on the server.
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.websocketHandler(function(websocket) {
+    server.websocket_handler do |ws|
 
-      // A WebSocket has connected!
+      # A WebSocket has connected!
 
-    }).listen(8080, 'localhost');
+    end.listen(8080, 'localhost')
 
 ### Reading from and Writing to WebSockets
 
-The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways. I.e by setting a `dataHandler` and calling the `writeBuffer` method.
+The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways. I.e by setting a `data_handler` and calling the `write_buffer` and `write_str` methods.
 
 See the chapter on `NetSocket` and streams and pumps for more information.
 
 For example, to echo all data received on a WebSocket:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.websocketHandler(function(websocket) {
+    server.websocket_handler do |websocket|
 
-      var p = new Pump(websocket, websocket);
-      p.start();
+      p = new Pump(websocket, websocket)
+      p.start
 
-    }).listen(8080, 'localhost');
+    end.listen(8080, 'localhost')
 
-The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
+The `websocket` instance also has method `write_binary_frame` for writing binary data. This has the same effect as calling `write_buffer`.
 
-Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling
+Another method `write_text_frame` also exists for writing text data. This is equivalent to calling
 
-    websocket.writeBuffer(new vertx.Buffer('some-string'));
+    websocket.write_buffer(Vertx::Buffer.create('some-string'))
 
 ### Rejecting WebSockets
 
 Sometimes you may only want to accept WebSockets which connect at a specific path.
 
-To check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
+To check the path, you can query the `path` property of the websocket. You can then call the `reject` method to reject the websocket.
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    server.websocketHandler(function(websocket) {
+    server.websocket_handler do |websocket|
 
-      if (websocket.path === '/services/echo') {
-        var p = new vertx.Pump(websocket, websocket);
-        p.start();
-      } else {
-        websocket.reject();
-      }
-    }).listen(8080, 'localhost');
+      if websocket.path == '/services/echo'
+        p = Vertx::Pump.new(websocket, websocket)
+        p.start
+      else
+        websocket.reject
+      end
+    end.listen(8080, 'localhost')
 
 ## WebSockets on the HTTP client
 
-To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the URI that you wish to connect to at the server, and a handler.
+To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connect_websocket` function, passing in the URI that you wish to connect to at the server, and a handler.
 
 The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
 
-Here's an example of WebSocket connection;
+Here's an example of WebSockets on the client:
 
-    var client = new vertx.HttpClient();
+    client = Vertx::HttpClient.new
+    client.port = 8080
 
-    client.connectWebsocket('http://localhost:8080/some-uri', function(websocket) {
+    client.connect_web_socket('http://localhost:8080/services/echo') do |websocket|
 
-      // WebSocket has connected!
-
-    });
+      websocket.data_handler { |buff| puts "got #{buff}"}
+      
+      websocket.write_text_frame('foo')
+      
+    end
 
 Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object.
 
@@ -1860,9 +1822,9 @@ This enables vert.x to be used for modern, so-called *real-time* (this is the *m
 
 To create a SockJS server you simply create a HTTP server as normal and pass it in to the constructor of the SockJS server.
 
-    var httpServer = new vertx.HttpServer();
+    httpServer = Vertx::HttpServer.new
 
-    var sockJSServer = new vertx.SockJSServer(httpServer);
+    sockJSServer = Vertx::SockJSServer.new(httpServer)
 
 Each SockJS server can host multiple *applications*.
 
@@ -1870,20 +1832,20 @@ Each application is defined by some configuration, and provides a handler which 
 
 For example, to create a SockJS echo application:
 
-    var httpServer = new vertx.HttpServer();
+    httpServer = Vertx::HttpServer.new
 
-    var sockJSServer = new vertx.SockJSServer(httpServer);
+    sockJSServer = Vertx::SockJSServer.new(httpServer)
 
-    var config = { prefix: '/echo' };
+    config = { 'prefix' => '/echo' }
 
-    sockJSServer.installApp(config, function(sock) {
+    sockJSServer.install_app(config) do |sock|
 
-        var p = new.vertx.Pump(sock, sock);
+        p = Vertx::Pump.new(sock, sock)
 
-        p.start();
-    });
+        p.start
+    end
 
-    httpServer.listen(8080);
+    httpServer.listen(8080)
 
 The configuration can take the following fields:
 
@@ -1896,24 +1858,22 @@ The configuration can take the following fields:
 
 ## Reading and writing data from a SockJS server
 
-The object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps.
+The object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps. See the chapter on Streams and Pumps for more information.
 
-See the chapter on Streams and Pumps for more information.
+    httpServer = Vertx::HttpServer.new
 
-    var httpServer = new vertx.HttpServer();
+    sockJSServer = Vertx::SockJSServer.new(httpServer)
 
-    var sockJSServer = new vertx.SockJSServer(httpServer);
+    config = { 'prefix' => '/echo' }
 
-    var config = { prefix: '/echo' };
+    sockJSServer.install_app(config) do |sock|
 
-    sockJSServer.installApp(config, function(sock) {
+        sock.data_handler do |buffer|
+            sock.write_buffer(buffer)
+        end
+    end
 
-        sock.dataHandler(function(buff) {
-            sock.writeBuffer(buff);
-        });
-    });
-
-    httpServer.listen(8080);
+    httpServer.listen(8080)
 
 ## SockJS client
 
@@ -1934,6 +1894,8 @@ For full information on using the SockJS client library please see the SockJS we
            console.log('close');
        };
     </script>
+    
+As you can see the API is very similar to the WebSockets API.    
 
 # SockJS - EventBus Bridge
 
@@ -1949,17 +1911,17 @@ We also provide a client side JavaScript library called `vertxbus.js` which prov
 
 This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
 
-Creating a Sock JS bridge is simple. You just create an instance of `vertx.SockJSBridge` as shown in the following example.
+Creating a Sock JS bridge is simple. You just create an instance of `Vertx::SockJSBridge` as shown in the following example.
 
 You will also need to secure the bridge (see below).
 
 The following example creates and starts a SockJS bridge which will bridge any events sent to the path `eventbus` on to the server side event bus.
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new;
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+    Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'}, [] )
 
-    server.listen(8080);
+    server.listen(8080)
 
 The SockJS bridge currently only works with JSON event bus messages.
 
@@ -1995,7 +1957,7 @@ The first thing the example does is to create a instance of the event bus
 
 The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix `eventbus` we will connect there.
 
-The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.
+The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the JavaScript core manual chapter on the EventBus for a description of that API.
 
 ## Securing the Bridge
 
@@ -2009,7 +1971,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument in the constructor of `Vertx::SockJSBridge`.
 
 Each match has two fields:
 
@@ -2024,51 +1986,54 @@ When a message arrives from the client, the bridge will look through the availab
 
 Here is an example:
 
-    var server = new vertx.HttpServer();
+    server = Vertx::HttpServer.new
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+    Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'},
       [
-        // Let through any messages sent to 'demo.orderMgr'
+        # Let through any messages sent to 'demo.orderMgr'
         {
-          address : 'demo.orderMgr'
+          'address' => 'demo.orderMgr'
         },
-        // Allow calls to the address 'demo.persistor' as long as the messages
-        // have an action field with value 'find' and a collection field with value
-        // 'albums'
+        # Allow calls to the address 'demo.persistor' as long as the messages
+        # have an action field with value 'find' and a collection field with value
+        # 'albums'
         {
-          address : 'demo.persistor',
-          match : {
-            action : 'find',
-            collection : 'albums'
+          'address' => 'demo.persistor',
+          'match' => {
+            'action' => 'find',
+            'collection' => 'albums'
           }
         },
-        // Allow through any message with a field `wibble` with value `foo`.
+        # Allow through any message with a field `wibble` with value `foo`.
         {
-          match : {
-            wibble: 'foo'
+          'match' => {
+            'wibble' => 'foo'
           }
         }
-      ]);
+      ])
 
 
-    server.listen(8080);
+    server.listen(8080)
 
 To let all messages through you can specify an array with a single empty JSON object which will match all messages.
 
-     new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [{}]);
+     Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'}, [{}])
 
 **Be very careful!**
 
 # File System
 
-Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
-The first argument passed into the callback is an exception, if an error occurred. This will be `null` if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.
+Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler block as the last argument.
+
+This block will be called when the operation is complete, or an error has occurred.
+
+The first argument passed into the block is an exception, if an error occurred. This will be `nil` if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.
 
 # Synchronous forms
 
 For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
 
-The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with `Sync` appended.
+The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with `_sync` appended.
 
 ## copy
 
@@ -2076,20 +2041,18 @@ Copies a file.
 
 This function can be called in two different ways:
 
-* `copy(source, destination, handler)`
+* `copy(source, destination)`
 
 Non recursive file copy. `source` is the source file name. `destination` is the destination file name.
 
 Here's an example:
 
-    vertx.FileSystem.copy('foo.dat', 'bar.dat', function(err) {
-        if (!err) {
-            log.info('Copy was successful');
-        }
-    });
+    Vertx::FileSystem.copy('foo.dat', 'bar.dat') do |err, res|
+        puts 'Copy was successful' if !err        
+    end
 
 
-* `copy(source, destination, recursive, handler)`
+* `copy(source, destination, recursive)`
 
 Recursive copy. `source` is the source file name. `destination` is the destination file name. `recursive` is a boolean flag - if `true` and source is a directory, then a recursive copy of the directory and all its contents will be attempted.
 
@@ -2097,7 +2060,7 @@ Recursive copy. `source` is the source file name. `destination` is the destinati
 
 Moves a file.
 
-`move(source, destination, handler)`
+`move(source, destination)`
 
 `source` is the source file name. `destination` is the destination file name.
 
@@ -2105,7 +2068,7 @@ Moves a file.
 
 Truncates a file.
 
-`truncate(file, len, handler)`
+`truncate(file, len)`
 
 `file` is the file name of the file to truncate. `len` is the length in bytes to truncate it to.
 
@@ -2115,7 +2078,7 @@ Changes permissions on a file or directory.
 
 This function can be called in two different ways:
 
-* `chmod(file, perms, handler)`.
+* `chmod(file, perms)`.
 
 Change permissions on a file.
 
@@ -2124,39 +2087,37 @@ Change permissions on a file.
     rwxr-xr-x
     r--r--r--
 
-* `chmod(file, perms, dirPerms, handler)`.
+* `chmod(file, perms, dir_perms)`.
 
-Recursively change permissionson a directory. `file` is the directory name. `perms` is a Unix style permissions to apply recursively to any files in the directory. `dirPerms` is a Unix style permissions string to apply to the directory and any other child directories recursively.
+Recursively change permissionson a directory. `file` is the directory name. `perms` is a Unix style permissions to apply recursively to any files in the directory. `dir_perms` is a Unix style permissions string to apply to the directory and any other child directories recursively.
 
 ## props
 
 Retrieve properties of a file.
 
-`props(file, handler)`
+`props(file)`
 
-`file` is the file name. The props are returned in the handler. The results is an object with the following properties:
+`file` is the file name. The props are returned in the handler. The results is an object with the following properties/methods:
 
-TODO these are currently returning Java dates - need to wrap them.
-
-* `creationTime`. Date of file creation.
-* `lastAccessTime`. Date of last file access.
-* `lastModifiedTime`. Date file was last modified.
-* `isDirectory`. This will have the value `true` if the file is a directory.
-* `isRegularFile`. This will have the value `true` if the file is a regular file (not symlink or directory).
-* `isSymbolicLink`. This will have the value `true` if the file is a symbolic link.
-* `isOther`. This will have the value `true` if the file is another type.
+* `creation_time`. Time of file creation.
+* `last_access_time`. Time of last file access.
+* `last_modified_time`. Time file was last modified.
+* `directory?`. This will have the value `true` if the file is a directory.
+* `regular_file?`. This will have the value `true` if the file is a regular file (not symlink or directory).
+* `symbolic_link?`. This will have the value `true` if the file is a symbolic link.
+* `other?`. This will have the value `true` if the file is another type.
 
 Here's an example:
 
-    vertx.FileSystem.props('some-file.txt', function(err, props) {
-        if (err) {
-            log.info('Failed to retrieve file props: ' + err);
-        } else {
-            log.info('File props are:');
-            log.info('Last accessed: ' + props.lastAccessTime);
+    Vertx::FileSystem.props('some-file.txt') do |err, props|
+        if err
+            puts "Failed to retrieve file props: #{err}"
+        else
+            puts 'File props are:'
+            puts "Last accessed: #{props.lastAccessTime}"
             // etc
-        }
-    });
+        end
+    end
 
 ## lprops
 
@@ -2168,7 +2129,7 @@ It takes the same arguments and provides the same results as `props`.
 
 Create a hard link.
 
-`link(link, existing, handler)`
+`link(link, existing)`
 
 `link` is the name of the link. `existing` is the exsting file (i.e. where to point the link at).
 
@@ -2176,7 +2137,7 @@ Create a hard link.
 
 Create a symbolic link.
 
-`symlink(link, existing, handler)`
+`sym_link(link, existing)`
 
 `link` is the name of the symlink. `existing` is the exsting file (i.e. where to point the symlink at).
 
@@ -2184,23 +2145,21 @@ Create a symbolic link.
 
 Unlink (delete) a link.
 
-`unlink(link, handler)`
+`unlink(link)`
 
 `link` is the name of the link to unlink.
 
-## readSymLink
+## read_sym_link
 
 Reads a symbolic link. I.e returns the path representing the file that the symbolic link specified by `link` points to.
 
-`readSymLink(link, handler)`
+`read_sym_link(link)`
 
 `link` is the name of the link to read. An usage example would be:
 
-    vertx.FileSystem.readSymLink('somelink', function(err, res) {
-        if (!err) {
-            log.info('Link points at ' + res);
-        }
-    });
+    Vertx::FileSystem.read_sym_link('somelink') do |err, res|
+        puts "Link points at #{res}" if !err
+    end
 
 ## delete
 
@@ -2208,11 +2167,11 @@ Deletes a file or recursively deletes a directory.
 
 This function can be called in two ways:
 
-* `delete(file, handler)`
+* `delete(file)`
 
 Deletes a file. `file` is the file name.
 
-* `delete(file, recursive, handler)`
+* `delete(file, recursive)`
 
 If `recursive` is `true`, it deletes a directory with name `file`, recursively. Otherwise it just deletes a file.
 
@@ -2222,161 +2181,122 @@ Creates a directory.
 
 This function can be called in three ways:
 
-* `mkdir(dirname, handler)`
+* `mkdir(dirname)`
 
 Makes a new empty directory with name `dirname`, and default permissions `
 
-* `mkdir(dirname, createParents, handler)`
+* `mkdir(dirname, create_parents)`
 
-If `createParents` is `true`, this creates a new directory and creates any of its parents too. Here's an example
+If `create_parents` is `true`, this creates a new directory and creates any of its parents too. Here's an example
 
-    vertx.FileSystem.mkdir('a/b/c', true, function(err, res) {
-       if (!err) {
-         log.info('Directory created ok');
-       }
-    });
+    Vertx::FileSystem.mkdir('a/b/c', true) do |err, res|
+       puts "Directory created ok" if !err       
+    end
 
-* `mkdir(dirname, createParents, perms, handler)`
+* `mkdir(dirname, create_parents, perms)`
 
-Like `mkdir(dirname, createParents, handler)`, but also allows permissions for the newly created director(ies) to be specified. `perms` is a Unix style permissions string as explained earlier.
+Like `mkdir(dirname, create_parents, handler)`, but also allows permissions for the newly created director(ies) to be specified. `perms` is a Unix style permissions string as explained earlier.
 
-## readDir
+## read_dir
 
 Reads a directory. I.e. lists the contents of the directory.
 
-This function can be called in two ways:
+This method can be called in two ways:
 
-* `readDir(dirName)`
+* `read_dir(dir_name)`
 
 Lists the contents of a directory
 
-* `readDir(dirName, filter)`
+* `read_dir(dir_name, filter)`
 
 List only the contents of a directory which match the filter. Here's an example which only lists files with an extension `txt` in a directory.
 
-    vertx.FileSystem.readDir('mydirectory', '*.txt', function(err, res) {
-      if (!err) {
-        log.info('Directory contains these .txt files');
-        for (var i = 0; i < res.length; i++) {
-          log.info(res[i]);
-        }
-      }
-    });
+    Vertx::FileSystem.read_dir('mydirectory', '.*\.txt') do |err, res|
+      if !err
+        puts 'Directory contains these .txt files'
+        res.each do |filename|
+            puts filename
+        end
+      end
+    end
+    
+The filter is a regular expression.    
 
-## readFile
+## read_file_as_buffer
 
 Read the entire contents of a file in one go. *Be careful if using this with large files since the entire file will be stored in memory at once*.
 
-`readFile(file)`. Where `file` is the file name of the file to read.
+`read_file_as_bufer(file)`. Where `file` is the file name of the file to read.
 
 The body of the file will be returned as a `Buffer` in the handler.
 
 Here is an example:
 
-    vertx.FileSystem.readFile('myfile.dat', function(err, res) {
-        if (!err) {
-            log.info('File contains: ' + res.length() + ' bytes');
-        }
-    });
+    Vertx::FileSystem.read_file_as_buffer('myfile.dat') do |err, res|
+        puts "File contains: #{res.length} bytes" if !err        
+    end
 
-## writeFile
+## write_buffer_to_file
 
-Writes an entire `Buffer` or a string into a new file on disk.
+Writes an entire `Buffer` into a new file on disk
 
-`writeFile(file, data, handler)` Where `file` is the file name. `data` is a `Buffer` or string.
+`write_buffer_to_file(file, data)` Where `file` is the file name. `data` is a `Buffer` or string.
 
-## createFile
+## create_file
 
 Creates a new empty file.
 
-`createFile(file, handler)`. Where `file` is the file name.
+`create_file(file)`. Where `file` is the file name.
 
-## exists
+## exists?
 
 Checks if a file exists.
 
-`exists(file, handler)`. Where `file` is the file name.
+`exists?(file)`. Where `file` is the file name.
 
 The result is returned in the handler.
 
-    vertx.FileSystem.exists('some-file.txt', function(err, res) {
-        if (!err) {
-            log.info('File ' + (res ? 'exists' : 'does not exist'));
-        }
-    });
+    Vertx::FileSystem.exists?('some-file.txt') do |err, res|
+    puts "File #{res ? 'exists' : 'does not exist'}" if !err        
+end
 
-## fsProps
+## fs_props
 
 Get properties for the file system.
 
-`fsProps(file, handler)`. Where `file` is any file on the file system.
+`fs_props(file)`. Where `file` is any file on the file system.
 
 The result is returned in the handler. The result object has the following fields:
 
-* `totalSpace`. Total space on the file system in bytes.
-* `unallocatedSpace`. Unallocated space on the file system in bytes.
-* `usableSpace`. Usable space on the file system in bytes.
+* `total_space`. Total space on the file system in bytes.
+* `unallocated_space`. Unallocated space on the file system in bytes.
+* `usable_space`. Usable space on the file system in bytes.
 
 Here is an example:
 
-    vertx.FileSystem.fsProps('mydir', function(err, res) {
-        if (!err) {
-            log.info('total space: ' + res.totalSpace);
-            // etc
-        }
-    });
-
+    Vertx::FileSystem.fs_props('mydir') do |err, res|
+      puts "total space: #{res.total_space}" if !err
+    end
 
 ## open
 
 Opens an asynchronous file for reading \ writing.
 
-This function can be called in four different ways:
+* `open(path, perms = nil, read = true, write = true, create_new = true, flush = false)`
 
-* `open(file, handler)`
+When the file is opened, an instance of `AsyncFile` is passed into the result handler block:
 
-Opens a file for reading and writing. `file` is the file name. It creates it if it does not already exist.
-
-* `open(file, openFlags, handler)`
-
-Opens a file using the specified open flags. `file` is the file name. `openFlags` is an integer representing whether to open the flag for reading or writing and whether to create it if it doesn't already exist.
-
-`openFlags` is constructed from a combination of these three constants.
-
-    vertx.FileSystem.OPEN_READ = 1
-    vertx.FileSystem.OPEN_WRITE = 2
-    vertx.FileSystem.CREATE_NEW = 4
-
-For example
-
-    // Open for reading only
-    var flags = vertx.FileSystem.OPEN_READ;
-
-     // Open for reading and writing
-    var flags = vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE;
-
-When the file is opened, an instance of `AsyncFile` is passed into the result handler:
-
-    vertx.FileSystem.open('some-file.dat', vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE,
-        function(err, asyncFile) {
-            if (err) {
-                log.info('Failed to open file ' + err);
-            } else {
-                log.info('File opened ok');
-                asyncFile.close(); // Close it
-            }
-        });
-
-* `open(file, openFlags, flush, handler)`
-
-This is the same as `open(file, openFlags, handler)` but you can also specify whether any file write are flushed immediately to disk (sync'd).
-
-Default is `flush = false`, so writes are just written into the OS cache.
-
-* `open(file, openFlags, flush, perms, handler)`
-
-This is the same as `open(file, openFlags, flush, handler)` but you can also specify the file permissions to give the file if it is created. Permissions is a Unix-style permissions string as explained earlier in the chapter.
-
+    Vertx::FileSystem.open('some-file.dat') do |err, async_file|
+        if err
+            puts "Failed to open file #{err}"
+        else
+            puts 'File opened ok'
+            async_file.close
+        end
+    end
+    
+If `read` is `true`, the file will be opened for reading. If `write` is `true` the file will be opened for writing. If `create_new` is `true`, the file wil be created if it doesn't already exist. If `flush` is `true` then every write on the file will be automatically flushed (synced) from the OS cache.    
+If the file is created, `perms` is a Unix-style permissions string used to describe the file permissions for the newly created file.
 
 ## AsyncFile
 
@@ -2390,7 +2310,7 @@ They also allow you to read and write directly to them.
 
 To use an AsyncFile for random access writing you use the write method.
 
-`write(buffer, position, handler)`.
+`write(buffer, position)`.
 
 The first parameter `buffer` is the buffer to write.
 
@@ -2398,23 +2318,23 @@ The second parameter `position` is an integer position in the file where to writ
 
 Here is an example of random access writes:
 
-    vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
-            if (err) {
-                log.info('Failed to open file ' + err);
-            } else {
-                // File open, write a buffer 5 times into a file
-                var buff = new vertx.Buffer('foo');
-                for (var i = 0; i < 5; i++) {
-                    asyncFile.write(buff, buff.length() * i, function(err) {
-                        if (err) {
-                            log.info('Failed to write ' + err);
-                        } else {
-                            log.info('Written ok');
-                        }
-                    });
-                }
-            }
-        });
+    Vertx::FileSystem.open('some-file.dat') do |err, async_file|
+        if err
+            puts "Failed to open file #{err}"
+        else
+            # File open, write a buffer 5 times into a file
+            buff = Vertx::Buffer.create('foo')
+            (1..5).each do |i|            
+                async_file.write(buff, buff.length() * i) do |err, res|
+                    if err
+                        puts "Failed to write #{err}"
+                    else
+                        puts 'Written ok'
+                    end
+                end
+            end
+        end
+    end     
 
 ### Random access reads
 
@@ -2432,56 +2352,57 @@ To use an AsyncFile for random access reads you use the read method.
 
 Here's an example of random access reads:
 
-    vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
-        if (err) {
-            log.info('Failed to open file ' + err);
-        } else {
-            var buff = new vertx.Buffer(1000);
-            for (var i = 0; i < 10; i++) {
-                asyncFile.read(buff, i * 100, i * 100, 100, function(err) {
-                    if (err) {
-                        log.info('Failed to read ' + err);
-                    } else {
-                        log.info('Read ok');
-                    }
-                });
-            }
-        }
-    });
+    Vertx::FileSystem.open('some-file.dat') do |err, async_file|
+        if err
+            puts "Failed to open file #{err}"
+        else 
+            buff = Vertx::Buffer.create(1000)
+            (1..10).each do |i|
+                async_file.read(buff, i * 100, i * 100, 100) do |err, res|
+                    if err
+                        puts "Failed to read #{err}"
+                    else
+                        puts 'Read ok'
+                    end
+                end
+            end
+        end
+    end
 
 ### Flushing data to underlying storage.
 
-If the AsyncFile was not opened with `flush = true`, then you can manually flush any writes from the OS cache by calling the `flush` function.
+If the AsyncFile was not opened with `flush = true`, then you can manually flush any writes from the OS cache by calling the `flush` method.
 
 ### Using AsyncFile as `ReadStream` and `WriteStream`
 
-Use the functions `getReadStream` and `getWriteStream` to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.
+Use the methods `read_stream` and `write_stream` to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.
 
 Here's an example of pumping data from a file on a client to a HTTP request:
 
-    var client = new vertx.HttpClient().setHost('foo.com');
+    client = Vertx::HttpClient.new
+    client.host = 'foo.com'
 
-    vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
-        if (err) {
-            log.info('Failed to open file ' + err);
-        } else {
-            var request = client.put('/uploads', function(resp) {
-                log.info('resp status code ' + resp.statusCode);
-            });
-            var rs = asyncFile.getReadStream();
-            var pump = new vertx.Pump(rs, request);
-            pump.start();
-            rs.endHandler(function() {
-                // File sent, end HTTP requuest
-                request.end();
-            });
+    Vertx::FileSystem.open('some-file.dat') do |err, async_file|
+        if err
+            puts "Failed to open file #{err}"
+        else
+            request = client.put('/uploads') do |resp|
+                puts "resp status code #{resp.status_code}"
+            end
+            rs = asyncFile.read_stream
+            pump = Vertx::Pump.new(rs, request)
+            pump.start
+            rs.end_handler do 
+                # File sent, end HTTP requuest
+                request.end
+            end
 
-        }
-    });
+        end
+    end
 
 ### Closing an AsyncFile
 
-To close an AsyncFuile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to `close`.
+To close an AsyncFile call the `close` method. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler block as an argument to `close`.
 
 # Performance Tuning
 

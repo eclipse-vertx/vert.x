@@ -1163,10 +1163,14 @@ To set the HTTP status code for the response use the `statusCode` property, e.g.
     server.requestHandler(function(request) {
     
         request.response.statusCode = 404;
+        
+        request.response.end();
       
     }).listen(8080, 'localhost');  
     
 You can also use the `statusMessage` property to set the status message. If you do not set the status message a default message will be used.    
+  
+The default value for `statusCode` is `200`.    
   
 
 #### Writing HTTP responses
@@ -1262,9 +1266,7 @@ If you wish to add several trailers in one operation, just call `putTrailers` wi
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, vert.x provides a feature where you can stream files directly from disk to the response bypassing user-space altogether.
-
-This functionality is OS dependent and leverages the `sendfile` function to tell the kernel to directly serve the file. Using this operation can greatly reduce CPU utilisation.
+Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.
 
 To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
@@ -1280,7 +1282,7 @@ To do this use the `sendfile` function on the HTTP response. Here's a simple HTT
       req.response.sendFile('web/' + file);   
     }).listen(8080, 'localhost');
     
-*Note: If you use `sendfile` while using HTTPS it won't actually use the kernel `sendfile` function, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
+*Note: If you use `sendfile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
 **If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
 
@@ -1298,6 +1300,8 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
       
       var p = new Pump(req, req.response);
       p.start();
+      
+      req.endHandler(function() { req.response.end(); });
       
     }).listen(8080, 'localhost');
     
@@ -1437,13 +1441,11 @@ Once you have finished with the HTTP request you must call the `end` function on
 
 This function can be invoked in several ways:
 
-With no arguments, the response is simply ended. 
+With no arguments, the request is simply ended. 
 
     request.end();
     
 The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
-
-You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
 
 #### Writing Request Headers
 
@@ -1456,6 +1458,7 @@ To write headers to the request, use the `putHeader` method.
     });
     
     request.putHeader('Some-Header', 'Some-Value');
+    request.end();
     
 These can be chained together as per the common vert.x API pattern:
 
@@ -1494,7 +1497,7 @@ The response object implements `ReadStream`, so it can be pumped to a `WriteStre
 
 To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
 
- var client = new vertx.HttpClient();
+    var client = new vertx.HttpClient();
     
     client.getNow('http://localhost:8080/some-path', function(resp) {
       log.info('server returned status code: ' + resp.statusCode);   
@@ -1559,7 +1562,7 @@ Here's an example using `bodyHandler`:
     
     client.getNow('http://localhost:8080/some-uri', function(resp) {
       
-      resp.bodyHandler(function() {
+      resp.bodyHandler(function(body) {
         log.info('The total body received was ' + body.length() + ' bytes');
       });
       
@@ -1567,38 +1570,7 @@ Here's an example using `bodyHandler`:
     
 ## Pumping Requests and Responses
 
-The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them.
-
-Here's a very simple proxy server which forwards a request to another server and forwards the response back to the client.
-
-It uses two pumps - one to pump the server request to the client request, and another to pump the client response back to the server response. It uses pumps so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
-
-    var server = new vertx.HttpServer();
-    
-    var client = new vertx.HttpClient().setHost('some-other-server.com');
-
-    server.requestHandler(function(req) {
-    
-        var clientReq = client.request(req.method, req.uri, function(clientResp) {
-    
-            req.response.status_code = clientResp.statusCode;
-            req.response.putAllHeaders(clientResp.headers());
-            
-            var respPump = new Pump(clientResp, req.response);
-            respPump.start();
-            
-            clientResp.endHandler(function() { req.response.end() });
-        }
-
-        clientReq.putAllHeaders(req.headers());
-        
-        var reqPump = new Pump(req, clientReq);
-        
-        reqPump.start();
-        
-        req.endHandler(function { clientReq.end() } );
-      
-    }).listen(8080, 'localhost');
+The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them and any other read and write streams.
     
 ### 100-Continue Handling
 
@@ -1618,9 +1590,7 @@ An example will illustrate this:
     
     var request = client.put('http://localhost:8080/some-path', function(resp) {
       
-      resp.bodyHandler(function(resp) {
-        log.info('Got a response ' + resp.statusCode);
-      });
+      log.info('Got a response ' + resp.statusCode);
       
     });     
     
@@ -1694,7 +1664,7 @@ There's also an `all` method which applies the match to any HTTP request method.
 
 The handler specified to the method is just a normal HTTP server request handler, the same as you would supply to the `requestHandler` method of the HTTP server.
 
-You can provide as many matches as you like and they are evaulated in the order you added them, the first matching one will receive the request.
+You can provide as many matches as you like and they are evaluated in the order you added them, the first matching one will receive the request.
 
 A request is sent to at most one handler.
 
@@ -1724,22 +1694,29 @@ Valid parameter names must start with a letter of the alphabet and be followed b
 
 Regular Expressions can be used to extract more complex matches. In this case capture groups are used to capture any parameters.
 
-Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc. For example:
+Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc. 
 
 Corresponding methods exist for each HTTP method - `getWithRegEx`, `postWithRegEx`, `putWithRegEx`, `deleteWithRegEx`, `headWithRegEx`, `optionsWithRegEx`, `traceWithRegEx`, `connectWithRegEx` and `patchWithRegEx`.
 
 There's also an `allWithRegEx` method which applies the match to any HTTP request method.
 
+For example:
+
     var server = new vertx.HttpServer();
     
     var routeMatcher = new vertx.RouteMatcher();
-    
-    routeMatcher.putWithRegEx('\\/([^\\/]+)\\/([^\\/]+)', function(req) {        
+
+    routeMatcher.allWithRegEx('\/([^\/]+)\/([^\/]+)', function(req) {        
         var first = req.params().param0
         var second = req.params().param1;
-        // Do something
-        req.response.end();
-    });    
+        req.response.end("first is " + first + " and second is " + second);
+    });
+
+    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    
+Run the above and point your browser at `http://localhost:8080/animals/cats`.
+
+It will display 'first is animals and second is cats'.         
     
 You can use regular expressions as catch all when no other matches apply, e.g.
 
@@ -1949,6 +1926,8 @@ For full information on using the SockJS client library please see the SockJS we
        };
     </script>   
     
+As you can see the API is very similar to the WebSockets API.    
+            
 # SockJS - EventBus Bridge
 
 ## Setting up the Bridge
@@ -2150,11 +2129,9 @@ Retrieve properties of a file.
 
 `file` is the file name. The props are returned in the handler. The results is an object with the following properties:
 
-TODO these are currently returning Java dates - need to wrap them.
-
-* `creationTime`. Date of file creation.
-* `lastAccessTime`. Date of last file access.
-* `lastModifiedTime`. Date file was last modified.
+* `creationTime`. Time of file creation.
+* `lastAccessTime`. Time of last file access.
+* `lastModifiedTime`. Time file was last modified.
 * `isDirectory`. This will have the value `true` if the file is a directory.
 * `isRegularFile`. This will have the value `true` if the file is a regular file (not symlink or directory).
 * `isSymbolicLink`. This will have the value `true` if the file is a symbolic link.
@@ -2268,7 +2245,7 @@ Lists the contents of a directory
 
 List only the contents of a directory which match the filter. Here's an example which only lists files with an extension `txt` in a directory.
 
-    vertx.FileSystem.readDir('mydirectory', '*.txt', function(err, res) {
+    vertx.FileSystem.readDir('mydirectory', '.*\.txt', function(err, res) {
       if (!err) {
         log.info('Directory contains these .txt files');
         for (var i = 0; i < res.length; i++) {
@@ -2276,6 +2253,8 @@ List only the contents of a directory which match the filter. Here's an example 
         }
       }
     });
+    
+The filter is a regular expression.    
   
 ## readFile
 
@@ -2495,7 +2474,7 @@ Here's an example of pumping data from a file on a client to a HTTP request:
     
 ### Closing an AsyncFile
 
-To close an AsyncFuile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to `close`.
+To close an AsyncFile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to `close`.
 
 # Performance Tuning
 
