@@ -785,7 +785,7 @@ If `setTrustAll(true)` has not been invoked then a client trust store must be co
 
 The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
-If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
+If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it#s just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
 
 To configure a client to trust all server certificates (dangerous):
 
@@ -826,84 +826,76 @@ Any flow control aware object that can be written to is said to implement `ReadS
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
-An example would be reading from a `NetSocket` and writing to an `AsyncFile` on disk. A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
+A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, websockets, etc.
+
+A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
     var server = new vertx.NetServer();
 
     server.connectHandler(function(sock) {
     
-        vertx.FileSystem.open('some_file.dat', function(err, res) {
-            sock.dataHandler(function(buffer) {
+        sock.dataHandler(function(buffer) {
       
-                // Stream all data directly to the disk file:
-                      
-                asyncFile.write(buffer); 
-            });
+            // Write data straight back on the socket
+                  
+            sock.write(buffer); 
         });
-        
+                
     }).listen(1234, 'localhost');
     
-There's a problem with the above example: If data is read from the socket faster than it can be written to the underlying disk file, it will build up in the write queue of the AsyncFile, eventually running out of RAM.
+There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
 
-It just so happens that `AsyncFile` implements `WriteStream`, so we can check if the `WriteStream` is full before writing to it:
+Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
     var server = new vertx.NetServer();
 
     server.connectHandler(function(sock) {
     
-        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-            sock.dataHandler(function(buffer) {
+        sock.dataHandler(function(buffer) {
       
-                if (!asyncFile.writeQueueFull()) {      
-                    asyncFile.writeBuffer(buffer); 
-                }
-            });
+            if (!sock.writeQueueFull()) {      
+                sock.write(buffer); 
+            }
         });
-          
+                
     }).listen(1234, 'localhost');
     
-This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the `AsyncFile` `WriteQueue` is full. Let's do that:
+This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the write queue is full. Let's do that:
 
     var server = new vertx.NetServer();
 
     server.connectHandler(function(sock) {
     
-        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-            sock.dataHandler(function(buffer) {
+        sock.dataHandler(function(buffer) {
       
-                if (!asyncFile.writeQueueFull()) {      
-                    asyncFile.writeBuffer(buffer); 
-                } else {
-                    sock.pause();
-                }
-            });
+            if (!sock.writeQueueFull()) {      
+                sock.write(buffer); 
+            } else {
+                sock.pause();
+            }
         });
-        
-      });
-      
+                
     }).listen(1234, 'localhost');
 
-We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to *unpause* it when the file write queue has processed its backlog:
+We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to *unpause* it when the write queue has processed its backlog:
 
     var server = new vertx.NetServer();
 
     server.connectHandler(function(sock) {
     
-        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-            sock.dataHandler(function(buffer) {
+        sock.dataHandler(function(buffer) {
       
-                if (!asyncFile.writeQueueFull()) {      
-                    asyncFile.writeBuffer(buffer); 
-                } else {
-                    sock.pause();
-                    
-                    asyncFile.drainHandler(function() {
-                        sock.resume();
-                    });
-                }
-            });
-        });    
-      
+            if (!sock.writeQueueFull()) {      
+                sock.write(buffer); 
+            } else {
+                sock.pause();
+                
+                sock.drainHandler(function() {
+                    sock.resume();
+                });
+            }
+        });
+                
     }).listen(1234, 'localhost');
 
 And there we have it. The `drainHandler` event handler will get called when the write queue is ready to accept more data, this resumes the `NetSocket` which allows it to read more data.
@@ -914,11 +906,9 @@ It's very common to want to do this when writing vert.x applications, so we prov
 
     server.connectHandler(function(sock) {
     
-        var asyncFile = vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {        
-            var pump = new vertx.Pump(sock, asyncFile);      
-            pump.start();
-        });        
-      
+        var pump = new vertx.Pump(sock, sock);
+        pump.start();
+                
     }).listen(1234, 'localhost');
     
 Which does exactly the same thing as the more verbose example.
@@ -1105,7 +1095,7 @@ You'll notice this is very similar to how data from `NetSocket` is read.
 
 The request object implements the `ReadStream` interface so you can pump the request body to a `WriteStream`. See the chapter on streams and pumps for a detailed explanation. 
 
-In many cases, you know the body is not large and you just one to receive it in one go. To do this you could do something like the following:
+In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:
 
     var server = new vertx.HttpServer();
 
@@ -1316,13 +1306,13 @@ To create an HTTP client you simply create an instance of vertx.HttpClient
 You set the port and hostname (or ip address) that the client will connect to using the `setHost` and `setPort` functions:
 
     var client = new vertx.HttpClient();
-    client.setPort(8181);
+    client.setPort(8181)
     client.setHost('foo.com');
     
 This, of course, can be chained:
 
     var client = new vertx.HttpClient()
-                   .setPort(8181);
+                   .setPort(8181)
                    .setHost('foo.com');
                    
 A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
@@ -1721,7 +1711,7 @@ It will display 'first is animals and second is cats'.
 You can use regular expressions as catch all when no other matches apply, e.g.
 
     // Catch all - serve the index page
-    routeMatcher.getWithRegEx('.*', function(req) {
+    routeMatcher.allWithRegEx('.*', function(req) {
       req.response.sendFile("route_match/index.html");
     });    
 

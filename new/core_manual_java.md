@@ -877,33 +877,32 @@ If `setTrustAll(true)` has not been invoked then a client trust store must be co
 
 The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
-If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
+If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it's just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
 
 To configure a client to trust all server certificates (dangerous):
 
-    var client = new vertx.NetClient()
+    NetClient client = new NetClient()
                    .setSSL(true)
                    .setTrustAll(true);
     
 To configure a client to only trust those certificates it has in its trust store:
 
-    var client = new vertx.NetClient()
+    NetClient client = new NetClient()
                    .setSSL(true)
-                   .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
-                   .setTrustStorePassword('password');
+                   .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks2)
+                   .setTrustStorePassword("password");
                    
 To configure a client to only trust those certificates it has in its trust store, and also to supply a client certificate:
 
-    var client = new vertx.NetClient()
+    NetClient client = new NetClient()
                    .setSSL(true)
-                   .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
-                   .setTrustStorePassword('password')
+                   .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks")
+                   .setTrustStorePassword("password2)
                    .setClientAuthRequired(true)
-                   .setKeyStorePath('/path/to/keystore/holding/client/cert/client-keystore.jks')
-                   .setKeyStorePassword('password');
+                   .setKeyStorePath("/path/to/keystore/holding/client/cert/client-keystore.jks")
+                   .setKeyStorePassword("password2);
                      
  
-
 # Flow Control - Streams and Pumps
 
 There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.
@@ -914,104 +913,108 @@ It's not hard to see that if you write to an object faster than it can actually 
 
 To solve this problem a simple flow control capability is provided by some objects in the vert.x API.
 
-Any flow control aware object that can be written to is said to implement `ReadStream`, and any flow control object that can be read from is said to implement `WriteStream`.
+Any flow control aware object that can be written to implements `org.vertx.java.core.streams.ReadStream`, and any flow control object that can be read from is said to implement `org.vertx.java.core.streams.WriteStream`.
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
-An example would be reading from a `NetSocket` and writing to an `AsyncFile` on disk. A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
+A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, websockets, etc.
 
-    var server = new vertx.NetServer();
+A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
-    server.connectHandler(function(sock) {
-    
-        vertx.FileSystem.open('some_file.dat', function(err, res) {
-            sock.dataHandler(function(buffer) {
-      
-                // Stream all data directly to the disk file:
-                      
-                asyncFile.write(buffer); 
-            });
-        });
+    NetServer server = new NetServer();
+
+    server.connectHandler(new Handler<NetSocket>() {
+        public void handle(final NetSocket sock) {
         
-    }).listen(1234, 'localhost');
-    
-There's a problem with the above example: If data is read from the socket faster than it can be written to the underlying disk file, it will build up in the write queue of the AsyncFile, eventually running out of RAM.
-
-It just so happens that `AsyncFile` implements `WriteStream`, so we can check if the `WriteStream` is full before writing to it:
-
-    var server = new vertx.NetServer();
-
-    server.connectHandler(function(sock) {
-    
-        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-            sock.dataHandler(function(buffer) {
-      
-                if (!asyncFile.writeQueueFull()) {      
-                    asyncFile.writeBuffer(buffer); 
+            sock.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer buffer) {
+                    // Write the data straight back
+                    sock.write(buffer);
                 }
             });
-        });
-          
-    }).listen(1234, 'localhost');
-    
-This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the `AsyncFile` `WriteQueue` is full. Let's do that:
-
-    var server = new vertx.NetServer();
-
-    server.connectHandler(function(sock) {
-    
-        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-            sock.dataHandler(function(buffer) {
-      
-                if (!asyncFile.writeQueueFull()) {      
-                    asyncFile.writeBuffer(buffer); 
-                } else {
-                    sock.pause();
-                }
-            });
-        });
         
-      });
-      
-    }).listen(1234, 'localhost');
-
-We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to *unpause* it when the file write queue has processed its backlog:
-
-    var server = new vertx.NetServer();
-
-    server.connectHandler(function(sock) {
+        }
+    }).listen(1234, "localhost");
     
-        vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-            sock.dataHandler(function(buffer) {
-      
-                if (!asyncFile.writeQueueFull()) {      
-                    asyncFile.writeBuffer(buffer); 
-                } else {
-                    sock.pause();
-                    
-                    asyncFile.drainHandler(function() {
-                        sock.resume();
-                    });
+There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
+
+Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
+
+    NetServer server = new NetServer();
+
+    server.connectHandler(new Handler<NetSocket>() {
+        public void handle(final NetSocket sock) {
+        
+            sock.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer buffer) {
+                    if (!sock.writeQueueFull()) {
+                        sock.write(buffer);
+                    }
                 }
             });
-        });    
-      
-    }).listen(1234, 'localhost');
+        
+        }
+    }).listen(1234, "localhost");
+    
+This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the write queue is full. Let's do that:
+
+    NetServer server = new NetServer();
+
+    server.connectHandler(new Handler<NetSocket>() {
+        public void handle(final NetSocket sock) {
+        
+            sock.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer buffer) {
+                    if (!sock.writeQueueFull()) {
+                        sock.write(buffer);
+                    } else {
+                        sock.pause();
+                    }
+                }
+            });
+        
+        }
+    }).listen(1234, "localhost");
+
+We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to *unpause* it when the write queue has processed its backlog:
+
+    NetServer server = new NetServer();
+
+    server.connectHandler(new Handler<NetSocket>() {
+        public void handle(final NetSocket sock) {
+        
+            sock.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer buffer) {
+                    if (!sock.writeQueueFull()) {
+                        sock.write(buffer);
+                    } else {
+                        sock.pause();
+                        sock.drainHandler(new SimpleHandler() {
+                            public void handle() {
+                                sock.resume();
+                            }
+                        });
+                    }
+                }
+            });
+        
+        }
+    }).listen(1234, "localhost");
 
 And there we have it. The `drainHandler` event handler will get called when the write queue is ready to accept more data, this resumes the `NetSocket` which allows it to read more data.
 
 It's very common to want to do this when writing vert.x applications, so we provide a helper class called `Pump` which does all this hard work for you. You just feed it the `ReadStream` and the `WriteStream` and it tell it to start:
 
-    var server = new vertx.NetServer();
+    NetServer server = new NetServer();
 
-    server.connectHandler(function(sock) {
-    
-        var asyncFile = vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {        
-            var pump = new vertx.Pump(sock, asyncFile);      
+    server.connectHandler(new Handler<NetSocket>() {
+        public void handle(NetSocket sock) {
+        
+            Pump pump = new Pump(sock, sock);
             pump.start();
-        });        
-      
-    }).listen(1234, 'localhost');
+        
+        }
+    }).listen(1234, "localhost");
     
 Which does exactly the same thing as the more verbose example.
 
@@ -1036,7 +1039,7 @@ Functions:
 Functions:
 
 * `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
-* `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
+* `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the method `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
 * `writeQueueFull()`: returns `true` if the write queue is considered full.
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
@@ -1060,48 +1063,56 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 
 ### Creating an HTTP Server
 
-To create an HTTP server you simply create an instance of vertx.net.HttpServer.
+To create an HTTP server you simply create an instance of `org.vertx.java.core.http.HttpServer`.
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
     
 ### Start the Server Listening    
     
 To tell that server to listen for incoming requests you use the `listen` method:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.listen(8080, 'myhost');
+    server.listen(8080, "myhost");
     
 The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
 
 ### Getting Notified of Incoming Requests
     
-To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` function of the server, passing in the handler:
+To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` method of the server, passing in the handler:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-      log.info('An HTTP request has been received');
-    })  
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {
+            log.info("A request has arrived on the server!");
+        }
+    });  
 
-    server.listen(8080, 'localhost');
+    server.listen(8080, "localhost");
     
-This displays 'An HTTP request has been received!' every time an HTTP request arrives on the server. You can try it by running the verticle and pointing your browser at `http://localhost:8080`.
+Every time a request arrives on the server the handler is called passing in an instance of `org.vertx.java.core.http.HttpServerRequest`.    
+    
+You can try it by running the verticle and pointing your browser at `http://localhost:8080`.
 
 Similarly to `NetServer`, the return value of the `requestHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-      log.info('An HTTP request has been received');
-    }).listen(8080, 'localhost');
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {
+            log.info("A request has arrived on the server!");
+        }
+    }).listen(8080, "localhost");
     
 Or:
 
-    new vertx.HttpServer().requestHandler(function(request) {
-      log.info('An HTTP request has been received');
-    }).listen(8080, 'localhost');
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {
+            log.info("A request has arrived on the server!");
+        }
+    }).listen(8080, "localhost");
     
        
 ### Handling HTTP Requests
@@ -1144,36 +1155,36 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
         
 #### Request Headers
 
-The request headers are available using the `headers()` function on the request object. The return value of the function is just a JavaScript object. As we all know JavaScript objects are just hashes (associative arrays).
+A map of the request headers are available using the `getAllHeaders()` method on the request object. Alternatively, a single header can be retrieved using the `getHeader` method.
 
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-    
-      var headers = request.headers();  
-    
-      var str = '';
-      for (var k in headers) {
-        str = str.concat(k, ': ', headers[k], '\n');
-      }
-      
-      request.response.end(str);
-      
-    }).listen(8080, 'localhost');
-    
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, String> header: request.getAllHeaders().entrySet()) {
+                sb.append(header.getKey()).append(": ").append(header.getValue()).append("\n");
+            }
+            request.response.putHeader("Content-Type", "text/plain");
+            request.response.end(sb.toString());  
+        }
+    }).listen(8080, "localhost");
+
+
 #### Request params
 
-Similarly to the headers, the request parameters are available using the `params()` function on the request object. The return value of the function is just a hash too.     
+Similarly to the headers, the map of request parameters are available using the `getAllParams()` method on the request object.      
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
     http://localhost:8080/page.html?param1=abc&param2=xyz
     
-Then the params hash would be the following JS object:
+Then the params mapa would contain the following entries
 
-    { param1: 'abc', param2: 'xyz' }
+    param1: 'abc'
+    param2: 'xyz
     
 #### Reading Data from the Request Body
 
@@ -1181,42 +1192,49 @@ Sometimes an HTTP request contains a request body that we want to read. As previ
 
 To receive the body, you set the `dataHandler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-    
-      request.dataHandler(function(buffer) {
-        log.info('I received ' + buffer.length() + ' bytes');
-      });
-      
-    }).listen(8080, 'localhost'); 
-    
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {
+            request.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer buffer) {
+                    log.info('I received ' + buffer.length() + ' bytes');
+                }
+            });
+             
+        }
+    }).listen(8080, "localhost");
+
 The `dataHandler` may be called more than once depending on the size of the body.    
 
 You'll notice this is very similar to how data from `NetSocket` is read. 
 
 The request object implements the `ReadStream` interface so you can pump the request body to a `WriteStream`. See the chapter on streams and pumps for a detailed explanation. 
 
-In many cases, you know the body is not large and you just one to receive it in one go. To do this you could do something like the following:
+In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-    
-      // Create a buffer to hold the body
-      var body = new vertx.Buffer();  
-    
-      request.dataHandler(function(buffer) {
-        // Append the chunk to the buffer
-        body.appendBuffer(buffer);
-      });
-      
-      request.endHandler(function() {
-        // The entire body has now been received
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
-      
-    }).listen(8080, 'localhost');   
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {
+        
+            final Buffer body = Buffer.create(0);
+            
+            request.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer buffer) {
+                    body.appendBuffer(buffer);
+                }
+            });
+            request.endHandler(new SimpleHandler() {
+                public void handle() {
+                  // The entire body has now been received
+                  log.info("The total body received was " + body.length() + " bytes");    
+                }
+            });
+             
+        }
+    }).listen(8080, "localhost");
+
     
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the request.
 
@@ -1230,15 +1248,18 @@ The body handler is called only once when the *entire* request body has been rea
 
 Here's an example using `bodyHandler`:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-    
-      request.bodyHandler(function(body) {
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
-      
-    }).listen(8080, 'localhost');  
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {        
+            request.bodyHandler(new Handler<Buffer>() {
+                public void handle(Buffer body) {
+                  // The entire body has now been received
+                  log.info("The total body received was " + body.length() + " bytes");   
+                }
+            });            
+        }
+    }).listen(8080, "localhost");
     
 Simples, innit?    
     
@@ -1250,47 +1271,48 @@ As previously mentioned, the HTTP request object contains a property `response`.
 
 To set the HTTP status code for the response use the `statusCode` property, e.g.
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(request) {
-    
-        request.response.statusCode = 404;
-        
-        request.response.end();
-      
-    }).listen(8080, 'localhost');  
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest request) {        
+            request.response.statusCode = 739;
+            request.response.statusMessage = "Too many gerbils";  
+            request.response.end();         
+        }
+    }).listen(8080, "localhost");
     
 You can also use the `statusMessage` property to set the status message. If you do not set the status message a default message will be used.    
   
 The default value for `statusCode` is `200`.    
   
-
 #### Writing HTTP responses
 
 To write data to an HTTP response, you invoke the `write` function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:
 
 With a single buffer:
 
-    var myBuffer = ...
+    Buffer myBuffer = ...
     request.response.write(myBuffer);
     
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.response.write('hello');    
+    request.response.write("hello2);    
     
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
 
-    request.response.write('hello', 'UTF-16');
+    request.response.write("hello", "UTF-16");
     
 The `write` function is asynchronous and always returns immediately after the write has been queued.
 
-The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will then be invoked when the write has completed:
+The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a handler as a final argument. This handler will then be invoked when the write has completed:
 
-    request.response.write('hello', function() {
-        log.info('It has actually been written');
-    });  
+    request.response.write("hello", new SimpleHandler() {
+        public void handle() {
+            log.info("It has actually been written");
+        }        
+    });
     
-If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` function.   
+If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` method.   
 
 The first call to `write` results in the response header being being written to the response.
 
@@ -1325,13 +1347,13 @@ Or:
 
 Individual HTTP response headers can be written using the `putHeader` method. For example:
 
-    request.response.putHeader('Content-Length', '0');    
+    request.response.putHeader("Content-Length", "0");    
     
 Response headers must all be added before any parts of the response body are written.
 
-If you wish to add several headers in one operation, just call `putHeaders` with a hash of the headers:
+If you wish to add several headers in one operation, you can call `putAllHeaders`, passing in a `java.util.Map` of the headers.
 
-    request.response.putHeaders({ 'Content-Length' : '0', 'Some-Other-Header': 'abc'});
+    request.response.putAllHeaders(headerMap);
     
 #### Chunked HTTP Responses and Trailers
 
@@ -1349,31 +1371,33 @@ To write an individual trailer use the `putTrailer` method:
 
     request.response.putTrailer('Some-Trailer', 'some value'); 
     
-If you wish to add several trailers in one operation, just call `putTrailers` with a hash of the trailers:
+If you wish to add several trailers in one operation, just call `putAllTrailers` passing in a `java.util.Map` of the trailers.
 
-    request.response.putTrailers({ 'Some-Trailer' : 'some value', 'Some-Other-Trailer': 'wibble'});    
+    request.response.putAllTrailers(trailers);    
 
 
 ### Serving files directly disk
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.
+Alternatively, vert.x provides a method which allows you to send serve a file from disk to an HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.
 
 To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(req) {
-      var file = '';
-      if (req.path == '/') {
-        file = 'index.html';
-      } else if (req.path.indexOf('..') == -1) {
-        file = req.path;
-      }
-      req.response.sendFile('web/' + file);   
-    }).listen(8080, 'localhost');
-    
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {        
+          String file = "";
+          if (req.path.equals("/")) {
+            file = "index.html";
+          } else if (!req.path.contains("..")) {
+            file = req.path;
+          }
+          req.response.sendFile("web/" + file);              
+        }
+    }).listen(8080, "localhost");
+
 *Note: If you use `sendfile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
 **If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
@@ -1384,38 +1408,43 @@ Since the HTTP Response implements `WriteStream` you can pump to it from any `Re
 
 Here's an example which echoes HttpRequest headers and body back in the HttpResponse. It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.requestHandler(function(req) {
+    server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(final HttpServerRequest req) {        
+          req.response.putAllHeaders(req.getAllHeaders());
       
-      req.response.putHeaders(req.headers());
-      
-      var p = new Pump(req, req.response);
-      p.start();
-      
-      req.endHandler(function() { req.response.end(); });
-      
-    }).listen(8080, 'localhost');
+          Pump p = new Pump(req, req.response);
+          p.start();
+          
+          req.endHandler(new SimpleHandler() {
+            public void handle() {
+                req.response.end();
+            }
+          });           
+        }
+    }).listen(8080, "localhost");
+
     
 ## Writing HTTP Clients
 
 ### Creating an HTTP Client
 
-To create an HTTP client you simply create an instance of vertx.HttpClient
+To create an HTTP client you simply create an instance of `org.vertx.java.core.http.HttpClient`.
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
 You set the port and hostname (or ip address) that the client will connect to using the `setHost` and `setPort` functions:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     client.setPort(8181);
-    client.setHost('foo.com');
+    client.setHost("foo.com");
     
 This, of course, can be chained:
 
-    var client = new vertx.HttpClient()
-                   .setPort(8181);
-                   .setHost('foo.com');
+    HttpClient client = new HttpClient()
+        .setPort(8181)
+        .setHost("foo.com");
                    
 A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
@@ -1427,18 +1456,18 @@ By default the `HTTPClient` pools HTTP connections. As you make requests a conne
 
 If you do not want connections to be pooled you can call `setKeepAlive` with `false`:
 
-    var client = new vertx.HttpClient()
-                   .setPort(8181);
-                   .setHost('foo.com').
+    HttpClient client = new HttpClient()
+                   .setPort(8181)
+                   .setHost("foo.com").
                    .setKeepAlive(false);
 
 In this case a new connection will be created for each HTTP request and closed once the response has ended.
 
 You can set the maximum number of connections that the client will pool as follows:
 
-    var client = new vertx.HttpClient()
-                   .setPort(8181);
-                   .setHost('foo.com').
+    HttpClient client = new HttpClient()
+                   .setPort(8181)
+                   .setHost("foo.com").
                    .setMaxPoolSize(10);
                    
 The default value is `1`.         
@@ -1455,10 +1484,12 @@ To make a request using the client you invoke one the methods named after the HT
 
 For example, to make a `POST` request:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    var request = client.post('http://localhost:8080/some-path/', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    HttpClientRequest request = client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            log.info("Got a response: " + resp.statusCode());
+        }
     });
     
     request.end();
@@ -1469,26 +1500,31 @@ Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `c
 
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
-The return value from the appropriate request method is an `HTTPClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
+The return value from the appropriate request method is an instance of `org.vertx.java.core.http.HTTPClientRequest`. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
 Once you have finished with the request you must call the `end` function.
 
 If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    var request = client.request('POST', 'http://localhost:8080/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    });
+    HttpClientRequest request = client.request("POST", "http://localhost:8080/some-path/",
+        new Handler<HttpClientResponse>() {
+            public void handle(HttpClientResponse resp) {
+                log.info("Got a response: " + resp.statusCode());
+            }
+        });
     
     request.end();
     
 There is also a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            log.info("Got a response: " + resp.statusCode());
+        }
     });
 
 With `getNow` there is no return value.
@@ -1501,28 +1537,30 @@ To write data to an `HttpClientRequest` object, you invoke the `write` function.
 
 With a single buffer:
 
-    var myBuffer = ...
+    Buffer myBuffer = ...
     request.write(myBuffer);
     
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.write('hello');    
+    request.write("hello");    
     
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
 
-    request.write('hello', 'UTF-16');
+    request.write("hello", "UTF-16");
     
 The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
 
 If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will be invoked when the write has completed:
 
-    request.response.write('hello', function() {
-        log.info('It has actually been written');
+    request.response.write("hello", new SimpleHandler() {
+        public void handle() {
+            log.info("It's actually been written");
+        }
     });  
     
 If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` function.   
 
-The first call to `write` results in the request header being being written to the request.
+The first call to `write` results in the request header being written to the request.
 
 Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
 
@@ -1543,31 +1581,32 @@ The function can also be called with a string or Buffer in the same way `write` 
 
 To write headers to the request, use the `putHeader` method.
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    var request = client.post('http://localhost:8080/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    HttpClientRequest request = client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            log.info("Got a response: " + resp.statusCode());
+        }
     });
     
-    request.putHeader('Some-Header', 'Some-Value');
+    request.putHeader("Some-Header", "Some-Value");
     request.end();
     
 These can be chained together as per the common vert.x API pattern:
 
-    client.post('http://localhost:8080/some-uri', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    }).putHeader('Some-Header', 'Some-Value')
-      .putHeader('Some-Other-Header', 'Some-Other-Value')
-      .end();
+    client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            log.info("Got a response: " + resp.statusCode());
+        }
+    }).putHeader("Some-Header", "Some-Value").end();
 
-If you want to put more than one header at the same time, you can instead use the `putHeaders` function.
+If you want to put more than one header at the same time, you can instead use the `putHeaders` function and pass in a Map of headers.
   
-    client.post('http://localhost:8080/some-uri', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    }).putHeaders({'Some-Header': 'Some-Value',
-                   'Some-Other-Header': 'Some-Other-Value',
-                   'Yet-Another-Header': 'Yet-Another-Value'})
-      .end(); 
+    client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            log.info("Got a response: " + resp.statusCode());
+        }
+    }).putHeaders(headersMap).end(); 
        
       
 
@@ -1589,12 +1628,15 @@ The response object implements `ReadStream`, so it can be pumped to a `WriteStre
 
 To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-      log.info('server returned status code: ' + resp.statusCode);   
-      log.info('server returned status message: ' + resp.statusMessage);   
+    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            log.info('server returned status code: ' + resp.statusCode);   
+            log.info('server returned status message: ' + resp.statusMessage);   
+        }
     });
+
 
 #### Reading Data from the Response Body
 
@@ -1604,14 +1646,18 @@ Sometimes an HTTP response contains a request body that we want to read. Like an
 
 To receive the response body, you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
 
-
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-      resp.dataHandler(function(buffer) {
-        log.info('I received ' + buffer.length() + ' bytes');
-      });    
+    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+            resp.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer data) {
+                    log.info('I received ' + buffer.length() + ' bytes');
+                }
+            });  
+        }
     });
+
 
 The response object implements the `ReadStream` interface so you can pump the response body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation. 
 
@@ -1619,25 +1665,27 @@ The `dataHandler` can be called multiple times for a single HTTP response.
 
 As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
-      
-      // Create a buffer to hold the entire response body
-      var body = new vertx.Buffer();  
-    
-      resp.dataHandler(function(buffer) {
-        // Add chunk to the buffer
-        body.appendBuffer(buffer);
-      });
-      
-      resp.endHandler(function() {
-        // The entire response body has been received
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
-      
+    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {
+        
+            final Buffer body = Buffer.create(0);
+        
+            resp.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer data) {
+                    body.appendBuffer(data);
+                }
+            }); 
+            resp.endHandler(new SimpleHandler() {
+                public void handle() {
+                   // The entire response body has been received
+                   log.info('The total body received was ' + body.length() + ' bytes');
+                }
+            }); 
+        }
     });
-    
+
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the response.
 
 If the HTTP response is using HTTP chunking, then each chunk of the response body will correspond to a single call to the `dataHandler`.
@@ -1650,15 +1698,18 @@ The body handler is called only once when the *entire* response body has been re
 
 Here's an example using `bodyHandler`:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
-      
-      resp.bodyHandler(function(body) {
-        log.info('The total body received was ' + body.length() + ' bytes');
-      });
-      
-    }); 
+    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {       
+            resp.bodyHandler(new Handler<Buffer>() {
+                public void handle(Buffer body) {
+                   // The entire response body has been received
+                   log.info("The total body received was " + body.length() + " bytes2);
+                }
+            }); 
+        }
+    });
     
 ## Pumping Requests and Responses
 
@@ -1678,22 +1729,24 @@ This is used in conjunction with the `sendHead` function to send the head of the
 
 An example will illustrate this:
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    var request = client.put('http://localhost:8080/some-path', function(resp) {
-      
-      log.info('Got a response ' + resp.statusCode);
-      
-    });     
-    
-    request.putHeader('Expect', '100-Continue');
-    
-    request.continueHandler(function() {
-        // OK to send rest of body
-        
-        request.write('Some data').end();
+    final HttpClientRequest request = client.put("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
+        public void handle(HttpClientResponse resp) {       
+            log.info("Got a response " + resp.statusCode);
+        }
     });
+
+    request.putHeader("Expect", "100-Continue");
     
+    request.continueHandler(new SimpleHandler() {
+        public void handle() {
+            // OK to send rest of body
+            
+            request.write("Some data").end();
+        }
+    });
+
     request.sendHead();
 
 ## HTTPS Servers
@@ -1714,7 +1767,7 @@ Configuring an HTTP client for HTTPS is done in exactly the same way as configur
 
 Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:
 
-    vertx deploy http_server.js -instances 20
+    vertx deploy foo.MyServer -instances 20
     
 The scaling works in the same way as scaling a `NetServer`. Please see the chapter on scaling Net Servers for a detailed explanation of how this works.
 
@@ -1724,31 +1777,34 @@ Vert.x lets you route HTTP requests to different handlers based on pattern match
 
 This is particularly useful when developing REST-style web applications.
 
-To do this you simply create an instance of `vertx.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
+To do this you simply create an instance of `org.vertx.java.core.http.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
     
-    var routeMatcher = new vertx.RouteMatcher();
+    RouteMatcher routeMatcher = new RouteMatcher();
         
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    server.requestHandler(routeMatcher).listen(8080, "localhost");
     
 ## Specifying matches.    
     
 You can then add different matches to the route matcher. For example, to send all GET requests with path `/animals/dogs` to one handler and all GET requests with path `/animals/cats` to another handler you would do:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
     
-    var routeMatcher = new vertx.RouteMatcher();
+    RouteMatcher routeMatcher = new RouteMatcher();
     
-    routeMatcher.get('/animals/dogs', function(req) {
-        req.response.end('You requested dogs');
+    routeMatcher.get("/animals/dogs", new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+            req.response.end("You requested dogs");
+        }
     });
-    
-    routeMatcher.get('/animals/cats', function(req) {
-        req.response.end('You requested cats');    
+    routeMatcher.get("/animals/cats", new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+            req.response.end("You requested cats");
+        }
     });
         
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    server.requestHandler(routeMatcher).listen(8080, "localhost");
     
 Corresponding methods exist for each HTTP method - `get`, `post`, `put`, `delete`, `head`, `options`, `trace`, `connect` and `patch`.
 
@@ -1764,17 +1820,19 @@ A request is sent to at most one handler.
 
 If you want to extract parameters from the path, you can do this too, by using the `:` (colon) character to denote the name of a parameter. For example:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
     
-    var routeMatcher = new vertx.RouteMatcher();
+    RouteMatcher routeMatcher = new RouteMatcher();
     
-    routeMatcher.put('/:blogname/:post', function(req) {        
-        var blogName = req.params().blogname;
-        var post = req.params().post;
-        req.response.end('blogname is ' + blogName + ', post is ' + post);
+    routeMatcher.put("/:blogname/:post", new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+            String blogName = req.getAllParams().get("blogname");
+            String post = req.getAllParams().get("post");
+            req.response.end("blogname is " + blogName + ", post is " + post);    
+        }
     });
     
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
+    server.requestHandler(routeMatcher).listen(8080, "localhost");
     
 Any params extracted by pattern matching are added to the map of request parameters.
 
@@ -1794,18 +1852,20 @@ There's also an `allWithRegEx` method which applies the match to any HTTP reques
 
 For example:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
     
-    var routeMatcher = new vertx.RouteMatcher();
-
-    routeMatcher.allWithRegEx('\/([^\/]+)\/([^\/]+)', function(req) {        
-        var first = req.params().param0
-        var second = req.params().param1;
-        req.response.end("first is " + first + " and second is " + second);
+    RouteMatcher routeMatcher = new RouteMatcher();
+    
+    routeMatcher.allWithRegEx("\\/([^\\/]+)\\/([^\\/]+)", new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+            String first = req.getAllParams().get("param0");
+            String second = req.getAllParams().get("param1");            
+            req.response.end("first is " + first + " and second is " + second);   
+        }
     });
-
-    server.requestHandler(routeMatcher).listen(8080, 'localhost');
     
+    server.requestHandler(routeMatcher).listen(8080, "localhost");
+
 Run the above and point your browser at `http://localhost:8080/animals/cats`.
 
 It will display 'first is animals and second is cats'.         
@@ -1813,10 +1873,13 @@ It will display 'first is animals and second is cats'.
 You can use regular expressions as catch all when no other matches apply, e.g.
 
     // Catch all - serve the index page
-    routeMatcher.getWithRegEx('.*', function(req) {
-      req.response.sendFile("route_match/index.html");
-    });    
-
+    
+    routeMatcher.allWithRegEx(".*", new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+            req.response.sendFile("route_match/index.html"); 
+        }
+    });
+    
 # WebSockets
 
 [WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a feature of HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
@@ -1825,13 +1888,14 @@ You can use regular expressions as catch all when no other matches apply, e.g.
 
 To use WebSockets on the server you create an HTTP server as normal, but instead of setting a `requestHandler` you set a `websocketHandler` on the server.
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.websocketHandler(function(websocket) {
-      
-      // A WebSocket has connected!
-      
-    }).listen(8080, 'localhost');
+    server.websocketHandler(new Handler<ServerWebSocket>() {
+        public void handle(ServerWebSocket ws) {  
+            // A WebSocket has connected!                        
+        }
+    }).listen(8080, "localhost");
+
     
 ### Reading from and Writing to WebSockets    
     
@@ -1841,20 +1905,20 @@ See the chapter on `NetSocket` and streams and pumps for more information.
 
 For example, to echo all data received on a WebSocket:
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.websocketHandler(function(websocket) {
-      
-      var p = new Pump(websocket, websocket);
-      p.start();
-      
-    }).listen(8080, 'localhost');
+    server.websocketHandler(new Handler<ServerWebSocket>() {
+        public void handle(ServerWebSocket ws) {  
+            Pump pump = new Pump(ws, ws);
+            pump.start();                        
+        }
+    }).listen(8080, "localhost");
     
 The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
 
 Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling 
 
-    websocket.writeBuffer(new vertx.Buffer('some-string'));    
+    websocket.writeBuffer(Buffer.create("some-string"));    
 
 ### Rejecting WebSockets
 
@@ -1862,17 +1926,19 @@ Sometimes you may only want to accept WebSockets which connect at a specific pat
 
 To check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
 
-    server.websocketHandler(function(websocket) {
-      
-      if (websocket.path === '/services/echo') {
-        var p = new vertx.Pump(websocket, websocket);
-        p.start();  
-      } else {
-        websocket.reject();
-      }        
-    }).listen(8080, 'localhost');    
+    server.websocketHandler(new Handler<ServerWebSocket>() {
+        public void handle(ServerWebSocket ws) {  
+            if (ws.path.equals("/services/echo")) {
+                Pump pump = new Pump(ws, ws);
+                pump.start();                        
+            } else {
+                ws.reject();
+            }
+        }
+    }).listen(8080, "localhost");
+    
     
 ## WebSockets on the HTTP client
 
@@ -1882,12 +1948,12 @@ The handler will then get called if the WebSocket successfully connects. If the 
 
 Here's an example of WebSocket connection;
 
-    var client = new vertx.HttpClient();
+    HttpClient client = new HttpClient();
     
-    client.connectWebsocket('http://localhost:8080/some-uri', function(websocket) {
-      
-      // WebSocket has connected!
-      
+    client.connectWebsocket("http://localhost:8080/some-uri", new Handler<WebSocket>() {
+        public void handle(WebSocket ws) {  
+            // Connected!
+        }
     }); 
     
 Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object. 
@@ -1943,32 +2009,32 @@ This enables vert.x to be used for modern, so-called *real-time* (this is the *m
 
 To create a SockJS server you simply create a HTTP server as normal and pass it in to the constructor of the SockJS server.
 
-    var httpServer = new vertx.HttpServer();
+    HttpServer httpServer = new HttpServer();
     
-    var sockJSServer = new vertx.SockJSServer(httpServer);
+    SockJSServer sockJSServer = new SockJSServer(httpServer);
     
 Each SockJS server can host multiple *applications*.
 
-Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.     
+Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.      
 
 For example, to create a SockJS echo application:
 
-    var httpServer = new vertx.HttpServer();
+    HttpServer httpServer = new HttpServer();
     
-    var sockJSServer = new vertx.SockJSServer(httpServer);
+    SockJSServer sockJSServer = new SockJSServer(httpServer);
     
-    var config = { prefix: '/echo' };
+    AppConfig config = new AppConfig().setPrefix("/echo");
     
-    sockJSServer.installApp(config, function(sock) {
-    
-        var p = new.vertx.Pump(sock, sock);
-        
-        p.start();
+    sockJSServer.installApp(config, new Handler<SockJSSocket>() {
+        public void handle(SockJSSocket sock) {
+            Pump p = new Pump(sock, sock);
+            p.start();
+        }
     });
     
     httpServer.listen(8080);
     
-The configuration can take the following fields:
+The configuration is an instance of `org.vertx.java.core.sockjs.AppConfig`, and has the following properties:
 
 * `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
 * `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
@@ -1982,21 +2048,6 @@ The configuration can take the following fields:
 The object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps.
 
 See the chapter on Streams and Pumps for more information.
-
-    var httpServer = new vertx.HttpServer();
-    
-    var sockJSServer = new vertx.SockJSServer(httpServer);
-    
-    var config = { prefix: '/echo' };
-    
-    sockJSServer.installApp(config, function(sock) {
-    
-        sock.dataHandler(function(buff) {
-            sock.writeBuffer(buff);
-        });
-    });
-    
-    httpServer.listen(8080);
     
 ## SockJS client
 
@@ -2034,15 +2085,19 @@ We also provide a client side JavaScript library called `vertxbus.js` which prov
 
 This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
 
-Creating a Sock JS bridge is simple. You just create an instance of `vertx.SockJSBridge` as shown in the following example.
+Creating a Sock JS bridge is simple. You just create an instance of `org.vertx.java.core.eventbus.SockJSBridge` as shown in the following example.
 
 You will also need to secure the bridge (see below).
 
 The following example creates and starts a SockJS bridge which will bridge any events sent to the path `eventbus` on to the server side event bus.
 
-    var server = new vertx.HttpServer();
+    HttpServer server = new HttpServer();
+    
+    AppConfig config = new AppConfig().setPrefix("/eventbus");
+    
+    List<JsonObject> permitted = new ArrayList<>();
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+    new SockJSBridge(server, config, permitted);
     
     server.listen(8080);
     
@@ -2094,7 +2149,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
 
 Each match has two fields:
 
@@ -2109,38 +2164,41 @@ When a message arrives from the client, the bridge will look through the availab
 
 Here is an example:
 
-    var server = new vertx.HttpServer();
-
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
-      [
-        // Let through any messages sent to 'demo.orderMgr'
-        {
-          address : 'demo.orderMgr'
-        },
-        // Allow calls to the address 'demo.persistor' as long as the messages
-        // have an action field with value 'find' and a collection field with value
-        // 'albums'
-        {
-          address : 'demo.persistor',
-          match : {
-            action : 'find',
-            collection : 'albums'
-          }
-        },
-        // Allow through any message with a field `wibble` with value `foo`.
-        {
-          match : {
-            wibble: 'foo'
-          }
-        }
-      ]);
-
+    HttpServer server = new HttpServer();
+    
+    AppConfig config = new AppConfig().setPrefix("/eventbus");
+    
+    List<JsonObject> permitted = new ArrayList<>();
+    
+    // Let through any messages sent to 'demo.orderMgr'
+    JsonObject permitted1 = new JsonObject().putString("address", "demo.orderMgr");
+    permitted.add(permitted1);
+    
+    // Allow calls to the address 'demo.persistor' as long as the messages
+    // have an action field with value 'find' and a collection field with value
+    // 'albums'
+    JsonObject permitted2 = new JsonObject().putString("address", "demo.persistor")
+        .putObject("match", new JsonObject().putString("action", "find")
+                                            .putString("collection", "albums"));
+    permitted.add(permitted2);                                            
+              
+    // Allow through any message with a field `wibble` with value `foo`.                                            
+    JsonObject permitted3 = new JsonObject().putObject("match", new JsonObject().putString("wibble", "foo"));
+    permitted.add(permitted3);
 
     server.listen(8080);
+
+    new SockJSBridge(server, config, permitted);
+    
+    server.listen(8080);
+   
     
 To let all messages through you can specify an array with a single empty JSON object which will match all messages.
 
-     new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [{}]);
+    List<JsonObject> permitted = new ArrayList<>();
+    permitted.add(new JsonObject());
+
+    new SockJSBridge(server, config, permitted);
      
 **Be very careful!**
     

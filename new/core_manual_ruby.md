@@ -777,7 +777,7 @@ The default value of `trust_all` is `false`.
 
 The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trust store location is set by setting the attribute `trust_store_path` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
-If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set with the attribute `key_store_path` on the `NetClient`.
+If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it's just a regular Java key store. The client keystore location is set with the attribute `key_store_path` on the `NetClient`.
 
 To configure a client to trust all server certificates (dangerous):
 
@@ -815,38 +815,36 @@ Any flow control aware object that can be written to is said to implement `ReadS
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
-An example would be reading from a `NetSocket` and writing to an `AsyncFile` on disk. A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
+A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, websockets, etc.
+
+A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
     server = Vertx::NetServer.new
 
     server.connect_handler do |sock|
 
-        Vertx::FileSystem.open('some_file.dat') do |err, async_file| 
-            sock.data_handler do |buffer|
+        sock.data_handler do |buffer|
 
-                # Stream all data directly to the disk file:
+            # Write the data straight back
 
-                async_file.write(buffer)
-            end
+            sock.write(buffer)
         end
-
+       
     end.listen(1234, 'localhost')
 
-There's a problem with the above example: If data is read from the socket faster than it can be written to the underlying disk file, it will build up in the write queue of the `AsyncFile`, eventually running out of RAM.
+There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
 
-It just so happens that `AsyncFile` implements `WriteStream`, so we can check if the `WriteStream` is full before writing to it:
+Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
     server = Vertx::NetServer.new
 
     server.connect_handler do |sock|
 
-        Vertx::FileSystem.open('some_file.dat') do |err, async_file| 
-            sock.data_handler do |buffer|
+        sock.data_handler do |buffer|
 
-                async_file.write(buffer) if !async_file.write_queue_full?
-            end
+            sock.write(buffer) if !sock.write_queue_full?
         end
-
+       
     end.listen(1234, 'localhost')
 
 This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the `AsyncFile` write queue is full. Let's do that:
@@ -855,18 +853,16 @@ This example won't run out of RAM but we'll end up losing data if the write queu
 
     server.connect_handler do |sock|
 
-        Vertx::FileSystem.open('some_file.dat') do |err, async_file| 
+        sock.data_handler do |buffer|
 
-            sock.data_handler do |buffer|
-
-                if async_file.write_queue_full?
-                    sock.pause
-                else 
-                    async_file.write(buffer)
-                end 
+            if sock.write_queue_full?
+                sock.pause
+            else
+              sock.write(buffer)
             end
+            
         end
-
+       
     end.listen(1234, 'localhost')
 
 We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to *unpause* it when the file write queue has processed its backlog:
@@ -875,20 +871,17 @@ We're almost there, but not quite. The `NetSocket` now gets paused when the file
 
     server.connect_handler do |sock|
 
-        Vertx::FileSystem.open('some_file.dat') do |err, async_file| 
+        sock.data_handler do |buffer|
 
-            sock.data_handler do |buffer|
-
-                if async_file.write_queue_full?
-                    sock.pause
-                    
-                    asyncFile.drain_handler { sock.resume }
-                else 
-                    async_file.write(buffer)
-                end 
+            if sock.write_queue_full?
+                sock.pause
+                sock.drain_handler { sock.resume }
+            else
+                sock.write(buffer)
             end
+            
         end
-
+       
     end.listen(1234, 'localhost')
 
 And there we have it. The `drain_handler` event handler will get called when the write queue is ready to accept more data, this resumes the `NetSocket` which allows it to read more data.
@@ -899,11 +892,9 @@ It's very common to want to do this when writing vert.x applications, so we prov
 
     server.connect_handler do |sock|
 
-        Vertx::FileSystem.open('some_file.dat') do |err, async_file| 
-            pump = Vertx::Pump.new(sock, asyncFile)
-            pump.start
-        end
-
+        pump = Vertx::Pump.new(sock, sock)
+        pump.start
+        
     end.listen(1234, 'localhost')
 
 Which does exactly the same thing as the more verbose example.
@@ -1087,7 +1078,7 @@ You'll notice this is very similar to how data from `NetSocket` is read.
 
 The request object implements the `ReadStream` interface so you can pump the request body to a `WriteStream`. See the chapter on streams and pumps for a detailed explanation.
 
-In many cases, you know the body is not large and you just one to receive it in one go. To do this you could do something like the following:
+In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:
 
     server = Vertx::HttpServer.new
 
@@ -1688,7 +1679,7 @@ It will display 'first is animals and second is cats'.
 You can use regular expressions as catch all when no other matches apply, e.g.
 
     # Catch all - serve the index page
-    routeMatcher.get_re('.*') do |req|
+    routeMatcher.all_re('.*') do |req|
       req.response.send_file('route_match/index.html')
     end
 
