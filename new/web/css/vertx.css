@@ -7,15 +7,15 @@ body {
 .title {
   font-size: 18px;
   font-weight: 200;
-  color: #009900;
+  color: #666600;
 }
 
 .highlight_title {
   font-size: 18px;
   font-weight: 200;
-  color: #00FF00;
+  color: #666600;
 }
 
 .feat_hilights {
-  color: #00FF00;
+  color: #666600;
 }
