@@ -90,7 +90,7 @@ function vertxStop() {
 <p>Save it as <code>web-server.js</code>.</p>
 <p>Now, create a directory called web with a file <code>index.html</code> in it:</p>
 <pre class="prettyprint">tim@Ethel:~/tutorial$ mkdir web
-echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/index.html
+tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/index.html
 </pre>
 <p>And run the web server:</p>
 <pre class="prettyprint">tim@Ethel:~/tutorial$ vertx run web_server.js
@@ -259,7 +259,7 @@ function vertxStop() {
 <p>Now there is some stuff to buy, you should be able to add stuff to your cart, and view the contents of your cart by clicking on the cart tab.</p>
 <h2 id="step-6-requesting-data-from-the-server">Step 6. Requesting data from the server</h2><br/>
 <p>As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a look at the code in the client side app that requests the catalogue data and populates the shop.</p>
-<p>The client side application JavaScript is contained in the file <code>web/js/app.js</code>. If you open this in your text editor you will see the following line, towards the top of the script:</p>
+<p>The client side application JavaScript is contained in the file <code>web/js/client_app.js</code>. If you open this in your text editor you will see the following line, towards the top of the script:</p>
 <pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
 </pre>
 <p>This is using the <code>vertxbus.js</code> library to create an <code>EventBus</code> object. This object is then used to send and receive messages from the event bus.</p>
@@ -377,7 +377,7 @@ vertx.deployVerticle('web_server.js');
 <p>Attempt to log-in with username <code>tim</code> and password <code>password</code>. A message should appear on the left telling you you are logged in!.</p>
 <p><img alt="Client Application" src="tutorial_3.png"/></p>
 <p>Let's take a look at the client side code which does the login.</p>
-<p>Open <code>web/js/app/js</code> and scroll down to the <code>login</code> function. This gets trigged by knockout when the login button is pressed on the page.</p>
+<p>Open <code>web/js/client_app.js</code> and scroll down to the <code>login</code> function. This gets trigged by knockout when the login button is pressed on the page.</p>
 <pre class="prettyprint">eb.send('demo.authMgr.login', {username: that.username(), password: that.password()}, function (reply) {
     if (reply.status === 'ok') {
       that.sessionID(reply.sessionID);
@@ -472,7 +472,7 @@ function vertxStop() {
 );
 </pre>
 <p>Ok, let's take a look at the client side code which sends the order.</p>
-<p>Open up <code>web/js/app.js</code> again, and look for the function <code>submitOrder</code>.</p>
+<p>Open up <code>web/js/client_app.js</code> again, and look for the function <code>submitOrder</code>.</p>
 <pre class="prettyprint">that.submitOrder = function() {
 
     if (!orderReady()) {
@@ -506,7 +506,7 @@ function vertxStop() {
 <p>Now log-in and add a few items into your cart. Click to the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly".</p>
 <p>Take a look in the console window of the application. You should see the order has been logged.</p>
 <p><img alt="Client Application" src="tutorial_4.png"/></p>
-<p>Congratulations! You have just placed an order.</p>
+<p><strong> Congratulations! You have just placed an order. </strong></p>
 <h2 id="step-9-sending-emails">Step 9. Sending emails</h2><br/>
 <p>We can easily send order confirmation emails from the order manager.</p>
 <p>First we need to start a Mailer busmod. This is an out of the box busmod that comes bundled with vert.x</p>
@@ -600,7 +600,7 @@ see the manual).</p>
 </pre>
 <p><em>The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.</em>         <br/>
 </p>
-<p>You'll also need to edit <code>web/js/app.js</code> so the line which creates the client side event bus instance now uses <code>https</code> as the protocol:</p>
+<p>You'll also need to edit <code>web/js/client_app.js</code> so the line which creates the client side event bus instance now uses <code>https</code> as the protocol:</p>
 <pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
 </pre>
 <p>Now restart the app again.</p>
@@ -622,7 +622,11 @@ vertx.deployVerticle('web_server.js', null, 32);
 <p>In our trivial example it probably won't make much difference, but if you have some fairly intensive processing that needs to be done on the orders, it might make sense to maintain a farm of order processors, and as orders come into the order manager, to farm them out to one of the available processors.</p>
 <p>You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.</p>
 <p>Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called <code>WorkQueue</code> which allows you to easily create queues of work can be shared out amongst many processors.</p>
-<p>Please consult the busmods manual for more information on this.</p></div>
+<p>Please consult the busmods manual for more information on this.</p>
+<h2 id="final-thoughts">Final Thoughts</h2><br/>
+<p>This tutorial gives you just a taste of the kinds of things you can do with vert.x. </p>
+<p>With just a few lines of code you can create real, scalable web-enabled applications.</p>
+<p>With a network of verticles communicating on an event bus which spans multiple machines on both the server side and client side JavaScript, the only limit is your imagination.</p></div>
       </div>
     </div>
   </div>

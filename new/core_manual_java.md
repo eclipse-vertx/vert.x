@@ -2208,7 +2208,7 @@ Vert.x lets you manipulate files on the file system. File system operations are 
 
 The argument passed into the handler is an instance of `org.vertx.java.core.AsyncResult`. Instances of this class have two fields: `exception` - If the operation has failed this will be set; `result` - If the operation has succeeded this will contain the result.
 
-# Synchronous forms
+## Synchronous forms
 
 For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
 

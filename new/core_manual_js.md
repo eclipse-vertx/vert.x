@@ -2047,7 +2047,7 @@ To let all messages through you can specify an array with a single empty JSON ob
 Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
 The first argument passed into the callback is an exception, if an error occurred. This will be `null` if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.
 
-# Synchronous forms
+## Synchronous forms
 
 For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
 

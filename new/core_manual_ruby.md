@@ -32,7 +32,7 @@ And notice how data you send (and hit enter) is echoed back to you.
 
 Congratulations! You've written your first verticle.
 
-## Loading other scripts.
+## Accessing the Vert.x API
 
 If you want to access the vert.x core API from within your verticle (which you almost certainly want to do), you need to require it with `require 'vertx'` at the top of your script. Normally this will be the first thing at the top of your verticle main.
 
@@ -40,7 +40,7 @@ This will import the module `Vertx`. The `Vertx` module contains the various cla
 
 ## Verticle clean-up
 
-The optional function `vertx_stop` is called when the verticle is undeployed. You should always provide such a function if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers.
+The optional method `vertx_stop` is called when the verticle is undeployed. You should always provide such a method if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers.
 
 ## Getting Configuration in a Verticle
 
@@ -50,9 +50,9 @@ If JSON configuration has been passed when deploying a verticle from either the 
 
     # Do something with config
     
-    puts 'number of wibbles is #{config.wibble_number}
+    puts "number of wibbles is #{config.wibble_number}"
 
-The config returned is a JSON object. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
+The config returned is a Ruby Hash. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
 ## Logging from a Verticle
 
@@ -153,7 +153,7 @@ The above example would deploy 10 instances.
 
 The actual verticle deployment is asynchronous and might not complete until some time after the call to `deploy_verticle` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a block to `deploy_verticle`, which will be called when it's complete:
 
-    Vertx.deploy_verticle('my_verticle.rb', nil, 10) { puts("It's been deployed!") }
+    Vertx.deploy_verticle('my_verticle.rb', nil, 10) { puts "It's been deployed!" }
 
 ## Deploying Worker Verticles
 
@@ -289,8 +289,8 @@ Send a JSON object:
 
     myObj = {
       'name' => 'Tim',
-      'address': 'The Moon',
-      'age': 457
+      'address' => 'The Moon',
+      'age' => 457
     }
     Vertx::EventBus.send('test.address', myObj)
 
@@ -310,15 +310,10 @@ When this function is invoked it causes a reply to be sent back to the sender wh
 
 The receiver:
 
-    var myHandler = function(message, replier) {
-      
-    }
-
     Vertx::EventBus.registerHandler('test.address') do |message|
       puts("I received a message #{message.body}")
 
-      # Do some stuff
-
+      # Do some stuff...
       # Now reply to it
 
       message.reply('This is a reply')
@@ -370,13 +365,13 @@ And then, in a different verticle:
 
 To use a shared set to share data between verticles first get a reference to the set.
 
-    set = Vertx.SharedData.getSet('demo.myset')
+    set = Vertx::SharedData.getSet('demo.myset')
 
     set.add('some-value');
 
 And then, in a different verticle:
 
-    set = Vertx.SharedData.getSet('demo.myset')
+    set = Vertx::SharedData.getSet('demo.myset')
 
     # Do something with the set
 
@@ -2019,7 +2014,7 @@ This block will be called when the operation is complete, or an error has occurr
 
 The first argument passed into the block is an exception, if an error occurred. This will be `nil` if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.
 
-# Synchronous forms
+## Synchronous forms
 
 For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
 

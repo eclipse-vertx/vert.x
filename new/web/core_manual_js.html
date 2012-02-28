@@ -223,6 +223,7 @@
 </ul>
 </li>
 <li><a href="#file-system">File System</a><ul>
+<li><a href="#synchronous-forms">Synchronous forms</a></li>
 <li><a href="#copy">copy</a></li>
 <li><a href="#move">move</a></li>
 <li><a href="#truncate">truncate</a></li>
@@ -286,10 +287,10 @@ function vertxStop() {
 <h2 id="verticle-clean-up">Verticle clean-up</h2><br/>
 <p>The optional function <code>vertxStop</code> is called when the verticle is undeployed. You should always provide such a function if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers. </p>
 <h2 id="getting-configuration-in-a-verticle">Getting Configuration in a Verticle</h2><br/>
-<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle using the <code>vertx.getConfiguration</code> function. For example:</p>
-<pre class="prettyprint">var config = vertx.getConfig();
+<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle in the <code>vertx.config</code> variable. For example:</p>
+<pre class="prettyprint">var config = vertx.config;
 
-// Do something with config
+stdout.println("Config is " + JSON.stringify(config));
 </pre>
 <p>The config returned is a JSON object. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.</p>
 <h2 id="logging-from-a-verticle">Logging from a Verticle</h2><br/>
@@ -323,7 +324,7 @@ logger.info("I am logging something");
 <pre class="prettyprint">var config = { name: 'foo', age: 234 };
 vertx.deployVerticle('my_verticle.js', config);
 </pre>
-<p>Then, in the <code>my_verticle.js</code> you can access the config via <code>vertx.getConfig</code> as previously explained.</p>
+<p>Then, in <code>my_verticle.js</code> you can access the config via <code>vertx.getConfig</code> as previously explained.</p>
 <h2 id="using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</h2><br/>
 <p>If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.</p>
 <p>For example, you could create a verticle <code>app.js</code> as follows:</p>
@@ -460,8 +461,8 @@ eb.send('test.address', 3.14159);
 </pre>
 <p>Send a JSON object:</p>
 <pre class="prettyprint">var myObj = {
-  name: 'Tim'
-  address: 'The Moon'
+  name: 'Tim',
+  address: 'The Moon',
   age: 457    
 }
 eb.send('test.address', myObj);
@@ -534,7 +535,7 @@ set.add('some-value');
 <p><strong>TODO</strong></p>
 <h1 id="delayed-and-periodic-tasks">Delayed and Periodic Tasks</h1><br/>
 <p>It's very common in vert.x to want to perform an action after a delay, or periodically.</p>
-<p>In standard verticles you can't just call <code>Thread.sleep</code> to introduce a delay, as that will block the event loop thread.</p>
+<p>In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.</p>
 <p>Instead you use vert.x timers. Timers can be <em>one-shot</em> or <em>periodic</em>. We'll discuss both</p>
 <h2 id="one-shot-timers">One-shot Timers</h2><br/>
 <p>A one shot timer calls an event handler after a certain delay, expressed in milliseconds. </p>
@@ -555,7 +556,7 @@ log.info('First this is printed');
 </pre>
 <h2 id="cancelling-timers">Cancelling timers</h2><br/>
 <p>To cancel a periodic timer, call the <code>cancelTimer</code> function specifying the timer id. For example:</p>
-<pre class="prettyprint">var id = vertx.setTimer(1000, function(id) {        
+<pre class="prettyprint">var id = vertx.setPeriodic(1000, function(id) {        
 });
 
 // And immediately cancel it
@@ -565,7 +566,7 @@ vertx.cancelTimer(id);
 <p>Or you can cancel it from inside the event handler. The following example cancels the timer after it has fired 10 times.</p>
 <pre class="prettyprint">var count = 0;
 
-vertx.setTimer(1000, function(id) {
+vertx.setPeriodic(1000, function(id) {
     log.info('In event handler ' + count); 
     count++;
     if (count === 10) {
@@ -758,7 +759,7 @@ client.connect(1234, 'localhost', function(sock) {
 <p>The argument passed into the connect handler is an instance of <code>NetSocket</code>, exactly the same as what is passed into the server side connect handler. Once given the <code>NetSocket</code> you can read and write data from the socket in exactly the same way as you do on the server side.</p>
 <p>You can also close it, set the closed handler, set the exception handler and use it as a <code>ReadStream</code> or <code>WriteStream</code> exactly the same as the server side <code>NetSocket</code>.</p>
 <h3 id="catching-exceptions-on-the-net-client">Catching exceptions on the Net Client</h3><br/>
-<p>You can set a connection handler on the <code>NetClient</code>. This will catch any exceptions that occur during connection.</p>
+<p>You can set an exception handler on the <code>NetClient</code>. This will catch any exceptions that occur during connection.</p>
 <pre class="prettyprint">var client = new vertx.NetClient();
 
 client.exceptionHandler(function(ex) {
@@ -805,7 +806,7 @@ client.setReconnectInterval(500);
                .setSSL(true)
                .setKeyStorePath('/path/to/your/keystore/server-keystore.jks')
                .setKeyStorePassword('password')
-               .setTrustStorePath('/path/to/your/keystore/server-truststore.jks')
+               .setTrustStorePath('/path/to/your/truststore/server-truststore.jks')
                .setTrustStorePassword('password')
                .setClientAuthRequired(true);
 </pre>
@@ -817,7 +818,7 @@ client.setReconnectInterval(500);
 <p>If the <code>setTrustAll(true)</code> is invoked on the client, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is <code>false</code>.</p>
 <p>If <code>setTrustAll(true)</code> has not been invoked then a client trust store must be configured and should contain the certificates of the servers that the client trusts.</p>
 <p>The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function <code>setTrustStorePath</code> on the <code>NetClient</code>. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.</p>
-<p>If the server requires that client authentication is required then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again its just a regular Java key store. The client keystore location is set by using the function <code>setKeyStorePath</code> on the <code>NetClient</code>. </p>
+<p>If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it#s just a regular Java key store. The client keystore location is set by using the function <code>setKeyStorePath</code> on the <code>NetClient</code>. </p>
 <p>To configure a client to trust all server certificates (dangerous):</p>
 <pre class="prettyprint">var client = new vertx.NetClient()
                .setSSL(true)
@@ -834,87 +835,79 @@ client.setReconnectInterval(500);
                .setSSL(true)
                .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
                .setTrustStorePassword('password')
+               .setClientAuthRequired(true)
                .setKeyStorePath('/path/to/keystore/holding/client/cert/client-keystore.jks')
                .setKeyStorePassword('password');
 </pre>
 <h1 id="flow-control-streams-and-pumps">Flow Control - Streams and Pumps</h1><br/>
 <p>There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.</p>
-<p>All operations in the vert.x API are non blocking, calls to write data return immediately and writes are internally queued.</p>
+<p>All operations in the vert.x API are non blocking; calls to write data return immediately and writes are internally queued.</p>
 <p>It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound - eventually resulting in exhausting available memory.</p>
 <p>To solve this problem a simple flow control capability is provided by some objects in the vert.x API.</p>
 <p>Any flow control aware object that can be written to is said to implement <code>ReadStream</code>, and any flow control object that can be read from is said to implement <code>WriteStream</code>.</p>
 <p>Let's take an example where we want to read from a <code>ReadStream</code> and write the data to a <code>WriteStream</code>.</p>
-<p>An example would be reading from a <code>NetSocket</code> and writing to an <code>AsyncFile</code> on disk. A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:</p>
+<p>A very simple example would be reading from a <code>NetSocket</code> on a server and writing back to the same <code>NetSocket</code> - since <code>NetSocket</code> implements both <code>ReadStream</code> and <code>WriteStream</code>, but you can do this between any <code>ReadStream</code> and any <code>WriteStream</code>, including HTTP requests and response, async files, websockets, etc.</p>
+<p>A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:</p>
 <pre class="prettyprint">var server = new vertx.NetServer();
 
 server.connectHandler(function(sock) {
 
-    vertx.FileSystem.open('some_file.dat', function(err, res) {
-        sock.dataHandler(function(buffer) {
+    sock.dataHandler(function(buffer) {
 
-            // Stream all data directly to the disk file:
+        // Write data straight back on the socket
 
-            asyncFile.write(buffer); 
-        });
+        sock.write(buffer); 
     });
 
 }).listen(1234, 'localhost');
 </pre>
-<p>There's a problem with the above example: If data is read from the socket faster than it can be written to the underlying disk file, it will build up in the write queue of the AsyncFile, eventually running out of RAM.</p>
-<p>It just so happens that <code>AsyncFile</code> implements <code>WriteStream</code>, so we can check if the <code>WriteStream</code> is full before writing to it:</p>
+<p>There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.</p>
+<p>Since <code>NetSocket</code> implements <code>WriteStream</code>, we can check if the <code>WriteStream</code> is full before writing to it:</p>
 <pre class="prettyprint">var server = new vertx.NetServer();
 
 server.connectHandler(function(sock) {
 
-    vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-        sock.dataHandler(function(buffer) {
+    sock.dataHandler(function(buffer) {
 
-            if (!asyncFile.writeQueueFull()) {      
-                asyncFile.writeBuffer(buffer); 
-            }
-        });
+        if (!sock.writeQueueFull()) {      
+            sock.write(buffer); 
+        }
     });
 
 }).listen(1234, 'localhost');
 </pre>
-<p>This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the <code>NetSocket</code> when the <code>AsyncFile</code> <code>WriteQueue</code> is full. Let's do that:</p>
+<p>This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the <code>NetSocket</code> when the write queue is full. Let's do that:</p>
 <pre class="prettyprint">var server = new vertx.NetServer();
 
 server.connectHandler(function(sock) {
 
-    vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-        sock.dataHandler(function(buffer) {
+    sock.dataHandler(function(buffer) {
 
-            if (!asyncFile.writeQueueFull()) {      
-                asyncFile.writeBuffer(buffer); 
-            } else {
-                sock.pause();
-            }
-        });
+        if (!sock.writeQueueFull()) {      
+            sock.write(buffer); 
+        } else {
+            sock.pause();
+        }
     });
-
-  });
 
 }).listen(1234, 'localhost');
 </pre>
-<p>We're almost there, but not quite. The <code>NetSocket</code> now gets paused when the file is full, but we also need to <em>unpause</em> it when the file write queue has processed its backlog:</p>
+<p>We're almost there, but not quite. The <code>NetSocket</code> now gets paused when the file is full, but we also need to <em>unpause</em> it when the write queue has processed its backlog:</p>
 <pre class="prettyprint">var server = new vertx.NetServer();
 
 server.connectHandler(function(sock) {
 
-    vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {
-        sock.dataHandler(function(buffer) {
+    sock.dataHandler(function(buffer) {
 
-            if (!asyncFile.writeQueueFull()) {      
-                asyncFile.writeBuffer(buffer); 
-            } else {
-                sock.pause();
+        if (!sock.writeQueueFull()) {      
+            sock.write(buffer); 
+        } else {
+            sock.pause();
 
-                asyncFile.drainHandler(function() {
-                    sock.resume();
-                });
-            }
-        });
+            sock.drainHandler(function() {
+                sock.resume();
+            });
+        }
     });
 
 }).listen(1234, 'localhost');
@@ -925,10 +918,8 @@ server.connectHandler(function(sock) {
 
 server.connectHandler(function(sock) {
 
-    var asyncFile = vertx.FileSystem.open('some_file.dat', function(err, asyncFile) {        
-        var pump = new vertx.Pump(sock, asyncFile);      
-        pump.start();
-    });
+    var pump = new vertx.Pump(sock, sock);
+    pump.start();
 
 }).listen(1234, 'localhost');
 </pre>
@@ -1067,7 +1058,7 @@ server.requestHandler(function(request) {
 </p>
 <p>You'll notice this is very similar to how data from <code>NetSocket</code> is read. </p>
 <p>The request object implements the <code>ReadStream</code> interface so you can pump the request body to a <code>WriteStream</code>. See the chapter on streams and pumps for a detailed explanation. </p>
-<p>In many cases, you know the body is not large and you just one to receive it in one go. To do this you could do something like the following:</p>
+<p>In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:</p>
 <pre class="prettyprint">var server = new vertx.HttpServer();
 
 server.requestHandler(function(request) {
@@ -1115,9 +1106,13 @@ server.requestHandler(function(request) {
 
     request.response.statusCode = 404;
 
+    request.response.end();
+
 }).listen(8080, 'localhost');
 </pre>
 <p>You can also use the <code>statusMessage</code> property to set the status message. If you do not set the status message a default message will be used.  <br/>
+</p>
+<p>The default value for <code>statusCode</code> is <code>200</code>.  <br/>
 </p>
 <h4 id="writing-http-responses">Writing HTTP responses</h4><br/>
 <p>To write data to an HTTP response, you invoke the <code>write</code> function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:</p>
@@ -1184,8 +1179,7 @@ request.response.end("That's really all folks", true);
 </pre>
 <h3 id="serving-files-directly-disk">Serving files directly disk</h3><br/>
 <p>If you were writing a web server, one way to serve a file from disk would be to open it as an <code>AsyncFile</code> and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.</p>
-<p>Alternatively, vert.x provides a feature where you can stream files directly from disk to the response bypassing user-space altogether.</p>
-<p>This functionality is OS dependent and leverages the <code>sendfile</code> function to tell the kernel to directly serve the file. Using this operation can greatly reduce CPU utilisation.</p>
+<p>Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.</p>
 <p>To do this use the <code>sendfile</code> function on the HTTP response. Here's a simple HTTP web server that serves static files from the local <code>web</code> directory:</p>
 <pre class="prettyprint">var server = new vertx.HttpServer();
 
@@ -1199,7 +1193,7 @@ server.requestHandler(function(req) {
   req.response.sendFile('web/' + file);   
 }).listen(8080, 'localhost');
 </pre>
-<p><em>Note: If you use <code>sendfile</code> while using HTTPS it won't actually use the kernel <code>sendfile</code> function, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
+<p><em>Note: If you use <code>sendfile</code> while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
 <p><strong>If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.</strong></p>
 <h3 id="pumping-responses">Pumping Responses</h3><br/>
 <p>Since the HTTP Response implements <code>WriteStream</code> you can pump to it from any <code>ReadStream</code>, e.g. an <code>AsyncFile</code>, <code>NetSocket</code> or <code>HttpServerRequest</code>.</p>
@@ -1213,6 +1207,8 @@ server.requestHandler(function(req) {
   var p = new Pump(req, req.response);
   p.start();
 
+  req.endHandler(function() { req.response.end(); });
+
 }).listen(8080, 'localhost');
 </pre>
 <h2 id="writing-http-clients">Writing HTTP Clients</h2><br/>
@@ -1222,12 +1218,12 @@ server.requestHandler(function(req) {
 </pre>
 <p>You set the port and hostname (or ip address) that the client will connect to using the <code>setHost</code> and <code>setPort</code> functions:</p>
 <pre class="prettyprint">var client = new vertx.HttpClient();
-client.setPort(8181);
+client.setPort(8181)
 client.setHost('foo.com');
 </pre>
 <p>This, of course, can be chained:</p>
 <pre class="prettyprint">var client = new vertx.HttpClient()
-               .setPort(8181);
+               .setPort(8181)
                .setHost('foo.com');
 </pre>
 <p>A single <code>HTTPClient</code> always connects to the same host and port. If you want to connect to different servers, create more instances.</p>
@@ -1314,11 +1310,10 @@ request.write(myBuffer);
 <h4 id="ending-http-requests">Ending HTTP requests</h4><br/>
 <p>Once you have finished with the HTTP request you must call the <code>end</code> function on it.</p>
 <p>This function can be invoked in several ways:</p>
-<p>With no arguments, the response is simply ended. </p>
+<p>With no arguments, the request is simply ended. </p>
 <pre class="prettyprint">request.end();
 </pre>
 <p>The function can also be called with a string or Buffer in the same way <code>write</code> is called. In this case it's just the same as calling write with a string or Buffer followed by calling <code>end</code> with no arguments.</p>
-<p>You can also optionally call <code>end</code> with a final boolean argument. If this argument is <code>true</code> then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.</p>
 <h4 id="writing-request-headers">Writing Request Headers</h4><br/>
 <p>To write headers to the request, use the <code>putHeader</code> method.</p>
 <pre class="prettyprint">var client = new vertx.HttpClient();
@@ -1328,6 +1323,7 @@ var request = client.post('http://localhost:8080/some-path', function(resp) {
 });
 
 request.putHeader('Some-Header', 'Some-Value');
+request.end();
 </pre>
 <p>These can be chained together as per the common vert.x API pattern:</p>
 <pre class="prettyprint">client.post('http://localhost:8080/some-uri', function(resp) {
@@ -1355,8 +1351,9 @@ request.putHeader('Some-Header', 'Some-Value');
 <p>Client responses are received as an argument to the response handler that is passed into one of the request methods on the HTTP client.</p>
 <p>The response object implements <code>ReadStream</code>, so it can be pumped to a <code>WriteStream</code> like any other <code>ReadStream</code>.</p>
 <p>To query the status code of the response use the <code>statusCode</code> property. The <code>statusMessage</code> property contains the status message. For example:</p>
-<p>var client = new vertx.HttpClient();</p>
-<pre class="prettyprint">client.getNow('http://localhost:8080/some-path', function(resp) {
+<pre class="prettyprint">var client = new vertx.HttpClient();
+
+client.getNow('http://localhost:8080/some-path', function(resp) {
   log.info('server returned status code: ' + resp.statusCode);   
   log.info('server returned status message: ' + resp.statusMessage);   
 });
@@ -1405,43 +1402,14 @@ client.getNow('http://localhost:8080/some-path', function(resp) {
 
 client.getNow('http://localhost:8080/some-uri', function(resp) {
 
-  resp.bodyHandler(function() {
+  resp.bodyHandler(function(body) {
     log.info('The total body received was ' + body.length() + ' bytes');
   });
 
 });
 </pre>
 <h2 id="pumping-requests-and-responses">Pumping Requests and Responses</h2><br/>
-<p>The HTTP client and server requests and responses all implement either <code>ReadStream</code> or <code>WriteStream</code>. This means you can pump between them.</p>
-<p>Here's a very simple proxy server which forwards a request to another server and forwards the response back to the client.</p>
-<p>It uses two pumps - one to pump the server request to the client request, and another to pump the client response back to the server response. It uses pumps so it will work even if the HTTP request body is much larger than can fit in memory at any one time:</p>
-<pre class="prettyprint">var server = new vertx.HttpServer();
-
-var client = new vertx.HttpClient().setHost('some-other-server.com');
-
-server.requestHandler(function(req) {
-
-    var clientReq = client.request(req.method, req.uri, function(clientResp) {
-
-        req.response.status_code = clientResp.statusCode;
-        req.response.putAllHeaders(clientResp.headers());
-
-        var respPump = new Pump(clientResp, req.response);
-        respPump.start();
-
-        clientResp.endHandler(function() { req.response.end() });
-    }
-
-    clientReq.putAllHeaders(req.headers());
-
-    var reqPump = new Pump(req, clientReq);
-
-    reqPump.start();
-
-    req.endHandler(function { clientReq.end() } );
-
-}).listen(8080, 'localhost');
-</pre>
+<p>The HTTP client and server requests and responses all implement either <code>ReadStream</code> or <code>WriteStream</code>. This means you can pump between them and any other read and write streams.</p>
 <h3 id="100-continue-handling">100-Continue Handling</h3><br/>
 <p>According to the <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html">HTTP 1.1 specification</a> a client can set a header <code>Expect: 100-Continue</code> and send the request header before sending the rest of the request body.</p>
 <p>The server can then respond with an interim response status <code>Status: 100 (Continue)</code> to signify the client is ok to send the rest of the body.</p>
@@ -1453,9 +1421,7 @@ server.requestHandler(function(req) {
 
 var request = client.put('http://localhost:8080/some-path', function(resp) {
 
-  resp.bodyHandler(function(resp) {
-    log.info('Got a response ' + resp.statusCode);
-  });
+  log.info('Got a response ' + resp.statusCode);
 
 });
 
@@ -1510,7 +1476,7 @@ server.requestHandler(routeMatcher).listen(8080, 'localhost');
 <p>Corresponding methods exist for each HTTP method - <code>get</code>, <code>post</code>, <code>put</code>, <code>delete</code>, <code>head</code>, <code>options</code>, <code>trace</code>, <code>connect</code> and <code>patch</code>.</p>
 <p>There's also an <code>all</code> method which applies the match to any HTTP request method.</p>
 <p>The handler specified to the method is just a normal HTTP server request handler, the same as you would supply to the <code>requestHandler</code> method of the HTTP server.</p>
-<p>You can provide as many matches as you like and they are evaulated in the order you added them, the first matching one will receive the request.</p>
+<p>You can provide as many matches as you like and they are evaluated in the order you added them, the first matching one will receive the request.</p>
 <p>A request is sent to at most one handler.</p>
 <h2 id="extracting-parameters-from-the-path">Extracting parameters from the path</h2><br/>
 <p>If you want to extract parameters from the path, you can do this too, by using the <code>:</code> (colon) character to denote the name of a parameter. For example:</p>
@@ -1531,23 +1497,28 @@ server.requestHandler(routeMatcher).listen(8080, 'localhost');
 <p>Valid parameter names must start with a letter of the alphabet and be followed by any letters of the alphabet or digits.</p>
 <h2 id="extracting-params-using-regular-expressions">Extracting params using Regular Expressions</h2><br/>
 <p>Regular Expressions can be used to extract more complex matches. In this case capture groups are used to capture any parameters.</p>
-<p>Since the capture groups are not named they are added to the request with names <code>param0</code>, <code>param1</code>, <code>param2</code>, etc. For example:</p>
+<p>Since the capture groups are not named they are added to the request with names <code>param0</code>, <code>param1</code>, <code>param2</code>, etc. </p>
 <p>Corresponding methods exist for each HTTP method - <code>getWithRegEx</code>, <code>postWithRegEx</code>, <code>putWithRegEx</code>, <code>deleteWithRegEx</code>, <code>headWithRegEx</code>, <code>optionsWithRegEx</code>, <code>traceWithRegEx</code>, <code>connectWithRegEx</code> and <code>patchWithRegEx</code>.</p>
 <p>There's also an <code>allWithRegEx</code> method which applies the match to any HTTP request method.</p>
+<p>For example:</p>
 <pre class="prettyprint">var server = new vertx.HttpServer();
 
 var routeMatcher = new vertx.RouteMatcher();
 
-routeMatcher.putWithRegEx('\\/([^\\/]+)\\/([^\\/]+)', function(req) {        
+routeMatcher.allWithRegEx('\/([^\/]+)\/([^\/]+)', function(req) {        
     var first = req.params().param0
     var second = req.params().param1;
-    // Do something
-    req.response.end();
+    req.response.end("first is " + first + " and second is " + second);
 });
+
+server.requestHandler(routeMatcher).listen(8080, 'localhost');
 </pre>
+<p>Run the above and point your browser at <code>http://localhost:8080/animals/cats</code>.</p>
+<p>It will display 'first is animals and second is cats'.       <br/>
+</p>
 <p>You can use regular expressions as catch all when no other matches apply, e.g.</p>
 <pre class="prettyprint">// Catch all - serve the index page
-routeMatcher.getWithRegEx('.*', function(req) {
+routeMatcher.allWithRegEx('.*', function(req) {
   req.response.sendFile("route_match/index.html");
 });
 </pre>
@@ -1713,6 +1684,8 @@ httpServer.listen(8080);
    };
 &lt;/script&gt;
 </pre>
+<p>As you can see the API is very similar to the WebSockets API.  <br/>
+</p>
 <h1 id="sockjs-eventbus-bridge">SockJS - EventBus Bridge</h1><br/>
 <h2 id="setting-up-the-bridge">Setting up the Bridge</h2><br/>
 <p>By connecting up SockJS and the vert.x event bus we create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers.</p>
@@ -1720,16 +1693,12 @@ httpServer.listen(8080);
 <p>On the server side we have already discussed the event bus API.</p>
 <p>We also provide a client side JavaScript library called <code>vertxbus.js</code> which provides the same event bus API, but on the client side.</p>
 <p>This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.</p>
-<p>Creating a Sock JS bridge is simple. You just create a SockJS server as described in the last chapter, and install an application in the SockJS server with a pre-made handler called the <code>SockJSBridgeHandler</code>. </p>
+<p>Creating a Sock JS bridge is simple. You just create an instance of <code>vertx.SockJSBridge</code> as shown in the following example.</p>
 <p>You will also need to secure the bridge (see below).</p>
 <p>The following example creates and starts a SockJS bridge which will bridge any events sent to the path <code>eventbus</code> on to the server side event bus.</p>
 <pre class="prettyprint">var server = new vertx.HttpServer();
 
-var sockJSServer = new vertx.SockJSServer(server);
-
-var handler = new vertx.SockJSBridgeHandler();
-
-sockJSServer.installApp({prefix : '/eventbus'}, handler);
+new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
 
 server.listen(8080);
 </pre>
@@ -1768,7 +1737,7 @@ server.listen(8080);
 <p>For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!</p>
 <p>To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.</p>
 <p>In other words the bridge acts like a kind of firewall which has a default <em>deny-all</em> policy.</p>
-<p>Configuring the bridge to tell it what messages it should pass through is easy. You just call the function <code>addPermitted</code> on the bridge handler and pass in any number of JSON objects that represent <em>matches</em>.</p>
+<p>Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent <em>matches</em>, as the final argument in the constructor of <code>vertx.SockJSBridge</code>.</p>
 <p>Each match has two fields:</p>
 <ol>
 <li><code>address</code>. This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.</li>
@@ -1786,46 +1755,42 @@ server.listen(8080);
 <p>Here is an example:</p>
 <pre class="prettyprint">var server = new vertx.HttpServer();
 
-var sockJSServer = new vertx.SockJSServer(server);
-
-var handler = new vertx.SockJSBridgeHandler();
-
-handler.addPermitted(
-  // Let through any messages sent to 'demo.orderMgr'
-  {
-    address : 'demo.orderMgr'
-  },
-  // Allow calls to the address 'demo.persistor' as long as the messages
-  // have an action field with value 'find' and a collection field with value
-  // 'albums'
-  {
-    address : 'demo.persistor',
-    match : {
-      action : 'find',
-      collection : 'albums'
+new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+  [
+    // Let through any messages sent to 'demo.orderMgr'
+    {
+      address : 'demo.orderMgr'
+    },
+    // Allow calls to the address 'demo.persistor' as long as the messages
+    // have an action field with value 'find' and a collection field with value
+    // 'albums'
+    {
+      address : 'demo.persistor',
+      match : {
+        action : 'find',
+        collection : 'albums'
+      }
+    },
+    // Allow through any message with a field `wibble` with value `foo`.
+    {
+      match : {
+        wibble: 'foo'
+      }
     }
-  },
-  // Allow through any message with a field `wibble` with value `foo`.
-  {
-    match : {
-      wibble: 'foo'
-    }
-  }
-
-);
-
-sockJSServer.installApp({prefix : '/eventbus'}, handler);
+  ]);
 
 server.listen(8080);
 </pre>
-<p>To let all messages through you can add an empty permitted entry:</p>
-<pre class="prettyprint"> handler.addPermitted({});
+<p>To let all messages through you can specify an array with a single empty JSON object which will match all messages.</p>
+<pre class="prettyprint"> new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [{}]);
 </pre>
 <p><strong>Be very careful!</strong></p>
 <h1 id="file-system">File System</h1><br/>
-<p>Vert.x lets you manipulate files on the file system. All file system operations are asynchronous and take a handler function as the last argument.</p>
-<p>This function will be called when the operation is complete, or an error has occurred.</p>
-<p>The first argument passed into the callback is an exception, if an error occurred. This will be <code>null</code> if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.</p>
+<p>Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
+The first argument passed into the callback is an exception, if an error occurred. This will be <code>null</code> if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.</p>
+<h2 id="synchronous-forms">Synchronous forms</h2><br/>
+<p>For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.</p>
+<p>The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with <code>Sync</code> appended.</p>
 <h2 id="copy">copy</h2><br/>
 <p>Copies a file.</p>
 <p>This function can be called in two different ways:</p>
@@ -1872,11 +1837,10 @@ r--r--r--
 <p>Retrieve properties of a file.</p>
 <p><code>props(file, handler)</code></p>
 <p><code>file</code> is the file name. The props are returned in the handler. The results is an object with the following properties:</p>
-<p>TODO these are currently returning Java dates - need to wrap them.</p>
 <ul>
-<li><code>creationTime</code>. Date of file creation.</li>
-<li><code>lastAccessTime</code>. Date of last file access.</li>
-<li><code>lastModifiedTime</code>. Date file was last modified.</li>
+<li><code>creationTime</code>. Time of file creation.</li>
+<li><code>lastAccessTime</code>. Time of last file access.</li>
+<li><code>lastModifiedTime</code>. Time file was last modified.</li>
 <li><code>isDirectory</code>. This will have the value <code>true</code> if the file is a directory.</li>
 <li><code>isRegularFile</code>. This will have the value <code>true</code> if the file is a regular file (not symlink or directory).</li>
 <li><code>isSymbolicLink</code>. This will have the value <code>true</code> if the file is a symbolic link.</li>
@@ -1961,7 +1925,7 @@ r--r--r--
 <li><code>readDir(dirName, filter)</code></li>
 </ul>
 <p>List only the contents of a directory which match the filter. Here's an example which only lists files with an extension <code>txt</code> in a directory.</p>
-<pre class="prettyprint">vertx.FileSystem.readDir('mydirectory', '*.txt', function(err, res) {
+<pre class="prettyprint">vertx.FileSystem.readDir('mydirectory', '.*\.txt', function(err, res) {
   if (!err) {
     log.info('Directory contains these .txt files');
     for (var i = 0; i &lt; res.length; i++) {
@@ -1970,6 +1934,8 @@ r--r--r--
   }
 });
 </pre>
+<p>The filter is a regular expression.  <br/>
+</p>
 <h2 id="readfile">readFile</h2><br/>
 <p>Read the entire contents of a file in one go. <em>Be careful if using this with large files since the entire file will be stored in memory at once</em>.</p>
 <p><code>readFile(file)</code>. Where <code>file</code> is the file name of the file to read.</p>
@@ -2136,7 +2102,7 @@ vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
 });
 </pre>
 <h3 id="closing-an-asyncfile">Closing an AsyncFile</h3><br/>
-<p>To close an AsyncFuile call the <code>close</code> function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to <code>close</code>.</p>
+<p>To close an AsyncFile call the <code>close</code> function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to <code>close</code>.</p>
 <h1 id="performance-tuning">Performance Tuning</h1><br/>
 <p><strong>TODO</strong></p></div>
       </div>
