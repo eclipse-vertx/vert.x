@@ -849,7 +849,7 @@ public class FileSystem {
   private AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
                            boolean flush, Context context,
                            Thread th) throws Exception {
-    return new AsyncFile(path, perms, read, write, createNew, flush, context, th);
+    return new AsyncFile(path, perms, read, write, createNew, flush, context);
   }
 
   private SynchronousAction<Void> createFileDeferred(String path) {
