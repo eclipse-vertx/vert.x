@@ -1,4 +1,4 @@
-# Copyright 2011 the original author or authors.
+# Copyright 2011-2012 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This is just a wrapper around the Java auth manager
+
 include Java
 
-require 'core/timers'
-require 'core/buffer'
-require 'core/file_system'
-require 'core/http'
-require 'core/net'
-require 'core/parsetools'
-require 'core/streams'
-require 'core/shared_data'
-require 'core/std_io'
-require 'core/composition'
-require 'core/logger'
-require 'core/event_bus'
-require 'core/sock_js'
-require 'core/deploy'
+@j_auth = org.vertx.java.busmods.auth.AuthManager.new
 
+@j_auth.start
+
+def vertx_stop
+  @j_auth.stop
+end
