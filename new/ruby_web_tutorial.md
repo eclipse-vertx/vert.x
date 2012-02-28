@@ -16,24 +16,25 @@ The first thing we're going to need is a web server, so let's write one.
 
 Open a text editor and copy the following into it:
 
-    load('vertx.js');
+    require('vertx')
+    include Vertx
 
-    var server = new vertx.HttpServer();
-    
-    server.requestHandler(function(req) {
-      if (req.path === '/') {
-        req.response.sendFile('web/index.html');
-      } else if (req.path.indexOf('..') === -1) {
-        req.response.sendFile('web' + req.path);
-      } else {
-        req.response.statusCode = 404;
-        req.response.end;
-      }
-    }).listen(8080, 'localhost');
-    
-    function vertxStop() {
-      server.close();
-    }
+    @server = HttpServer.new
+
+    @server.request_handler do |req|
+      if req.path == '/'
+        req.response.send_file('web/index.html')
+      elsif !req.path.include?('..')
+        req.response.send_file('web' + req.path)
+      else
+        req.response.status_code = 404
+        req.response.end
+      end
+    end.listen(8080, 'localhost')
+
+    def vertx_stop 
+      server.close
+    end
 
 We're creating an instance of `HttpServer` and we're setting a request handler function on it. The request handler gets called every time an HTTP request arrives on the server.
 
@@ -41,7 +42,7 @@ If the request is for the root, we just serve `index.html`. Otherwise we serve a
 
 If the path url contains the string `..` we just return a 404. This is to prevent someone reading files outside of the `web` directory.    
 
-Save it as `web-server.js`.
+Save it as `web-server.rb`.
 
 Now, create a directory called web with a file `index.html` in it:
 
@@ -50,7 +51,7 @@ Now, create a directory called web with a file `index.html` in it:
     
 And run the web server:
 
-    tim@Ethel:~/tutorial$ vertx run web_server.js
+    tim@Ethel:~/tutorial$ vertx run web_server.rb
     
 Point your browser at `http://localhost:8080`. You should see a page returned with 'Hello World'.    
 
@@ -60,14 +61,21 @@ That's the web server done.
 
 Now we have a working web server, we need to serve the actual client side app.
 
-For this demo, we've written it using knockout.js and Twitter bootstrap, but in your apps you can use whatever client side toolset you feel most comfortable with.
+For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with.
 
 The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.
 
-Copy the client side application from the vert.x installation into our web directory as follows:
-  
+Copy the client side application from the vert.x installation into our web directory as follows:  
     
-    tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/demo/web/* web
+    tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/ruby/webapp/web/* web
+    
+Open the file `web/js/client_app.js` in your text editor, and edit the line:
+
+    var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+    
+So it reads:
+
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus');      
           
         
 Now, refresh your browser. The client application should now be served.
@@ -96,34 +104,34 @@ We're going to use a persistor in our application for a few different things:
 * Storing usernames and passwords of users
 * Storing orders
 
-You could start a persistor on the command line by calling `vertx run busmods/mongo_persistor.js` but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.
+You could start a persistor on the command line by calling `vertx run busmods/mongo_persistor.rb` but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.
 
 It can also contain the JSON configuration for our application. All verticles can be configured using JSON.
 
 Open a text editor and copy in the following:
     
-    load('vertx.js');
+    require('vertx')
 
-    // Our application config
+    # Our application config
 
-    var app_conf = {
-      persistor_conf: {
-        address: 'demo.persistor',
-        db_name: 'test_db'
+    app_conf = {
+      'persistor_conf' => {
+        'address' => 'demo.persistor',
+        'db_name' => 'test_db'
       }
     }
 
-    // Deploy the busmods
+    # Deploy the busmods
 
-    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf);
+    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']);
 
-    // Start the web server
+    # Start the web server
 
-    vertx.deployVerticle('web_server.js');    
+    Vertx.deploy_verticle('web_server.rb')  
 
-Save it as `app.js`.
+Save it as `app.rb`.
 
-The calls to `vertx.deployVerticle` and `vertx.deployWorkerVerticle` are a programmatic way of starting other verticles from inside the code of a verticle.
+The calls to `Vertx.deploy_verticle` and `Vertx.deploy_worker_verticle` are a programmatic way of starting other verticles from inside the code of a verticle.
 
 As you can see, the persistor needs some configuration and that is passed in when we deploy the persistor verticle. The configuration is expressed in JSON.
 
@@ -135,9 +143,9 @@ The persistor needs two pieces of information:
 
 Of course you'll also need to make sure you have installed a MongoDB instance on the local machine, with default settings.
 
-Now CTRL-C the web server you started earlier and run `app.js` with 
+Now CTRL-C the web server you started earlier and run `app.rb` with 
 
-    tim@Ethel:~/tutorial$ vertx run app.js 
+    tim@Ethel:~/tutorial$ vertx run app.rb 
     
 The persistor and web server should be running and it should serve the client application as before.
 
@@ -151,37 +159,38 @@ To that we use a SockJS bridge.
 
 SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.
 
-SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.
+The SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.
 
 SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.
 
-To create a SockJS bridge, we just create an instance of `vertx.SockJSBridge` as follows:
+To create a SockJS bridge, we just create an instance of `Vertx::SockJSBridge` as follows:
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+    Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'}, [] )
 
-Edit `web_server.js` so it looks like:
+Edit `web_server.rb` so it looks like:
 
-    load('vertx.js');
+    require('vertx')
+    include Vertx
 
-    var server = new vertx.HttpServer();
-        
-    // Link up the client side to the server side event bus
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
-    
-    server.requestHandler(function(req) {
-      if (req.path === '/') {
-        req.response.sendFile('web/index.html');
-      } else if (req.path.indexOf('..') === -1) {
-        req.response.sendFile('web' + req.path);
-      } else {
-        req.response.statusCode = 404;
-        req.response.end;
-      }
-    }).listen(8080, 'localhost');
-    
-    function vertxStop() {
-      server.close();
-    }
+    @server = HttpServer.new
+
+    # Link up the client side to the server side event bus
+    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'}, [])
+
+    @server.request_handler do |req|
+      if req.path == '/'
+        req.response.send_file('web/index.html')
+      elsif !req.path.include?('..')
+        req.response.send_file('web' + req.path)
+      else
+        req.response.status_code = 404
+        req.response.end
+      end
+    end.listen(8080, 'localhost')
+
+    def vertx_stop 
+      server.close
+    end
 
 What we're doing here is creating an instance of a SockJS bridge and telling it that any requests it receives with the prefix `/eventbus` should be considered traffic for the event bus.
 
@@ -195,40 +204,40 @@ To allow messages through we have to tell the bridge what sort of messages we're
 
 Initially, we only want to allow through requests to the persistor to find albums. This will be used by the client side application to request the catalogue so it can display the list of available items to buy.
 
-Edit the code in `web_server.js` so it looks like:
+Edit the code in `web_server.rb` so it looks like:
 
-    load('vertx.js');
+    require('vertx')
+    include Vertx
 
-    var server = new vertx.HttpServer();
-        
-    // Link up the client side to the server side event bus
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
-      [
-        // Allow calls to get static album data from the persistor
+    @server = HttpServer.new
+
+    # Link up the client side to the server side event bus
+    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
+     [
+        # Allow calls to get static album data from the persistor
         {
-          address : 'demo.persistor',
-          match : {
-            action : 'find',
-            collection : 'albums'
+          'address' => 'demo.persistor',
+          'match' => {
+            'action' => 'find',
+            'collection' => 'albums'
           }
         }
-      ]
-    );
-    
-    server.requestHandler(function(req) {
-      if (req.path === '/') {
-        req.response.sendFile('web/index.html');
-      } else if (req.path.indexOf('..') === -1) {
-        req.response.sendFile('web' + req.path);
-      } else {
-        req.response.statusCode = 404;
-        req.response.end;
-      }
-    }).listen(8080, 'localhost');
-    
-    function vertxStop() {
-      server.close();
-    }
+      ])
+
+    @server.request_handler do |req|
+      if req.path == '/'
+        req.response.send_file('web/index.html')
+      elsif !req.path.include?('..')
+        req.response.send_file('web' + req.path)
+      else
+        req.response.status_code = 404
+        req.response.end
+      end
+    end.listen(8080, 'localhost')
+
+    def vertx_stop 
+      server.close
+    end
     
 The third parameter to the SockJSBridge constructor is an array of matches.    
     
@@ -242,21 +251,21 @@ We're almost at the point where the client side app can see the catalogue data. 
 
 To do this we will create a script called `static_data.js` which just inserts catalogue and other data needed by the application in the database. It does this by sending JSON messages on the event bus.
 
-Copy `static_data.js` into your directory as follows:
+Copy `static_data.rb` into your directory as follows:
 
-    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/demo/static_data.js .
+    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/ruby/webapp/static_data.rb .
 
-We want to insert the static data only after the persistor verticle has completed starting up so we edit `app.js` as follows:
+We want to insert the static data only after the persistor verticle has completed starting up so we edit `app.rb` as follows:
 
-    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf, 1, function() {
-      load('static_data.js');
-    });
+    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']) do
+        load('static_data.rb')
+    end
     
-The function that we're specifying in the call to `deployWorkerVerticle` will be invoked when the persistor is fully started. In that function we just load the static data script.
+The block that we're specifying in the call to `deploy_worker_verticle` will be invoked when the persistor is fully started. In that block we just load the static data script.
 
-Save the edited `app.js` and restart it.
+Save the edited `app.rb` and restart it.
 
-    vertx run app.js
+    vertx run app.rb
     
 Refresh your browser.
 
@@ -324,81 +333,78 @@ For detailed information on this component please consult the busmods manual.
 
 We're going to add an authentication manager component to our application so the user can login.
 
-Open up app.js again, and add the following line:
+Open up app.rb again, and add the following line:
 
-    vertx.deployVerticle('busmods/auth_mgr.js', app_conf.auth_mgr_conf);
+    Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
 
 Also add the following to the `app_conf`:
 
-    auth_mgr_conf: {
-        address: 'demo.authMgr',
-        user_collection: 'users',
-        persistor_address: 'demo.persistor'
-      }
+  'auth_mgr_conf' => {
+    'address' => 'demo.authMgr',
+    'user_collection' => 'users',
+    'persistor_address' => 'demo.persistor'
+  }
       
-So, app.js should now look like this:
+So, app.rb should now look like this:
 
-    load('vertx.js');
+    require('vertx')
 
-    var log = vertx.getLogger();
+    # Our application config
 
-    // Our application config
-
-    var app_conf = {  
-      persistor_conf: {
-        address: 'demo.persistor',
-        db_name: 'test_db'
+    app_conf = {
+      'persistor_conf' => {
+        'address' => 'demo.persistor',
+        'db_name' => 'test_db'
       },
-      auth_mgr_conf: {
-        address: 'demo.authMgr',
-        user_collection: 'users',
-        persistor_address: 'demo.persistor'
+      'auth_mgr_conf' => {
+        'address' => 'demo.authMgr',
+        'user_collection' => 'users',
+        'persistor_address' => 'demo.persistor'
       }
     }
 
-    // Deploy the busmods
+    # Deploy the busmods
 
-    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf, 1, function() {
-      load('static_data.js');
-    });
+    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']) do
+        load('static_data.rb')
+    end
 
-    vertx.deployVerticle('busmods/auth_mgr.js', app_conf.auth_mgr_conf);
+    Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
 
-    // Start the web server
+    # Start the web server
 
-    vertx.deployVerticle('web_server.js');
+    Vertx.deploy_verticle('web_server.rb') 
     
 We also need to tell the SockJS bridge to expect login messages coming onto the event bus.
 
-Edit `web_server.js` and add the following match to the array of matches passed into the SockJSBridge constructor:
+Edit `web_server.rb` and add the following match to the array of matches passed into the SockJSBridge constructor:
 
-    // Allow user to login
+    # Allow user to login
     {
-      address : 'demo.authMgr.login'
+      'address' => 'demo.authMgr.login'
     }
     
 So the line that constructs the SockJSBridge looks like:
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
       [
-        // Allow calls to get static album data from the persistor
+        # Allow calls to get static album data from the persistor
         {
-          address : 'demo.persistor',
-          match : {
-            action : 'find',
-            collection : 'albums'
+          'address' => 'demo.persistor',
+          'match' => {
+            'action' => 'find',
+            'collection' => 'albums'
           }
         },
-        // Allow user to login
+        # Allow user to login
         {
-          address : 'demo.authMgr.login'
+          'address' => 'demo.authMgr.login'
         }
-      ]
-    );
+      ])
 
 Now restart the application
 
-    vertx run app.js
+    vertx run app.rb
     
 And refresh your browser.
 
@@ -428,7 +434,7 @@ It's as easy as that.
 
 The next part to implement is submitting of orders.
 
-One naive way to do this would be to directly insert the order in the database by sending a messager to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.
+One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.
 
 Problem is we don't want to just anyone inserting data into the database or sending emails from the client side (we don't want to become a spam relay!).
 
@@ -441,81 +447,87 @@ As orders arrive we want to
 3. If Ok, then send an order confirmation
 4. Send back a confirmation to the client side.
 
-Copy the following into your editor and save it as `order_mgr.js` in your tutorial top-level directory.
+Copy the following into your editor and save it as `order_mgr.rb` in your tutorial top-level directory.
 
-    load('vertx.js');
+    require('vertx')
+    require('json')
 
-    var eb = vertx.EventBus;
-    var log = vertx.getLogger();
+    eb = Vertx::EventBus
+    address = "demo.orderMgr"
 
-    var handler = function(order, replier) {
-      log.info('Received order in order manager ' + JSON.stringify(order));
-      var sessionID = order.sessionID;
-      eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
-        if (reply.status === 'ok') {
-          // Get the email address for the order
-          var username = reply.username;
-          eb.send('demo.persistor', {action:'findone', collection:'users', matcher: {username: username}},
-            function(reply) {
-              if (reply.status === 'ok') {
-                replier({status: 'ok'});
-              } else {
-                log.warn('Failed to persist order');
-              }
-            });
-        } else {
-          // Invalid session id
-          log.warn('invalid session id');
-        }
-      });
-    }
+    id = eb.register_handler(address) do |message|
+      order = message.body
+      puts "Received order in order manager #{JSON.generate(order)}"
+      sessionID = order['sessionID']
+      eb.send('demo.authMgr.validate', { 'sessionID' => sessionID }) do |reply|
+        if reply.body['status'] == 'ok'
+          username = reply.body['username']
+          eb.send('demo.persistor',
+                  {'action' => 'findone', 'collection' => 'users',
+                  'matcher'=> {'username' => username}}) do |reply|                                         
+              if reply.body['status'] == 'ok'
+                message.reply({'status' => 'ok'})
+              else
+                puts 'Failed to persist order'
+              end
+            end
+        else
+          # Invalid session id
+          puts 'invalid session id'
+        end
+      end
+    end
 
-    var address = "demo.orderMgr";
-    eb.registerHandler(address, handler);
-
-    function vertxStop() {
-      eb.unregisterHandler(address, handler);
-    }
+    def vertx_stop
+      eb.unregister_handler(id)
+    end
     
-The order manager verticle registers a handler on the address `demo.orderMgr`. When an order message arrives in the handler the first thing it does is log out the order, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
+The order manager verticle registers a handler on the address `demo.orderMgr`. When any message arrives on the event bus a `Message` object is passed to the handler.
 
-If the user was logged in ok, the order is persisted using the MongoDB persistor. If that returns ok, we send back a message to the client 
+The actual order is in the `body` attribute of the message. When an order message arrives the first thing it does is print the order to stdout, then it sends a message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
 
-    if (reply.status === 'ok') {
-        replier({status: 'ok'});
-    }
+If the user was logged in ok, the order is then persisted using the MongoDB persistor. If that returns ok, we send back a message to the client 
+
+    if reply.status == 'ok'
+        order.reply({'status': 'ok'})
+    end
     
-All message handlers when invoked receive a second argument. This is a replier function which can be invoked to send back a reply to the sender of the message. In other words, it's an implementation of the *request-response* pattern.
+All messages have a `reply` function which can be invoked to send back a reply to the sender of the message. In other words, it's an implementation of the *request-response* pattern.
 
-We'll also need to add another accepted match on the SockJSBridge config in `web_server.js` to tell it to let through orders:
+We'll also need to add another accepted match on the SockJSBridge config in `web_server.rb` to tell it to let through orders:
     
-    // Let through orders posted to the order manager
+    # Let through orders posted to the order manager
     {
-      address : 'demo.orderMgr'
+      'address' => 'demo.orderMgr'
     }
     
 So, it should look like:
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
       [
-        // Allow calls to get static album data from the persistor
+        # Allow calls to get static album data from the persistor
         {
-          address : 'demo.persistor',
-          match : {
-            action : 'find',
-            collection : 'albums'
+          'address' => 'demo.persistor',
+          'match' => {
+            'action' => 'find',
+            'collection' => 'albums'
           }
         },
-        // Allow user to login
+        # Allow user to login
         {
-          address : 'demo.authMgr.login'
+          'address' => 'demo.authMgr.login'
         },
-        // Let through orders posted to the order manager
+        # Let through orders posted to the order manager
         {
-          address : 'demo.orderMgr'
+          'address' => 'demo.orderMgr'
         }
-      ]
-    );    
+      ])
+    
+We'll also have to add a line to `app.rb` to load the `order_mgr.rb` verticle, just before the web server is started:
+
+    # Start the order manager
+
+    Vertx.deploy_verticle('order_mgr.rb')
 
 Ok, let's take a look at the client side code which sends the order.
 
@@ -555,7 +567,7 @@ Everything should be in order, so restart the app again:
     
 Refresh the browser.
 
-Now log-in and add a few items into your cart. Click to the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly".
+Now log-in and add a few items into your cart. Click on the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly" should appear!
 
 Take a look in the console window of the application. You should see the order has been logged.
 
@@ -569,105 +581,110 @@ We can easily send order confirmation emails from the order manager.
 
 First we need to start a Mailer busmod. This is an out of the box busmod that comes bundled with vert.x
 
-Add the following line to `app.js`.
+Add the following line to `app.rb`, just after where the `auth_mgr` is deployed.
 
-    vertx.deployWorkerVerticle('busmods/mailer.js', app_conf.mailer_conf);
+    Vertx.deploy_worker_verticle('busmods/mailer.rb', app_conf['mailer_conf'])
     
+        
 And augment the app config with
 
-    mailer_conf: {
-        address: 'demo.mailer'    
+    'mailer_conf' => {
+        'address' => 'demo.mailer'    
     }
     
 So it reads:
 
-    var app_conf = {  
-      persistor_conf: {
-        address: 'demo.persistor',
-        db_name: 'test_db'
+    app_conf = {
+      'persistor_conf' => {
+        'address' => 'demo.persistor',
+        'db_name' => 'test_db'
       },
-      auth_mgr_conf: {
-        address: 'demo.authMgr',
-        user_collection: 'users',
-        persistor_address: 'demo.persistor'
+      'auth_mgr_conf' => {
+        'address' => 'demo.authMgr',
+        'user_collection' => 'users',
+        'persistor_address' => 'demo.persistor'
       },
-      mailer_conf: {
-        address: 'demo.mailer'    
-      }  
-    }         
+      'mailer_conf' => {
+         'address' => 'demo.mailer'    
+      }
+    }      
     
 By default, the mailer attempts to send mails to a local mail server (e.g. sendmail daemon) running on `localhost`, port `25`. If you don't have such a daemon, you can try it out with (for example), a gmail account by changing the mailer config as follows:
 
-    mailer_conf: {
-        address: 'demo.mailer',
-        host: 'smtp.googlemail.com',
-        port: 465,
-        ssl: true,
-        auth: true,
-        username: 'username',
-        password: 'password'    
+    'mailer_conf' => {
+        'address' => 'demo.mailer',
+        'host' => 'smtp.googlemail.com',
+        'port' => 465,
+        'ssl' => true,
+        'auth' => true,
+        'username' => 'username',
+        'password' => 'password'    
     }
     
 (Obviously, changing the `username` and `password` values).  
 
-By default the email address of the `tim` user is `tim@localhost.com`. Updated this in `static-data.js` (and restart), and you should see the email being sent to the correct address.  
+By default the email address of the `tim` user is `tim@localhost.com`. Update this in `static-data.rb` (and restart), and you should see the email being sent to the correct address.  
 
-Next, we can edit `order_mgr.js` to actually send the email. We'll add the following function:
+Next, we can edit `order_mgr.rb` to actually send the email. We'll add the following function:
 
-    function sendEmail(email, items) {
+    def send_email(email, items)
 
-      var body = 'Thank you for your order\n\nYou bought:\n\n';
-      var totPrice = 0.0;
-      for (var i = 0; i < items.length; i++) {
-        var quant = items[i].quantity;
-        var album = items[i].album;
-        var linePrice = quant * album.price;
-        totPrice += linePrice;
-        body = body.concat(quant, ' of ', album.title, ' at $' ,album.price.toFixed(2),
-                           ' Line Total: $', linePrice.toFixed(2), '\n');
+      puts "sending to email #{email}"
+
+      body = "Thank you for your order\n\nYou bought:\n\n"
+      tot_price = 0.0
+      for i in 0..items.length - 1
+        quant = items[i]['quantity']
+        album = items[i]['album']
+        line_price = quant * album['price']
+        tot_price += line_price
+        body << "#{quant} of #{album['title']} at $#{album['price']} Line Total: $#{line_price}\n"
+      end
+      body << "\nTotal: $#{tot_price}"
+
+      msg = {
+        'from' => 'vToons@localhost',
+        'to' => email,
+        'subject' => 'Thank you for your order',
+        'body' => body
       }
-      body = body.concat('\n', 'Total: $', totPrice.toFixed(2));
+      
+      puts "sending email: #{body}"
 
-      var msg = {
-        from: 'vToons@localhost',
-        to: email,
-        subject: 'Thank you for your order',
-        body: body
-      };
-
-      eb.send('demo.mailer', msg);
-    }
+      @eb.send('demo.mailer', msg)
+    end
     
-And insert a call the `sendEmail` function, just after the order has been persisted ok, so it looks like this:
+This method simply formats an email based on the email address and the order items, and sends it off by sending a message on the event bus to the mailer.    
+    
+You'll also need to insert a call to this method, just after the order has been persisted ok, so it looks like this:
 
-    if (reply.status === 'ok') {
-        replier({status: 'ok'});
+    if reply.body['status'] == 'ok'
+        message.reply({'status' => 'ok'})
 
-        // Send an email            
-        sendEmail(reply.result.email, order.items);
-
-    } else {
-      log.warn('Failed to persist order');
-    }
+        # Send an email            
+        send_email(reply.body['result']['email'], order['items'])
+    else
+        puts 'Failed to persist order'
+    end
 
    
 ## Step 10. Securing the Connection
 
-So far in this tutorial, all client-server traffic has been over an unsecured HTTP or WebSockets connection. That's not a very good idea since we've been sending login credentials and orders.
+So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea since we've been sending login credentials and orders.
 
 Configuring vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please
 see the manual).
 
-Edit `web_server.js` again, and edit the line that creates the HTTP server so it reads:
+Edit `web_server.rb` again, and edit the line that creates the HTTP server so it reads:
 
-    var server = new vertx.HttpServer()
-        .setSSL(true)
-        .setKeyStorePath('my-keystore.jks')
-        .setKeyStorePassword('password');
+    @server = HttpServer.new
+    @server.ssl = true
+    @server.key_store_path = 'server-keystore.jks'
+    @server.key_store_password = 'wibble'
         
 Copy the keystore from the distribution
 
-    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/demo/server-keystore.jks . 
+    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/ruby/webapp/server-keystore.jks . 
     
 *The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java `keytool` command.*           
         
@@ -693,9 +710,9 @@ Easy peasy. **It just works**
 
 Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the verticle `web_server.js` to something like:
 
-    // Start 32 instances of the web server!
+    # Start 32 instances of the web server!
 
-    vertx.deployVerticle('web_server.js', null, 32);  
+    Vertx.deploy_verticle('web_server.rb', nil, 32)  
     
 (*Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances*.)
 
@@ -713,9 +730,7 @@ Please consult the busmods manual for more information on this.
 
 This tutorial gives you just a taste of the kinds of things you can do with vert.x. 
 
-With just a few lines of code you can create real, scalable web-enabled applications.
-
-With a network of verticles communicating on an event bus which spans multiple machines on both the server side and client side JavaScript, the only limit is your imagination.
+With just a couple of handfuls of code you can have creates a real, scalable web-app.
 
 
        

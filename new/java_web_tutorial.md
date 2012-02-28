@@ -60,14 +60,22 @@ That's the web server done.
 
 Now we have a working web server, we need to serve the actual client side app.
 
-For this demo, we've written it using knockout.js and Twitter bootstrap, but in your apps you can use whatever client side toolset you feel most comfortable with.
+For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with.
 
 The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.
 
 Copy the client side application from the vert.x installation into our web directory as follows:
   
     
-    tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/demo/web/* web
+    tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/java/webapp/web/* web
+    
+Open the file `web/js/client_app.js` in your text editor, and edit the line:
+
+    var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+    
+So it reads:
+
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus');      
           
         
 Now, refresh your browser. The client application should now be served.

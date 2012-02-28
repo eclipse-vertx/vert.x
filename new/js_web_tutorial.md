@@ -60,16 +60,23 @@ That's the web server done.
 
 Now we have a working web server, we need to serve the actual client side app.
 
-For this demo, we've written it using knockout.js and Twitter bootstrap, but in your apps you can use whatever client side toolset you feel most comfortable with.
+For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with.
 
 The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.
 
 Copy the client side application from the vert.x installation into our web directory as follows:
   
     
-    tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/demo/web/* web
-          
-        
+    tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/javascript/webapp/web/* web
+    
+Open the file `web/js/client_app.js` in your text editor, and edit the line:
+
+    var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+    
+So it reads:
+
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus');    
+                  
 Now, refresh your browser. The client application should now be served.
 
 Of course, it won't do anything useful yet, since we haven't connected it up to anything, but you should at least see the layout. It should look like this: 
@@ -151,7 +158,7 @@ To that we use a SockJS bridge.
 
 SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.
 
-SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.
+The SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.
 
 SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.
 
@@ -428,7 +435,7 @@ It's as easy as that.
 
 The next part to implement is submitting of orders.
 
-One naive way to do this would be to directly insert the order in the database by sending a messager to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.
+One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.
 
 Problem is we don't want to just anyone inserting data into the database or sending emails from the client side (we don't want to become a spam relay!).
 
@@ -453,7 +460,6 @@ Copy the following into your editor and save it as `order_mgr.js` in your tutori
       var sessionID = order.sessionID;
       eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
         if (reply.status === 'ok') {
-          // Get the email address for the order
           var username = reply.username;
           eb.send('demo.persistor', {action:'findone', collection:'users', matcher: {username: username}},
             function(reply) {
@@ -477,7 +483,7 @@ Copy the following into your editor and save it as `order_mgr.js` in your tutori
       eb.unregisterHandler(address, handler);
     }
     
-The order manager verticle registers a handler on the address `demo.orderMgr`. When an order message arrives in the handler the first thing it does is log out the order, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
+The order manager verticle registers a handler on the address `demo.orderMgr`. When an order message arrives in the handler the first thing it does is print out the order to stdout, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
 
 If the user was logged in ok, the order is persisted using the MongoDB persistor. If that returns ok, we send back a message to the client 
 
@@ -516,6 +522,12 @@ So, it should look like:
         }
       ]
     );    
+    
+We'll also have to add a line to `app.js` to load the `order_mgr.js` verticle, just before the web server is started:
+
+    // Start the order manager
+
+    vertx.deployVerticle('order_mgr.js');    
 
 Ok, let's take a look at the client side code which sends the order.
 
@@ -555,7 +567,7 @@ Everything should be in order, so restart the app again:
     
 Refresh the browser.
 
-Now log-in and add a few items into your cart. Click to the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly".
+Now log-in and add a few items into your cart. Click to the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly" should be displayed!
 
 Take a look in the console window of the application. You should see the order has been logged.
 
@@ -610,7 +622,7 @@ By default, the mailer attempts to send mails to a local mail server (e.g. sendm
     
 (Obviously, changing the `username` and `password` values).  
 
-By default the email address of the `tim` user is `tim@localhost.com`. Updated this in `static-data.js` (and restart), and you should see the email being sent to the correct address.  
+By default the email address of the `tim` user is `tim@localhost.com`. Update this in `static-data.js` (and restart), and you should see the email being sent to the correct address.  
 
 Next, we can edit `order_mgr.js` to actually send the email. We'll add the following function:
 
@@ -638,7 +650,9 @@ Next, we can edit `order_mgr.js` to actually send the email. We'll add the follo
       eb.send('demo.mailer', msg);
     }
     
-And insert a call the `sendEmail` function, just after the order has been persisted ok, so it looks like this:
+This method simply formats an email based on the email address and the order items, and sends it off by sending a message on the event bus to the mailer.    
+    
+You'll also need to insert a call to this method, just after the order has been persisted ok, so it looks like this:
 
     if (reply.status === 'ok') {
         replier({status: 'ok'});
@@ -653,7 +667,7 @@ And insert a call the `sendEmail` function, just after the order has been persis
    
 ## Step 10. Securing the Connection
 
-So far in this tutorial, all client-server traffic has been over an unsecured HTTP or WebSockets connection. That's not a very good idea since we've been sending login credentials and orders.
+So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea since we've been sending login credentials and orders.
 
 Configuring vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please
 see the manual).
@@ -662,12 +676,12 @@ Edit `web_server.js` again, and edit the line that creates the HTTP server so it
 
     var server = new vertx.HttpServer()
         .setSSL(true)
-        .setKeyStorePath('my-keystore.jks')
-        .setKeyStorePassword('password');
+        .setKeyStorePath('server-keystore.jks')
+        .setKeyStorePassword('wibble');
         
 Copy the keystore from the distribution
 
-    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/demo/server-keystore.jks . 
+    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks . 
     
 *The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java `keytool` command.*           
         
@@ -713,9 +727,7 @@ Please consult the busmods manual for more information on this.
 
 This tutorial gives you just a taste of the kinds of things you can do with vert.x. 
 
-With just a few lines of code you can create real, scalable web-enabled applications.
-
-With a network of verticles communicating on an event bus which spans multiple machines on both the server side and client side JavaScript, the only limit is your imagination.
+With just a couple of handfuls of code you can have creates a real, scalable web-app.
 
 
        
