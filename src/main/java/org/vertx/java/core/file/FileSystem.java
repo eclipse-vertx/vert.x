@@ -17,12 +17,14 @@
 package org.vertx.java.core.file;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Deferred;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleAsyncResultHandler;
 import org.vertx.java.core.SynchronousAction;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
@@ -65,6 +67,18 @@ public class FileSystem {
   private FileSystem() {
   }
 
+  private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
+    fut.handler(new CompletionHandler<T>() {
+      public void handle(Future<T> event) {
+        if (event.succeeded()) {
+          handler.handle(new AsyncResult<T>(event.result()));
+        } else {
+          handler.handle(new AsyncResult<T>(event.exception()));
+        }
+      }
+    });
+  }
+
   private SynchronousAction<Void> copyDeferred(String from, String to) {
     return copyDeferred(from, to, false);
   }
@@ -75,8 +89,8 @@ public class FileSystem {
    * The actual copy will happen asynchronously.
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> copy(String from, String to) {
-    return copyDeferred(from, to).execute();
+  public void copy(String from, String to, AsyncResultHandler<Void> handler) {
+    wrapHandler(copyDeferred(from, to).execute(), handler);
   }
 
   public void copySync(String from, String to) throws Exception {
@@ -131,25 +145,8 @@ public class FileSystem {
    * The copy will fail if the destination if the destination already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> copy(String from, String to, boolean recursive) {
-    return copyDeferred(from, to, recursive).execute();
-  }
-
-  public void copy2(String from, String to, boolean recursive, final Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = copyDeferred(from, to, recursive).execute();
-    wrapHandler(fut, handler);
-  }
-
-  private <T> void wrapHandler(Future<T> fut, final Handler<AsyncResult<T>> handler) {
-    fut.handler(new CompletionHandler<T>() {
-      public void handle(Future<T> event) {
-        if (event.succeeded()) {
-          handler.handle(new AsyncResult<T>(event.result()));
-        } else {
-          handler.handle(new AsyncResult<T>(event.exception()));
-        }
-      }
-    });
+  public void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
+    wrapHandler(copyDeferred(from, to, recursive).execute(), handler);
   }
 
   public void copySync(String from, String to, boolean recursive) throws Exception {
@@ -181,8 +178,8 @@ public class FileSystem {
    * The actual move will happen asynchronously.
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> move(String from, String to) {
-    return moveDeferred(from, to).execute();
+  public void move(String from, String to, AsyncResultHandler<Void> handler) {
+    wrapHandler(moveDeferred(from, to).execute(), handler);
   }
 
   public void moveSync(String from, String to) throws Exception {
@@ -219,8 +216,8 @@ public class FileSystem {
    * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> truncate(String path, long len) {
-    return truncateDeferred(path, len).execute();
+  public void truncate(String path, long len, AsyncResultHandler<Void> handler) {
+    wrapHandler(truncateDeferred(path, len).execute(), handler);
   }
 
   public void truncateSync(String path, long len) throws Exception {
@@ -236,8 +233,8 @@ public class FileSystem {
    * The permission String takes the form rwxr-x--- as specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> chmod(String path, String perms) {
-    return chmodDeferred(path, perms).execute();
+  public void chmod(String path, String perms, AsyncResultHandler<Void> handler) {
+    wrapHandler(chmodDeferred(path, perms).execute(), handler);
   }
 
   public void chmodSync(String path, String perms) throws Exception {
@@ -284,8 +281,8 @@ public class FileSystem {
    * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> chmod(String path, String perms, String dirPerms) {
-    return chmodDeferred(path, perms, dirPerms).execute();
+  public void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+    wrapHandler(chmodDeferred(path, perms, dirPerms).execute(), handler);
   }
 
 
@@ -303,8 +300,8 @@ public class FileSystem {
    * If the file is a link, the link will be followed.
    * @return a Future representing the future result of the action.
    */
-  public Future<FileProps> props(String path) {
-    return propsDeferred(path).execute();
+  public void props(String path, AsyncResultHandler<FileProps> handler) {
+    wrapHandler(propsDeferred(path).execute(), handler);
   }
 
   public FileProps propsSync(String path) throws Exception {
@@ -319,8 +316,8 @@ public class FileSystem {
    * Obtain properties for the link represented by {@code path}, asynchronously. The link will not be followed.
    * @return a Future representing the future result of the action.
    */
-  public Future<FileProps> lprops(String path) {
-    return lpropsDeferred(path).execute();
+  public void lprops(String path, AsyncResultHandler<FileProps> handler) {
+    wrapHandler(lpropsDeferred(path).execute(), handler);
   }
 
   public FileProps lpropsSync(String path) throws Exception {
@@ -355,8 +352,8 @@ public class FileSystem {
    * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> link(String link, String existing) {
-    return linkDeferred(link, existing).execute();
+  public void link(String link, String existing, AsyncResultHandler<Void> handler) {
+    wrapHandler(linkDeferred(link, existing).execute(), handler);
   }
 
   public void linkSync(String link, String existing) throws Exception {
@@ -371,8 +368,8 @@ public class FileSystem {
    * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> symlink(String link, String existing) {
-    return symlinkDeferred(link, existing).execute();
+  public void symlink(String link, String existing, AsyncResultHandler<Void> handler) {
+    wrapHandler(symlinkDeferred(link, existing).execute(), handler);
   }
 
   public void symlinkSync(String link, String existing) throws Exception {
@@ -407,8 +404,8 @@ public class FileSystem {
    * Unlinks the link on the file system represented by the path {@code link}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> unlink(String link) {
-    return unlinkDeferred(link).execute();
+  public void unlink(String link, AsyncResultHandler<Void> handler) {
+    wrapHandler(unlinkDeferred(link).execute(), handler);
   }
 
   public void unlinkSync(String link) throws Exception {
@@ -433,8 +430,8 @@ public class FileSystem {
    * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<String> readSymlink(String link) {
-    return readSymlinkDeferred(link).execute();
+  public void readSymlink(String link, AsyncResultHandler<String> handler) {
+    wrapHandler(readSymlinkDeferred(link).execute(), handler);
   }
 
   public String readSymlinkSync(String link) throws Exception {
@@ -449,8 +446,8 @@ public class FileSystem {
    * Deletes the file represented by the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> delete(String path) {
-    return deleteDeferred(path).execute();
+  public void delete(String path, AsyncResultHandler<Void> handler) {
+    wrapHandler(deleteDeferred(path).execute(), handler);
   }
 
   public void deleteSync(String path) throws Exception {
@@ -496,8 +493,8 @@ public class FileSystem {
    * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> delete(String path, boolean recursive) {
-    return deleteDeferred(path, recursive).execute();
+  public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
+    wrapHandler(deleteDeferred(path, recursive).execute(), handler);
   }
 
   public void deleteSync(String path, boolean recursive) throws Exception {
@@ -513,8 +510,8 @@ public class FileSystem {
    * The operation will fail if the directory already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> mkdir(String path) {
-    return mkdirDeferred(path).execute();
+  public void mkdir(String path, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path).execute(), handler);
   }
 
   public void mkdirSync(String path) throws Exception {
@@ -532,8 +529,8 @@ public class FileSystem {
    * The operation will fail if the directory already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> mkdir(String path, boolean createParents) {
-    return mkdirDeferred(path, createParents).execute();
+  public void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path, createParents).execute(), handler);
   }
 
   public void mkdirSync(String path, boolean createParents) throws Exception {
@@ -551,8 +548,8 @@ public class FileSystem {
    * The operation will fail if the directory already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> mkdir(String path, String perms) {
-    return mkdirDeferred(path, perms).execute();
+  public void mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path, perms).execute(), handler);
   }
 
   public void mkdirSync(String path, String perms) throws Exception {
@@ -598,8 +595,8 @@ public class FileSystem {
    * The operation will fail if the directory already exists.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> mkdir(String path, String perms, boolean createParents) {
-    return mkdirDeferred(path, perms, createParents).execute();
+  public void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path, perms, createParents).execute(), handler);
   }
 
   public void mkdirSync(String path, String perms, boolean createParents) throws Exception {
@@ -615,8 +612,8 @@ public class FileSystem {
    * @return a Future representing the future result of the action.
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  public Future<String[]> readDir(String path) {
-    return readDirDeferred(path).execute();
+  public void readDir(String path, AsyncResultHandler<String[]> handler) {
+    wrapHandler(readDirDeferred(path).execute(), handler);
   }
 
   public String[] readDirSync(String path) throws Exception {
@@ -667,8 +664,8 @@ public class FileSystem {
    * @return a Future representing the future result of the action.
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  public Future<String[]> readDir(String path, String filter) {
-    return readDirDeferred(path, filter).execute();
+  public void readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
+    wrapHandler(readDirDeferred(path, filter).execute(), handler);
   }
 
   public String[] readDirSync(String path, String filter) throws Exception {
@@ -692,8 +689,8 @@ public class FileSystem {
    * Do not user this method to read very large files or you risk running out of available RAM.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Buffer> readFile(String path) {
-    return readFileDeferred(path).execute();
+  public void readFile(String path, AsyncResultHandler<Buffer> handler) {
+    wrapHandler(readFileDeferred(path).execute(), handler);
   }
 
   public Buffer readFileSync(String path) throws Exception {
@@ -715,8 +712,8 @@ public class FileSystem {
    * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> writeFile(String path, Buffer data) {
-    return writeFileDeferred(path, data).execute();
+  public void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
+    wrapHandler(writeFileDeferred(path, data).execute(), handler);
   }
 
   public void writeFileSync(String path, Buffer data) throws Exception {
@@ -749,8 +746,8 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(String path) {
-    return openDeferred(path).execute();
+  public void open(String path, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path).execute(), handler);
   }
 
   public AsyncFile openSync(String path) throws Exception {
@@ -768,8 +765,8 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(String path, String perms) {
-    return openDeferred(path, perms).execute();
+  public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms).execute(), handler);
   }
 
   public AsyncFile openSync(String path, String perms) throws Exception {
@@ -788,8 +785,8 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(String path, String perms, boolean createNew) {
-    return openDeferred(path, perms, createNew).execute();
+  public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms, createNew).execute(), handler);
   }
 
   public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
@@ -810,8 +807,8 @@ public class FileSystem {
    * Write operations will not automatically flush to storage.
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(String path, String perms, boolean read, boolean write, boolean createNew) {
-    return openDeferred(path, perms, read, write, createNew).execute();
+  public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms, read, write, createNew).execute(), handler);
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
@@ -843,9 +840,9 @@ public class FileSystem {
    * storage on each write.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<AsyncFile> open(String path, String perms, boolean read, boolean write, boolean createNew,
-                   boolean flush) {
-    return openDeferred(path, perms, read, write, createNew, flush).execute();
+  public void open(String path, String perms, boolean read, boolean write, boolean createNew,
+                   boolean flush, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms, read, write, createNew, flush).execute(), handler);
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
@@ -866,8 +863,8 @@ public class FileSystem {
    * Creates an empty file with the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> createFile(String path) {
-    return createFileDeferred(path).execute();
+  public void createFile(String path, AsyncResultHandler<Void> handler) {
+    wrapHandler(createFileDeferred(path).execute(), handler);
   }
 
   public void createFileSync(String path) throws Exception {
@@ -898,8 +895,8 @@ public class FileSystem {
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Void> createFile(String path, String perms) {
-    return createFileDeferred(path, perms).execute();
+  public void createFile(String path, String perms, AsyncResultHandler<Void> handler) {
+    wrapHandler(createFileDeferred(path, perms).execute(), handler);
   }
 
   public void createFileSync(String path, String perms) throws Exception {
@@ -920,8 +917,8 @@ public class FileSystem {
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<Boolean> exists(String path) {
-    return existsDeferred(path).execute();
+  public void exists(String path, AsyncResultHandler<Boolean> handler) {
+    wrapHandler(existsDeferred(path).execute(), handler);
   }
 
   public boolean existsSync(String path) throws Exception {
@@ -943,8 +940,8 @@ public class FileSystem {
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
    * @return a Future representing the future result of the action.
    */
-  public Future<FileSystemProps> fsProps(String path) {
-    return fsPropsDeferred(path).execute();
+  public void fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
+    wrapHandler(fsPropsDeferred(path).execute(), handler);
   }
 
   public FileSystemProps fsPropsSync(String path) throws Exception {

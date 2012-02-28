@@ -16,6 +16,8 @@
 
 package org.vertx.java.examples.upload;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -53,22 +55,22 @@ public class UploadClient implements Verticle {
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);
 
-    FileSystem.instance.open(filename).handler(new CompletionHandler<AsyncFile>() {
-      public void handle(Future<AsyncFile> completion) {
-        final AsyncFile file = completion.result();
+    FileSystem.instance.open(filename, new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult<AsyncFile> ar) {
+        final AsyncFile file = ar.result;
         Pump pump = new Pump(file.getReadStream(), req);
         pump.start();
 
         file.getReadStream().endHandler(new SimpleHandler() {
           public void handle() {
 
-            file.close().handler(new CompletionHandler<Void>() {
-              public void handle(Future<Void> completion) {
-                if (completion.succeeded()) {
+            file.close(new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> ar) {
+                if (ar.exception == null) {
                   req.end();
                   System.out.println("Sent request");
                 } else {
-                  completion.exception().printStackTrace(System.err);
+                  ar.exception.printStackTrace(System.err);
                 }
               }
             });
