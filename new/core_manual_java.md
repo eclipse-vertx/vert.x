@@ -2205,7 +2205,8 @@ To let all messages through you can specify an array with a single empty JSON ob
 # File System
 
 Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
-The first argument passed into the callback is an exception, if an error occurred. This will be `null` if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.
+
+The argument passed into the handler is an instance of `org.vertx.java.core.AsyncResult`. Instances of this class have two fields: `exception` - If the operation has failed this will be set; `result` - If the operation has succeeded this will contain the result.
 
 # Synchronous forms
 
@@ -2225,12 +2226,15 @@ Non recursive file copy. `source` is the source file name. `destination` is the 
 
 Here's an example:
 
-    vertx.FileSystem.copy('foo.dat', 'bar.dat', function(err) {
-        if (!err) {
-            log.info('Copy was successful');
+    FileSystem.instance.copy("foo.dat", "bar.dat", new AsyncResultHandler<Void>() {
+        public void handle(AsyncResult ar) {
+            if (ar.exception == null) {
+                log.info("Copy was successful");
+            } else {
+                log.error("Failed to copy", ar.exception);
+            }
         }
     });
-
 
 * `copy(source, destination, recursive, handler)`
 
@@ -2289,15 +2293,17 @@ Retrieve properties of a file.
 
 Here's an example:
 
-    vertx.FileSystem.props('some-file.txt', function(err, props) {
-        if (err) {
-            log.info('Failed to retrieve file props: ' + err);
-        } else {
-            log.info('File props are:');
-            log.info('Last accessed: ' + props.lastAccessTime);
-            // etc 
+    FileSystem.instance.props("foo.dat", "bar.dat", new AsyncResultHandler<FileProps>() {
+        public void handle(AsyncResult<FileProps> ar) {
+            if (ar.exception == null) {
+                log.info("File props are:");
+                log.info("Last accessed: " + ar.result.lastAccessTime);
+                // etc 
+            } else {
+                log.error("Failed to get props", ar.exception);
+            }
         }
-    }); 
+    });
 
 ## lprops
 
@@ -2337,9 +2343,13 @@ Reads a symbolic link. I.e returns the path representing the file that the symbo
 
 `link` is the name of the link to read. An usage example would be:
 
-    vertx.FileSystem.readSymLink('somelink', function(err, res) {
-        if (!err) {
-            log.info('Link points at ' + res);
+    FileSystem.instance.readSymLink("somelink", new AsyncResultHandler<String>() {
+        public void handle(AsyncResult<String> ar) {
+            if (ar.exception == null) {                
+                log.info("Link points at  " + ar.result);                
+            } else {
+                log.error("Failed to read", ar.exception);
+            }
         }
     });
   
@@ -2371,12 +2381,16 @@ Makes a new empty directory with name `dirname`, and default permissions `
 
 If `createParents` is `true`, this creates a new directory and creates any of its parents too. Here's an example
     
-    vertx.FileSystem.mkdir('a/b/c', true, function(err, res) {
-       if (!err) {
-         log.info('Directory created ok');
-       }
+    FileSystem.instance.mkdir("a/b/c", true, new AsyncResultHandler<Void>() {
+        public void handle(AsyncResult ar) {
+            if (ar.exception == null) {                
+                log.info("Directory created ok");                
+            } else {
+                log.error("Failed to mkdir", ar.exception);
+            }
+        }
     });
-  
+    
 * `mkdir(dirname, createParents, perms, handler)`
 
 Like `mkdir(dirname, createParents, handler)`, but also allows permissions for the newly created director(ies) to be specified. `perms` is a Unix style permissions string as explained earlier.
@@ -2395,15 +2409,19 @@ Lists the contents of a directory
 
 List only the contents of a directory which match the filter. Here's an example which only lists files with an extension `txt` in a directory.
 
-    vertx.FileSystem.readDir('mydirectory', '.*\.txt', function(err, res) {
-      if (!err) {
-        log.info('Directory contains these .txt files');
-        for (var i = 0; i < res.length; i++) {
-          log.info(res[i]);  
+    FileSystem.instance.readDir("mydirectory", ".*\\.txt", new AsyncResultHandler<String[]>() {
+        public void handle(AsyncResult<String[]> ar) {
+            if (ar.exception == null) {                
+                log.info("Directory contains these .txt files");
+                for (int i = 0; i < ar.result.length; i++) {
+                  log.info(ar.result[i]);  
+                }               
+            } else {
+                log.error("Failed to read", ar.exception);
+            }
         }
-      }
     });
-    
+
 The filter is a regular expression.    
   
 ## readFile
@@ -2412,13 +2430,17 @@ Read the entire contents of a file in one go. *Be careful if using this with lar
 
 `readFile(file)`. Where `file` is the file name of the file to read.
 
-The body of the file will be returned as a `Buffer` in the handler.
+The body of the file will be returned as an instance of `org.vertx.java.core.buffer.Buffer` in the handler.
 
 Here is an example:
 
-    vertx.FileSystem.readFile('myfile.dat', function(err, res) {
-        if (!err) {
-            log.info('File contains: ' + res.length() + ' bytes');
+    FileSystem.instance.readFile("myfile.dat", new AsyncResultHandler<Buffer>() {
+        public void handle(AsyncResult<Buffer> ar) {
+            if (ar.exception == null) {                
+                log.info("File contains: " + ar.result.length() + " bytes");              
+            } else {
+                log.error("Failed to read", ar.exception);
+            }
         }
     });
 
@@ -2442,9 +2464,13 @@ Checks if a file exists.
 
 The result is returned in the handler.
 
-    vertx.FileSystem.exists('some-file.txt', function(err, res) {
-        if (!err) {
-            log.info('File ' + (res ? 'exists' : 'does not exist'));
+    FileSystem.instance.exists("some-file.txt", new AsyncResultHandler<Boolean>() {
+        public void handle(AsyncResult<Boolean> ar) {
+            if (ar.exception == null) {                
+                log.info("File " + (ar.result ? "exists" : "does not exist"));             
+            } else {
+                log.error("Failed to check existence", ar.exception);
+            }
         }
     });
 
@@ -2454,7 +2480,7 @@ Get properties for the file system.
 
 `fsProps(file, handler)`. Where `file` is any file on the file system.
 
-The result is returned in the handler. The result object has the following fields:
+The result is returned in the handler. The result object is an instance of `org.vertx.java.core.file.FileSystemProps` has the following fields:
 
 * `totalSpace`. Total space on the file system in bytes.
 * `unallocatedSpace`. Unallocated space on the file system in bytes.
@@ -2462,13 +2488,16 @@ The result is returned in the handler. The result object has the following field
 
 Here is an example:
 
-    vertx.FileSystem.fsProps('mydir', function(err, res) {
-        if (!err) {
-            log.info('total space: ' + res.totalSpace);
-            // etc
+    FileSystem.instance.fsProps("mydir", new AsyncResultHandler<FileSystemProps>() {
+        public void handle(AsyncResult<FileSystemProps> ar) {
+            if (ar.exception == null) {                
+                log.info("total space: " + ar.result.totalSpace);
+                // etc            
+            } else {
+                log.error("Failed to check existence", ar.exception);
+            }
         }
     });
-
 
 ## open
 
@@ -2480,50 +2509,39 @@ This function can be called in four different ways:
 
 Opens a file for reading and writing. `file` is the file name. It creates it if it does not already exist.
 
-* `open(file, openFlags, handler)`
+* `open(file, perms, handler)`
 
-Opens a file using the specified open flags. `file` is the file name. `openFlags` is an integer representing whether to open the flag for reading or writing and whether to create it if it doesn't already exist.
+Opens a file for reading and writing. `file` is the file name. It creates it if it does not already exist and assigns it the permissions as specified by `perms`.
 
-`openFlags` is constructed from a combination of these three constants.
+* `open(file, perms, createNew, handler)`
 
-    vertx.FileSystem.OPEN_READ = 1
-    vertx.FileSystem.OPEN_WRITE = 2
-    vertx.FileSystem.CREATE_NEW = 4
+Opens a file for reading and writing. `file` is the file name. It `createNew` is `true` it creates it if it does not already exist.
+
+* `open(file, perms, read, write, createNew, handler)`
+
+Opens a file. `file` is the file name. If `read` is `true` it is opened for reading. If `write` is `true` it is opened for writing. It `createNew` is `true` it creates it if it does not already exist.
+
+* `open(file, perms, read, write, createNew, flush, handler)`
+
+Opens a file. `file` is the file name. If `read` is `true` it is opened for reading. If `write` is `true` it is opened for writing. It `createNew` is `true` it creates it if it does not already exist. If `flush` is `true` all writes are immediately flushed through the OS cache (default value of `flush` is false).
+
   
-For example
+When the file is opened, an instance of `org.vertx.java.core.file.AsyncFile` is passed into the result handler:
 
-    // Open for reading only
-    var flags = vertx.FileSystem.OPEN_READ;
-  
-     // Open for reading and writing
-    var flags = vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE;
-  
-When the file is opened, an instance of `AsyncFile` is passed into the result handler:
-
-    vertx.FileSystem.open('some-file.dat', vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE,
-        function(err, asyncFile) {
-            if (err) {
-                log.info('Failed to open file ' + err);
+    FileSystem.instance.open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> ar) {
+            if (ar.exception == null) {                
+                log.info("File opened ok!");
+                // etc            
             } else {
-                log.info('File opened ok');
-                asyncFile.close(); // Close it    
+                log.error("Failed to open file", ar.exception);
             }
-        });    
+        }
+    });
         
-* `open(file, openFlags, flush, handler)`
-
-This is the same as `open(file, openFlags, handler)` but you can also specify whether any file write are flushed immediately to disk (sync'd).
-
-Default is `flush = false`, so writes are just written into the OS cache.
-
-* `open(file, openFlags, flush, perms, handler)`
-
-This is the same as `open(file, openFlags, flush, handler)` but you can also specify the file permissions to give the file if it is created. Permissions is a Unix-style permissions string as explained earlier in the chapter.
-
-
 ## AsyncFile
 
-Instances of `AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
+Instances of `org.vertx.java.core.file.AsyncFileAsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
 
 AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.
 
@@ -2541,23 +2559,29 @@ The second parameter `position` is an integer position in the file where to writ
 
 Here is an example of random access writes:
 
-    vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
-            if (err) {
-                log.info('Failed to open file ' + err);
-            } else {
+    FileSystem.instance.open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> ar) {
+            if (ar.exception == null) {    
+                AsyncFile asyncFile = ar.result;            
                 // File open, write a buffer 5 times into a file              
-                var buff = new vertx.Buffer('foo');
-                for (var i = 0; i < 5; i++) {
-                    asyncFile.write(buff, buff.length() * i, function(err) {
-                        if (err) {
-                            log.info('Failed to write ' + err);
-                        } else {
-                            log.info('Written ok');
+                Buffer buff = Buffer.create("foo");
+                for (int i = 0; i < 5; i++) {
+                    asyncFile.write(buff, buff.length() * i, new AsyncResultHandler<Void>() {
+                        public void handle(AsyncResult ar) {
+                            if (ar.exception == null) {                
+                                log.info("Written ok!");
+                                // etc            
+                            } else {
+                                log.error("Failed to write", ar.exception);
+                            }
                         }
                     });    
-                }
+                }            
+            } else {
+                log.error("Failed to open file", ar.exception);
             }
-        });   
+        }
+    });
 
 ### Random access reads
 
@@ -2575,26 +2599,35 @@ To use an AsyncFile for random access reads you use the read method.
 
 Here's an example of random access reads:
 
-    vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
-        if (err) {
-            log.info('Failed to open file ' + err);
-        } else {                   
-            var buff = new vertx.Buffer(1000);
-            for (var i = 0; i < 10; i++) {
-                asyncFile.read(buff, i * 100, i * 100, 100, function(err) {
-                    if (err) {
-                        log.info('Failed to read ' + err);
-                    } else {
-                        log.info('Read ok');
-                    }
-                });    
+    FileSystem.instance.open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> ar) {
+            if (ar.exception == null) {    
+                AsyncFile asyncFile = ar.result;            
+                Buffer buff = Buffer.create(1000);
+                for (int i = 0; i < 10; i++) {
+                    asyncFile.read(buff, i * 100, i * 100, 100, new AsyncResultHandler<Buffer>() {
+                        public void handle(AsyncResult<Buffer> ar) {
+                            if (ar.exception == null) {                
+                                log.info("Read ok!");
+                                // etc            
+                            } else {
+                                log.error("Failed to write", ar.exception);
+                            }
+                        }
+                    });    
+                }      
+            } else {
+                log.error("Failed to open file", ar.exception);
             }
         }
-    });   
+    });
+
     
 ### Flushing data to underlying storage.
 
-If the AsyncFile was not opened with `flush = true`, then you can manually flush any writes from the OS cache by calling the `flush` function.
+If the AsyncFile was not opened with `flush = true`, then you can manually flush any writes from the OS cache by calling the `flush` method.
+
+This method can also be called with an handler which will be called when the flush is complete.
 
 ### Using AsyncFile as `ReadStream` and `WriteStream`
 
@@ -2602,29 +2635,36 @@ Use the functions `getReadStream` and `getWriteStream` to get read and write str
 
 Here's an example of pumping data from a file on a client to a HTTP request:
 
-    var client = new vertx.HttpClient().setHost('foo.com');
+    final HttpClient client = new HttpClient().setHost("foo.com");
     
-    vertx.FileSystem.open('some-file.dat', function(err, asyncFile) {
-        if (err) {
-            log.info('Failed to open file ' + err);
-        } else {                   
-            var request = client.put('/uploads', function(resp) {
-                log.info('resp status code ' + resp.statusCode);
-            });
-            var rs = asyncFile.getReadStream();
-            var pump = new vertx.Pump(rs, request);
-            pump.start();
-            rs.endHandler(function() {
-                // File sent, end HTTP requuest
-                request.end();
-            });
-            
+    FileSystem.instance.open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> ar) {
+            if (ar.exception == null) {    
+                final HttpClientRequest request = client.put("/uploads", new Handler<HttpClientResponse>() {
+                    public void handle(HttpClientResponse resp) {
+                        log.info("Received response: " + resp.statusCode);
+                    }
+                });
+                AsyncFile asyncFile = ar.result;
+                ReadStream rs = asyncFile.getReadStream();
+                request.setChunked(true);
+                Pump pump = new Pump(rs, request);
+                pump.start();
+                rs.endHandler(new SimpleHandler() {
+                    public void handle() {
+                        // File sent, end HTTP requuest
+                        request.end();
+                    }
+                });    
+            } else {
+                log.error("Failed to open file", ar.exception);
+            }
         }
-    });   
+    });
     
 ### Closing an AsyncFile
 
-To close an AsyncFile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to `close`.
+To close an AsyncFile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument.
 
 # Performance Tuning
 
