@@ -50,6 +50,9 @@ public class JRubyVerticle implements Verticle {
 
   public void start() throws Exception {
     InputStream is = cl.getResourceAsStream(scriptName);
+    if (is == null) {
+      throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
+    }
     container.runScriptlet(is, scriptName);
     try {
       is.close();

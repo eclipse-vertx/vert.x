@@ -9,7 +9,6 @@ var handler = function(order, replier) {
   eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
     if (reply.status === 'ok') {
       log.info("Logged in ok");
-      // Get the email address for the order
       var username = reply.username;
       eb.send('demo.persistor', {action:'findone', collection:'users', matcher: {username: username}},
         function(reply) {
