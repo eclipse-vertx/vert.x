@@ -100,10 +100,16 @@ tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;
 <p>That's the web server done.</p>
 <h2 id="step-2-serve-the-client-side-app">Step 2. Serve the client-side app</h2><br/>
 <p>Now we have a working web server, we need to serve the actual client side app.</p>
-<p>For this demo, we've written it using knockout.js and Twitter bootstrap, but in your apps you can use whatever client side toolset you feel most comfortable with.</p>
+<p>For this demo, we've written it using <a href="http://knockoutjs.com/">knockout.js</a> and <a href="http://twitter.github.com/bootstrap/">Twitter bootstrap</a>, but in your apps you can use whatever client side toolset you feel most comfortable with.</p>
 <p>The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.</p>
 <p>Copy the client side application from the vert.x installation into our web directory as follows:</p>
-<pre class="prettyprint">tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/demo/web/* web
+<pre class="prettyprint">tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/javascript/webapp/web/* web
+</pre>
+<p>Open the file <code>web/js/client_app.js</code> in your text editor, and edit the line:</p>
+<pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+</pre>
+<p>So it reads:</p>
+<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
 </pre>
 <p>Now, refresh your browser. The client application should now be served.</p>
 <p>Of course, it won't do anything useful yet, since we haven't connected it up to anything, but you should at least see the layout. It should look like this: </p>
@@ -165,7 +171,7 @@ vertx.deployVerticle('web_server.js');
 <p>We need to connect up the client side so it can interact with the persistor on the event bus.</p>
 <p>To that we use a SockJS bridge.</p>
 <p>SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.</p>
-<p>SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.</p>
+<p>The SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.</p>
 <p>SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.</p>
 <p>To create a SockJS bridge, we just create an instance of <code>vertx.SockJSBridge</code> as follows:</p>
 <pre class="prettyprint">new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
@@ -391,7 +397,7 @@ vertx.deployVerticle('web_server.js');
 <p>It's as easy as that.</p>
 <h2 id="step-8-processing-orders">Step 8. Processing Orders</h2><br/>
 <p>The next part to implement is submitting of orders.</p>
-<p>One naive way to do this would be to directly insert the order in the database by sending a messager to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.</p>
+<p>One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.</p>
 <p>Problem is we don't want to just anyone inserting data into the database or sending emails from the client side (we don't want to become a spam relay!).</p>
 <p>A better solution is to write a simple order manager verticle which sits on the event bus on the server and handles the whole order processing for us.</p>
 <p>As orders arrive we want to</p>
@@ -412,7 +418,6 @@ var handler = function(order, replier) {
   var sessionID = order.sessionID;
   eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
     if (reply.status === 'ok') {
-      // Get the email address for the order
       var username = reply.username;
       eb.send('demo.persistor', {action:'findone', collection:'users', matcher: {username: username}},
         function(reply) {
@@ -436,7 +441,7 @@ function vertxStop() {
   eb.unregisterHandler(address, handler);
 }
 </pre>
-<p>The order manager verticle registers a handler on the address <code>demo.orderMgr</code>. When an order message arrives in the handler the first thing it does is log out the order, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).</p>
+<p>The order manager verticle registers a handler on the address <code>demo.orderMgr</code>. When an order message arrives in the handler the first thing it does is print out the order to stdout, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).</p>
 <p>If the user was logged in ok, the order is persisted using the MongoDB persistor. If that returns ok, we send back a message to the client </p>
 <pre class="prettyprint">if (reply.status === 'ok') {
     replier({status: 'ok'});
@@ -471,6 +476,11 @@ function vertxStop() {
   ]
 );
 </pre>
+<p>We'll also have to add a line to <code>app.js</code> to load the <code>order_mgr.js</code> verticle, just before the web server is started:</p>
+<pre class="prettyprint">// Start the order manager
+
+vertx.deployVerticle('order_mgr.js');
+</pre>
 <p>Ok, let's take a look at the client side code which sends the order.</p>
 <p>Open up <code>web/js/client_app.js</code> again, and look for the function <code>submitOrder</code>.</p>
 <pre class="prettyprint">that.submitOrder = function() {
@@ -503,7 +513,7 @@ function vertxStop() {
 <pre class="prettyprint">vertx run app.js
 </pre>
 <p>Refresh the browser.</p>
-<p>Now log-in and add a few items into your cart. Click to the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly".</p>
+<p>Now log-in and add a few items into your cart. Click to the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly" should be displayed!</p>
 <p>Take a look in the console window of the application. You should see the order has been logged.</p>
 <p><img alt="Client Application" src="tutorial_4.png"/></p>
 <p><strong> Congratulations! You have just placed an order. </strong></p>
@@ -547,7 +557,7 @@ function vertxStop() {
 </pre>
 <p>(Obviously, changing the <code>username</code> and <code>password</code> values).<br/>
 </p>
-<p>By default the email address of the <code>tim</code> user is <code>tim@localhost.com</code>. Updated this in <code>static-data.js</code> (and restart), and you should see the email being sent to the correct address.<br/>
+<p>By default the email address of the <code>tim</code> user is <code>tim@localhost.com</code>. Update this in <code>static-data.js</code> (and restart), and you should see the email being sent to the correct address.<br/>
 </p>
 <p>Next, we can edit <code>order_mgr.js</code> to actually send the email. We'll add the following function:</p>
 <pre class="prettyprint">function sendEmail(email, items) {
@@ -574,7 +584,9 @@ function vertxStop() {
   eb.send('demo.mailer', msg);
 }
 </pre>
-<p>And insert a call the <code>sendEmail</code> function, just after the order has been persisted ok, so it looks like this:</p>
+<p>This method simply formats an email based on the email address and the order items, and sends it off by sending a message on the event bus to the mailer.  <br/>
+</p>
+<p>You'll also need to insert a call to this method, just after the order has been persisted ok, so it looks like this:</p>
 <pre class="prettyprint">if (reply.status === 'ok') {
     replier({status: 'ok'});
 
@@ -586,17 +598,17 @@ function vertxStop() {
 }
 </pre>
 <h2 id="step-10-securing-the-connection">Step 10. Securing the Connection</h2><br/>
-<p>So far in this tutorial, all client-server traffic has been over an unsecured HTTP or WebSockets connection. That's not a very good idea since we've been sending login credentials and orders.</p>
+<p>So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea since we've been sending login credentials and orders.</p>
 <p>Configuring vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please
 see the manual).</p>
 <p>Edit <code>web_server.js</code> again, and edit the line that creates the HTTP server so it reads:</p>
 <pre class="prettyprint">var server = new vertx.HttpServer()
     .setSSL(true)
-    .setKeyStorePath('my-keystore.jks')
-    .setKeyStorePassword('password');
+    .setKeyStorePath('server-keystore.jks')
+    .setKeyStorePassword('wibble');
 </pre>
 <p>Copy the keystore from the distribution</p>
-<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/demo/server-keystore.jks .
+<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks .
 </pre>
 <p><em>The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.</em>         <br/>
 </p>
@@ -625,8 +637,7 @@ vertx.deployVerticle('web_server.js', null, 32);
 <p>Please consult the busmods manual for more information on this.</p>
 <h2 id="final-thoughts">Final Thoughts</h2><br/>
 <p>This tutorial gives you just a taste of the kinds of things you can do with vert.x. </p>
-<p>With just a few lines of code you can create real, scalable web-enabled applications.</p>
-<p>With a network of verticles communicating on an event bus which spans multiple machines on both the server side and client side JavaScript, the only limit is your imagination.</p></div>
+<p>With just a couple of handfuls of code you can have creates a real, scalable web-app.</p></div>
       </div>
     </div>
   </div>

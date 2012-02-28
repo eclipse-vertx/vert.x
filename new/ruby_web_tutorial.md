@@ -2,6 +2,10 @@ In this tutorial we're going to write a real web-application using vert.x.
 
 The application is a shop application called "vToons" which allows you to buy tracks online.
 
+The application consists of a client-side JavaScript MVVM application which communicates with a set of server-side components via the vert.x event bus.
+
+In this version of this tutorial we've written it all in Ruby. If you'd prefer to use JavaScript or Java please see the version for that language. You could also mix and match - writing your components in a variety of languages.
+
 ## Step 0. Install vert.x
 
 If you haven't yet installed vert.x, do that now. Installation instructions are here.
