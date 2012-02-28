@@ -6,7 +6,7 @@ In this version of this tutorial we've written it all in JavaScript. If you'd pr
 
 ## Step 1. Install vert.x
 
-If you haven't yet installed vert.x, do that now. Installation instructions are here.
+If you haven't yet installed vert.x, [do that now](install.html). 
 
 The rest of the tutorial will assume you have installed vert.x in directory `VERTX_HOME`.
 
