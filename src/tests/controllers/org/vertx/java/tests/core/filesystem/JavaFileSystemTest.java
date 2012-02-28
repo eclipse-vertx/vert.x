@@ -17,6 +17,8 @@
 package org.vertx.java.tests.core.filesystem;
 
 import org.junit.Test;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.logging.Logger;
@@ -328,10 +330,18 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+
+  private AsyncResultHandler createHandler() {
+    return new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+      }
+    };
+  }
+
   @Test
   public void testExistsNoContext() throws Exception {
     try {
-      FileSystem.instance.exists("foo");
+      FileSystem.instance.exists("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -342,7 +352,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testChmod1NoContext() throws Exception {
     try {
-      FileSystem.instance.chmod("foo", "bar");
+      FileSystem.instance.chmod("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -352,7 +362,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testChmod2NoContext() throws Exception {
     try {
-      FileSystem.instance.chmod("foo", "bar", "quux");
+      FileSystem.instance.chmod("foo", "bar", "quux", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -362,7 +372,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testCopy1NoContext() throws Exception {
     try {
-      FileSystem.instance.copy("foo", "bar");
+      FileSystem.instance.copy("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -372,7 +382,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testCopy2NoContext() throws Exception {
     try {
-      FileSystem.instance.copy("foo", "bar", true);
+      FileSystem.instance.copy("foo", "bar", true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -382,7 +392,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testCreateFile1NoContext() throws Exception {
     try {
-      FileSystem.instance.createFile("foo");
+      FileSystem.instance.createFile("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -392,7 +402,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testCreateFile2NoContext() throws Exception {
     try {
-      FileSystem.instance.createFile("foo", "bar");
+      FileSystem.instance.createFile("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -402,7 +412,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testDelete1NoContext() throws Exception {
     try {
-      FileSystem.instance.delete("foo");
+      FileSystem.instance.delete("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -412,7 +422,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testDelete2NoContext() throws Exception {
     try {
-      FileSystem.instance.delete("foo", true);
+      FileSystem.instance.delete("foo", true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -423,7 +433,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testFSPropsNoContext() throws Exception {
     try {
-      FileSystem.instance.fsProps("foo");
+      FileSystem.instance.fsProps("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -433,7 +443,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testLinkNoContext() throws Exception {
     try {
-      FileSystem.instance.link("foo", "bar");
+      FileSystem.instance.link("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -444,7 +454,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testLpropsNoContext() throws Exception {
     try {
-      FileSystem.instance.lprops("foo");
+      FileSystem.instance.lprops("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -454,7 +464,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testMkdir1NoContext() throws Exception {
     try {
-      FileSystem.instance.mkdir("foo");
+      FileSystem.instance.mkdir("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -464,7 +474,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testMkdir2NoContext() throws Exception {
     try {
-      FileSystem.instance.mkdir("foo", "bar");
+      FileSystem.instance.mkdir("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -474,7 +484,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testMkdir3NoContext() throws Exception {
     try {
-      FileSystem.instance.mkdir("foo", true);
+      FileSystem.instance.mkdir("foo", true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -484,7 +494,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testMkdir4NoContext() throws Exception {
     try {
-      FileSystem.instance.mkdir("foo", "bar", true);
+      FileSystem.instance.mkdir("foo", "bar", true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -495,7 +505,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testMoveNoContext() throws Exception {
     try {
-      FileSystem.instance.move("foo", "bar");
+      FileSystem.instance.move("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -505,7 +515,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpen1NoContext() throws Exception {
     try {
-      FileSystem.instance.open("foo");
+      FileSystem.instance.open("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -515,7 +525,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpen2NoContext() throws Exception {
     try {
-      FileSystem.instance.open("foo", "bar");
+      FileSystem.instance.open("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -525,7 +535,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpen3NoContext() throws Exception {
     try {
-      FileSystem.instance.open("foo", "bar", true);
+      FileSystem.instance.open("foo", "bar", true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -535,7 +545,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpen4NoContext() throws Exception {
     try {
-      FileSystem.instance.open("foo", "bar", true, true, true);
+      FileSystem.instance.open("foo", "bar", true, true, true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -545,7 +555,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpen5NoContext() throws Exception {
     try {
-      FileSystem.instance.open("foo", "bar", true, true, true, true);
+      FileSystem.instance.open("foo", "bar", true, true, true, true, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -556,7 +566,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testPropsNoContext() throws Exception {
     try {
-      FileSystem.instance.props("foo");
+      FileSystem.instance.props("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -566,7 +576,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testReadDirNoContext() throws Exception {
     try {
-      FileSystem.instance.readDir("foo");
+      FileSystem.instance.readDir("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -576,7 +586,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testReadDir2NoContext() throws Exception {
     try {
-      FileSystem.instance.readDir("foo", "bar");
+      FileSystem.instance.readDir("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -587,7 +597,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testReadFileNoContext() throws Exception {
     try {
-      FileSystem.instance.readFile("foo");
+      FileSystem.instance.readFile("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -597,7 +607,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testReadSymLinkNoContext() throws Exception {
     try {
-      FileSystem.instance.readSymlink("foo");
+      FileSystem.instance.readSymlink("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -607,7 +617,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testSymLinkNoContext() throws Exception {
     try {
-      FileSystem.instance.symlink("foo", "bar");
+      FileSystem.instance.symlink("foo", "bar", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -617,7 +627,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testTruncateNoContext() throws Exception {
     try {
-      FileSystem.instance.truncate("foo", 1234);
+      FileSystem.instance.truncate("foo", 1234, createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -628,7 +638,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testUnlinkNoContext() throws Exception {
     try {
-      FileSystem.instance.unlink("foo");
+      FileSystem.instance.unlink("foo", createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok
@@ -638,7 +648,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testWriteFileNoContext() throws Exception {
     try {
-      FileSystem.instance.writeFile("foo", Buffer.create("foo"));
+      FileSystem.instance.writeFile("foo", Buffer.create("foo"), createHandler());
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // Ok

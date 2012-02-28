@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.file;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Context;
@@ -89,7 +91,7 @@ public class AsyncFile {
    * is called on the Deferred instance returned by this method.
    * @return a Deferred representing the as-yet unexecuted action.
    */
-  public Deferred<Void> closeDeferred() {
+  private Deferred<Void> closeDeferred() {
     check();
 
     closed = true;
@@ -122,13 +124,30 @@ public class AsyncFile {
     return deferred;
   }
 
+  private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
+    fut.handler(new CompletionHandler<T>() {
+      public void handle(Future<T> event) {
+        if (event.succeeded()) {
+          handler.handle(new AsyncResult<T>(event.result()));
+        } else {
+          handler.handle(new AsyncResult<T>(event.exception()));
+        }
+      }
+    });
+  }
+
+
   /**
    * Close the file asynchronously.<p>
    * This method must be called using the same event loop the file was opened from.
    * @return a Future representing the future result of closing the file.
    */
-  public Future<Void> close() {
-    return closeDeferred().execute();
+  public void close() {
+    closeDeferred().execute();
+  }
+
+  public void close(AsyncResultHandler handler) {
+    wrapHandler(closeDeferred().execute(), handler);
   }
 
   /**
@@ -136,7 +155,7 @@ public class AsyncFile {
    * is called on the Deferred instance returned by this method.
    * @return a Deferred representing the as-yet unexecuted action.
    */
-  public Deferred<Void> writeDeferred(Buffer buffer, int position) {
+  private Deferred<Void> writeDeferred(Buffer buffer, int position) {
     check();
     ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
     return doWrite(bb, position);
@@ -151,8 +170,8 @@ public class AsyncFile {
    * This method must be called using the same event loop the file was opened from.
    * @return a Future representing the future result of the write.
    */
-  public Future<Void> write(Buffer buffer, int position) {
-    return writeDeferred(buffer, position).execute();
+  public void write(Buffer buffer, int position, AsyncResultHandler handler) {
+    wrapHandler(writeDeferred(buffer, position).execute(), handler);
   }
 
   /**
@@ -160,7 +179,7 @@ public class AsyncFile {
    * is called on the Deferred instance returned by this method.
    * @return a Deferred representing the as-yet unexecuted action.
    */
-  public Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
+  private Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
     return doRead(buffer, offset, bb, position);
@@ -176,8 +195,8 @@ public class AsyncFile {
    * This method must be called using the same event loop the file was opened from.
    * @return a Future representing the future result of the write.
    */
-  public Future<Buffer> read(Buffer buffer, int offset, int position, int length) {
-    return readDeferred(buffer, offset, position, length).execute();
+  public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler handler) {
+    wrapHandler(readDeferred(buffer, offset, position, length).execute(), handler);
   }
 
   /**
@@ -279,14 +298,12 @@ public class AsyncFile {
           if (!readInProgress) {
             readInProgress = true;
             Buffer buff = Buffer.create(BUFFER_SIZE);
-            Future<Buffer> deferred = read(buff, 0, pos, BUFFER_SIZE);
+            read(buff, 0, pos, BUFFER_SIZE, new AsyncResultHandler<Buffer>() {
 
-            deferred.handler(new CompletionHandler<Buffer>() {
-
-              public void handle(Future<Buffer> deferred) {
-                if (deferred.succeeded()) {
+              public void handle(AsyncResult<Buffer> ar) {
+                if (ar.exception == null) {
                   readInProgress = false;
-                  Buffer buffer = deferred.result();
+                  Buffer buffer = ar.result;
                   if (buffer.length() == 0) {
                     // Empty buffer represents end of file
                     handleEnd();
@@ -298,7 +315,7 @@ public class AsyncFile {
                     }
                   }
                 } else {
-                  handleException(deferred.exception());
+                  handleException(ar.exception);
                 }
               }
             });

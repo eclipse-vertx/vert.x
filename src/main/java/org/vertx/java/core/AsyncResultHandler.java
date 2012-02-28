@@ -19,18 +19,5 @@ package org.vertx.java.core;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncResult<T> {
-
-  public final T result;
-  public final Exception exception;
-
-  public AsyncResult(T result) {
-    this.result = result;
-    this.exception = null;
-  }
-
-  public AsyncResult(Exception exception) {
-    this.exception = exception;
-    this.result = null;
-  }
+public interface AsyncResultHandler<T> extends Handler<AsyncResult<T>> {
 }

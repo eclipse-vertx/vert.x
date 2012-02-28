@@ -22,26 +22,25 @@ if (!vertx.FileSystem) {
   (function() {
     var j_fs = org.vertx.java.core.file.FileSystem.instance;
 
-    function wrapHandler(handler, fut) {
-      fut.handler(function() {
-        if (fut.succeeded()) {
-          handler(null, fut.result());
+    function wrapHandler(handler) {
+      return function(asyncResult) {
+        if (!asyncResult.exception) {
+          handler(null, asyncResult.result);
         } else {
-          handler(fut.exception(), null);
+          handler(asyncResult.exception, null);
         }
-      });
+      }
     }
 
-    function wrapProps(handler, fut) {
-      fut.handler(function() {
-        if (fut.succeeded()) {
-          var j_res = fut.result();
-          var jsProps = convertProps(j_res);
+    function wrapPropsHandler(handler) {
+      return function(asyncResult) {
+        if (!asyncResult.exception) {
+          var jsProps = convertProps(asyncResult.result);
           handler(null, jsProps);
         } else {
-          handler(fut.exception(), null);
+          handler(asyncResult.exception, null);
         }
-      });
+      }
     }
 
     function convertProps(j_props) {
@@ -67,8 +66,7 @@ if (!vertx.FileSystem) {
         handler = arg2;
         recursive = false;
       }
-      var fut = j_fs.copy(from, to, recursive);
-      wrapHandler(handler, fut);
+      j_fs.copy(from, to, recursive, wrapHandler(handler));
     }
 
     vertx.FileSystem.copySync = function(from, to, recursive) {
@@ -77,8 +75,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.move = function(from, to, handler) {
-      var fut = j_fs.move(from, to);
-      wrapHandler(handler, fut);
+      j_fs.move(from, to, wrapHandler(handler));
     }
 
     vertx.FileSystem.moveSync = function(from, to) {
@@ -86,8 +83,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.truncate = function(path, len, handler) {
-      var fut = j_fs.truncate(path, len);
-      wrapHandler(handler, fut);
+      j_fs.truncate(path, len, wrapHandler(handler));
     }
 
     vertx.FileSystem.truncateSync = function(path, len) {
@@ -104,8 +100,7 @@ if (!vertx.FileSystem) {
         handler = arg2;
         dirPerms = null;
       }
-      var fut = j_fs.chmod(path, perms, dirPerms);
-      wrapHandler(handler, fut);
+      j_fs.chmod(path, perms, dirPerms, wrapHandler(handler));
     }
 
     vertx.FileSystem.chmodSync = function(path, perms, dirPerms) {
@@ -114,8 +109,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.props = function(path, handler) {
-      var fut = j_fs.props(path);
-      wrapProps(handler, fut);
+      j_fs.props(path, wrapPropsHandler(handler));
     }
 
     vertx.FileSystem.propsSync = function(path) {
@@ -124,8 +118,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.lprops = function(path, handler) {
-      var fut = j_fs.lprops(path);
-      wrapProps(handler, fut);
+      j_fs.lprops(path, wrapPropsHandler(handler));
     }
 
     vertx.FileSystem.lpropsSync = function(path) {
@@ -134,8 +127,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.link = function(link, existing, handler) {
-      var fut = j_fs.link(link, existing);
-      wrapHandler(handler, fut);
+      j_fs.link(link, existing, wrapHandler(handler));
     }
 
     vertx.FileSystem.linkSync = function(link, existing) {
@@ -143,8 +135,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.symlink = function(link, existing, handler) {
-      var fut = j_fs.symlink(link, existing);
-      wrapHandler(handler, fut);
+      j_fs.symlink(link, existing, wrapHandler(handler));
     }
 
     vertx.FileSystem.symlinkSync = function(link, existing) {
@@ -152,8 +143,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.unlink = function(link, handler) {
-      var fut = j_fs.unlink(link);
-      wrapHandler(handler, fut);
+      j_fs.unlink(link, wrapHandler(handler));
     }
 
     vertx.FileSystem.unlinkSync = function(link) {
@@ -161,8 +151,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.readSymlink = function(link, handler) {
-      var fut = j_fs.readSymlink(link);
-      wrapHandler(handler, fut);
+      j_fs.readSymlink(link, wrapHandler(handler));
     }
 
     vertx.FileSystem.readSymlinkSync = function(link, handler) {
@@ -179,8 +168,7 @@ if (!vertx.FileSystem) {
         handler = arg1;
         recursive = false;
       }
-      var fut = j_fs.delete(path, recursive);
-      wrapHandler(handler, fut);
+      j_fs.delete(path, recursive, wrapHandler(handler));
     }
 
     vertx.FileSystem.deleteSync = function(path, recursive) {
@@ -211,8 +199,7 @@ if (!vertx.FileSystem) {
         default:
           throw 'Invalid number of arguments';
       }
-      var fut = j_fs.mkdir(path, perms, createParents);
-      wrapHandler(handler, fut);
+      j_fs.mkdir(path, perms, createParents, wrapHandler(handler));
     }
 
     vertx.FileSystem.mkDirSync = function(path, arg1, arg2) {
@@ -247,8 +234,7 @@ if (!vertx.FileSystem) {
         handler = arg1;
         filter = null;
       }
-      var fut = j_fs.readDir(path, filter);
-      wrapHandler(handler, fut);
+      j_fs.readDir(path, filter, wrapHandler(handler));
     }
 
     vertx.FileSystem.readDirSync = function(path, filter) {
@@ -257,8 +243,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.readFile = function(path, handler) {
-      var fut = j_fs.readFile(path);
-      wrapHandler(handler, fut);
+      j_fs.readFile(path, wrapHandler(handler));
     }
 
     vertx.FileSystem.readFileSync = function(path) {
@@ -269,8 +254,7 @@ if (!vertx.FileSystem) {
       if (typeof data === 'string') {
         data = org.vertx.java.core.buffer.Buffer.create(data);
       }
-      var fut = j_fs.writeFile(path, data);
-      wrapHandler(handler, fut);
+      j_fs.writeFile(path, data, wrapHandler(handler));
     }
 
     vertx.FileSystem.writeFileSync = function(path, data) {
@@ -366,17 +350,13 @@ if (!vertx.FileSystem) {
       var write = (openFlags & vertx.FileSystem.OPEN_WRITE) == vertx.FileSystem.OPEN_WRITE;
       var createNew = (openFlags & vertx.FileSystem.CREATE_NEW) == vertx.FileSystem.CREATE_NEW;
 
-      var fut = j_fs.open(path, perms, read, write, createNew, flush);
-
-      fut.handler(function() {
-        if (fut.succeeded()) {
-          var j_af = fut.result();
-
+      j_fs.open(path, perms, read, write, createNew, flush, function(asyncResult) {
+        if (!asyncResult.exception) {
+          var j_af = asyncResult.result;
           var wrapped = wrapAsyncFile(j_af);
-
           handler(null, wrapped);
         } else {
-          handler(fut.exception(), null);
+          handler(asyncResult.exception, null);
         }
       });
     }
@@ -385,20 +365,18 @@ if (!vertx.FileSystem) {
       return {
         close: function(handler) {
           if (handler) {
-            j_af.closeDeferred().handler(handler).execute();
+            j_af.close(wrapHandler(handler))
           } else {
             j_af.close();
           }
         },
 
         write: function(buffer, position, handler) {
-          var fut = j_af.write(buffer, position);
-          wrapHandler(handler, fut);
+          j_af.write(buffer, position, wrapHandler(handler));
         },
 
         read: function(buffer, offset, position, length, handler) {
-          var fut = j_af.read(buffer, offset, position, length);
-          wrapHandler(handler, fut);
+          j_af.read(buffer, offset, position, length, wrapHandler(handler));
         },
 
         getWriteStream: function() {
@@ -411,7 +389,7 @@ if (!vertx.FileSystem) {
 
         flush: function(handler) {
           if (handler) {
-            j_af.flushDeferred().handler(handler).execute();
+            j_af.flush(wrapHandler(handler));
           } else {
             j_af.flush();
           }
@@ -420,8 +398,7 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.createFile = function(path, handler) {
-      var fut = j_fs.createFile(path);
-      wrapHandler(handler, fut);
+      j_fs.createFile(path, wrapHandler(handler));
     }
 
     vertx.FileSystem.createFileSync = function(path) {
@@ -429,12 +406,15 @@ if (!vertx.FileSystem) {
     }
 
     vertx.FileSystem.exists = function(path, handler) {
-      var fut = j_fs.exists(path);
-      wrapHandler(handler, fut);
+      j_fs.exists(path, wrapHandler(handler));
     }
 
     vertx.FileSystem.existsSync = function(path) {
       return j_fs.existsSync(path);
+    }
+
+    vertx.FileSystem.fsProps = function(path, handler) {
+      j_fs.fsProps(path, wrapHandler(handler));
     }
 
     vertx.FileSystem.fsPropsSync = function(path) {
