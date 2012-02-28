@@ -4,13 +4,13 @@ The application is a shop application called "vToons" which allows you to buy tr
 
 In this version of this tutorial we've written it all in JavaScript. If you'd prefer to use Ruby or Java please see the version for that language. You could also mix and match - writing your components in a variety of languages.
 
-## Step 0. Install vert.x
+## Step 1. Install vert.x
 
 If you haven't yet installed vert.x, do that now. Installation instructions are here.
 
 The rest of the tutorial will assume you have installed vert.x in directory `VERTX_HOME`.
 
-## Step 1. Create a Web Server
+## Step 2. Create a Web Server
 
 Open a console, and create a new, empty directory. `cd` into it.
 
@@ -58,7 +58,7 @@ Point your browser at `http://localhost:8080`. You should see a page returned wi
 
 That's the web server done.
     
-## Step 2. Serve the client-side app
+## Step 3. Serve the client-side app
 
 Now we have a working web server, we need to serve the actual client side app.
 
@@ -93,7 +93,7 @@ In the centre there's a set of tabs which let you flick between the shop, and yo
 
 On the left hand bar there's a form which allows you to login.    
 
-### Step 3. Get the Persistor up and running
+### Step 4. Get the Persistor up and running
 
 Vert.x ships with an out of the box bus module (busmod) called `MongoPersistor`. This is a busmod is component which communicates with other components on the vert.x event bus by exchanging JSON messages.
 
@@ -150,7 +150,7 @@ Now CTRL-C the web server you started earlier and run `app.js` with
     
 The persistor and web server should be running and it should serve the client application as before.
 
-## Step 4. Connecting up the client side to the Event Bus
+## Step 5. Connecting up the client side to the Event Bus
 
 So far we have a web server running, and a server side persistor listening on the event bus, but not doing anything.
 
@@ -245,7 +245,7 @@ In our case, we're going to allow through any event bus messages from the client
 
 Save the file.
 
-## Step 5. Inserting the Static Data
+## Step 6. Inserting the Static Data
 
 We're almost at the point where the client side app can see the catalogue data. But first we need to insert some static data.
 
@@ -275,7 +275,7 @@ You should now see the catalogue displayed in the client side app:
 
 Now there is some stuff to buy, you should be able to add stuff to your cart, and view the contents of your cart by clicking on the cart tab.
 
-## Step 6. Requesting data from the server
+## Step 7. Requesting data from the server
 
 As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a look at the code in the client side app that requests the catalogue data and populates the shop.
 
@@ -319,7 +319,7 @@ In this case, the reply contains a JSON message with a field `results` which con
 
 Once we get the albums we give them to knockout.js to render on the view.
 
-## Step 7. Handling Login
+## Step 8. Handling Login
 
 In order to actually send an order, you need to be logged in so we know who has placed the order.
 
@@ -433,7 +433,7 @@ When the reply comes back with status `ok`, it stores the session id which cause
 
 It's as easy as that.
 
-## Step 8. Processing Orders
+## Step 9. Processing Orders
 
 The next part to implement is submitting of orders.
 
@@ -577,7 +577,7 @@ Take a look in the console window of the application. You should see the order h
 
 ** Congratulations! You have just placed an order. **
 
-## Step 9. Sending emails
+## Step 10. Sending emails
 
 We can easily send order confirmation emails from the order manager.
 
@@ -667,7 +667,7 @@ You'll also need to insert a call to this method, just after the order has been 
     }
 
    
-## Step 10. Securing the Connection
+## Step 11. Securing the Connection
 
 So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea since we've been sending login credentials and orders.
 
@@ -703,7 +703,7 @@ Now login, and place an order as before.
 
 Easy peasy. **It just works**
 
-## Step 11. Scaling the application
+## Step 12. Scaling the application
 
 ### Scaling the web server
 
