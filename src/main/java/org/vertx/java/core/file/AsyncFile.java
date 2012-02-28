@@ -57,7 +57,6 @@ public class AsyncFile {
   public static final int BUFFER_SIZE = 8192;
 
   private final AsynchronousFileChannel ch;
-  private final Thread th;
   private final Context context;
   private boolean closed;
   private ReadStream readStream;
@@ -66,7 +65,7 @@ public class AsyncFile {
   private long writesOutstanding;
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final Context context, final Thread th) throws Exception {
+            final boolean flush, final Context context) throws Exception {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -83,7 +82,6 @@ public class AsyncFile {
       ch = AsynchronousFileChannel.open(file, options, VertxInternal.instance.getBackgroundPool());
     }
     this.context = context;
-    this.th = th;
   }
 
   /**
@@ -170,7 +168,7 @@ public class AsyncFile {
    * This method must be called using the same event loop the file was opened from.
    * @return a Future representing the future result of the write.
    */
-  public void write(Buffer buffer, int position, AsyncResultHandler handler) {
+  public void write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
     wrapHandler(writeDeferred(buffer, position).execute(), handler);
   }
 
@@ -195,7 +193,7 @@ public class AsyncFile {
    * This method must be called using the same event loop the file was opened from.
    * @return a Future representing the future result of the write.
    */
-  public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler handler) {
+  public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
     wrapHandler(readDeferred(buffer, offset, position, length).execute(), handler);
   }
 
