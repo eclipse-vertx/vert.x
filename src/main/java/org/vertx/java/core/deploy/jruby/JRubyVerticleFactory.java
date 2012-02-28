@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.deploy.jruby;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
