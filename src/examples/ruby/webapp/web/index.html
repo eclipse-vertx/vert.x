@@ -11,152 +11,149 @@
 
 <body>
 
-  <div class="container-fluid">
+<div class="container-fluid">
 
-    <div class="sidebar">
-      <div class="well">
-        <h2>Order total:</h2>
-        <h2><strong data-bind="text:total"></strong></h2>
-      </div>
+  <div class="sidebar">
+    <div class="well">
+      <h2>Order total:</h2>
 
-      <form class="form-stacked">
-        <label for="username">Username</label>
-        <input type="text" id="username" class="span2" data-bind="value: username"/>
-        <label for="password">Password</label>
-        <input type="password" id="password" class="span2" data-bind="value: password"/>
-        <br><br>
-        <input type="submit" class="btn primary" value="Login" data-bind="click: login"/>
-      </form>
-
-      <br>
-      <div data-bind="visible: sessionID() != ''">
-        <h3>Logged in as</h3>
-        <h3><strong data-bind="text: username"></strong></h3>
-      </div>
-
+      <h2><strong data-bind="text:total"></strong></h2>
     </div>
 
-    <div class="content">
-      <!-- Main hero unit for a primary marketing message or call to action -->
-      <div class="hero-unit">
-        <h1>Welcome to vToons</h1>
-        <p>I hope you will enjoy our fantastic selection of music</p>
-      </div>
+    <form class="form-stacked">
+      <label for="username">Username</label>
+      <input type="text" id="username" class="span2"
+             data-bind="value: username"/>
+      <label for="password">Password</label>
+      <input type="password" id="password" class="span2"
+             data-bind="value: password"/>
+      <br><br>
+      <input type="submit" class="btn primary" value="Login"
+             data-bind="click: login"/>
+    </form>
 
-      <!-- Example row of columns -->
-      <div class="row">
+    <br>
 
-        <ul class="tabs">
-          <li class="active"><a href="#shop">Shop</a></li>
-          <li><a href="#cart">Cart</a></li>
-          <li><a href="#account">Account</a></li>
-        </ul>
+    <div data-bind="visible: sessionID() != ''">
+      <h3>Logged in as</h3>
 
-        <div class="pill-content">
+      <h3><strong data-bind="text: username"></strong></h3>
+    </div>
 
-          <div class="active" id="shop">
+  </div>
 
-            <div class="span16">
+  <div class="content">
+    <!-- Main hero unit for a primary marketing message or call to action -->
+    <div class="hero-unit">
+      <h1>Welcome to vToons</h1>
 
-              <h2>Please choose from our wonderful selection of songs:</h2>
+      <p>I hope you will enjoy our fantastic selection of music</p>
+    </div>
 
-              <table class="bordered-table">
-                <thead>
-                  <tr>
-                    <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th>
-                  </tr>
-                </thead>
-                <tbody data-bind="foreach: albums">
-                  <tr>
-                    <td data-bind="text: genre"></td>
-                    <td data-bind="text: artist"></td>
-                    <td data-bind="text: title"></td>
-                    <td data-bind="text: formattedPrice"></td>
-                    <td><a href="#" data-bind="click: $root.addToCart">Add to Cart</a></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+    <!-- Example row of columns -->
+    <div class="row">
+
+      <ul class="tabs">
+        <li class="active"><a href="#shop">Shop</a></li>
+        <li><a href="#cart">Cart</a></li>
+      </ul>
+
+      <div class="pill-content">
+
+        <div class="active" id="shop">
+
+          <div class="span16">
+
+            <h2>Please choose from our wonderful selection of songs:</h2>
+
+            <table class="bordered-table">
+              <thead>
+              <tr>
+                <th>Genre</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th>Price</th>
+              </tr>
+              </thead>
+              <tbody data-bind="foreach: albums">
+              <tr>
+                <td data-bind="text: genre"></td>
+                <td data-bind="text: artist"></td>
+                <td data-bind="text: title"></td>
+                <td data-bind="text: formattedPrice"></td>
+                <td><a href="#" data-bind="click: $root.addToCart">Add to
+                  Cart</a></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <div id="cart">
+
+          <div class="alert-message info fade in"
+               data-bind="visible: orderSubmitted()">
+            <p><strong>Your order has been accepted. An email will be on your way
+              to you shortly.</strong></p>
+          </div>
+
+          <div class="alert-message warn fade in"
+               data-bind="visible: !orderReady()">
+            <p><strong>Please add some item(s) to your cart and login before
+              submitting.</strong></p>
+          </div>
+
+          <div class="span16">
+
+            <form>
+              <fieldset>
+                <legend>Cart</legend>
+
+                <div class="actions">
+                  <input type="submit" class="btn primary" value="Submit Order"
+                         data-bind="click: submitOrder"/>
+                </div>
+
+              </fieldset>
+            </form>
 
           </div>
 
-          <div id="cart">
+          <div class="span16">
 
-            <div class="alert-message info fade in" data-bind="visible: orderSubmitted()">
-              <p><strong>Your order has been accepted. An email will be on your way to you shortly.</strong></p>
-            </div>
-
-            <div class="alert-message warn fade in" data-bind="visible: !orderReady()">
-              <p><strong>Please add some item(s) to your cart and login before submitting.</strong></p>
-            </div>
-
-            <div class="span16">
-
-              <form>
-                <fieldset>
-                  <legend>Cart</legend>
-
-                  <div class="actions">
-                    <input type="submit" class="btn primary" value="Submit Order" data-bind="click: submitOrder"/>
-                  </div>
-
-                </fieldset>
-              </form>
-
-            </div>
-
-            <div class="span16">
-
-              <table class="bordered-table">
-                <thead>
-                  <tr>
-                    <th>Genre</th><th>Artist</th><th>Album</th><th>Price</th><th>Quantity</th>
-                  </tr>
-                </thead>
-                <tbody data-bind="foreach: items">
-                  <tr>
-                    <td data-bind="text: album.genre"></td>
-                    <td data-bind="text: album.artist"></td>
-                    <td data-bind="text: album.title"></td>
-                    <td data-bind="text: album.formattedPrice"></td>
-                    <td data-bind="text: quantity"></td>
-                    <td><a href="#" data-bind="click: $root.removeFromCart">Remove</a></td>
-                  </tr>
-                </tbody>
-              </table>
-
-             </div>
-
-          </div>
-
-          <div id="account">
-
-            <div class="span16">
-
-              <div class="alert-message warn fade in" data-bind="visible: sessionID() == ''">
-                <p><strong>Please login to view your account settings</strong></p>
-              </div>
-
-              <div data-bind="visible: sessionID() != ''">
-                <form>
-                  <fieldset>
-                    <legend>Account settings</legend>
-
-
-                  </fieldset>
-                </form>
-              </div>
-
-            </div>
+            <table class="bordered-table">
+              <thead>
+              <tr>
+                <th>Genre</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th>Price</th>
+                <th>Quantity</th>
+              </tr>
+              </thead>
+              <tbody data-bind="foreach: items">
+              <tr>
+                <td data-bind="text: album.genre"></td>
+                <td data-bind="text: album.artist"></td>
+                <td data-bind="text: album.title"></td>
+                <td data-bind="text: album.formattedPrice"></td>
+                <td data-bind="text: quantity"></td>
+                <td><a href="#"
+                       data-bind="click: $root.removeFromCart">Remove</a></td>
+              </tr>
+              </tbody>
+            </table>
 
           </div>
 
         </div>
 
-
       </div>
+
     </div>
   </div>
+</div>
 
 </body>
 
