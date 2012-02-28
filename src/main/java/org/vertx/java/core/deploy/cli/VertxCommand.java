@@ -17,8 +17,8 @@
 package org.vertx.java.core.deploy.cli;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.deploy.VerticleManager;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.deploy.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
