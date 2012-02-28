@@ -1,14 +1,12 @@
-# Installation
-
 Before you can do anything with vert.x you need to install it, so let's describe how to do that.
 
-## Getting a distro
+# Getting a distro
 
 The easiest way to get hold of a distribution is to [download a binary distro](https://github.com/purplefox/vert
 .x/downloads).
 Alternatively you can build from source. To do that see the instructions on the [github wiki](https://github.com/purplefox/vert.x/wiki).
 
-## Pre-requisites
+# Pre-requisites
 
 * Operating System. vert.x runs out of the box on Linux or OSX. If you are running Windows, the best way to run vert.x is to create a Linux (I recommend Ubuntu) vitrtual machine using your favourite virtualisation software (VMware Workstation, of course!) and run it in that.
 
@@ -18,7 +16,7 @@ Alternatively you can build from source. To do that see the instructions on the 
 
 * Ruby Gems. If you want to use Ruby Gems inside your Ruby verticles you'll need to have the `JRUBY_HOME` environment variable pointing at the base of your JRuby installation.
 
-## Install vert.x
+# Install vert.x
 
 Once you've got the pre-requisites installed, you install vert.x as follows:
 
@@ -32,7 +30,7 @@ To make sure you've installed it correctly, open another console and type:
 
 You should see output something like the above.
 
-## Testing the install
+# Testing the install
 
 Let's test the install by writing a simple web server.
 

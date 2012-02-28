@@ -35,7 +35,7 @@
           <li><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
           <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
-          <li><a href="#">Contributing</a></li>
+          <li><a href="community.html">Community</a></li>
         </ul>
       </div>
     </div>
@@ -60,7 +60,7 @@
 
     <div class="span3">
       <div class="well">
-        <h4 class="title">Polyglot</h4>
+        <h3 class="title">Polyglot</h3>
         <br/>
         <p>Write your application components in <strong>JavaScript</strong>,
           <strong>Ruby</strong> or <strong>Java</strong>.Or mix and match several programming languages in a single
@@ -73,7 +73,7 @@
         <br/>
         <p>...without being simplistic. Create real, scalable applications in
           just a
-          few lines of code. No more boilerplate or sprawling xml config.</p>
+          few lines of code. No boilerplate or sprawling xml config.</p>
         <br/>
       </div>
     </div>
@@ -90,7 +90,7 @@
       <div class="well">
         <h3 class="title">Concurrency</h3>
         <br/>
-        <p>Super simple concurrency model frees you from worrying about locks and race conditions.</p>
+        <p>Super-simple concurrency model frees you from worrying about locks and race conditions.</p>
         <br/><br/>
       </div>
     </div>
@@ -108,7 +108,7 @@
               and even penetrates into client side JavaScript.</p>
           </li>
           <li>
-            <p><strong>Out of the box bus modules </strong>ncluding
+            <p><strong>Out of the box event bus modules </strong>including
             persistor, mailer, authentication manager, and work queues.</p>
           </li>
           <li>
@@ -124,21 +124,17 @@
             <p><strong>SockJS</strong> support</p>
           </li>
           <li>
-            <p><strong>Extensive documentation</strong></p>
+            <p><strong>Extensive <a href="docs.html">documentation</a></strong></p>
           </li>
           <li>
             <p><strong>Open Source.</strong> Licenced under the ASL 2.0</p>
           </li>
           <li>
-            <p>Many other features. See the user manual.</p>
+            <p><strong>Many other features.</strong> See the documentation for full details.</a></p>
           </li>
 
         </ul>
-      </div>
-      <div class="well">
-        What is vert.x?<br/>
-        blah blah blah
-      </div>
+      </div>      
     </div>
 
     <div class="span9">
@@ -154,10 +150,10 @@
             <p>Here's a highly scalable web server. It serves files from the <code>webroot</code> directory.</p>
             <p>(Click on the tab below for your preferred language)</p>
 
-            <ul class="nav nav-tabs">
-              <li><a href="#ws_java" data-toggle="tab">Java</a></li>
-              <li><a href="#ws_ruby" data-toggle="tab">Ruby</a></li>
+            <ul class="nav nav-tabs">              
               <li class="active"><a href="#ws_js" data-toggle="tab">JavaScript</a></li>
+              <li><a href="#ws_ruby" data-toggle="tab">Ruby</a></li>
+              <li><a href="#ws_java" data-toggle="tab">Java</a></li>              
             </ul>
 
             <div class="tab-content">
@@ -165,20 +161,22 @@
 
                 <p>Save the following in <code>server.js</code></p>
                 <pre class="prettyprint">
-load('vert.js');
+load('vert.js')
 
 new vertx.HttpServer().requestHandler(function(req) {
     var file = req.path === '/' ? 'index.html' : req.path;
     req.response.sendFile('webroot/' + file);
-}).listen(8080);
+}).listen(8080)
 
                 </pre>
                 <p>Run it with:</p>
                 <p><code>vertx run server.js</code></p>
 
-                <p>Have 32 cores on your server and want to use them all? Just spin up more instances.
-                Vert.x will do the magic to ensure the requests are distributed amongst the instances.</p>
-                <p><code>vertx run server.js -instances 32</code></p>
+                <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
+                <p>Just spin up more instances:</p>
+                <p><code>vertx run Server -instances 32</code></p>                
+                <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
+                
 
               </div>
               <div class="tab-pane" id="ws_ruby">
@@ -198,9 +196,11 @@ end.listen(8080)
                 <p>Run it with:</p>
                 <p><code>vertx run server.rb</code></p>
 
-                <p>Have 32 cores on your server and want to use them all? Just spin up more instances.
-                Vert.x will do the magic to ensure the requests are distributed amongst the instances.</p>
-                <p><code>vertx run server.rb -instances 32</code></p>
+                <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
+                <p>Just spin up more instances:</p>
+                <p><code>vertx run Server -instances 32</code></p>                
+                <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
+            
 
               </div>
               <div class="tab-pane" id="ws_java">
@@ -232,9 +232,11 @@ public class Server implements Verticle {
                 <p>Run it with:</p>
                 <p><code>vertx run Server</code></p>
 
-                <p>Have 32 cores on your server and want to use them all? Just spin up more instances.
-                Vert.x will do the magic to ensure the requests are distributed amongst the instances.</p>
-                <p><code>vertx run Server -instances 32</code></p>
+                <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
+                <p>Just spin up more instances:</p>
+                <p><code>vertx run Server -instances 32</code></p>                
+                <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
+            
 
 
               </div>
@@ -244,7 +246,7 @@ public class Server implements Verticle {
 
           <div class="well">
             <p>OK, that's pretty cool, but it's just a Hello World.</p>
-            <p>For something more substantial take a look at the <a href="web_tutorial.html">real-time web application tutorial.</p>
+            <p>For something more substantial take a look at the <a href="tutorials.html">tutorials</p>.
           </div>
           
           

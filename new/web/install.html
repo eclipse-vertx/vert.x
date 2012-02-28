@@ -35,6 +35,7 @@
           <li><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
           <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
         </ul>
       </div>
     </div>
@@ -45,8 +46,8 @@
 
   <div class="row">
     <div class="span12">
-      <div class="hero-unit" style="padding: 30px;">
-        <h1>Vert.x Installation Guide</h1>
+      <div class="well">
+        <h1 style="font-size: 35px;">Installation Guide</h1>
       </div>
     </div>
   </div>
@@ -55,12 +56,11 @@
     <div class="span12">
       <div class="well">
 <div>
-<h1 id="installation">Installation</h1><br/>
 <p>Before you can do anything with vert.x you need to install it, so let's describe how to do that.</p>
-<h2 id="getting-a-distro">Getting a distro</h2><br/>
+<h1 id="getting-a-distro">Getting a distro</h1><br/>
 <p>The easiest way to get hold of a distribution is to <a href="https://github.com/purplefox/vert .x/downloads">download a binary distro</a>.
 Alternatively you can build from source. To do that see the instructions on the <a href="https://github.com/purplefox/vert.x/wiki">github wiki</a>.</p>
-<h2 id="pre-requisites">Pre-requisites</h2><br/>
+<h1 id="pre-requisites">Pre-requisites</h1><br/>
 <ul>
 <li>
 <p>Operating System. vert.x runs out of the box on Linux or OSX. If you are running Windows, the best way to run vert.x is to create a Linux (I recommend Ubuntu) vitrtual machine using your favourite virtualisation software (VMware Workstation, of course!) and run it in that.</p>
@@ -75,7 +75,7 @@ Alternatively you can build from source. To do that see the instructions on the 
 <p>Ruby Gems. If you want to use Ruby Gems inside your Ruby verticles you'll need to have the <code>JRUBY_HOME</code> environment variable pointing at the base of your JRuby installation.</p>
 </li>
 </ul>
-<h2 id="install-vertx">Install vert.x</h2><br/>
+<h1 id="install-vertx">Install vert.x</h1><br/>
 <p>Once you've got the pre-requisites installed, you install vert.x as follows:</p>
 <ol>
 <li>Unzip the distro somewhere sensible (e.g. your home directory)</li>
@@ -86,7 +86,7 @@ Alternatively you can build from source. To do that see the instructions on the 
 vert.x 1.0.0.beta.1
 </pre>
 <p>You should see output something like the above.</p>
-<h2 id="testing-the-install">Testing the install</h2><br/>
+<h1 id="testing-the-install">Testing the install</h1><br/>
 <p>Let's test the install by writing a simple web server.</p>
 <p>Copy the following into a text editor and save it as <code>server.js</code></p>
 <pre class="prettyprint">load('vertx.js');
