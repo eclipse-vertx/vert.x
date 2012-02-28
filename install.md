@@ -2,8 +2,7 @@ Before you can do anything with vert.x you need to install it, so let's describe
 
 # Getting a distro
 
-The easiest way to get hold of a distribution is to [download a binary distro](https://github.com/purplefox/vert
-.x/downloads).
+The easiest way to get hold of a distribution is to [download a binary distro](https://github.com/purplefox/vert.x/downloads).
 Alternatively you can build from source. To do that see the instructions on the [github wiki](https://github.com/purplefox/vert.x/wiki).
 
 # Pre-requisites
