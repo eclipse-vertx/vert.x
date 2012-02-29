@@ -4,4 +4,4 @@ To build user manual: ./genmanual.sh
 
 To run local web server for development: ./runserver.sh
 
-Point browser at http://localhost:8080
+Point browser at http://localhost:8181

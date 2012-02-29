@@ -92,6 +92,7 @@
 </li>
 <li><a href="#logging">Logging</a></li>
 <li><a href="#configuring-clustering">Configuring clustering</a></li>
+<li><a href="#internals">Internals</a></li>
 </ul>
 </div>
 <h1 id="introduction">Introduction</h1><br/>
@@ -366,7 +367,15 @@ vertx undeploy my_app
 <pre class="prettyprint">-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.SLF4JLogDelegateFactory
 </pre>
 <h1 id="configuring-clustering">Configuring clustering</h1><br/>
-<p>To configure clustering use the file <code>conf/cluster.xml</code> in the distribution.</p></div>
+<p>To configure clustering use the file <code>conf/cluster.xml</code> in the distribution.</p>
+<h1 id="internals">Internals</h1><br/>
+<p>Vert.x uses the following amazing open source projects:</p>
+<ul>
+<li><a href="https://github.com/netty/netty">Netty</a> for much of its network IO</li>
+<li><a href="http://jruby.org/">JRuby</a> for its Ruby engine</li>
+<li><a href="http://www.mozilla.org/rhino/">Mozilla Rhino</a> for its JavaScript engine</li>
+<li><a href="http://www.hazelcast.com/">Hazelcast</a> for group management of cluster members</li>
+</ul></div>
       </div>
     </div>
   </div>

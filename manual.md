@@ -353,7 +353,14 @@ or
 
 To configure clustering use the file `conf/cluster.xml` in the distribution.
 
+# Internals
 
+Vert.x uses the following amazing open source projects:
+
+* [Netty](https://github.com/netty/netty) for much of its network IO
+* [JRuby](http://jruby.org/) for its Ruby engine
+* [Mozilla Rhino](http://www.mozilla.org/rhino/) for its JavaScript engine
+* [Hazelcast](http://www.hazelcast.com/) for group management of cluster members
 
 
 
