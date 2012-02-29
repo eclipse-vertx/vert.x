@@ -21,7 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.ArrayList;

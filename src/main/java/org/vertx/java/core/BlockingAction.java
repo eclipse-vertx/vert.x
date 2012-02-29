@@ -17,7 +17,7 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * <p>Internal class used to run specific blocking actions on the worker pool.</p>

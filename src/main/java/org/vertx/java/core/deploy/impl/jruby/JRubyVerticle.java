@@ -22,7 +22,7 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
 import org.vertx.java.core.Verticle;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;

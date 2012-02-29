@@ -27,7 +27,7 @@ import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import static org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType;
 

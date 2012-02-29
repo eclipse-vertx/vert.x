@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.sockjs;
+package org.vertx.java.core.json.impl;
+
+import org.codehaus.jackson.map.ObjectMapper;
+import org.vertx.java.core.json.EncodeException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-interface TransportListener {
+public class Json {
 
-  void sendFrame(String payload);
+  public final static ObjectMapper mapper = new ObjectMapper();
+
+  public static String encode(Object obj) throws EncodeException {
+    try {
+      return mapper.writeValueAsString(obj);
+    }
+    catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON");
+    }
+  }
 }

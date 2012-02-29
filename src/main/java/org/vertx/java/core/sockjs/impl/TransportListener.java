@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.sockjs;
+package org.vertx.java.core.sockjs.impl;
 
 /**
- * The available SockJS transports
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public enum Transport {
-  WEBSOCKETS, EVENT_SOURCE, HTML_FILE, JSON_P, XHR
+interface TransportListener {
+
+  void sendFrame(String payload);
 }

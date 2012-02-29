@@ -13,7 +13,9 @@
  * Modified from original form by Tim Fox
  */
 
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
+
+import org.vertx.java.core.logging.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

@@ -20,7 +20,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
 /**

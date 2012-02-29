@@ -13,7 +13,7 @@
  * Modified from original form by Tim Fox
  */
 
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
 
 /**
  * I represent operations that are delegated to underlying logging frameworks.

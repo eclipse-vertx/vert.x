@@ -20,7 +20,7 @@ import org.vertx.java.core.ConnectionPool;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 

@@ -22,7 +22,7 @@ import org.vertx.java.core.DeferredAction;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;

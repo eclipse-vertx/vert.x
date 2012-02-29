@@ -18,7 +18,7 @@ package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * Represents a message sent on the event bus.

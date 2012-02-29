@@ -27,7 +27,7 @@ import org.vertx.java.core.deploy.impl.jruby.JRubyVerticleFactory;
 import org.vertx.java.core.deploy.impl.rhino.RhinoVerticleFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.net.URL;
 import java.util.ArrayList;

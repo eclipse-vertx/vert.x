@@ -13,78 +13,80 @@
  * Modified from original form by Tim Fox
  */
 
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
+
+import java.util.logging.Level;
 
 /**
- * A {@link LogDelegate} which delegates to Apache Log4j
+ * A {@link LogDelegate} which delegates to java.util.logging
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
-public class Log4jLogDelegate implements LogDelegate {
-  private final org.apache.log4j.Logger logger;
+public class JULLogDelegate implements LogDelegate {
+  private final java.util.logging.Logger logger;
 
-  Log4jLogDelegate(final String name) {
-    logger = org.apache.log4j.Logger.getLogger(name);
+  JULLogDelegate(final String name) {
+    logger = java.util.logging.Logger.getLogger(name);
   }
 
   public boolean isInfoEnabled() {
-    return logger.isInfoEnabled();
+    return logger.isLoggable(Level.INFO);
   }
 
   public boolean isDebugEnabled() {
-    return logger.isDebugEnabled();
+    return logger.isLoggable(Level.FINE);
   }
 
   public boolean isTraceEnabled() {
-    return logger.isTraceEnabled();
+    return logger.isLoggable(Level.FINEST);
   }
 
   public void fatal(final Object message) {
-    logger.fatal(message);
+    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString());
   }
 
   public void fatal(final Object message, final Throwable t) {
-    logger.fatal(message, t);
+    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
   }
 
   public void error(final Object message) {
-    logger.error(message);
+    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString());
   }
 
   public void error(final Object message, final Throwable t) {
-    logger.error(message, t);
+    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
   }
 
   public void warn(final Object message) {
-    logger.warn(message);
+    logger.log(Level.WARNING, message == null ? "NULL" : message.toString());
   }
 
   public void warn(final Object message, final Throwable t) {
-    logger.warn(message, t);
+    logger.log(Level.WARNING, message == null ? "NULL" : message.toString(), t);
   }
 
   public void info(final Object message) {
-    logger.info(message);
+    logger.log(Level.INFO, message == null ? "NULL" : message.toString());
   }
 
   public void info(final Object message, final Throwable t) {
-    logger.info(message, t);
+    logger.log(Level.INFO, message == null ? "NULL" : message.toString(), t);
   }
 
   public void debug(final Object message) {
-    logger.debug(message);
+    logger.log(Level.FINE, message == null ? "NULL" : message.toString());
   }
 
   public void debug(final Object message, final Throwable t) {
-    logger.debug(message, t);
+    logger.log(Level.FINE, message == null ? "NULL" : message.toString(), t);
   }
 
   public void trace(final Object message) {
-    logger.trace(message);
+    logger.log(Level.FINEST, message == null ? "NULL" : message.toString());
   }
 
   public void trace(final Object message, final Throwable t) {
-    logger.trace(message, t);
+    logger.log(Level.FINEST, message == null ? "NULL" : message.toString(), t);
   }
 
 }

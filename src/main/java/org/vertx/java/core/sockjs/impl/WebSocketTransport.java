@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.sockjs;
+package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -23,7 +23,9 @@ import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.Map;
 

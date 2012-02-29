@@ -12,7 +12,7 @@
  *
  * Modified from original form by Tim Fox
  */
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

@@ -17,7 +17,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}

@@ -25,7 +25,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.nio.ByteOrder;
 import java.security.SecureRandom;

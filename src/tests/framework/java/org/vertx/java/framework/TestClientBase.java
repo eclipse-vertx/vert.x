@@ -17,7 +17,7 @@ package org.vertx.java.framework;
 
 import org.vertx.java.core.Verticle;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
