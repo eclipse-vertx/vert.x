@@ -22,21 +22,21 @@ import java.util.Set;
 /**
  *
  * Configuration for a SockJS application. See the SockJS website for more information.
- *
+ * <p>
  * Params are:
- *
+ * <p>
  * insertJSESSIONID - if true a JSESSIONID cookie will be inserted into responses if not already present. Default is true.
- *
+ * <p>
  * sessionTimeout - timeout in ms after a session has no receiving connection. Default is 5000 ms
- *
+ * <p>
  * heartbeatPeriod - heartbeat period in ms. Default is 25000 ms
- *
+ * <p>
  * maxBytesStreaming - maximum number of bytes that can be written to a streaming connection before it is closed. Default is 128KB
- *
+ * <p>
  * libraryURL - URL from where to download the sock-js client js library. Default is "http://cdn.sockjs.org/sockjs-0.1.min.js"
- *
+ * <p>
  * disabledTransports - set of transports not enabled for this application. Default is empty set.
- *
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AppConfig {

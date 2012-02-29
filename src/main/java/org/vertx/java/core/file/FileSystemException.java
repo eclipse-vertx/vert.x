@@ -21,7 +21,7 @@ package org.vertx.java.core.file;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FileSystemException extends Exception {
+public class FileSystemException extends RuntimeException {
 
   /**
    * Construct a {@code FileSystemException} with a message as specified by {@code msg}

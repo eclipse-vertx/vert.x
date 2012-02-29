@@ -84,20 +84,13 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
- * <p>An HTTP server.</p>
- * <p>The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.</p>
- * <p>An {@code HttpServer} instance can only be used from the event loop that created it.</p>
- *
+ * An HTTP and WebSockets server
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServer extends NetServerBase {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
-
-  //For debug only
-  public static int numServers() {
-    return servers.size();
-  }
 
   private static final Map<ServerID, HttpServer> servers = new HashMap<>();
 

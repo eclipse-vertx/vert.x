@@ -36,32 +36,29 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
- * <p>Encapsulates a client-side HTTP request.</p>
- * <p/>
- * <p>Instances of this class are created by an {@link HttpClient} instance, via one of the methods corresponding to the
- * specific HTTP methods, or the generic {@link HttpClient#request} method</p>
- * <p/>
- * <p>Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
- * if required. Once you are ready to send the request, the {@link #end()} method must called.</p>
- * <p/>
- * <p>Nothing is sent until the request has been internally assigned an HTTP connection. The {@link HttpClient} instance
+ * Represents a client-side HTTP request.<p>
+ * Instances of this class are created by an {@link HttpClient} instance, via one of the methods corresponding to the
+ * specific HTTP methods, or the generic {@link HttpClient#request} method
+ * <p>
+ * Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
+ * if required. Once you are ready to send the request, the {@link #end()} method must called.
+ * <p>
+ * Nothing is sent until the request has been internally assigned an HTTP connection. The {@link HttpClient} instance
  * will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
  * sent before a connection is assigned will be queued internally and actually sent when an HTTP connection becomes
- * available from the pool.</p>
- * <p/>
- * <p>The headers of the request are actually sent either when the {@link #end()} method is called, or, when the first
- * part of the body is written, whichever occurs first.</p>
- * <p/>
- * <p>This class supports both chunked and non-chunked HTTP.</p>
- * <p/>
- * <p>This class can only be used from the event loop that created it.</p>
- * <p/>
- * <p>An example of using this class is as follows:</p>
- * <p/>
+ * available from the pool.
+ * <p>
+ * The headers of the request are actually sent either when the {@link #end()} method is called, or, when the first
+ * part of the body is written, whichever occurs first.
+ * <p>
+ * This class supports both chunked and non-chunked HTTP.
+ * <p>
+ * An example of using this class is as follows:
+ * <p>
  * <pre>
  *
- * HttpClientRequest req = httpClient.post("/some-url", new EventHandler<HttpClientResponse>() {
- *   public void onEvent(HttpClientResponse response) {
+ * HttpClientRequest req = httpClient.post("/some-url", new Handler<HttpClientResponse>() {
+ *   public void handle(HttpClientResponse response) {
  *     System.out.println("Got response: " + response.statusCode);
  *   }
  * });
@@ -86,8 +83,10 @@ public class HttpClientRequest implements WriteStream {
     this(client, method, uri, respHandler, context, th, false);
   }
 
-  // Raw request - used by websockets
-  // Raw requests won't have any headers set automatically, like Content-Length and Connection
+  /*
+  Raw request - used by websockets
+  Raw requests won't have any headers set automatically, like Content-Length and Connection
+  */
   HttpClientRequest(final HttpClient client, final String method, final String uri,
                     final Handler<HttpClientResponse> respHandler,
                     final Context context, final Thread th,

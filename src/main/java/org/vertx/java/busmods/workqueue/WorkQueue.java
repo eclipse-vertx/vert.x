@@ -31,7 +31,10 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- *
+ * Work Queue Bus Module
+ * <p>
+ * Please see the busmods manual for a full description
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class WorkQueue extends BusModBase implements Verticle {
@@ -53,6 +56,9 @@ public class WorkQueue extends BusModBase implements Verticle {
     super(false);
   }
 
+  /**
+   * Start the busmod
+   */
   public void start() {
     super.start();
 
@@ -82,6 +88,15 @@ public class WorkQueue extends BusModBase implements Verticle {
       }
     };
     eb.registerHandler(address, sendHandler);
+  }
+
+  /**
+   * Stop the busmod
+   */
+  public void stop() {
+    eb.unregisterHandler(address + ".register", registerHandler);
+    eb.unregisterHandler(address + ".unregister", unregisterHandler);
+    eb.unregisterHandler(address, sendHandler);
   }
 
   // Load all the message into memory
@@ -115,11 +130,6 @@ public class WorkQueue extends BusModBase implements Verticle {
     };
   }
 
-  public void stop() {
-    eb.unregisterHandler(address + ".register", registerHandler);
-    eb.unregisterHandler(address + ".unregister", unregisterHandler);
-    eb.unregisterHandler(address, sendHandler);
-  }
 
   private void checkWork() {
     if (!messages.isEmpty() && !processors.isEmpty()) {

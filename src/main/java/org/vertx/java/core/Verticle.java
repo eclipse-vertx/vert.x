@@ -17,6 +17,8 @@
 package org.vertx.java.core;
 
 /**
+ * A verticle is the unit of deployment in vert.x
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Verticle {

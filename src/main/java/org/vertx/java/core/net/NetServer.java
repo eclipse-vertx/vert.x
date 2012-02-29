@@ -56,12 +56,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * <p>Encapsulates a server that understands TCP or SSL.</p>
- *
- * <p>Instances of this class can only be used from the event loop that created it. When connections are accepted by the server
- * they are supplied to the user in the form of a {@link NetSocket} instance that is passed via an instance of
- * {@link org.vertx.java.core.Handler} which is supplied to the server via the {@link #connectHandler} method.</p>
- *
+ * Represents a TCP or SSL server
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServer extends NetServerBase {

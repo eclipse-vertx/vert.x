@@ -36,9 +36,13 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 /**
- * <p>Represents the interface to a TCP or SSL connection on either the client or the server side.</p>
- * <p>Instances of this class is created on the client side by an {@link NetClient} when a connection to a server is
- * made, or on the server side by a {@link NetServer} when a server accepts a connection.</p>
+ * Represents a socket-like interface to a TCP or SSL connection on either the
+ * client or the server side.
+ * <p>
+ * Instances of this class is created on the client side by an {@link NetClient}
+ * when a connection to a server is made, or on the server side by a {@link NetServer}
+ * when a server accepts a connection.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {

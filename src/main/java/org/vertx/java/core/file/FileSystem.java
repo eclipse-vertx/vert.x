@@ -53,8 +53,12 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * <p>Represents the file-system and contains a broad set of operations for manipulating files.</p>
- *
+ * Contains a broad set of operations for manipulating files.
+ * <p>
+ * An asynchronous and a synchronous version of each operation is provided.
+ * The asynchronous versions take an {@code AsynchronousResultHandler} which is
+ * called when the operation completes or an error occurs.
+ * The synchronous versions return the results, or throw exceptions directly.
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystem {
@@ -62,6 +66,536 @@ public class FileSystem {
   public static FileSystem instance = new FileSystem();
 
   private FileSystem() {
+  }
+
+  /**
+   * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
+   * The copy will fail if the destination if the destination already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void copy(String from, String to, AsyncResultHandler<Void> handler) {
+    wrapHandler(copyDeferred(from, to).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #copy(String, String, AsyncResultHandler)}
+   */
+  public void copySync(String from, String to) throws Exception {
+    copyDeferred(from, to).action();
+  }
+
+  /**
+   * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
+   * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
+   * will be copied recursively to the destination {@code to}.<p>
+   * The copy will fail if the destination if the destination already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
+    wrapHandler(copyDeferred(from, to, recursive).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #copy(String, String, boolean, AsyncResultHandler)}
+   */
+  public void copySync(String from, String to, boolean recursive) throws Exception {
+    copyDeferred(from, to, recursive).action();
+  }
+
+  /**
+   * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
+   * The move will fail if the destination already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void move(String from, String to, AsyncResultHandler<Void> handler) {
+    wrapHandler(moveDeferred(from, to).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #move(String, String, AsyncResultHandler)}
+   */
+  public void moveSync(String from, String to) throws Exception {
+    moveDeferred(from, to).action();
+  }
+
+  /**
+   * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
+   * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void truncate(String path, long len, AsyncResultHandler<Void> handler) {
+    wrapHandler(truncateDeferred(path, len).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #truncate(String, long, AsyncResultHandler)}
+   */
+  public void truncateSync(String path, long len) throws Exception {
+    truncateDeferred(path, len).action();
+  }
+
+  /**
+   * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
+   * The permission String takes the form rwxr-x--- as
+   * specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void chmod(String path, String perms, AsyncResultHandler<Void> handler) {
+    wrapHandler(chmodDeferred(path, perms).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #chmod(String, String, AsyncResultHandler)}
+   */
+  public void chmodSync(String path, String perms) throws Exception {
+    chmodDeferred(path, perms).action();
+  }
+
+
+  /**
+   * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
+   * The permission String takes the form rwxr-x--- as
+   * specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
+   * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
+   * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+    wrapHandler(chmodDeferred(path, perms, dirPerms).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #chmod(String, String, String, AsyncResultHandler)}
+   */
+  public void chmodSync(String path, String perms, String dirPerms) throws Exception {
+    chmodDeferred(path, perms, dirPerms).action();
+  }
+
+  /**
+   * Obtain properties for the file represented by {@code path}, asynchronously.
+   * If the file is a link, the link will be followed.
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void props(String path, AsyncResultHandler<FileProps> handler) {
+    wrapHandler(propsDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #props(String, AsyncResultHandler)}
+   */
+  public FileProps propsSync(String path) throws Exception {
+    return propsDeferred(path).action();
+  }
+
+  /**
+   * Obtain properties for the link represented by {@code path}, asynchronously.
+   * The link will not be followed.
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void lprops(String path, AsyncResultHandler<FileProps> handler) {
+    wrapHandler(lpropsDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #lprops(String, AsyncResultHandler)}
+   */
+  public FileProps lpropsSync(String path) throws Exception {
+    return lpropsDeferred(path).action();
+  }
+
+  /**
+   * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void link(String link, String existing, AsyncResultHandler<Void> handler) {
+    wrapHandler(linkDeferred(link, existing).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
+   */
+  public void linkSync(String link, String existing) throws Exception {
+    linkDeferred(link, existing).action();
+  }
+
+  /**
+   * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void symlink(String link, String existing, AsyncResultHandler<Void> handler) {
+    wrapHandler(symlinkDeferred(link, existing).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
+   */
+  public void symlinkSync(String link, String existing) throws Exception {
+    symlinkDeferred(link, existing).action();
+  }
+
+  /**
+   * Unlinks the link on the file system represented by the path {@code link}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void unlink(String link, AsyncResultHandler<Void> handler) {
+    wrapHandler(unlinkDeferred(link).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #unlink(String, AsyncResultHandler)}
+   */
+  public void unlinkSync(String link) throws Exception {
+    unlinkDeferred(link).action();
+  }
+
+  /**
+   * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void readSymlink(String link, AsyncResultHandler<String> handler) {
+    wrapHandler(readSymlinkDeferred(link).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #readSymlink(String, AsyncResultHandler)}
+   */
+  public String readSymlinkSync(String link) throws Exception {
+    return readSymlinkDeferred(link).action();
+  }
+
+  /**
+   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void delete(String path, AsyncResultHandler<Void> handler) {
+    wrapHandler(deleteDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #delete(String, AsyncResultHandler)}
+   */
+  public void deleteSync(String path) throws Exception {
+    deleteDeferred(path).action();
+  }
+
+  /**
+   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
+   * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
+    wrapHandler(deleteDeferred(path, recursive).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #delete(String, boolean, AsyncResultHandler)}
+   */
+  public void deleteSync(String path, boolean recursive) throws Exception {
+    deleteDeferred(path, recursive).action();
+  }
+
+  /**
+   * Create the directory represented by {@code path}, asynchronously.<p>
+   * The operation will fail if the directory already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void mkdir(String path, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #mkdir(String, AsyncResultHandler)}
+   */
+  public void mkdirSync(String path) throws Exception {
+    mkdirDeferred(path).action();
+  }
+
+  /**
+   * Create the directory represented by {@code path}, asynchronously.<p>
+   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
+   * will also be created.<p>
+   * The operation will fail if the directory already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path, createParents).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #mkdir(String, boolean, AsyncResultHandler)}
+   */
+  public void mkdirSync(String path, boolean createParents) throws Exception {
+    mkdirDeferred(path, createParents).action();
+  }
+
+
+  /**
+   * Create the directory represented by {@code path}, asynchronously.<p>
+   * The new directory will be created with permissions as specified by {@code perms}.
+   * The permission String takes the form rwxr-x--- as specified
+   * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
+   * The operation will fail if the directory already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path, perms).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #mkdir(String, String, AsyncResultHandler)}
+   */
+  public void mkdirSync(String path, String perms) throws Exception {
+    mkdirDeferred(path, perms).action();
+  }
+
+  /**
+   * Create the directory represented by {@code path}, asynchronously.<p>
+   * The new directory will be created with permissions as specified by {@code perms}.
+   * The permission String takes the form rwxr-x--- as specified
+   * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
+   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
+   * will also be created.<p>
+   * The operation will fail if the directory already exists.<p>
+   * The handler will be called when the operation completes or an error occurs
+   */
+  public void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
+    wrapHandler(mkdirDeferred(path, perms, createParents).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #mkdir(String, String, boolean, AsyncResultHandler)}
+   */
+  public void mkdirSync(String path, String perms, boolean createParents) throws Exception {
+    mkdirDeferred(path, perms, createParents).action();
+  }
+
+  /**
+   * Read the contents of the directory specified by {@code path}, asynchronously
+   * @return a Future representing the future result of the action.
+   * The handler will be called when the operation completes or an error occurs.
+   * The result is an array of String representing the paths of the files inside the directory.
+   */
+  public void readDir(String path, AsyncResultHandler<String[]> handler) {
+    wrapHandler(readDirDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #readDir(String, AsyncResultHandler)}
+   */
+  public String[] readDirSync(String path) throws Exception {
+    return readDirDeferred(path).action();
+  }
+
+  /**
+   * Read the contents of the directory specified by {@code path}, asynchronously<p>
+   * {@code filter} is a regular expression. If {@code filter} is specified then only the paths that match @{filter} will be returned.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   * The result is an array of String representing the paths of the files inside the directory.
+   */
+  public void readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
+    wrapHandler(readDirDeferred(path, filter).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #readDir(String, String, AsyncResultHandler)}
+   */
+  public String[] readDirSync(String path, String filter) throws Exception {
+    return readDirDeferred(path, filter).action();
+  }
+
+  /**
+   * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
+   * Do not user this method to read very large files or you risk running out of available RAM.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void readFile(String path, AsyncResultHandler<Buffer> handler) {
+    wrapHandler(readFileDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #readFile(String, AsyncResultHandler)}
+   */
+  public Buffer readFileSync(String path) throws Exception {
+    return readFileDeferred(path).action();
+  }
+
+  /**
+   * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
+    wrapHandler(writeFileDeferred(path, data).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #writeFile(String, Buffer, AsyncResultHandler)}
+   */
+  public void writeFileSync(String path, Buffer data) throws Exception {
+    writeFileDeferred(path, data).action();
+  }
+
+  /**
+   * Open the file represented by {@code path}, asynchronously.<p>
+   * The file is opened for both reading and writing. If the file does not already exist it will be created.
+   * Write operations will not automatically flush to storage.
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void open(String path, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #open(String, AsyncResultHandler)}
+   */
+  public AsyncFile openSync(String path) throws Exception {
+    return openDeferred(path).action();
+  }
+
+  /**
+   * Open the file represented by {@code path}, asynchronously.<p>
+   * The file is opened for both reading and writing. If the file does not already exist it will be created with the
+   * permissions as specified by {@code perms}.
+   * Write operations will not automatically flush to storage.
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #open(String, String, AsyncResultHandler)}
+   */
+  public AsyncFile openSync(String path, String perms) throws Exception {
+    return openDeferred(path, perms).action();
+  }
+
+  /**
+   * Open the file represented by {@code path}, asynchronously.<p>
+   * The file is opened for both reading and writing. If the file does not already exist and
+   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
+   * the operation will fail.
+   * Write operations will not automatically flush to storage.
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms, createNew).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #open(String, String, boolean, AsyncResultHandler)}
+   */
+  public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
+    return openDeferred(path, perms, createNew).action();
+  }
+
+  /**
+   * Open the file represented by {@code path}, asynchronously.<p>
+   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
+   * will be opened for writing.<p>
+   * If the file does not already exist and
+   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
+   * the operation will fail.<p>
+   * Write operations will not automatically flush to storage.
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms, read, write, createNew).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, AsyncResultHandler)}
+   */
+  public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
+    return openDeferred(path, perms, read, write, createNew).action();
+  }
+
+  /**
+   * Open the file represented by {@code path}, asynchronously.<p>
+   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
+   * will be opened for writing.<p>
+   * If the file does not already exist and
+   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
+   * the operation will fail.<p>
+   * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
+   * storage on each write.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void open(String path, String perms, boolean read, boolean write, boolean createNew,
+                   boolean flush, AsyncResultHandler<AsyncFile> handler) {
+    wrapHandler(openDeferred(path, perms, read, write, createNew, flush).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, boolean, AsyncResultHandler)}
+   */
+  public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
+    return openDeferred(path, perms, read, write, createNew, flush).action();
+  }
+
+  /**
+   * Creates an empty file with the specified {@code path}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void createFile(String path, AsyncResultHandler<Void> handler) {
+    wrapHandler(createFileDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #createFile(String, AsyncResultHandler)}
+   */
+  public void createFileSync(String path) throws Exception {
+    createFileDeferred(path).action();
+  }
+
+  /**
+   * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void createFile(String path, String perms, AsyncResultHandler<Void> handler) {
+    wrapHandler(createFileDeferred(path, perms).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #createFile(String, String, AsyncResultHandler)}
+   */
+  public void createFileSync(String path, String perms) throws Exception {
+    createFileDeferred(path, perms).action();
+  }
+
+  /**
+   * Determines whether the file as specified by the path {@code path} exists, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void exists(String path, AsyncResultHandler<Boolean> handler) {
+    wrapHandler(existsDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #exists(String, AsyncResultHandler)}
+   */
+  public boolean existsSync(String path) throws Exception {
+    return existsDeferred(path).action();
+  }
+
+  /**
+   * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
+   * The handler will be called when the operation completes or an error occurs.
+   */
+  public void fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
+    wrapHandler(fsPropsDeferred(path).execute(), handler);
+  }
+
+  /**
+   * Synchronous version of {@link #fsProps(String, AsyncResultHandler)}
+   */
+  public FileSystemProps fsPropsSync(String path) throws Exception {
+    return fsPropsDeferred(path).action();
+  }
+
+  private void checkContext() {
+    if (VertxInternal.instance.getContext() == null) {
+      throw new IllegalStateException("Can't use file system outside an event loop");
+    }
   }
 
   private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
@@ -78,20 +612,6 @@ public class FileSystem {
 
   private SynchronousAction<Void> copyDeferred(String from, String to) {
     return copyDeferred(from, to, false);
-  }
-
-  /**
-   * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
-   * The copy will fail if the destination if the destination already exists.<p>
-   * The actual copy will happen asynchronously.
-   * @return a Future representing the future result of the action.
-   */
-  public void copy(String from, String to, AsyncResultHandler<Void> handler) {
-    wrapHandler(copyDeferred(from, to).execute(), handler);
-  }
-
-  public void copySync(String from, String to) throws Exception {
-    copyDeferred(from, to).action();
   }
 
   private SynchronousAction<Void> copyDeferred(String from, String to, final boolean recursive) {
@@ -135,21 +655,6 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
-   * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
-   * will be copied recursively to the destination {@code to}.<p>
-   * The copy will fail if the destination if the destination already exists.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
-    wrapHandler(copyDeferred(from, to, recursive).execute(), handler);
-  }
-
-  public void copySync(String from, String to, boolean recursive) throws Exception {
-    copyDeferred(from, to, recursive).action();
-  }
-
   private SynchronousAction<Void> moveDeferred(String from, String to) {
     checkContext();
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
@@ -169,73 +674,33 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
-   * The move will fail if the destination already exists.<p>
-   * The actual move will happen asynchronously.
-   * @return a Future representing the future result of the action.
-   */
-  public void move(String from, String to, AsyncResultHandler<Void> handler) {
-    wrapHandler(moveDeferred(from, to).execute(), handler);
-  }
-
-  public void moveSync(String from, String to) throws Exception {
-    moveDeferred(from, to).action();
-  }
-
   private SynchronousAction<Void> truncateDeferred(final String path, final long len) {
-    checkContext();
-    return new BlockingAction<Void>() {
-      public Void action() throws Exception {
-        if (len < 0) {
-          throw new FileSystemException("Cannot truncate file to size < 0");
-        }
-        if (!Files.exists(Paths.get(path))) {
-          throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
-        }
+     checkContext();
+     return new BlockingAction<Void>() {
+       public Void action() throws Exception {
+         if (len < 0) {
+           throw new FileSystemException("Cannot truncate file to size < 0");
+         }
+         if (!Files.exists(Paths.get(path))) {
+           throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
+         }
 
-        RandomAccessFile raf = null;
-        try {
-          raf = new RandomAccessFile(path, "rw");
-          raf.getChannel().truncate(len);
-        } catch (FileNotFoundException e) {
-          throw new FileSystemException("Cannot open file " + path + ". Either it is a directory or you don't have permission to change it");
-        } finally {
-          if (raf != null) raf.close();
-        }
-        return null;
-      }
-    };
-  }
-
-  /**
-   * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
-   * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
-   * @return a Future representing the future result of the action.
-   */
-  public void truncate(String path, long len, AsyncResultHandler<Void> handler) {
-    wrapHandler(truncateDeferred(path, len).execute(), handler);
-  }
-
-  public void truncateSync(String path, long len) throws Exception {
-    truncateDeferred(path, len).action();
+         RandomAccessFile raf = null;
+         try {
+           raf = new RandomAccessFile(path, "rw");
+           raf.getChannel().truncate(len);
+         } catch (FileNotFoundException e) {
+           throw new FileSystemException("Cannot open file " + path + ". Either it is a directory or you don't have permission to change it");
+         } finally {
+           if (raf != null) raf.close();
+         }
+         return null;
+       }
+     };
   }
 
   private SynchronousAction<Void> chmodDeferred(String path, String perms) {
     return chmodDeferred(path, perms, null);
-  }
-
-  /**
-   * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
-   * The permission String takes the form rwxr-x--- as specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void chmod(String path, String perms, AsyncResultHandler<Void> handler) {
-    wrapHandler(chmodDeferred(path, perms).execute(), handler);
-  }
-
-  public void chmodSync(String path, String perms) throws Exception {
-    chmodDeferred(path, perms).action();
   }
 
   private SynchronousAction<Void> chmodDeferred(String path, String perms, String dirPerms) {
@@ -271,54 +736,12 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
-   * The permission String takes the form rwxr-x--- as specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
-   * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
-   * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
-    wrapHandler(chmodDeferred(path, perms, dirPerms).execute(), handler);
-  }
-
-
-  public void chmodSync(String path, String perms, String dirPerms) throws Exception {
-    chmodDeferred(path, perms, dirPerms).action();
-  }
-
-
   private SynchronousAction<FileProps> propsDeferred(String path) {
     return props(path, true);
   }
 
-  /**
-   * Obtain properties for the file represented by {@code path}, asynchronously.
-   * If the file is a link, the link will be followed.
-   * @return a Future representing the future result of the action.
-   */
-  public void props(String path, AsyncResultHandler<FileProps> handler) {
-    wrapHandler(propsDeferred(path).execute(), handler);
-  }
-
-  public FileProps propsSync(String path) throws Exception {
-    return propsDeferred(path).action();
-  }
-
   private SynchronousAction<FileProps> lpropsDeferred(String path) {
     return props(path, false);
-  }
-
-  /**
-   * Obtain properties for the link represented by {@code path}, asynchronously. The link will not be followed.
-   * @return a Future representing the future result of the action.
-   */
-  public void lprops(String path, AsyncResultHandler<FileProps> handler) {
-    wrapHandler(lpropsDeferred(path).execute(), handler);
-  }
-
-  public FileProps lpropsSync(String path) throws Exception {
-    return lpropsDeferred(path).action();
   }
 
   private SynchronousAction<FileProps> props(String path, final boolean followLinks) {
@@ -345,32 +768,8 @@ public class FileSystem {
     return link(link, existing, false);
   }
 
-  /**
-   * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void link(String link, String existing, AsyncResultHandler<Void> handler) {
-    wrapHandler(linkDeferred(link, existing).execute(), handler);
-  }
-
-  public void linkSync(String link, String existing) throws Exception {
-    linkDeferred(link, existing).action();
-  }
-
   private SynchronousAction<Void> symlinkDeferred(String link, String existing) {
     return link(link, existing, true);
-  }
-
-  /**
-   * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void symlink(String link, String existing, AsyncResultHandler<Void> handler) {
-    wrapHandler(symlinkDeferred(link, existing).execute(), handler);
-  }
-
-  public void symlinkSync(String link, String existing) throws Exception {
-    symlinkDeferred(link, existing).action();
   }
 
   private SynchronousAction<Void> link(String link, String existing, final boolean symbolic) {
@@ -397,18 +796,6 @@ public class FileSystem {
     return deleteDeferred(link);
   }
 
-  /**
-   * Unlinks the link on the file system represented by the path {@code link}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void unlink(String link, AsyncResultHandler<Void> handler) {
-    wrapHandler(unlinkDeferred(link).execute(), handler);
-  }
-
-  public void unlinkSync(String link) throws Exception {
-    unlinkDeferred(link).action();
-  }
-
   private SynchronousAction<String> readSymlinkDeferred(String link) {
     checkContext();
     final Path source = Paths.get(link);
@@ -423,32 +810,8 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void readSymlink(String link, AsyncResultHandler<String> handler) {
-    wrapHandler(readSymlinkDeferred(link).execute(), handler);
-  }
-
-  public String readSymlinkSync(String link) throws Exception {
-    return readSymlinkDeferred(link).action();
-  }
-
   private SynchronousAction<Void> deleteDeferred(String path) {
     return deleteDeferred(path, false);
-  }
-
-  /**
-   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void delete(String path, AsyncResultHandler<Void> handler) {
-    wrapHandler(deleteDeferred(path).execute(), handler);
-  }
-
-  public void deleteSync(String path) throws Exception {
-    deleteDeferred(path).action();
   }
 
   private SynchronousAction<Void> deleteDeferred(String path, final boolean recursive) {
@@ -485,72 +848,16 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
-   * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
-    wrapHandler(deleteDeferred(path, recursive).execute(), handler);
-  }
-
-  public void deleteSync(String path, boolean recursive) throws Exception {
-    deleteDeferred(path, recursive).action();
-  }
-
   private SynchronousAction<Void> mkdirDeferred(String path) {
     return mkdirDeferred(path, null, false);
-  }
-
-  /**
-   * Create the directory represented by {@code path}, asynchronously.<p>
-   * The operation will fail if the directory already exists.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void mkdir(String path, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path).execute(), handler);
-  }
-
-  public void mkdirSync(String path) throws Exception {
-    mkdirDeferred(path).action();
   }
 
   private SynchronousAction<Void> mkdirDeferred(String path, boolean createParents) {
     return mkdirDeferred(path, null, createParents);
   }
 
-  /**
-   * Create the directory represented by {@code path}, asynchronously.<p>
-   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
-   * will also be created.<p>
-   * The operation will fail if the directory already exists.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path, createParents).execute(), handler);
-  }
-
-  public void mkdirSync(String path, boolean createParents) throws Exception {
-    mkdirDeferred(path, createParents).action();
-  }
-
   private SynchronousAction<Void> mkdirDeferred(String path, String perms) {
     return mkdirDeferred(path, perms, false);
-  }
-
-  /**
-   * Create the directory represented by {@code path}, asynchronously.<p>
-   * The new directory will be created with permissions as specified by {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * The operation will fail if the directory already exists.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path, perms).execute(), handler);
-  }
-
-  public void mkdirSync(String path, String perms) throws Exception {
-    mkdirDeferred(path, perms).action();
   }
 
   private SynchronousAction<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
@@ -583,38 +890,8 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Create the directory represented by {@code path}, asynchronously.<p>
-   * The new directory will be created with permissions as specified by {@code perms}.
-   * The permission String takes the form rwxr-x--- as specified in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
-   * will also be created.<p>
-   * The operation will fail if the directory already exists.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path, perms, createParents).execute(), handler);
-  }
-
-  public void mkdirSync(String path, String perms, boolean createParents) throws Exception {
-    mkdirDeferred(path, perms, createParents).action();
-  }
-
   private SynchronousAction<String[]> readDirDeferred(String path) {
     return readDirDeferred(path, null);
-  }
-
-  /**
-   * Read the contents of the directory specified by {@code path}, asynchronously
-   * @return a Future representing the future result of the action.
-   * The result is an array of String representing the paths of the files inside the directory.
-   */
-  public void readDir(String path, AsyncResultHandler<String[]> handler) {
-    wrapHandler(readDirDeferred(path).execute(), handler);
-  }
-
-  public String[] readDirSync(String path) throws Exception {
-    return readDirDeferred(path).action();
   }
 
   private SynchronousAction<String[]> readDirDeferred(final String path, final String filter) {
@@ -655,20 +932,6 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Read the contents of the directory specified by {@code path}, asynchronously<p>
-   * {@code filter} is a regular expression. If {@code filter} is specified then only the paths that match @{filter} will be returned.<p>
-   * @return a Future representing the future result of the action.
-   * The result is an array of String representing the paths of the files inside the directory.
-   */
-  public void readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
-    wrapHandler(readDirDeferred(path, filter).execute(), handler);
-  }
-
-  public String[] readDirSync(String path, String filter) throws Exception {
-    return readDirDeferred(path, filter).action();
-  }
-
   private SynchronousAction<Buffer> readFileDeferred(final String path) {
     checkContext();
     return new BlockingAction<Buffer>() {
@@ -679,19 +942,6 @@ public class FileSystem {
         return buff;
       }
     };
-  }
-
-  /**
-   * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
-   * Do not user this method to read very large files or you risk running out of available RAM.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void readFile(String path, AsyncResultHandler<Buffer> handler) {
-    wrapHandler(readFileDeferred(path).execute(), handler);
-  }
-
-  public Buffer readFileSync(String path) throws Exception {
-    return readFileDeferred(path).action();
   }
 
   private SynchronousAction<Void> writeFileDeferred(final String path, final Buffer data) {
@@ -705,111 +955,20 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
-    wrapHandler(writeFileDeferred(path, data).execute(), handler);
-  }
-
-  public void writeFileSync(String path, Buffer data) throws Exception {
-    writeFileDeferred(path, data).action();
-  }
-
-  public void lock() {
-    //TODO
-  }
-
-  public void unlock() {
-    //TODO
-  }
-
-  public void watchFile() {
-    //TODO
-  }
-
-  public void unwatchFile() {
-    //TODO
-  }
-
   private SynchronousAction<AsyncFile> openDeferred(String path) {
     return openDeferred(path, null, true, true, true, false);
-  }
-
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * The file is opened for both reading and writing. If the file does not already exist it will be created.
-   * Write operations will not automatically flush to storage.
-   * @return a Future representing the future result of the action.
-   */
-  public void open(String path, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path).execute(), handler);
-  }
-
-  public AsyncFile openSync(String path) throws Exception {
-    return openDeferred(path).action();
   }
 
   private SynchronousAction<AsyncFile> openDeferred(String path, String perms) {
     return openDeferred(path, perms, true, true, true, false);
   }
 
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * The file is opened for both reading and writing. If the file does not already exist it will be created with the
-   * permissions as specified by {@code perms}.
-   * Write operations will not automatically flush to storage.
-   * @return a Future representing the future result of the action.
-   */
-  public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms).execute(), handler);
-  }
-
-  public AsyncFile openSync(String path, String perms) throws Exception {
-    return openDeferred(path, perms).action();
-  }
-
   private SynchronousAction<AsyncFile> openDeferred(String path, String perms, boolean createNew) {
     return openDeferred(path, perms, true, true, createNew, false);
   }
 
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * The file is opened for both reading and writing. If the file does not already exist and
-   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
-   * the operation will fail.
-   * Write operations will not automatically flush to storage.
-   * @return a Future representing the future result of the action.
-   */
-  public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms, createNew).execute(), handler);
-  }
-
-  public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
-    return openDeferred(path, perms, createNew).action();
-  }
-
   private SynchronousAction<AsyncFile> openDeferred(String path, String perms, boolean read, boolean write, boolean createNew) {
     return openDeferred(path, perms, read, write, createNew, false);
-  }
-
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
-   * will be opened for writing.<p>
-   * If the file does not already exist and
-   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
-   * the operation will fail.<p>
-   * Write operations will not automatically flush to storage.
-   * @return a Future representing the future result of the action.
-   */
-  public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms, read, write, createNew).execute(), handler);
-  }
-
-  public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
-    return openDeferred(path, perms, read, write, createNew).action();
   }
 
   private SynchronousAction<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
@@ -826,26 +985,6 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
-   * will be opened for writing.<p>
-   * If the file does not already exist and
-   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
-   * the operation will fail.<p>
-   * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
-   * storage on each write.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void open(String path, String perms, boolean read, boolean write, boolean createNew,
-                   boolean flush, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms, read, write, createNew, flush).execute(), handler);
-  }
-
-  public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
-    return openDeferred(path, perms, read, write, createNew, flush).action();
-  }
-
   private AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
                            boolean flush, Context context,
                            Thread th) throws Exception {
@@ -854,18 +993,6 @@ public class FileSystem {
 
   private SynchronousAction<Void> createFileDeferred(String path) {
     return createFileDeferred(path, null);
-  }
-
-  /**
-   * Creates an empty file with the specified {@code path}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void createFile(String path, AsyncResultHandler<Void> handler) {
-    wrapHandler(createFileDeferred(path).execute(), handler);
-  }
-
-  public void createFileSync(String path) throws Exception {
-    createFileDeferred(path).action();
   }
 
   private SynchronousAction<Void> createFileDeferred(final String path, final String perms) {
@@ -888,18 +1015,6 @@ public class FileSystem {
     };
   }
 
-  /**
-   * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void createFile(String path, String perms, AsyncResultHandler<Void> handler) {
-    wrapHandler(createFileDeferred(path, perms).execute(), handler);
-  }
-
-  public void createFileSync(String path, String perms) throws Exception {
-    createFileDeferred(path, perms).action();
-  }
-
   private SynchronousAction<Boolean> existsDeferred(final String path) {
     checkContext();
     return new BlockingAction<Boolean>() {
@@ -908,18 +1023,6 @@ public class FileSystem {
         return file.exists();
       }
     };
-  }
-
-  /**
-   * Determines whether the file as specified by the path {@code path} exists, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void exists(String path, AsyncResultHandler<Boolean> handler) {
-    wrapHandler(existsDeferred(path).execute(), handler);
-  }
-
-  public boolean existsSync(String path) throws Exception {
-    return existsDeferred(path).action();
   }
 
   private SynchronousAction<FileSystemProps> fsPropsDeferred(final String path) {
@@ -932,23 +1035,4 @@ public class FileSystem {
       }
     };
   }
-
-  /**
-   * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
-   * @return a Future representing the future result of the action.
-   */
-  public void fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
-    wrapHandler(fsPropsDeferred(path).execute(), handler);
-  }
-
-  public FileSystemProps fsPropsSync(String path) throws Exception {
-    return fsPropsDeferred(path).action();
-  }
-
-  private void checkContext() {
-    if (VertxInternal.instance.getContext() == null) {
-      throw new IllegalStateException("Can't use file system outside an event loop");
-    }
-  }
-
 }

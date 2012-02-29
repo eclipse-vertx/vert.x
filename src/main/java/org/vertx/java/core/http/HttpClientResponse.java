@@ -28,13 +28,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * <p>Encapsulates a client-side HTTP response.</p>
- * <p/>
- * <p>An instance of this class is provided to the user via an {@link org.vertx.java.core.Handler} class that was specified when one of the
- * HTTP method operations, or the generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)} method was called on an instance of {@link HttpClient}.</p>
- * <p/>
- * <p>Instances of this class can only be used from the event loop thread which created the corresponding {@link HttpClientRequest}</p>
- *
+ * Represents a client-side HTTP response.
+ * An instance of this class is provided to the user via an {@link org.vertx.java.core.Handler}
+ * instance that was specified when one of the* HTTP method operations, or the
+ * generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)}
+ * method was called on an instance of {@link HttpClient}.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientResponse extends HttpReadStreamBase {

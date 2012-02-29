@@ -21,6 +21,8 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
+ * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServerWebSocket extends WebSocket {
@@ -41,6 +43,14 @@ public class ServerWebSocket extends WebSocket {
     this.connectRunnable = connectRunnable;
   }
 
+  /**
+   * Reject the WebSocket<p>
+   * Calling this method from the websocketHandler gives you the opportunity to reject
+   * the websocket, which will cause the websocket handshake to fail by returning
+   * a 404 response code.<p>
+   * You might use this method, if for example you only want to accept websockets
+   * with a particular path.
+   */
   public void reject() {
     checkClosed();
     if (connected) {
@@ -67,6 +77,9 @@ public class ServerWebSocket extends WebSocket {
     }
   }
 
+  /**
+   * Close the WebSocket
+   */
   @Override
   public void close() {
     if (rejected) {

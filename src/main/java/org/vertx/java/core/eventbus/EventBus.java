@@ -44,14 +44,15 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * <p>This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
- * It is very useful for otherwise isolated vert.x application instances to communicate with each other.</p>
+ * Verticles can communicate via message passing by using the event bus.
+ * The event bus implements a distributed publish / subscribe network.</p>
  *
- * <p>Messages sent over the event bus are represented by instances of the  {@link Message} class.</p>
- *
- * <p>The event bus implements a distributed publish / subscribe network.</p>
+ * <p>Messages sent over the event bus are represented by instances of the  {@link Message} class.
+ * Subclasses of Message exist for messages that represent all primitive types as well as java.lang.String,
+ * {@link Buffer}, byte[] and {@link JsonObject}</p>
  *
  * <p>Messages are sent to an address which is simply an arbitrary String.
- * There can be multiple handlers can be registered against that address.
+ * There can be multiple handlers registered against that address.
  * Any handlers with a matching name will receive the message irrespective of what vert.x application instance and
  * what vert.x instance they are located in.</p>
  *
@@ -63,7 +64,7 @@ import java.util.concurrent.ConcurrentMap;
  * sent from that sender.</p>
  *
  * <p>When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
- * has been received.</p>
+ * has been received. Reply messages can also be replied to, etc, ad infinitum</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -110,32 +111,8 @@ public class EventBus {
     this.server = setServer();
   }
 
-  private NetServer setServer() {
-    return new NetServer().connectHandler(new Handler<NetSocket>() {
-      public void handle(NetSocket socket) {
-        final RecordParser parser = RecordParser.newFixed(4, null);
-        Handler<Buffer> handler = new Handler<Buffer>() {
-          int size = -1;
-          public void handle(Buffer buff) {
-            if (size == -1) {
-              size = buff.getInt(0);
-              parser.fixedSizeMode(size);
-            } else {
-              Message received = Message.read(buff);
-              receiveMessage(received);
-              parser.fixedSizeMode(4);
-              size = -1;
-            }
-          }
-        };
-        parser.setOutput(handler);
-        socket.dataHandler(parser);
-      }
-    }).listen(serverID.port, serverID.host);
-  }
-
   /**
-   * Send a message
+   * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -145,7 +122,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -154,7 +131,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Buffer as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -164,7 +141,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Buffer as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -173,7 +150,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a byte[] as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -183,7 +160,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a byte[] as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -192,7 +169,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a String as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -202,7 +179,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a String as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -211,7 +188,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send an Integer as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -221,7 +198,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send an Integer as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -230,7 +207,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Long as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -240,7 +217,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Long as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -249,7 +226,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Float as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -259,7 +236,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Float as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -268,7 +245,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Double as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -278,7 +255,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Double as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -287,7 +264,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Boolean as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -297,7 +274,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Boolean as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -306,7 +283,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Short as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -316,7 +293,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Short as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -325,7 +302,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Character as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -335,7 +312,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Character as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -344,7 +321,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Byte as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
@@ -354,7 +331,7 @@ public class EventBus {
   }
 
   /**
-   * Send a message
+   * Send a Byte as a message
    * @param address The address to send it to
    * @param message The message
    */
@@ -363,10 +340,10 @@ public class EventBus {
   }
 
   /**
-   * Unregisters a handler
+   * Unregisters a handler given the address and the handler
    * @param address The address the handler was registered to
    * @param handler The handler
-   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * @param completionHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void unregisterHandler(String address, Handler<? extends Message> handler,
@@ -391,7 +368,7 @@ public class EventBus {
   }
 
   /**
-   * Unregister a handler
+   * Unregisters a handler given the address and the handler
    * @param address The address the handler was registered aty
    * @param handler The handler
    */
@@ -400,7 +377,7 @@ public class EventBus {
   }
 
   /**
-   * Unregister a handler given a handler id
+   * Unregister a handler given the unique handler id
    * @param id The handler id
    */
   public void unregisterHandler(String id) {
@@ -408,9 +385,9 @@ public class EventBus {
   }
 
   /**
-   * Unregister a handler given a handler id
+   * Unregister a handler given the unique handler id
    * @param id The handler id
-   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * @param completionHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public void unregisterHandler(String id, CompletionHandler<Void> completionHandler) {
@@ -432,7 +409,7 @@ public class EventBus {
   /**
    * Registers a handler against a uniquely generated address, the address is returned as the id
    * @param handler
-   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * @param completionHandler Optional completion handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
@@ -445,7 +422,7 @@ public class EventBus {
    * Registers a handler against the specified address
    * @param address The address top register it at
    * @param handler The handler
-   * @param completionHandler Optional completion handler. If specified, then when the subscription information has been
+   * @param completionHandler Optional completion handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
@@ -467,6 +444,31 @@ public class EventBus {
   protected void close(Handler<Void> doneHandler) {
     server.close(doneHandler);
   }
+
+  private NetServer setServer() {
+    return new NetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+        final RecordParser parser = RecordParser.newFixed(4, null);
+        Handler<Buffer> handler = new Handler<Buffer>() {
+          int size = -1;
+          public void handle(Buffer buff) {
+            if (size == -1) {
+              size = buff.getInt(0);
+              parser.fixedSizeMode(size);
+            } else {
+              Message received = Message.read(buff);
+              receiveMessage(received);
+              parser.fixedSizeMode(4);
+              size = -1;
+            }
+          }
+        };
+        parser.setOutput(handler);
+        socket.dataHandler(parser);
+      }
+    }).listen(serverID.port, serverID.host);
+  }
+
 
   private void send(final Message message, final Handler replyHandler) {
 
