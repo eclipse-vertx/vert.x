@@ -23,7 +23,16 @@ package org.vertx.java.core;
  */
 public interface Verticle {
 
+  /**
+   * Vert.x calls thhe start method when the verticle is deployed
+   * @throws Exception
+   */
   void start() throws Exception;
 
+  /**
+   * Vert.x calls the stop method when the verticle is undeployed.
+   * Put any cleanup code for your verticle in here
+   * @throws Exception
+   */
   void stop() throws Exception;
 }
