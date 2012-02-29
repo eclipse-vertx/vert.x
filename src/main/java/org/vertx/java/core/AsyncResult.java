@@ -33,11 +33,33 @@ public class AsyncResult<T> {
    */
   public final Exception exception;
 
+  /**
+   * Did it succeeed?
+   */
+  public boolean succeeded() {
+    return exception == null;
+  }
+
+  /**
+   * Did it fail?
+   */
+  public boolean failed() {
+    return exception != null;
+  }
+
+  /**
+   * Create a successful AsyncResult
+   * @param result The result
+   */
   public AsyncResult(T result) {
     this.result = result;
     this.exception = null;
   }
 
+  /**
+   * Create a failed AsyncResult
+   * @param exception The exception
+   */
   public AsyncResult(Exception exception) {
     this.exception = exception;
     this.result = null;
