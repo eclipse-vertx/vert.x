@@ -49,7 +49,7 @@ import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 
 import javax.net.ssl.SSLEngine;

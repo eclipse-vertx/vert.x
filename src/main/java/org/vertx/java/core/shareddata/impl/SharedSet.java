@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shareddata;
+package org.vertx.java.core.shareddata.impl;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class SharedSet<E> implements Set<E> {
+public class SharedSet<E> implements Set<E> {
 
   private final Map<E, Object> map = new SharedMap<>();
 

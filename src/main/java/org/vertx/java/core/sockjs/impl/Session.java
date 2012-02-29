@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.sockjs;
+package org.vertx.java.core.sockjs.impl;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.LinkedList;
 import java.util.Queue;

@@ -20,7 +20,7 @@ package org.vertx.java.core.http.impl.ws.hybi08;
 
 import org.vertx.java.core.http.impl.ws.Base64;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

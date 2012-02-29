@@ -13,13 +13,20 @@
  * Modified from original form by Tim Fox
  */
 
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
 
 /**
- * I am responsible for creating {@link LogDelegate} instances.
+ * A {@link LogDelegateFactory} which creates {@link Log4jLogDelegate} instances.
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
+ *
+ *
  */
-public interface LogDelegateFactory {
-  LogDelegate createDelegate(String name);
+public class Log4jLogDelegateFactory implements LogDelegateFactory
+{
+   public LogDelegate createDelegate(final String name)
+   {
+      return new Log4jLogDelegate(name);
+   }
+
 }

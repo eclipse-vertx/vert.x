@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.shareddata;
+package org.vertx.java.core.shareddata.impl;
+
+import org.vertx.java.core.shareddata.SharedData;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,13 +29,13 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class SharedMap<K, V> implements ConcurrentMap<K, V> {
+public class SharedMap<K, V> implements ConcurrentMap<K, V> {
 
   private final ConcurrentMap<K, V> map = new ConcurrentHashMap<>();
 
   public V putIfAbsent(K k, V v) {
-    SharedData.checkType(k);
-    SharedData.checkType(v);
+    Checker.checkType(k);
+    Checker.checkType(v);
     return map.putIfAbsent(k, v);
   }
 
@@ -42,14 +44,14 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public boolean replace(K k, V v, V v1) {
-    SharedData.checkType(v1);
+    Checker.checkType(v1);
     return map.replace(k, v, v1);
   }
 
   public V replace(K k, V v) {
-    SharedData.checkType(v);
+    Checker.checkType(v);
     V ret = map.replace(k, v);
-    return SharedData.copyIfRequired(ret);
+    return Checker.copyIfRequired(ret);
   }
 
   public int size() {
@@ -69,23 +71,23 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   }
 
   public V get(Object o) {
-    return SharedData.copyIfRequired(map.get(o));
+    return Checker.copyIfRequired(map.get(o));
   }
 
   public V put(K k, V v) {
-    SharedData.checkType(k);
-    SharedData.checkType(v);
+    Checker.checkType(k);
+    Checker.checkType(v);
     return map.put(k, v);
   }
 
   public V remove(Object o) {
-    return SharedData.copyIfRequired(map.remove(o));
+    return Checker.copyIfRequired(map.remove(o));
   }
 
   public void putAll(Map<? extends K, ? extends V> map) {
     for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-      SharedData.checkType(entry.getKey());
-      SharedData.checkType(entry.getValue());
+      Checker.checkType(entry.getKey());
+      Checker.checkType(entry.getValue());
       this.map.put(entry.getKey(), entry.getValue());
     }
   }
@@ -97,7 +99,7 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   public Set<K> keySet() {
     Set<K> copied = new HashSet<>();
     for (K k: map.keySet()) {
-      copied.add(SharedData.copyIfRequired(k));
+      copied.add(Checker.copyIfRequired(k));
     }
     return copied;
   }
@@ -105,7 +107,7 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
   public Collection<V> values() {
     Collection<V> copied = new ArrayList<>();
     for (V v: map.values()) {
-      copied.add(SharedData.copyIfRequired(v));
+      copied.add(Checker.copyIfRequired(v));
     }
     return copied;
   }
@@ -137,16 +139,16 @@ class SharedMap<K, V> implements ConcurrentMap<K, V> {
     }
 
     public K getKey() {
-      return SharedData.copyIfRequired(internalEntry.getKey());
+      return Checker.copyIfRequired(internalEntry.getKey());
     }
 
     public V getValue() {
-      return SharedData.copyIfRequired(internalEntry.getValue());
+      return Checker.copyIfRequired(internalEntry.getValue());
     }
 
     public V setValue(V value) {
       V old = internalEntry.getValue();
-      SharedData.checkType(value);
+      Checker.checkType(value);
       internalEntry.setValue(value);
       return old;
     }

@@ -13,20 +13,15 @@
  * Modified from original form by Tim Fox
  */
 
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
 
 /**
- * A {@link LogDelegateFactory} which creates {@link Log4jLogDelegate} instances.
+ * A {@link LogDelegateFactory} which creates {@link JULLogDelegate} instances.
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
- *
- *
  */
-public class Log4jLogDelegateFactory implements LogDelegateFactory
-{
-   public LogDelegate createDelegate(final String name)
-   {
-      return new Log4jLogDelegate(name);
-   }
-
+public class JULLogDelegateFactory implements LogDelegateFactory {
+  public LogDelegate createDelegate(final String name) {
+    return new JULLogDelegate(name);
+  }
 }

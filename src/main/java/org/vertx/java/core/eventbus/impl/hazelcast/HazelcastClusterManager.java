@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import org.vertx.java.core.eventbus.impl.AsyncMultiMap;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;

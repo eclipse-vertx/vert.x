@@ -16,7 +16,7 @@
  * Modified from original form by Tim Fox
  */
 
-package org.vertx.java.core.logging;
+package org.vertx.java.core.logging.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

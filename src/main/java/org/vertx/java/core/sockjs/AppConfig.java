@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.sockjs;
 
+import org.vertx.java.core.sockjs.impl.Transport;
+
 import java.util.Collections;
 import java.util.Set;
 

@@ -25,7 +25,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.LinkedList;

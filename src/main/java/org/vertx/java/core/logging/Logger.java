@@ -15,6 +15,8 @@
 
 package org.vertx.java.core.logging;
 
+import org.vertx.java.core.logging.impl.LogDelegate;
+
 /**
  * <p>This class allows us to isolate all our logging dependencies in one place. It also allows us to have zero runtime
  * 3rd party logging jar dependencies, since we default to JUL by default.</p>
@@ -37,12 +39,8 @@ public class Logger {
 
   final LogDelegate delegate;
 
-  Logger(final LogDelegate delegate) {
+  public Logger(final LogDelegate delegate) {
     this.delegate = delegate;
-  }
-
-  public LogDelegate getDelegate() {
-    return delegate;
   }
 
   public boolean isInfoEnabled() {
