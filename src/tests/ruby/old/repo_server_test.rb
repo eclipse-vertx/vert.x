@@ -13,7 +13,7 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'vmm/repo_server.rb'
+require 'addons.old.vmm/repo_server.rb'
 require 'fileutils'
 require 'utils'
 

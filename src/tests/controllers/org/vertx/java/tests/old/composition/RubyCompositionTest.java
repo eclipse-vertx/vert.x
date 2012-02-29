@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.core.composition;
+package org.vertx.java.tests.old.composition;
 
 import org.vertx.java.framework.TestBase;
 

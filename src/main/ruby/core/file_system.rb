@@ -13,7 +13,6 @@
 # limitations under the License.
 
 require 'core/streams'
-require 'core/composition'
 
 module Vertx
 
