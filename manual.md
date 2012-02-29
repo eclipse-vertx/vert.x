@@ -34,7 +34,7 @@ When you write an application, you might write a single verticle, or your applic
 
 ### Vert.x Instances
 
-Verticles run inside a vert.x *instance*. A single vert.x instance is just an operating system process running a JVM. There can be many verticles running inside a single vert.x instance at any one time. Vert.x makes sure each verticle is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.
+Verticles run inside a vert.x *instance*. A single vert.x instance runs inside its own JVM instance. There can be many verticles running inside a single vert.x instance at any one time. Vert.x makes sure each verticle is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.
 
 There can be many vert.x instances running on the same host, or on different hosts on the network at the same time. The instances can be configured to cluster with each other forming a distributed event bus over which verticle instances can communicate.
 
