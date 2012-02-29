@@ -17,11 +17,11 @@
 package org.vertx.java.tests.redis;
 
 import junit.framework.TestCase;
-import org.vertx.java.old.redis.RedisReply;
-import org.vertx.java.old.redis.ReplyParser;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.framework.TestUtils;
+import org.vertx.java.old.redis.RedisReply;
+import org.vertx.java.old.redis.ReplyParser;
 
 import java.util.ArrayList;
 import java.util.Iterator;

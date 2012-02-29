@@ -16,11 +16,11 @@
 
 package org.vertx.java.examples.old.stomp;
 
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.old.stomp.StompClient;
 import org.vertx.java.old.stomp.StompConnectHandler;
 import org.vertx.java.old.stomp.StompConnection;
 import org.vertx.java.old.stomp.StompMsgCallback;
-import org.vertx.java.core.buffer.Buffer;
 
 import java.util.Map;
 

@@ -16,14 +16,14 @@
 
 package vertx.tests.redis;
 
-import org.vertx.java.old.redis.RedisConnection;
-import org.vertx.java.old.redis.RedisPool;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Future;
 import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.old.redis.RedisConnection;
+import org.vertx.java.old.redis.RedisPool;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
