@@ -14,35 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ByteArrayMessage extends Message<byte[]> {
+class BooleanMessage extends BaseMessage<Boolean> {
 
-  private static final Logger log = LoggerFactory.getLogger(ByteArrayMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(BooleanMessage.class);
 
-  ByteArrayMessage(String address, byte[] payload) {
+  BooleanMessage(String address, Boolean payload) {
     super(address, payload);
   }
 
-  public ByteArrayMessage(Buffer readBuff) {
+  public BooleanMessage(Buffer readBuff) {
     super(readBuff);
   }
 
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      pos++;
-      int buffLength = readBuff.getInt(pos);
-      pos += 4;
-      body = readBuff.getBytes(pos, pos + buffLength);
+      body = new Boolean(readBuff.getByte(pos + 1) == (byte)1);
     }
   }
 
@@ -51,35 +49,24 @@ class ByteArrayMessage extends Message<byte[]> {
       buff.appendByte((byte)0);
     } else {
       buff.appendByte((byte)1);
-      buff.appendInt(body.length);
-      buff.appendBytes(body);
+      buff.appendByte(body ? (byte)1 : (byte)0);
     }
   }
 
   protected int getBodyLength() {
-    return body == null ? 1 : 1 + 4 + body.length;
+    return 1 + (body == null ? 0 : 1);
   }
 
   protected Message copy() {
-    byte[] bod;
-    if (body != null) {
-      bod = new byte[body.length];
-      System.arraycopy(body, 0, bod, 0, bod.length);
-    } else {
-      bod = null;
-    }
-    ByteArrayMessage copied = new ByteArrayMessage(address, bod);
-    copied.replyAddress = this.replyAddress;
-    copied.bus = this.bus;
-    copied.sender = this.sender;
-    return copied;
+    // No need to copy since everything is immutable
+    return this;
   }
 
   protected byte type() {
-    return TYPE_BYTEARRAY;
+    return MessageFactory.TYPE_BOOLEAN;
   }
 
-  protected void handleReply(byte[] reply, Handler<Message<byte[]>> replyHandler) {
+  protected void handleReply(Boolean reply, Handler<Message<Boolean>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 

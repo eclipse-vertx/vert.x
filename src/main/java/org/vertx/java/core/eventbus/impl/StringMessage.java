@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
+import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class BufferMessage extends Message<Buffer> {
+class StringMessage extends BaseMessage<String> {
 
-  private static final Logger log = LoggerFactory.getLogger(BufferMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(StringMessage.class);
 
-  BufferMessage(String address, Buffer payload) {
+  private byte[] encoded;
+
+  StringMessage(String address, String payload) {
     super(address, payload);
   }
 
-  public BufferMessage(Buffer readBuff) {
+  public StringMessage(Buffer readBuff) {
     super(readBuff);
   }
 
@@ -40,10 +44,10 @@ class BufferMessage extends Message<Buffer> {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
       pos++;
-      int buffLength = readBuff.getInt(pos);
+      int strLength = readBuff.getInt(pos);
       pos += 4;
-      byte[] payload = readBuff.getBytes(pos, pos + buffLength);
-      body = Buffer.create(payload);
+      byte[] bytes = readBuff.getBytes(pos, pos + strLength);
+      body = new String(bytes, CharsetUtil.UTF_8);
     }
   }
 
@@ -52,28 +56,31 @@ class BufferMessage extends Message<Buffer> {
       buff.appendByte((byte)0);
     } else {
       buff.appendByte((byte)1);
-      buff.appendInt(body.length());
-      buff.appendBuffer(body);
+      buff.appendInt(encoded.length);
+      buff.appendBytes(encoded);
     }
+    encoded = null;
   }
 
   protected int getBodyLength() {
-    return 1 + (body == null ? 0 : 4 + body.length());
+    if (body == null) {
+      return 1;
+    } else {
+      encoded = body.getBytes(CharsetUtil.UTF_8);
+      return 1 + 4 + encoded.length;
+    }
   }
 
   protected Message copy() {
-    BufferMessage copied = new BufferMessage(address, body == null ? null : body.copy());
-    copied.replyAddress = this.replyAddress;
-    copied.bus = this.bus;
-    copied.sender = this.sender;
-    return copied;
+    // No need to copy since everything is immutable
+    return this;
   }
 
   protected byte type() {
-    return TYPE_BUFFER;
+    return MessageFactory.TYPE_STRING;
   }
 
-  protected void handleReply(Buffer reply, Handler<Message<Buffer>> replyHandler) {
+  protected void handleReply(String reply, Handler<Message<String>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 

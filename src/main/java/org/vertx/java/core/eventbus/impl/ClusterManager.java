@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.spi;
+package org.vertx.java.core.eventbus.impl;
 
 import java.util.Map;
 import java.util.Set;

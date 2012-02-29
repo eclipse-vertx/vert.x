@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ShortMessage extends Message<Short> {
+class FloatMessage extends BaseMessage<Float> {
 
-  private static final Logger log = LoggerFactory.getLogger(ShortMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(FloatMessage.class);
 
-  ShortMessage(String address, Short payload) {
+  FloatMessage(String address, Float payload) {
     super(address, payload);
   }
 
-  public ShortMessage(Buffer readBuff) {
+  public FloatMessage(Buffer readBuff) {
     super(readBuff);
   }
 
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getShort(++pos);
+      body = readBuff.getFloat(++pos);
     }
   }
 
@@ -48,12 +49,12 @@ class ShortMessage extends Message<Short> {
       buff.appendByte((byte)0);
     } else {
       buff.appendByte((byte)1);
-      buff.appendShort(body);
+      buff.appendFloat(body);
     }
   }
 
   protected int getBodyLength() {
-    return 1 + (body == null ? 0 : 2);
+    return 1 + (body == null ? 0 : 4);
   }
 
   protected Message copy() {
@@ -62,10 +63,10 @@ class ShortMessage extends Message<Short> {
   }
 
   protected byte type() {
-    return TYPE_SHORT;
+    return MessageFactory.TYPE_FLOAT;
   }
 
-  protected void handleReply(Short reply, Handler<Message<Short>> replyHandler) {
+  protected void handleReply(Float reply, Handler<Message<Float>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 

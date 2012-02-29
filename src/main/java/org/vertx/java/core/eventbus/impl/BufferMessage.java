@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
-import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class JsonMessage extends Message<JsonObject> {
+class BufferMessage extends BaseMessage<Buffer> {
 
-  private static final Logger log = LoggerFactory.getLogger(JsonMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(BufferMessage.class);
 
-  private byte[] encoded;
-
-  JsonMessage(String address, JsonObject payload) {
+  BufferMessage(String address, Buffer payload) {
     super(address, payload);
   }
 
-  public JsonMessage(Buffer readBuff) {
+  public BufferMessage(Buffer readBuff) {
     super(readBuff);
   }
 
@@ -44,11 +41,10 @@ class JsonMessage extends Message<JsonObject> {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
       pos++;
-      int strLength = readBuff.getInt(pos);
+      int buffLength = readBuff.getInt(pos);
       pos += 4;
-      byte[] bytes = readBuff.getBytes(pos, pos + strLength);
-      String str = new String(bytes, CharsetUtil.UTF_8);
-      body = new JsonObject(str);
+      byte[] payload = readBuff.getBytes(pos, pos + buffLength);
+      body = Buffer.create(payload);
     }
   }
 
@@ -57,23 +53,17 @@ class JsonMessage extends Message<JsonObject> {
       buff.appendByte((byte)0);
     } else {
       buff.appendByte((byte)1);
-      buff.appendInt(encoded.length);
-      buff.appendBytes(encoded);
+      buff.appendInt(body.length());
+      buff.appendBuffer(body);
     }
   }
 
   protected int getBodyLength() {
-    if (body == null) {
-      return 1;
-    } else {
-      String strJson = body.encode();
-      encoded = strJson.getBytes(CharsetUtil.UTF_8);
-      return 1 + 4 + encoded.length;
-    }
+    return 1 + (body == null ? 0 : 4 + body.length());
   }
 
   protected Message copy() {
-    Message copied = new JsonMessage(address, body == null ? null : body.copy());
+    BufferMessage copied = new BufferMessage(address, body == null ? null : body.copy());
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
     copied.sender = this.sender;
@@ -81,10 +71,10 @@ class JsonMessage extends Message<JsonObject> {
   }
 
   protected byte type() {
-    return TYPE_JSON;
+    return MessageFactory.TYPE_BUFFER;
   }
 
-  protected void handleReply(JsonObject reply, Handler<Message<JsonObject>> replyHandler) {
+  protected void handleReply(Buffer reply, Handler<Message<Buffer>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 
