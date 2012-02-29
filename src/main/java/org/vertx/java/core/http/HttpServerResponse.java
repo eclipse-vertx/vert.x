@@ -16,68 +16,37 @@
 
 package org.vertx.java.core.http;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.WriteStream;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Map;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
 /**
- * <p>Encapsulates a server-side HTTP response.</p>
- * <p/>
- * <p>An instance of this class is created and associated to every instance of {@link HttpServerRequest} that is created.<p>
- * <p/>
- * <p>It allows the developer to control the HTTP response that is sent back to the client for the corresponding HTTP
- * request. It contains methods that allow HTTP headers and trailers to be set, and for a body to be written out
- * to the response.</p>
- * <p/>
- * <p>It also allows a file to be streamed by the kernel directly from disk to the outgoing HTTP connection,
- * bypassing user space altogether (where supported by the underlying operating system). This is a very efficient way of
- * serving files from the server since buffers do not have to be read one by one from the file and written to the outgoing
- * socket.</p>
- *
+ * Represents a server-side HTTP response.
+ * <p>
+ * An instance of this class is created and associated to every instance of
+ * {@link HttpServerRequest} that is created.<p>
+ * It allows the developer to control the HTTP response that is sent back to the
+ * client for the corresponding HTTP request. It contains methods that allow HTTP
+ * headers and trailers to be set, and for a body to be written outto the response.
+ * <p>
+ * It also allows files to be streamed by the kernel directly from disk to the
+ * outgoing HTTP connection, bypassing user space altogether (where supported by
+ * the underlying operating system). This is a very efficient way of
+ * serving files from the server since buffers do not have to be read one by one
+ * from the file and written to the outgoing socket.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerResponse implements WriteStream {
+public abstract class HttpServerResponse implements WriteStream {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerResponse.class);
 
-  private final ServerConnection conn;
-  private final HttpResponse response;
-  private HttpChunkTrailer trailer;
-  private boolean headWritten;
-  private boolean written;
-  private Handler<Void> drainHandler;
-  private Handler<Exception> exceptionHandler;
-  private Handler<Void> closeHandler;
-  private long contentLength;
-  private long writtenBytes;
-  private boolean chunked;
-
-  HttpServerResponse(ServerConnection conn) {
-    this.conn = conn;
-    this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
+  protected HttpServerResponse() {
   }
 
   /**
@@ -103,14 +72,7 @@ public class HttpServerResponse implements WriteStream {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse setChunked(boolean chunked) {
-    checkWritten();
-    if (writtenBytes > 0) {
-      throw new IllegalStateException("Cannot set chunked after data has been written on response");
-    }
-    this.chunked = chunked;
-    return this;
-  }
+  public abstract HttpServerResponse setChunked(boolean chunked);
 
   /**
    * Inserts a header into the response. The {@link Object#toString()} method will be called on {@code value} to determine
@@ -118,371 +80,187 @@ public class HttpServerResponse implements WriteStream {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse putHeader(String key, Object value) {
-    checkWritten();
-    response.setHeader(key, value);
-    checkContentLengthChunked(key, value);
-    return this;
-  }
+  public abstract HttpServerResponse putHeader(String key, Object value);
 
   /**
-   * Inserts all the specified headers into the response. The {@link Object#toString()} method will be called on the header values {@code value} to determine
+   * Inserts all the specified headers into the response.
+   * The {@link Object#toString()} method will be called on the header values {@code value} to determine
    * the String value to actually use for the header value.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
-    checkWritten();
-    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      response.setHeader(entry.getKey(), entry.getValue().toString());
-      checkContentLengthChunked(entry.getKey(), entry.getValue());
-    }
-    return this;
-  }
+  public abstract HttpServerResponse putAllHeaders(Map<String, ? extends Object> m);
 
   /**
-   * Inserts a trailer into the response. The {@link Object#toString()} method will be called on {@code value} to determine
+   * Inserts a trailer into the response. The {@link Object#toString()} method
+   * will be called on {@code value} to determine
    * the String value to actually use for the trailer value.<p>
    * Trailers are only sent if you are using a HTTP chunked response.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse putTrailer(String key, Object value) {
-    checkChunked();
-    checkWritten();
-    checkTrailer();
-    trailer.setHeader(key, value);
-    return this;
-  }
+  public abstract HttpServerResponse putTrailer(String key, Object value);
 
   /**
-   * Inserts all the specified trailers into the response. The {@link Object#toString()} method will be called on {@code value} to determine
+   * Inserts all the specified trailers into the response.
+   * The {@link Object#toString()} method will be called on {@code value} to determine
    * the String value to actually use for the trailer value.<p>
    * Trailers are only sent if you are using a HTTP chunked response.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
-    checkChunked();
-    checkWritten();
-    checkTrailer();
-    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      trailer.setHeader(entry.getKey(), entry.getValue().toString());
-    }
-    return this;
-  }
+  public abstract HttpServerResponse putAllTrailers(Map<String, ? extends Object> m);
 
   /**
-   * Data is queued until it is actually sent. To set the point at which the queue is considered "full" call this method
+   * Data is queued until it is actually sent. To set the point at which the queue
+   * is considered "full" call this method
    * specifying the {@code maxSize} in bytes.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
    */
-  public void setWriteQueueMaxSize(int size) {
-    checkWritten();
-    conn.setWriteQueueMaxSize(size);
-  }
+  public abstract void setWriteQueueMaxSize(int size);
 
   /**
-   * If the amount of data that is currently queued is greater than the write queue max size see {@link #setWriteQueueMaxSize(int)}
+   * If the amount of data that is currently queued is greater than the write
+   * queue max size see {@link #setWriteQueueMaxSize(int)}
    * then the response queue is considered full.<p>
-   * Data can still be written to the response even if the write queue is deemed full, however it should be used as indicator
-   * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
+   * Data can still be written to the response even if the write queue is deemed full,
+   * however it should be used as indicator
+   * to stop writing and push back on the source of the data, otherwise you risk
+   * running out of available RAM.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
    *
    * @return {@code true} if the write queue is full, {@code false} otherwise
    */
-  public boolean writeQueueFull() {
-    checkWritten();
-    return conn.writeQueueFull();
-  }
+  public abstract boolean writeQueueFull();
 
   /**
-   * This method sets a drain handler {@code handler} on the response. The drain handler will be called when write queue is no longer
+   * This method sets a drain handler {@code handler} on the response.
+   * The drain handler will be called when write queue is no longer
    * full and it is safe to write to it again.<p>
-   * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
-   * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
+   * The drain handler is actually called when the write queue size reaches
+   * <b>half</b> the write queue max size to prevent thrashing.
+   * This method is used as part of a flow control strategy, e.g. it is used by
+   * the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams.
    *
    * @param handler
    */
-  public void drainHandler(Handler<Void> handler) {
-    checkWritten();
-    this.drainHandler = handler;
-    conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
-  }
+  public abstract void drainHandler(Handler<Void> handler);
 
   /**
    * Set {@code handler} as an exception handler on the response. Any exceptions that occur
    * will be notified by calling the handler. If the response has no handler than any exceptions occurring will be
    * output to {@link System#err}
    */
-  public void exceptionHandler(Handler<Exception> handler) {
-    checkWritten();
-    this.exceptionHandler = handler;
-  }
+  public abstract void exceptionHandler(Handler<Exception> handler);
 
   /**
    * Set a close handler for the response. This will be called if the underlying connection closes before the response
    * is complete.
    * @param handler
    */
-  public void closeHandler(Handler<Void> handler) {
-    checkWritten();
-    this.closeHandler = handler;
-  }
+  public abstract void closeHandler(Handler<Void> handler);
 
   /**
    * Write a {@link Buffer} to the response body.
    */
-  public void writeBuffer(Buffer chunk) {
-    write(chunk.getChannelBuffer(), null);
-  }
+  public abstract void writeBuffer(Buffer chunk);
 
   /**
    * Write a {@link Buffer} to the response body.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(Buffer chunk) {
-    return write(chunk.getChannelBuffer(), null);
-  }
+  public abstract HttpServerResponse write(Buffer chunk);
 
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(String chunk, String enc) {
-    return write(Buffer.create(chunk, enc).getChannelBuffer(), null);
-  }
+  public abstract HttpServerResponse write(String chunk, String enc);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(String chunk) {
-    return write(Buffer.create(chunk).getChannelBuffer(), null);
-  }
+  public abstract HttpServerResponse write(String chunk);
 
   /**
    * Write a {@link Buffer} to the response body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler) {
-    return write(chunk.getChannelBuffer(), doneHandler);
-  }
+  public abstract HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler) {
-    return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
-  }
+  public abstract HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse write(String chunk, Handler<Void> doneHandler) {
-    return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
-  }
+  public abstract HttpServerResponse write(String chunk, Handler<Void> doneHandler);
 
   /**
    * Same as {@link #end(String, boolean)} called with closeConnection = false
    */
-  public void end(String chunk) {
-    end(chunk, false);
-  }
+  public abstract void end(String chunk);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the default encoding
    */
-  public void end(String chunk, boolean closeConnection) {
-    end(Buffer.create(chunk), closeConnection);
-  }
+  public abstract void end(String chunk, boolean closeConnection);
 
   /**
    * Same as {@link #end(String, String, boolean)} called with closeConnection = false
    */
-  public void end(String chunk, String enc) {
-    end(chunk, enc, false);
-  }
+  public abstract void end(String chunk, String enc);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    */
-  public void end(String chunk, String enc, boolean closeConnection) {
-    end(Buffer.create(chunk, enc), closeConnection);
-  }
+  public abstract void end(String chunk, String enc, boolean closeConnection);
 
   /**
    * Same as {@link #end(Buffer, boolean)} called with closeConnection = false
    */
-  public void end(Buffer chunk) {
-    end(chunk, false);
-  }
+  public abstract void end(Buffer chunk);
 
   /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
    * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
-  public void end(Buffer chunk, boolean closeConnection) {
-    if (!chunked && contentLength == 0) {
-      contentLength = chunk.length();
-      response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
-    }
-    write(chunk);
-    end(closeConnection);
-  }
+  public abstract void end(Buffer chunk, boolean closeConnection);
 
   /**
    * Like {@link #end(boolean)} called with closeConnection = false
    */
-  public void end() {
-    end(false);
-  }
+  public abstract void end();
 
   /**
-   * Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.<p>
+   * Ends the response. If no data has been written to the response body,
+   * the actual response won't get written until this method gets called.<p>
    * Once the response has ended, it cannot be used any more.
    * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
-  public void end(boolean closeConnection) {
-    checkWritten();
-    writeHead();
-    if (chunked) {
-      HttpChunk nettyChunk;
-      if (trailer == null) {
-        nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
-      } else {
-        nettyChunk = trailer;
-      }
-      conn.write(nettyChunk);
-    }
-    written = true;
-    conn.responseComplete();
-  }
+  public abstract void end(boolean closeConnection);
 
   /**
-   * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection, bypassing userspace altogether
-   * (where supported by the underlying operating system. This is a very efficient way to serve files.<p>
+   * Tell the kernel to stream a file as specified by {@code filename} directly
+   * from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system.
+   * This is a very efficient way to serve files.<p>
    */
-  public HttpServerResponse sendFile(String filename) {
-    if (headWritten) {
-      throw new IllegalStateException("Head already written");
-    }
-    checkWritten();
-    File file = new File(filename);
-    if (!file.exists()) {
-      sendNotFound();
-    } else {
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-      response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
-      try {
-        String contentType = Files.probeContentType(Paths.get(filename));
-        if (contentType != null) {
-          response.setHeader(Names.CONTENT_TYPE, contentType);
-        }
-      } catch (IOException e) {
-        log.error("Failed to get content type", e);
-        sendNotFound();
-      }
+  public abstract HttpServerResponse sendFile(String filename);
 
-      conn.write(response);
-      conn.sendFile(file);
-      headWritten = written = true;
-      conn.responseComplete();
-    }
-
-    return this;
-  }
-
-  private void sendNotFound() {
-    statusCode = HttpResponseStatus.NOT_FOUND.getCode();
-    end("<html><payload>Resource not found</payload><html>");
-  }
-
-  void handleDrained() {
-    if (drainHandler != null) {
-      drainHandler.handle(null);
-    }
-  }
-
-  void handleException(Exception e) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
-    }
-  }
-
-  void handleClosed() {
-    if (closeHandler != null) {
-      closeHandler.handle(null);
-    }
-  }
-
-  private void checkChunked() {
-    if (!chunked) {
-      throw new IllegalStateException("Cannot set trailer for non-chunked response");
-    }
-  }
-
-  private void checkTrailer() {
-    if (trailer == null) trailer = new DefaultHttpChunkTrailer();
-  }
-
-  private void checkWritten() {
-    if (written) {
-      throw new IllegalStateException("Response has already been written");
-    }
-  }
-
-  private void checkContentLengthChunked(String key, Object value) {
-    if (key.equals(HttpHeaders.Names.CONTENT_LENGTH)) {
-      contentLength = Integer.parseInt(value.toString());
-      chunked = false;
-    } else if (key.equals(HttpHeaders.Names.TRANSFER_ENCODING) && value.equals(HttpHeaders.Values.CHUNKED)) {
-      chunked = true;
-    }
-  }
-
-  private void writeHead() {
-    if (!headWritten) {
-      HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
-          new HttpResponseStatus(statusCode, statusMessage);
-      response.setStatus(status);
-      if (chunked) {
-        response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      } else if (contentLength == 0) {
-        response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
-      }
-      conn.write(response);
-      headWritten = true;
-    }
-  }
-
-  private HttpServerResponse write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
-    checkWritten();
-    writtenBytes += chunk.readableBytes();
-    if (!chunked && writtenBytes > contentLength) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "payload BEFORE sending any data if you are not using HTTP chunked encoding. "
-          + "Current written: " + written + " Current Content-Length: " + contentLength);
-    }
-
-    writeHead();
-    Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
-    ChannelFuture writeFuture = conn.write(msg);
-    if (doneHandler != null) {
-      conn.addFuture(doneHandler, writeFuture);
-    }
-    return this;
-  }
 }

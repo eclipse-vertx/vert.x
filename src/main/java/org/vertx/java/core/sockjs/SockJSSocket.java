@@ -40,7 +40,7 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
   public final String writeHandlerID;
   public final Handler<Message<Buffer>> writeHandler;
 
-  SockJSSocket() {
+  public SockJSSocket() {
     this.writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> buff) {
         writeBuffer(buff.body);

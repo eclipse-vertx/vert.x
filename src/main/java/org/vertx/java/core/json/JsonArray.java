@@ -16,7 +16,8 @@
 
 package org.vertx.java.core.json;
 
-import org.vertx.java.core.http.ws.Base64;
+import org.vertx.java.core.http.impl.ws.Base64;
+import org.vertx.java.core.json.impl.Json;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Represents a JSON array
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonArray implements Iterable<Object> {

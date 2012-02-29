@@ -16,71 +16,35 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
+ * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerWebSocket extends WebSocket {
+public abstract class ServerWebSocket extends WebSocket {
 
   private static final Logger log = LoggerFactory.getLogger(ServerWebSocket.class);
 
-  private final Runnable connectRunnable;
+  protected ServerWebSocket(String path, String binaryHandlerID, String textHandlerID) {
+    super(binaryHandlerID, textHandlerID);
+    this.path = path;
+  }
 
+  /**
+   * The path the websocket is attempting to connect at
+   */
   public final String path;
 
-  boolean rejected;
-
-  private boolean connected;
-
-  public ServerWebSocket(String path, AbstractConnection conn, Runnable connectRunnable) {
-    super(conn);
-    this.path = path;
-    this.connectRunnable = connectRunnable;
-  }
-
-  public void reject() {
-    checkClosed();
-    if (connected) {
-      throw new IllegalStateException("Cannot reject websocket, it has already been written to");
-    }
-    rejected = true;
-  }
-
-  @Override
-  protected void writeFrame(WebSocketFrame frame) {
-    if (rejected) {
-      throw new IllegalStateException("Cannot write to websocket, it has been rejected");
-    }
-    if (!connected && !closed) {
-      connect();
-    }
-    super.writeFrame(frame);
-  }
-
-  // Connect if not already connected
-  void connectNow() {
-    if (!connected && !rejected) {
-      connect();
-    }
-  }
-
-  @Override
-  public void close() {
-    if (rejected) {
-      throw new IllegalStateException("Cannot close websocket, it has been rejected");
-    }
-    if (!connected && !closed) {
-      connect();
-    }
-    super.close();
-  }
-
-  private void connect() {
-    connectRunnable.run();
-    connected = true;
-  }
-
+  /**
+   * Reject the WebSocket<p>
+   * Calling this method from the websocketHandler gives you the opportunity to reject
+   * the websocket, which will cause the websocket handshake to fail by returning
+   * a 404 response code.<p>
+   * You might use this method, if for example you only want to accept websockets
+   * with a particular path.
+   */
+  public abstract void reject();
 }

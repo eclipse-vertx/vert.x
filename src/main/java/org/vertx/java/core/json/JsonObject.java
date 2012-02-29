@@ -16,7 +16,8 @@
 
 package org.vertx.java.core.json;
 
-import org.vertx.java.core.http.ws.Base64;
+import org.vertx.java.core.http.impl.ws.Base64;
+import org.vertx.java.core.json.impl.Json;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,20 +25,34 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ *
+ * Represents a JSON object
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonObject {
 
   final Map<String, Object> map;
 
+  /**
+   * Create a JSON object based on the specified Map
+   * @param map
+   */
   public JsonObject(Map<String, Object> map) {
     this.map = map;
   }
 
+  /**
+   * Create an empty JSON object
+   */
   public JsonObject() {
     this.map = new HashMap<>();
   }
 
+  /**
+   * Create a JSON object from a string form of a JSON object
+   * @param jsonString The string form of a JSON object
+   */
   public JsonObject(String jsonString) {
     try {
       map = Json.mapper.readValue(jsonString, Map.class);

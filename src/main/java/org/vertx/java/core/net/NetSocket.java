@@ -16,37 +16,25 @@
 
 package org.vertx.java.core.net;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.util.CharsetUtil;
-import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
-import java.io.File;
-import java.nio.charset.Charset;
-import java.util.UUID;
-
 /**
- * <p>Represents the interface to a TCP or SSL connection on either the client or the server side.</p>
- * <p>Instances of this class is created on the client side by an {@link NetClient} when a connection to a server is
- * made, or on the server side by a {@link NetServer} when a server accepts a connection.</p>
+ * Represents a socket-like interface to a TCP or SSL connection on either the
+ * client or the server side.
+ * <p>
+ * Instances of this class is created on the client side by an {@link NetClient}
+ * when a connection to a server is made, or on the server side by a {@link NetServer}
+ * when a server accepts a connection.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
-
-  private Handler<Buffer> dataHandler;
-  private Handler<Void> endHandler;
-  private Handler<Void> drainHandler;
-  private Handler<Message<Buffer>> writeHandler;
+public abstract class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
@@ -57,105 +45,61 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    */
   public final String writeHandlerID;
 
-  NetSocket(Channel channel, Context context, Thread th) {
+  protected NetSocket(Channel channel, String writeHandlerID, Context context, Thread th) {
     super(channel, context, th);
-    if (EventBus.instance != null) {
-      writeHandlerID = UUID.randomUUID().toString();
-      writeHandler = new Handler<Message<Buffer>>() {
-        public void handle(Message<Buffer> msg) {
-          writeBuffer(msg.body);
-        }
-      };
-      EventBus.instance.registerHandler(writeHandlerID, writeHandler);
-    } else {
-      writeHandlerID = null;
-    }
+    this.writeHandlerID = writeHandlerID;
   }
 
   /**
    * Write a {@link Buffer} to the connection.
    */
-  public void writeBuffer(Buffer data) {
-    doWrite(data.getChannelBuffer());
-  }
+  public abstract void writeBuffer(Buffer data);
 
   /**
    * Write a {@link Buffer} to the request body.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(Buffer data) {
-    doWrite(data.getChannelBuffer());
-    return this;
-  }
+  public abstract NetSocket write(Buffer data);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(String str) {
-    doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8));
-    return this;
-  }
+  public abstract NetSocket write(String str);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(String str, String enc) {
-    if (enc == null) {
-      write(str);
-    } else {
-      doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
-    }
-    return this;
-  }
+  public abstract NetSocket write(String str, String enc);
 
   /**
    * Write a {@link Buffer} to the connection. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(Buffer data, Handler<Void> doneHandler) {
-    addFuture(doneHandler, doWrite(data.getChannelBuffer()));
-    return this;
-  }
+  public abstract NetSocket write(Buffer data, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(String str, Handler<Void> doneHandler) {
-    addFuture(doneHandler, doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8)));
-    return this;
-  }
+  public abstract NetSocket write(String str, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the connection, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public NetSocket write(String str, String enc, Handler<Void> doneHandler) {
-    if (enc == null) {
-      write(str, enc);
-    } else {
-      addFuture(doneHandler, doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc))));
-    }
-    return this;
-  }
+  public abstract NetSocket write(String str, String enc, Handler<Void> doneHandler);
 
   /**
    * Specify a data handler for the connection. As data is read from the connection the handler will be called.
    */
-  public void dataHandler(Handler<Buffer> dataHandler) {
-    checkThread();
-    this.dataHandler = dataHandler;
-  }
+  public abstract void dataHandler(Handler<Buffer> dataHandler) ;
 
   /**
    * Specify an end handler for the connection. This will be called when the connection has ended, i.e. when it has been closed.
    */
-  public void endHandler(Handler<Void> endHandler) {
-    checkThread();
-    this.endHandler = endHandler;
-  }
+  public abstract void endHandler(Handler<Void> endHandler);
 
   /**
    * This method sets a drain handler {@code drainHandler} on the connection. The drain handler will be called when write queue is no longer
@@ -164,82 +108,14 @@ public class NetSocket extends ConnectionBase implements ReadStream, WriteStream
    * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams.
    */
-  public void drainHandler(Handler<Void> drainHandler) {
-    checkThread();
-    this.drainHandler = drainHandler;
-    Vertx.instance.nextTick(new SimpleHandler() {
-      public void handle() {
-        callDrainHandler(); //If the channel is already drained, we want to call it immediately
-      }
-    });
-  }
+  public abstract void drainHandler(Handler<Void> drainHandler);
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection, bypassing userspace altogether
    * (where supported by the underlying operating system. This is a very efficient way to stream files.<p>
    */
-  public void sendFile(String filename) {
-    checkThread();
-    File f = new File(filename);
-    super.sendFile(f);
-  }
+  public abstract void sendFile(String filename);
 
-  protected Context getContext() {
-    return super.getContext();
-  }
 
-  protected void handleClosed() {
-    setContext();
-
-    if (endHandler != null) {
-      try {
-        endHandler.handle(null);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
-    }
-    super.handleClosed();
-    if (EventBus.instance != null) {
-      EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
-    }
-  }
-
-  void handleInterestedOpsChanged() {
-    setContext();
-    callDrainHandler();
-  }
-
-  void handleDataReceived(Buffer data) {
-    if (dataHandler != null) {
-      setContext();
-      try {
-        dataHandler.handle(data);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
-    }
-  }
-
-  //Close without checking thread - used when server is closed
-  void internalClose() {
-    channel.close();
-  }
-
-  private ChannelFuture doWrite(ChannelBuffer buff) {
-    checkThread();
-    return channel.write(buff);
-  }
-
-  private void callDrainHandler() {
-    if (drainHandler != null) {
-      if (channel.isWritable()) {
-        try {
-          drainHandler.handle(null);
-        } catch (Throwable t) {
-          handleHandlerException(t);
-        }
-      }
-    }
-  }
 }
 

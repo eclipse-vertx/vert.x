@@ -16,8 +16,8 @@
 
 package vertx.tests.core.eventbus;
 
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 
@@ -151,9 +151,9 @@ public class LocalEchoPeer extends EventBusAppBase {
             handled = true;
             msg.reply(msg.body);
           }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
+        }, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+        if (event.exception == null) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");

@@ -16,9 +16,10 @@
 
 package org.vertx.java.core.shareddata;
 
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.shareddata.impl.SharedMap;
+import org.vertx.java.core.shareddata.impl.SharedSet;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,42 +62,9 @@ public class SharedData {
   private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
   private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
 
-  static void checkType(Object obj) {
-    if (obj instanceof String ||
-        obj instanceof Integer ||
-        obj instanceof Long ||
-        obj instanceof Boolean ||
-        obj instanceof Double ||
-        obj instanceof Float ||
-        obj instanceof Short ||
-        obj instanceof Byte ||
-        obj instanceof Character ||
-        obj instanceof byte[] ||
-        obj instanceof Buffer) {
-    } else {
-      throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
-    }
-  }
-
-  static <T> T copyIfRequired(T obj) {
-    if (obj instanceof byte[]) {
-      //Copy it
-      byte[] bytes = (byte[]) obj;
-      byte[] copy = new byte[bytes.length];
-      System.arraycopy(bytes, 0, copy, 0, bytes.length);
-      return (T) copy;
-    } else if (obj instanceof Buffer) {
-      //Copy it
-      return (T) ((Buffer) obj).copy();
-    } else {
-      return obj;
-    }
-  }
-
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
-   * The Map instance returned is a lock free Map which supports a very high degree of concurrency.
    */
   public <K, V> ConcurrentMap<K, V> getMap(String name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
@@ -113,7 +81,6 @@ public class SharedData {
   /**
    * Return a {@code Set} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Set} instance. <p>
-   * The Set instance returned is a lock free Map which supports a very high degree of concurrency.
    */
   public <E> Set<E> getSet(String name) {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);
