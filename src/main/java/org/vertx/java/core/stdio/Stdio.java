@@ -16,14 +16,13 @@
 
 package org.vertx.java.core.stdio;
 
+import org.vertx.java.core.stdio.impl.InStream;
+import org.vertx.java.core.stdio.impl.OutStream;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
 /**
  * <p>Provides asynchronous stream wrappers around STDOUT, STDIN and STDERR</p>
- *
- * <p>These wrappers should be used if you want to use STDOUT, STDIN and STDERR in a non blocking way from inside
- * an event loop.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

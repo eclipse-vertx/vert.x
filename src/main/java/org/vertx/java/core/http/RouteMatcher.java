@@ -18,7 +18,7 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,19 +31,19 @@ import java.util.regex.Pattern;
 
 /**
  *
- * <p>This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
+ * This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
  * to <a href="http://www.sinatrarb.com/">Sinatra</a> or <a href="http://expressjs.com/">Express</a>.
- *
- * <p>RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using
+ * <p>
+ * RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using
  * regular expressions for more complex matches. Any parameters extracted will be added to the requests parameters
- * which will be available to you in your request handler.</p>
- *
- * <p>It's particularly useful when writing REST-ful web applications.</p>
- *
- * <p>To use a simple pattern to extract parameters simply prefix the parameter name in the pattern with a ':' (colon).</p>
- *
- * <p>For example:</p>
- *
+ * which will be available to you in your request handler.
+ * <p>
+ * It's particularly useful when writing REST-ful web applications.
+ * <p>
+ * To use a simple pattern to extract parameters simply prefix the parameter name in the pattern with a ':' (colon).
+ * <p>
+ * For example:
+ * <p>
  * <pre>
  *   RouteMatcher rm = new RouteMatcher();
  *
@@ -52,17 +52,17 @@ import java.util.regex.Pattern;
  *   rm.get("/animals/:animal_name/:colour", handler1);
  * </pre>
  *
- * <p>In the above example, if a GET request with a uri of '/animals/dog/black' was received at the server, handler1
- * would be called with request parameter 'animal' set to 'dog', and 'colour' set to 'black'</p>
- *
- * <p>Different handlers can be specified for each of the HTTP verbs, GET, POST, PUT, DELETE etc.</p>
- *
- * <p>For more complex matches regular expressions can be used in the pattern. When regular expressions are used, the extracted
- * parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.</p>
- *
- * <p>Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
- * a particular request, the first matching one will be used.</p>
- *
+ * In the above example, if a GET request with a uri of '/animals/dog/black' was received at the server, handler1
+ * would be called with request parameter 'animal' set to 'dog', and 'colour' set to 'black'
+ * <p>
+ * Different handlers can be specified for each of the HTTP verbs, GET, POST, PUT, DELETE etc.
+ * <p>
+ * For more complex matches regular expressions can be used in the pattern. When regular expressions are used, the extracted
+ * parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.
+ * <p>
+ * Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
+ * a particular request, the first matching one will be used.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {

@@ -14,6 +14,12 @@
 
 module Vertx
 
+  # Deploy a verticle. The actual deploy happens asynchronously
+  # @param main [String] The main of the verticle to deploy
+  # @param config [Hash] JSON configuration for the verticle
+  # @param instances [FixNum] Number of instances to deploy
+  # @param block [Block] Block will be executed when deploy has completed
+  # @return [String] Unique id of deployment
   def Vertx.deploy_verticle(main, config = nil, instances = 1, &block)
     if config
       json_str = JSON.generate(config)
@@ -22,6 +28,11 @@ module Vertx
     org.vertx.java.core.Vertx.instance.deployVerticle(main, config, instances, block)
   end
 
+  # Deploy a workerverticle. The actual deploy happens asynchronously
+  # @param main [String] The main of the verticle to deploy
+  # @param config [Hash] JSON configuration for the verticle
+  # @param instances [FixNum] Number of instances to deploy
+  # @param block [Block] Block will be executed when deploy has completed
   def Vertx.deploy_worker_verticle(main, config = nil, instances = 1, &block)
     if config
       json_str = JSON.generate(config)
@@ -30,20 +41,20 @@ module Vertx
     org.vertx.java.core.Vertx.instance.deployWorkerVerticle(main, config, instances, block)
   end
 
+  # Undeploy a verticle
+  # @param id [String] The unique id of the deployment
   def Vertx.undeploy_verticle(id)
     org.vertx.java.core.Vertx.instance.undeployVerticle(id)
   end
 
+  # Get config for the verticle
+  # @return [Hash] The JSON config for the verticle
   def Vertx.config
     if !defined? @@j_conf
       @@j_conf = org.vertx.java.core.Vertx.instance.getConfig
       @@j_conf = JSON.parse(@@j_conf.encode) if @@j_conf
     end
     @@j_conf
-  end
-
-  def Vertx.exit
-    org.vertx.java.core.Vertx.instance.exit
   end
 
 end

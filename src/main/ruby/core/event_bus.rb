@@ -24,7 +24,8 @@ module Vertx
   #
   # The event bus implements a distributed publish / subscribe network.
   #
-  # Messages are sent to an address which is simply an arbitrary String.
+  # Messages are sent to an address.
+  #
   # There can be multiple handlers registered against that address.
   # Any handlers with a matching name will receive the message irrespective of what vert.x application instance and
   # what vert.x instance they are located in.

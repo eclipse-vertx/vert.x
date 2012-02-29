@@ -23,13 +23,17 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.LoggerFactory;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
+ * Authentication Manager Bus Module
+ * <p>
+ * Please see the busmods manual for a full description
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AuthManager extends BusModBase implements Verticle {
@@ -61,6 +65,9 @@ public class AuthManager extends BusModBase implements Verticle {
     super(false);
   }
 
+  /**
+   * Start the busmod
+   */
   public void start() {
     super.start();
 
@@ -97,6 +104,9 @@ public class AuthManager extends BusModBase implements Verticle {
     eb.registerHandler(address + ".validate", validateHandler);
   }
 
+  /**
+  Stop the busmod
+   */
   public void stop() {
     eb.unregisterHandler(address + ".login", loginHandler);
     eb.unregisterHandler(address + ".logout", logoutHandler);

@@ -17,20 +17,29 @@
 package org.vertx.java.core;
 
 /**
+ * Represents a result that is returned asynchronously from an operation.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncResult<T> {
 
-  final T result;
-  final Exception e;
+  /**
+   * The result of the operation. This will be null if the operation failed.
+   */
+  public final T result;
+
+  /**
+   * An exception describing failure. This will be null if the operation succeeded.
+   */
+  public final Exception exception;
 
   public AsyncResult(T result) {
     this.result = result;
-    this.e = null;
+    this.exception = null;
   }
 
-  public AsyncResult(Exception e) {
-    this.e = e;
+  public AsyncResult(Exception exception) {
+    this.exception = exception;
     this.result = null;
   }
 }

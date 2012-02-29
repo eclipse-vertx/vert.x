@@ -1036,8 +1036,6 @@ module Vertx
       @j_del.deleteWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
-    #
-
     # Specify a handler that will be called for a matching HTTP OPTIONS
     # @param [String] A regular expression for a pattern
     # @param [Proc] proc A proc to be used as the handler
