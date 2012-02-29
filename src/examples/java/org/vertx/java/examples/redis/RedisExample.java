@@ -16,8 +16,6 @@
 
 package org.vertx.java.examples.redis;
 
-import org.vertx.java.old.redis.RedisConnection;
-import org.vertx.java.old.redis.RedisPool;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
@@ -25,6 +23,8 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Future;
+import org.vertx.java.old.redis.RedisConnection;
+import org.vertx.java.old.redis.RedisPool;
 
 public class RedisExample implements Verticle {
 

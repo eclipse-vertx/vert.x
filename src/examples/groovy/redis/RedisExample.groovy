@@ -17,9 +17,9 @@
 package redis
 
 import org.vertx.groovy.core.http.HttpServer
-import org.vertx.java.old.redis.RedisPool
 import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.impl.CompletionHandler
+import org.vertx.java.old.redis.RedisPool
 
 final pool = new RedisPool()
 final key = Buffer.create("my_count")

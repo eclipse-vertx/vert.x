@@ -16,8 +16,8 @@
 
 package org.vertx.java.examples.old.stomp;
 
-import org.vertx.java.old.stomp.StompServer;
 import org.vertx.java.core.net.NetServer;
+import org.vertx.java.old.stomp.StompServer;
 
 public class ServerExample {
   public static void main(String[] args) throws Exception {
