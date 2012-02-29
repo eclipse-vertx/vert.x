@@ -17,16 +17,9 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.ws.DefaultWebSocketFrame;
-import org.vertx.java.core.http.ws.WebSocketFrame;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-
-import java.util.UUID;
 
 /**
  * Represents an HTML 5 Websocket
@@ -38,20 +31,12 @@ import java.util.UUID;
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WebSocket implements ReadStream, WriteStream {
+public abstract class WebSocket implements ReadStream, WriteStream {
 
-  private final AbstractConnection conn;
-
-  private Handler<Buffer> dataHandler;
-  private Handler<Void> drainHandler;
-  private Handler<Exception> exceptionHandler;
-  private Handler<Void> closedHandler;
-  private Handler<Void> endHandler;
-
-  private Handler<Message<Buffer>> binaryHandler;
-  private Handler<Message<String>> textHandler;
-
-  protected boolean closed;
+  protected WebSocket(String binaryHandlerID, String textHandlerID) {
+    this.binaryHandlerID = binaryHandlerID;
+    this.textHandlerID = textHandlerID;
+  }
 
   /**
    * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
@@ -71,91 +56,49 @@ public class WebSocket implements ReadStream, WriteStream {
    */
   public final String textHandlerID;
 
-  WebSocket(AbstractConnection conn) {
-    this.conn = conn;
-    binaryHandlerID = UUID.randomUUID().toString();
-    binaryHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> msg) {
-        writeBinaryFrame(msg.body);
-      }
-    };
-    EventBus.instance.registerHandler(binaryHandlerID, binaryHandler);
-    textHandlerID = UUID.randomUUID().toString();
-    textHandler = new Handler<Message<String>>() {
-      public void handle(Message<String> msg) {
-        writeTextFrame(msg.body);
-      }
-    };
-    EventBus.instance.registerHandler(textHandlerID, textHandler);
-  }
-
   /**
    * Write {@code data} to the websocket as binary frame
    */
-  public void writeBinaryFrame(Buffer data) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, data.getChannelBuffer());
-    writeFrame(frame);
-  }
+  public abstract void writeBinaryFrame(Buffer data);
 
   /**
    * Write {@code str} to the websocket as text frame
    */
-  public void writeTextFrame(String str) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(str);
-    writeFrame(frame);
-  }
+  public abstract void writeTextFrame(String str);
 
   /**
    * Specify a data handler for the websocket. As data is received on the websocket the handler will be called, passing
    * in a Buffer of data
    */
-  public void dataHandler(Handler<Buffer> handler) {
-    checkClosed();
-    this.dataHandler = handler;
-  }
+  public abstract void dataHandler(Handler<Buffer> handler);
 
   /**
    * Specify an end handler for the websocket. The {@code endHandler} is called once there is no more data to be read.
    */
-  public void endHandler(Handler<Void> handler) {
-    checkClosed();
-    this.endHandler = handler;
-  }
+  public abstract void endHandler(Handler<Void> handler);
 
   /**
    * Specify an exception handler for the websocket. The {@code exceptionHandler} is called if an exception occurs.
    */
-  public void exceptionHandler(Handler<Exception> handler) {
-    checkClosed();
-    this.exceptionHandler = handler;
-  }
+  public abstract void exceptionHandler(Handler<Exception> handler);
 
   /**
    * Set a closed handler on the connection
    */
-  public void closedHandler(Handler<Void> handler) {
-    checkClosed();
-    this.closedHandler = handler;
-  }
+  public abstract void closedHandler(Handler<Void> handler);
 
   /**
    * Pause the websocket. Once the websocket has been paused, the system will stop reading any more chunks of data
    * from the wire, thus pushing back to the server.
    * Pause is often used in conjunction with a {@link org.vertx.java.core.streams.Pump} to pump data between streams and implement flow control.
    */
-  public void pause() {
-    checkClosed();
-    conn.pause();
-  }
+  public abstract void pause() ;
 
   /**
    * Resume a paused websocket. The websocket will resume receiving chunks of data from the wire.<p>
    * Resume is often used in conjunction with a {@link org.vertx.java.core.streams.Pump} to pump data between streams and implement flow control.
    */
-  public void resume() {
-    checkClosed();
-    conn.resume();
-  }
+  public abstract void resume();
 
   /**
    * Data is queued until it is actually sent. To set the point at which the queue is considered "full" call this method
@@ -163,10 +106,7 @@ public class WebSocket implements ReadStream, WriteStream {
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
    */
-  public void setWriteQueueMaxSize(int maxSize) {
-    checkClosed();
-    conn.setWriteQueueMaxSize(maxSize);
-  }
+  public abstract void setWriteQueueMaxSize(int maxSize);
 
   /**
    * If the amount of data that is currently queued is greater than the write queue max size see {@link #setWriteQueueMaxSize(int)}
@@ -178,17 +118,12 @@ public class WebSocket implements ReadStream, WriteStream {
    *
    * @return {@code true} if the write queue is full, {@code false} otherwise
    */
-  public boolean writeQueueFull() {
-    checkClosed();
-    return conn.writeQueueFull();
-  }
+  public abstract boolean writeQueueFull();
 
   /**
    * Write a {@link Buffer} to the websocket.
    */
-  public void writeBuffer(Buffer data) {
-    writeBinaryFrame(data);
-  }
+  public abstract void writeBuffer(Buffer data);
 
   /**
    * This method sets a drain handler {@code handler} on the websocket. The drain handler will be called when write queue is no longer
@@ -199,60 +134,11 @@ public class WebSocket implements ReadStream, WriteStream {
    *
    * @param handler
    */
-  public void drainHandler(Handler<Void> handler) {
-    checkClosed();
-    this.drainHandler = handler;
-  }
+  public abstract void drainHandler(Handler<Void> handler);
 
   /**
    * Close the websocket
    */
-  public void close() {
-    checkClosed();
-    conn.close();
-    EventBus.instance.unregisterHandler(binaryHandlerID, binaryHandler);
-    EventBus.instance.unregisterHandler(textHandlerID, textHandler);
-    closed = true;
-  }
+  public abstract void close();
 
-  protected void writeFrame(WebSocketFrame frame) {
-    checkClosed();
-    conn.write(frame);
-  }
-
-  protected void checkClosed() {
-    if (closed) {
-      throw new IllegalStateException("WebSocket is closed");
-    }
-  }
-
-  void handleFrame(WebSocketFrame frame) {
-    if (dataHandler != null) {
-      Buffer buff = new Buffer(frame.getBinaryData());
-      dataHandler.handle(buff);
-    }
-  }
-
-  void writable() {
-    if (drainHandler != null) {
-      drainHandler.handle(null);
-    }
-  }
-
-  void handleException(Exception e) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
-    } else {
-      VertxInternal.instance.reportException(e);
-    }
-  }
-
-  void handleClosed() {
-    if (endHandler != null) {
-      endHandler.handle(null);
-    }
-    if (closedHandler != null) {
-      closedHandler.handle(null);
-    }
-  }
 }

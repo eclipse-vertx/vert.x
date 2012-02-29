@@ -31,7 +31,7 @@ import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.net.ServerID;
+import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
 import java.util.ArrayList;

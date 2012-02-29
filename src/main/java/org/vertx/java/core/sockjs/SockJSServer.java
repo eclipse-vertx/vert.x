@@ -27,7 +27,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.WebSocketMatcher;
+import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;

@@ -22,7 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.net.ServerID;
+import org.vertx.java.core.net.impl.ServerID;
 
 /**
  * Represents a message sent on the event bus.
