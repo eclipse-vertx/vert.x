@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class LongMessage extends Message<Long> {
+class LongMessage extends BaseMessage<Long> {
 
   private static final Logger log = LoggerFactory.getLogger(LongMessage.class);
 
@@ -62,7 +63,7 @@ class LongMessage extends Message<Long> {
   }
 
   protected byte type() {
-    return TYPE_LONG;
+    return MessageFactory.TYPE_LONG;
   }
 
   protected void handleReply(Long reply, Handler<Message<Long>> replyHandler) {

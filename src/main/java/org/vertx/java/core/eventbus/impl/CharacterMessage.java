@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class FloatMessage extends Message<Float> {
+class CharacterMessage extends BaseMessage<Character> {
 
-  private static final Logger log = LoggerFactory.getLogger(FloatMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(CharacterMessage.class);
 
-  FloatMessage(String address, Float payload) {
+  CharacterMessage(String address, Character payload) {
     super(address, payload);
   }
 
-  public FloatMessage(Buffer readBuff) {
+  public CharacterMessage(Buffer readBuff) {
     super(readBuff);
   }
 
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = readBuff.getFloat(++pos);
+      body = (char)readBuff.getShort(++pos);
     }
   }
 
@@ -48,12 +49,12 @@ class FloatMessage extends Message<Float> {
       buff.appendByte((byte)0);
     } else {
       buff.appendByte((byte)1);
-      buff.appendFloat(body);
+      buff.appendShort((short)body.charValue());
     }
   }
 
   protected int getBodyLength() {
-    return 1 + (body == null ? 0 : 4);
+    return 1 + (body == null ? 0 : 2);
   }
 
   protected Message copy() {
@@ -62,10 +63,10 @@ class FloatMessage extends Message<Float> {
   }
 
   protected byte type() {
-    return TYPE_FLOAT;
+    return MessageFactory.TYPE_CHARACTER;
   }
 
-  protected void handleReply(Float reply, Handler<Message<Float>> replyHandler) {
+  protected void handleReply(Character reply, Handler<Message<Character>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 

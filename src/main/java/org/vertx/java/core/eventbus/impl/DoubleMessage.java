@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class BooleanMessage extends Message<Boolean> {
+class DoubleMessage extends BaseMessage<Double> {
 
-  private static final Logger log = LoggerFactory.getLogger(BooleanMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(DoubleMessage.class);
 
-  BooleanMessage(String address, Boolean payload) {
+  DoubleMessage(String address, Double payload) {
     super(address, payload);
   }
 
-  public BooleanMessage(Buffer readBuff) {
+  public DoubleMessage(Buffer readBuff) {
     super(readBuff);
   }
 
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = new Boolean(readBuff.getByte(pos + 1) == (byte)1);
+      body = readBuff.getDouble(++pos);
     }
   }
 
@@ -48,12 +49,12 @@ class BooleanMessage extends Message<Boolean> {
       buff.appendByte((byte)0);
     } else {
       buff.appendByte((byte)1);
-      buff.appendByte(body ? (byte)1 : (byte)0);
+      buff.appendDouble(body);
     }
   }
 
   protected int getBodyLength() {
-    return 1 + (body == null ? 0 : 1);
+    return 1 + (body == null ? 0 : 8);
   }
 
   protected Message copy() {
@@ -62,10 +63,10 @@ class BooleanMessage extends Message<Boolean> {
   }
 
   protected byte type() {
-    return TYPE_BOOLEAN;
+    return MessageFactory.TYPE_DOUBLE;
   }
 
-  protected void handleReply(Boolean reply, Handler<Message<Boolean>> replyHandler) {
+  protected void handleReply(Double reply, Handler<Message<Double>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 

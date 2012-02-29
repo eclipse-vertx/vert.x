@@ -14,28 +14,37 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus;
+package org.vertx.java.core.eventbus.impl;
 
 import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class StringMessage extends Message<String> {
+class JsonMessage extends BaseMessage<JsonObject> {
 
-  private static final Logger log = LoggerFactory.getLogger(StringMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonMessage.class);
 
   private byte[] encoded;
 
-  StringMessage(String address, String payload) {
+  JsonMessage(String address, JsonObject payload) {
     super(address, payload);
   }
 
-  public StringMessage(Buffer readBuff) {
+  private JsonMessage(JsonMessage other) {
+    super(other.address, other.body == null ? null : other.body.copy());
+    this.replyAddress = other.replyAddress;
+    this.bus = other.bus;
+    this.sender = other.sender;
+  }
+
+  public JsonMessage(Buffer readBuff) {
     super(readBuff);
   }
 
@@ -46,7 +55,8 @@ class StringMessage extends Message<String> {
       int strLength = readBuff.getInt(pos);
       pos += 4;
       byte[] bytes = readBuff.getBytes(pos, pos + strLength);
-      body = new String(bytes, CharsetUtil.UTF_8);
+      String str = new String(bytes, CharsetUtil.UTF_8);
+      body = new JsonObject(str);
     }
   }
 
@@ -58,28 +68,27 @@ class StringMessage extends Message<String> {
       buff.appendInt(encoded.length);
       buff.appendBytes(encoded);
     }
-    encoded = null;
   }
 
   protected int getBodyLength() {
     if (body == null) {
       return 1;
     } else {
-      encoded = body.getBytes(CharsetUtil.UTF_8);
+      String strJson = body.encode();
+      encoded = strJson.getBytes(CharsetUtil.UTF_8);
       return 1 + 4 + encoded.length;
     }
   }
 
   protected Message copy() {
-    // No need to copy since everything is immutable
-    return this;
+    return new JsonMessage(this);
   }
 
   protected byte type() {
-    return TYPE_STRING;
+    return MessageFactory.TYPE_JSON;
   }
 
-  protected void handleReply(String reply, Handler<Message<String>> replyHandler) {
+  protected void handleReply(JsonObject reply, Handler<Message<JsonObject>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
   }
 

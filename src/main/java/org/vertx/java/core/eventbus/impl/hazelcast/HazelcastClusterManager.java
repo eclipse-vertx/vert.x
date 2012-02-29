@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.spi.hazelcast;
+package org.vertx.java.core.eventbus.impl.hazelcast;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
-import org.vertx.java.core.eventbus.spi.ClusterManager;
+import org.vertx.java.core.eventbus.impl.AsyncMultiMap;
+import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 

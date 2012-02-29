@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.spi.hazelcast;
+package org.vertx.java.core.eventbus.impl.hazelcast;
 
 import org.vertx.java.core.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Deferred;
-import org.vertx.java.core.eventbus.spi.AsyncMultiMap;
+import org.vertx.java.core.eventbus.impl.AsyncMultiMap;
 
 import java.util.Collection;
 

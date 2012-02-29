@@ -19,8 +19,9 @@ package vertx.tests.core.eventbus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.spi.ClusterManager;
-import org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager;
+import org.vertx.java.core.eventbus.impl.ClusterManager;
+import org.vertx.java.core.eventbus.impl.EventBusImpl;
+import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestClientBase;
@@ -36,7 +37,7 @@ public abstract class EventBusAppBase extends TestClientBase {
   protected Map<String, Object> data;
   protected EventBus eb;
 
-  class TestEventBus extends EventBus {
+  class TestEventBus extends EventBusImpl {
 
     TestEventBus(ServerID serverID, ClusterManager clusterManager) {
       super(serverID, clusterManager);

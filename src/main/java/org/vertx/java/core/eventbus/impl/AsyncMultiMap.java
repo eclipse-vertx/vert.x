@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.spi;
+package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.CompletionHandler;
 

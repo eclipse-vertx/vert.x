@@ -23,7 +23,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.deploy.impl.Args;
 import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.spi.ClusterManager;
+import org.vertx.java.core.eventbus.impl.ClusterManager;
+import org.vertx.java.core.eventbus.impl.EventBusImpl;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -258,7 +259,7 @@ public class VertxMgr {
       }
       String clusterProviderClass = args.map.get("-cluster-provider");
       if (clusterProviderClass == null) {
-        clusterProviderClass = "org.vertx.java.core.eventbus.spi.hazelcast.HazelcastClusterManager";
+        clusterProviderClass = "org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager";
       }
       final Class clusterProvider;
       try {
@@ -278,7 +279,7 @@ public class VertxMgr {
             System.err.println("Failed to instantiate eventbus provider");
             return;
           }
-          EventBus bus = new EventBus(clusterServerID, mgr) {
+          EventBus bus = new EventBusImpl(clusterServerID, mgr) {
           };
           EventBus.initialize(bus);
           latch.countDown();
@@ -290,7 +291,7 @@ public class VertxMgr {
       VertxInternal.instance.startOnEventLoop(new Runnable() {
         public void run() {
           // Start non clustered event bus
-          EventBus bus = new EventBus() {
+          EventBus bus = new EventBusImpl() {
           };
           EventBus.initialize(bus);
           latch.countDown();

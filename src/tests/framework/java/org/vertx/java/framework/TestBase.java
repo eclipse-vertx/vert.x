@@ -25,6 +25,7 @@ import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.impl.EventBusImpl;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
@@ -85,7 +86,7 @@ public class TestBase extends TestCase {
 
         if (EventBus.instance == null) {
           // Start non clustered event bus
-          EventBus bus = new EventBus() {
+          EventBus bus = new EventBusImpl() {
           };
           EventBus.initialize(bus);
         }
