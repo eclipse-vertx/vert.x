@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.AsyncResultHandler;
 
 import java.util.Collection;
 
@@ -27,9 +27,9 @@ import java.util.Collection;
  */
 public interface AsyncMultiMap<K, V> {
 
-  void put(K k, V v, CompletionHandler<Void> completionHandler);
+  void put(K k, V v, AsyncResultHandler<Void> completionHandler);
 
-  void get(K k, CompletionHandler<Collection<V>> completionHandler);
+  void get(K k, AsyncResultHandler<Collection<V>> completionHandler);
 
-  void remove(K k, V v, CompletionHandler<Boolean> completionHandler);
+  void remove(K k, V v, AsyncResultHandler<Boolean> completionHandler);
 }

@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.CompletionHandler;
-
 /**
  * <p>Represents an operation that may or may not have completed yet.</p>
  * <p>It contains methods to determine it it has completed, failed or succeded, and allows a handler to

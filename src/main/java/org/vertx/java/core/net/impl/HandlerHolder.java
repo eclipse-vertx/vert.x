@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.Context;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

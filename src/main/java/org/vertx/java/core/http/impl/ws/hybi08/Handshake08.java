@@ -29,11 +29,11 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.impl.SimpleFuture;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.impl.ws.Handshake;
+import org.vertx.java.core.impl.CompletionHandler;
+import org.vertx.java.core.impl.SimpleFuture;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 

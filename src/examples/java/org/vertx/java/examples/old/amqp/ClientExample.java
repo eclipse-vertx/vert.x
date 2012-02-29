@@ -21,7 +21,7 @@ public class ClientExample {
 //  private static String QUEUE_NAME = "my-queue";
 //
 //  public static void main(String[] args) throws IOException {
-//    org.vertx.java.addons.old.amqp.AmqpClient.createClient().connect(new AmqpConnectHandler() {
+//    org.vertx.java.old.amqp.AmqpClient.createClient().connect(new AmqpConnectHandler() {
 //      public void onConnect(AmqpConnection conn) {
 //        conn.createChannel(new ChannelHandler() {
 //          public void onCreate(final Channel channel) {

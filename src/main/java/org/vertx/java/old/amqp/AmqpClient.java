@@ -14,36 +14,50 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.amqp;
+package org.vertx.java.old.amqp;
 
-public class AmqpConnection {
+public class AmqpClient {
 //
-//  private com.rabbitmq.client.Connection conn;
-//
-//  AmqpConnection(com.rabbitmq.client.Connection conn) {
-//    this.conn = conn;
+//  public static AmqpClient createClient() {
+//    return new AmqpClient();
 //  }
 //
-//  public void createChannel(final ChannelHandler channelHandler) {
+//  private AmqpClient() {
+//    cf = new ConnectionFactory();
+//  }
+//
+//  private ConnectionFactory cf;
+//
+//  public AmqpClient setHost(String host) {
+//    cf.setHost(host);
+//    return this;
+//  }
+//
+//  public AmqpClient setPort(int port) {
+//    cf.setPort(port);
+//    return this;
+//  }
+//
+//  public AmqpClient setUsername(String username) {
+//    cf.setUsername(username);
+//    return this;
+//  }
+//
+//  public AmqpClient setPassword(String password) {
+//    cf.setPassword(password);
+//    return this;
+//  }
+//
+//  public AmqpClient setVirtualHost(String virtualHost) {
+//    cf.setVirtualHost(virtualHost);
+//    return this;
+//  }
+//
+//  public void connect(final AmqpConnectHandler connectHandler) {
 //    VertxInternal.instance.executeInBackground(new Runnable() {
 //      public void run() {
 //        try {
-//          channelHandler.onCreate(new Channel(conn.createChannel()));
-//        } catch (IOException e) {
-//          //TODO handle exceptionHandler by passing them back on callback
-//          e.printStackTrace();
-//        }
-//      }
-//    });
-//  }
-//
-//  public void close(final Runnable doneCallback) {
-//    VertxInternal.instance.executeInBackground(new Runnable() {
-//      public void run() {
-//        try {
-//          conn.close();
-//          //FIXME - again this is sync
-//          doneCallback.run();
+//          connectHandler.onConnect(new AmqpConnection(cf.newConnection()));
 //        } catch (IOException e) {
 //          //TODO handle exceptionHandler by passing them back on callback
 //          e.printStackTrace();

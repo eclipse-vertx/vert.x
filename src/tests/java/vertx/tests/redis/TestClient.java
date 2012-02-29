@@ -16,16 +16,16 @@
 
 package vertx.tests.redis;
 
-import org.vertx.java.addons.redis.RedisConnection;
-import org.vertx.java.addons.redis.RedisException;
-import org.vertx.java.addons.redis.RedisPool;
+import org.vertx.java.old.redis.RedisConnection;
+import org.vertx.java.old.redis.RedisException;
+import org.vertx.java.old.redis.RedisPool;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.composition.Composer;
 import org.vertx.java.core.impl.Deferred;
 import org.vertx.java.core.impl.DeferredAction;
 import org.vertx.java.core.impl.Future;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.SimpleAction;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.composition.Composer;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 

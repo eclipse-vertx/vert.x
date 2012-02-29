@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.impl.SynchronousAction;
-
 /**
  * <p>An Implementation of {@link org.vertx.java.core.impl.Deferred} which can be used to implement custom synchronous actions.</p>
  *

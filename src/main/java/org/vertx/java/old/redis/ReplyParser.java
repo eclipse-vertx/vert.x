@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.redis;
+package org.vertx.java.old.redis;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;

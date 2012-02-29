@@ -14,8 +14,23 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.amqp;
+package org.vertx.java.old.stomp;
 
-public abstract class AmqpConnectHandler {
- // public abstract void onConnect(AmqpConnection connection);
+import org.vertx.java.core.net.NetSocket;
+
+class StompServerConnection extends StompConnection {
+  protected StompServerConnection(NetSocket socket) {
+    super(socket);
+  }
+
+  private FrameHandler frameHandler;
+
+  protected void frameHandler(FrameHandler frameHandler) {
+    this.frameHandler = frameHandler;
+  }
+
+  @Override
+  protected void handleFrame(Frame frame) {
+    frameHandler.onFrame(frame);
+  }
 }

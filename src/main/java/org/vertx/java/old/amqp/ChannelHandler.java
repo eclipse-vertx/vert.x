@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.stomp;
+package org.vertx.java.old.amqp;
 
-import org.vertx.java.core.buffer.Buffer;
-
-import java.util.Map;
-
-public interface StompMsgCallback {
-  void onMessage(Map<String, String> headers, Buffer body);
+public abstract class ChannelHandler {
+ // public abstract void onCreate(Channel channel);
 }

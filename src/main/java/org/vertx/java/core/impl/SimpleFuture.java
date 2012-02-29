@@ -16,9 +16,6 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.impl.Future;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
