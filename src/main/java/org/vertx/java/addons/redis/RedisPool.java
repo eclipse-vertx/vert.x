@@ -16,8 +16,8 @@
 
 package org.vertx.java.addons.redis;
 
-import org.vertx.java.core.ConnectionPool;
-import org.vertx.java.core.Context;
+import org.vertx.java.core.impl.ConnectionPool;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;

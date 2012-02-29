@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.stdio;
 
+import org.vertx.java.core.stdio.impl.InStream;
+import org.vertx.java.core.stdio.impl.OutStream;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 

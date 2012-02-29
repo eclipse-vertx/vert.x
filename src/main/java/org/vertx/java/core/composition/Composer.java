@@ -17,9 +17,9 @@
 package org.vertx.java.core.composition;
 
 import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Deferred;
-import org.vertx.java.core.DeferredAction;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.impl.Deferred;
+import org.vertx.java.core.impl.DeferredAction;
+import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -34,7 +34,7 @@ import java.util.List;
  * In a asynchronous framework such as vert.x you cannot just block on the result of one action before executing
  * the next one, since an event loop thread must never block. By using Composer you can describe the execution order
  * of a sequence of actions in a quasi-direct way, even though when they execute it will all be asynchronous.</p>
- * <p>Each action to execute is represented by an instance of {@link Deferred}. A Deferred represents an action
+ * <p>Each action to execute is represented by an instance of {@link org.vertx.java.core.impl.Deferred}. A Deferred represents an action
  * which is yet to be executed. Instances of Deferred can represent any asynchronous action, e.g. copying a file from A to B,
  * or getting a key from a Redis server.</p>
  * <p>An example of using this class is as follows:</p>

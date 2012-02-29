@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
+
+import org.vertx.java.core.impl.SynchronousAction;
 
 /**
- * <p>An Implementation of {@link Deferred} which can be used to implement custom synchronous actions.</p>
+ * <p>An Implementation of {@link org.vertx.java.core.impl.Deferred} which can be used to implement custom synchronous actions.</p>
  *
  * <p>If you wish to create an instance of Deferred which does an operation without returning sa result, without blocking than
  * this class can be subclassed and the act method implemented.</p>
@@ -34,7 +36,7 @@ public abstract class SimpleAction extends SynchronousAction<Void> {
 
    /**
    * Implement this method in a subclass to implement the non blocking synchronous action .
-   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link BlockingAction} for that.
+   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link org.vertx.java.core.impl.BlockingAction} for that.
    */
   protected abstract void act();
 }

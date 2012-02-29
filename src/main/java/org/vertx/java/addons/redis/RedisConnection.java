@@ -16,13 +16,13 @@
 
 package org.vertx.java.addons.redis;
 
-import org.vertx.java.core.ConnectionPool;
-import org.vertx.java.core.Deferred;
-import org.vertx.java.core.DeferredAction;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.impl.ConnectionPool;
+import org.vertx.java.core.impl.Deferred;
+import org.vertx.java.core.impl.DeferredAction;
+import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;

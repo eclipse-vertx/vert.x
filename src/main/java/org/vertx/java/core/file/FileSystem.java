@@ -18,12 +18,12 @@ package org.vertx.java.core.file;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.BlockingAction;
+import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.Future;
-import org.vertx.java.core.SynchronousAction;
-import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.Future;
+import org.vertx.java.core.impl.SynchronousAction;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 
 import java.io.File;

@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class VertxImpl implements VertxInternal {
+public class VertxImpl implements VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
@@ -60,7 +61,9 @@ class VertxImpl implements VertxInternal {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
-  // Public API ------------------------------------------------
+  public VertxImpl() {
+    timer.start();
+  }
 
   public synchronized void setCoreThreadPoolSize(int size) {
     if (corePool != null) {
@@ -196,8 +199,6 @@ class VertxImpl implements VertxInternal {
     return VerticleManager.instance.getLogger();
   }
 
-  // Internal API -----------------------------------------------------------------------------------------
-
   //The worker pool is used for making blocking calls to legacy synchronous APIs
   public ExecutorService getBackgroundPool() {
     //This is a correct implementation of double-checked locking idiom
@@ -256,12 +257,6 @@ class VertxImpl implements VertxInternal {
   public void reportException(Throwable t) {
     VerticleManager.instance.reportException(t);
   }
-
-  VertxImpl() {
-    timer.start();
-  }
-
-  // Private --------------------------------------------------------------------------------------------------
 
   private Context checkContext() {
     Context contextID = getContext();

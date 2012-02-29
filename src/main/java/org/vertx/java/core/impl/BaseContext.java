@@ -14,26 +14,35 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
-
-import java.util.concurrent.Executor;
+package org.vertx.java.core.impl;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkerContext extends BaseContext {
+public abstract class BaseContext implements Context {
 
-  private final Executor bgExec;
+  private Object extraData;
 
-  public WorkerContext(Executor bgExec) {
-    this.bgExec = bgExec;
+  private VertxInternal vertx = VertxInternal.instance;
+
+  public void setExtraData(Object data) {
+    this.extraData = data;
   }
 
-  public void execute(final Runnable task) {
-    bgExec.execute(new Runnable() {
+  public Object getExtraData() {
+    return extraData;
+  }
+
+  protected Runnable wrapTask(final Runnable task) {
+    return new Runnable() {
       public void run() {
-        wrapTask(task).run();
+        try {
+          vertx.setContext(BaseContext.this);
+          task.run();
+        } catch (Throwable t) {
+          VertxInternal.instance.reportException(t);
+        }
       }
-    });
+    };
   }
 }

@@ -16,9 +16,9 @@
 
 package org.vertx.java.core.eventbus.impl.hazelcast;
 
-import org.vertx.java.core.BlockingAction;
+import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Deferred;
+import org.vertx.java.core.impl.Deferred;
 import org.vertx.java.core.eventbus.impl.AsyncMultiMap;
 
 import java.util.Collection;
