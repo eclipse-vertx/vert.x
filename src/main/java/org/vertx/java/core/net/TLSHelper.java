@@ -36,6 +36,7 @@ import java.security.cert.X509Certificate;
 
 /**
  * Helper class for SSL.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TLSHelper {

@@ -17,6 +17,8 @@
 package org.vertx.java.core.http;
 
 /**
+ * Represents the version of the WebSockets specification
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public enum WebSocketVersion {

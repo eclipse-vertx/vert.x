@@ -31,18 +31,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * <p>Encapsulates a server-side HTTP request.</p>
- * <p/>
- * <p>An instance of this class is created for each request that is handled by the server and is passed to the user via the
- * {@link org.vertx.java.core.Handler} instance registered with the {@link HttpServer} using the method
- * {@link HttpServer#requestHandler(org.vertx.java.core.Handler)}.<p>
- * <p/>
- * <p>On creation a new execution context is assigned to each instance and an event loop is allocated to it from one
- * of the available ones. The instance must only be called from that event loop.</p>
- * <p/>
- * <p>Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via the
- * {@code response} field.</p>
- *
+ * Represents  a server-side HTTP request.
+ * <p>
+ * An instance of this class is created for each request that is handled by the server
+ * andis passed to the user via the {@link org.vertx.java.core.Handler} instance
+ * registered with the {@link HttpServer} using the method
+ * {@link HttpServer#requestHandler(org.vertx.java.core.Handler)}.
+ * <p>Each instance of this class is associated with a correspondin
+ * {@link HttpServerResponse} instance via the {@code response} field.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerRequest extends HttpReadStreamBase {
@@ -81,7 +78,8 @@ public class HttpServerRequest extends HttpReadStreamBase {
   public final String method;
 
   /**
-   * The uri of the request. For example http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&someotherparam=x
+   * The uri of the request. For example
+   * http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&someotherparam=x
    */
   public final String uri;
 

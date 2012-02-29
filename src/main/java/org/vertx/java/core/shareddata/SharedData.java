@@ -96,7 +96,6 @@ public class SharedData {
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
-   * The Map instance returned is a lock free Map which supports a very high degree of concurrency.
    */
   public <K, V> ConcurrentMap<K, V> getMap(String name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
@@ -113,7 +112,6 @@ public class SharedData {
   /**
    * Return a {@code Set} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Set} instance. <p>
-   * The Set instance returned is a lock free Map which supports a very high degree of concurrency.
    */
   public <E> Set<E> getSet(String name) {
     SharedSet<E> set = (SharedSet<E>) sets.get(name);

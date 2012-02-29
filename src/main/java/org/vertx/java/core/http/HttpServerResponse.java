@@ -44,19 +44,20 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
- * <p>Encapsulates a server-side HTTP response.</p>
- * <p/>
- * <p>An instance of this class is created and associated to every instance of {@link HttpServerRequest} that is created.<p>
- * <p/>
- * <p>It allows the developer to control the HTTP response that is sent back to the client for the corresponding HTTP
- * request. It contains methods that allow HTTP headers and trailers to be set, and for a body to be written out
- * to the response.</p>
- * <p/>
- * <p>It also allows a file to be streamed by the kernel directly from disk to the outgoing HTTP connection,
- * bypassing user space altogether (where supported by the underlying operating system). This is a very efficient way of
- * serving files from the server since buffers do not have to be read one by one from the file and written to the outgoing
- * socket.</p>
- *
+ * Represents a server-side HTTP response.
+ * <p>
+ * An instance of this class is created and associated to every instance of
+ * {@link HttpServerRequest} that is created.<p>
+ * It allows the developer to control the HTTP response that is sent back to the
+ * client for the corresponding HTTP request. It contains methods that allow HTTP
+ * headers and trailers to be set, and for a body to be written outto the response.
+ * <p>
+ * It also allows files to be streamed by the kernel directly from disk to the
+ * outgoing HTTP connection, bypassing user space altogether (where supported by
+ * the underlying operating system). This is a very efficient way of
+ * serving files from the server since buffers do not have to be read one by one
+ * from the file and written to the outgoing socket.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerResponse implements WriteStream {
@@ -126,7 +127,8 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Inserts all the specified headers into the response. The {@link Object#toString()} method will be called on the header values {@code value} to determine
+   * Inserts all the specified headers into the response.
+   * The {@link Object#toString()} method will be called on the header values {@code value} to determine
    * the String value to actually use for the header value.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
@@ -141,7 +143,8 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Inserts a trailer into the response. The {@link Object#toString()} method will be called on {@code value} to determine
+   * Inserts a trailer into the response. The {@link Object#toString()} method
+   * will be called on {@code value} to determine
    * the String value to actually use for the trailer value.<p>
    * Trailers are only sent if you are using a HTTP chunked response.<p>
    *
@@ -156,7 +159,8 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Inserts all the specified trailers into the response. The {@link Object#toString()} method will be called on {@code value} to determine
+   * Inserts all the specified trailers into the response.
+   * The {@link Object#toString()} method will be called on {@code value} to determine
    * the String value to actually use for the trailer value.<p>
    * Trailers are only sent if you are using a HTTP chunked response.<p>
    *
@@ -173,7 +177,8 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Data is queued until it is actually sent. To set the point at which the queue is considered "full" call this method
+   * Data is queued until it is actually sent. To set the point at which the queue
+   * is considered "full" call this method
    * specifying the {@code maxSize} in bytes.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
@@ -184,10 +189,13 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * If the amount of data that is currently queued is greater than the write queue max size see {@link #setWriteQueueMaxSize(int)}
+   * If the amount of data that is currently queued is greater than the write
+   * queue max size see {@link #setWriteQueueMaxSize(int)}
    * then the response queue is considered full.<p>
-   * Data can still be written to the response even if the write queue is deemed full, however it should be used as indicator
-   * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
+   * Data can still be written to the response even if the write queue is deemed full,
+   * however it should be used as indicator
+   * to stop writing and push back on the source of the data, otherwise you risk
+   * running out of available RAM.<p>
    * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams and perform flow control.
    *
@@ -199,10 +207,13 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * This method sets a drain handler {@code handler} on the response. The drain handler will be called when write queue is no longer
+   * This method sets a drain handler {@code handler} on the response.
+   * The drain handler will be called when write queue is no longer
    * full and it is safe to write to it again.<p>
-   * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
-   * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
+   * The drain handler is actually called when the write queue size reaches
+   * <b>half</b> the write queue max size to prevent thrashing.
+   * This method is used as part of a flow control strategy, e.g. it is used by
+   * the {@link org.vertx.java.core.streams.Pump} class to pump data
    * between different streams.
    *
    * @param handler
@@ -351,7 +362,8 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.<p>
+   * Ends the response. If no data has been written to the response body,
+   * the actual response won't get written until this method gets called.<p>
    * Once the response has ended, it cannot be used any more.
    * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
@@ -372,8 +384,10 @@ public class HttpServerResponse implements WriteStream {
   }
 
   /**
-   * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection, bypassing userspace altogether
-   * (where supported by the underlying operating system. This is a very efficient way to serve files.<p>
+   * Tell the kernel to stream a file as specified by {@code filename} directly
+   * from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system.
+   * This is a very efficient way to serve files.<p>
    */
   public HttpServerResponse sendFile(String filename) {
     if (headWritten) {

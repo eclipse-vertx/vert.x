@@ -24,20 +24,34 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ *
+ * Represents a JSON object
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonObject {
 
   final Map<String, Object> map;
 
+  /**
+   * Create a JSON object based on the specified Map
+   * @param map
+   */
   public JsonObject(Map<String, Object> map) {
     this.map = map;
   }
 
+  /**
+   * Create an empty JSON object
+   */
   public JsonObject() {
     this.map = new HashMap<>();
   }
 
+  /**
+   * Create a JSON object from a string form of a JSON object
+   * @param jsonString The string form of a JSON object
+   */
   public JsonObject(String jsonString) {
     try {
       map = Json.mapper.readValue(jsonString, Map.class);

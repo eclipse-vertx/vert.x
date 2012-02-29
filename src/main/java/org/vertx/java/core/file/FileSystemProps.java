@@ -17,8 +17,8 @@
 package org.vertx.java.core.file;
 
 /**
- * <p>Represents properties of the file system</p>
- *
+ * Represents properties of the file system
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystemProps {

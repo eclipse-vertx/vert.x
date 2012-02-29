@@ -25,8 +25,8 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.ServerID;
 
 /**
- * <p>Represents a message sent on the event bus.</p>
- *
+ * Represents a message sent on the event bus.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class Message<T>  {
@@ -105,13 +105,15 @@ public abstract class Message<T>  {
    * Reply to this message. If the message was sent specifying a receipt handler, that handler will be
    * called when it has received a reply. If the message wasn't sent specifying a receipt handler
    * this method does nothing.
-   * Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
-   * of the original message.
    */
   public void reply(T message) {
     reply(message, null);
   }
 
+  /**
+   * The same as {@link #reply(T)} but you can specify handler for the reply - i.e.
+   * to receive the reply to the reply.
+   */
   public void reply(T message, Handler<Message<T>> replyHandler) {
     if (bus != null && replyAddress != null) {
       handleReply(message, replyHandler);

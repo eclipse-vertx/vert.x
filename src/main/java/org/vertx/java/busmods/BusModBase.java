@@ -24,6 +24,8 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 
 /**
+ * Base helper class for Java busmods
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class BusModBase {
@@ -40,6 +42,9 @@ public abstract class BusModBase {
     }
   }
 
+  /**
+   * Start the busmod
+   */
   protected void start() {
     config = Vertx.instance.getConfig();
     address = config.getString("address");

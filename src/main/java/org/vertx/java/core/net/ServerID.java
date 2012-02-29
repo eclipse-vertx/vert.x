@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- *
- * TODO this shouldn't implement DataSerializable since that is Hazelcast specific
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServerID implements Serializable, DataSerializable {

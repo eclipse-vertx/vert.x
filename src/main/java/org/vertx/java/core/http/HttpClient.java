@@ -55,13 +55,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * <p>An asynchronous, pooling, HTTP 1.1 client</p>
- * <p/>
- * <p>An {@code HttpClient} maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
- * as pipelines for HTTP requests.</p>
- * <p>It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
- * used as a factory for HTML5 {@link WebSocket websockets}.</p>
- *
+ * A pooling HTTP 1.1 client
+ * <p>
+ * Maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
+ * as pipelines for HTTP requests.
+ * <p>
+ * It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
+ * used as a factory for HTML5 {@link WebSocket websockets}.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClient extends NetClientBase {
@@ -89,16 +90,15 @@ public class HttpClient extends NetClientBase {
   }
 
   /**
-   * Set the exception handler for the {@code HttpClient}
+   * Set an exception handler
    */
   public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
   /**
-   * Set the maximum pool size to the value specified by {@code maxConnections}<p>
+   * Set the maximum pool size<p>
    * The client will maintain up to {@code maxConnections} HTTP connections in an internal pool<p>
-   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setMaxPoolSize(int maxConnections) {
@@ -120,7 +120,6 @@ public class HttpClient extends NetClientBase {
    * If {@code keepAlive} is {@code false} then a new connection will be created for each request and it won't ever go in the pool,
    * the connection will closed after the response has been received. Even with no keep alive, the client will not allow more
    * than {@link #getMaxPoolSize() getMaxPoolSize()} connections to be created at any one time. <p>
-   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setKeepAlive(boolean keepAlive) {
@@ -172,7 +171,6 @@ public class HttpClient extends NetClientBase {
 
   /**
    * Set the port that the client will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
-   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setPort(int port) {
@@ -182,7 +180,6 @@ public class HttpClient extends NetClientBase {
 
   /**
    * Set the host that the client will attempt to connect to, to {@code host}. The default value is {@code localhost}<p>
-   *
    * @return A reference to this, so multiple invocations can be chained together.
    */
   public HttpClient setHost(String host) {
@@ -192,7 +189,6 @@ public class HttpClient extends NetClientBase {
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
-   * This version of the method defaults to the Hybi-10 version of the websockets protocol
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
   public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
@@ -213,8 +209,8 @@ public class HttpClient extends NetClientBase {
   }
 
   /**
-   * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler) get()} method where you do not want to do anything with the request
-   * before sending.<p>
+   * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler) get()}
+   * method where you do not want to do anything with the request before sending.<p>
    * Normally with any of the HTTP methods you create the request then when you are ready to send it you call
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
