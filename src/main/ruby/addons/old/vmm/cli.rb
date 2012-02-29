@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'vmm/installer'
+require 'addons.old.vmm/installer'
 
 module Vmm
 
   # @author {http://tfox.org Tim Fox}
   class CLI
 
-    VMM_ROOT = "./vmm-root/"
+    VMM_ROOT = "./addons.old.vmm-root/"
 
     def parse
       if ARGV.length == 0
@@ -59,7 +59,7 @@ module Vmm
         puts "Argument: #{a}"
       end
       puts "Usage:"
-      puts "  vmm install DIRECTORY"
+      puts "  addons.old.vmm install DIRECTORY"
       puts "Installs a module into the local repository"
       puts "DIRECTORY is the name of a directory which contains a valid vert.x module"
     end

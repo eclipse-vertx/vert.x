@@ -65,7 +65,7 @@ module Vmm
       puts "Installing module from directory #{module_dir}"
 
       if !check_dir(@vmm_root)
-        set_err(ERR_VMM_ROOT_MISSING, "vmm root directory #{@vmm_root} is missing")
+        set_err(ERR_VMM_ROOT_MISSING, "addons.old.vmm root directory #{@vmm_root} is missing")
         return
       end
 

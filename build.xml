@@ -129,6 +129,7 @@
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
     <exclude name="org/vertx/java/tests/redis/*Test.class"/>
+    <exclude name="org/vertx/java/tests/old/**/*Test.class"/>
   </fileset>
 
   <fileset id="redis-tests.fs" dir="${tests-target}">
