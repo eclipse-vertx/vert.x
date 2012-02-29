@@ -16,6 +16,8 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.impl.Future;
+
 /**
  * <p>A handler that will be called when a {@link Future} completes or fails.</p>
  *

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import org.vertx.java.core.Vertx;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;

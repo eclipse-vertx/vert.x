@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
+
+import org.vertx.java.core.CompletionHandler;
 
 /**
  * <p>Represents an operation that may or may not have completed yet.</p>

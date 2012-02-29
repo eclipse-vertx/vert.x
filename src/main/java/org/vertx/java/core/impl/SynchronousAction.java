@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
 /**
  * <p>A subclass of {@link DeferredAction} which can be used to implement custom synchronous actions.</p>
@@ -38,7 +38,7 @@ public abstract class SynchronousAction<T> extends DeferredAction<T> {
   /**
    * Implement this method in a subclass to implement the non blocking synchronous action and return the result as the
    * return value of the method.
-   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link BlockingAction} for that.
+   * <b>Do not</b> use this method to implement long running, blocking operations. Use {@link org.vertx.java.core.impl.BlockingAction} for that.
    */
   public abstract T action() throws Exception;
 }

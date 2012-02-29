@@ -16,6 +16,7 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.impl.VertxImpl;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 

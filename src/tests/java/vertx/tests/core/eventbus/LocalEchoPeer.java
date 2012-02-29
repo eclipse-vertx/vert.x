@@ -17,7 +17,7 @@
 package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 

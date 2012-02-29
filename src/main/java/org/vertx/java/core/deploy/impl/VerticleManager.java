@@ -16,11 +16,11 @@
 
 package org.vertx.java.core.deploy.impl;
 
-import org.vertx.java.core.Context;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Verticle;
-import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.deploy.impl.groovy.GroovyVerticleFactory;
 import org.vertx.java.core.deploy.impl.java.JavaVerticleFactory;
 import org.vertx.java.core.deploy.impl.jruby.JRubyVerticleFactory;

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
+
+import org.vertx.java.core.CompletionHandler;
 
 /**
  * <p>DeferredAction is useful when you want to create your own Deferred actions.</p>

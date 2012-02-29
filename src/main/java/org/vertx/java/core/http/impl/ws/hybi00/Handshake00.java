@@ -33,7 +33,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.CompletionHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleFuture;
+import org.vertx.java.core.impl.SimpleFuture;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientRequest;

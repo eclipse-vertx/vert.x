@@ -1,4 +1,4 @@
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
 /*
  * Copyright 2009 Red Hat, Inc.

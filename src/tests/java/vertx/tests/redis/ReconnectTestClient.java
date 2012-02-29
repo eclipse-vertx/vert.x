@@ -19,7 +19,7 @@ package vertx.tests.redis;
 import org.vertx.java.addons.redis.RedisConnection;
 import org.vertx.java.addons.redis.RedisPool;
 import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;

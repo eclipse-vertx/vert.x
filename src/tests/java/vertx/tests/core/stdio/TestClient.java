@@ -19,7 +19,7 @@ package vertx.tests.core.stdio;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.stdio.InStream;
+import org.vertx.java.core.stdio.impl.InStream;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 

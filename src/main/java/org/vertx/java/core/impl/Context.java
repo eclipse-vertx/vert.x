@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
-
-import org.jboss.netty.channel.socket.nio.NioWorker;
+package org.vertx.java.core.impl;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EventLoopContext extends BaseContext {
+public interface Context {
 
-  private final NioWorker worker;
+  void execute(Runnable task);
 
-  public EventLoopContext(NioWorker worker) {
-    this.worker = worker;
-  }
+  void setExtraData(Object data);
 
-  public void execute(Runnable task) {
-    worker.scheduleOtherTask(wrapTask(task));
-  }
-
-  public NioWorker getWorker() {
-    return worker;
-  }
+  Object getExtraData();
 }

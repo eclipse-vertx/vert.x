@@ -14,34 +14,26 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
+
+import org.jboss.netty.channel.socket.nio.NioWorker;
 
 /**
- *
- * A Deferred in the body of the run() of which you can get and pass back another future the result of which will
- * be wired into this deferred.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class CompositeDeferred<T> extends DeferredAction<T> {
+public class EventLoopContext extends BaseContext {
 
-  @Override
-  protected void run() {
-    Future<T> def = doRun();
-    def.handler(new CompletionHandler<T>() {
-      public void handle(Future<T> future) {
-        if (future.succeeded()) {
-          setResult(future.result());
-        } else {
-          setException(future.exception());
-        }
-      }
-    });
-    if (def instanceof Deferred) {
-      ((Deferred)def).execute();
-    }
+  private final NioWorker worker;
+
+  public EventLoopContext(NioWorker worker) {
+    this.worker = worker;
   }
 
-  protected abstract Future<T> doRun();
+  public void execute(Runnable task) {
+    worker.scheduleOtherTask(wrapTask(task));
+  }
 
+  public NioWorker getWorker() {
+    return worker;
+  }
 }

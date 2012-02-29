@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.stdio;
+package org.vertx.java.core.stdio.impl;
 
-import org.vertx.java.core.Context;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.impl.VertxInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

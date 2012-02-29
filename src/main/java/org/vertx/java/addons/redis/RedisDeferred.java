@@ -16,8 +16,8 @@
 
 package org.vertx.java.addons.redis;
 
-import org.vertx.java.core.Deferred;
-import org.vertx.java.core.DeferredAction;
+import org.vertx.java.core.impl.Deferred;
+import org.vertx.java.core.impl.DeferredAction;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
+
+import org.vertx.java.core.CompletionHandler;
 
 /**
  * <p>Represents something that hasn't happened yet, but will occur when the {@link #execute} method is called.</p>

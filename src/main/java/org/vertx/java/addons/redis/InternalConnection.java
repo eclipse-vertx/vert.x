@@ -16,8 +16,8 @@
 
 package org.vertx.java.addons.redis;
 
-import org.vertx.java.core.ConnectionPool;
-import org.vertx.java.core.DeferredAction;
+import org.vertx.java.core.impl.ConnectionPool;
+import org.vertx.java.core.impl.DeferredAction;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;

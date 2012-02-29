@@ -86,7 +86,7 @@ module Vertx
   # @author {http://tfox.org Tim Fox}
   class SimpleFuture < Future
     def initialize
-      @j_del = org.vertx.java.core.SimpleFuture.new
+      @j_del = org.vertx.java.core.impl.SimpleFuture.new
       super(@j_del)
     end
 
@@ -167,7 +167,7 @@ module Vertx
     private
 
     # @private
-    class Deff < org.vertx.java.core.DeferredAction
+    class Deff < org.vertx.java.core.impl.DeferredAction
 
       def initialize(&blk)
         @blk = blk

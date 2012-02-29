@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.vertx.java.core.Context;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.Handler;
 
 /**
