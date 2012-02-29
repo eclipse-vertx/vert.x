@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.jruby;
+package org.vertx.java.core.deploy.impl.jruby;
 
 import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.LocalContextScope;

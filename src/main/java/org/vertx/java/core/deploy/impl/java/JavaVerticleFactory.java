@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.java;
+package org.vertx.java.core.deploy.impl.java;
 
 import org.vertx.java.core.Verticle;
-import org.vertx.java.core.deploy.VerticleFactory;
-import org.vertx.java.core.deploy.VerticleManager;
+import org.vertx.java.core.deploy.impl.VerticleFactory;
+import org.vertx.java.core.deploy.impl.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

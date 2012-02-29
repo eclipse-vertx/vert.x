@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.cli;
+package org.vertx.java.core.deploy.impl.rhino;
 
-import org.vertx.java.core.deploy.VerticleManager;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
 
 /**
+ * We need to make sure any Java primitive types are passed into Rhino code as the corresponding JS types
+ * By default Rhino doesn't do this.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class UndeployCommand extends VertxCommand {
+public class RhinoContextFactory extends ContextFactory {
 
-  public String name;
-
-  public UndeployCommand(String name) {
-    this.name = name;
-  }
-
-  public UndeployCommand() {
-  }
-
-  public String execute(VerticleManager appMgr) throws Exception {
-    appMgr.undeploy(name, null);
-    return "";
+  protected void onContextCreated(Context cx) {
+    super.onContextCreated(cx);
+    cx.getWrapFactory().setJavaPrimitiveWrap(false);
   }
 }
+
+

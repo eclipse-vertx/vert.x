@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.cli;
+package org.vertx.java.core.deploy.impl.cli;
 
-import org.vertx.java.core.deploy.VerticleManager;
+import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
 
 import java.net.URL;

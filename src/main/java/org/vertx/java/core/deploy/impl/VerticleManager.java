@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy;
+package org.vertx.java.core.deploy.impl;
 
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Verticle;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.deploy.groovy.GroovyVerticleFactory;
-import org.vertx.java.core.deploy.java.JavaVerticleFactory;
-import org.vertx.java.core.deploy.jruby.JRubyVerticleFactory;
-import org.vertx.java.core.deploy.rhino.RhinoVerticleFactory;
+import org.vertx.java.core.deploy.impl.groovy.GroovyVerticleFactory;
+import org.vertx.java.core.deploy.impl.java.JavaVerticleFactory;
+import org.vertx.java.core.deploy.impl.jruby.JRubyVerticleFactory;
+import org.vertx.java.core.deploy.impl.rhino.RhinoVerticleFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
