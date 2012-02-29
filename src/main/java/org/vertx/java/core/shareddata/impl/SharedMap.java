@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.shareddata.impl;
 
-import org.vertx.java.core.shareddata.SharedData;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;

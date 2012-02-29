@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.stomp;
+package org.vertx.java.old.stomp;
 
-import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.buffer.Buffer;
 
-class StompServerConnection extends StompConnection {
-  protected StompServerConnection(NetSocket socket) {
-    super(socket);
-  }
+import java.util.Map;
 
-  private FrameHandler frameHandler;
-
-  protected void frameHandler(FrameHandler frameHandler) {
-    this.frameHandler = frameHandler;
-  }
-
-  @Override
-  protected void handleFrame(Frame frame) {
-    frameHandler.onFrame(frame);
-  }
+public interface StompMsgCallback {
+  void onMessage(Map<String, String> headers, Buffer body);
 }

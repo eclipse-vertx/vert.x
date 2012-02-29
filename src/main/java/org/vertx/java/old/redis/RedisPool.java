@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.redis;
+package org.vertx.java.old.redis;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.ConnectionPool;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;

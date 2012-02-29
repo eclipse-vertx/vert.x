@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.stomp;
+package org.vertx.java.old.stomp;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetClient;

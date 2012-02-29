@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.amqp;
+package org.vertx.java.core.impl;
 
-public abstract class ChannelHandler {
- // public abstract void onCreate(Channel channel);
+import org.vertx.java.core.Handler;
+
+/**
+ * <p>A handler that will be called when a {@link Future} completes or fails.</p>
+ *
+ * TODO remove this and replace everywhere with AsyncResultHandler
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public interface CompletionHandler<T> extends Handler<Future<T>> {
 }

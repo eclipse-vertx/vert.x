@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.redis;
+package org.vertx.java.old.redis;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

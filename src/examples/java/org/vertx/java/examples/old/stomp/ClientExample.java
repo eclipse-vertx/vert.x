@@ -16,9 +16,9 @@
 
 package org.vertx.java.examples.old.stomp;
 
-import org.vertx.java.addons.old.stomp.StompConnectHandler;
-import org.vertx.java.addons.old.stomp.StompConnection;
-import org.vertx.java.addons.old.stomp.StompMsgCallback;
+import org.vertx.java.old.stomp.StompConnectHandler;
+import org.vertx.java.old.stomp.StompConnection;
+import org.vertx.java.old.stomp.StompMsgCallback;
 import org.vertx.java.core.buffer.Buffer;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ public class ClientExample {
 
   public static void main(String[] args) throws Exception {
 
-    org.vertx.java.addons.old.stomp.StompClient.connect(8181, new StompConnectHandler() {
+    org.vertx.java.old.stomp.StompClient.connect(8181, new StompConnectHandler() {
       public void onConnect(final StompConnection conn) {
 
         // Subscribe to a topic

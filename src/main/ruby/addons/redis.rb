@@ -30,7 +30,7 @@ module Vertx
 
     # Create a new RedisPool
     def initialize
-      @j_del = org.vertx.java.addons.redis.RedisPool.new
+      @j_del = org.vertx.java.old.redis.RedisPool.new
     end
 
     # Set the port that the client will attempt to connect to on the server. If not set, the default value is 6379
@@ -554,11 +554,11 @@ module Vertx
     def z_inter_store(destination, num_keys, keys, weights = nil, aggregate_type = 'SUM')
       j_agg_type = case aggregate_type
                      when 'SUM'
-                       org.vertx.java.addons.redis.RedisConnection.AggregateType::SUM
+                       org.vertx.java.old.redis.RedisConnection.AggregateType::SUM
                      when 'MIN'
-                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MIN
+                       org.vertx.java.old.redis.RedisConnection.AggregateType::MIN
                      when 'MAX'
-                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MAX
+                       org.vertx.java.old.redis.RedisConnection.AggregateType::MAX
                      else
                        raise "Legal aggregate_type values are SUM, MIN or MAX"
                      end
@@ -608,11 +608,11 @@ module Vertx
     def z_union_store(destination, num_keys, keys, weights = nil, aggregate_type = 'SUM')
       j_agg_type = case aggregate_type
                      when 'SUM'
-                       org.vertx.java.addons.redis.RedisConnection.AggregateType::SUM
+                       org.vertx.java.old.redis.RedisConnection.AggregateType::SUM
                      when 'MIN'
-                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MIN
+                       org.vertx.java.old.redis.RedisConnection.AggregateType::MIN
                      when 'MAX'
-                       org.vertx.java.addons.redis.RedisConnection.AggregateType::MAX
+                       org.vertx.java.old.redis.RedisConnection.AggregateType::MAX
                      else
                        raise "Legal aggregate_type values are SUM, MIN or MAX"
                      end

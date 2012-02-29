@@ -18,8 +18,8 @@ package org.vertx.java.tests.core.composition;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import org.vertx.java.core.impl.DeferredAction;
 import org.vertx.java.core.composition.Composer;
+import org.vertx.java.core.impl.DeferredAction;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

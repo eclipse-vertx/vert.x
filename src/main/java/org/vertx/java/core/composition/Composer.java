@@ -16,11 +16,11 @@
 
 package org.vertx.java.core.composition;
 
-import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Deferred;
 import org.vertx.java.core.impl.DeferredAction;
 import org.vertx.java.core.impl.Future;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 

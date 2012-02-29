@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.amqp;
+package org.vertx.java.old.amqp;
 
 public class AmqpProps {
 //  public String appId;

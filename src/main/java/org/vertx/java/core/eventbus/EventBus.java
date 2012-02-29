@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.eventbus;
 
-import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
@@ -250,11 +250,11 @@ public abstract class EventBus {
    * Unregisters a handler given the address and the handler
    * @param address The address the handler was registered to
    * @param handler The handler
-   * @param completionHandler Optional completion handler. If specified, then when the unregister has been
+   * @param resultHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
   public abstract void unregisterHandler(String address, Handler<? extends Message> handler,
-                                CompletionHandler<Void> completionHandler);
+                                AsyncResultHandler<Void> resultHandler);
 
   /**
    * Unregisters a handler given the address and the handler
@@ -272,10 +272,10 @@ public abstract class EventBus {
   /**
    * Unregister a handler given the unique handler id
    * @param id The handler id
-   * @param completionHandler Optional completion handler. If specified, then when the unregister has been
+   * @param resultHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public abstract void unregisterHandler(String id, CompletionHandler<Void> completionHandler);
+  public abstract void unregisterHandler(String id, AsyncResultHandler<Void> resultHandler);
 
   /**
    * Registers a handler against a uniquely generated address, the address is returned as the id
@@ -287,23 +287,23 @@ public abstract class EventBus {
   /**
    * Registers a handler against a uniquely generated address, the address is returned as the id
    * @param handler
-   * @param completionHandler Optional completion handler. If specified, then when the register has been
+   * @param resultHandler Optional result handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
   public abstract String registerHandler(Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler);
+                                         AsyncResultHandler<Void> resultHandler);
 
   /**
    * Registers a handler against the specified address
    * @param address The address top register it at
    * @param handler The handler
-   * @param completionHandler Optional completion handler. If specified, then when the register has been
+   * @param resultHandler Optional completion handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
   public abstract String registerHandler(String address, Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler);
+                               AsyncResultHandler<Void> resultHandler);
 
   /**
    * Registers a handler against the specified address

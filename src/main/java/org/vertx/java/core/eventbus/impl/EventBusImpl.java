@@ -16,15 +16,14 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.Future;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.SimpleFuture;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -174,7 +173,7 @@ public class EventBusImpl extends EventBus {
   }
 
   public void unregisterHandler(String address, Handler<? extends Message> handler,
-                                CompletionHandler<Void> completionHandler) {
+                                AsyncResultHandler<Void> completionHandler) {
     Map<HandlerHolder, String> map = handlers.get(address);
     if (map != null) {
       String handlerID = map.remove(new HandlerHolder(handler, false));
@@ -199,10 +198,10 @@ public class EventBusImpl extends EventBus {
   }
 
   public void unregisterHandler(String id) {
-    unregisterHandler(id, (CompletionHandler<Void>) null);
+    unregisterHandler(id, (AsyncResultHandler<Void>) null);
   }
 
-  public void unregisterHandler(String id, CompletionHandler<Void> completionHandler) {
+  public void unregisterHandler(String id, AsyncResultHandler<Void> completionHandler) {
     HandlerInfo info = handlersByID.get(id);
     if (info != null) {
       unregisterHandler(info.address, info.handler, completionHandler);
@@ -214,12 +213,12 @@ public class EventBusImpl extends EventBus {
   }
 
   public String registerHandler(Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler) {
+                               AsyncResultHandler<Void> completionHandler) {
     return registerHandler(null, handler, completionHandler, false);
   }
 
   public String registerHandler(String address, Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler) {
+                               AsyncResultHandler<Void> completionHandler) {
     return registerHandler(address, handler, completionHandler, false);
   }
 
@@ -278,10 +277,10 @@ public class EventBusImpl extends EventBus {
         }
       } else {
         if (subs != null) {
-          subs.get(message.address, new CompletionHandler<Collection<ServerID>>() {
-            public void handle(Future<Collection<ServerID>> event) {
-              Collection<ServerID> serverIDs = event.result();
-              if (event.succeeded()) {
+          subs.get(message.address, new AsyncResultHandler<Collection<ServerID>>() {
+            public void handle(AsyncResult<Collection<ServerID>> event) {              
+              if (event.exception == null) {
+                Collection<ServerID> serverIDs = event.result;
                 if (serverIDs != null) {
                   for (ServerID serverID : serverIDs) {
                     if (!serverID.equals(EventBusImpl.this.serverID)) {  //We don't send to this node
@@ -290,7 +289,7 @@ public class EventBusImpl extends EventBus {
                   }
                 }
               } else {
-                log.error("Failed to send message", event.exception());
+                log.error("Failed to send message", event.exception);
               }
             }
           });
@@ -308,7 +307,7 @@ public class EventBusImpl extends EventBus {
   }
 
   private String registerHandler(String address, Handler<? extends Message> handler,
-                               CompletionHandler<Void> completionHandler,
+                               AsyncResultHandler<Void> completionHandler,
                                boolean replyHandler) {
     String id = UUID.randomUUID().toString();
     if (address == null) {
@@ -323,10 +322,10 @@ public class EventBusImpl extends EventBus {
         map = prevMap;
       }
       if (completionHandler == null) {
-        completionHandler = new CompletionHandler<Void>() {
-          public void handle(Future<Void> event) {
-            if (event.failed()) {
-              log.error("Failed to remove entry", event.exception());
+        completionHandler = new AsyncResultHandler<Void>() {
+          public void handle(AsyncResult<Void> event) {
+            if (event.exception != null) {
+              log.error("Failed to remove entry", event.exception);
             }
           }
         };
@@ -349,9 +348,8 @@ public class EventBusImpl extends EventBus {
     return id;
   }
 
-  private void callCompletionHandler(CompletionHandler<Void> completionHandler) {
-    SimpleFuture<Void> f = new SimpleFuture<>();
-    f.setResult(null);
+  private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
+    AsyncResult<Void> f = new AsyncResult<>((Void)null);
     completionHandler.handle(f);
   }
 
@@ -396,20 +394,20 @@ public class EventBusImpl extends EventBus {
     }
   }
 
-  private void removeSub(String subName, ServerID serverID, final CompletionHandler<Void> completionHandler) {
-    subs.remove(subName, serverID, new CompletionHandler<Boolean>() {
-      public void handle(Future<Boolean> event) {
+  private void removeSub(String subName, ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
+    subs.remove(subName, serverID, new AsyncResultHandler<Boolean>() {
+      public void handle(AsyncResult<Boolean> event) {
         if (completionHandler != null) {
-          SimpleFuture<Void> f = new SimpleFuture<>();
-          if (event.failed()) {
-            f.setException(event.exception());
+          AsyncResult<Void> result;
+          if (event.exception != null) {
+            result = new AsyncResult<Void>(event.exception);
           } else {
-            f.setResult(null);
+            result = new AsyncResult<Void>((Void)null);
           }
-          completionHandler.handle(f);
+          completionHandler.handle(result);
         } else {
-          if (event.failed()) {
-            log.error("Failed to remove subscription", event.exception());
+          if (event.exception != null) {
+            log.error("Failed to remove subscription", event.exception);
           }
         }
       }

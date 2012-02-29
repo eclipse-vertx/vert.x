@@ -17,7 +17,7 @@
 package vertx.tests.core.blockingaction;
 
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.CompletionHandler;
+import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Future;
 import org.vertx.java.framework.TestClientBase;
 

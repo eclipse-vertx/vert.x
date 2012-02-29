@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package org.vertx.java.addons.old.stomp;
+package org.vertx.java.old.amqp;
 
-public interface FrameHandler {
-  void onFrame(Frame frame);
+public abstract class AmqpConnectHandler {
+ // public abstract void onConnect(AmqpConnection connection);
 }
