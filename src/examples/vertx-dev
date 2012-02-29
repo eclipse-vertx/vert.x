@@ -34,4 +34,4 @@ $DIRNAME/../../src/main/javascript
 echo $CLASSPATH
 
 java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties -Djruby.home=$JRUBY_HOME\
- -cp $CLASSPATH org.vertx.java.core.deploy.cli.VertxMgr "$@"
+ -cp $CLASSPATH org.vertx.java.core.deploy.impl.cli.VertxMgr "$@"

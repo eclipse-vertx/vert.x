@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.cli;
+package org.vertx.java.core.deploy.impl;
 
-import org.vertx.java.core.deploy.VerticleManager;
+import org.vertx.java.core.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class StopCommand extends VertxCommand {
+public interface VerticleFactory {
 
-  public String execute(VerticleManager appMgr) {
-    appMgr.unblock();
-    return null;
-  }
+  Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
 
-  @Override
-  public boolean isBlock() {
-    return false;
-  }
+  void reportException(Throwable t);
+
 }

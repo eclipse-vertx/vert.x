@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.cli;
+package org.vertx.java.core.deploy.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.deploy.VerticleManager;
+import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;

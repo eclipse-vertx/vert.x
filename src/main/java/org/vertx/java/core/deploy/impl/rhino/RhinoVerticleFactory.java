@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.rhino;
+package org.vertx.java.core.deploy.impl.rhino;
 
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
 import org.vertx.java.core.Verticle;
-import org.vertx.java.core.deploy.VerticleFactory;
-import org.vertx.java.core.deploy.VerticleManager;
+import org.vertx.java.core.deploy.impl.VerticleFactory;
+import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 
 /**
