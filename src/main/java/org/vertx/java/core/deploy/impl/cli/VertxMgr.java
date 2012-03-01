@@ -97,7 +97,9 @@ public class VertxMgr {
 
       if (cmd != null) {
         String res = sendCommand(port, cmd);
-        System.out.println(res);
+        if (res != null) {
+          System.out.println(res);
+        }
       }
     }
   }

@@ -29,13 +29,11 @@ public class SSLClient implements Verticle {
   public void start() {
     client = new NetClient().setSSL(true).setTrustAll(true).connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
           }
         });
-
         //Now send some dataHandler
         for (int i = 0; i < 10; i++) {
           String str = "hello" + i + "\n";

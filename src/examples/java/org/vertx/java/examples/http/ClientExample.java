@@ -30,7 +30,7 @@ public class ClientExample implements Verticle {
     client = new HttpClient();
     client.setPort(8080).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
-        response.dataHandler(new Handler<Buffer>() {
+        response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             System.out.println(data);
           }
