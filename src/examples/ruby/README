@@ -1,5 +1,5 @@
-vert.x Ruby Examples
-====================
+vert.x JavaScript Examples
+==========================
 
 Prerequisites:
 
@@ -102,11 +102,11 @@ vertx run proxy/http_server.rb
 
 Run the proxy server:
 
-vertx run proxy/proxy_server.rb -cp
+vertx run proxy/proxy_server.rb
 
 Run the http client:
 
-vertx run proxy/http_client.rb -cp
+vertx run proxy/http_client.rb
 
 PubSub
 ======
