@@ -736,7 +736,7 @@ This tutorial gives you just a taste of the kinds of things you can do with vert
 
 This tutorial gives you just a taste of the kinds of things you can do with vert.x.
 
-With just a couple of handfuls of you have created a real, scalable web-app.
+With just a couple of handfuls of code you have created a real, scalable web-app.
 
 
        
