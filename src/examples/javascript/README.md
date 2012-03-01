@@ -1,5 +1,4 @@
-vert.x JavaScript Examples
-==========================
+# vert.x JavaScript Examples
 
 Prerequisites:
 
@@ -22,8 +21,7 @@ where <example script name> is, for example, echo/echo_server.rb
 
 There now follows a description of all the available examples:
 
-Echo Server + Client
-====================
+## Echo Server + Client
 
 A simple echo server which echos back any sent to it
 
@@ -37,8 +35,7 @@ Instead of telnet you can also run a simple echo client in a different console:
 
 vertx run echo/echo_client.js
 
-Fanout Server
-=============
+## Fanout Server
 
 Fans out all data received on any one connection to all other connections.
 
@@ -48,8 +45,7 @@ vertx run fanout/fanout_server.js
 
 Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
-HTTP
-====
+## HTTP
 
 A simple HTTP server which just returns some hard-coded HTML to the client, and a simple HTTP client which sends a GET
 request and displays the response it receives.
@@ -64,8 +60,7 @@ Alternatively, you can also run the HTTP client from a different console:
 
 vertx run http/http_client.js
 
-HTTPS
-=====
+## HTTPS
 
 Like the HTTP example, but using HTTPS
 
@@ -81,8 +76,7 @@ vertx run https/https_client.js
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's normal.
 
-Proxy
-=====
+## Proxy
 
 A very simple HTTP proxy which simply proxies requests/response from a client to a server and back again.
 Run each part in its own console:
@@ -108,8 +102,7 @@ Run the http client:
 
 vertx run proxy/http_client.js
 
-PubSub
-======
+## PubSub
 
 A very simple publish-subscribe server.
 
@@ -143,8 +136,7 @@ vertx run -pubsub/pubsub_server.js
 
 Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
-SendFile
-========
+## SendFile
 
 Simple web server that uses sendfile to serve content directly from disk to the socket bypassing user space. This is a
 very efficient way of serving static files from disk.
@@ -157,8 +149,7 @@ vertx run sendfile/sendfile.js
 
 Then point your browser at http://localhost:8080 and click around
 
-SSL
-===
+## SSL
 
 This is like the echo example, but this time using SSL.
 
@@ -170,8 +161,7 @@ To run the client in a different console:
 
 vertx run ssl/ssl_client.rb
 
-Upload
-======
+## Upload
 
 A simple upload server example. The client streams a file from disk to an HTTP request and the server reads the
 HTTP request and streams the data to a file on disk.
@@ -184,8 +174,7 @@ To run the client in a different console:
 
 vertx run upload/upload_client.js
 
-Websockets
-==========
+## Websockets
 
 A simple example demonstrating HTML 5 websockets. The example serves a simple page which has some JavaScript in it
 to create a websocket to a server, and send and receive data from it.
@@ -198,8 +187,7 @@ vertx run websockets/websockets.js
 
 Then point your browser at: http://localhost:8080
 
-Route Match
-===========
+## Route Match
 
 This example shows how a route matcher can be used with a vert.x HTTP server to allow REST-style resource based matching of URIS
 in the manner of express (JS) or Sinatra.
@@ -216,8 +204,7 @@ An index page will be served which contains some links to urls of the form:
 
 The server will extract the user and id from the uri and display it on the returned page
 
-SockJS
-======
+## SockJS
 
 A simple example demonstrating SockJS connections from a browser. The example serves a simple page which has some JavaScript in it
 to create a SockJS connection to a server, and send and receive data from it.
@@ -228,8 +215,7 @@ vertx run sockjs/sockjs.js
 
 Then point your browser at: http://localhost:8080
 
-Eventbus Bridge
-===============
+## Eventbus Bridge
 
 This example shows how the vert.x event bus can extend to client side JavaScript.
 
