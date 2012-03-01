@@ -32,6 +32,7 @@
           <li><a href="https://github.com/purplefox/vert.x/downloads">Download</a></li>
           <li><a href="install.html">Install</a></li>
           <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
           <li><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
           <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
@@ -124,7 +125,7 @@
 <p>A verticle is defined by having a <em>main</em> which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.</p>
 <p>When you write an application, you might write a single verticle, or your application could consist of a whole set of verticles communicating with each other using the event bus.</p>
 <h3 id="vertx-instances">Vert.x Instances</h3><br/>
-<p>Verticles run inside a vert.x <em>instance</em>. A single vert.x instance is just an operating system process running a JVM. There can be many verticles running inside a single vert.x instance at any one time. Vert.x makes sure each verticle is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.</p>
+<p>Verticles run inside a vert.x <em>instance</em>. A single vert.x instance runs inside its own JVM instance. There can be many verticles running inside a single vert.x instance at any one time. Vert.x makes sure each verticle is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.</p>
 <p>There can be many vert.x instances running on the same host, or on different hosts on the network at the same time. The instances can be configured to cluster with each other forming a distributed event bus over which verticle instances can communicate.</p>
 <h3 id="polyglot">Polyglot</h3><br/>
 <p>We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby and Java, but we aim to support Groovy, Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.</p>
