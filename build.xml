@@ -23,7 +23,7 @@
   <!-- set global properties for this build -->
   <property name="target" value="target"/>
   <property name="jar-file" value="vert.x.jar"/>
-  <property name="version-number" value="1.0"/>
+  <property name="version-number" value="1.0.beta1"/>
   <property name="dist-build-base" value="${target}/dist-build"/>
   <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
   <property name="core-src" value="src/main/java"/>
