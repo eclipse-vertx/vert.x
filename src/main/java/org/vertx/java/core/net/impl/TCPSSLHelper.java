@@ -232,12 +232,6 @@ public class TCPSSLHelper {
     this.trustStorePassword = pwd;
   }
 
-  /**
-   * Set {@code required} to true if you want the server to request client authentication from any connecting clients. This
-   * is an extra level of security in SSL, and requires clients to provide client certificates. Those certificates must be added
-   * to the server trust store.
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
   public void setClientAuthRequired(boolean required) {
     clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
   }

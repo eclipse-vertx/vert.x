@@ -25,7 +25,7 @@ public class StopCommand extends VertxCommand {
 
   public String execute(VerticleManager appMgr) {
     appMgr.unblock();
-    return null;
+    return "OK";
   }
 
   @Override

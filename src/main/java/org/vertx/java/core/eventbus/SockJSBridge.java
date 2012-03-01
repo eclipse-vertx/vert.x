@@ -24,6 +24,10 @@ import org.vertx.java.core.sockjs.SockJSServer;
 import java.util.List;
 
 /**
+ * A SockJSBridge bridges between SockJS and the event bus.
+ *<p>
+ * Bridging allows the event bus to be extended to client side in-browser JavaScript.
+ *<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SockJSBridge {

@@ -37,7 +37,7 @@ public class RouteMatchExample implements Verticle {
     });
 
     // Catch all - serve the index page
-    rm.get(".*", new Handler<HttpServerRequest>() {
+    rm.getWithRegEx(".*", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.sendFile("route_match/index.html");
       }

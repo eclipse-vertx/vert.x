@@ -371,7 +371,6 @@ public class FileSystem {
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously
-   * @return a Future representing the future result of the action.
    * The handler will be called when the operation completes or an error occurs.
    * The result is an array of String representing the paths of the files inside the directory.
    */

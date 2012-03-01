@@ -15,6 +15,7 @@
 
 module Vertx
 
+  # @return [Logger] Get the logger for the verticle
   def Vertx.logger
     org.vertx.java.core.Vertx.instance.getLogger
   end

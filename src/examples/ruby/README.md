@@ -1,92 +1,85 @@
-vert.x Java Examples
-====================
+# vert.x Ruby Examples
 
 Prerequisites:
 
 1) The bin directory from the distro must be on your PATH - this should have been done as part of the install procedure.
 
-2) Apache ant must be installed and the ant bin directory must be on your PATH
+2) JDK/JRE 1.7.0+ must be installed and the JDK/JRE bin directory must be on your PATH
 
-3) JDK/JRE 1.7.0+ must be installed and the JDK/JRE bin directory must be on your PATH
+(The instructions below use the `vertx run` command to start each vertx application in its own vert.x instance, alternatively
+you can run vertx is application server mode. See the wiki for more information).
 
-1. Compile the java classes by invoking ant from this directory
-
-2. Deploy an example:
+3) Run an example:
 
 (for full help on deploying just type vertx from the command line)
 
 (from this directory)
 
-vertx run  -main <example main class name> -cp classes
+vertx run <example script name>
 
-where <example main class name> is, for example, org.vertx.java.examples.echo.EchoServer
+where <example script name> is, for example, echo/echo_server.rb
 
 There now follows a description of all the available examples:
 
-Echo Server + Client
-====================
+## Echo Server + Client
 
 A simple echo server which echos back any sent to it
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.echo.EchoServer -cp classes
+vertx run echo/echo_server.rb
 
 Then either telnet localhost 1234 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client in a different console:
 
-vertx run -main org.vertx.java.examples.echo.EchoClient -cp classes
+vertx run echo/echo_client.rb
 
-Fanout Server
-=============
+## Fanout Server
 
 Fans out all data received on any one connection to all other connections.
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.fanout.FanoutServer -cp classes
+vertx run fanout/fanout_server.rb
 
 Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
-HTTP
-====
+## HTTP
 
 A simple HTTP server which just returns some hard-coded HTML to the client, and a simple HTTP client which sends a GET
 request and displays the response it receives.
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.http.ServerExample -cp classes
+vertx run http/http_server.rb
 
 Then point your browser at http://localhost:8080
 
-Alternatively, you can also run the HTTP client in a different console:
+Alternatively, you can also run the HTTP client from a different console:
 
-vertx run -main org.vertx.java.examples.http.ClientExample -cp classes
+vertx run http/http_client.rb
 
-HTTPS
-=====
+## HTTPS
 
 Like the HTTP example, but using HTTPS
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.https.ServerExample -cp classes
+vertx run https/https_server.rb
 
-Then point your browser at http://localhost:4443
+Then point your browser at https://localhost:4443
 
-Alternatively, you can also run the HTTPS client in a different console:
+Alternatively, you can also run the HTTPS client from a different console:
 
-vertx run -main org.vertx.java.examples.https.ClientExample -cp classes
+vertx run https/https_client.rb
 
-You'll get a warning from your browser since the server certificate the server is using is not known to it, that's
-normal.
+You'll get a warning from your browser since the server certificate the server is using is not known to it, that's normal.
 
-Proxy
-=====
+## Proxy
 
 A very simple HTTP proxy which simply proxies requests/response from a client to a server and back again.
+Run each part in its own console:
 
 It includes
 
@@ -97,22 +90,19 @@ response it receives
 
 c) A proxy server which simply sits in the middle proxying requests and responses between client and server
 
-Do each part in a different console:
+Run the http server:
 
-To run the http server:
-
-vertx run -main org.vertx.java.examples.proxy.Server -cp classes
+vertx run proxy/http_server.rb
 
 Run the proxy server:
 
-vertx run -main org.vertx.java.examples.proxy.ProxyServer -cp classes
+vertx run proxy/proxy_server.rb
 
 Run the http client:
 
-vertx run -main org.vertx.java.examples.proxy.Client -cp classes
+vertx run proxy/http_client.rb
 
-PubSub
-======
+## PubSub
 
 A very simple publish-subscribe server.
 
@@ -124,15 +114,15 @@ The pub-sub server understands the following simple text protocol. Each line is 
 
 To subscribe to a topic:
 
-SUBSCRIBE,<topic_name>
+subscribe,<topic_name>
 
 To unsubscribe from a topic:
 
-UNSUBSCRIBE,<topic_name>
+unsubscribe,<topic_name>
 
 To publish a message to a topic:
 
-PUBLISH,<topic_name>,<message>
+publish,<topic_name>,<message>
 
 Where:
 
@@ -142,12 +132,11 @@ Where:
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.pubsub.PubSubServer -cp classes
+vertx run -pubsub/pubsub_server.rb
 
 Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
-SendFile
-========
+## SendFile
 
 Simple web server that uses sendfile to serve content directly from disk to the socket bypassing user space. This is a
 very efficient way of serving static files from disk.
@@ -156,72 +145,56 @@ The example contains three static pages: index.html, page1.html and page2.html w
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.sendfile.SendFileExample -cp classes
+vertx run sendfile/sendfile.rb
 
 Then point your browser at http://localhost:8080 and click around
 
-SSL
-===
+## SSL
 
 This is like the echo example, but this time using SSL.
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.ssl.SSLServer -cp classes
+vertx run -ssl/ssl_server.rb
 
 To run the client in a different console:
 
-vertx run -main org.vertx.java.examples.ssl.SSLClient -cp classes
+vertx run ssl/ssl_client.rb
 
-Upload
-======
+## Upload
 
 A simple upload server example. The client streams a file from disk to an HTTP request and the server reads the
 HTTP request and streams the data to a file on disk.
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.upload.UploadServer -cp classes
+vertx run upload/upload_server.rb
 
 To run the client in a different console:
 
-vertx run -main org.vertx.java.examples.upload.UploadClient -cp classes
+vertx run upload/upload_client.rb
 
-Websockets
-==========
+## Websockets
 
 A simple example demonstrating HTML 5 websockets. The example serves a simple page which has some JavaScript in it
 to create a websocket to a server, and send and receive data from it.
 
+The server just echoes back any data is receives on the websocket.
+
 To run the server:
 
-vertx run -main org.vertx.java.examples.websockets.WebsocketsExample -cp classes
+vertx run websockets/websockets.rb
 
 Then point your browser at: http://localhost:8080
 
-Redis
-=====
-
-This example demonstrates a simple HTTP server which responds to HTTP requests to '/' with a page containing a hit counter.
-The count is stored in a Redis Server and incremented each time using the Redis INCR command.
-
-To run this example you must have a Redis server running on localhost.
-
-The, to run the example:
-
-vertx run -main org.vertx.java.examples.redis.RedisExample -cp classes
-
-Then point your browser at: http://localhost:8080 and hit refresh a few times
-
-Route Match
-===========
+## Route Match
 
 This example shows how a route matcher can be used with a vert.x HTTP server to allow REST-style resource based matching of URIS
 in the manner of express (JS) or Sinatra.
 
 To run the example:
 
-vertx run -main org.vertx.java.examples.routeMatch.RouteMatchExample -cp classes
+vertx run route_match/route_match_example.rb
 
 Then point your browser at: http://localhost:8080.
 
@@ -231,26 +204,24 @@ An index page will be served which contains some links to urls of the form:
 
 The server will extract the user and id from the uri and display it on the returned page
 
-SockJS
-======
+## SockJS
 
 A simple example demonstrating SockJS connections from a browser. The example serves a simple page which has some JavaScript in it
 to create a SockJS connection to a server, and send and receive data from it.
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.sockjs.SockJSExample -cp classes
+vertx run sockjs/sockjs.rb
 
 Then point your browser at: http://localhost:8080
 
-Eventbus Bridge
-===============
+## Eventbus Bridge
 
 This example shows how the vert.x event bus can extend to client side JavaScript.
 
 To run the server:
 
-vertx run -main org.vertx.java.examples.eventbusbridge.BridgeServer -cp classes
+vertx run eventbusbridge/bridge_server.rb
 
 The example shows a simple publish / subscribe client side JavaScript application that uses the vert.x event bus.
 
@@ -258,24 +229,21 @@ Using the application you can subscribe to one or more "addresses", then send me
 
 To run it, open one or more browsers and point them to http://localhost:8080.
 
-Try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
+First connect, then try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
 
-Resource Load
-=============
+## Web application
 
-This example shows how you can access various resources on your classpath from within your verticle.
+This is a full end-end "real-time" web appplication which has a modern JavaScript client side MVVM application that communicates with a set of verticle at the back end via the vert.x event bus.
 
-Run it with
+It's the same application from the tutorial.
 
-vertx run org.vertx.java.examples.resourceload.ResourceLoadExample -cp "classes:resourceload:resourceload/quux.jar"
+You will need an instance of MongoDB server (with default settings) running on localhost.
 
+To run it simply `cd` into the webapp directory and `vertx run app.rb`
 
+Then point your browser at https://localhost:8080 and start shopping!
 
-
-
-
-
-
+To fully understand this example please follow the web app tutorial on the website
 
 
 

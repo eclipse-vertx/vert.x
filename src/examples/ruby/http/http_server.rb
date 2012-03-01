@@ -16,7 +16,7 @@ require "vertx"
 include Vertx
 
 @server = HttpServer.new.request_handler do |req|
-  req.response.end("<html><payload><h1>Hello from vert.x!</h1></payload></html>")
+  req.response.end("<html><body><h1>Hello from vert.x!</h1></body></html>")
 end.listen(8080)
 
 def vertx_stop

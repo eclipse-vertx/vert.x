@@ -34,15 +34,11 @@ public class FanoutServer implements Verticle {
   public void start()  {
     final Set<String> connections = SharedData.instance.getSet("conns");
 
-    System.out.println("connections is " + System.identityHashCode(connections));
-
     server = new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         connections.add(socket.writeHandlerID);
-        System.out.println("Got a connection on app " + System.identityHashCode(FanoutServer.this));
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            System.out.println("Fanning out to " + connections.size() + " connections");
             for (String actorID : connections) {
               EventBus.instance.send(actorID, buffer);
             }
