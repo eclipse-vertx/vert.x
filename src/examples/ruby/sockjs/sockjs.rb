@@ -18,7 +18,7 @@ include Vertx
 @server = HttpServer.new
 sjs_server = SockJSServer.new(@server)
 
-# The handler for the SockJS app
+# The handler for the SockJS app - we just echo data back
 sjs_server.install_app({"prefix" => "/testapp"}) { |sock| sock.data_handler{ |buff| sock.write_buffer(buff) } }
 
 # Also serve the index page

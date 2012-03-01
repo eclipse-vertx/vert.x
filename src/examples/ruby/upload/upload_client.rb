@@ -20,11 +20,11 @@ include Vertx
 @client.host = "localhost"
 req = @client.put("/someurl") { |resp| puts "Response #{resp.status_code}" }
 filename = "upload/upload.txt"
-FileSystem::props(filename).handler do |compl|
-  size = compl.result.size
+FileSystem::props(filename) do |err, props|
+  size = props.size
   req.put_header("Content-Length", size)
-  FileSystem::open(filename).handler do |compl|
-    rs = compl.result.read_stream
+  FileSystem::open(filename) do |err, file|
+    rs = file.read_stream
     pump = Pump.new(rs, req)
     rs.end_handler { req.end }
     pump.start

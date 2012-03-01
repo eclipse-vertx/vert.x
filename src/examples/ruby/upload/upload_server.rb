@@ -20,11 +20,11 @@ include Vertx
   req.pause
   filename = (0...9).map { ('A'..'Z').to_a[rand(26)] }.join
   filename << ".uploaded"
-  FileSystem::open(filename).handler do |compl|
-    pump = Pump.new(req, compl.result.write_stream)
+  FileSystem::open(filename)do |err, file|
+    pump = Pump.new(req, file.write_stream)
     start_time = Time.now
     req.end_handler do
-      compl.result.close.handler do
+      file.close do
         end_time = Time.now
         puts "Uploaded #{pump.bytes_pumped} bytes to #{filename} in #{1000 * (end_time - start_time)} ms"
         req.response.end
