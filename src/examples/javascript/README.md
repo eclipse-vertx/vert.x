@@ -231,6 +231,21 @@ To run it, open one or more browsers and point them to http://localhost:8080.
 
 First connect, then try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
 
+## Web application
+
+This is a full end-end "real-time" web appplication which has a modern JavaScript client side MVVM application that communicates with a set of verticle at the back end via the vert.x event bus.
+
+It's the same application from the tutorial.
+
+You will need an instance of MongoDB server (with default settings) running on localhost.
+
+To run it simply `cd` into the webapp directory and `vertx run app.js`
+
+Then point your browser at https://localhost:8080 and start shopping!
+
+To fully understand this example please follow the web app tutorial on the website
+
+
 
 
 
