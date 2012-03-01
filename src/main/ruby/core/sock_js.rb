@@ -83,7 +83,7 @@ module Vertx
   end
 
   # You interact with SockJS clients through instances of SockJS socket.
-  # The API is very similar to {Websocket}. It implements both
+  # The API is very similar to {WebSocket}. It implements both
   # {ReadStream} and {WriteStream} so it can be used with {Pump} to enable
   # flow control.
   #
@@ -108,8 +108,7 @@ module Vertx
 
     # When a SockJSSocket is created it automatically registers an event handler with the system, the ID of that
     # handler is given by {#handler_id}.
-    # Given this ID, a different event loop can send a buffer to that event handler using {Vertx.send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
     # allows you to write data to other SockJSSockets which are owned by different event loops.
     def handler_id
       @handler_id

@@ -120,7 +120,7 @@ module Vertx
   # which results in the pump resuming the ReadStream.
   #
   # This class can be used to pump from any {ReadStream} to any { WriteStream},
-  # e.g. from an {HttpServerRequest} to an {AsyncFile}, or from {NetSocket} to a {Websocket}.
+  # e.g. from an {HttpServerRequest} to an {AsyncFile}, or from {NetSocket} to a {WebSocket}.
   #
   # @author {http://tfox.org Tim Fox}
   class Pump

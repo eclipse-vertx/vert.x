@@ -190,8 +190,14 @@ module Vertx
 
   end
 
+  # A SockJSBridge bridges between SockJS and the event bus.
+  # Bridging allows the event bus to be extended to client side in-browser JavaScript.
   class SockJSBridge
 
+    # Create a new SockJSBridge
+    # @param http_server [HttpServer] An HTTP server
+    # @param sjs_config [Hash] Config for SockJS server
+    # @param permitted [[Hash]] Array of JSON objects (Hashes) representing permitted matches
     def initialize(http_server, sjs_config, permitted)
       @sjs_server = SockJSServer.new(http_server)
       handler = SockJSBridgeHandler.new

@@ -279,7 +279,10 @@ public class HttpClient {
   }
 
   /**
-   * {@inheritDoc}
+   * If you want an SSL client to trust *all* server certificates rather than match them
+   * against those in its trust store. Set this to true.
+   * Use this with caution as you may be exposed to "main in the middle" attacks
+   * @param trustAll Set to true if you want to trust all server certificates
    */
   public HttpClient setTrustAll(boolean trustAll) {
     client.setTrustAll(trustAll);

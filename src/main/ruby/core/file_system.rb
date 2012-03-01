@@ -105,8 +105,6 @@ module Vertx
     end
 
     # Close the file, asynchronously.
-    # This method must be called using the same event loop the file was opened from.
-    # @return [Future] a Future representing the future result of closing the file.
     def close(&block)
       @j_file.close(FSWrappedHandler.new(block))
     end
@@ -114,11 +112,9 @@ module Vertx
     # Write a {Buffer} to the file, asynchronously.
     # When multiple writes are invoked on the same file
     # there are no guarantees as to order in which those writes actually occur.
-    # This method must be called using the same event loop the file was opened from.
     # @param [Buffer] buffer The buffer to write
     # @param [FixNum] position The position in the file where to write the buffer. Position is measured in bytes and
     # starts with zero at the beginning of the file.
-    # @return [Future] a Future representing the future result of the action.
     def write(buffer, position, &block)
       @j_file.write(buffer._to_java_buffer, position, FSWrappedHandler.new(block))
     end
@@ -126,33 +122,27 @@ module Vertx
     # Reads some data from a file into a buffer, asynchronously.
     # When multiple reads are invoked on the same file
     # there are no guarantees as to order in which those reads actually occur.
-    # This method must be called using the same event loop the file was opened from.
     # @param [Buffer] buffer The buffer into which the data which is read is written.
     # @param [FixNum] offset The position in the buffer where to start writing the data.
     # @param [FixNum] position The position in the file where to read the data.
     # @param [FixNum] length The number of bytes to read.
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {Buffer}.
     def read(buffer, offset, position, length, &block)
       @j_file.read(buffer._to_java_buffer, offset, position, length, FSWrappedHandler.new(block) { |j_buff| Buffer.new(j_buff) })
     end
 
     # @return [WriteStream] A write stream operating on the file.
-    # This method must be called using the same event loop the file was opened from.
     def write_stream
       AsyncFileWriteStream.new(@j_file.getWriteStream)
     end
 
     # @return [ReadStream] A read stream operating on the file.
-    # This method must be called using the same event loop the file was opened from.
     def read_stream
       AsyncFileReadStream.new(@j_file.getReadStream)
     end
 
     # Flush any writes made to this file to underlying persistent storage, asynchronously.
     # If the file was opened with flush set to true then calling this method will have no effect.
-    # This method must be called using the same event loop the file was opened from.
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    # @return [Future] a Future representing the future result of the action.
     def flush
       Future.new(@j_file.flush)
     end
@@ -201,6 +191,13 @@ module Vertx
   end
 
   # Represents the file-system and contains a broad set of operations for manipulating files.
+  # An asynchronous and a synchronous version of each operation is provided.
+  # The asynchronous versions take a handler as a final argument which is
+  # called when the operation completes or an error occurs. The handler is called
+  # with two arguments; the first an exception, this will be nil if the operation has
+  # succeeded. The second is the result - this will be nil if the operation failed or
+  # there was no result to return.
+  # The synchronous versions return the results, or throw exceptions directly.
   # @author {http://tfox.org Tim Fox}
   class FileSystem
 
@@ -208,11 +205,11 @@ module Vertx
     # @param [String] from Path of file to copy
     # @param [String] to Path of file to copy to
     # @param [Block] hndlr a block representing the handler which is called on completion.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.copy(from, to, &block)
       org.vertx.java.core.file.FileSystem.instance.copy(from, to, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.copy}
     def FileSystem.copy_sync(from, to)
       org.vertx.java.core.file.FileSystem.instance.copySync(from, to)
     end
@@ -222,11 +219,11 @@ module Vertx
     # tree is copied.
     # @param [String] from Path of file to copy
     # @param [String] to Path of file to copy to
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.copy_recursive(from, to, &block)
       org.vertx.java.core.file.FileSystem.instance.copy(from, to, true, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.copy_recursive}
     def FileSystem.copy_recursive_sync(from, to)
       org.vertx.java.core.file.FileSystem.instance.copySync(from, to, true)
     end
@@ -234,11 +231,11 @@ module Vertx
     # Move a file, asynchronously. The move will fail if from does not exist, or if to already exists.
     # @param [String] from Path of file to move
     # @param [String] to Path of file to move to
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.move(from, to, &block)
       org.vertx.java.core.file.FileSystem.instance.move(from, to, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.move}
     def FileSystem.move_sync(from, to)
       org.vertx.java.core.file.FileSystem.instance.moveSync(from, to)
     end
@@ -246,11 +243,11 @@ module Vertx
     # Truncate a file, asynchronously. The move will fail if path does not exist.
     # @param [String] path Path of file to truncate
     # @param [FixNum] len Length to truncate file to. Will fail if len < 0. If len > file size then will do nothing.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.truncate(path, len, &block)
       org.vertx.java.core.file.FileSystem.instance.truncate(path, len, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.truncate}
     def FileSystem.truncate_sync(path, len)
       org.vertx.java.core.file.FileSystem.instance.truncateSync(path, len)
     end
@@ -261,22 +258,22 @@ module Vertx
     # {http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}. This is
     # used to set the permissions for any regular files (not directories).
     # @param [String] dir_perms A permission string of the form rwxr-x---. Used to set permissions for regular files.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.chmod(path, perms, dir_perms = nil, &block)
       org.vertx.java.core.file.FileSystem.instance.chmod(path, perms, dir_perms, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.chmod}
     def FileSystem.chmod_sync(path, perms, dir_perms = nil)
       org.vertx.java.core.file.FileSystem.instance.chmodSync(path, perms, dir_perms)
     end
 
     # Get file properties for a file, asynchronously.
     # @param [String] path Path to file
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {FileProps}.
     def FileSystem.props(path, &block)
       org.vertx.java.core.file.FileSystem.instance.props(path, FSWrappedHandler.new(block) { |j_props| FileProps.new(j_props) })
     end
 
+    # Synchronous version of {#FileSystem.props}
     def FileSystem.props_sync(path)
       j_props = org.vertx.java.core.file.FileSystem.instance.propsSync(path)
       FileProps.new(j_props)
@@ -285,11 +282,11 @@ module Vertx
     # Create a hard link, asynchronously..
     # @param [String] link Path of the link to create.
     # @param [String] existing Path of where the link points to.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.link(link, existing, &block)
        org.vertx.java.core.file.FileSystem.instance.link(link, existing, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.link}
     def FileSystem.link_sync(link, existing)
       org.vertx.java.core.file.FileSystem.instance.linkSync(link, existing)
     end
@@ -297,33 +294,33 @@ module Vertx
     # Create a symbolic link, asynchronously.
     # @param [String] link Path of the link to create.
     # @param [String] existing Path of where the link points to.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.sym_link(link, existing, &block)
        org.vertx.java.core.file.FileSystem.instance.symLink(link, existing, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.sym_link}
     def FileSystem.sym_link_sync(link, existing)
       org.vertx.java.core.file.FileSystem.instance.symLinkSync(link, existing)
     end
 
     # Unlink a hard link.
     # @param [String] link Path of the link to unlink.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.unlink(link, &block)
       org.vertx.java.core.file.FileSystem.instance.unlink(link, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.unlink}
     def FileSystem.unlinkSync(link)
       org.vertx.java.core.file.FileSystem.instance.unlinkSync(link)
     end
 
     # Read a symbolic link, asynchronously. I.e. tells you where the symbolic link points.
     # @param [String] link Path of the link to read.
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is String..
     def FileSystem.read_sym_link(link, &block)
       org.vertx.java.core.file.FileSystem.instance.readSymLink(link, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.read_sym_link}
     def FileSystem.read_sym_link_sync(link)
       org.vertx.java.core.file.FileSystem.instance.readSymLinkSync(link)
     end
@@ -331,11 +328,11 @@ module Vertx
     # Delete a file on the file system, asynchronously.
     # The delete will fail if the file does not exist, or is a directory and is not empty.
     # @param [String] path Path of the file to delete.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.delete(path, &block)
       org.vertx.java.core.file.FileSystem.instance.delete(path, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.delete}
     def FileSystem.delete_sync(path)
       org.vertx.java.core.file.FileSystem.instance.deleteSync(path)
     end
@@ -344,11 +341,11 @@ module Vertx
     # The delete will fail if the file does not exist. If the file is a directory the entire directory contents
     # will be deleted recursively.
     # @param [String] path Path of the file to delete.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.delete_recursive(path, &block)
       org.vertx.java.core.file.FileSystem.instance.delete(path, true, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.delete_recursive}
     def FileSystem.delete_recursive_sync(path)
       org.vertx.java.core.file.FileSystem.instance.deleteSync(path, true)
     end
@@ -358,11 +355,11 @@ module Vertx
     # exist.
     # @param [String] path Path of the directory to create.
     # @param [String] perms. A permission string of the form rwxr-x--- to give directory.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.mkdir(path, perms = nil, &block)
       org.vertx.java.core.file.FileSystem.instance.mkdir(path, perms, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.mkdir}
     def FileSystem.mkdir_sync(path, perms = nil)
       org.vertx.java.core.file.FileSystem.instance.mkdirSync(path, perms)
     end
@@ -371,11 +368,11 @@ module Vertx
     # The create will fail if the directory already exists.
     # @param [String] path Path of the directory to create.
     # @param [String] perms. A permission string of the form rwxr-x--- to give the created directory(ies).
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.mkdir_with_parents(path, perms = nil, &block)
       org.vertx.java.core.file.FileSystem.instance.mkdir(path, perms, true, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.mkdir_with_parents}
     def FileSystem.mkdir_with_parents_sync(path, perms = nil)
       org.vertx.java.core.file.FileSystem.instance.mkdirSync(path, perms, true)
     end
@@ -385,22 +382,22 @@ module Vertx
     # @param [String] path Path of the directory to read.
     # @param [String] filter A regular expression to filter out the contents of the directory. If the filter is not nil
     # then only files which match the filter will be returned.
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is an Array of String.
     def FileSystem.read_dir(path, filter = nil, &block)
       org.vertx.java.core.file.FileSystem.instance.readDir(path, filter, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.read_dir}
     def FileSystem.read_dir_sync(path, filter = nil)
       org.vertx.java.core.file.FileSystem.instance.readDirSync(path, filter)
     end
 
     # Read the contents of an entire file as a {Buffer}, asynchronously.
     # @param [String] path Path of the file to read.
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {Buffer}.
     def FileSystem.read_file_as_buffer(path, &block)
       org.vertx.java.core.file.FileSystem.instance.readFile(path, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.read_file_as_buffer}
     def FileSystem.read_file_as_buffer_sync(path)
       org.vertx.java.core.file.FileSystem.instance.readFileSync(path)
     end
@@ -408,29 +405,13 @@ module Vertx
     # Write a [Buffer] as the entire contents of a file, asynchronously.
     # @param [String] path Path of the file to write.
     # @param [String] buffer The Buffer to write
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.write_buffer_to_file(path, buffer, &block)
       org.vertx.java.core.file.FileSystem.instance.writeFile(path, buffer, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.write_buffer_to_file}
     def FileSystem.write_buffer_to_file_sync(path, buffer)
       org.vertx.java.core.file.FileSystem.instance.writeFileSync(path, buffer)
-    end
-
-    def FileSystem.lock
-      # TODO
-    end
-
-    def FileSystem.unlock
-      # TODO
-    end
-
-    def FileSystem.watch_file(path)
-      # TODO
-    end
-
-    def FileSystem.unwatch_file(path)
-      # TODO
     end
 
     # Open a file on the file system, asynchronously.
@@ -440,11 +421,11 @@ module Vertx
     # @param [Boolean] write Open the file for writing?
     # @param [Boolean] create_new Create the file if it doesn't already exist?
     # @param [Boolean] flush Whenever any data is written to the file, flush all changes to permanent storage immediately?
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {AsyncFile}.
     def FileSystem.open(path, perms = nil, read = true, write = true, create_new = true, flush = false, &block)
       org.vertx.java.core.file.FileSystem.instance.open(path, perms, read, write, create_new, flush, FSWrappedHandler.new(block){ |j_file| AsyncFile.new(j_file)})
     end
 
+    # Synchronous version of {#FileSystem.open}
     def FileSystem.open_sync(path, perms = nil, read = true, write = true, create_new = true, flush = false)
       j_af = org.vertx.java.core.file.FileSystem.instance.open(path, perms, read, write, create_new, flush)
       AsyncFile.new(j_af)
@@ -453,33 +434,33 @@ module Vertx
     # Create a new empty file, asynchronously.
     # @param [String] path Path of the file to create.
     # @param [String] perms The file will be created with these permissions.
-    # @return [Future] a Future representing the future result of the action.
     def FileSystem.create_file(path, perms = nil, &block)
       org.vertx.java.core.file.FileSystem.instance.createFile(path, perms, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.create_file}
     def FileSystem.create_file_sync(path, perms = nil)
       org.vertx.java.core.file.FileSystem.instance.createFileSync(path, perms)
     end
 
     # Check if  a file exists, asynchronously.
     # @param [String] path Path of the file to check.
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is boolean.
     def FileSystem.exists?(path, &block)
       org.vertx.java.core.file.FileSystem.instance.exists(path, FSWrappedHandler.new(block))
     end
 
+    # Synchronous version of {#FileSystem.exists?}
     def FileSystem.exists_sync?(path)
       org.vertx.java.core.file.FileSystem.instance.existsSync(path)
     end
 
     # Get properties for the file system, asynchronously.
     # @param [String] path Path in the file system.
-    # @return [Future] a Future representing the future result of the action. The type of {Future#result} is {FSProps}.
     def FileSystem.fs_props(path, &block)
       org.vertx.java.core.file.FileSystem.instance.fsProps(path, FSWrappedHandler.new(block) { |j_props| FSProps.new(j_props)})
     end
 
+    # Synchronous version of {#FileSystem.fs_props}
     def FileSystem.fs_props_sync(path)
       j_fsprops = org.vertx.java.core.file.FileSystem.instance.fsPropsSync(path)
       FSProps.new(j_fsprops)
