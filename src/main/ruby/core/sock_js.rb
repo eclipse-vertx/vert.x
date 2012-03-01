@@ -95,8 +95,8 @@ module Vertx
     # @private
     def initialize(j_sock)
       @j_del = j_sock
-      @handler_id = EventBus.register_simple_handler { |buffer|
-        write_buffer(buffer)
+      @handler_id = EventBus.register_simple_handler { |msg|
+        write_buffer(msg.body)
       }
     end
 

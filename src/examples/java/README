@@ -17,7 +17,7 @@ Prerequisites:
 
 (from this directory)
 
-vertx run  -main <example main class name> -cp classes
+vertx run <example main class name> -cp classes
 
 where <example main class name> is, for example, org.vertx.java.examples.echo.EchoServer
 
@@ -189,6 +189,8 @@ Websockets
 
 A simple example demonstrating HTML 5 websockets. The example serves a simple page which has some JavaScript in it
 to create a websocket to a server and send and receive data from it.
+
+The server just echoes back any data is receives on the websocket.
 
 To run the server:
 

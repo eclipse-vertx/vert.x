@@ -20,7 +20,7 @@ include Vertx
 @server.key_store_path = "server-keystore.jks"
 @server.key_store_password = "wibble"
 @server.request_handler do |req|
-  req.response.end("<html><payload><h1>Hello from vert.x over HTTPS!</h1></payload></html>", "UTF-8")
+  req.response.end("<html><body><h1>Hello from vert.x over HTTPS!</h1></body></html>")
 end.listen(4443)
 
 def vertx_stop

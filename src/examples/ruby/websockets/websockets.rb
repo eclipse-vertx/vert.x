@@ -15,13 +15,8 @@
 require "vertx"
 include Vertx
 
-@server = HttpServer.new.websocket_handler do |param|
-  if param.is_a? String
-    true # Accept the websocket (The string is the uri)
-  else
-    ws = param
-    ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
-  end
+@server = HttpServer.new.websocket_handler do |ws|
+  ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
 end.request_handler do |req|
   req.response.send_file("websockets/ws.html") if req.uri == "/"
 end.listen(8080)
