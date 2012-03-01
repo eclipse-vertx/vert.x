@@ -1,5 +1,4 @@
-vert.x Java Examples
-====================
+# vert.x Java Examples
 
 Prerequisites:
 
@@ -23,8 +22,7 @@ where <example main class name> is, for example, org.vertx.java.examples.echo.Ec
 
 There now follows a description of all the available examples:
 
-Echo Server + Client
-====================
+## Echo Server + Client
 
 A simple echo server which echos back any sent to it
 
@@ -38,8 +36,7 @@ Instead of telnet you can also run a simple echo client in a different console:
 
 vertx run org.vertx.java.examples.echo.EchoClient -cp classes
 
-Fanout Server
-=============
+## Fanout Server
 
 Fans out all data received on any one connection to all other connections.
 
@@ -49,8 +46,7 @@ vertx run org.vertx.java.examples.fanout.FanoutServer -cp classes
 
 Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
-HTTP
-====
+## HTTP
 
 A simple HTTP server which just returns some hard-coded HTML to the client, and a simple HTTP client which sends a GET
 request and displays the response it receives.
@@ -65,8 +61,7 @@ Alternatively, you can also run the HTTP client in a different console:
 
 vertx run org.vertx.java.examples.http.ClientExample -cp classes
 
-HTTPS
-=====
+## HTTPS
 
 Like the HTTP example, but using HTTPS
 
@@ -82,8 +77,7 @@ vertx run org.vertx.java.examples.https.ClientExample -cp classes
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's normal.
 
-Proxy
-=====
+## Proxy
 
 A very simple HTTP proxy which simply proxies requests/response from a client to a server and back again.
 
@@ -110,8 +104,7 @@ Run the http client:
 
 vertx run org.vertx.java.examples.proxy.Client -cp classes
 
-PubSub
-======
+## PubSub
 
 A very simple publish-subscribe server.
 
@@ -145,8 +138,7 @@ vertx run org.vertx.java.examples.pubsub.PubSubServer -cp classes
 
 Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
-SendFile
-========
+## SendFile
 
 Simple web server that uses sendfile to serve content directly from disk to the socket bypassing user space. This is a very efficient way of serving static files from disk.
 
@@ -158,8 +150,7 @@ vertx run org.vertx.java.examples.sendfile.SendFileExample -cp classes
 
 Then point your browser at http://localhost:8080 and click around
 
-SSL
-===
+## SSL
 
 This is like the echo example, but this time using SSL.
 
@@ -171,8 +162,7 @@ To run the client in a different console:
 
 vertx run org.vertx.java.examples.ssl.SSLClient -cp classes
 
-Upload
-======
+## Upload
 
 A simple upload server example. The client streams a file from disk to an HTTP request and the server reads the HTTP request and streams the data to a file on disk.
 
@@ -184,8 +174,7 @@ To run the client in a different console:
 
 vertx run org.vertx.java.examples.upload.UploadClient -cp classes
 
-Websockets
-==========
+## Websockets
 
 A simple example demonstrating HTML 5 websockets. The example serves a simple page which has some JavaScript in it
 to create a websocket to a server and send and receive data from it.
@@ -198,8 +187,7 @@ vertx run org.vertx.java.examples.websockets.WebsocketsExample -cp classes
 
 Then point your browser at: http://localhost:8080
 
-Route Match
-===========
+## Route Match
 
 This example shows how a route matcher can be used with a vert.x HTTP server to allow REST-style resource based matching of URIS
 in the manner of express (JS) or Sinatra.
@@ -216,8 +204,7 @@ An index page will be served which contains some links to urls of the form:
 
 The server will extract the user and id from the uri and display it on the returned page
 
-SockJS
-======
+## SockJS
 
 A simple example demonstrating SockJS connections from a browser. The example serves a simple page which has some JavaScript in it
 to create a SockJS connection to a server and send and receive data from it.
@@ -230,8 +217,7 @@ vertx run org.vertx.java.examples.sockjs.SockJSExample -cp classes
 
 Then point your browser at: http://localhost:8080
 
-Eventbus Bridge
-===============
+## Eventbus Bridge
 
 This example shows how the vert.x event bus can extend to client side JavaScript.
 
@@ -247,8 +233,7 @@ To run it, open one or more browsers and point them to http://localhost:8080.
 
 First click to connect then try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
 
-Resource Load
-=============
+## Resource Load
 
 This example shows how you can access various resources on your classpath from within your verticle.
 
