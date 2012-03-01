@@ -35,7 +35,7 @@ public class ServerExample implements Verticle {
         }
         req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
         req.response.setChunked(true);
-        req.response.write("<html><payload><h1>Hello from vert.x!</h1></payload></html>", "UTF-8").end();
+        req.response.write("<html><body><h1>Hello from vert.x!</h1></body></html>", "UTF-8").end();
       }
     }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(4443);
   }
