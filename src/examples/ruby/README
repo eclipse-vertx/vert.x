@@ -16,7 +16,7 @@ you can run vertx is application server mode. See the wiki for more information)
 
 (from this directory)
 
-vertx run -ruby <example script name>
+vertx run <example script name>
 
 where <example script name> is, for example, echo/echo_server.rb
 
