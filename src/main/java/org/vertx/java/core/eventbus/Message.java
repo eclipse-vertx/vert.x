@@ -43,7 +43,7 @@ public abstract class Message<T>  {
   public String replyAddress;
 
   /**
-   * Same as {@link #reply(T)} but with an empty payload
+   * Same as {@code reply(T message)} but with an empty payload
    */
   public void reply() {
     reply(null);
@@ -59,7 +59,7 @@ public abstract class Message<T>  {
   }
 
   /**
-   * The same as {@link #reply(T)} but you can specify handler for the reply - i.e.
+   * The same as {@code reply(T message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
   public abstract void reply(T message, Handler<Message<T>> replyHandler);

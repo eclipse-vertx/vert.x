@@ -14,17 +14,17 @@
 
 require 'core/streams'
 require 'core/ssl_support'
+require 'core/tcp_support'
 
 module Vertx
 
   # An HTTP server.
   # The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.
-  # Instances of HttpServer can only be used from the event loop that created it.
   #
   # @author {http://tfox.org Tim Fox}
   class HttpServer
 
-    include SSLSupport
+    include SSLSupport, TCPSupport
 
     # Create a new HttpServer
     def initialize
@@ -42,7 +42,7 @@ module Vertx
     end
 
     # Set the websocket handler for the server.
-    # As websocket requests arrive on the server and are accepted a new {Websocket} instance will be created and passed to the handler.
+    # As websocket requests arrive on the server and are accepted a new {WebSocket} instance will be created and passed to the handler.
     # @param [Proc] proc A proc to be used as the handler
     # @param [Block] hndlr A block to be used as the handler
     def websocket_handler(proc = nil, &hndlr)
@@ -86,12 +86,12 @@ module Vertx
   # A client maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
   # as pipelines for HTTP requests.
   # It is used as a factory for {HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
-  # used as a factory for HTML5 {Websocket websockets}.
+  # used as a factory for HTML5 {WebSocket websockets}.
   #
   # @author {http://tfox.org Tim Fox}
   class HttpClient
 
-    include SSLSupport
+    include SSLSupport, TCPSupport
 
     # Create a new HttpClient
     def initialize
@@ -156,9 +156,9 @@ module Vertx
     end
 
     # Attempt to connect an HTML5 websocket to the specified URI.
-    # The connect is done asynchronously and the handler is called with a Completion containing a {Websocket} on success.
+    # The connect is done asynchronously and the handler is called with a  {WebSocket} on success.
     # @param [String] uri. A relative URI where to connect the websocket on the host, e.g. /some/path
-    # @param [Block] hndlr. The handler to be called with the {Websocket}
+    # @param [Block] hndlr. The handler to be called with the {WebSocket}
     def connect_web_socket(uri, &hndlr)
       @j_del.connectWebsocket(uri) { |j_ws| hndlr.call(WebSocket.new(j_ws)) }
     end
@@ -288,8 +288,6 @@ module Vertx
   #
   # This class supports both chunked and non-chunked HTTP.
   #
-  # This class can only be used from the event loop that created it.
-  #
   # An example of using this class is as follows:
   #
   # @example
@@ -417,8 +415,6 @@ module Vertx
   # An instance of this class is provided to the user via a handler that was specified when one of the
   # HTTP method operations, or the generic {HttpClient#request} method was called on an instance of {HttpClient}.
   #
-  # Instances of this class can only be used from the event loop thread which created the corresponding {HttpClientRequest}.</p>
-  #
   # @author {http://tfox.org Tim Fox}
   class HttpClientResponse
 
@@ -534,9 +530,6 @@ module Vertx
   #
   # An instance of this class is created for each request that is handled by the server and is passed to the user via the
   # handler specified using {HttpServer#request_handler}.
-  #
-  # On creation a new execution context is assigned to each instance and an event loop is allocated to it from one
-  # of the available ones. The instance must only be called from that event loop.
   #
   # Each instance of this class is associated with a corresponding {HttpServerResponse} instance via the field {#response}.
   #
@@ -771,12 +764,9 @@ module Vertx
 
   # Encapsulation of an HTML 5 Websocket.
   #
-  # Instances of this class are either created by an {HttpServer} instance when a websocket handshake is accepted
-  # on the server, or are create by an {HttpClient} instance when a client succeeds in a websocket handshake with a server.
+  # Instances of this class are createde by an {HttpClient} instance when a client succeeds in a websocket handshake with a server.
   # Once an instance has been obtained it can be used to send or receive buffers of data from the connection,
   # a bit like a TCP socket.
-  #
-  # Instances of this class can only be used from the event loop thread which created it.
   #
   # @author {http://tfox.org Tim Fox}
   class WebSocket
@@ -818,8 +808,7 @@ module Vertx
 
     # When a Websocket is created it automatically registers an event handler with the system, the ID of that
     # handler is given by {#binary_handler_id}.
-    # Given this ID, a different event loop can send a binary frame to that event handler using {Vertx.send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a binary frame to that event handler using the event bus. This
     # allows you to write data to other websockets which are owned by different event loops.
     def binary_handler_id
       @binary_handler_id
@@ -827,8 +816,7 @@ module Vertx
 
     # When a Websocket is created it automatically registers an event handler with the system, the ID of that
     # handler is given by {#text_handler_id}.
-    # Given this ID, a different event loop can send a text frame to that event handler using {Vertx.send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a text frame to that event handler using the event bus. This
     # allows you to write data to other websockets which are owned by different event loops.
     def text_handler_id
       @text_handler_id
@@ -844,6 +832,9 @@ module Vertx
 
   end
 
+  # Instances of this class are created when a WebSocket is accepted on the server.
+  # It extends {WebSocket} and adds methods to reject the WebSocket and an
+  # attribute for the path.
   class ServerWebSocket < WebSocket
 
     # @private
@@ -852,10 +843,15 @@ module Vertx
       @j_del = j_ws
     end
 
+    # Reject the WebSocket
+    # This can be called in the websocket connect handler on the server side and
+    # will cause the WebSocket connection attempt to be rejected, returning a
+    # 404 to the client.
     def reject
       @j_del.reject
     end
 
+    # The path the websocket connect was attempted at.
     def path
       @j_del.path
     end

@@ -48,10 +48,6 @@ public class NetServer {
     return this;
   }
 
-  public TCPSSLHelper.ClientAuth getClientAuth() {
-    return server.getClientAuth();
-  }
-
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    * @return a reference to this so multiple method calls can be chained together
@@ -146,8 +142,9 @@ public class NetServer {
    * to the server trust store.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public void setClientAuthRequired(boolean required) {
+  public NetServer setClientAuthRequired(boolean required) {
     server.setClientAuthRequired(required);
+    return this;
   }
 
   /**

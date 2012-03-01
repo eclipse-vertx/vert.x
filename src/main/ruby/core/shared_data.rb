@@ -67,14 +67,14 @@ module Vertx
 
     # Convert to corresponding Java objects
     # And make copies where appropriate (the underlying java map will also make copies for some data types too)
+    # @private
     def SharedData.check_obj(obj)
       if obj.is_a?(Buffer)
-        obj = obj._to_java_buffer.copy
-      elsif obj.is_a?(String)
-        obj = String.new(obj)
+        obj = obj._to_java_buffer
       end
       obj
     end
+
 
     # @private
     class SharedHash < DelegateClass(Hash)
@@ -86,10 +86,8 @@ module Vertx
       end
 
       def []=(key, val)
-
         key = SharedData.check_obj(key)
         val = SharedData.check_obj(val)
-
         # We call the java class directly - otherwise RubyHash does a scan of the whole map!! :(
         # This will be fixed in JRuby 1.6.5
         @hash.put(key, val)
