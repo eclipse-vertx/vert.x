@@ -1,5 +1,5 @@
-vert.x JavaScript Examples
-==========================
+vert.x Ruby Examples
+====================
 
 Prerequisites:
 
@@ -16,7 +16,7 @@ you can run vertx is application server mode. See the wiki for more information)
 
 (from this directory)
 
-vertx run -ruby <example script name>
+vertx run <example script name>
 
 where <example script name> is, for example, echo/echo_server.rb
 
@@ -29,13 +29,13 @@ A simple echo server which echos back any sent to it
 
 To run the server:
 
-vertx run echo/echo_server.rb
+vertx run echo/echo_server.js
 
 Then either telnet localhost 1234 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client in a different console:
 
-vertx run echo/echo_client.rb
+vertx run echo/echo_client.js
 
 Fanout Server
 =============
@@ -44,7 +44,7 @@ Fans out all data received on any one connection to all other connections.
 
 To run the server:
 
-vertx run fanout/fanout_server.rb
+vertx run fanout/fanout_server.js
 
 Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
@@ -56,13 +56,13 @@ request and displays the response it receives.
 
 To run the server:
 
-vertx run http/http_server.rb
+vertx run http/http_server.js
 
 Then point your browser at http://localhost:8080
 
 Alternatively, you can also run the HTTP client from a different console:
 
-vertx run http/http_client.rb
+vertx run http/http_client.js
 
 HTTPS
 =====
@@ -71,13 +71,13 @@ Like the HTTP example, but using HTTPS
 
 To run the server:
 
-vertx run https/https_server.rb
+vertx run https/https_server.js
 
 Then point your browser at https://localhost:4443
 
 Alternatively, you can also run the HTTPS client from a different console:
 
-vertx run https/https_client.rb
+vertx run https/https_client.js
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's normal.
 
@@ -98,15 +98,15 @@ c) A proxy server which simply sits in the middle proxying requests and response
 
 Run the http server:
 
-vertx run proxy/http_server.rb
+vertx run proxy/http_server.js
 
 Run the proxy server:
 
-vertx run proxy/proxy_server.rb
+vertx run proxy/proxy_server.js
 
 Run the http client:
 
-vertx run proxy/http_client.rb
+vertx run proxy/http_client.js
 
 PubSub
 ======
@@ -139,7 +139,7 @@ Where:
 
 To run the server:
 
-vertx run -pubsub/pubsub_server.rb
+vertx run -pubsub/pubsub_server.js
 
 Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
@@ -153,7 +153,7 @@ The example contains three static pages: index.html, page1.html and page2.html w
 
 To run the server:
 
-vertx run sendfile/sendfile.rb
+vertx run sendfile/sendfile.js
 
 Then point your browser at http://localhost:8080 and click around
 
@@ -178,11 +178,11 @@ HTTP request and streams the data to a file on disk.
 
 To run the server:
 
-vertx run upload/upload_server.rb
+vertx run upload/upload_server.js
 
 To run the client in a different console:
 
-vertx run upload/upload_client.rb
+vertx run upload/upload_client.js
 
 Websockets
 ==========
@@ -194,7 +194,7 @@ The server just echoes back any data is receives on the websocket.
 
 To run the server:
 
-vertx run websockets/websockets.rb
+vertx run websockets/websockets.js
 
 Then point your browser at: http://localhost:8080
 
@@ -206,7 +206,7 @@ in the manner of express (JS) or Sinatra.
 
 To run the example:
 
-vertx run route_match/route_match_example.rb
+vertx run route_match/route_match_example.js
 
 Then point your browser at: http://localhost:8080.
 
@@ -224,7 +224,7 @@ to create a SockJS connection to a server, and send and receive data from it.
 
 To run the server:
 
-vertx run sockjs/sockjs.rb
+vertx run sockjs/sockjs.js
 
 Then point your browser at: http://localhost:8080
 
@@ -235,7 +235,7 @@ This example shows how the vert.x event bus can extend to client side JavaScript
 
 To run the server:
 
-vertx run eventbusbridge/bridge_server.rb
+vertx run eventbusbridge/bridge_server.js
 
 The example shows a simple publish / subscribe client side JavaScript application that uses the vert.x event bus.
 

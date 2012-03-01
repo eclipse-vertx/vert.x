@@ -6,11 +6,11 @@ var rm = new vertx.RouteMatcher();
 
 // Extract the params from the uri
 rm.get('/details/:user/:id', function(req) {
-  req.response.end("User: " + req.params()['user'] + " ID: " + req.params['id'])
+  req.response.end("User: " + req.params()['user'] + " ID: " + req.params()['id'])
 });
 
 // Catch all - serve the index page
-rm.get('.*', function(req) {
+rm.getWithRegEx('.*', function(req) {
   req.response.sendFile("route_match/index.html");
 });
 
