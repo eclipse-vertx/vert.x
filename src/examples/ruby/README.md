@@ -1,4 +1,4 @@
-# vert.x JavaScript Examples
+# vert.x Ruby Examples
 
 Prerequisites:
 
