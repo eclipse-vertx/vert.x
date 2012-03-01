@@ -51,7 +51,8 @@ if (!vertx.FileSystem) {
         isDirectory: j_props.isDirectory,
         isOther: j_props.isOther,
         isRegularFile: j_props.isRegularFile,
-        isSymbolicLink: j_props.isSymbolicLink
+        isSymbolicLink: j_props.isSymbolicLink,
+        size: j_props.size
       }
       return jsProps;
     }

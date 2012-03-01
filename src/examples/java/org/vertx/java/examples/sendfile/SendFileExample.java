@@ -38,7 +38,6 @@ public class SendFileExample implements Verticle {
         }
       }
     }).listen(8080);
-
   }
 
   public void stop() {

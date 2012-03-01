@@ -42,7 +42,6 @@ import java.util.concurrent.ConcurrentMap;
  *   {@link Short}
  *   {@link Byte}
  *   {@link Character}
- *   {@link java.math.BigDecimal}
  *   {@code byte[]} - this will be automatically copied, and the copy will be stored in the structure.
  *   {@link org.vertx.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.

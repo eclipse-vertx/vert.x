@@ -34,7 +34,7 @@ include Vertx
       puts "publishing to #{sp[1]} with #{sp[2]}"
       topic = SharedData::get_set(sp[1])
       puts "topic is #{topic}"
-      topic.each { |actor_id| Vertx::send_to_handler(actor_id, Buffer.create_from_str(sp[2])) }
+      topic.each { |address| EventBus::send(address, Buffer.create_from_str(sp[2])) }
     end
   end
   socket.data_handler(parser)

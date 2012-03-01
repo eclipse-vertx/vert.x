@@ -33,7 +33,7 @@ public class BridgeServer implements Verticle {
       }
     });
 
-    server.listen(1234);
+    server.listen(8080);
   }
 
   public void stop() throws Exception {

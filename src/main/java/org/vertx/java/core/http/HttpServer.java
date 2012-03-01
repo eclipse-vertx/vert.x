@@ -169,8 +169,9 @@ public class HttpServer {
    * to the server trust store.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public void setClientAuthRequired(boolean required) {
+  public HttpServer setClientAuthRequired(boolean required) {
     server.setClientAuthRequired(required);
+    return this;
   }
 
   /**

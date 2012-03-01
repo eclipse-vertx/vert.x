@@ -17,8 +17,5 @@
 var vertx = vertx || {};
 
 if (!vertx.logger) {
-
-  vertx.logger = function() {
-    return org.vertx.java.core.Vertx.instance.getLogger();
-  }
+  vertx.logger = org.vertx.java.core.Vertx.instance.getLogger();
 }

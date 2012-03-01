@@ -102,8 +102,13 @@ if (!vertx.EventBus) {
           message = new java.lang.Double(message);
           break;
         case 'object':
-          // Assume JSON message
-          message = new org.vertx.java.core.json.JsonObject(JSON.stringify(message));
+          // If null then we just wrap it as an empty JSON message
+          // We don't do this if it's a Java class (it has the getClass) method
+          // since it may be a Buffer which we want to let through
+          if (message == null || typeof message.getClass === "undefined") {
+            // Not a Java object - assume JSON message
+            message = new org.vertx.java.core.json.JsonObject(JSON.stringify(message));
+          }
           break;
         default:
           throw 'Invalid type for message: ' + msgType;

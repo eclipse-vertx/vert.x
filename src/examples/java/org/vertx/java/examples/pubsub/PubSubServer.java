@@ -37,15 +37,19 @@ public class PubSubServer implements Verticle {
         socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
           public void handle(Buffer frame) {
             String line = frame.toString().trim();
+            System.out.println("Line is " + line);
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {
+              System.out.println("Topic is " + parts[1]);
               Set<String> set = SharedData.instance.getSet(parts[1]);
               set.add(socket.writeHandlerID);
             } else if (line.startsWith("unsubscribe")) {
               SharedData.instance.getSet(parts[1]).remove(socket.writeHandlerID);
             } else if (line.startsWith("publish")) {
+              System.out.println("Publish to topic is " + parts[1]);
               Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
               for (String actorID : actorIDs) {
+                System.out.println("Sending to verticle");
                 EventBus.instance.send(actorID, Buffer.create(parts[2]));
               }
             }

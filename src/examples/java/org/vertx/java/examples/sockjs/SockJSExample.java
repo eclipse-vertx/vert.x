@@ -29,8 +29,6 @@ import org.vertx.java.core.sockjs.SockJSSocket;
 
 public class SockJSExample implements Verticle {
 
-  private static final Logger log = LoggerFactory.getLogger(SockJSExample.class);
-
   private HttpServer server;
 
   public void start() {

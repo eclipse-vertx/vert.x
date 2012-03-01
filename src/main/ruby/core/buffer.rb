@@ -20,7 +20,7 @@ module Vertx
   # as necessary to accomodate any bytes written to it.
   #
   # Buffers are used in many places in vert.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
-  # {Websocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
+  # {WebSocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
   #
   # Buffer instances should always be created using the factory methods {Buffer.create} and {Buffer.create_from_str}.
   #

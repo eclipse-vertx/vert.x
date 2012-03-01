@@ -1,17 +1,11 @@
 load('vertx.js')
 
-var log = vertx.logger;
-
-var client = new vertx.HttpClient().setPort(8181);
+var client = new vertx.HttpClient().setPort(8080);
 
 client.connectWebsocket('/some-uri', function(websocket) {
-
   websocket.dataHandler(function(data) {
-    log.info('Received data ' + data);
+    stdout.println('Received data ' + data);
+    client.close();
   });
-
   websocket.writeTextFrame('Hello world');
-
-  client.close();
-
 });

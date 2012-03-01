@@ -14,63 +14,13 @@
 
 require 'core/streams'
 require 'core/ssl_support'
+require 'core/tcp_support'
 
 module Vertx
 
-  # Mixin module that provides all the common TCP params that can be set.
+  # Represents a TCP or SSL Server
   #
-  # @author {http://tfox.org Tim Fox}
-  module TCPSupport
-
-    # Set the TCP send buffer size.
-    # @param [FixNum] val. The size in bytes.
-    # @return [] A reference to self so invocations can be chained
-    def send_buffer_size=(val)
-      @j_del.setSendBufferSize(val)
-      self
-    end
-
-    # Set the TCP receive buffer size.
-    # @param [FixNum] val. The size in bytes.
-    # @return [] A reference to self so invocations can be chained
-    def receive_buffer_size=(val)
-      @j_del.setReceiveBufferSize(val)
-      self
-    end
-
-    # Set the TCP keep alive setting.
-    # @param [Boolean] val. If true, then TCP keep alive will be enabled.
-    # @return [] A reference to self so invocations can be chained
-    def tcp_keep_alive=(val)
-      @j_del.setTCPKeepAlive(val)
-    end
-
-    # Set the TCP reuse address setting.
-    # @param [Boolean] val. If true, then TCP reuse address will be enabled.
-    # @return [] A reference to self so invocations can be chained
-    def reuse_address=(val)
-      @j_del.setReuseAddress(val)
-    end
-
-    # Set the TCP so linger setting.
-    # @param [Boolean] val. If true, then TCP so linger will be enabled.
-    # @return [] A reference to self so invocations can be chained
-    def so_linger=(val)
-      @j_del.setSoLinger(val)
-    end
-
-    # Set the TCP traffic class setting.
-    # @param [FixNum] val. The TCP traffic class setting.
-    # @return [] A reference to self so invocations can be chained
-    def traffic_class=(val)
-      @j_del.setTrafficClass(val)
-    end
-
-  end
-
-  # Encapsulates a server that understands TCP or SSL.
-  #
-  # Instances of this class can only be used from the event loop that created it. When connections are accepted by the server
+  # When connections are accepted by the server
   # they are supplied to the user in the form of a {NetSocket} instance that is passed via the handler
   # set using {#connect_handler}.
   #
@@ -88,7 +38,6 @@ module Vertx
     # Those certificates must be added to the server trust store.
     # @param [Boolean] val. If true then the server will request client authentication from any connecting clients, if they
     # do not authenticate then they will not make a connection.
-
     def client_auth_required=(val)
       @j_del.setClientAuthRequired(val)
       self
@@ -167,6 +116,9 @@ module Vertx
   end
 
 
+  # NetSocket is a socket-like abstraction used for reading from or writing
+  # to TCP connections.
+  #
   # @author {http://tfox.org Tim Fox}
   class NetSocket
 
@@ -176,8 +128,8 @@ module Vertx
     def initialize(j_socket)
       @j_del = j_socket
 
-      @write_handler_id = EventBus.register_simple_handler { |buffer|
-        write_buffer(buffer)
+      @write_handler_id = EventBus.register_simple_handler { |msg|
+        write_buffer(msg.body)
       }
       @j_del.closedHandler(Proc.new {
         EventBus.unregister_handler(@write_handler_id)
@@ -229,10 +181,9 @@ module Vertx
       @j_del.close
     end
 
-    #  When a NetSocket is created it automatically registers an event handler with the system. The address of that
+    # When a NetSocket is created it automatically registers an event handler with the system. The address of that
     # handler is given by {#write_handler_id}.
-    # Given this ID, a different event loop can send a buffer to that event handler using {send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
     # allows you to write data to other connections which are owned by different event loops.
     def write_handler_id
       @write_handler_id

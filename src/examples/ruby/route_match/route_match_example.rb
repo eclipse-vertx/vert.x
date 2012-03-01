@@ -22,7 +22,7 @@ rm = RouteMatcher.new
 rm.get('/details/:user/:id') { |req| req.response.end("User: #{req.params['user']} ID: #{req.params['id']}") }
 
 # Catch all - serve the index page
-rm.get('.*') { |req| req.response.send_file("route_match/index.html")}
+rm.get_re('.*') { |req| req.response.send_file("route_match/index.html")}
 
 @server = HttpServer.new.request_handler(rm).listen(8080)
 
