@@ -36,8 +36,16 @@ import org.vertx.java.core.parsetools.RecordParser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
 import java.net.MalformedURLException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -257,7 +265,13 @@ public class VertxMgr {
       }
       String clusterHost = args.map.get("-cluster-host");
       if (clusterHost == null) {
-        clusterHost = "0.0.0.0";
+        clusterHost = getDefaultAddress();
+        if (clusterHost == null) {
+          System.err.println("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
+          return false;
+        } else {
+          System.out.println("No cluster-host specified so using address " + clusterHost);
+        }
       }
       String clusterProviderClass = args.map.get("-cluster-provider");
       if (clusterProviderClass == null) {
@@ -314,6 +328,33 @@ public class VertxMgr {
       System.out.println("Started");
     }
     return true;
+  }
+
+  /*
+  Get default interface to use since the user hasn't specified one
+   */
+  private String getDefaultAddress() {
+    Enumeration<NetworkInterface> nets;
+    try {
+      nets = NetworkInterface.getNetworkInterfaces();
+    } catch (SocketException e) {
+      return null;
+    }
+    NetworkInterface netinf;
+    while (nets.hasMoreElements()) {
+      netinf = nets.nextElement();
+
+      Enumeration<InetAddress> addresses = netinf.getInetAddresses();
+
+      while (addresses.hasMoreElements()) {
+        InetAddress address = addresses.nextElement();
+        if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
+            && !(address instanceof Inet6Address)) {
+          return address.getHostAddress();
+        }
+      }
+    }
+    return null;
   }
 
   private void displaySyntax() {
