@@ -254,6 +254,13 @@ public class EventBusImpl extends EventBus {
     }).listen(serverID.port, serverID.host);
   }
 
+  private void sendToSubs(Collection<ServerID> subs, BaseMessage message) {
+    for (ServerID serverID : subs) {
+      if (!serverID.equals(EventBusImpl.this.serverID)) {  //We don't send to this node
+        sendRemote(serverID, message);
+      }
+    }
+  }
 
   private void send(final BaseMessage message, final Handler replyHandler) {
     Context context = VertxInternal.instance.getContext();
@@ -277,15 +284,11 @@ public class EventBusImpl extends EventBus {
       } else {
         if (subs != null) {
           subs.get(message.address, new AsyncResultHandler<Collection<ServerID>>() {
-            public void handle(AsyncResult<Collection<ServerID>> event) {              
+            public void handle(AsyncResult<Collection<ServerID>> event) {
               if (event.exception == null) {
                 Collection<ServerID> serverIDs = event.result;
                 if (serverIDs != null) {
-                  for (ServerID serverID : serverIDs) {
-                    if (!serverID.equals(EventBusImpl.this.serverID)) {  //We don't send to this node
-                      sendRemote(serverID, message);
-                    }
-                  }
+                  sendToSubs(serverIDs, message);
                 }
               } else {
                 log.error("Failed to send message", event.exception);
@@ -353,6 +356,7 @@ public class EventBusImpl extends EventBus {
   }
 
   private void sendRemote(final ServerID serverID, final BaseMessage message) {
+
     //We need to deal with the fact that connecting can take some time and is async, and we cannot
     //block to wait for it. So we add any sends to a pending list if not connected yet.
     //Once we connect we send them.

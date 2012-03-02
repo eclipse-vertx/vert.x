@@ -29,4 +29,8 @@ if (!vertx.setTimer) {
   vertx.cancelTimer = function(id) {
     org.vertx.java.core.Vertx.instance.cancelTimer(id);
   }
+
+  vertx.nextTick = function(handler) {
+    org.vertx.java.core.Vertx.instance.nextTick(handler);
+  }
 }
