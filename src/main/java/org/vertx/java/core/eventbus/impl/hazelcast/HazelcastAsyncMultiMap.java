@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.eventbus.impl.hazelcast;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.eventbus.impl.AsyncMultiMap;
@@ -26,24 +28,32 @@ import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
+public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener<K, V> {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastAsyncMultiMap.class);
 
   private final com.hazelcast.core.MultiMap<K, V> map;
 
+  // The Hazelcast near cache is very slow so we use our own one
+  private ConcurrentMap<K, Collection<V>> cache = new ConcurrentHashMap<>();
+
   public HazelcastAsyncMultiMap(com.hazelcast.core.MultiMap<K, V> map) {
     this.map = map;
+    map.addEntryListener(this, true);
   }
 
   @Override
   public void put(final K k, final V v, final AsyncResultHandler<Void> completionHandler) {
-
     Deferred<Void> action = new BlockingAction<Void>() {
       public Void action() throws Exception {
         map.put(k, v);
@@ -66,27 +76,37 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
 
   @Override
   public void get(final K k, final AsyncResultHandler<Collection<V>> completionHandler) {
-    Deferred<Collection<V>> action = new BlockingAction<Collection<V>>() {
-      public Collection<V> action() throws Exception {
-        return map.get(k);
-      }
-    };
-    action.handler(new CompletionHandler<Collection<V>>() {
-      public void handle(Future<Collection<V>> event) {
-        AsyncResult<Collection<V>> result;
-        if (event.succeeded()) {
-          result = new AsyncResult<>(event.result());
-        } else {
-          result = new AsyncResult<>(event.exception());
+    Collection<V> entries = cache.get(k);
+    if (entries != null) {
+      completionHandler.handle(new AsyncResult<>(entries));
+    } else {
+      Deferred<Collection<V>> action = new BlockingAction<Collection<V>>() {
+        public Collection<V> action() throws Exception {
+          return map.get(k);
         }
-        completionHandler.handle(result);
-      }
-    });
-    action.execute();
+      };
+      action.handler(new CompletionHandler<Collection<V>>() {
+        public void handle(Future<Collection<V>> event) {
+          AsyncResult<Collection<V>> result;
+          if (event.succeeded()) {
+            Collection<V> entries = event.result();
+            if (entries != null) {
+              cache.put(k, entries);
+            }
+            result = new AsyncResult<>(event.result());
+          } else {
+            result = new AsyncResult<>(event.exception());
+          }
+          completionHandler.handle(result);
+        }
+      });
+      action.execute();
+    }
   }
 
   @Override
   public void remove(final K k, final V v, final AsyncResultHandler<Boolean> completionHandler) {
+    removeEntry(k, v);
     Deferred<Boolean> action = new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
         return map.remove(k, v);
@@ -106,5 +126,49 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
     action.execute();
   }
 
+  @Override
+  public void entryAdded(EntryEvent<K, V> entry) {
+     addEntry(entry.getKey(), entry.getValue());
+  }
 
+  private void addEntry(K key, V value) {
+    Collection<V> entries = cache.get(key);
+    if (entries == null) {
+      entries = new HashSet<>();
+      Collection<V> prev = cache.putIfAbsent(key, entries);
+      if (prev != null) {
+        entries = prev;
+      }
+    }
+    entries.add(value);
+  }
+
+  @Override
+  public void entryRemoved(EntryEvent<K, V> entry) {
+    removeEntry(entry.getKey(), entry.getValue());
+  }
+
+  private void removeEntry(K key, V value) {
+    Collection<V> entries = cache.get(key);
+    if (entries != null) {
+      entries.remove(value);
+      if (entries.isEmpty()) {
+        cache.remove(key);
+      }
+    }
+  }
+
+  @Override
+  public void entryUpdated(EntryEvent<K, V> entry) {
+    K key = entry.getKey();
+    Collection<V> entries = cache.get(key);
+    if (entries != null) {
+      entries.add(entry.getValue());
+    }
+  }
+
+  @Override
+  public void entryEvicted(EntryEvent<K, V> entry) {
+    entryRemoved(entry);
+  }
 }
