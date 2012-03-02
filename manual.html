@@ -369,6 +369,9 @@ vertx undeploy my_app
 </pre>
 <h1 id="configuring-clustering">Configuring clustering</h1><br/>
 <p>To configure clustering use the file <code>conf/cluster.xml</code> in the distribution.</p>
+<p>If you want to receive more info on cluster setup etc, then edit <code>conf/logging.properties</code> to read <code>com.hazelcast.level=INFO</code></p>
+<p>In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the <code>interfaces-enabled</code> element.</p>
+<p>There's also a bug in vert.x 1.0.0.beta.1 which means you <strong>must</strong> specify <code>-cluster-host</code> when running clustered</p>
 <h1 id="internals">Internals</h1><br/>
 <p>Vert.x uses the following amazing open source projects:</p>
 <ul>

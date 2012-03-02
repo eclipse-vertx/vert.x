@@ -353,6 +353,12 @@ or
 
 To configure clustering use the file `conf/cluster.xml` in the distribution.
 
+If you want to receive more info on cluster setup etc, then edit `conf/logging.properties` to read `com.hazelcast.level=INFO`
+
+In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the `interfaces-enabled` element.
+
+There's also a bug in vert.x 1.0.0.beta.1 which means you **must** specify `-cluster-host` when running clustered
+
 # Internals
 
 Vert.x uses the following amazing open source projects:
