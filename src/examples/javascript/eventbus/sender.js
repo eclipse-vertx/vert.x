@@ -1,3 +1,7 @@
 load('vertx.js')
 
-vertx.EventBus.send('example.address', 'hello world');
+var eb = vertx.EventBus;
+
+var address = 'example.address'
+
+eb.send(address, 'hello world');

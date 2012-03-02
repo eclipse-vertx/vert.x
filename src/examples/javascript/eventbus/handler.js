@@ -2,16 +2,15 @@ load('vertx.js')
 
 var eb = vertx.EventBus;
 
-var log = vertx.logger;
+var address = 'example.address'
 
 var handler = function(message) {
-  log.info('received the message ' + message);
+  stdout.println('received the message ' + message);
 }
 
-eb.registerHandler("example.address", handler);
-log.info("registered handler");
+eb.registerHandler(address, handler);
 
 function vertxStop() {
-  eb.unregisterHandler(handler);
+  eb.unregisterHandler(address, handler);
 }
 
