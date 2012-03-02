@@ -295,12 +295,6 @@
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>
 
-    <copy todir="${dist-build}">
-      <fileset dir="rel-notes">
-        <include name="release-notes-${version-number}.txt"/>
-      </fileset>
-    </copy>
-
     <tar destfile="${target}/vert.x-${version-number}.tar" longfile="gnu">
       <tarfileset dir="${dist-build-base}" filemode="755">
         <include name="**/bin/**"/>
