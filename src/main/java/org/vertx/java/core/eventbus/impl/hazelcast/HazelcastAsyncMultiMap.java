@@ -23,6 +23,8 @@ import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Deferred;
 import org.vertx.java.core.impl.Future;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.Collection;
 
@@ -30,6 +32,8 @@ import java.util.Collection;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
+
+  private static final Logger log = LoggerFactory.getLogger(HazelcastAsyncMultiMap.class);
 
   private final com.hazelcast.core.MultiMap<K, V> map;
 

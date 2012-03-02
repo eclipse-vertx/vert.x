@@ -21,8 +21,8 @@
                 <region>us-east-1</region>
             </aws>
         </join>
-        <interfaces enabled="false">
-            <interface>10.10.1.*</interface>
+        <interfaces enabled="true">
+            <interface>192.168.1.*</interface>
         </interfaces>
         <symmetric-encryption enabled="false">
             <!--

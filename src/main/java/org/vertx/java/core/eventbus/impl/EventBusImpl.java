@@ -256,7 +256,6 @@ public class EventBusImpl extends EventBus {
 
 
   private void send(final BaseMessage message, final Handler replyHandler) {
-
     Context context = VertxInternal.instance.getContext();
     try {
       message.sender = serverID;
