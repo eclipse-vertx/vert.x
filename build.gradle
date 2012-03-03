@@ -1,21 +1,20 @@
 apply plugin: 'java'
 apply plugin: 'groovy'
 
-version = '0.1'
+version = '1.0.beta1'
 
 repositories {
-    flatDir(dirs: file('lib/opt'))
+    flatDir(dirs: file('lib/main'))
 }
 
 dependencies {
-  compile fileTree('lib/core').matching { include '*.jar' }
-  compile fileTree('lib/opt').matching {
+  compile fileTree('lib/main').matching {
     include '*.jar'
     exclude 'groovy-all-*.jar'
   }
   testCompile fileTree('lib/tests').matching { include '*.jar' }
 
-  groovy module(':groovy-all:1.8.3')
+  groovy module(':groovy-all:1.8.6')
 }
 
 sourceSets {
