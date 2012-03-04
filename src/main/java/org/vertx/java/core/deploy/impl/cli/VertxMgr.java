@@ -38,14 +38,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InterfaceAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +57,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class VertxMgr {
 
   private static final Logger log = LoggerFactory.getLogger(VertxMgr.class);
+  
+  private static boolean WIN_OS = System.getProperty("os.name").startsWith("Windows");
 
   public static void main(String[] args) {
     new VertxMgr(args);
@@ -189,32 +188,22 @@ public class VertxMgr {
     // Convert to URL[]
 
     String[] parts;
-    if (cp.contains(":")) {
-      parts = cp.split(":");
+    
+    String cpSeparator = WIN_OS ? ";" : ":";
+    if (cp.contains(cpSeparator)) {
+      parts = cp.split(cpSeparator);
     } else {
       parts = new String[] { cp };
     }
     int index = 0;
     final URL[] urls = new URL[parts.length];
     for (String part: parts) {
-      File file = new File(part);
-      part = file.getAbsolutePath();
-      if (!part.endsWith(".jar") && !part.endsWith(".zip") && !part.endsWith("/")) {
-        //It's a directory - need to add trailing slash
-        part += "/";
-      }
-      URL url;
       try {
-        url = new URL("file://" + part);
+    	  URL url = new File(part).toURI().toURL();
+    	  urls[index++] = url;
       } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid path: " + cp) ;
+        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
       }
-      urls[index++] = url;
-    }
-
-    if (main == null) {
-      displaySyntax();
-      return null;
     }
 
     String sinstances = args.map.get("-instances");
