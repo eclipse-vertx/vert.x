@@ -19,7 +19,7 @@ dependencies {
 
 sourceSets {
   test {
-    java.srcDirs = [file('src/tests/java'), file('src/tests/testapps/java')]
+    java.srcDirs = [file('src/tests/java'), file('src/tests/controllers'), file('src/tests/framework/java'), file('src/tests/testapps/java')]
     resources.srcDirs = [file('src/tests/java')]
   }
 }
