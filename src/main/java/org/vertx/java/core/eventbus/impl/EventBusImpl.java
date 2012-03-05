@@ -335,6 +335,7 @@ public class EventBusImpl extends EventBus {
       map.put(new HandlerHolder(handler, replyHandler), id);
       if (subs != null && !replyHandler) {
         // Propagate the information
+        log.info("Propagating register " + address + " server " + serverID);
         subs.put(address, serverID, completionHandler);
       } else {
         if (completionHandler != null) {
@@ -355,6 +356,15 @@ public class EventBusImpl extends EventBus {
     completionHandler.handle(f);
   }
 
+  private void connectionFailed(String address, ServerID serverID) {
+    log.debug("Cluster connection failed. Removing it from map");
+    ConnectionHolder holder = connections.remove(serverID);
+    holder.socket.close();
+    if (subs != null) {
+      removeSub(address, serverID, null);
+    }
+  }
+
   private void sendRemote(final ServerID serverID, final BaseMessage message) {
 
     //We need to deal with the fact that connecting can take some time and is async, and we cannot
@@ -372,6 +382,11 @@ public class EventBusImpl extends EventBus {
       final ConnectionHolder fholder = holder;
       client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
         public void handle(NetSocket socket) {
+          socket.exceptionHandler(new Handler<Exception>() {
+            public void handle(Exception e) {
+              connectionFailed(message.address, serverID);
+            }
+          });
           fholder.socket = socket;
           for (BaseMessage message : fholder.pending) {
             message.write(socket);
@@ -381,11 +396,7 @@ public class EventBusImpl extends EventBus {
       });
       client.exceptionHandler(new Handler<Exception>() {
         public void handle(Exception e) {
-          log.debug("Cluster connection failed. Removing it from map");
-          connections.remove(serverID);
-          if (subs != null) {
-            removeSub(message.address, serverID, null);
-          }
+          connectionFailed(message.address, serverID);
         }
       });
     } else {

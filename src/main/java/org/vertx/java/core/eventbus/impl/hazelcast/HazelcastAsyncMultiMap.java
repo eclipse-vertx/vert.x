@@ -28,10 +28,8 @@ import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -91,7 +89,7 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
           if (event.succeeded()) {
             Collection<V> entries = event.result();
             if (entries != null) {
-              cache.put(k, entries);
+              cache.put(k, new HashSet<>(entries));
             }
             result = new AsyncResult<>(event.result());
           } else {
@@ -106,7 +104,6 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
 
   @Override
   public void remove(final K k, final V v, final AsyncResultHandler<Boolean> completionHandler) {
-    removeEntry(k, v);
     Deferred<Boolean> action = new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
         return map.remove(k, v);
