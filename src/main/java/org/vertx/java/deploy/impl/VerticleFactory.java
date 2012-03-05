@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.impl;
+package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Verticle;
 

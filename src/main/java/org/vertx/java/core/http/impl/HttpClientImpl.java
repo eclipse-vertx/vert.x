@@ -72,16 +72,13 @@ public class HttpClientImpl {
   private String host = "localhost";
   private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
     protected void connect(Handler<ClientConnection> connectHandler, Context context) {
-      internalConnect(connectHandler, context);
+      internalConnect(connectHandler);
     }
   };
   private boolean keepAlive = true;
 
   public HttpClientImpl() {
-    ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Can only be used from an event loop");
-    }
+    ctx = VertxInternal.instance.getOrAssignContext();
     if (!VertxInternal.instance.isEventLoop()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
@@ -124,7 +121,7 @@ public class HttpClientImpl {
       public void handle(final ClientConnection conn) {
         conn.toWebSocket(uri, wsConnect, wsVersion);
       }
-    }, VertxInternal.instance.getContext());
+    }, ctx);
   }
 
   public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
@@ -176,10 +173,6 @@ public class HttpClientImpl {
   }
 
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    final Context ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Requests must be made from inside an event loop");
-    }
     return new HttpClientRequestImpl(this, method, uri, responseHandler, ctx, Thread.currentThread());
   }
 
@@ -323,7 +316,7 @@ public class HttpClientImpl {
     }
   }
 
-  private void internalConnect(final Handler<ClientConnection> connectHandler, final Context context) {
+  private void internalConnect(final Handler<ClientConnection> connectHandler) {
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
@@ -349,9 +342,9 @@ public class HttpClientImpl {
       });
     }
     EventLoopContext ectx;
-    if (context instanceof EventLoopContext) {
+    if (ctx instanceof EventLoopContext) {
       //It always will be
-      ectx = (EventLoopContext)context;
+      ectx = (EventLoopContext)ctx;
     } else {
       ectx = null;
     }

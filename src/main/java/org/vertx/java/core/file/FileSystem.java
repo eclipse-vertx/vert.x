@@ -591,12 +591,6 @@ public class FileSystem {
     return fsPropsDeferred(path).action();
   }
 
-  private void checkContext() {
-    if (VertxInternal.instance.getContext() == null) {
-      throw new IllegalStateException("Can't use file system outside an event loop");
-    }
-  }
-
   private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
     fut.handler(new CompletionHandler<T>() {
       public void handle(Future<T> event) {
@@ -614,7 +608,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> copyDeferred(String from, String to, final boolean recursive) {
-    checkContext();
+    
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
     return new BlockingAction<Void>() {
@@ -655,7 +649,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> moveDeferred(String from, String to) {
-    checkContext();
+    
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
@@ -674,7 +668,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> truncateDeferred(final String path, final long len) {
-     checkContext();
+     
      return new BlockingAction<Void>() {
        public Void action() throws Exception {
          if (len < 0) {
@@ -703,7 +697,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> chmodDeferred(String path, String perms, String dirPerms) {
-    checkContext();
+    
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
@@ -744,7 +738,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<FileProps> props(String path, final boolean followLinks) {
-    checkContext();
+    
     final Path target = Paths.get(path);
     return new BlockingAction<FileProps>() {
       public FileProps action() throws Exception {
@@ -772,7 +766,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> link(String link, String existing, final boolean symbolic) {
-    checkContext();
+    
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
     return new BlockingAction<Void>() {
@@ -796,7 +790,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<String> readSymlinkDeferred(String link) {
-    checkContext();
+    
     final Path source = Paths.get(link);
     return new BlockingAction<String>() {
       public String action() throws Exception {
@@ -814,7 +808,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> deleteDeferred(String path, final boolean recursive) {
-    checkContext();
+    
     final Path source = Paths.get(path);
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -860,7 +854,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
-    checkContext();
+    
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>() {
@@ -894,7 +888,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<String[]> readDirDeferred(final String path, final String filter) {
-    checkContext();
+    
     return new BlockingAction<String[]>() {
       public String[] action() throws Exception {
         File file = new File(path);
@@ -932,7 +926,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Buffer> readFileDeferred(final String path) {
-    checkContext();
+    
     return new BlockingAction<Buffer>() {
       public Buffer action() throws Exception {
         Path target = Paths.get(path);
@@ -944,7 +938,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> writeFileDeferred(final String path, final Buffer data) {
-    checkContext();
+    
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
         Path target = Paths.get(path);
@@ -972,21 +966,15 @@ public class FileSystem {
 
   private SynchronousAction<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
                    final boolean flush) {
-    final Context ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Can't use file system from outside an event loop");
-    }
-    final Thread th = Thread.currentThread();
     return new BlockingAction<AsyncFile>() {
       public AsyncFile action() throws Exception {
-        return doOpen(path, perms, read, write, createNew, flush, ctx, th);
+        return doOpen(path, perms, read, write, createNew, flush, context);
       }
     };
   }
 
   private AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
-                           boolean flush, Context context,
-                           Thread th) throws Exception {
+                           boolean flush, Context context) throws Exception {
     return new AsyncFile(path, perms, read, write, createNew, flush, context);
   }
 
@@ -995,7 +983,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Void> createFileDeferred(final String path, final String perms) {
-    checkContext();
+    
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>() {
       public Void action() throws Exception {
@@ -1015,7 +1003,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<Boolean> existsDeferred(final String path) {
-    checkContext();
+    
     return new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
         File file = new File(path);
@@ -1025,7 +1013,7 @@ public class FileSystem {
   }
 
   private SynchronousAction<FileSystemProps> fsPropsDeferred(final String path) {
-    checkContext();
+    
     return new BlockingAction<FileSystemProps>() {
       public FileSystemProps action() throws Exception {
         Path target = Paths.get(path);

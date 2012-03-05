@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.impl.cli;
+package org.vertx.java.deploy.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.deploy.impl.Args;
-import org.vertx.java.core.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.impl.Args;
+import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.EventBusImpl;

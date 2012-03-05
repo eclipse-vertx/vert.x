@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.impl.rhino;
+package org.vertx.java.deploy.impl.rhino;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;

@@ -65,10 +65,7 @@ public class NetClientImpl {
   private long reconnectInterval = 1000;
 
   public NetClientImpl() {
-    ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Can only be used from an event loop");
-    }
+    ctx = VertxInternal.instance.getOrAssignContext();
     if (!VertxInternal.instance.isEventLoop()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
@@ -228,10 +225,6 @@ public class NetClientImpl {
 
   private void connect(final int port, final String host, final Handler<NetSocket> connectHandler,
                             final int remainingAttempts) {
-    final Context context = VertxInternal.instance.getContext();
-    if (context == null) {
-      throw new IllegalStateException("Requests must be made from inside an event loop");
-    }
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
@@ -258,9 +251,9 @@ public class NetClientImpl {
 
     //Client connections share context with caller
     EventLoopContext ectx;
-    if (context instanceof EventLoopContext) {
+    if (ctx instanceof EventLoopContext) {
       //It always will be
-      ectx = (EventLoopContext)context;
+      ectx = (EventLoopContext)ctx;
     } else {
       ectx = null;
     }
@@ -297,7 +290,7 @@ public class NetClientImpl {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             tcpHelper.runOnCorrectThread(ch, new Runnable() {
               public void run() {
-                VertxInternal.instance.setContext(context);
+                VertxInternal.instance.setContext(ctx);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
                 //Set a timer to retry connection
                 Vertx.instance.setTimer(reconnectInterval, new Handler<Long>() {

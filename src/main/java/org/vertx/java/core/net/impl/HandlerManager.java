@@ -67,8 +67,8 @@ public class HandlerManager<T> {
     return worker;
   }
 
-  public synchronized void addHandler(Handler<T> handler) {
-    Context context = VertxInternal.instance.getContext();
+  public synchronized void addHandler(Handler<T> handler, Context context) {
+    //Context context = VertxInternal.instance.getContext();
     NioWorker worker = getWorker(context);
     availableWorkers.addWorker(worker);
     Handlers handlers = handlerMap.get(worker);
@@ -79,8 +79,8 @@ public class HandlerManager<T> {
     handlers.addHandler(new HandlerHolder<>(context, handler));
   }
 
-  public synchronized void removeHandler(Handler<T> handler) {
-    Context context = VertxInternal.instance.getContext();
+  public synchronized void removeHandler(Handler<T> handler, Context context) {
+    //Context context = VertxInternal.instance.getContext();
     NioWorker worker = getWorker(context);
     Handlers handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {

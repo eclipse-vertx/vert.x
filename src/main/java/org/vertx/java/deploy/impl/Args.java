@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.impl;
+package org.vertx.java.deploy.impl;
 
 import java.util.HashMap;
 import java.util.Map;

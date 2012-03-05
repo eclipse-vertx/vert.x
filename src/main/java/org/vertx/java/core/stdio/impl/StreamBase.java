@@ -30,11 +30,7 @@ class StreamBase {
   protected Handler<Exception> exceptionHandler;
 
   protected StreamBase() {
-    Context context = VertxInternal.instance.getContext();
-    if (context == null) {
-      throw new IllegalStateException("Can only be used inside an event loop");
-    }
-    this.context = context;
+    this.context = VertxInternal.instance.getOrAssignContext();
     this.th = Thread.currentThread();
   }
 
