@@ -17,7 +17,8 @@ DIRNAME=`dirname "$PRG"`
 
 CLASSPATH=\
 $DIRNAME/../../conf:\
-$DIRNAME/../../target/vert.x.jar:\
+$DIRNAME/../../target/vert.x-core.jar:\
+$DIRNAME/../../target/vert.x-platform.jar:\
 $DIRNAME/../../lib/main/netty.jar:\
 $DIRNAME/../../lib/main/jackson-core-asl-1.9.4.jar:\
 $DIRNAME/../../lib/main/jackson-mapper-asl-1.9.4.jar:\
