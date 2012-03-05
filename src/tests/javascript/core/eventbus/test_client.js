@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 load('test_utils.js')
 load('vertx.js')
 
@@ -9,7 +25,6 @@ var eb = vertx.EventBus;
 var address = 'foo-address';
 
 var sent = {
-  address : address,
   price : 23.45,
   name : 'tim'
 };
@@ -24,16 +39,10 @@ var reply = {
 }
 
 function assertSent(msg) {
-  tu.azzert(msg.messageID != undefined);
-  tu.azzert(sent.address === msg.address);
   tu.azzert(sent.price === msg.price);
   tu.azzert(sent.name === msg.name);
 }
 
-function assertEmptySent(msg) {
-  tu.azzert(msg.messageID != undefined);
-  tu.azzert(sent.address === msg.address);
-}
 
 function assertReply(rep) {
   tu.azzert(reply.desc === rep.desc);
@@ -52,8 +61,7 @@ function testSimple() {
     tu.testComplete();
   });
 
-  eb.send(sent);
-  tu.azzert(sent.messageID != undefined);
+  eb.send(address, sent);
 }
 
 function testEmptyMessage() {
@@ -62,14 +70,12 @@ function testEmptyMessage() {
   eb.registerHandler(address, function MyHandler(msg, replier) {
     tu.checkContext();
     tu.azzert(!handled);
-    assertEmptySent(msg);
     eb.unregisterHandler(address, MyHandler);
     handled = true;
     tu.testComplete();
   });
 
-  eb.send(emptySent);
-  tu.azzert(emptySent.messageID != undefined);
+  eb.send(address, emptySent);
 }
 
 
@@ -91,8 +97,7 @@ function testUnregister() {
   });
 
   for (var i = 0; i < 2; i++) {
-    eb.send(sent);
-    tu.azzert(sent.messageID != undefined);
+    eb.send(address, sent);
   }
 }
 
@@ -108,13 +113,31 @@ function testWithReply() {
     replier(reply);
   });
 
-  eb.send(sent, function(reply) {
+  eb.send(address, sent, function(reply) {
     tu.checkContext();
     assertReply(reply);
     tu.testComplete();
   });
-  eb.send(sent);
-  tu.azzert(sent.messageID != undefined);
+}
+
+function testReplyOfReplyOfReply() {
+
+  eb.registerHandler(address, function MyHandler(msg, replier) {
+    tu.azzert("message" === msg);
+    replier("reply", function(reply, replier) {
+      tu.azzert("reply-of-reply" === reply);
+      replier("reply-of-reply-of-reply");
+      eb.unregisterHandler(address, MyHandler);
+    });
+  });
+
+  eb.send(address, "message", function(reply, replier) {
+    tu.azzert("reply" === reply);
+    replier("reply-of-reply", function(reply) {
+      tu.azzert("reply-of-reply-of-reply" === reply);
+      tu.testComplete();
+    });
+  });
 }
 
 function testEmptyReply() {
@@ -129,12 +152,65 @@ function testEmptyReply() {
     replier({});
   });
 
-  eb.send(sent, function(reply) {
+  eb.send(address, sent, function(reply) {
     tu.checkContext();
     tu.testComplete();
   });
-  eb.send(sent);
-  tu.azzert(sent.messageID != undefined);
+  eb.send(address, sent);
+}
+
+function testEchoString() {
+  echo("foo");
+}
+
+function testEchoNumber1() {
+  echo(1234);
+}
+
+function testEchoNumber2() {
+  echo(1.2345);
+}
+
+function testEchoBooleanTrue() {
+  echo(true);
+}
+
+function testEchoBooleanFalse() {
+  echo(false);
+}
+
+function testEchoJson() {
+  echo(sent);
+}
+
+function testEchoNull() {
+  echo(null);
+}
+
+
+function echo(msg) {
+  eb.registerHandler(address, function MyHandler(received, replier) {
+    tu.checkContext();
+    eb.unregisterHandler(address, MyHandler);
+    replier(received);
+  });
+  eb.send(address, msg, function (reply){
+
+    if (msg != null) {
+      if (typeof msg != 'object') {
+        tu.azzert(msg === reply);
+      } else {
+        //Json object
+        for (field in reply) {
+          tu.azzert(msg.field === reply.field);
+        }
+      }
+    } else {
+      tu.azzert(reply == null);
+    }
+
+    tu.testComplete();
+  });
 }
 
 tu.registerTests(this);

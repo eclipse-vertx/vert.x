@@ -1,13 +1,32 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.vertx.java.core.eventbus;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,20 +43,24 @@ import java.util.Map;
  */
 public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
-  private static final Logger log = Logger.getLogger(SockJSBridgeHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(SockJSBridgeHandler.class);
 
   private final EventBus eb = EventBus.instance;
-  private final ObjectMapper mapper = new ObjectMapper();
+  private List<JsonObject> permitted = new ArrayList<>();
+
+  public void addPermitted(JsonObject permitted) {
+    this.permitted.add(permitted);
+  }
 
   public void handle(final SockJSSocket sock) {
 
-    final Map<String, Handler<Message>> handlers = new HashMap<>();
+    final Map<String, Handler<Message<JsonObject>>> handlers = new HashMap<>();
 
     sock.endHandler(new SimpleHandler() {
       public void handle() {
 
         // On close unregister any handlers that haven't been unregistered
-        for (Map.Entry<String, Handler<Message>> entry: handlers.entrySet()) {
+        for (Map.Entry<String, Handler<Message<JsonObject>>> entry: handlers.entrySet()) {
           eb.unregisterHandler(entry.getKey(), entry.getValue());
         }
       }
@@ -45,37 +68,36 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
     sock.dataHandler(new Handler<Buffer>() {
 
-      JsonHelper helper = new JsonHelper();
-
-      private void handleSend(Map<String, Object> body, final String replyAddress) {
-        Handler<Message> replyHandler;
+      private void handleSend(String address, JsonObject jsonObject, final String replyAddress) {
+        Handler<Message<JsonObject>> replyHandler;
         if (replyAddress != null) {
-          replyHandler = new Handler<Message>() {
-            public void handle(Message message) {
-              message.address = replyAddress;
-              deliverMessage(message);
+          replyHandler = new Handler<Message<JsonObject>>() {
+            public void handle(Message<JsonObject> message) {
+              deliverMessage(replyAddress, message);
             }
           };
         } else {
           replyHandler = null;
         }
-        helper.sendJSON(body, replyHandler);
-      }
-
-      private void deliverMessage(Message msg) {
-        Map<String, Object> json = helper.toJson(msg);
-        Map<String, Object> envelope = new HashMap<>();
-        if (msg.replyAddress != null) {
-          envelope.put("replyAddress", msg.replyAddress);
+        if (checkMatches(address, jsonObject)) {
+          eb.send(address, jsonObject, replyHandler);
+        } else {
+          log.trace("Message rejected");
         }
-        envelope.put("body", json);
-        sock.writeBuffer(Buffer.create(helper.jsonToString(envelope)));
       }
 
-      private void handleRegister(String address) {
-        Handler<Message> handler = new Handler<Message>() {
-          public void handle(Message msg) {
-            deliverMessage(msg);
+      private void deliverMessage(String address, Message<JsonObject> jsonMessage) {
+        JsonObject envelope = new JsonObject().putString("address", address).putObject("body", jsonMessage.body);
+        if (jsonMessage.replyAddress != null) {
+          envelope.putString("replyAddress", jsonMessage.replyAddress);
+        }
+        sock.writeBuffer(Buffer.create(envelope.encode()));
+      }
+
+      private void handleRegister(final String address) {
+        Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
+          public void handle(Message<JsonObject> msg) {
+            deliverMessage(address, msg);
           }
         };
 
@@ -84,14 +106,22 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
       }
 
       private void handleUnregister(String address) {
-        Handler<Message> handler = handlers.remove(address);
+        Handler<Message<JsonObject>> handler = handlers.remove(address);
         if (handler != null) {
           eb.unregisterHandler(address, handler);
         }
       }
 
-      private Object getMandatory(Map<String, Object> json, String field) {
-        Object value = json.get(field);
+      private String getMandatoryString(JsonObject json, String field) {
+        String value = json.getString(field);
+        if (value == null) {
+          throw new IllegalStateException(field + " must be specified for message");
+        }
+        return value;
+      }
+
+      private JsonObject getMandatoryObject(JsonObject json, String field) {
+        JsonObject value = json.getObject(field);
         if (value == null) {
           throw new IllegalStateException(field + " must be specified for message");
         }
@@ -100,27 +130,20 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
       public void handle(Buffer data)  {
 
-        Map<String, Object> msg;
-        try {
-          msg = mapper.readValue(data.toString(), Map.class);
-        } catch (Exception e) {
-          throw new IllegalStateException("Failed to parse JSON");
-        }
+        JsonObject msg = new JsonObject(data.toString());
 
-        String type = (String)getMandatory(msg, "type");
-
+        String type = getMandatoryString(msg, "type");
+        String address = getMandatoryString(msg, "address");
         switch (type) {
           case "send":
-            Map<String, Object> body = (Map<String, Object>)getMandatory(msg, "body");
-            String replyAddress = (String)msg.get("replyAddress");
-            handleSend(body, replyAddress);
+            JsonObject body = getMandatoryObject(msg, "body");
+            String replyAddress = msg.getString("replyAddress");
+            handleSend(address, body, replyAddress);
             break;
           case "register":
-            String address = (String)getMandatory(msg, "address");
             handleRegister(address);
             break;
           case "unregister":
-            address = (String)getMandatory(msg, "address");
             handleUnregister(address);
             break;
           default:
@@ -128,5 +151,32 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         }
       }
     });
+  }
+
+  /*
+  Empty permitted means reject everything - this is the default.
+  If at least one match is supplied and all the fields of any match match then the message permitted,
+  this means that specifying one match with a JSON empty object means everything is accepted
+   */
+  private boolean checkMatches(String address, JsonObject message) {
+    for (JsonObject matchHolder: permitted) {
+      String matchAddress = matchHolder.getString("address");
+      if (matchAddress == null || matchAddress.equals(address)) {
+        boolean matched = true;
+        JsonObject match = matchHolder.getObject("match");
+        if (match != null) {
+          for (String fieldName: match.getFieldNames()) {
+            if (!match.getField(fieldName).equals(message.getField(fieldName))) {
+              matched = false;
+              break;
+            }
+          }
+        }
+        if (matched) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

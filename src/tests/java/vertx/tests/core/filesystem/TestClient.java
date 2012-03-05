@@ -1,7 +1,23 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vertx.tests.core.filesystem;
 
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -14,8 +30,8 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import org.vertx.java.newtests.TestClientBase;
-import org.vertx.java.newtests.TestUtils;
+import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.framework.TestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,10 +60,10 @@ public class TestClient extends TestClientBase {
   @Override
   public void start() {
     super.start();
-    params = SharedData.getMap("params");
+    params = SharedData.instance.getMap("params");
     java.nio.file.FileSystem fs = FileSystems.getDefault();
     pathSep = fs.getSeparator();
-    params = SharedData.getMap("params");
+    params = SharedData.instance.getMap("params");
 
     testDir = new File(TEST_DIR);
     if (testDir.exists()) {
@@ -167,11 +183,11 @@ public class TestClient extends TestClientBase {
 
   private void testCopy(final String source, final String target, final boolean recursive,
                         final boolean shouldPass, final Handler<Void> afterOK) {
-    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (recursive) {
-      FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, true).handler(compl);
+      FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, true, handler);
     } else {
-      FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target).handler(compl);
+      FileSystem.instance.copy(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, handler);
     }
   }
 
@@ -249,7 +265,7 @@ public class TestClient extends TestClientBase {
   }
 
   private void testMove(final String source, final String target, final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
-    FileSystem.instance.move(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target).handler(createHandler(shouldPass, afterOK));
+    FileSystem.instance.move(TEST_DIR + pathSep + source, TEST_DIR + pathSep + target, createHandler(shouldPass, afterOK));
   }
 
   public void testTruncate() throws Exception {
@@ -273,7 +289,7 @@ public class TestClient extends TestClientBase {
 
   private void testTruncate(final String file, final long truncatedLen, final boolean shouldPass,
                             final Handler<Void> afterOK) throws Exception {
-    FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen).handler(createHandler(shouldPass, afterOK));
+    FileSystem.instance.truncate(TEST_DIR + pathSep + file, truncatedLen, createHandler(shouldPass, afterOK));
   }
 
   public void testChmodNonRecursive1() throws Exception {
@@ -368,11 +384,11 @@ public class TestClient extends TestClientBase {
     } else {
       tu.azzert("rw-r--r--".equals(getPerms(file)));
     }
-    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (dirPerms != null) {
-      FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms, dirPerms).handler(compl);
+      FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms, dirPerms, handler);
     } else {
-      FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms).handler(compl);
+      FileSystem.instance.chmod(TEST_DIR + pathSep + file, perms, handler);
     }
   }
   
@@ -448,23 +464,23 @@ public class TestClient extends TestClientBase {
   
   private void testProps(final String fileName, final boolean link, final boolean shouldPass,
                          final Handler<FileProps> afterOK) throws Exception {
-    CompletionHandler<FileProps> compl = new CompletionHandler<FileProps>() {
-      public void handle(Future<FileProps> completion) {
+    AsyncResultHandler<FileProps> handler = new AsyncResultHandler<FileProps>() {
+      public void handle(AsyncResult<FileProps> ar) {
         tu.checkContext();
-        if (!completion.succeeded()) {
+        if (ar.exception != null) {
           if (shouldPass) {
-            tu.exception(completion.exception(), "stat failed");
+            tu.exception(ar.exception, "stat failed");
           } else {
-            tu.azzert(completion.exception() instanceof FileSystemException);
+            tu.azzert(ar.exception instanceof FileSystemException);
             if (afterOK != null) {
-              afterOK.handle(completion.result());
+              afterOK.handle(ar.result);
             }
             tu.testComplete();
           }
         } else {
           if (shouldPass) {
             if (afterOK != null) {
-              afterOK.handle(completion.result());
+              afterOK.handle(ar.result);
             }
             tu.testComplete();
           } else {
@@ -474,9 +490,9 @@ public class TestClient extends TestClientBase {
       }
     };
     if (link) {
-      FileSystem.instance.lprops(TEST_DIR + pathSep + fileName).handler(compl);
+      FileSystem.instance.lprops(TEST_DIR + pathSep + fileName, handler);
     } else {
-      FileSystem.instance.props(TEST_DIR + pathSep + fileName).handler(compl);
+      FileSystem.instance.props(TEST_DIR + pathSep + fileName, handler);
     }
   }
 
@@ -508,12 +524,12 @@ public class TestClient extends TestClientBase {
 
   private void testLink(final String from, final String to, final boolean symbolic,
                         final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
-    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (symbolic) {
       // Symlink is relative
-      FileSystem.instance.symlink(TEST_DIR + pathSep + from, to).handler(compl);
+      FileSystem.instance.symlink(TEST_DIR + pathSep + from, to, handler);
     } else {
-      FileSystem.instance.link(TEST_DIR + pathSep + from, TEST_DIR + pathSep + to).handler(compl);
+      FileSystem.instance.link(TEST_DIR + pathSep + from, TEST_DIR + pathSep + to, handler);
     }
   }
 
@@ -524,12 +540,12 @@ public class TestClient extends TestClientBase {
     final String linkName = "some-link.txt";
     Files.createLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(TEST_DIR + pathSep + fileName));
     tu.azzert(fileSize == fileLength(linkName));
-    CompletionHandler<Void> compl = createHandler(true, new SimpleHandler() {
+    AsyncResultHandler<Void> handler = createHandler(true, new SimpleHandler() {
       public void handle() {
         tu.azzert(!fileExists(linkName));
       }
     });
-    FileSystem.instance.unlink(TEST_DIR + pathSep + linkName).handler(compl);
+    FileSystem.instance.unlink(TEST_DIR + pathSep + linkName, handler);
   }
 
   public void testReadSymLink() throws Exception {
@@ -538,18 +554,18 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(fileName, fileSize);
     final String linkName = "some-link.txt";
     Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
-    CompletionHandler<String> compl = new CompletionHandler<String>() {
-      public void handle(Future<String> completion) {
+    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
+      public void handle(AsyncResult<String> ar) {
         tu.checkContext();
-        if (!completion.succeeded()) {
-          tu.exception(completion.exception(), "Read failed");
+        if (ar.exception != null) {
+          tu.exception(ar.exception, "Read failed");
         } else {
-          tu.azzert(fileName.equals(completion.result()));
+          tu.azzert(fileName.equals(ar.result));
           tu.testComplete();
         }
       }
     };
-    FileSystem.instance.readSymlink(TEST_DIR + pathSep + linkName).handler(compl);
+    FileSystem.instance.readSymlink(TEST_DIR + pathSep + linkName, handler);
   }
 
   public void testSimpleDelete() throws Exception {
@@ -608,11 +624,11 @@ public class TestClient extends TestClientBase {
 
   private void testDelete(final String fileName, final boolean recursive, final boolean shouldPass,
                           final Handler<Void> afterOK) throws Exception {
-    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (recursive) {
-      FileSystem.instance.delete(TEST_DIR + pathSep + fileName, recursive).handler(compl);
+      FileSystem.instance.delete(TEST_DIR + pathSep + fileName, recursive, handler);
     } else {
-      FileSystem.instance.delete(TEST_DIR + pathSep + fileName).handler(compl);
+      FileSystem.instance.delete(TEST_DIR + pathSep + fileName, handler);
     }
   }
 
@@ -669,18 +685,18 @@ public class TestClient extends TestClientBase {
 
   private void testMkdir(final String dirName, final String perms, final boolean createParents,
                          final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
-    CompletionHandler<Void> compl = createHandler(shouldPass, afterOK);
+    AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (createParents) {
       if (perms != null) {
-        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, createParents).handler(compl);
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, createParents, handler);
       } else {
-        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, createParents).handler(compl);
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, createParents, handler);
       }
     } else {
       if (perms != null) {
-        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms).handler(compl);
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, perms, handler);
       } else {
-        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName).handler(compl);
+        FileSystem.instance.mkdir(TEST_DIR + pathSep + dirName, handler);
       }
     }
   }
@@ -748,14 +764,14 @@ public class TestClient extends TestClientBase {
 
   private void testReadDir(final String dirName, final String filter, final boolean shouldPass,
                            final Handler<String[]> afterOK) throws Exception {
-    CompletionHandler<String[]> compl = new CompletionHandler<String[]>() {
-      public void handle(Future<String[]> completion) {
+    AsyncResultHandler<String[]> handler = new AsyncResultHandler<String[]>() {
+      public void handle(AsyncResult<String[]> ar) {
         tu.checkContext();
-        if (!completion.succeeded()) {
+        if (ar.exception != null) {
           if (shouldPass) {
-            tu.exception(completion.exception(), "read failed");
+            tu.exception(ar.exception, "read failed");
           } else {
-            tu.azzert(completion.exception() instanceof FileSystemException);
+            tu.azzert(ar.exception instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(null);
             }
@@ -764,7 +780,7 @@ public class TestClient extends TestClientBase {
         } else {
           if (shouldPass) {
             if (afterOK != null) {
-              afterOK.handle(completion.result());
+              afterOK.handle(ar.result);
             }
             tu.testComplete();
           } else {
@@ -774,9 +790,9 @@ public class TestClient extends TestClientBase {
       }
     };
     if (filter == null) {
-      FileSystem.instance.readDir(TEST_DIR + pathSep + dirName).handler(compl);
+      FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, handler);
     } else {
-      FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, filter).handler(compl);
+      FileSystem.instance.readDir(TEST_DIR + pathSep + dirName, filter, handler);
     }
   }
 
@@ -784,29 +800,29 @@ public class TestClient extends TestClientBase {
     final byte[] content = TestUtils.generateRandomByteArray(1000);
     final String fileName = "some-file.dat";
     createFile(fileName, content);
-    CompletionHandler<Buffer> compl = new CompletionHandler<Buffer>() {
-      public void handle(Future<Buffer> completion) {
+    AsyncResultHandler<Buffer> handler = new AsyncResultHandler<Buffer>() {
+      public void handle(AsyncResult<Buffer> ar) {
         tu.checkContext();
-        if (!completion.succeeded()) {
-          tu.exception(completion.exception(), "failed to read");
+        if (ar.exception != null) {
+          tu.exception(ar.exception, "failed to read");
         } else {
-          tu.azzert(TestUtils.buffersEqual(Buffer.create(content), completion.result()));
+          tu.azzert(TestUtils.buffersEqual(Buffer.create(content), ar.result));
           tu.testComplete();
         }
       }
     };
-    FileSystem.instance.readFile(TEST_DIR + pathSep + fileName).handler(compl);
+    FileSystem.instance.readFile(TEST_DIR + pathSep + fileName, handler);
   }
 
   public void testWriteFile() throws Exception {
     final byte[] content = TestUtils.generateRandomByteArray(1000);
     final Buffer buff = Buffer.create(content);
     final String fileName = "some-file.dat";
-    CompletionHandler<Void> compl = new CompletionHandler<Void>() {
-      public void handle(Future<Void> completion) {
+    AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> ar) {
         tu.checkContext();
-        if (!completion.succeeded()) {
-          tu.exception(completion.exception(), "failed to write");
+        if (ar.exception != null) {
+          tu.exception(ar.exception, "failed to write");
         } else {
           tu.azzert(fileExists(fileName));
           tu.azzert(fileLength(fileName) == content.length);
@@ -822,7 +838,7 @@ public class TestClient extends TestClientBase {
         }
       }
     };
-    FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff).handler(compl);
+    FileSystem.instance.writeFile(TEST_DIR + pathSep + fileName, buff, handler);
   }
 
   public void testWriteAsync() throws Exception {
@@ -833,37 +849,38 @@ public class TestClient extends TestClientBase {
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     final Buffer buff = Buffer.create(content);
 
-    FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, false, true, true, true, new AsyncResultHandler<AsyncFile>() {
       int count;
-      public void handle(Future<AsyncFile> completion) {
+      public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
-        if (completion.succeeded()) {
+        if (ar.exception == null) {
           for (int i = 0; i < chunks; i++) {
             Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
-            completion.result().write(chunk, i * chunkSize).handler(new CompletionHandler<Void>() {
-              public void handle(Future<Void> completion) {
-                if (completion.succeeded()) {
-                  tu.azzert(fileExists(fileName));
-                  byte[] readBytes;
-                  try {
-                    readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-                  } catch (IOException e) {
-                    tu.exception(e, "Failed to read file");
-                    return;
-                  }
-                  tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+            ar.result.write(chunk, i * chunkSize, new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> ar) {
+                if (ar.exception == null) {
                   if (++count == chunks) {
+                    tu.azzert(fileExists(fileName));
+                    byte[] readBytes;
+                    try {
+                      readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                    } catch (IOException e) {
+                      tu.exception(e, "Failed to read file");
+                      return;
+                    }
+                    Buffer read = Buffer.create(readBytes);
+                    tu.azzert(TestUtils.buffersEqual(buff, read));
                     tu.testComplete();
                   }
                 } else {
-                  tu.exception(completion.exception(), "Failed to write");
+                  tu.exception(ar.exception, "Failed to write");
                 }
               }
             });
           }
         } else {
-          tu.exception(completion.exception(), "Failed to open");
+          tu.exception(ar.exception, "Failed to open");
         }
       }
     });
@@ -876,29 +893,29 @@ public class TestClient extends TestClientBase {
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     final Buffer expected = Buffer.create(content);
     createFile(fileName, content);
-    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
       int reads;
-      public void handle(Future<AsyncFile> completion) {
+      public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
-        if (completion.succeeded()) {
+        if (ar.exception == null) {
           final Buffer buff = Buffer.create(chunks * chunkSize);
           for (int i = 0; i < chunks; i++) {
-            completion.result().read(buff, i * chunkSize, i * chunkSize, chunkSize).handler(new CompletionHandler<Buffer>() {
-              public void handle(Future<Buffer> completion) {
-                if (completion.succeeded()) {
+            ar.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new AsyncResultHandler<Buffer>() {
+              public void handle(AsyncResult<Buffer> ar) {
+                if (ar.exception == null) {
                   if (++reads == chunks) {
                     tu.azzert(TestUtils.buffersEqual(expected, buff));
-                    tu.azzert(buff == completion.result());
+                    tu.azzert(buff == ar.result);
                     tu.testComplete();
                   }
                 } else {
-                  tu.exception(completion.exception(), "failed to read");
+                  tu.exception(ar.exception, "failed to read");
                 }
               }
             });
           }
         } else {
-          tu.exception(completion.exception(), "failed to open file");
+          tu.exception(ar.exception, "failed to open file");
         }
       }
     });
@@ -910,11 +927,11 @@ public class TestClient extends TestClientBase {
     final int chunks = 10;
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     final Buffer buff = Buffer.create(content);
-    FileSystem.instance.open(TEST_DIR + pathSep + fileName).handler(new CompletionHandler<AsyncFile>() {
-      public void handle(Future<AsyncFile> completion) {
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
-        if (completion.succeeded()) {
-          WriteStream ws = completion.result().getWriteStream();
+        if (ar.exception == null) {
+          WriteStream ws = ar.result.getWriteStream();
 
           ws.exceptionHandler(new Handler<Exception>() {
             public void handle(Exception e) {
@@ -929,11 +946,11 @@ public class TestClient extends TestClientBase {
             ws.writeBuffer(chunk);
           }
 
-          completion.result().close().handler(new CompletionHandler<Void>() {
-            public void handle(Future<Void> completion) {
+          ar.result.close(new AsyncResultHandler<Void>() {
+            public void handle(AsyncResult<Void> ar) {
               tu.checkContext();
-              if (completion.failed()) {
-                tu.exception(completion.exception(), "failed to close");
+              if (ar.exception != null) {
+                tu.exception(ar.exception, "failed to close");
               } else {
                 tu.azzert(fileExists(fileName));
                 byte[] readBytes;
@@ -949,7 +966,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(completion.exception(), "failed to open");
+          tu.exception(ar.exception, "failed to open");
         }
       }
     });
@@ -962,11 +979,11 @@ public class TestClient extends TestClientBase {
     final byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
     createFile(fileName, content);
 
-    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
-      public void handle(Future<AsyncFile> completion) {
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
-        if (completion.succeeded()) {
-          ReadStream rs = completion.result().getReadStream();
+        if (ar.exception == null) {
+          ReadStream rs = ar.result.getReadStream();
           final Buffer buff = Buffer.create(0);
 
           rs.dataHandler(new Handler<Buffer>() {
@@ -991,7 +1008,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(completion.exception(), "failed to open");
+          tu.exception(ar.exception, "failed to open");
         }
       }
     });
@@ -1006,31 +1023,31 @@ public class TestClient extends TestClientBase {
     final byte[] content = TestUtils.generateRandomByteArray(fileSize);
     createFile(fileName1, content);
 
-    FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false).handler(new CompletionHandler<AsyncFile>() {
-      public void handle(Future<AsyncFile> completion) {
+    FileSystem.instance.open(TEST_DIR + pathSep + fileName1, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
-        if (completion.succeeded()) {
-          final ReadStream rs = completion.result().getReadStream();
+        if (ar.exception == null) {
+          final ReadStream rs = ar.result.getReadStream();
 
           //Open file for writing
-          FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true).handler(new CompletionHandler<AsyncFile>() {
+          FileSystem.instance.open(TEST_DIR + pathSep + fileName2, null, true, true, true, new AsyncResultHandler<AsyncFile>() {
 
-            public void handle(final Future<AsyncFile> completion) {
+            public void handle(final AsyncResult<AsyncFile> ar) {
               tu.checkContext();
-              if (completion.succeeded()) {
+              if (ar.exception == null) {
 
-                WriteStream ws = completion.result().getWriteStream();
+                WriteStream ws = ar.result.getWriteStream();
                 Pump p = new Pump(rs, ws);
                 p.start();
                 rs.endHandler(new SimpleHandler() {
                   public void handle() {
                     tu.checkContext();
-                    completion.result().close().handler(new CompletionHandler<Void>() {
+                    ar.result.close(new AsyncResultHandler<Void>() {
 
-                      public void handle(Future<Void> completion) {
+                      public void handle(AsyncResult<Void> ar) {
                         tu.checkContext();
-                        if (completion.failed()) {
-                          tu.exception(completion.exception(), "failed to close");
+                        if (ar.exception != null) {
+                          tu.exception(ar.exception, "failed to close");
                         } else {
                           tu.azzert(fileExists(fileName2));
                           byte[] readBytes;
@@ -1048,12 +1065,12 @@ public class TestClient extends TestClientBase {
                   }
                 });
               } else {
-                tu.exception(completion.exception(), "failed to open");
+                tu.exception(ar.exception, "failed to open");
               }
             }
           });
         } else {
-          tu.exception(completion.exception(), "failed to open");
+          tu.exception(ar.exception, "failed to open");
         }
       }
     });
@@ -1074,14 +1091,14 @@ public class TestClient extends TestClientBase {
 
   private void testCreateFile(final String perms, final boolean shouldPass) throws Exception {
     final String fileName = "some-file.dat";
-    CompletionHandler compl = new CompletionHandler<Void>() {
-      public void handle(Future<Void> completion) {
+    AsyncResultHandler handler = new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> ar) {
         tu.checkContext();
-        if (completion.failed()) {
+        if (ar.exception != null) {
           if (shouldPass) {
-            tu.exception(completion.exception(), "failed to create");
+            tu.exception(ar.exception, "failed to create");
           } else {
-            tu.azzert(completion.exception() instanceof FileSystemException);
+            tu.azzert(ar.exception instanceof FileSystemException);
             tu.testComplete();
           }
         } else {
@@ -1099,9 +1116,9 @@ public class TestClient extends TestClientBase {
       }
     };
     if (perms != null) {
-      FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, perms).handler(compl);
+      FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, perms, handler);
     } else {
-      FileSystem.instance.createFile(TEST_DIR + pathSep + fileName).handler(compl);
+      FileSystem.instance.createFile(TEST_DIR + pathSep + fileName, handler);
     }
   }
 
@@ -1119,22 +1136,22 @@ public class TestClient extends TestClientBase {
       createFileWithJunk(fileName, 100);
     }
 
-    CompletionHandler<Boolean> compl = new CompletionHandler<Boolean>() {
-      public void handle(Future<Boolean> completion) {
+    AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
+      public void handle(AsyncResult<Boolean> ar) {
         tu.checkContext();
-        if (completion.succeeded()) {
+        if (ar.exception == null) {
           if (exists) {
-            tu.azzert(completion.result());
+            tu.azzert(ar.result);
           } else {
-            tu.azzert(!completion.result());
+            tu.azzert(!ar.result);
           }
           tu.testComplete();
         } else {
-          tu.exception(completion.exception(), "failed to check");
+          tu.exception(ar.exception, "failed to check");
         }
       }
     };
-    FileSystem.instance.exists(TEST_DIR + pathSep + fileName).handler(compl);
+    FileSystem.instance.exists(TEST_DIR + pathSep + fileName, handler);
   }
 
   public void testFSProps() throws Exception {
@@ -1154,29 +1171,29 @@ public class TestClient extends TestClientBase {
 
   private void testFSProps(final String fileName,
                            final Handler<FileSystemProps> afterOK) throws Exception {
-    CompletionHandler<FileSystemProps> compl = new CompletionHandler<FileSystemProps>() {
-      public void handle(Future<FileSystemProps> completion) {
+    AsyncResultHandler<FileSystemProps> handler = new AsyncResultHandler<FileSystemProps>() {
+      public void handle(AsyncResult<FileSystemProps> ar) {
         tu.checkContext();
-        if (!completion.succeeded()) {
-          tu.exception(completion.exception(), "props failed");
+        if (ar.exception != null) {
+          tu.exception(ar.exception, "props failed");
         } else {
-          afterOK.handle(completion.result());
+          afterOK.handle(ar.result);
           tu.testComplete();
         }
       }
     };
-    FileSystem.instance.fsProps(TEST_DIR + pathSep + fileName).handler(compl);
+    FileSystem.instance.fsProps(TEST_DIR + pathSep + fileName, handler);
   }
 
-  private CompletionHandler<Void> createHandler(final boolean shouldPass, final Handler<Void> afterOK) {
-    return new CompletionHandler<Void>() {
-      public void handle(Future<Void> completion) {
+  private AsyncResultHandler<Void> createHandler(final boolean shouldPass, final Handler<Void> afterOK) {
+    return new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
         tu.checkContext();
-        if (!completion.succeeded()) {
+        if (event.exception != null) {
           if (shouldPass) {
-            tu.exception(completion.exception(), "operation failed");
+            tu.exception(event.exception, "operation failed");
           } else {
-            tu.azzert(completion.exception() instanceof FileSystemException);
+            tu.azzert(event.exception instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(null);
             }

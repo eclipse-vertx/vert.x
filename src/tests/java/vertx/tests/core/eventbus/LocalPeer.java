@@ -1,13 +1,30 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vertx.tests.core.eventbus;
 
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.TestUtils;
+import org.vertx.java.framework.TestUtils;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -31,18 +48,16 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testPubSubInitialise() {
     final String address = "some-address";
-    eb.registerHandler(address, new Handler<Message>() {
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
 
-          public void handle(Message msg) {
+          public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            tu.azzert(address.equals(msg.address));
-            tu.azzert(msg.messageID != null);
             handled = true;
-            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
-              public void handle(Future<Void> event) {
-                if (event.succeeded()) {
+            eb.unregisterHandler("some-address", this, new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> event) {
+                if (event.exception == null) {
                   tu.testComplete();
                 } else {
                   tu.azzert(false, "Failed to unregister");
@@ -50,9 +65,9 @@ public class LocalPeer extends EventBusAppBase {
               }
             });
           }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
+        }, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+        if (event.exception == null) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -66,7 +81,7 @@ public class LocalPeer extends EventBusAppBase {
   public void testPubSubMultipleHandlersInitialise() {
 
     final String address2 = "some-other-address";
-    final Handler<Message> otherHandler = new Handler<Message>() {
+    final Handler<Message<Buffer>> otherHandler = new Handler<Message<Buffer>>() {
       public void handle(Message msg) {
         tu.azzert(false, "Should not receive message");
       }
@@ -74,17 +89,15 @@ public class LocalPeer extends EventBusAppBase {
     eb.registerHandler(address2, otherHandler);
 
     final String address = "some-address";
-    eb.registerHandler(address, new Handler<Message>() {
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
 
-          public void handle(Message msg) {
+          public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            tu.azzert(address.equals(msg.address));
-            tu.azzert(msg.messageID != null);
-            eb.unregisterHandler(address, this, new CompletionHandler<Void>() {
-              public void handle(Future<Void> event) {
-                if (event.succeeded()) {
+            eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> event) {
+                if (event.exception == null) {
                   tu.testComplete();
                 } else {
                   tu.azzert(false, "Failed to unregister");
@@ -94,75 +107,9 @@ public class LocalPeer extends EventBusAppBase {
             eb.unregisterHandler(address, otherHandler);
             handled = true;
           }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
-          tu.testComplete();
-        } else {
-          tu.azzert(false, "Failed to register");
-        }
-      }
-    }
-    );
-  }
-
-  public void testNoBufferInitialise() {
-    final String address = "some-address";
-    eb.registerHandler("some-address", new Handler<Message>() {
-          boolean handled = false;
-
-          public void handle(Message msg) {
-            tu.checkContext();
-            tu.azzert(msg.body.length() == 0);
-            tu.azzert(address.equals(msg.address));
-            tu.azzert(msg.messageID != null);
-            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
-              public void handle(Future<Void> event) {
-                if (event.succeeded()) {
-                  tu.testComplete();
-                } else {
-                  tu.azzert(false, "Failed to unregister");
-                }
-              }
-            });
-            handled = true;
-          }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
-          tu.testComplete();
-        } else {
-          tu.azzert(false, "Failed to register");
-        }
-      }
-    }
-    );
-  }
-
-  public void testNullBufferInitialise() {
-    final String address = "some-address";
-    eb.registerHandler("some-address", new Handler<Message>() {
-          boolean handled = false;
-
-          public void handle(Message msg) {
-            tu.checkContext();
-            tu.azzert(msg.body.length() == 0);
-            tu.azzert(address.equals(msg.address));
-            tu.azzert(msg.messageID != null);
-            eb.unregisterHandler("some-address", this, new CompletionHandler<Void>() {
-              public void handle(Future<Void> event) {
-                if (event.succeeded()) {
-                  tu.testComplete();
-                } else {
-                  tu.azzert(false, "Failed to unregister");
-                }
-              }
-            });
-            handled = true;
-          }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
+        }, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+        if (event.exception == null) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -174,17 +121,16 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testPointToPointInitialise() {
     final String address = UUID.randomUUID().toString();
-    eb.registerHandler(address, new Handler<Message>() {
+    SharedData.instance.getSet("addresses").add(address);
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
-          public void handle(Message msg) {
+          public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            tu.azzert(address.equals(msg.address));
-            tu.azzert(msg.messageID != null);
-            eb.unregisterHandler(address, this, new CompletionHandler<Void>() {
-              public void handle(Future<Void> event) {
-                if (event.succeeded()) {
+            eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> event) {
+                if (event.exception == null) {
                   tu.testComplete();
                 } else {
                   tu.azzert(false, "Failed to unregister");
@@ -193,9 +139,9 @@ public class LocalPeer extends EventBusAppBase {
             });
             handled = true;
           }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
+        }, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+        if (event.exception == null) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -203,27 +149,26 @@ public class LocalPeer extends EventBusAppBase {
       }
     }
     );
-    SharedData.getSet("addresses").add(address);
   }
 
   public void testReplyInitialise() {
     final String address = UUID.randomUUID().toString();
-    eb.registerHandler(address, new Handler<Message>() {
+    Set<String> addresses = SharedData.instance.getSet("addresses");
+    addresses.add(address);
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
 
-          public void handle(Message msg) {
+          public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            tu.azzert(address.equals(msg.address));
-            tu.azzert(msg.messageID != null);
             eb.unregisterHandler(address, this);
             handled = true;
             msg.reply(Buffer.create("reply" + address));
           }
-        }, new CompletionHandler<Void>() {
-      public void handle(Future<Void> event) {
-        if (event.succeeded()) {
+        }, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+        if (event.exception == null) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -231,7 +176,6 @@ public class LocalPeer extends EventBusAppBase {
       }
     }
     );
-    SharedData.getSet("addresses").add(address);
   }
 
 

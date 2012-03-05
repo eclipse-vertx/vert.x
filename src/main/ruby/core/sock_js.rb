@@ -14,7 +14,6 @@
 
 require 'core/streams'
 require 'core/ssl_support'
-
 module Vertx
 
   # This is an implementation of the server side part of {"https://github.com/sockjs"}
@@ -84,7 +83,7 @@ module Vertx
   end
 
   # You interact with SockJS clients through instances of SockJS socket.
-  # The API is very similar to {Websocket}. It implements both
+  # The API is very similar to {WebSocket}. It implements both
   # {ReadStream} and {WriteStream} so it can be used with {Pump} to enable
   # flow control.
   #
@@ -96,20 +95,20 @@ module Vertx
     # @private
     def initialize(j_sock)
       @j_del = j_sock
-      @handler_id = Vertx::register_handler { |buffer|
-        write_buffer(buffer)
+      @handler_id = EventBus.register_simple_handler { |msg|
+        write_buffer(msg.body)
       }
     end
 
     # Close the socket
     def close
+      EventBus.unregister_handler(@handler_id)
       @j_del.close
     end
 
     # When a SockJSSocket is created it automatically registers an event handler with the system, the ID of that
     # handler is given by {#handler_id}.
-    # Given this ID, a different event loop can send a buffer to that event handler using {Vertx.send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
     # allows you to write data to other SockJSSockets which are owned by different event loops.
     def handler_id
       @handler_id
@@ -120,27 +119,6 @@ module Vertx
       @j_del
     end
 
-  end
-
-  # A SockJSBridgeHandler plugs into a SockJS server and translates data received via SockJS into operations
-  # to send messages and register and unregister handlers on the vert.x event bus.
-  #
-  # When used in conjunction with the vert.x client side JavaScript event bus api (vertxbus.js) this effectively
-  # extends the reach of the vert.x event bus from vert.x server side applications to the browser as well. This
-  # enables a truly transparent single event bus where client side JavaScript applications can play on the same
-  # bus as server side application instances and services.
-  #
-  # @author {http://tfox.org Tim Fox}
-  class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
-    def initialize
-      super
-    end
-
-    # Call this handler - pretend to be a Proc
-    def call(sock)
-      # This is inefficient since we convert to a Ruby SockJSSocket and back again to a Java one
-      handle(sock._to_java_socket)
-    end
   end
 
 end

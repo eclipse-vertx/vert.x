@@ -17,29 +17,28 @@
 package org.vertx.java.examples.websockets;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.core.http.WebSocketHandler;
+import org.vertx.java.core.http.ServerWebSocket;
 
-public class WebsocketsExample implements VertxApp {
+public class WebsocketsExample implements Verticle {
 
   private HttpServer server;
 
   public void start() {
-    server = new HttpServer().websocketHandler(new WebSocketHandler() {
-      public void handle(final WebSocket ws) {
-        ws.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
-            ws.writeTextFrame(data.toString()); // Echo it back
-          }
-        });
-      }
-
-      public boolean accept(String path) {
-        return path.equals("/myapp");
+    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+      public void handle(final ServerWebSocket ws) {
+        if (ws.path.equals("/myapp")) {
+          ws.dataHandler(new Handler<Buffer>() {
+            public void handle(Buffer data) {
+              ws.writeTextFrame(data.toString()); // Echo it back
+            }
+          });
+        } else {
+          ws.reject();
+        }
       }
     }).requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {

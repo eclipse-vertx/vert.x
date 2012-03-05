@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<project name="vert.x.java.examples" default="compile" basedir=".">
+<project name="vert.x.java.examples" default="all" basedir=".">
 
   <description>
     Build script for vert.x Java examples
@@ -22,8 +22,10 @@
 
   <property name="src" value="."/>
   <property name="output" value="classes"/>
-  <property name="libs" value="../../../lib/core"/>
+  <property name="libs" value="../../../lib/main"/>
   <property name="vertx-classes" value="../../../target/core/classes"/>
+
+  <property name="quux-output" value="quux-out"/>
 
   <path id="compile-classpath">
     <fileset dir="${libs}">
@@ -39,11 +41,25 @@
 
   <target name="compile" depends="init" description="compile the source for the examples">
     <mkdir dir="${output}"/>
-    <javac srcdir="${src}" destdir="${output}" classpathref="compile-classpath" debug="on" includeantruntime="false"/>
+    <javac srcdir="${src}" destdir="${output}" classpathref="compile-classpath" debug="on" includeantruntime="false">
+      <exclude name="**/Quux.java"/>
+    </javac>
   </target>
 
   <target name="clean" description="clean up">
     <delete dir="${output}"/>
+    <delete dir="${quux-output}"/>
   </target>
+
+  <!-- This jar contains a single file and is used in the resource loading example -->
+  <target name="build-quux-jar">
+    <mkdir dir="${quux-output}"/>
+    <javac srcdir="${src}" destdir="${quux-output}" classpathref="compile-classpath" debug="on" includeantruntime="false">
+      <include name="**/Quux.java"/>
+    </javac>
+    <jar jarfile="resourceload/quux.jar" basedir="${quux-output}" includes="**/Quux.class"/>
+  </target>
+
+  <target name="all" depends="compile, build-quux-jar"/>
 
 </project>

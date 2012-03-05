@@ -1,64 +1,140 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.vertx.java.busmods.workqueue;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Queue;
 
 /**
+ * Work Queue Bus Module
+ * <p>
+ * Please see the busmods manual for a full description
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkQueue extends BusModBase {
+public class WorkQueue extends BusModBase implements Verticle {
 
-  private static final Logger log = Logger.getLogger(WorkQueue.class);
+  private static final Logger log = LoggerFactory.getLogger(WorkQueue.class);
 
-  private final long processTimeout;
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
-  private final Queue<Map<String, Object>> messages = new LinkedList<>();
+  private final Queue<JsonObject> messages = new LinkedList<>();
+  private Handler<Message<JsonObject>> registerHandler;
+  private Handler<Message<JsonObject>> unregisterHandler;
+  private Handler<Message<JsonObject>> sendHandler;
 
-  public WorkQueue(final String address, long processTimeout) {
-    super(address, false);
-    this.processTimeout = processTimeout;
+  private long processTimeout;
+  private String persistorAddress;
+  private String collection;
+
+  public WorkQueue() {
+    super(false);
   }
 
-  @Override
+  /**
+   * Start the busmod
+   */
+  public void start() {
+    super.start();
+
+    processTimeout = super.getOptionalLongConfig("process_timeout", 5 * 60 * 1000);
+    persistorAddress = super.getOptionalStringConfig("persistor_address", null);
+    collection = super.getOptionalStringConfig("collection", null);
+
+    if (persistorAddress != null) {
+      loadMessages();
+    }
+
+    registerHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
+        doRegister(message);
+      }
+    };
+    eb.registerHandler(address + ".register", registerHandler);
+    unregisterHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
+        doUnregister(message);
+      }
+    };
+    eb.registerHandler(address + ".unregister", unregisterHandler);
+    sendHandler = new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
+        doSend(message);
+      }
+    };
+    eb.registerHandler(address, sendHandler);
+  }
+
+  /**
+   * Stop the busmod
+   */
   public void stop() {
-    EventBus.instance.unregisterHandler(address, this);
-    super.stop();
+    eb.unregisterHandler(address + ".register", registerHandler);
+    eb.unregisterHandler(address + ".unregister", unregisterHandler);
+    eb.unregisterHandler(address, sendHandler);
   }
 
-  public void handle(Message message, Map<String, Object> json) {
-    String action = (String)getMandatory("action", message, json);
-    if (action == null) {
-      return;
-    }
-    switch (action) {
-      case "register":
-        doRegister(message, json);
-        break;
-      case "unregister":
-        doUnregister(message, json);
-        break;
-      case "send":
-        doSend(message, json);
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid action: " + action);
-    }
+  // Load all the message into memory
+  // TODO - we could limit the amount we load at startup
+  private void loadMessages() {
+    JsonObject msg = new JsonObject().putString("action", "find").putString("collection", collection)
+                                             .putObject("matcher", new JsonObject());
+    eb.send(persistorAddress, msg, createLoadReplyHandler());
   }
+
+  private void processLoadBatch(JsonArray toLoad) {
+    Iterator iter = toLoad.iterator();
+    while (iter.hasNext()) {
+      Object obj = iter.next();
+      if (obj instanceof JsonObject) {
+        messages.add((JsonObject)obj);
+      }
+    }
+    checkWork();
+  }
+
+  private Handler<Message<JsonObject>> createLoadReplyHandler() {
+    return new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> reply) {
+        processLoadBatch(reply.body.getArray("results"));
+        if (reply.body.getString("status").equals("more-exist")) {
+          // Get next batch
+          reply.reply(null, createLoadReplyHandler());
+        }
+      }
+    };
+  }
+
 
   private void checkWork() {
     if (!messages.isEmpty() && !processors.isEmpty()) {
-      final Map<String, Object> message = messages.poll();
+      final JsonObject message = messages.poll();
       final String address = processors.poll();
-      message.put("address", address);
       final long timeoutID = Vertx.instance.setTimer(processTimeout, new Handler<Long>() {
         public void handle(Long id) {
           // Processor timed out - put message back on queue
@@ -66,41 +142,67 @@ public class WorkQueue extends BusModBase {
           messages.add(message);
         }
       });
-      helper.sendJSON(message, new Handler<Message>() {
-        public void handle(Message reply) {
+      eb.send(address, message, new Handler<Message<JsonObject>>() {
+        public void handle(Message<JsonObject> reply) {
           Vertx.instance.cancelTimer(timeoutID);
           processors.add(address);
-          checkWork();
+          if (persistorAddress != null) {
+            JsonObject msg = new JsonObject().putString("action", "delete").putString("collection", collection)
+                                             .putObject("matcher", message);
+            eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
+              public void handle(Message<JsonObject> reply) {
+                if (!reply.body.getString("status").equals("ok"))                 {
+                  log.error("Failed to delete document from queue: " + reply.body.getString("message"));
+                }
+                checkWork();
+              }
+            });
+          } else {
+            checkWork();
+          }
         }
       });
-
     }
   }
 
-  private void doRegister(Message message, Map<String, Object> map) {
-    String processor = (String)getMandatory("processor", message, map);
+  private void doRegister(Message<JsonObject> message) {
+    String processor = getMandatoryString("processor", message);
     if (processor == null) {
       return;
     }
     processors.add(processor);
     checkWork();
-    message.reply();
+    sendOK(message);
   }
 
-  private void doUnregister(Message message, Map<String, Object> map) {
-    String processor = (String)getMandatory("processor", message, map);
+  private void doUnregister(Message<JsonObject> message) {
+    String processor = getMandatoryString("processor", message);
     if (processor == null) {
       return;
     }
     processors.remove(processor);
-    message.reply();
+    sendOK(message);
   }
 
-  private void doSend(Message message, Map<String, Object> map) {
-    Map<String, Object> work = (Map<String, Object>)getMandatory("work", message, map);
-    if (work == null) {
-      return;
+  private void doSend(final Message<JsonObject> message) {
+    if (persistorAddress != null) {
+      JsonObject msg = new JsonObject().putString("action", "save").putString("collection", collection)
+                                       .putObject("document", message.body);
+      eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
+        public void handle(Message<JsonObject> reply) {
+          if (reply.body.getString("status").equals("ok")) {
+            actualSend(message, message.body);
+          } else {
+            sendError(message, reply.body.getString("message"));
+          }
+        }
+      });
+    } else {
+      actualSend(message, message.body);
     }
+  }
+
+  private void actualSend(Message<JsonObject> message, JsonObject work) {
     messages.add(work);
     //Been added to the queue so reply
     sendOK(message);

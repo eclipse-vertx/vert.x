@@ -17,9 +17,9 @@
 package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
@@ -27,7 +27,7 @@ import org.vertx.java.core.shareddata.SharedData;
 
 import java.util.Set;
 
-public class PubSubServer implements VertxApp {
+public class PubSubServer implements Verticle {
 
   private NetServer server;
 
@@ -37,16 +37,20 @@ public class PubSubServer implements VertxApp {
         socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
           public void handle(Buffer frame) {
             String line = frame.toString().trim();
+            System.out.println("Line is " + line);
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {
-              Set<Long> set = SharedData.<Long>getSet(parts[1]);
+              System.out.println("Topic is " + parts[1]);
+              Set<String> set = SharedData.instance.getSet(parts[1]);
               set.add(socket.writeHandlerID);
             } else if (line.startsWith("unsubscribe")) {
-              SharedData.<Long>getSet(parts[1]).remove(socket.writeHandlerID);
+              SharedData.instance.getSet(parts[1]).remove(socket.writeHandlerID);
             } else if (line.startsWith("publish")) {
-              Set<Long> actorIDs = SharedData.getSet(parts[1]);
-              for (Long actorID : actorIDs) {
-                Vertx.instance.sendToHandler(actorID, Buffer.create(parts[2]));
+              System.out.println("Publish to topic is " + parts[1]);
+              Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
+              for (String actorID : actorIDs) {
+                System.out.println("Sending to verticle");
+                EventBus.instance.send(actorID, Buffer.create(parts[2]));
               }
             }
           }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,19 @@
 
 package org.vertx.java.core.file;
 
-import org.vertx.java.core.BlockingAction;
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Deferred;
-import org.vertx.java.core.DeferredAction;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.BlockingAction;
+import org.vertx.java.core.impl.CompletionHandler;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.Deferred;
+import org.vertx.java.core.impl.DeferredAction;
+import org.vertx.java.core.impl.Future;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -41,21 +44,22 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 
 /**
- * <p>Represents a file on the file-system which can be read from, or written to asynchronously.</p>
- * <p>Methods also exist to get a {@link org.vertx.java.core.streams.ReadStream} or a
+ * Represents a file on the file-system which can be read from, or written to asynchronously.
+ * <p>
+ * Methods also exist to get a {@link org.vertx.java.core.streams.ReadStream} or a
  * {@link org.vertx.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
- * other streams, e.g. an {@link org.vertx.java.core.http.HttpClientRequest} instance, using the {@link org.vertx.java.core.streams.Pump} class</p>
+ * other streams, e.g. an {@link org.vertx.java.core.http.HttpClientRequest} instance, using the {@link org.vertx.java.core.streams.Pump} class
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
   */
 public class AsyncFile {
 
-  private static final Logger log = Logger.getLogger(AsyncFile.class);
+  private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 
   public static final int BUFFER_SIZE = 8192;
 
   private final AsynchronousFileChannel ch;
-  private final Thread th;
-  private final long contextID;
+  private final Context context;
   private boolean closed;
   private ReadStream readStream;
   private WriteStream writeStream;
@@ -63,7 +67,7 @@ public class AsyncFile {
   private long writesOutstanding;
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final long contextID, final Thread th) throws Exception {
+            final boolean flush, final Context context) throws Exception {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -79,66 +83,22 @@ public class AsyncFile {
     } else {
       ch = AsynchronousFileChannel.open(file, options, VertxInternal.instance.getBackgroundPool());
     }
-    this.contextID = contextID;
-    this.th = th;
+    this.context = context;
   }
 
   /**
-   * The same as {@link #close} but the close does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
+   * Close the file. The actual close happens asychronously.
    */
-  public Deferred<Void> closeDeferred() {
-    check();
-
-    closed = true;
-
-    Deferred<Void> deferred = new DeferredAction<Void>() {
-
-      @Override
-      public Deferred<Void> execute() {
-        if (!complete) {
-          if (writesOutstanding == 0) {
-            run();
-            complete = true;
-          } else {
-            closedDeferred = this;
-          }
-        }
-        return this;
-      }
-
-      public void run() {
-        try {
-          ch.close();
-          setResult(null);
-        } catch (IOException e) {
-          setException(e);
-        }
-      }
-    };
-
-    return deferred;
+  public void close() {
+    closeDeferred().execute();
   }
 
   /**
-   * Close the file asynchronously.<p>
-   * This method must be called using the same event loop the file was opened from.
-   * @return a Future representing the future result of closing the file.
+   * Close the file. The actual close happens asychronously.
+   * The handler will be called when the close is complete, or an error occurs.
    */
-  public Future<Void> close() {
-    return closeDeferred().execute();
-  }
-
-  /**
-   * The same as {@link #write} but the write does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> writeDeferred(Buffer buffer, int position) {
-    check();
-    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
-    return doWrite(bb, position);
+  public void close(AsyncResultHandler handler) {
+    wrapHandler(closeDeferred().execute(), handler);
   }
 
   /**
@@ -147,22 +107,10 @@ public class AsyncFile {
    * of the file, the file will be enlarged to encompass it.<p>
    * When multiple writes are invoked on the same file
    * there are no guarantees as to order in which those writes actually occur.<p>
-   * This method must be called using the same event loop the file was opened from.
-   * @return a Future representing the future result of the write.
+   * The handler will be called when the close is complete, or an error occurs.
    */
-  public Future<Void> write(Buffer buffer, int position) {
-    return writeDeferred(buffer, position).execute();
-  }
-
-  /**
-   * The same as {@link #read} but the read does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
-    check();
-    ByteBuffer bb = ByteBuffer.allocate(length);
-    return doRead(buffer, offset, bb, position);
+  public void write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
+    wrapHandler(writeDeferred(buffer, position).execute(), handler);
   }
 
   /**
@@ -172,11 +120,10 @@ public class AsyncFile {
    * {@code position + length} must lie within the confines of the file.<p>
    * When multiple reads are invoked on the same file
    * there are no guarantees as to order in which those reads actually occur.<p>
-   * This method must be called using the same event loop the file was opened from.
-   * @return a Future representing the future result of the write.
+   * The handler will be called when the close is complete, or an error occurs.
    */
-  public Future<Buffer> read(Buffer buffer, int offset, int position, int length) {
-    return readDeferred(buffer, offset, position, length).execute();
+  public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
+    wrapHandler(readDeferred(buffer, offset, position, length).execute(), handler);
   }
 
   /**
@@ -278,14 +225,12 @@ public class AsyncFile {
           if (!readInProgress) {
             readInProgress = true;
             Buffer buff = Buffer.create(BUFFER_SIZE);
-            Future<Buffer> deferred = read(buff, 0, pos, BUFFER_SIZE);
+            read(buff, 0, pos, BUFFER_SIZE, new AsyncResultHandler<Buffer>() {
 
-            deferred.handler(new CompletionHandler<Buffer>() {
-
-              public void handle(Future<Buffer> deferred) {
-                if (deferred.succeeded()) {
+              public void handle(AsyncResult<Buffer> ar) {
+                if (ar.exception == null) {
                   readInProgress = false;
-                  Buffer buffer = deferred.result();
+                  Buffer buffer = ar.result;
                   if (buffer.length() == 0) {
                     // Empty buffer represents end of file
                     handleEnd();
@@ -297,7 +242,7 @@ public class AsyncFile {
                     }
                   }
                 } else {
-                  handleException(deferred.exception());
+                  handleException(ar.exception);
                 }
               }
             });
@@ -365,29 +310,21 @@ public class AsyncFile {
   }
 
   /**
-   * The same as {@link #flush} but the flush does not start until the {@link Deferred#execute} method
-   * is called on the Deferred instance returned by this method.
-   * @return a Deferred representing the as-yet unexecuted action.
-   */
-  public Deferred<Void> flushDeferred() {
-    checkClosed();
-    checkContext();
-    return new BlockingAction<Void>() {
-      public Void action() throws Exception {
-        ch.force(false);
-        return null;
-      }
-    };
-  }
-
-  /**
    * Flush any writes made to this file to underlying persistent storage.<p>
    * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
    * The actual flush will happen asynchronously.
-   * @return a Future representing the future result of the write.
    */
-  public Future<Void> flush() {
-    return flushDeferred().execute();
+  public void flush() {
+    flushDeferred().execute();
+  }
+
+  /**
+   * Same as {@link #flush} but the handler will be called when the flush is complete
+   * or an error occurs
+   * @param handler
+   */
+  public void flush(AsyncResultHandler handler) {
+    wrapHandler(flushDeferred().execute(), handler);
   }
 
   private Deferred<Void> doWrite(final ByteBuffer buff, final int position) {
@@ -417,9 +354,8 @@ public class AsyncFile {
           doWrite(buff, pos, deferred);
         } else {
           // It's been fully written
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              VertxInternal.instance.setContextID(contextID);
               writesOutstanding -= buff.limit();
               deferred.setResult(null);
             }
@@ -430,9 +366,8 @@ public class AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           final Exception e = (Exception) exc;
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              VertxInternal.instance.setContextID(contextID);
               deferred.setException(e);
             }
           });
@@ -462,9 +397,8 @@ public class AsyncFile {
       int pos = position;
 
       private void done() {
-        VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+        context.execute(new Runnable() {
           public void run() {
-            setContextID();
             buff.flip();
             writeBuff.setBytes(offset, buff);
             deferred.setResult(writeBuff);
@@ -490,14 +424,13 @@ public class AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           final Exception e = (Exception) exc;
-          VertxInternal.instance.executeOnContext(contextID, new Runnable() {
+          context.execute(new Runnable() {
             public void run() {
-              setContextID();
               deferred.setException(e);
             }
           });
         } else {
-          log.error("Error occurred", exc);
+          VertxInternal.instance.reportException(exc);
         }
       }
     });
@@ -514,19 +447,81 @@ public class AsyncFile {
     }
   }
 
-  private void setContextID() {
-    // Sanity checkClosed
-    // All ops should always be invoked on same thread
-    if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread");
-    }
-    VertxInternal.instance.setContextID(contextID);
-  }
-
   private void checkContext() {
-    if (!Vertx.instance.getContextID().equals(contextID)) {
+    if (!VertxInternal.instance.getContext().equals(context)) {
       throw new IllegalStateException("AsyncFile must only be used in the context that created it");
     }
   }
+
+  private Deferred<Void> flushDeferred() {
+    checkClosed();
+    checkContext();
+    return new BlockingAction<Void>() {
+      public Void action() throws Exception {
+        ch.force(false);
+        return null;
+      }
+    };
+  }
+
+  private Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
+    check();
+    ByteBuffer bb = ByteBuffer.allocate(length);
+    return doRead(buffer, offset, bb, position);
+  }
+
+  private Deferred<Void> writeDeferred(Buffer buffer, int position) {
+    check();
+    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
+    return doWrite(bb, position);
+  }
+
+
+  private Deferred<Void> closeDeferred() {
+    check();
+
+    closed = true;
+
+    Deferred<Void> deferred = new DeferredAction<Void>() {
+
+      @Override
+      public Deferred<Void> execute() {
+        if (!complete) {
+          if (writesOutstanding == 0) {
+            run();
+            complete = true;
+          } else {
+            closedDeferred = this;
+          }
+        }
+        return this;
+      }
+
+      public void run() {
+        try {
+          ch.close();
+          setResult(null);
+        } catch (IOException e) {
+          setException(e);
+        }
+      }
+    };
+
+    return deferred;
+  }
+
+  private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
+    fut.handler(new CompletionHandler<T>() {
+      public void handle(Future<T> event) {
+        if (event.succeeded()) {
+          handler.handle(new AsyncResult<T>(event.result()));
+        } else {
+          handler.handle(new AsyncResult<T>(event.exception()));
+        }
+      }
+    });
+  }
+
+
 
 }

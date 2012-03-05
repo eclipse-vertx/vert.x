@@ -17,25 +17,23 @@
 package org.vertx.java.examples.ssl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
-public class SSLClient implements VertxApp {
+public class SSLClient implements Verticle {
 
   private NetClient client;
 
   public void start() {
     client = new NetClient().setSSL(true).setTrustAll(true).connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
           }
         });
-
         //Now send some dataHandler
         for (int i = 0; i < 10; i++) {
           String str = "hello" + i + "\n";

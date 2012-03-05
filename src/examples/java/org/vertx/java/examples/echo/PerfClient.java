@@ -18,13 +18,13 @@ package org.vertx.java.examples.echo;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.app.VertxApp;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
-public class PerfClient implements VertxApp {
+public class PerfClient implements Verticle {
 
   private NetClient client;
 

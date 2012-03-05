@@ -1,17 +1,33 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vertx.tests.redis;
 
-import org.vertx.java.addons.redis.RedisConnection;
-import org.vertx.java.addons.redis.RedisException;
-import org.vertx.java.addons.redis.RedisPool;
-import org.vertx.java.core.Deferred;
-import org.vertx.java.core.DeferredAction;
-import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleAction;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.composition.Composer;
-import org.vertx.java.newtests.TestClientBase;
-import org.vertx.java.newtests.TestUtils;
+import org.vertx.java.core.impl.Deferred;
+import org.vertx.java.core.impl.DeferredAction;
+import org.vertx.java.core.impl.Future;
+import org.vertx.java.core.impl.SimpleAction;
+import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.framework.TestUtils;
+import org.vertx.java.old.redis.RedisConnection;
+import org.vertx.java.old.redis.RedisException;
+import org.vertx.java.old.redis.RedisPool;
 
 import java.util.HashMap;
 import java.util.HashSet;

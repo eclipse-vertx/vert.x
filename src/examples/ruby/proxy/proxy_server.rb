@@ -25,17 +25,17 @@ include Vertx
   c_req = @client.request(req.method, req.uri) do |c_res|
     puts "Proxying response: #{c_res.status_code}"
     req.response.status_code = c_res.status_code
-    req.response.put_all_headers(c_res.headers)
+    req.response.put_headers(c_res.headers)
     c_res.data_handler do |data|
-      puts "Proxying response body: #{data}"
+      puts "Proxying response payload: #{data}"
       req.response.write_buffer(data);
     end
     c_res.end_handler { req.response.end }
   end
 
-  c_req.put_all_headers(req.headers)
+  c_req.put_headers(req.headers)
   req.data_handler do |data|
-    puts "Proxying request body #{data}"
+    puts "Proxying request payload #{data}"
     c_req.write_buffer(data)
   end
   req.end_handler { c_req.end }

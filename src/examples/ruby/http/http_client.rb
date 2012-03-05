@@ -20,7 +20,7 @@ include Vertx
 @client.host = "localhost"
 @client.get_now("/") do |resp|
   puts "Got response #{resp.status_code}"
-  resp.data_handler do |buffer|
+  resp.body_handler do |buffer|
     puts "Got data #{buffer}"
   end
 end

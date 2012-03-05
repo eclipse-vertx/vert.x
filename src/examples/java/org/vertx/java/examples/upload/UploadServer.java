@@ -16,11 +16,11 @@
 
 package org.vertx.java.examples.upload;
 
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpServer;
@@ -29,7 +29,7 @@ import org.vertx.java.core.streams.Pump;
 
 import java.util.UUID;
 
-public class UploadServer implements VertxApp {
+public class UploadServer implements Verticle {
 
   private HttpServer server;
 
@@ -43,21 +43,21 @@ public class UploadServer implements VertxApp {
 
         final String filename = "upload/file-" + UUID.randomUUID().toString() + ".upload";
 
-        FileSystem.instance.open(filename).handler(new CompletionHandler<AsyncFile>() {
-          public void handle(Future<AsyncFile> deferred) {
-            final AsyncFile file = deferred.result();
+        FileSystem.instance.open(filename, new AsyncResultHandler<AsyncFile>() {
+          public void handle(AsyncResult<AsyncFile> ar) {
+            final AsyncFile file = ar.result;
             final Pump pump = new Pump(req, file.getWriteStream());
             final long start = System.currentTimeMillis();
             req.endHandler(new SimpleHandler() {
               public void handle() {
-                file.close().handler(new CompletionHandler<Void>() {
-                  public void handle(Future<Void> deferred) {
-                    if (deferred.succeeded()) {
+                file.close(new AsyncResultHandler<Void>() {
+                  public void handle(AsyncResult<Void> ar) {
+                    if (ar.exception == null) {
                       req.response.end();
                       long end = System.currentTimeMillis();
                       System.out.println("Uploaded " + pump.getBytesPumped() + " bytes to " + filename + " in " + (end - start) + " ms");
                     } else {
-                      deferred.exception().printStackTrace(System.err);
+                      ar.exception.printStackTrace(System.err);
                     }
                   }
                 });

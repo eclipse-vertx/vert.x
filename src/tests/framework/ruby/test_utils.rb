@@ -1,13 +1,18 @@
 class TestUtils
   def initialize
-    @j_tu = org.vertx.java.newtests.TestUtils.new
+    @j_tu = org.vertx.java.framework.TestUtils.new
   end
 
   def azzert(result, message = nil)
-    if message
-      @j_tu.azzert(result, message)
-    else
-      @j_tu.azzert(result)
+    begin
+      if message
+        @j_tu.azzert(result, message)
+      else
+        @j_tu.azzert(result)
+      end
+    rescue java.lang.RuntimeException
+      # Rethrow as a ruby exception so we see nice Ruby backtrace
+      raise "Assertion Failed #{message}"
     end
   end
 
@@ -41,12 +46,16 @@ class TestUtils
   end
 
   def TestUtils.gen_buffer(size)
-    j_buff = org.vertx.java.newtests.TestUtils.generateRandomBuffer(size)
+    j_buff = org.vertx.java.framework.TestUtils.generateRandomBuffer(size)
     Buffer.new(j_buff)
   end
 
+  def TestUtils.random_unicode_string(size)
+    org.vertx.java.framework.TestUtils.randomUnicodeString(size)
+  end
+
   def TestUtils.buffers_equal(buff1, buff2)
-    org.vertx.java.newtests.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
+    org.vertx.java.framework.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end
 
   def check_context

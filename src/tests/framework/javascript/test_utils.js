@@ -1,7 +1,7 @@
 var TestUtils = function() {
 
   var that = this;
-  var jutils = new org.vertx.java.newtests.TestUtils();
+  var jutils = new org.vertx.java.framework.TestUtils();
 
   that.azzert = function(result, message) {
     if (message) {
@@ -42,6 +42,18 @@ var TestUtils = function() {
 
   that.checkContext = function() {
     jutils.checkContext();
+  }
+
+  that.generateRandomBuffer = function(size) {
+    return jutils.generateRandomBuffer(size);
+  }
+
+  that.randomUnicodeString = function(size) {
+    return jutils.randomUnicodeString(size);
+  }
+
+  that.buffersEqual = function(buff1, buff2) {
+    return jutils.buffersEqual(buff1, buff2);
   }
 
 }

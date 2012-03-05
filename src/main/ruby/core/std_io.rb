@@ -16,9 +16,6 @@ module Vertx
 
   # Provides asynchronous stream wrappers around STDOUT, STDIN and STDERR
   #
-  # These wrappers should be used if you want to use STDOUT, STDIN and STDERR in a non blocking way from inside
-  # an event loop.
-  #
   # @author {http://tfox.org Tim Fox}
   class StdIO
 

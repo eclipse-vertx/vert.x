@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ var vertx = vertx || {};
 
 vertx.EventBus = function(url, options) {
 
-  // I use Crockford style to hide all private data
-
   var that = this;
   var sockJSConn = new SockJS(url, options);
   var handlerMap = {};
@@ -33,26 +31,26 @@ vertx.EventBus = function(url, options) {
   that.onopen = null;
   that.onclose = null;
 
-  that.send = function(address, data, replyHandler) {
+  that.send = function(address, message, replyHandler) {
     checkSpecified("address", address);
-    checkSpecified("data", data);
+    checkSpecified("message", message);
     if (replyHandler && !isFunction(replyHandler)) {
       throw new Error("replyHandler must be a function");
     }
+    if (typeof message != 'object') {
+      throw new Error("Message to send must be a JSON object");
+    }
     checkOpen();
-    var msgID = makeUUID();
-    data.messageID = msgID;
-    data.address = address;
-    var msg = { "type" : "send",
-              "body": data };
+    var envelope = { type : "send",
+                     address: address,
+                     body: message };
     if (replyHandler) {
       var replyAddress = makeUUID();
-      msg["replyAddress"] = replyAddress;
+      envelope.replyAddress = replyAddress;
       replyHandlers[replyAddress] = replyHandler;
     }
-    var str = JSON.stringify(msg);
+    var str = JSON.stringify(envelope);
     sockJSConn.send(str);
-    return msgID;
   }
 
   that.registerHandler = function(address, handler) {
@@ -66,8 +64,8 @@ vertx.EventBus = function(url, options) {
       handlers = [handler];
       handlerMap[address] = handlers;
       // First handler for this address so we should register the connection
-      var msg = { "type" : "register",
-                "address": address };
+      var msg = { type : "register",
+                  address: address };
       sockJSConn.send(JSON.stringify(msg));
     } else {
       handlers[handlers.length] = handler;
@@ -86,8 +84,8 @@ vertx.EventBus = function(url, options) {
       if (handlers.length == 0) {
         // No more local handlers so we should unregister the connection
 
-        var msg = { "type" : "unregister",
-                "address": address};
+        var msg = { type : "unregister",
+                    address: address};
         sockJSConn.send(JSON.stringify(msg));
         delete handlerMap[address];
       }
@@ -121,15 +119,14 @@ vertx.EventBus = function(url, options) {
   sockJSConn.onmessage = function(e) {
     var msg = e.data;
     var json = JSON.parse(msg);
-    var body = json["body"];
-    var replyAddress = json["replyAddress"];
-    var address = body["address"];
-    var messageID = body["messageID"];
+    var body = json.body;
+    var replyAddress = json.replyAddress;
+    var address = json.address;
     var replyHandler;
     if (replyAddress) {
-      replyHandler = function(data) {
+      replyHandler = function(reply, replyHandler) {
         // Send back reply
-        that.send(replyAddress, data);
+        that.send(replyAddress, reply, replyHandler);
       };
     }
     var handlers = handlerMap[address];

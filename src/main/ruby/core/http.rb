@@ -14,17 +14,17 @@
 
 require 'core/streams'
 require 'core/ssl_support'
+require 'core/tcp_support'
 
 module Vertx
 
   # An HTTP server.
   # The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.
-  # Instances of HttpServer can only be used from the event loop that created it.
   #
   # @author {http://tfox.org Tim Fox}
   class HttpServer
 
-    include SSLSupport
+    include SSLSupport, TCPSupport
 
     # Create a new HttpServer
     def initialize
@@ -42,17 +42,13 @@ module Vertx
     end
 
     # Set the websocket handler for the server.
-    # As websocket requests arrive on the server and are accepted a new {Websocket} instance will be created and passed to the handler.
+    # As websocket requests arrive on the server and are accepted a new {WebSocket} instance will be created and passed to the handler.
     # @param [Proc] proc A proc to be used as the handler
     # @param [Block] hndlr A block to be used as the handler
     def websocket_handler(proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.websocketHandler do |param|
-        if param.is_a? String
-          hndlr.call(param)
-        else
-          hndlr.call(Websocket.new(param))
-        end
+        hndlr.call(ServerWebSocket.new(param))
       end
 
       self
@@ -90,13 +86,12 @@ module Vertx
   # A client maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
   # as pipelines for HTTP requests.
   # It is used as a factory for {HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
-  # used as a factory for HTML5 {Websocket websockets}.
-  # The client is thread-safe and can be safely shareddata by different event loops.
+  # used as a factory for HTML5 {WebSocket websockets}.
   #
   # @author {http://tfox.org Tim Fox}
   class HttpClient
 
-    include SSLSupport
+    include SSLSupport, TCPSupport
 
     # Create a new HttpClient
     def initialize
@@ -161,11 +156,11 @@ module Vertx
     end
 
     # Attempt to connect an HTML5 websocket to the specified URI.
-    # The connect is done asynchronously and the handler is called with a Completion containing a {Websocket} on success.
+    # The connect is done asynchronously and the handler is called with a  {WebSocket} on success.
     # @param [String] uri. A relative URI where to connect the websocket on the host, e.g. /some/path
-    # @param [Block] hndlr. The handler to be called with the {Websocket}
+    # @param [Block] hndlr. The handler to be called with the {WebSocket}
     def connect_web_socket(uri, &hndlr)
-      @j_del.connectWebsocket(uri) { |j_ws| hndlr.call(Websocket.new(j_ws)) }
+      @j_del.connectWebsocket(uri) { |j_ws| hndlr.call(WebSocket.new(j_ws)) }
     end
 
     # This is a quick version of the {#get} method where you do not want to do anything with the request
@@ -244,6 +239,14 @@ module Vertx
       HttpClientRequest.new(@j_del.connect(uri, resp_handler(hndlr)))
     end
 
+    # This method returns an {HttpClientRequest} instance which represents an HTTP PATCH request with the specified uri.
+    # When an HTTP response is received from the server the handler is called passing in the response.
+    # @param [String] uri. A relative URI where to perform the PATCH on the server.
+    # @param [Block] hndlr. The handler to be called with the {HttpClientResponse}
+    def patch(uri, &hndlr)
+      HttpClientRequest.new(@j_del.patch(uri, resp_handler(hndlr)))
+    end
+
     # This method returns an {HttpClientRequest} instance which represents an HTTP request with the specified method and uri.
     # When an HTTP response is received from the server the handler is called passing in the response.
     # @param [String] method. The HTTP method. Can be one of OPTIONS, HEAD, GET, POST, PUT, DELETE, TRACE, CONNECT.
@@ -285,8 +288,6 @@ module Vertx
   #
   # This class supports both chunked and non-chunked HTTP.
   #
-  # This class can only be used from the event loop that created it.
-  #
   # An example of using this class is as follows:
   #
   # @example
@@ -325,7 +326,7 @@ module Vertx
     # Inserts a Hash of headers into the request.
     # @param [Hash] headers. Headers to insert. to_s will be called on each value to determine the actual String value to insert.
     # @return [HttpClientRequest] self So multiple operations can be chained.
-    def put_all_headers(headers)
+    def put_headers(headers)
       headers.each_pair do |k, v|
         @j_del.putHeader(k, v.to_s)
       end
@@ -414,8 +415,6 @@ module Vertx
   # An instance of this class is provided to the user via a handler that was specified when one of the
   # HTTP method operations, or the generic {HttpClient#request} method was called on an instance of {HttpClient}.
   #
-  # Instances of this class can only be used from the event loop thread which created the corresponding {HttpClientRequest}.</p>
-  #
   # @author {http://tfox.org Tim Fox}
   class HttpClientResponse
 
@@ -446,7 +445,7 @@ module Vertx
     # @return [Hash]. A Hash of headers.
     def headers
       if @headers == nil
-        hdrs = @j_del.getHeaders
+        hdrs = @j_del.getAllHeaders
         iter = hdrs.entrySet.iterator
         @headers = {}
         while iter.hasNext
@@ -491,12 +490,12 @@ module Vertx
     # @return [Hash]. A Hash of trailers.
     def trailers
       if @trailers == nil
-        hdrs = @j_del.getHeaders
-        iter = hdrs.iterator
+        trlrs = @j_del.getAllTrailers
+        iter = trlrs.entrySet.iterator
         @trailers = {}
         while iter.hasNext
           entry = iter.next
-          @trailers[entry.getkey] = entry.getValue
+          @trailers[entry.getKey] = entry.getValue
         end
       end
       @trailers
@@ -532,9 +531,6 @@ module Vertx
   # An instance of this class is created for each request that is handled by the server and is passed to the user via the
   # handler specified using {HttpServer#request_handler}.
   #
-  # On creation a new execution context is assigned to each instance and an event loop is allocated to it from one
-  # of the available ones. The instance must only be called from that event loop.
-  #
   # Each instance of this class is associated with a corresponding {HttpServerResponse} instance via the field {#response}.
   #
   # @author {http://tfox.org Tim Fox}
@@ -558,9 +554,26 @@ module Vertx
       @j_del.uri
     end
 
+    def path
+      @j_del.path
+    end
+
+    def query
+      @j_del.query
+    end
+
     # @return [Hash] The request parameters
     def params
-      @j_del.getParams
+      if (@params == nil)
+        prms = @j_del.getAllParams
+        iter = prms.entrySet.iterator
+        @params = {}
+        while iter.hasNext
+          entry = iter.next
+          @params[entry.getKey] = entry.getValue
+        end
+      end
+      @params
     end
 
     # @return [HttpServerResponse] The response. Each instance of this class has an {HttpServerResponse} instance attached to it. This is used
@@ -583,7 +596,7 @@ module Vertx
     # @return [Hash]. A Hash of headers.
     def headers
       if (@headers == nil)
-        hdrs = @j_del.getHeaders
+        hdrs = @j_del.getAllHeaders
         iter = hdrs.entrySet.iterator
         @headers = {}
         while iter.hasNext
@@ -649,6 +662,10 @@ module Vertx
       @j_del.statusCode = val
     end
 
+    def status_message=(val)
+      @j_del.statusMessage = val
+    end
+
     # Inserts a header into the response.
     # @param [String] key The header key
     # @param [Object] value The header value. to_s will be called on the value to determine the actual String value to insert.
@@ -661,7 +678,7 @@ module Vertx
     # Inserts a Hash of headers into the response.
     # @param [Hash] headers. Headers to insert. to_s will be called on each value to determine the actual String value to insert.
     # @return [HttpServerResponse] self So multiple operations can be chained.
-    def put_all_headers(headers)
+    def put_headers(headers)
       headers.each_pair do |k, v|
         @j_del.putHeader(k, v)
       end
@@ -680,7 +697,7 @@ module Vertx
     # Inserts a Hash of trailers into the response. Trailers are only sent if you are using a HTTP chunked response.
     # @param [Hash] trailers. Trailers to insert. to_s will be called on each value to determine the actual String value to insert.
     # @return [HttpServerResponse] self So multiple operations can be chained.
-    def put_all_trailers(headers)
+    def put_trailers(trailers)
       trailers.each_pair do |k, v|
         @j_del.putTrailer(k, v)
       end
@@ -747,38 +764,29 @@ module Vertx
 
   # Encapsulation of an HTML 5 Websocket.
   #
-  # Instances of this class are either created by an {HttpServer} instance when a websocket handshake is accepted
-  # on the server, or are create by an {HttpClient} instance when a client succeeds in a websocket handshake with a server.
+  # Instances of this class are createde by an {HttpClient} instance when a client succeeds in a websocket handshake with a server.
   # Once an instance has been obtained it can be used to send or receive buffers of data from the connection,
   # a bit like a TCP socket.
   #
-  # Instances of this class can only be used from the event loop thread which created it.
-  #
   # @author {http://tfox.org Tim Fox}
-  class Websocket
+  class WebSocket
 
     include ReadStream, WriteStream
 
     # @private
     def initialize(j_ws)
       @j_del = j_ws
-      @binary_handler_id = Vertx::register_handler { |buffer|
-        write_binary_frame(buffer)
+      @binary_handler_id = EventBus.register_simple_handler { |msg|
+        write_binary_frame(msg.body)
       }
-      @text_handler_id = Vertx::register_handler { |str|
-        write_text_frame(str)
+      @text_handler_id = EventBus.register_simple_handler { |msg|
+        write_text_frame(msg.body)
       }
       @j_del.closedHandler(Proc.new {
-        Vertx::unregister_handler(@binary_handler_id)
-        Vertx::unregister_handler(@text_handler_id)
+        EventBus.unregister_handler(@binary_handler_id)
+        EventBus.unregister_handler(@text_handler_id)
         @closed_handler.call if @closed_handler
       })
-    end
-
-    # @return [String] The uri the websocket was created on. When a websocket is first received on the server, the uri can be checked and
-    # the websocket can be closed if you want to restrict which uris you wish to accept websockets on.
-    def uri
-      @j_del.uri
     end
 
     # Write data to the websocket as a binary frame
@@ -800,8 +808,7 @@ module Vertx
 
     # When a Websocket is created it automatically registers an event handler with the system, the ID of that
     # handler is given by {#binary_handler_id}.
-    # Given this ID, a different event loop can send a binary frame to that event handler using {Vertx.send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a binary frame to that event handler using the event bus. This
     # allows you to write data to other websockets which are owned by different event loops.
     def binary_handler_id
       @binary_handler_id
@@ -809,8 +816,7 @@ module Vertx
 
     # When a Websocket is created it automatically registers an event handler with the system, the ID of that
     # handler is given by {#text_handler_id}.
-    # Given this ID, a different event loop can send a text frame to that event handler using {Vertx.send_to_handler} and
-    # that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+    # Given this ID, a different event loop can send a text frame to that event handler using the event bus. This
     # allows you to write data to other websockets which are owned by different event loops.
     def text_handler_id
       @text_handler_id
@@ -824,6 +830,31 @@ module Vertx
       @closed_handler = hndlr;
     end
 
+  end
+
+  # Instances of this class are created when a WebSocket is accepted on the server.
+  # It extends {WebSocket} and adds methods to reject the WebSocket and an
+  # attribute for the path.
+  class ServerWebSocket < WebSocket
+
+    # @private
+    def initialize(j_ws)
+      super(j_ws)
+      @j_del = j_ws
+    end
+
+    # Reject the WebSocket
+    # This can be called in the websocket connect handler on the server side and
+    # will cause the WebSocket connection attempt to be rejected, returning a
+    # 404 to the client.
+    def reject
+      @j_del.reject
+    end
+
+    # The path the websocket connect was attempted at.
+    def path
+      @j_del.path
+    end
   end
 
   # This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
@@ -911,6 +942,60 @@ module Vertx
       @j_del.delete(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
+    # Specify a handler that will be called for a matching HTTP OPTIONS
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def options(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.options(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP HEAD
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def head(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.head(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP TRACE
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def trace(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.trace(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP PATCH
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def patch(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.patch(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP CONNECT
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def connect(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.connect(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for any matching HTTP request
+    # @param [String] The simple pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def all(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.all(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
     # Specify a handler that will be called for a matching HTTP GET
     # @param [String] A regular expression for a pattern
     # @param [Proc] proc A proc to be used as the handler
@@ -945,6 +1030,60 @@ module Vertx
     def delete_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.deleteWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP OPTIONS
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def options_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.optionsWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP HEAD
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def head_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.headWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP TRACE
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def trace_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.traceWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP PATCH
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def patch_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.patchWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for a matching HTTP CONNECT
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def connect_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.connectWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called for any matching HTTP request
+    # @param [String] A regular expression for a pattern
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def all_re(pattern, proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.allWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
   end

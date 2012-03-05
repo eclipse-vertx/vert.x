@@ -1,4 +1,4 @@
-# Copyright 2011 the original author or authors.
+# Copyright 2011-2012 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ module Vertx
   # as necessary to accomodate any bytes written to it.
   #
   # Buffers are used in many places in vert.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
-  # {Websocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
+  # {WebSocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
   #
   # Buffer instances should always be created using the factory methods {Buffer.create} and {Buffer.create_from_str}.
   #
@@ -37,13 +37,6 @@ module Vertx
   #
   # @author {http://tfox.org Tim Fox}
   class Buffer
-
-    private_class_method :new
-
-    # We include this so we can put a buffer in a shareddata data structure.
-    # This class isn't actually immutable but it doesn't matter since it will get copied automatically
-    # as it is added to the map
-    include Immutable
 
     # @private
     def initialize(j_buffer)

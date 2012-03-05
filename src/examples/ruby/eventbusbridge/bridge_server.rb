@@ -16,10 +16,8 @@ require "vertx"
 include Vertx
 
 @server = HttpServer.new
-sjs_server = SockJSServer.new(@server)
-
-# Bridge the vert.x event bus to the client side
-sjs_server.install_app({"prefix" => "/eventbus"}, SockJSBridgeHandler.new)
+# Let everything through
+bridge = SockJSBridge.new(@server, {"prefix" => "/eventbus"}, [{}])
 
 # Also serve the index page
 @server.request_handler do |req|

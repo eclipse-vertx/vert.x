@@ -1,9 +1,25 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vertx.tests.core.blockingaction;
 
-import org.vertx.java.core.BlockingAction;
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
-import org.vertx.java.newtests.TestClientBase;
+import org.vertx.java.core.impl.BlockingAction;
+import org.vertx.java.core.impl.CompletionHandler;
+import org.vertx.java.core.impl.Future;
+import org.vertx.java.framework.TestClientBase;
 
 /**
  *
@@ -40,7 +56,7 @@ public class TestClient extends TestClientBase {
     for (int i = 0; i < numActions; i++) {
       // One that succeeeds
       new BlockingAction<String>() {
-        protected String action() throws Exception {
+        public String action() throws Exception {
           return "foo";
         }
       }.handler(new CompletionHandler<String>() {
@@ -53,7 +69,7 @@ public class TestClient extends TestClientBase {
 
       // One that throws an exception
       new BlockingAction<String>() {
-        protected String action() throws Exception {
+        public String action() throws Exception {
           throw new Exception("Wibble");
         }
       }.handler(new CompletionHandler<String>() {

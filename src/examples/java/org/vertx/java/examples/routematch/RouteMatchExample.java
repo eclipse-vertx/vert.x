@@ -17,12 +17,12 @@
 package org.vertx.java.examples.routematch;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 
-public class RouteMatchExample implements VertxApp {
+public class RouteMatchExample implements Verticle {
 
   private HttpServer server;
 
@@ -32,12 +32,12 @@ public class RouteMatchExample implements VertxApp {
 
     rm.get("/details/:user/:id", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        req.response.end("User: " + req.getParams().get("user") + " ID: " + req.getParams().get("id"));
+        req.response.end("User: " + req.getAllParams().get("user") + " ID: " + req.getAllParams().get("id"));
       }
     });
 
     // Catch all - serve the index page
-    rm.get(".*", new Handler<HttpServerRequest>() {
+    rm.getWithRegEx(".*", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.sendFile("route_match/index.html");
       }

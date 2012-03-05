@@ -1,10 +1,26 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.vertx.java.tests.core.websockets;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.TestBase;
+import org.vertx.java.framework.TestBase;
 import vertx.tests.core.websockets.InstanceCheckServer;
 import vertx.tests.core.websockets.WebsocketsTestClient;
 
@@ -13,17 +29,25 @@ import vertx.tests.core.websockets.WebsocketsTestClient;
  */
 public class JavaWebsocketTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaWebsocketTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaWebsocketTest.class);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, WebsocketsTestClient.class.getName());
+    startApp(WebsocketsTestClient.class.getName());
   }
 
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
+  }
+
+  public void testRejectHybi00() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testRejectHybi08() throws Exception {
+    startTest(getMethodName());
   }
 
   public void testWSBinaryHybi00() throws Exception {
@@ -129,19 +153,19 @@ public class JavaWebsocketTest extends TestBase {
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
-        appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getCounter("connections").set(0);
-      SharedData.getCounter("servers").set(0);
-      SharedData.getSet("instances").clear();
-      SharedData.getMap("params").put("numConnections", numConnections);
+      SharedData.instance.getSet("connections").clear();
+      SharedData.instance.getSet("servers").clear();
+      SharedData.instance.getSet("instances").clear();
+      SharedData.instance.getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 
-      assertEquals(numConnections, SharedData.getCounter("connections").get());
+      assertEquals(numConnections, SharedData.instance.getSet("connections").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.getSet("instances").size());
+      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
 
       // Then stop some
 
@@ -150,29 +174,26 @@ public class JavaWebsocketTest extends TestBase {
       }
     }
 
-    SharedData.getCounter("connections").set(0);
-    SharedData.getCounter("servers").set(0);
-    SharedData.getSet("instances").clear();
-    SharedData.getMap("params").put("numConnections", numConnections);
+    SharedData.instance.getSet("connections").clear();
+    SharedData.instance.getSet("servers").clear();
+    SharedData.instance.getSet("instances").clear();
+    SharedData.instance.getMap("params").put("numConnections", numConnections);
 
     //Now start some more
 
     if (multipleInstances) {
-      startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+      startApp(InstanceCheckServer.class.getName(), numInstances);
     } else {
       for (int i = 0; i < numInstances; i++) {
-        startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        startApp(InstanceCheckServer.class.getName(), 1);
       }
     }
 
     startTest(testName);
 
-    assertEquals(numConnections, SharedData.getCounter("connections").get());
+    assertEquals(numConnections, SharedData.instance.getSet("connections").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
   }
 
-//  public void testFoo() throws Exception {
-//    super.runTestInLoop("testSharedServersMultipleInstances3StartAllStopAll", 10);
-//  }
 }

@@ -18,9 +18,9 @@ include Vertx
 @client = HttpClient.new
 @client.port = 8080
 @client.host = "localhost"
-req = client.put("/someurl") do |resp|
+req = @client.put("/someurl") do |resp|
   puts "Got response #{resp.status_code}"
-  resp.data_handler { |buffer| puts "Got data #{buffer}" }
+  resp.body_handler { |buffer| puts "Got data #{buffer}" }
 end
 req.chunked = true
 for i in 0..9

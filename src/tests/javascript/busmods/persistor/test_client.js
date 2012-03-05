@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 load('test_utils.js')
 load('vertx.js')
 
@@ -5,11 +21,8 @@ var tu = new TestUtils();
 
 var eb = vertx.EventBus;
 
-deleteAll();
-
 function deleteAll() {
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'delete',
     matcher: {}
@@ -19,8 +32,7 @@ function deleteAll() {
 }
 
 function testSave() {
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -32,14 +44,40 @@ function testSave() {
     }
   }, function(reply) {
     tu.azzert(reply.status === 'ok');
-    tu.testComplete();
+    var id  = reply._id;
+    tu.azzert(id != undefined);
+
+    // Now update it
+    eb.send('test.persistor', {
+      collection: 'testcoll',
+      action: 'save',
+      document: {
+        _id: id,
+        name: 'tim',
+        age: 1000
+      }
+    }, function(reply) {
+      tu.azzert(reply.status === 'ok');
+
+       eb.send('test.persistor', {
+          collection: 'testcoll',
+          action: 'findone',
+          document: {
+            _id: id
+          }
+        }, function(reply) {
+          tu.azzert(reply.status === 'ok');
+          tu.azzert(reply.result.name === 'tim');
+          tu.azzert(reply.result.age === 1000);
+          tu.testComplete();
+       });
+    });
   });
 }
 
 function testFind() {
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -53,8 +91,7 @@ function testFind() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'find',
     matcher: {
@@ -78,8 +115,7 @@ function testFind() {
 
 function testFindOne() {
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -93,8 +129,7 @@ function testFindOne() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'findone',
     matcher: {
@@ -122,8 +157,7 @@ function testFindWithLimit() {
   var limit = 12;
 
   for (var i = 0; i < num; i++) {
-    eb.send({
-      address: 'testPersistor',
+    eb.send('test.persistor', {
       collection: 'testcoll',
       action: 'save',
       document: {
@@ -134,8 +168,7 @@ function testFindWithLimit() {
     });
   }
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'find',
     limit: limit,
@@ -152,8 +185,7 @@ function testFindWithSort() {
   var num = 10;
 
   for (var i = 0; i < num; i++) {
-    eb.send({
-      address: 'testPersistor',
+    eb.send('test.persistor', {
       collection: 'testcoll',
       action: 'save',
       document: {
@@ -165,8 +197,7 @@ function testFindWithSort() {
     });
   }
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'find',
     matcher: {},
@@ -184,10 +215,51 @@ function testFindWithSort() {
   });
 }
 
+function testFindBatched() {
+
+  var num = 103;
+
+  for (var i = 0; i < num; i++) {
+    eb.send('test.persistor', {
+      collection: 'testcoll',
+      action: 'save',
+      document: {
+        name: 'tim',
+        age: i
+      }
+    }, function(reply) {
+      tu.azzert(reply.status === 'ok');
+    });
+  }
+
+  var received = 0;
+
+  function createReplyHandler() {
+    return function(reply, replier) {
+      received += reply.results.length;
+      if (received < num) {
+        tu.azzert(reply.results.length === 10);
+        tu.azzert(reply.status === 'more-exist');
+        replier({}, createReplyHandler());
+      } else {
+        tu.azzert(reply.results.length === 3);
+        tu.azzert(reply.status === 'ok');
+        tu.testComplete();
+      }
+    }
+  }
+
+  eb.send('test.persistor', {
+    collection: 'testcoll',
+    action: 'find',
+    matcher: {},
+    batch_size: 10
+  }, createReplyHandler());
+}
+
 function testDelete() {
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -196,8 +268,7 @@ function testDelete() {
   }, function(reply) {
     tu.azzert(reply.status === 'ok');
   });
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'save',
     document: {
@@ -207,19 +278,18 @@ function testDelete() {
     tu.azzert(reply.status === 'ok');
   });
 
-  eb.send({
-    address: 'testPersistor',
+  eb.send('test.persistor', {
     collection: 'testcoll',
     action: 'delete',
     matcher: {
       name: 'tim'
     }
   }, function(reply) {
+
     tu.azzert(reply.status === 'ok');
     tu.azzert(reply.number === 1);
 
-    eb.send({
-      address: 'testPersistor',
+    eb.send('test.persistor', {
       collection: 'testcoll',
       action: 'find',
       matcher: {
@@ -235,7 +305,11 @@ function testDelete() {
 }
 
 tu.registerTests(this);
-tu.appReady();
+var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
+vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConfig, 1, function() {
+  deleteAll();
+  tu.appReady();
+});
 
 function vertxStop() {
   tu.unregisterAll();

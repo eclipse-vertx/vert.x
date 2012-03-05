@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
@@ -10,9 +26,9 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.TestClientBase;
-import org.vertx.java.newtests.TestUtils;
-import org.vertx.java.tests.core.TLSTestParams;
+import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.framework.TestUtils;
+import vertx.tests.core.http.TLSTestParams;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TestClient extends TestClientBase {
 
- // private static final Logger log = Logger.getLogger(TestClient.class);
+ // private static final Logger log = LoggerFactory.getLogger(TestClient.class);
 
   private NetClient client;
 
@@ -483,7 +499,7 @@ public class TestClient extends TestClientBase {
               });
 
               // Tell the server to resume
-              EventBus.instance.send(new Message("server_resume"));
+              EventBus.instance.send("server_resume", "");
             }
           }
         });
@@ -597,7 +613,7 @@ public class TestClient extends TestClientBase {
   }
 
   void tls() {
-    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 
@@ -662,7 +678,7 @@ public class TestClient extends TestClientBase {
 
   public void testSharedServersMultipleInstances1() {
     // Create a bunch of connections
-    final int numConnections = SharedData.<String, Integer>getMap("params").get("numConnections");
+    final int numConnections = SharedData.instance.<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", new Handler<NetSocket>() {
@@ -759,8 +775,8 @@ public class TestClient extends TestClientBase {
   }
 
   void setHandlers(final NetSocket sock) {
-    final Handler<Message> resumeHandler = new Handler<Message>() {
-      public void handle(Message message) {
+    final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> message) {
         tu.checkContext();
         sock.resume();
       }

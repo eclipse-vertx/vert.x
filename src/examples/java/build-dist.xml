@@ -22,7 +22,7 @@
 
   <property name="src" value="."/>
   <property name="output" value="classes"/>
-  <property name="dist-libs" value="../../lib/java"/>
+  <property name="dist-libs" value="../../lib/jars"/>
 
   <path id="compile-classpath">
     <fileset dir="${dist-libs}">

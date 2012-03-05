@@ -17,18 +17,17 @@
 package org.vertx.java.examples.sockjs;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
-public class SockJSExample implements VertxApp {
-
-  private static final Logger log = Logger.getLogger(SockJSExample.class);
+public class SockJSExample implements Verticle {
 
   private HttpServer server;
 

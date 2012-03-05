@@ -1,10 +1,29 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.vertx.java.busmods.mailer;
 
 import org.vertx.java.busmods.BusModBase;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxInternal;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -14,17 +33,18 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
+ * Mailer Bus Module
+ * <p>
+ * Please see the busmods manual for a full description
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Mailer extends BusModBase {
+public class Mailer extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
 
-  private static final Logger log = Logger.getLogger(Mailer.class);
+  private static final Logger log = LoggerFactory.getLogger(Mailer.class);
 
   private Session session;
   private Transport transport;
@@ -36,27 +56,23 @@ public class Mailer extends BusModBase {
   private String username;
   private String password;
 
-  public Mailer(String address, String host) {
-    this(address, host, 25, false, false, null, null);
+  public Mailer() {
+    super(true); // The Mailer must always be run as a worker
   }
 
-  public Mailer(String address, String host, int port) {
-    this(address, host, port, false, false, null, null);
-  }
-
-  public Mailer(String address, String host, int port, boolean ssl,boolean auth, String username, String password) {
-    super(address, true);
-    this.ssl = ssl;
-    this.host = host;
-    this.port = port;
-    this.auth = auth;
-    this.username = username;
-    this.password = password;
-  }
 
   @Override
   public void start() {
     super.start();
+
+    ssl = super.getOptionalBooleanConfig("ssl", false);
+    host = super.getOptionalStringConfig("host", "localhost");
+    port = super.getOptionalIntConfig("port", 25);
+    auth = super.getOptionalBooleanConfig("auth", false);
+    username = super.getOptionalStringConfig("username", null);
+    password = super.getOptionalStringConfig("password", null);
+
+    eb.registerHandler(address, this);
 
     Properties props = new Properties();
     props.put("mail.transport.protocol", "smtp");
@@ -69,7 +85,6 @@ public class Mailer extends BusModBase {
     props.put("mail.smtp.socketFactory.fallback", false);
     props.put("mail.smtp.auth", String.valueOf(auth));
     //props.put("mail.smtp.quitwait", "false");
-
 
     session = Session.getInstance(props,
         new javax.mail.Authenticator() {
@@ -89,19 +104,19 @@ public class Mailer extends BusModBase {
 
   @Override
   public void stop() {
+    eb.unregisterHandler(address, this);
+
     try {
       transport.close();
     } catch (MessagingException e) {
       log.error("Failed to stop mail transport", e);
     }
-
-    super.stop();
   }
 
-  private InternetAddress[] parseAddresses(Message message, Map<String, Object> json, String fieldName,
+  private InternetAddress[] parseAddresses(Message<JsonObject> message, String fieldName,
                                            boolean required)
   {
-    Object oto = json.get(fieldName);
+    Object oto = message.body.getField(fieldName);
     if (oto == null) {
       if (required) {
         sendError(message, fieldName + " address(es) must be specified");
@@ -112,8 +127,8 @@ public class Mailer extends BusModBase {
       InternetAddress[] addresses = null;
       if (oto instanceof String) {
         addresses = InternetAddress.parse((String)oto, true);
-      } else if (oto instanceof List) {
-        List loto = (List)oto;
+      } else if (oto instanceof JsonArray) {
+        JsonArray loto = (JsonArray)oto;
         addresses = new InternetAddress[loto.size()];
         int count = 0;
         for (Object addr: loto) {
@@ -132,8 +147,9 @@ public class Mailer extends BusModBase {
     }
   }
 
-  public void handle(Message message, Map<String, Object> json) {
-    String from = (String)json.get("from");
+  public void handle(Message<JsonObject> message) {
+
+    String from = message.body.getString("from");
 
     if (from == null) {
       sendError(message, "from address must be specified");
@@ -148,15 +164,23 @@ public class Mailer extends BusModBase {
       return;
     }
 
-    InternetAddress[] recipients = parseAddresses(message, json, "to", true);
+    InternetAddress[] recipients = parseAddresses(message, "to", true);
     if (recipients == null) {
       return;
     }
-    InternetAddress[] cc = parseAddresses(message, json, "cc", false);
-    InternetAddress[] bcc = parseAddresses(message, json, "bcc", false);
+    InternetAddress[] cc = parseAddresses(message, "cc", false);
+    InternetAddress[] bcc = parseAddresses(message, "bcc", false);
 
-    String subject = (String)json.get("subject");
-    String body = (String)json.get("body");
+    String subject = message.body.getString("subject");
+    if (subject == null) {
+      sendError(message, "subject must be specified");
+      return;
+    }
+    String body = message.body.getString("body");
+    if (body == null) {
+      sendError(message, "body must be specified");
+      return;
+    }
 
     javax.mail.Message msg = new MimeMessage(session);
 
@@ -171,7 +195,10 @@ public class Mailer extends BusModBase {
       transport.send(msg);
       sendOK(message);
     } catch (MessagingException e) {
+
       sendError(message, "Failed to send message", e);
+    } catch (Throwable t) {
+      t.printStackTrace();
     }
   }
 

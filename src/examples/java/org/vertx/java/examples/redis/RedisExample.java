@@ -16,17 +16,17 @@
 
 package org.vertx.java.examples.redis;
 
-import org.vertx.java.addons.redis.RedisConnection;
-import org.vertx.java.addons.redis.RedisPool;
-import org.vertx.java.core.CompletionHandler;
-import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.app.VertxApp;
+import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.impl.CompletionHandler;
+import org.vertx.java.core.impl.Future;
+import org.vertx.java.old.redis.RedisConnection;
+import org.vertx.java.old.redis.RedisPool;
 
-public class RedisExample implements VertxApp {
+public class RedisExample implements Verticle {
 
   private HttpServer server;
 
@@ -41,7 +41,7 @@ public class RedisExample implements VertxApp {
           final RedisConnection conn = pool.connection();
           conn.incr(key).handler(new CompletionHandler<Integer>() {
             public void handle(Future<Integer> future) {
-              Buffer content = Buffer.create("<html><body><h1>Hit count is " + future.result() + "</h1></body></html>");
+              Buffer content = Buffer.create("<html><payload><h1>Hit count is " + future.result() + "</h1></payload></html>");
               req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
               req.response.putHeader("Content-Length", String.valueOf(content.length()));
               req.response.write(content).end();

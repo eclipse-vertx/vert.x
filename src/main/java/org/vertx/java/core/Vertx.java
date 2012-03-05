@@ -1,11 +1,11 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,16 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.impl.VertxImpl;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
+
 /**
- *
- * <p>An instance of {@code Vertx} is available to all event loops in a running application.</p>
- *
- * <p>It handles such things as setting and cancelling timers, global event handlers, amongst other things.</p>
- *
+ * A singleton instance of Vertx is available to all verticles.
+ * <p>
+ * It contains operations to set and cancel timers, and deploy and undeploy
+ * verticles, amongst other things.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Vertx {
@@ -49,32 +53,6 @@ public interface Vertx {
   boolean cancelTimer(long id);
 
   /**
-   * Register a global handler with the system. The handler can be invoked by calling the {@link #sendToHandler}
-   * method from any event loop. The handler will always be called on the event loop that invoked the {@code
-   * registerHandler} method.
-   * @return the unique ID of the handler. This is required when calling {@link #sendToHandler}.
-   */
-  <T> long registerHandler(Handler<T> handler);
-
-  /**
-   * Unregister the handler with the specified {@code handlerID}. This must be called from the same event loop that
-   * registered the handler.
-   * @return true if the handler was successfully unregistered, otherwise false if the handler cannot be found.
-   */
-  boolean unregisterHandler(long handlerID);
-
-  /**
-   * Send a message to the handler with the specified {@code actorID}. This can be called from any event loop.
-   * @return true of the message was successfully sent, or false if no such handler exists.
-   */
-  <T> boolean sendToHandler(long actorID, T message);
-
-  /**
-   * Returns the context ID for the current event loop. The context ID uniquely identifies the event loop.
-   */
-  Long getContextID();
-
-  /**
    * Call the specified event handler asynchronously on the next "tick" of the event loop.
    */
   void nextTick(Handler<Void> handler);
@@ -84,4 +62,104 @@ public interface Vertx {
    * @return true if current thread is an event loop thread
    */
   boolean isEventLoop();
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @return Unique deployment id
+   */
+  String deployWorkerVerticle(String main);
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  String deployWorkerVerticle(String main, int instances);
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @return Unique deployment id
+   */
+  String deployWorkerVerticle(String main, JsonObject config);
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  String deployWorkerVerticle(String main, JsonObject config, int instances);
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler);
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @return Unique deployment id
+   */
+  String deployVerticle(String main);
+
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  String deployVerticle(String main, int instances);
+
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @return Unique deployment id
+   */
+  String deployVerticle(String main, JsonObject config);
+
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler);
+
+  /**
+   * Undeploy a verticle
+   * @param deploymentID The deployment ID
+   */
+  void undeployVerticle(String deploymentID);
+
+  /**
+   * Undeploy a verticle
+   * @param deploymentID The deployment ID
+   * @param doneHandler The handler will be called when undeployment is complete
+   */
+  void undeployVerticle(String deploymentID, Handler<Void> doneHandler);
+
+  /**
+   * Get the verticle configuration
+   * @return a JSON object representing the configuration
+   */
+  JsonObject getConfig();
+
+  /**
+   * Get the verticle logger
+   * @return The logger
+   */
+  Logger getLogger();
 }

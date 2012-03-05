@@ -12,17 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'rubygems'
+require 'json'
+
 module Vertx
 
   # This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
   # It is very useful for otherwise isolated vert.x application instances to communicate with each other.
   #
-  # Messages sent over the event bus are represented by instances of the {Message} class.
+  # Messages sent over the event bus are json objects represented as Ruby Hash instances.
   #
   # The event bus implements a distributed publish / subscribe network.
   #
-  # Messages are sent to an address which is simply an arbitrary String.
-  # There can be multiple handlers can be registered against that address.
+  # Messages are sent to an address.
+  #
+  # There can be multiple handlers registered against that address.
   # Any handlers with a matching name will receive the message irrespective of what vert.x application instance and
   # what vert.x instance they are located in.
   #
@@ -36,21 +40,26 @@ module Vertx
   # When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
   # has been received.
   #
+  # When receiving a message in a handler the received object is an instance of EventBus::Message - this contains
+  # the actual Hash of the message plus a reply method which can be used to reply to it.
+  #
   # @author {http://tfox.org Tim Fox}
   class EventBus
 
-    @@handler_map = java.util.concurrent.ConcurrentHashMap.new
-    @@handler_seq = java.util.concurrent.atomic.AtomicLong.new(0)
+    @@handler_map = {}
 
     # Send a message on the event bus
-    # @param message [Message] The message to send
+    # @param message [Hash] The message to send
     # @param reply_handler [Block] replyHandler An optional reply handler.
     # It will be called when the reply from a receiver is received.
-    def EventBus.send(message, &reply_handler)
+    def EventBus.send(address, message, &reply_handler)
+      raise "An address must be specified" if !address
+      raise "A message must be specified" if message == nil
+      message = convert_msg(message)
       if reply_handler != nil
-        org.vertx.java.core.eventbus.EventBus.instance.send(message._to_java_message, reply_handler)
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, message, InternalHandler.new(reply_handler))
       else
-        org.vertx.java.core.eventbus.EventBus.instance.send(message._to_java_message)
+        org.vertx.java.core.eventbus.EventBus.instance.send(address, message)
       end
     end
 
@@ -60,65 +69,77 @@ module Vertx
     # @param message_hndlr [Block] The handler
     # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
     def EventBus.register_handler(address, &message_hndlr)
-      internal = InternalHandler.new(address, message_hndlr)
-      org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
-      id = @@handler_seq.incrementAndGet
-      @@handler_map.put(id, internal)
+      raise "An address must be specified" if !address
+      raise "A message handler must be specified" if !message_hndlr
+      internal = InternalHandler.new(message_hndlr)
+      id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
+      @@handler_map[id] = internal
+      id
+    end
+
+    def EventBus.register_simple_handler(&message_hndlr)
+      raise "A message handler must be specified" if !message_hndlr
+      internal = InternalHandler.new(message_hndlr)
+      id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(internal)
+      @@handler_map[id] = internal
       id
     end
 
     # Unregisters a handler
     # @param handler_id [FixNum] The id of the handler to unregister. Returned from {EventBus.register_handler}
     def EventBus.unregister_handler(handler_id)
-      handler = @@handler_map.remove(handler_id)
+      raise "A handler_id must be specified" if !handler_id
+      handler = @@handler_map.delete(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler.address, handler)
+      org.vertx.java.core.eventbus.EventBus.instance.unregisterHandler(handler_id)
     end
 
     # @private
-    class InternalHandler
-      include org.vertx.java.core.Handler
-
-      attr_reader :address
-
-      def initialize(address, hndlr)
-        @address = address
-        @hndlr = hndlr
+    def EventBus.convert_msg(message)
+      if message.is_a? Hash
+        message = org.vertx.java.core.json.JsonObject.new(JSON.generate(message))
+      elsif message.is_a? Buffer
+        message = message._to_java_buffer
+      elsif message.is_a? Fixnum
+        message = java.lang.Long.new(message)
+      elsif message.is_a? Float
+        message = java.lang.Double.new(message)
       end
-
-      def handle(j_msg)
-        @hndlr.call(Message.create_from_j_msg(j_msg))
-      end
+      message
     end
 
   end
 
-  # Represents a message sent on the event bus
+  # @private
+  class InternalHandler
+    include org.vertx.java.core.Handler
+
+    def initialize(hndlr)
+      @hndlr = hndlr
+    end
+
+    def handle(message)
+      @hndlr.call(Message.new(message))
+    end
+  end
+
+  # Represents a message received from the event bus
   # @author {http://tfox.org Tim Fox}
   class Message
 
-    # @return [String] the address of the message
-    attr_accessor :address
+    attr_reader :body
 
-    # @return [Buffer] the body of the message
-    attr_accessor :body
+    # @private
+    def initialize(message)
 
-    # @return [String] the message id of the message. This is filled in by the server when sending
-    attr_accessor :message_id
-
-    #@private
-    attr_accessor :j_del
-
-    # Create a message
-    # @param address [String] The address to send the message to
-    # @param body [Buffer] Buffer representing body of message
-    def initialize(address, body)
-      raise "address parameter must be a String" if !address.is_a? String
-      raise "body parameter must be a Buffer" if !body.is_a? Buffer
-      @address = address
-      @body = body
-      @message_id = nil
-      @j_del = nil
+      @j_del = message
+      if message.body.is_a? org.vertx.java.core.json.JsonObject
+        @body = JSON.parse(message.body.encode)
+      elsif message.body.is_a? org.vertx.java.core.buffer.Buffer
+        @body = Buffer.new(message.body)
+      else
+        @body = message.body
+      end
     end
 
     # Reply to this message. If the message was sent specifying a receipt handler, that handler will be
@@ -126,23 +147,65 @@ module Vertx
     # this method does nothing.
     # Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
     # of the original message.
-    # @param [Buffer] Buffer representing body of the reply
-    def reply(buff = nil)
-      @j_del.reply if @j_del
-    end
-
-    # @private
-    def Message.create_from_j_msg(j_msg)
-      msg = Message.new(j_msg.address, Buffer.new(j_msg.body))
-      msg.message_id = j_msg.messageID
-      msg.j_del = j_msg
-      msg
-    end
-
-    # @private
-    def _to_java_message
-      org.vertx.java.core.eventbus.Message.new(@address, @body._to_java_buffer)
+    # @param [Hash] Message send as reply
+    def reply(reply, &reply_handler)
+      raise "A reply message must be specified" if reply == nil
+      reply = EventBus.convert_msg(reply)
+      if reply_handler != nil
+        @j_del.reply(reply, InternalHandler.new(reply_handler))
+      else
+        @j_del.reply(reply)
+      end
     end
 
   end
+
+  # A SockJSBridgeHandler plugs into a SockJS server and translates data received via SockJS into operations
+  # to send messages and register and unregister handlers on the vert.x event bus.
+  #
+  # When used in conjunction with the vert.x client side JavaScript event bus api (vertxbus.js) this effectively
+  # extends the reach of the vert.x event bus from vert.x server side applications to the browser as well. This
+  # enables a truly transparent single event bus where client side JavaScript applications can play on the same
+  # bus as server side application instances and services.
+  #
+  # @author {http://tfox.org Tim Fox}
+  class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
+    def initialize
+      super
+    end
+
+    # Call this handler - pretend to be a Proc
+    def call(sock)
+      # This is inefficient since we convert to a Ruby SockJSSocket and back again to a Java one
+      handle(sock._to_java_socket)
+    end
+
+    def add_permitted(*permitted)
+      permitted.each do |match|
+        json_str = JSON.generate(match)
+        j_json = org.vertx.java.core.json.JsonObject.new(json_str)
+        addPermitted(j_json);
+      end
+    end
+
+  end
+
+  # A SockJSBridge bridges between SockJS and the event bus.
+  # Bridging allows the event bus to be extended to client side in-browser JavaScript.
+  class SockJSBridge
+
+    # Create a new SockJSBridge
+    # @param http_server [HttpServer] An HTTP server
+    # @param sjs_config [Hash] Config for SockJS server
+    # @param permitted [[Hash]] Array of JSON objects (Hashes) representing permitted matches
+    def initialize(http_server, sjs_config, permitted)
+      @sjs_server = SockJSServer.new(http_server)
+      handler = SockJSBridgeHandler.new
+      handler.add_permitted(*permitted)
+      @sjs_server.install_app(sjs_config, handler);
+    end
+
+  end
+
 end
+

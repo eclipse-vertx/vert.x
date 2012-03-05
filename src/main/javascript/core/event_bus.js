@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var vertx = vertx || {};
 
 if (!vertx.EventBus) {
@@ -23,34 +39,40 @@ if (!vertx.EventBus) {
       }
     }
 
-    function bufferToStr(jBuffer) {
-      var str;
-      if (jBuffer.length() == 0) {
-        str = "{}";
-      } else {
-        str = jBuffer.toString();
-      }
-      return str;
+    function wrappedHandler(handler) {
+      return new org.vertx.java.core.Handler({
+        handle: function(jMsg) {
+          var body = jMsg.body;
+
+          if (typeof body === 'object') {
+            // Convert to JS JSON object
+            if (jMsg.body) {
+              body = JSON.parse(jMsg.body.encode());
+            } else {
+              body = undefined;
+            }
+          }
+
+          handler(body, function(reply, replyHandler) {
+            if (typeof reply === 'undefined') {
+              throw "Reply message must be specified";
+            }
+            reply = convertMessage(reply);
+            if (replyHandler) {
+              var wrapped = wrappedHandler(replyHandler);
+              jMsg.reply(reply, wrapped);
+            } else {
+              jMsg.reply(reply);
+            }
+          })
+        }
+      });
     }
 
     that.registerHandler = function(address, handler) {
       checkHandlerParams(address, handler);
-      var wrapped = new org.vertx.java.core.Handler({
-        handle: function(jMsg) {
-          var bodyStr = bufferToStr(jMsg.body);
-          var json = JSON.parse(bodyStr);
-          json.address = address;
-          json.messageID = '' + jMsg.messageID;
-          handler(json, function(reply) {
-            if (!reply) {
-              throw "Reply message must be specified";
-            }
-            var bodyStr = JSON.stringify(reply);
-            var body = org.vertx.java.core.buffer.Buffer.create(bodyStr);
-            jMsg.reply(body);
-          })
-        }
-      });
+
+      var wrapped = wrappedHandler(handler);
 
       // This is a bit more complex than it should be because we have to wrap the handler - therefore we
       // have to keep track of it :(
@@ -58,7 +80,6 @@ if (!vertx.EventBus) {
 
       jEventBus.registerHandler(address, wrapped);
     };
-
 
     that.unregisterHandler = function(address, handler) {
       checkHandlerParams(address, handler);
@@ -69,41 +90,80 @@ if (!vertx.EventBus) {
       }
     };
 
+
+    function convertMessage(message) {
+      var msgType = typeof message;
+      switch (msgType) {
+        case 'string':
+        case 'boolean':
+        case 'undefined':
+          break;
+        case 'number':
+          message = new java.lang.Double(message);
+          break;
+        case 'object':
+          // If null then we just wrap it as an empty JSON message
+          // We don't do this if it's a Java class (it has the getClass) method
+          // since it may be a Buffer which we want to let through
+          if (message == null || typeof message.getClass === "undefined") {
+            // Not a Java object - assume JSON message
+            message = new org.vertx.java.core.json.JsonObject(JSON.stringify(message));
+          }
+          break;
+        default:
+          throw 'Invalid type for message: ' + msgType;
+      }
+      return message;
+    }
+
     /*
     Message should be a JSON object
     It should have a property "address"
      */
-    that.send = function(message, replyHandler) {
-
+    that.send = function(address, message, replyHandler) {
+      if (!address) {
+        throw "address must be specified";
+      }
+      if (typeof address != "string") {
+        throw "address must be a string";
+      }
       if (replyHandler && typeof replyHandler != "function") {
         throw "replyHandler must be a function";
       }
-      var address = message.address;
-      if (!address) {
-        throw "The message should be a JSON object with a field 'address'";
-      }
-
-      var bodyStr = JSON.stringify(message);
-      var body = org.vertx.java.core.buffer.Buffer.create(bodyStr);
-      var java_msg = new org.vertx.java.core.eventbus.Message(address, body);
+      message = convertMessage(message);
       if (replyHandler) {
-        var hndlr = new org.vertx.java.core.Handler({
-          handle: function(jMessage) {
-            var bodyStr = bufferToStr(jMessage.body);
-            var json = JSON.parse(bodyStr);
-            replyHandler(json);
-          }
-        });
-        jEventBus.send(java_msg, hndlr);
+        var wrapped = wrappedHandler(replyHandler);
+        jEventBus.send(address, message, wrapped);
       } else {
-        jEventBus.send(java_msg);
+        jEventBus.send(address, message);
       }
-      message.messageID = '' + java_msg.messageID;
     };
 
   })();
-}
 
-vertx.SockJSBridgeHandler = function() {
-  return new org.vertx.java.core.eventbus.SockJSBridgeHandler();
+  vertx.SockJSBridgeHandler = function() {
+    var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
+    var handler = new org.vertx.java.core.Handler({
+      handle: function(sock) {
+        jHandler.handle(sock);
+      }
+    });
+    handler.addPermitted = function(permitted) {
+      for (var i = 0; i < permitted.length; i++) {
+        var match = permitted[i];
+        var json_str = JSON.stringify(match);
+        var jJson = new org.vertx.java.core.json.JsonObject(json_str);
+        jHandler.addPermitted(jJson);
+      }
+    }
+    return handler;
+  }
+
+  vertx.SockJSBridge = function(httpServer, sockJSConfig, permitted) {
+    var sockJSServer = new vertx.SockJSServer(httpServer);
+    var handler = new vertx.SockJSBridgeHandler();
+    handler.addPermitted(permitted);
+    sockJSServer.installApp(sockJSConfig, handler);
+  }
+
 }

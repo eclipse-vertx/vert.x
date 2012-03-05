@@ -1,13 +1,29 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.TestBase;
-import org.vertx.java.tests.core.TLSTestParams;
+import org.vertx.java.framework.TestBase;
+import vertx.tests.core.http.TLSTestParams;
 import vertx.tests.core.net.CloseHandlerServer;
 import vertx.tests.core.net.CloseHandlerServerCloseFromServer;
 import vertx.tests.core.net.CloseSocketServer;
@@ -25,12 +41,12 @@ import vertx.tests.core.net.TestClient;
  */
 public class JavaNetTest extends TestBase {
 
-  private static final Logger log = Logger.getLogger(JavaNetTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaNetTest.class);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, TestClient.class.getName());
+    startApp(TestClient.class.getName());
   }
 
   @Override
@@ -60,37 +76,37 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testEchoBytes() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringDefaultEncoding() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringUTF8() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testEchoStringUTF16() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testConnectDefaultHost() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testConnectLocalHost() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
@@ -106,43 +122,43 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testWriteWithCompletion() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testClientCloseHandlersCloseFromClient() throws Exception {
-    startApp(AppType.JAVA, EchoServer.class.getName());
+    startApp(EchoServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testClientCloseHandlersCloseFromServer() throws Exception {
-    startApp(AppType.JAVA, CloseSocketServer.class.getName());
+    startApp(CloseSocketServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testServerCloseHandlersCloseFromClient() throws Exception {
-    startApp(AppType.JAVA, CloseHandlerServer.class.getName());
+    startApp(CloseHandlerServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testServerCloseHandlersCloseFromServer() throws Exception {
-    startApp(AppType.JAVA, CloseHandlerServerCloseFromServer.class.getName());
+    startApp(CloseHandlerServerCloseFromServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testClientDrainHandler() throws Exception {
-    startApp(AppType.JAVA, PausingServer.class.getName());
+    startApp(PausingServer.class.getName());
     startTest(getMethodName());
   }
 
   @Test
   public void testServerDrainHandler() throws Exception {
-    startApp(AppType.JAVA, DrainingServer.class.getName());
+    startApp(DrainingServer.class.getName());
     startTest(getMethodName());
   }
 
@@ -169,7 +185,7 @@ public class JavaNetTest extends TestBase {
   void reconnectAttempts() throws Exception {
     // Wait a little while then start the server
     Thread.sleep(1000);
-    startApp(AppType.JAVA, EchoServerNoReady.class.getName(), false);
+    startApp(EchoServerNoReady.class.getName(), false);
     waitTestComplete();
   }
 
@@ -222,8 +238,8 @@ public class JavaNetTest extends TestBase {
     //Put the params in shared-data
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
-    SharedData.getMap("TLSTest").put("params", params);
-    startApp(AppType.JAVA, TLSServer.class.getName());
+    SharedData.instance.getMap("TLSTest").put("params", params.serialize());
+    startApp(TLSServer.class.getName());
     startTest(testName);
   }
 
@@ -288,9 +304,9 @@ public class JavaNetTest extends TestBase {
     // Start an echo server on a different port to make sure shared servers work ok when there are other servers
     // on different ports
 
-    SharedData.getMap("params").put("listenport", 8181);
-    startApp(AppType.JAVA, EchoServer.class.getName(), true);
-    SharedData.getMap("params").remove("listenport");
+    SharedData.instance.getMap("params").put("listenport", 8181);
+    startApp(EchoServer.class.getName(), true);
+    SharedData.instance.getMap("params").remove("listenport");
 
     //We initially start then stop them to make sure the shared server cleanup code works ok
 
@@ -301,19 +317,19 @@ public class JavaNetTest extends TestBase {
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
-        appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getCounter("connections").set(0);
-      SharedData.getCounter("servers").set(0);
-      SharedData.getSet("instances").clear();
-      SharedData.getMap("params").put("numConnections", numConnections);
+      SharedData.instance.getSet("connections").clear();
+      SharedData.instance.getSet("servers").clear();
+      SharedData.instance.getSet("instances").clear();
+      SharedData.instance.getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 
-      assertEquals(numConnections, SharedData.getCounter("connections").get());
+      assertEquals(numConnections, SharedData.instance.getSet("connections").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.getSet("instances").size());
+      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
 
       // Then stop some
 
@@ -322,26 +338,26 @@ public class JavaNetTest extends TestBase {
       }
     }
 
-    SharedData.getCounter("connections").set(0);
-    SharedData.getCounter("servers").set(0);
-    SharedData.getSet("instances").clear();
-    SharedData.getMap("params").put("numConnections", numConnections);
+    SharedData.instance.getSet("connections").clear();
+    SharedData.instance.getSet("servers").clear();
+    SharedData.instance.getSet("instances").clear();
+    SharedData.instance.getMap("params").put("numConnections", numConnections);
 
     //Now start some more
 
     if (multipleInstances) {
-      startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+      startApp(InstanceCheckServer.class.getName(), numInstances);
     } else {
       for (int i = 0; i < numInstances; i++) {
-        startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        startApp(InstanceCheckServer.class.getName(), 1);
       }
     }
 
     startTest(testName);
 
-    assertEquals(numConnections, SharedData.getCounter("connections").get());
+    assertEquals(numConnections, SharedData.instance.getSet("connections").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
   }
 
   @Test
@@ -366,7 +382,7 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testFanout() throws Exception {
-    startApp(AppType.JAVA, FanoutServer.class.getName());
+    startApp(FanoutServer.class.getName());
     startTest(getMethodName());
   }
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vertx.tests.core.http;
 
 import org.vertx.java.core.Handler;
@@ -14,9 +30,8 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.TestClientBase;
-import org.vertx.java.newtests.TestUtils;
-import org.vertx.java.tests.core.TLSTestParams;
+import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.framework.TestUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -471,8 +486,8 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(query.equals(req.query));
-        tu.azzert(req.getParams().size() == params.size());
-        for (Map.Entry<String, String> entry : req.getParams().entrySet()) {
+        tu.azzert(req.getAllParams().size() == params.size());
+        for (Map.Entry<String, String> entry : req.getAllParams().entrySet()) {
           tu.azzert(entry.getValue().equals(params.get(entry.getKey())));
         }
         req.response.end();
@@ -492,7 +507,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(req.query == null);
-        tu.azzert(req.getParams().isEmpty());
+        tu.azzert(req.getAllParams().isEmpty());
         req.response.end();
       }
     });
@@ -509,9 +524,9 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.getHeaders().size() == 1);
+        tu.azzert(req.getAllHeaders().size() == 1);
         tu.azzert(req.getHeader("Host").equals("localhost:8080"));
-        tu.azzert(req.getHeaders().get("Host").equals("localhost:8080"));
+        tu.azzert(req.getAllHeaders().get("Host").equals("localhost:8080"));
         req.response.end();
       }
     });
@@ -537,7 +552,7 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.getHeaders().size() == 1 + headers.size());
+        tu.azzert(req.getAllHeaders().size() == 1 + headers.size());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(req.getHeader(entry.getKey())));
         }
@@ -1105,7 +1120,7 @@ public class HttpTestClient extends TestClientBase {
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkContext();
-        tu.azzert(resp.getHeaders().size() == headers.size() + 1);
+        tu.azzert(resp.getAllHeaders().size() == headers.size() + 1);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(resp.getHeader(entry.getKey())));
         }
@@ -1146,7 +1161,7 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.azzert(resp.getTrailers().size() == trailers.size());
+            tu.azzert(resp.getAllTrailers().size() == trailers.size());
             for (Map.Entry<String, String> entry : trailers.entrySet()) {
               tu.azzert(entry.getValue().equals(resp.getTrailer(entry.getKey())));
             }
@@ -1173,7 +1188,7 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.azzert(resp.getTrailers().isEmpty());
+            tu.azzert(resp.getAllTrailers().isEmpty());
             tu.testComplete();
           }
         });
@@ -1893,7 +1908,7 @@ public class HttpTestClient extends TestClientBase {
           });
 
           // Tell the server to resume
-          EventBus.instance.send(new Message("server_resume"));
+          EventBus.instance.send("server_resume", "");
         }
       }
     });
@@ -1903,8 +1918,8 @@ public class HttpTestClient extends TestClientBase {
     final HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
         resp.pause();
-        final Handler<Message> resumeHandler = new Handler<Message>() {
-          public void handle(Message message) {
+        final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
+          public void handle(Message<Buffer> message) {
             tu.checkContext();
             resp.resume();
           }
@@ -1983,7 +1998,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void tls() {
-    TLSTestParams params = SharedData.<String, TLSTestParams>getMap("TLSTest").get("params");
+    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 
@@ -2065,7 +2080,7 @@ public class HttpTestClient extends TestClientBase {
     //Make sure connections aren't reused
     client.setKeepAlive(false);
     // Make a bunch of requests
-    final int numRequests = SharedData.<String, Integer>getMap("params").get("numRequests");
+    final int numRequests = SharedData.instance.<String, Integer>getMap("params").get("numRequests");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numRequests; i++) {
 

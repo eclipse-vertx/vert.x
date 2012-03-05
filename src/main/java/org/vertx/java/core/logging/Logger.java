@@ -9,12 +9,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
+ *
+ * Modified from original form by Tim Fox
  */
 
 package org.vertx.java.core.logging;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.vertx.java.core.logging.impl.LogDelegate;
 
 /**
  * <p>This class allows us to isolate all our logging dependencies in one place. It also allows us to have zero runtime
@@ -35,70 +36,11 @@ import java.util.concurrent.ConcurrentMap;
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  */
 public class Logger {
-  public static final String LOGGER_DELEGATE_FACTORY_CLASS_NAME = "org.vertx.logger-delegate-factory-class-name";
 
-  private static volatile LogDelegateFactory delegateFactory;
+  final LogDelegate delegate;
 
-  private static final ConcurrentMap<Class<?>, Logger> loggers = new ConcurrentHashMap<>();
-
-  static {
-    Logger.initialise();
-  }
-
-  public static synchronized void initialise() {
-    LogDelegateFactory delegateFactory;
-
-    // If a system property is specified then this overrides any delegate factory which is set
-    // programmatically - this is primarily of use so we can configure the logger delegate on the client side.
-    // call to System.getProperty is wrapped in a try block as it will fail if the client runs in a secured
-    // environment
-    String className = JULLogDelegateFactory.class.getName();
-    try {
-      className = System.getProperty(Logger.LOGGER_DELEGATE_FACTORY_CLASS_NAME);
-    } catch (Exception e) {
-    }
-
-    if (className != null) {
-      ClassLoader loader = Thread.currentThread().getContextClassLoader();
-      try {
-        Class<?> clz = loader.loadClass(className);
-        delegateFactory = (LogDelegateFactory) clz.newInstance();
-      } catch (Exception e) {
-        throw new IllegalArgumentException("Error instantiating transformer class \"" + className + "\"", e);
-      }
-    } else {
-      delegateFactory = new JULLogDelegateFactory();
-    }
-
-    Logger.delegateFactory = delegateFactory;
-  }
-
-  public static Logger getLogger(final Class<?> clazz) {
-    Logger logger = Logger.loggers.get(clazz);
-
-    if (logger == null) {
-      LogDelegate delegate = Logger.delegateFactory.createDelegate(clazz);
-
-      logger = new Logger(delegate);
-
-      Logger oldLogger = Logger.loggers.putIfAbsent(clazz, logger);
-
-      if (oldLogger != null) {
-        logger = oldLogger;
-      }
-    }
-
-    return logger;
-  }
-
-  private final LogDelegate delegate;
-
-  Logger(final LogDelegate delegate) {
+  public Logger(final LogDelegate delegate) {
     this.delegate = delegate;
-  }
-
-  public LogDelegate getDelegate() {
-    return delegate;
   }
 
   public boolean isInfoEnabled() {

@@ -5,14 +5,11 @@
     <title></title>
     <script src="http://cdn.sockjs.org/sockjs-0.1.min.js"></script>
     <script src="../../client/vertxbus.js"></script>
-    <script type="text/javascript">
-
-    </script>
 </head>
 <body>
 
 <script type="text/javascript">
-   var eb = new VertxBus("http://localhost:8080/sockjs-bridge");
+   var eb = new vertx.EventBus("http://localhost:8080/eventbus");
    eb.onopen = function() {
      console.log('event bus open');
    };
@@ -22,18 +19,23 @@
 
    function send(address, message) {
      console.log("sending message to address " + address + " msg: " + message);
-     eb.send(address, message, function(data) {
-       console.log("Got reply: " + data);
+     eb.send(address, {msg: message}, function(reply, replier) {
+       console.log("Got reply: " + JSON.stringify(reply));
+
+       console.log("sending reply to reply");
+       replier({msg: "reply to reply"});
      });
    }
 
    function subscribe(address) {
      console.log("subscribing to address " + address)
      eb.registerHandler(address, function(msg, replyTo) {
-        console.log("received message: " + msg + " reply to: " + replyTo);
+        console.log("received message: " + JSON.stringify(msg));
         if (replyTo) {
           console.log("calling replyto");
-          replyTo("this is a reply");
+          replyTo({msg:"this is a reply"}, function(msg) {
+            console.log("received: " + JSON.stringify(msg));
+          });
         }
      });
    }

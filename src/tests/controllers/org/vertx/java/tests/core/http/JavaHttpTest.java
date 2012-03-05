@@ -1,18 +1,33 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.vertx.java.tests.core.http;
 
 import org.junit.Test;
-import org.vertx.java.core.app.AppType;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.newtests.TestBase;
-import org.vertx.java.tests.core.TLSTestParams;
+import org.vertx.java.framework.TestBase;
 import vertx.tests.core.http.CountServer;
 import vertx.tests.core.http.DrainingServer;
 import vertx.tests.core.http.HttpTestClient;
 import vertx.tests.core.http.InstanceCheckServer;
 import vertx.tests.core.http.PausingServer;
 import vertx.tests.core.http.TLSServer;
+import vertx.tests.core.http.TLSTestParams;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -22,7 +37,7 @@ public class JavaHttpTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(AppType.JAVA, HttpTestClient.class.getName());
+    startApp(HttpTestClient.class.getName());
   }
 
   @Override
@@ -426,22 +441,22 @@ public class JavaHttpTest extends TestBase {
   }
 
   public void testClientDrainHandler() throws Exception {
-    startApp(AppType.JAVA, PausingServer.class.getName());
+    startApp(PausingServer.class.getName());
     startTest(getMethodName());
   }
 
   public void testServerDrainHandler() throws Exception {
-    startApp(AppType.JAVA, DrainingServer.class.getName());
+    startApp(DrainingServer.class.getName());
     startTest(getMethodName());
   }
 
   public void testPooling() throws Exception {
-    startApp(AppType.JAVA, CountServer.class.getName());
+    startApp(CountServer.class.getName());
     startTest(getMethodName());
   }
 
   public void testPoolingNoKeepAlive() throws Exception {
-    startApp(AppType.JAVA, CountServer.class.getName());
+    startApp(CountServer.class.getName());
     startTest(getMethodName());
   }
 
@@ -494,8 +509,8 @@ public class JavaHttpTest extends TestBase {
     //Put the params in shared-data
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
-    SharedData.getMap("TLSTest").put("params", params);
-    startApp(AppType.JAVA, TLSServer.class.getName());
+    SharedData.instance.getMap("TLSTest").put("params", params.serialize());
+    startApp(TLSServer.class.getName());
     startTest(testName);
   }
 
@@ -575,19 +590,19 @@ public class JavaHttpTest extends TestBase {
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
-        appNames[i] = startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.getCounter("requests").set(0);
-      SharedData.getCounter("servers").set(0);
-      SharedData.getSet("instances").clear();
-      SharedData.getMap("params").put("numRequests", numRequests);
+      SharedData.instance.getSet("requests").clear();
+      SharedData.instance.getSet("servers").clear();
+      SharedData.instance.getSet("instances").clear();
+      SharedData.instance.getMap("params").put("numRequests", numRequests);
 
       startTest(testName);
 
-      assertEquals(numRequests, SharedData.getCounter("requests").get());
+      assertEquals(numRequests, SharedData.instance.getSet("requests").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.getSet("instances").size());
+      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
 
       // Then stop some
 
@@ -596,26 +611,26 @@ public class JavaHttpTest extends TestBase {
       }
     }
 
-    SharedData.getCounter("requests").set(0);
-    SharedData.getCounter("servers").set(0);
-    SharedData.getSet("instances").clear();
-    SharedData.getMap("params").put("numRequests", numRequests);
+    SharedData.instance.getSet("requests").clear();
+    SharedData.instance.getSet("servers").clear();
+    SharedData.instance.getSet("instances").clear();
+    SharedData.instance.getMap("params").put("numRequests", numRequests);
 
     //Now start some more
 
     if (multipleInstances) {
-      startApp(AppType.JAVA, InstanceCheckServer.class.getName(), numInstances);
+      startApp(InstanceCheckServer.class.getName(), numInstances);
     } else {
       for (int i = 0; i < numInstances; i++) {
-        startApp(AppType.JAVA, InstanceCheckServer.class.getName(), 1);
+        startApp(InstanceCheckServer.class.getName(), 1);
       }
     }
 
     startTest(testName);
 
-    assertEquals(numRequests, SharedData.getCounter("requests").get());
+    assertEquals(numRequests, SharedData.instance.getSet("requests").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
   }
 
 

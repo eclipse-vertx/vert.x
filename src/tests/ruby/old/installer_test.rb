@@ -13,7 +13,7 @@
 # limitations under the License.
 
 require 'test/unit'
-require 'vmm/installer.rb'
+require 'addons.old.vmm/installer.rb'
 require 'fileutils'
 require 'json'
 
@@ -25,7 +25,7 @@ class InstallerTest < Test::Unit::TestCase
 
   TEST_OUTPUT = "ruby-test-output"
 
-  VMM_DIR = TEST_OUTPUT + "/vmm-root"
+  VMM_DIR = TEST_OUTPUT + "/addons.old.vmm-root"
 
   def setup
     rm_r TEST_OUTPUT if File.exists? TEST_OUTPUT
