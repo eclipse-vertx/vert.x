@@ -5,30 +5,32 @@ var eb = vertx.EventBus;
 var address = 'example.address'
 var creditsAddress = 'example.credits'
 
+var batchSize = 10000;
+
 var handler = function() {
-  credits += 1000;
+  credits += batchSize;
   sendMessage();
 }
 
 eb.registerHandler(creditsAddress, handler);
 
-var credits = 1000;
+var credits = batchSize;
 var count = 0
 
 sendMessage();
 
 function sendMessage() {
-  for (var i = 0; i < 200; i++) {
+  //for (var i = 0; i < batchSize / 2; i++) {
     if (credits > 0) {
       credits--;
       eb.send(address, "some-message");
-     // stdout.println("sent message " + count);
+      // stdout.println("sent message " + count);
       count++;
     }
     else {
       return;
     }
-  }
+  //}
   vertx.nextTick(sendMessage);
 }
 

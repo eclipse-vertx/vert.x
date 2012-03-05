@@ -25,7 +25,7 @@ var handler = function(message) {
       var now = new Date();
       var elapsed = now.getTime() - start.getTime();
       var rate = 1000 * (count + 0.0) / (elapsed);
-      stdout.println("rate: " + rate + " msgs/sec");
+      //stdout.println("rate: " + rate + " msgs/sec");
     }
   }
 }
