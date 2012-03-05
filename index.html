@@ -163,7 +163,7 @@
 
                 <p>Save the following in <code>server.js</code></p>
                 <pre class="prettyprint">
-load('vert.js')
+load('vertx.js')
 
 new vertx.HttpServer().requestHandler(function(req) {
     var file = req.path === '/' ? 'index.html' : req.path;
