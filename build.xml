@@ -283,6 +283,7 @@
       <fileset dir="src/examples">
         <exclude name="**/vertx-dev"/>
         <exclude name="**/build.xml"/>
+        <exclude name="**/classes/**"/>
         <exclude name="**/build-dist.xml"/>
       </fileset>
     </copy>
