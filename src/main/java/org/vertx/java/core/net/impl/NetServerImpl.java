@@ -78,10 +78,7 @@ public class NetServerImpl  {
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
   public NetServerImpl() {
-    ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Can only be used from an event loop");
-    }
+    ctx = VertxInternal.instance.getOrAssignContext();
     if (!VertxInternal.instance.isEventLoop()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
@@ -164,7 +161,7 @@ public class NetServerImpl  {
         checkConfigs(actualServer, this);
         actualServer = shared;
       }
-      actualServer.handlerManager.addHandler(connectHandler);
+      actualServer.handlerManager.addHandler(connectHandler, ctx);
     }
   }
 
@@ -182,7 +179,7 @@ public class NetServerImpl  {
     listening = false;
     synchronized (servers) {
 
-      actualServer.handlerManager.removeHandler(connectHandler);
+      actualServer.handlerManager.removeHandler(connectHandler, ctx);
 
       if (actualServer.handlerManager.hasHandlers()) {
         // The actual server still has handlers so we don't actually close it

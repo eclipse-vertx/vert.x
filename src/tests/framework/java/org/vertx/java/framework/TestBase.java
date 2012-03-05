@@ -20,7 +20,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.impl.EventBusImpl;

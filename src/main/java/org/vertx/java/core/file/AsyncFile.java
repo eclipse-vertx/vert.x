@@ -449,7 +449,8 @@ public class AsyncFile {
 
   private void checkContext() {
     if (!VertxInternal.instance.getContext().equals(context)) {
-      throw new IllegalStateException("AsyncFile must only be used in the context that created it");
+      throw new IllegalStateException("AsyncFile must only be used in the context that created it, expected: "
+          + context + " actual " + VertxInternal.instance.getContext());
     }
   }
 

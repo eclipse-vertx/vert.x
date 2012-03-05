@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.deploy.impl.cli;
+package org.vertx.java.deploy.impl;
 
-import org.vertx.java.core.deploy.impl.VerticleManager;
+import java.io.Serializable;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class StopCommand extends VertxCommand {
-
-  public String execute(VerticleManager appMgr) {
-    appMgr.unblock();
-    return "OK";
-  }
-
-  @Override
-  public boolean isBlock() {
-    return false;
-  }
+public enum VerticleType implements Serializable {
+  JAVA, RUBY, GROOVY, JS
 }

@@ -174,9 +174,10 @@ public class EventBusImpl extends EventBus {
 
   public void unregisterHandler(String address, Handler<? extends Message> handler,
                                 AsyncResultHandler<Void> completionHandler) {
+    Context context = VertxInternal.instance.getOrAssignContext();
     Map<HandlerHolder, String> map = handlers.get(address);
     if (map != null) {
-      String handlerID = map.remove(new HandlerHolder(handler, false));
+      String handlerID = map.remove(new HandlerHolder(handler, false, context));
       if (handlerID != null) {
         handlersByID.remove(handlerID);
       }
@@ -263,7 +264,7 @@ public class EventBusImpl extends EventBus {
   }
 
   private void send(final BaseMessage message, final Handler replyHandler) {
-    Context context = VertxInternal.instance.getContext();
+    Context context = VertxInternal.instance.getOrAssignContext();
     try {
       message.sender = serverID;
       if (replyHandler != null) {
@@ -309,8 +310,9 @@ public class EventBusImpl extends EventBus {
   }
 
   private String registerHandler(String address, Handler<? extends Message> handler,
-                               AsyncResultHandler<Void> completionHandler,
-                               boolean replyHandler) {
+                                AsyncResultHandler<Void> completionHandler,
+                                boolean replyHandler) {
+    Context context = VertxInternal.instance.getOrAssignContext();
     String id = UUID.randomUUID().toString();
     if (address == null) {
       address = id;
@@ -332,7 +334,7 @@ public class EventBusImpl extends EventBus {
           }
         };
       }
-      map.put(new HandlerHolder(handler, replyHandler), id);
+      map.put(new HandlerHolder(handler, replyHandler, context), id);
       if (subs != null && !replyHandler) {
         // Propagate the information
         log.info("Propagating register " + address + " server " + serverID);
@@ -343,7 +345,7 @@ public class EventBusImpl extends EventBus {
         }
       }
     } else {
-      map.put(new HandlerHolder(handler, replyHandler), id);
+      map.put(new HandlerHolder(handler, replyHandler, context), id);
       if (completionHandler != null) {
         callCompletionHandler(completionHandler);
       }
@@ -465,8 +467,8 @@ public class EventBusImpl extends EventBus {
     final Handler handler;
     final boolean replyHandler;
 
-    HandlerHolder(Handler handler, boolean replyHandler) {
-      this.context = VertxInternal.instance.getContext();
+    HandlerHolder(Handler handler, boolean replyHandler, Context context) {
+      this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;
     }

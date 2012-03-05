@@ -22,7 +22,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -124,10 +124,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   public void nextTick(final Handler<Void> handler) {
-    Context context = getContext();
-    if (context == null) {
-      throw new IllegalStateException("No context id");
-    }
+    Context context = getOrAssignContext();
     context.execute(new Runnable() {
       public void run() {
         handler.handle(null);
@@ -254,18 +251,21 @@ public class VertxImpl implements VertxInternal {
     return contextTL.get();
   }
 
+  public Context getOrAssignContext() {
+    Context ctx = getContext();
+    if (ctx == null) {
+      // Assign a context
+      ctx = createEventLoopContext();
+    }
+    return ctx;
+  }
+
   public void reportException(Throwable t) {
     VerticleManager.instance.reportException(t);
   }
 
-  private Context checkContext() {
-    Context contextID = getContext();
-    if (contextID == null) throw new IllegalStateException("No context id");
-    return contextID;
-  }
-
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
-    final Context context = checkContext();
+    final Context context = getOrAssignContext();
 
     InternalTimerHandler myHandler;
     if (periodic) {
@@ -289,15 +289,17 @@ public class VertxImpl implements VertxInternal {
   }
 
   public boolean cancelTimer(long id) {
-    return cancelTimeout(id, true);
+    return cancelTimeout(id);
   }
 
-  private boolean cancelTimeout(long id, boolean check) {
+  public Context createEventLoopContext() {
+    NioWorker worker = getWorkerPool().nextWorker();
+    return new EventLoopContext(worker);
+  }
+
+  private boolean cancelTimeout(long id) {
     TimeoutHolder holder = timeouts.remove(id);
     if (holder != null) {
-      if (check && holder.context != checkContext()) {
-        throw new IllegalStateException("Timer can only be cancelled in the context that set it");
-      }
       holder.timeout.cancel();
       return true;
     } else {
@@ -319,11 +321,6 @@ public class VertxImpl implements VertxInternal {
     id = id != -1 ? id : timeoutCounter.getAndIncrement();
     timeouts.put(id, new TimeoutHolder(timeout, context));
     return id;
-  }
-
-  private Context createEventLoopContext() {
-    NioWorker worker = getWorkerPool().nextWorker();
-    return new EventLoopContext(worker);
   }
 
   private Context createWorkerContext() {
