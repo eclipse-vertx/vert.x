@@ -22,13 +22,14 @@
 
   <!-- set global properties for this build -->
   <property name="target" value="target"/>
-  <property name="jar-file" value="vert.x.jar"/>
+  <property name="core-jar-file" value="vert.x-core.jar"/>
+  <property name="platform-jar-file" value="vert.x-platform.jar"/>
   <property name="version-number" value="1.0.beta1"/>
   <property name="dist-build-base" value="${target}/dist-build"/>
   <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
-  <property name="core-src" value="src/main/java"/>
-  <property name="core-src-groovy" value="src/main/groovy"/>
-  <property name="core-target" value="${target}/core/classes"/>
+  <property name="java-src-root" value="src/main/java"/>
+  <property name="groovy-src-root" value="src/main/groovy"/>
+  <property name="java-target" value="${target}/java/classes"/>
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
   <property name="core-lib" value="${lib-dir}/main"/>
@@ -67,7 +68,9 @@
       <include name="*.jar"/>
     </fileset>
     <pathelement location="${tests-target}"/>
-    <pathelement location="target/vert.x.jar"/>
+
+    <pathelement location="target/vert.x-core.jar"/>
+    <pathelement location="target/vert.x-platform.jar"/>
 
     <pathelement location="${tests-base}/javascript"/>
     <pathelement location="${tests-base}/framework/javascript"/>
@@ -93,19 +96,36 @@
   </target>
 
   <target name="compile-core" depends="init" description="compile the source for the core">
-    <mkdir dir="${core-target}"/>
-    <javac srcdir="${core-src}" destdir="${core-target}" classpathref="core-lib-classpath" debug="on"
-           includeantruntime="false" target="1.7" source="1.7"/>
-    <groovyc srcdir="${core-src-groovy}" destdir="${core-target}">
+    <mkdir dir="${java-target}"/>
+    <javac srcdir="${java-src-root}" destdir="${java-target}" classpathref="core-lib-classpath" debug="on"
+           includeantruntime="false" target="1.7" source="1.7">
+      <include name="org/vertx/java/core/**/*.java"/>
+    </javac>
+    <groovyc srcdir="${groovy-src-root}" destdir="${java-target}">
       <classpath>
         <pathelement path="core-lib-classpath"/>
-        <pathelement location="${core-target}"/>
+        <pathelement location="${java-target}"/>
       </classpath>
     </groovyc>
   </target>
 
+  <target name="compile-platform" depends="compile-core" description="compile the source for the platform">
+    <mkdir dir="${java-target}"/>
+    <javac srcdir="${java-src-root}" destdir="${java-target}" classpathref="core-lib-classpath" debug="on"
+           includeantruntime="false" target="1.7" source="1.7">
+      <include name="org/vertx/java/deploy/**/*.java"/>
+      <include name="org/vertx/java/busmods/**/*.java"/>
+    </javac>
+  </target>
+
   <target name="jar-core" depends="compile-core" description="generate the core jar">
-    <jar jarfile="${target}/${jar-file}" basedir="${core-target}" includes="**/*.class"/>
+    <jar jarfile="${target}/${core-jar-file}" basedir="${java-target}" includes="**/core/**/*.class"/>
+  </target>
+
+  <target name="jar-platform" depends="compile-platform" description="generate the platform jar">
+    <jar jarfile="${target}/${platform-jar-file}" basedir="${java-target}">
+      <exclude name="**/core/**/*.class"/>
+    </jar>
   </target>
 
   <target name="clean" description="clean up">
@@ -114,12 +134,13 @@
     <delete dir="${test-tmp}"/>
   </target>
 
-  <target name="compile-tests" depends="jar-core">
+  <target name="compile-tests" depends="jar-core,jar-platform">
     <mkdir dir="${tests-target}"/>
 
     <javac destdir="${tests-target}" classpathref="test-classpath"
            debug="on"
            includeantruntime="false">
+      <exclude name="**/redis/**/*.java"/>
       <src path="${test-framework-src-java}"/>
       <src path="${test-controllers-src}"/>
       <src path="${test-java-tests-src}"/>
@@ -204,7 +225,7 @@
     <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
              classpathref="core-lib-classpath" Public="true">
       <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
-      <packageset dir="${core-src}" defaultexcludes="yes">
+      <packageset dir="${java-src-root}" defaultexcludes="yes">
         <include name="org/vertx/java/core/**"/>
         <exclude name="org/vertx/java/core/**/impl/**"/>
         <exclude name="org/vertx/java/core/composition/**"/>
@@ -222,10 +243,11 @@
     <exec executable="yardoc"/>
   </target>
 
-  <target name="dist" depends="javadoc,yardoc,jar-core">
+  <target name="dist" depends="javadoc,yardoc,jar-core,jar-platform">
     <mkdir dir="${dist-build}"/>
 
-    <copy file="${target}/${jar-file}" todir="${dist-build}/lib/jars"/>
+    <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
+    <copy file="${target}/${platform-jar-file}" todir="${dist-build}/lib/jars"/>
 
     <mkdir dir="${dist-build}/conf"/>
 

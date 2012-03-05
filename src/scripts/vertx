@@ -17,7 +17,9 @@ DIRNAME=`dirname "$PRG"`
 
 CLASSPATH=\
 $DIRNAME/../conf:\
-$DIRNAME/../lib/jars/vert.x.jar:$DIRNAME/../lib/jars/netty.jar:\
+$DIRNAME/../lib/jars/vert.x-core.jar:\
+$DIRNAME/../lib/jars/vert.x-platform.jar:\
+$DIRNAME/../lib/jars/netty.jar:\
 $DIRNAME/../lib/jars/jackson-core.jar:$DIRNAME/../lib/jars/jackson-mapper.jar:\
 $DIRNAME/../lib/jars/hazelcast.jar:\
 $DIRNAME/../lib/jars/jruby.jar:\
