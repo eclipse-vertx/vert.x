@@ -17,19 +17,19 @@
 package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.net.impl.ServerID;
 
 import java.util.Collection;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
- *
  */
-public interface AsyncMultiMap<K, V> {
+public interface SubsMap {
 
-  void put(K k, V v, AsyncResultHandler<Void> completionHandler);
+  void put(String subName, ServerID serverID, AsyncResultHandler<Void> completionHandler);
 
-  void get(K k, AsyncResultHandler<Collection<V>> completionHandler);
+  void get(String subName, AsyncResultHandler<Collection<ServerID>> completionHandler);
 
-  void remove(K k, V v, AsyncResultHandler<Boolean> completionHandler);
+  void remove(String subName, ServerID serverID, AsyncResultHandler<Boolean> completionHandler);
 }

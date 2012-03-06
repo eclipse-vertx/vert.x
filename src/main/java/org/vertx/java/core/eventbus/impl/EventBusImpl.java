@@ -54,7 +54,7 @@ public class EventBusImpl extends EventBus {
   private static final int DEFAULT_CLUSTER_PORT = 2550;
   private final ServerID serverID;
   private final NetServer server;
-  private final AsyncMultiMap<String, ServerID> subs;  // Multimap name -> Collection<node ids>
+  private final SubsMap subs;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Map<HandlerHolder, String>> handlers = new ConcurrentHashMap<>();
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
@@ -87,7 +87,7 @@ public class EventBusImpl extends EventBus {
       final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
       ClusterManager mgr = (ClusterManager) clusterProvider.newInstance();
       this.serverID = clusterServerID;
-      subs = mgr.getMultiMap("subs");
+      subs = mgr.getSubsMap("subs");
       this.server = setServer();
     } catch (Exception e) {
       log.error("Failed to create cluster manager", e);

@@ -20,13 +20,14 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.eventbus.impl.AsyncMultiMap;
+import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Deferred;
 import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.impl.ServerID;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,25 +37,25 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener<K, V> {
+public class HazelcastSubsMap implements SubsMap, EntryListener<String, HazelcastServerID> {
 
-  private static final Logger log = LoggerFactory.getLogger(HazelcastAsyncMultiMap.class);
+  private static final Logger log = LoggerFactory.getLogger(HazelcastSubsMap.class);
 
-  private final com.hazelcast.core.MultiMap<K, V> map;
+  private final com.hazelcast.core.MultiMap<String, HazelcastServerID> map;
 
   // The Hazelcast near cache is very slow so we use our own one
-  private ConcurrentMap<K, Collection<V>> cache = new ConcurrentHashMap<>();
+  private ConcurrentMap<String, Collection<ServerID>> cache = new ConcurrentHashMap<>();
 
-  public HazelcastAsyncMultiMap(com.hazelcast.core.MultiMap<K, V> map) {
+  public HazelcastSubsMap(com.hazelcast.core.MultiMap<String, HazelcastServerID> map) {
     this.map = map;
     map.addEntryListener(this, true);
   }
 
   @Override
-  public void put(final K k, final V v, final AsyncResultHandler<Void> completionHandler) {
+  public void put(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
     Deferred<Void> action = new BlockingAction<Void>() {
       public Void action() throws Exception {
-        map.put(k, v);
+        map.put(subName, new HazelcastServerID(serverID));
         return null;
       }
     };
@@ -73,29 +74,36 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
   }
 
   @Override
-  public void get(final K k, final AsyncResultHandler<Collection<V>> completionHandler) {
-    Collection<V> entries = cache.get(k);
+  public void get(final String subName, final AsyncResultHandler<Collection<ServerID>> completionHandler) {
+    Collection<ServerID> entries = cache.get(subName);
     if (entries != null) {
       completionHandler.handle(new AsyncResult<>(entries));
     } else {
-      Deferred<Collection<V>> action = new BlockingAction<Collection<V>>() {
-        public Collection<V> action() throws Exception {
-          return map.get(k);
+      Deferred<Collection<HazelcastServerID>> action = new BlockingAction<Collection<HazelcastServerID>>() {
+        public Collection<HazelcastServerID> action() throws Exception {
+          return map.get(subName);
         }
       };
-      action.handler(new CompletionHandler<Collection<V>>() {
-        public void handle(Future<Collection<V>> event) {
-          AsyncResult<Collection<V>> result;
+      action.handler(new CompletionHandler<Collection<HazelcastServerID>>() {
+        public void handle(Future<Collection<HazelcastServerID>> event) {
+          AsyncResult<Collection<ServerID>> sresult;
           if (event.succeeded()) {
-            Collection<V> entries = event.result();
+            Collection<HazelcastServerID> entries = event.result();
+            Collection<ServerID> sids;
             if (entries != null) {
-              cache.put(k, new HashSet<>(entries));
+              sids = new HashSet<>(entries.size());
+              for (HazelcastServerID hid: entries) {
+                sids.add(hid.serverID);
+              }
+              cache.put(subName, sids);
+            } else {
+              sids = null;
             }
-            result = new AsyncResult<>(event.result());
+            sresult = new AsyncResult<>(sids);
           } else {
-            result = new AsyncResult<>(event.exception());
+            sresult = new AsyncResult<>(event.exception());
           }
-          completionHandler.handle(result);
+          completionHandler.handle(sresult);
         }
       });
       action.execute();
@@ -103,10 +111,10 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
   }
 
   @Override
-  public void remove(final K k, final V v, final AsyncResultHandler<Boolean> completionHandler) {
+  public void remove(final String subName, final ServerID serverID, final AsyncResultHandler<Boolean> completionHandler) {
     Deferred<Boolean> action = new BlockingAction<Boolean>() {
       public Boolean action() throws Exception {
-        return map.remove(k, v);
+        return map.remove(subName, new HazelcastServerID(serverID));
       }
     };
     action.handler(new CompletionHandler<Boolean>() {
@@ -124,15 +132,15 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
   }
 
   @Override
-  public void entryAdded(EntryEvent<K, V> entry) {
-     addEntry(entry.getKey(), entry.getValue());
+  public void entryAdded(EntryEvent<String, HazelcastServerID> entry) {
+     addEntry(entry.getKey(), entry.getValue().serverID);
   }
 
-  private void addEntry(K key, V value) {
-    Collection<V> entries = cache.get(key);
+  private void addEntry(String key, ServerID value) {
+    Collection<ServerID> entries = cache.get(key);
     if (entries == null) {
       entries = new HashSet<>();
-      Collection<V> prev = cache.putIfAbsent(key, entries);
+      Collection<ServerID> prev = cache.putIfAbsent(key, entries);
       if (prev != null) {
         entries = prev;
       }
@@ -141,12 +149,12 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
   }
 
   @Override
-  public void entryRemoved(EntryEvent<K, V> entry) {
-    removeEntry(entry.getKey(), entry.getValue());
+  public void entryRemoved(EntryEvent<String, HazelcastServerID> entry) {
+    removeEntry(entry.getKey(), entry.getValue().serverID);
   }
 
-  private void removeEntry(K key, V value) {
-    Collection<V> entries = cache.get(key);
+  private void removeEntry(String key, ServerID value) {
+    Collection<ServerID> entries = cache.get(key);
     if (entries != null) {
       entries.remove(value);
       if (entries.isEmpty()) {
@@ -156,16 +164,16 @@ public class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryL
   }
 
   @Override
-  public void entryUpdated(EntryEvent<K, V> entry) {
-    K key = entry.getKey();
-    Collection<V> entries = cache.get(key);
+  public void entryUpdated(EntryEvent<String, HazelcastServerID> entry) {
+    String key = entry.getKey();
+    Collection<ServerID> entries = cache.get(key);
     if (entries != null) {
-      entries.add(entry.getValue());
+      entries.add(entry.getValue().serverID);
     }
   }
 
   @Override
-  public void entryEvicted(EntryEvent<K, V> entry) {
+  public void entryEvicted(EntryEvent<String, HazelcastServerID> entry) {
     entryRemoved(entry);
   }
 }
