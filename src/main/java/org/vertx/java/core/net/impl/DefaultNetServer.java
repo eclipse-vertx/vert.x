@@ -60,24 +60,24 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetServerImpl  {
+public class DefaultNetServer {
 
-  private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
-  private static final Map<ServerID, NetServerImpl> servers = new HashMap<>();
+  private static final Map<ServerID, DefaultNetServer> servers = new HashMap<>();
 
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private ServerID id;
-  private NetServerImpl actualServer;
+  private DefaultNetServer actualServer;
   private final NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
-  public NetServerImpl() {
+  public DefaultNetServer() {
     ctx = VertxInternal.instance.getOrAssignContext();
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
@@ -104,7 +104,7 @@ public class NetServerImpl  {
 
     synchronized (servers) {
       id = new ServerID(port, host);
-      NetServerImpl shared = servers.get(id);
+      DefaultNetServer shared = servers.get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
@@ -200,7 +200,7 @@ public class NetServerImpl  {
       servers.remove(id);
     }
 
-    for (NetSocketImpl sock : socketMap.values()) {
+    for (DefaultNetSocket sock : socketMap.values()) {
       sock.internalClose();
     }
 
@@ -219,7 +219,7 @@ public class NetServerImpl  {
     }
   }
 
-  private void checkConfigs(NetServerImpl currentServer, NetServerImpl newServer) {
+  private void checkConfigs(DefaultNetServer currentServer, DefaultNetServer newServer) {
     //TODO check configs are the same
   }
 
@@ -378,7 +378,7 @@ public class NetServerImpl  {
     private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       handler.context.execute(new Runnable() {
         public void run() {
-          NetSocketImpl sock = new NetSocketImpl(ch, handler.context, Thread.currentThread());
+          DefaultNetSocket sock = new DefaultNetSocket(ch, handler.context, Thread.currentThread());
           socketMap.put(ch, sock);
           handler.handler.handle(sock);
         }
@@ -388,7 +388,7 @@ public class NetServerImpl  {
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocketImpl sock = socketMap.get(ch);
+      final DefaultNetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
         sock.getContext().execute(new Runnable() {
@@ -402,7 +402,7 @@ public class NetServerImpl  {
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocketImpl sock = socketMap.remove(ch);
+      final DefaultNetSocket sock = socketMap.remove(ch);
       if (sock != null) {
         sock.getContext().execute(new Runnable() {
           public void run() {
@@ -415,7 +415,7 @@ public class NetServerImpl  {
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
       Channel ch = e.getChannel();
-      NetSocketImpl sock = socketMap.get(ch);
+      DefaultNetSocket sock = socketMap.get(ch);
       if (sock != null) {
         ChannelBuffer buff = (ChannelBuffer) e.getMessage();
         sock.handleDataReceived(new Buffer(buff.slice()));

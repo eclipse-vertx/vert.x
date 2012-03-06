@@ -58,7 +58,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HttpClientImpl {
+public class DefaultHttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
@@ -77,7 +77,7 @@ public class HttpClientImpl {
   };
   private boolean keepAlive = true;
 
-  public HttpClientImpl() {
+  public DefaultHttpClient() {
     ctx = VertxInternal.instance.getOrAssignContext();
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
@@ -88,7 +88,7 @@ public class HttpClientImpl {
     this.exceptionHandler = handler;
   }
 
-  public HttpClientImpl setMaxPoolSize(int maxConnections) {
+  public DefaultHttpClient setMaxPoolSize(int maxConnections) {
     pool.setMaxPoolSize(maxConnections);
     return this;
   }
@@ -97,17 +97,17 @@ public class HttpClientImpl {
     return pool.getMaxPoolSize();
   }
 
-  public HttpClientImpl setKeepAlive(boolean keepAlive) {
+  public DefaultHttpClient setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
     return this;
   }
 
-  public HttpClientImpl setPort(int port) {
+  public DefaultHttpClient setPort(int port) {
     this.port = port;
     return this;
   }
 
-  public HttpClientImpl setHost(String host) {
+  public DefaultHttpClient setHost(String host) {
     this.host = host;
     return this;
   }
@@ -173,7 +173,7 @@ public class HttpClientImpl {
   }
 
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    return new HttpClientRequestImpl(this, method, uri, responseHandler, ctx);
+    return new DefaultHttpClientRequest(this, method, uri, responseHandler, ctx);
   }
 
   public void close() {
@@ -183,67 +183,67 @@ public class HttpClientImpl {
     }
   }
 
-  public HttpClientImpl setSSL(boolean ssl) {
+  public DefaultHttpClient setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
-  public HttpClientImpl setKeyStorePath(String path) {
+  public DefaultHttpClient setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
-  public HttpClientImpl setKeyStorePassword(String pwd) {
+  public DefaultHttpClient setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
-  public HttpClientImpl setTrustStorePath(String path) {
+  public DefaultHttpClient setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
-  public HttpClientImpl setTrustStorePassword(String pwd) {
+  public DefaultHttpClient setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
-  public HttpClientImpl setTrustAll(boolean trustAll) {
+  public DefaultHttpClient setTrustAll(boolean trustAll) {
     tcpHelper.setTrustAll(trustAll);
     return this;
   }
 
-  public HttpClientImpl setTCPNoDelay(boolean tcpNoDelay) {
+  public DefaultHttpClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
-  public HttpClientImpl setSendBufferSize(int size) {
+  public DefaultHttpClient setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
-  public HttpClientImpl setReceiveBufferSize(int size) {
+  public DefaultHttpClient setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
-  public HttpClientImpl setTCPKeepAlive(boolean keepAlive) {
+  public DefaultHttpClient setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
-  public HttpClientImpl setReuseAddress(boolean reuse) {
+  public DefaultHttpClient setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
-  public HttpClientImpl setSoLinger(boolean linger) {
+  public DefaultHttpClient setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
-  public HttpClientImpl setTrafficClass(int trafficClass) {
+  public DefaultHttpClient setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
@@ -388,7 +388,7 @@ public class HttpClientImpl {
   private void connected(final NioSocketChannel ch, final Handler<ClientConnection> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        final ClientConnection conn = new ClientConnection(HttpClientImpl.this, ch,
+        final ClientConnection conn = new ClientConnection(DefaultHttpClient.this, ch,
             host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx,
             Thread.currentThread());
         conn.closedHandler(new SimpleHandler() {

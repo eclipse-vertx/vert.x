@@ -45,9 +45,9 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EventBusImpl extends EventBus {
+public class DefaultEventBus extends EventBus {
 
-  private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
 
   private static final String DEFAULT_CLUSTER_PROVIDER_CLASS_NAME =
       "org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager";
@@ -63,22 +63,22 @@ public class EventBusImpl extends EventBus {
   /**
    * Create a non clustered event bus
    */
-  public EventBusImpl() {
+  public DefaultEventBus() {
     // Just some dummy server ID
     this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
     this.server = null;
     this.subs = null;
   }
 
-  public EventBusImpl(String clusterHost) {
+  public DefaultEventBus(String clusterHost) {
     this(DEFAULT_CLUSTER_PORT, clusterHost, null);
   }
 
-  public EventBusImpl(int clusterPort, String clusterHost) {
+  public DefaultEventBus(int clusterPort, String clusterHost) {
     this(clusterPort, clusterHost, null);
   }
 
-  public EventBusImpl(int clusterPort, String clusterHost, String clusterProviderClassName) {
+  public DefaultEventBus(int clusterPort, String clusterHost, String clusterProviderClassName) {
     if (clusterProviderClassName == null) {
       clusterProviderClassName = DEFAULT_CLUSTER_PROVIDER_CLASS_NAME;
     }
@@ -277,7 +277,7 @@ public class EventBusImpl extends EventBus {
 
   private void sendToSubs(Collection<ServerID> subs, BaseMessage message) {
     for (ServerID serverID : subs) {
-      if (!serverID.equals(EventBusImpl.this.serverID)) {  //We don't send to this node
+      if (!serverID.equals(DefaultEventBus.this.serverID)) {  //We don't send to this node
         sendRemote(serverID, message);
       }
     }

@@ -17,7 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.net.impl.NetServerImpl;
+import org.vertx.java.core.net.impl.DefaultNetServer;
 
 /**
  * Represents a TCP or SSL server
@@ -35,7 +35,7 @@ import org.vertx.java.core.net.impl.NetServerImpl;
  */
 public class NetServer {
 
-  private final NetServerImpl server = new NetServerImpl();
+  private final DefaultNetServer server = new DefaultNetServer();
 
   /**
    * Create a new NetServer instance.

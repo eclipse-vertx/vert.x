@@ -19,7 +19,7 @@ package org.vertx.java.core.eventbus;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.impl.EventBusImpl;
+import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -57,18 +57,18 @@ public abstract class EventBus {
   /**
    * The event bus instance.
    */
-  public static EventBus instance = new EventBusImpl();
+  public static EventBus instance = new DefaultEventBus();
 
   public static void setClustered(String hostname) {
-    instance = new EventBusImpl(hostname);
+    instance = new DefaultEventBus(hostname);
   }
 
   public static void setClustered(int port, String hostname) {
-    instance = new EventBusImpl(port, hostname);
+    instance = new DefaultEventBus(port, hostname);
   }
 
   public static void setClustered(int port, String hostname, String clusterProviderClassName) {
-    instance = new EventBusImpl(port, hostname, clusterProviderClassName);
+    instance = new DefaultEventBus(port, hostname, clusterProviderClassName);
   }
 
   /**

@@ -17,7 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.net.impl.NetClientImpl;
+import org.vertx.java.core.net.impl.DefaultNetClient;
 
 /**
  * NetClient is an asynchronous factory for TCP or SSL connections
@@ -40,7 +40,7 @@ import org.vertx.java.core.net.impl.NetClientImpl;
  */
 public class NetClient {
 
-  private NetClientImpl client = new NetClientImpl();
+  private DefaultNetClient client = new DefaultNetClient();
 
   /**
    * Create a new {@code NetClient}

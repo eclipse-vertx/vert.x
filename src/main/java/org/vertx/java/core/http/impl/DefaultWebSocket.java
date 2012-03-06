@@ -31,7 +31,7 @@ import java.util.UUID;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WebSocketImpl extends ServerWebSocket {
+public class DefaultWebSocket extends ServerWebSocket {
 
   private final AbstractConnection conn;
 
@@ -49,7 +49,7 @@ public class WebSocketImpl extends ServerWebSocket {
   boolean rejected;
   private boolean connected;
 
-  protected WebSocketImpl(String path, AbstractConnection conn, Runnable connectRunnable) {
+  protected DefaultWebSocket(String path, AbstractConnection conn, Runnable connectRunnable) {
     super(path, UUID.randomUUID().toString(), UUID.randomUUID().toString());
     this.conn = conn;
     binaryHandler = new Handler<Message<Buffer>>() {

@@ -41,13 +41,13 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientRequestImpl extends HttpClientRequest {
+public class DefaultHttpClientRequest extends HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
-  HttpClientRequestImpl(final HttpClientImpl client, final String method, final String uri,
-                        final Handler<HttpClientResponse> respHandler,
-                        final Context context) {
+  DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
+                           final Handler<HttpClientResponse> respHandler,
+                           final Context context) {
     this(client, method, uri, respHandler, context, false);
   }
 
@@ -55,18 +55,18 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   Raw request - used by websockets
   Raw requests won't have any headers set automatically, like Content-Length and Connection
   */
-  HttpClientRequestImpl(final HttpClientImpl client, final String method, final String uri,
-                        final Handler<HttpClientResponse> respHandler,
-                        final Context context,
-                        final ClientConnection conn) {
+  DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
+                           final Handler<HttpClientResponse> respHandler,
+                           final Context context,
+                           final ClientConnection conn) {
     this(client, method, uri, respHandler, context, true);
     this.conn = conn;
     conn.setCurrentRequest(this);
   }
 
-  private HttpClientRequestImpl(final HttpClientImpl client, final String method, final String uri,
-                                final Handler<HttpClientResponse> respHandler,
-                                final Context context, final boolean raw) {
+  private DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
+                                   final Handler<HttpClientResponse> respHandler,
+                                   final Context context, final boolean raw) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.chunked = false;
@@ -75,7 +75,7 @@ public class HttpClientRequestImpl extends HttpClientRequest {
     this.raw = raw;
   }
 
-  private final HttpClientImpl client;
+  private final DefaultHttpClient client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
   private Handler<Void> continueHandler;
@@ -95,7 +95,7 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   private long written;
   private long contentLength = 0;
 
-  public HttpClientRequestImpl setChunked(boolean chunked) {
+  public DefaultHttpClientRequest setChunked(boolean chunked) {
     check();
     if (written > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
@@ -104,14 +104,14 @@ public class HttpClientRequestImpl extends HttpClientRequest {
     return this;
   }
 
-  public HttpClientRequestImpl putHeader(String key, Object value) {
+  public DefaultHttpClientRequest putHeader(String key, Object value) {
     check();
     request.setHeader(key, value);
     checkContentLengthChunked(key, value);
     return this;
   }
 
-  public HttpClientRequestImpl putAllHeaders(Map<String, ? extends Object> m) {
+  public DefaultHttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
     check();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       request.setHeader(entry.getKey(), entry.getValue().toString());
@@ -125,32 +125,32 @@ public class HttpClientRequestImpl extends HttpClientRequest {
     write(chunk.getChannelBuffer(), null);
   }
 
-  public HttpClientRequestImpl write(Buffer chunk) {
+  public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     return write(chunk.getChannelBuffer(), null);
   }
 
-  public HttpClientRequestImpl write(String chunk) {
+  public DefaultHttpClientRequest write(String chunk) {
     check();
     return write(Buffer.create(chunk).getChannelBuffer(), null);
   }
 
-  public HttpClientRequestImpl write(String chunk, String enc) {
+  public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
     return write(Buffer.create(chunk, enc).getChannelBuffer(), null);
   }
 
-  public HttpClientRequestImpl write(Buffer chunk, Handler<Void> doneHandler) {
+  public DefaultHttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
     check();
     return write(chunk.getChannelBuffer(), doneHandler);
   }
 
-  public HttpClientRequestImpl write(String chunk, Handler<Void> doneHandler) {
+  public DefaultHttpClientRequest write(String chunk, Handler<Void> doneHandler) {
     checkComplete();
     return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
   }
 
-  public HttpClientRequestImpl write(String chunk, String enc, Handler<Void> doneHandler) {
+  public DefaultHttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
     check();
     return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
   }
@@ -191,7 +191,7 @@ public class HttpClientRequestImpl extends HttpClientRequest {
     this.continueHandler = handler;
   }
 
-  public HttpClientRequestImpl sendHead() {
+  public DefaultHttpClientRequest sendHead() {
     check();
     if (conn != null) {
       if (!headWritten) {
@@ -253,7 +253,7 @@ public class HttpClientRequestImpl extends HttpClientRequest {
     }
   }
 
-  void handleResponse(HttpClientResponseImpl resp) {
+  void handleResponse(DefaultHttpClientResponse resp) {
     try {
       if (resp.statusCode == 100) {
         if (continueHandler != null) {
@@ -337,7 +337,7 @@ public class HttpClientRequestImpl extends HttpClientRequest {
     conn.write(request);
   }
 
-  private HttpClientRequestImpl write(ChannelBuffer buff, Handler<Void> doneHandler) {
+  private DefaultHttpClientRequest write(ChannelBuffer buff, Handler<Void> doneHandler) {
 
     written += buff.readableBytes();
 

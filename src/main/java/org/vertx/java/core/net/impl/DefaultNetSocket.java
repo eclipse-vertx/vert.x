@@ -34,14 +34,14 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
-public class NetSocketImpl extends NetSocket {
+public class DefaultNetSocket extends NetSocket {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private Handler<Message<Buffer>> writeHandler;
 
-  public NetSocketImpl(Channel channel, Context context, Thread th) {
+  public DefaultNetSocket(Channel channel, Context context, Thread th) {
     super(channel, UUID.randomUUID().toString(), context, th);
     if (EventBus.instance != null) {
       writeHandler = new Handler<Message<Buffer>>() {

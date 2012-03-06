@@ -47,9 +47,9 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerResponseImpl extends HttpServerResponse {
+public class DefaultHttpServerResponse extends HttpServerResponse {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerResponse.class);
 
   private final ServerConnection conn;
   private final HttpResponse response;
@@ -63,12 +63,12 @@ public class HttpServerResponseImpl extends HttpServerResponse {
   private long writtenBytes;
   private boolean chunked;
 
-  HttpServerResponseImpl(ServerConnection conn) {
+  DefaultHttpServerResponse(ServerConnection conn) {
     this.conn = conn;
     this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
   }
 
-  public HttpServerResponseImpl setChunked(boolean chunked) {
+  public DefaultHttpServerResponse setChunked(boolean chunked) {
     checkWritten();
     if (writtenBytes > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on response");
@@ -77,14 +77,14 @@ public class HttpServerResponseImpl extends HttpServerResponse {
     return this;
   }
 
-  public HttpServerResponseImpl putHeader(String key, Object value) {
+  public DefaultHttpServerResponse putHeader(String key, Object value) {
     checkWritten();
     response.setHeader(key, value);
     checkContentLengthChunked(key, value);
     return this;
   }
 
-  public HttpServerResponseImpl putAllHeaders(Map<String, ? extends Object> m) {
+  public DefaultHttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
     checkWritten();
     for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
       response.setHeader(entry.getKey(), entry.getValue().toString());
@@ -93,7 +93,7 @@ public class HttpServerResponseImpl extends HttpServerResponse {
     return this;
   }
 
-  public HttpServerResponseImpl putTrailer(String key, Object value) {
+  public DefaultHttpServerResponse putTrailer(String key, Object value) {
     checkChunked();
     checkWritten();
     checkTrailer();
@@ -101,7 +101,7 @@ public class HttpServerResponseImpl extends HttpServerResponse {
     return this;
   }
 
-  public HttpServerResponseImpl putAllTrailers(Map<String, ? extends Object> m) {
+  public DefaultHttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
     checkChunked();
     checkWritten();
     checkTrailer();
@@ -141,27 +141,27 @@ public class HttpServerResponseImpl extends HttpServerResponse {
     write(chunk.getChannelBuffer(), null);
   }
 
-  public HttpServerResponseImpl write(Buffer chunk) {
+  public DefaultHttpServerResponse write(Buffer chunk) {
     return write(chunk.getChannelBuffer(), null);
   }
 
-  public HttpServerResponseImpl write(String chunk, String enc) {
+  public DefaultHttpServerResponse write(String chunk, String enc) {
     return write(Buffer.create(chunk, enc).getChannelBuffer(), null);
   }
 
-  public HttpServerResponseImpl write(String chunk) {
+  public DefaultHttpServerResponse write(String chunk) {
     return write(Buffer.create(chunk).getChannelBuffer(), null);
   }
 
-  public HttpServerResponseImpl write(Buffer chunk, Handler<Void> doneHandler) {
+  public DefaultHttpServerResponse write(Buffer chunk, Handler<Void> doneHandler) {
     return write(chunk.getChannelBuffer(), doneHandler);
   }
 
-  public HttpServerResponseImpl write(String chunk, String enc, Handler<Void> doneHandler) {
+  public DefaultHttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler) {
     return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
   }
 
-  public HttpServerResponseImpl write(String chunk, Handler<Void> doneHandler) {
+  public DefaultHttpServerResponse write(String chunk, Handler<Void> doneHandler) {
     return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
   }
 
@@ -214,7 +214,7 @@ public class HttpServerResponseImpl extends HttpServerResponse {
     conn.responseComplete();
   }
 
-  public HttpServerResponseImpl sendFile(String filename) {
+  public DefaultHttpServerResponse sendFile(String filename) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
     }
@@ -307,7 +307,7 @@ public class HttpServerResponseImpl extends HttpServerResponse {
     }
   }
 
-  private HttpServerResponseImpl write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
+  private DefaultHttpServerResponse write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
     checkWritten();
     writtenBytes += chunk.readableBytes();
     if (!chunked && writtenBytes > contentLength) {

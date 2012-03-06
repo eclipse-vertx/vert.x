@@ -477,7 +477,7 @@ public class HttpServerImpl {
                 }
               }
             };
-            WebSocketImpl ws = new WebSocketImpl(theURI.getPath(), wsConn, connectRunnable);
+            DefaultWebSocket ws = new DefaultWebSocket(theURI.getPath(), wsConn, connectRunnable);
             wsConn.handleWebsocketConnect(ws);
             if (ws.rejected) {
               if (firstHandler == null) {
