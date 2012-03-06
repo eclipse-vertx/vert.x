@@ -16,13 +16,9 @@
 
 package vertx.tests.core.eventbus;
 
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.EventBusImpl;
-import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
-import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.tests.core.eventbus.Counter;

@@ -18,10 +18,10 @@ package org.vertx.java.deploy.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

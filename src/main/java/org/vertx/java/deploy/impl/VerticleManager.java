@@ -18,17 +18,17 @@ package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.core.impl.DeploymentContext;
-import org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory;
-import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
-import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
-import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DeploymentContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory;
+import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
+import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
+import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
 
 import java.net.URL;
 import java.util.ArrayList;

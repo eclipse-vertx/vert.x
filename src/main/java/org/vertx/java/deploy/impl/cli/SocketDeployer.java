@@ -18,7 +18,6 @@ package org.vertx.java.deploy.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -26,6 +25,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
+import org.vertx.java.deploy.impl.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

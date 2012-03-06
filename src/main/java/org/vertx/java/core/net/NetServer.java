@@ -18,7 +18,6 @@ package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.impl.NetServerImpl;
-import org.vertx.java.core.net.impl.TCPSSLHelper;
 
 /**
  * Represents a TCP or SSL server

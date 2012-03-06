@@ -16,8 +16,8 @@
 
 package vertx.tests.core.deploy;
 
-import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.deploy.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
