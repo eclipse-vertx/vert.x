@@ -50,6 +50,8 @@ import java.util.HashSet;
  * {@link org.vertx.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
  * other streams, e.g. an {@link org.vertx.java.core.http.HttpClientRequest} instance, using the {@link org.vertx.java.core.streams.Pump} class
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
   */
 public class AsyncFile {

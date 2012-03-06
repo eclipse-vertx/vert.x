@@ -79,7 +79,7 @@ public class NetServerImpl  {
 
   public NetServerImpl() {
     ctx = VertxInternal.instance.getOrAssignContext();
-    if (!VertxInternal.instance.isEventLoop()) {
+    if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
     tcpHelper.setReuseAddress(true);

@@ -18,6 +18,8 @@ package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -38,6 +40,9 @@ import vertx.tests.core.net.InstanceCheckServer;
 import vertx.tests.core.net.PausingServer;
 import vertx.tests.core.net.TLSServer;
 import vertx.tests.core.net.TestClient;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -364,30 +369,40 @@ public class JavaNetTest extends TestBase {
   }
 
   @Test
-  public void testCreateServerNoContext() throws Exception {
+  public void testNoContext() throws Exception {
 
-//    NetServer server = new NetServer();
-//    server.connectHandler(new Handler<NetSocket>() {
-//      public void handle(NetSocket socket) {
-//        Pump p = new Pump(socket, socket);
-//        p.start();
-//      }
-//    });
-//    server.listen(1234);
-//
-//    Thread.sleep(20000000);
+    final CountDownLatch latch = new CountDownLatch(1);
 
+    final NetServer server = new NetServer();
+    server.connectHandler(new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+        Pump p = new Pump(socket, socket);
+        p.start();
+      }
+    });
+    server.listen(1234);
+
+    final NetClient client = new NetClient();
+    client.connect(1234, new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+        socket.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            server.close(new SimpleHandler() {
+              public void handle() {
+                client.close();
+                latch.countDown();
+              }
+            });
+
+          }
+        });
+        socket.write("foo");
+      }
+    });
+
+    assertTrue(latch.await(5, TimeUnit.SECONDS));
   }
 
-  @Test
-  public void testCreateClientNoContext() throws Exception {
-//    try {
-//      new NetClient();
-//      fail("Should throw exception");
-//    } catch (IllegalStateException e) {
-//      // Ok
-//    }
-  }
 
   @Test
   public void testFanout() throws Exception {

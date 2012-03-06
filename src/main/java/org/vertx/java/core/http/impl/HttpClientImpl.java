@@ -79,7 +79,7 @@ public class HttpClientImpl {
 
   public HttpClientImpl() {
     ctx = VertxInternal.instance.getOrAssignContext();
-    if (!VertxInternal.instance.isEventLoop()) {
+    if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
   }
@@ -173,7 +173,7 @@ public class HttpClientImpl {
   }
 
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    return new HttpClientRequestImpl(this, method, uri, responseHandler, ctx, Thread.currentThread());
+    return new HttpClientRequestImpl(this, method, uri, responseHandler, ctx);
   }
 
   public void close() {

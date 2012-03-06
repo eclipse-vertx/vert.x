@@ -62,4 +62,10 @@ public interface Vertx {
    * @return true if current thread is an event loop thread
    */
   boolean isEventLoop();
+
+  /**
+   * Is the current thread an worker thread?
+   * @return true if current thread is an worker thread
+   */
+  boolean isWorker();
 }

@@ -111,7 +111,7 @@ public class HttpServerImpl {
 
   public HttpServerImpl() {
     ctx = VertxInternal.instance.getOrAssignContext();
-    if (!VertxInternal.instance.isEventLoop()) {
+    if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
   }
