@@ -21,10 +21,10 @@ import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-import org.vertx.java.core.logging.Logger;
 
 import java.util.List;
 

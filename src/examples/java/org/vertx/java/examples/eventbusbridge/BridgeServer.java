@@ -1,12 +1,12 @@
 package org.vertx.java.examples.eventbusbridge;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.eventbus.SockJSBridge;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.deploy.Verticle;
 
 import java.util.ArrayList;
 import java.util.List;

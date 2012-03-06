@@ -17,13 +17,13 @@
 package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.deploy.Verticle;
 
 import java.util.Set;
 

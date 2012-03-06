@@ -17,8 +17,6 @@
 package org.vertx.java.tests.core.timer;
 
 import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.framework.TestBase;

@@ -20,13 +20,13 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.streams.Pump;
+import org.vertx.java.deploy.Verticle;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

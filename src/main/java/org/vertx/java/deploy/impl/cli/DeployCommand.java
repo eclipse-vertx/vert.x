@@ -16,8 +16,8 @@
 
 package org.vertx.java.deploy.impl.cli;
 
-import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.net.URL;
 

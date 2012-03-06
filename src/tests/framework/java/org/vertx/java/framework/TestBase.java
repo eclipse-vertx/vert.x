@@ -20,15 +20,14 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.deploy.impl.VerticleManager;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.eventbus.impl.EventBusImpl;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.lang.reflect.Method;
 import java.net.URL;

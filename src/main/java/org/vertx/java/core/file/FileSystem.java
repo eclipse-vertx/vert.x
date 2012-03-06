@@ -24,7 +24,6 @@ import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.impl.SynchronousAction;
-import org.vertx.java.core.impl.VertxInternal;
 
 import java.io.File;
 import java.io.FileNotFoundException;
