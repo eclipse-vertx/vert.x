@@ -84,13 +84,6 @@ public class TestBase extends TestCase {
     context = VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
 
-        if (EventBus.instance == null) {
-          // Start non clustered event bus
-          EventBus bus = new EventBusImpl() {
-          };
-          EventBus.initialize(bus);
-        }
-
         handler = new Handler<Message<JsonObject>>() {
           public void handle(Message<JsonObject> message) {
             try {

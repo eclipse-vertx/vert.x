@@ -17,7 +17,7 @@
 package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;

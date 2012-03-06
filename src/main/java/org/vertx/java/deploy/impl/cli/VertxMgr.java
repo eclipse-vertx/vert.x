@@ -244,7 +244,6 @@ public class VertxMgr {
 
 
   private boolean startCluster(Args args) {
-    final CountDownLatch latch = new CountDownLatch(1);
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
       System.out.print("Starting clustering...");
@@ -262,56 +261,8 @@ public class VertxMgr {
           System.out.println("No cluster-host specified so using address " + clusterHost);
         }
       }
-      String clusterProviderClass = args.map.get("-cluster-provider");
-      if (clusterProviderClass == null) {
-        clusterProviderClass = "org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager";
-      }
-      final Class clusterProvider;
-      try {
-        clusterProvider= Class.forName(clusterProviderClass);
-      } catch (ClassNotFoundException e) {
-        System.err.println("Cannot find class " + clusterProviderClass);
-        return false;
-      }
-      final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
-      VertxInternal.instance.startOnEventLoop(new Runnable() {
-        public void run() {
-          ClusterManager mgr;
-          try {
-            mgr = (ClusterManager) clusterProvider.newInstance();
-          } catch (Exception e) {
-            e.printStackTrace(System.err);
-            System.err.println("Failed to instantiate eventbus provider");
-            return;
-          }
-          EventBus bus = new EventBusImpl(clusterServerID, mgr) {
-          };
-          EventBus.initialize(bus);
-          latch.countDown();
-        }
-      });
-    } else {
-      // This is ugly - tidy it up!
-
-      VertxInternal.instance.startOnEventLoop(new Runnable() {
-        public void run() {
-          // Start non clustered event bus
-          EventBus bus = new EventBusImpl() {
-          };
-          EventBus.initialize(bus);
-          latch.countDown();
-        }
-      });
-    }
-    while (true) {
-      try {
-        if (!latch.await(10000, TimeUnit.SECONDS)) {
-          log.warn("Timed out waiting for clustering to start");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-        //OK - spurious wakeup
-      }
+      String clusterProviderClassName = args.map.get("-cluster-provider");
+      EventBus.setClustered(clusterPort, clusterHost, clusterProviderClassName);
     }
     if (clustered) {
       System.out.println("Started");

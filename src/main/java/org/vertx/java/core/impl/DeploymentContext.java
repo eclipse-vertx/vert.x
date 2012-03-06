@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-package org.vertx.java.old.redis;
+package org.vertx.java.core.impl;
 
 /**
- * Exception thrown by the Redis client
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class RedisException extends Exception {
+public interface DeploymentContext {
 
-  /**
-   * Construct a {@code RedisException} with a message as specified by {@code msg}
-   */
-  public RedisException(String msg) {
-    super(msg);
-  }
+  void reportException(Throwable t);
 }

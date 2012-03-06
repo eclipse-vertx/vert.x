@@ -34,7 +34,6 @@ jar {
 test {
   useTestNG()
   include "**/*Test.class"
-  exclude "**/redis/*.class"
   systemProperty "java.util.logging.config.file", "conf/logging.properties"
 }
 
@@ -42,11 +41,6 @@ task rubyTests(type: Exec, dependsOn: testClasses) {
   group = 'verification'
   workingDir = file('src/tests/ruby')
   executable = file('src/tests/ruby/run_tests.sh')
-}
-
-task redisTests(type: Test, dependsOn: testClasses) {
-    useTestNG()
-    include("**/RedisTest.class")
 }
 
 task yardoc(type: Exec) {

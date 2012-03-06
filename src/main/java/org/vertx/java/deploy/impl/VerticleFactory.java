@@ -16,7 +16,7 @@
 
 package org.vertx.java.deploy.impl;
 
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

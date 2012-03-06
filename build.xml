@@ -140,7 +140,6 @@
     <javac destdir="${tests-target}" classpathref="test-classpath"
            debug="on"
            includeantruntime="false">
-      <exclude name="**/redis/**/*.java"/>
       <src path="${test-framework-src-java}"/>
       <src path="${test-controllers-src}"/>
       <src path="${test-java-tests-src}"/>
@@ -149,13 +148,8 @@
 
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
-    <exclude name="org/vertx/java/tests/redis/*Test.class"/>
     <exclude name="org/vertx/java/tests/old/**/*Test.class"/>
     <exclude name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
-  </fileset>
-
-  <fileset id="redis-tests.fs" dir="${tests-target}">
-    <include name="org/vertx/java/tests/redis/*Test.class"/>
   </fileset>
 
   <!-- You will need  a mailer (use sendmail)
@@ -179,13 +173,7 @@
     </antcall>
   </target>
 
-  <target name="all-tests" depends="tests, redis-tests, mailer-tests, persistor-tests">
-  </target>
-
-  <target name="redis-tests">
-    <antcall target="internal-tests">
-      <param name="tests-fs" value="redis-tests.fs"/>
-    </antcall>
+  <target name="all-tests" depends="tests, mailer-tests, persistor-tests">
   </target>
 
   <target name="mailer-tests">
@@ -306,6 +294,7 @@
         <exclude name="**/vertx-dev"/>
         <exclude name="**/build.xml"/>
         <exclude name="**/build-dist.xml"/>
+        <exclude name="java/classes/**/*.class"/>
       </fileset>
     </copy>
 

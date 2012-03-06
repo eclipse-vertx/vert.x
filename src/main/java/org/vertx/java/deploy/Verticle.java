@@ -14,36 +14,25 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.redis;
-
-import org.vertx.java.framework.TestBase;
-import vertx.tests.redis.ReconnectTestClient;
+package org.vertx.java.deploy;
 
 /**
- *
- * This test must be run manually
+ * A verticle is the unit of deployment in vert.x
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
- *
  */
-public class JavaReconnectTest extends TestBase {
+public interface Verticle {
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    startApp(ReconnectTestClient.class.getName());
-  }
+  /**
+   * Vert.x calls thhe start method when the verticle is deployed
+   * @throws Exception
+   */
+  void start() throws Exception;
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
-  public void testConnectionFailure() {
-    startTest(getMethodName());
-  }
-
-  public void testConnectionFailureWhenInPool() {
-    startTest(getMethodName());
-  }
+  /**
+   * Vert.x calls the stop method when the verticle is undeployed.
+   * Put any cleanup code for your verticle in here
+   * @throws Exception
+   */
+  void stop() throws Exception;
 }
