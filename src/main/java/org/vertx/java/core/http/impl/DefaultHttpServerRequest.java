@@ -34,9 +34,9 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerRequestImpl extends HttpServerRequest {
+public class DefaultHttpServerRequest extends HttpServerRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerRequest.class);
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -47,10 +47,10 @@ public class HttpServerRequestImpl extends HttpServerRequest {
   //Cache this for performance
   private Map<String, String> headers;
 
-  HttpServerRequestImpl(ServerConnection conn,
-                        String method, String uri, String path, String query,
-                        HttpServerResponse response,
-                        HttpRequest request) {
+  DefaultHttpServerRequest(ServerConnection conn,
+                           String method, String uri, String path, String query,
+                           HttpServerResponse response,
+                           HttpRequest request) {
     super(method, uri, path, query, response);
     this.conn = conn;
     this.request = request;

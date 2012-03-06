@@ -51,20 +51,20 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetClientImpl {
+public class DefaultNetClient {
 
-  private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
 
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
-  private Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
+  private Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
   private Handler<Exception> exceptionHandler;
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
 
-  public NetClientImpl() {
+  public DefaultNetClient() {
     ctx = VertxInternal.instance.getOrAssignContext();
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
@@ -313,7 +313,7 @@ public class NetClientImpl {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
         VertxInternal.instance.setContext(ctx);
-        NetSocketImpl sock = new NetSocketImpl(ch, ctx, Thread.currentThread());
+        DefaultNetSocket sock = new DefaultNetSocket(ch, ctx, Thread.currentThread());
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
       }
@@ -342,7 +342,7 @@ public class NetClientImpl {
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocketImpl sock = socketMap.remove(ch);
+      final DefaultNetSocket sock = socketMap.remove(ch);
       if (sock != null) {
         tcpHelper.runOnCorrectThread(ch, new Runnable() {
           public void run() {
@@ -354,7 +354,7 @@ public class NetClientImpl {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      NetSocketImpl sock = socketMap.get(ctx.getChannel());
+      DefaultNetSocket sock = socketMap.get(ctx.getChannel());
       if (sock != null) {
         ChannelBuffer cb = (ChannelBuffer) e.getMessage();
         sock.handleDataReceived(new Buffer(cb));
@@ -364,7 +364,7 @@ public class NetClientImpl {
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocketImpl sock = socketMap.get(ch);
+      final DefaultNetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
         tcpHelper.runOnCorrectThread(ch, new Runnable() {

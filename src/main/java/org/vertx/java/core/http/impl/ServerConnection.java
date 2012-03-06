@@ -53,9 +53,9 @@ class ServerConnection extends AbstractConnection {
 
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private HttpServerRequestImpl currentRequest;
-  private HttpServerResponseImpl pendingResponse;
-  private WebSocketImpl ws;
+  private DefaultHttpServerRequest currentRequest;
+  private DefaultHttpServerResponse pendingResponse;
+  private DefaultWebSocket ws;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
@@ -115,7 +115,7 @@ class ServerConnection extends AbstractConnection {
     channel.close();
   }
 
-  private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
+  private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {
     setContext();
     try {
       this.currentRequest = req;
@@ -162,7 +162,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWebsocketConnect(WebSocketImpl ws) {
+  void handleWebsocketConnect(DefaultWebSocket ws) {
     try {
       if (wsHandler != null) {
         setContext();
@@ -251,8 +251,8 @@ class ServerConnection extends AbstractConnection {
       String uri = request.getUri();
       String path = theURI.getPath();
       String query = theURI.getQuery();
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(this);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, method, uri, path, query, resp, request);
+      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this);
+      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
       handleRequest(req, resp);
 
       ChannelBuffer requestBody = request.getContent();

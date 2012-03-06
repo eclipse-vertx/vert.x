@@ -32,9 +32,9 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientResponseImpl extends HttpClientResponse {
+public class DefaultHttpClientResponse extends HttpClientResponse {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpClientResponseImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
   private final ClientConnection conn;
   private Handler<Buffer> dataHandler;
@@ -47,7 +47,7 @@ public class HttpClientResponseImpl extends HttpClientResponse {
   // Cache these for performance
   private Map<String, String> trailers;
 
-  HttpClientResponseImpl(ClientConnection conn, HttpResponse response) {
+  DefaultHttpClientResponse(ClientConnection conn, HttpResponse response) {
     super(response.getStatus().getCode(), response.getStatus().getReasonPhrase());
     this.conn = conn;
     this.response = response;

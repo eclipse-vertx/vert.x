@@ -17,7 +17,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.impl.HttpClientImpl;
+import org.vertx.java.core.http.impl.DefaultHttpClient;
 
 import java.util.Map;
 
@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class HttpClient {
 
-  private final HttpClientImpl client = new HttpClientImpl();
+  private final DefaultHttpClient client = new DefaultHttpClient();
   
   /**
    * Create an {@code HttpClient} instance
