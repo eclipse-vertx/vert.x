@@ -17,7 +17,7 @@
 package vertx.tests.busmods.worker;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;

@@ -35,18 +35,7 @@ import java.util.Map;
 public abstract class EventBusAppBase extends TestClientBase {
 
   protected Map<String, Object> data;
-  protected EventBus eb;
-
-  class TestEventBus extends EventBusImpl {
-
-    TestEventBus(ServerID serverID, ClusterManager clusterManager) {
-      super(serverID, clusterManager);
-    }
-
-    public void close(Handler<Void> doneHandler) {
-      super.close(doneHandler);
-    }
-  }
+  protected EventBusImpl eb;
 
   @Override
   public void start() {
@@ -55,16 +44,10 @@ public abstract class EventBusAppBase extends TestClientBase {
     data = SharedData.instance.getMap("data");
 
     if (isLocal()) {
-      eb = EventBus.instance;
+      eb = (EventBusImpl)EventBus.instance;
     } else {
-
-      // We force each application to have its own instance of the event bus so we can test them clustering
-      // you wouldn't do this in real life (programmatically)
-
       int port = Counter.portCounter.getAndIncrement();
-      ServerID serverID = new ServerID(port, "localhost");
-      ClusterManager cm = new HazelcastClusterManager();
-      eb = new TestEventBus(serverID, cm);
+      eb = new EventBusImpl(port, "localhost");
     }
 
     tu.appReady();
@@ -73,7 +56,7 @@ public abstract class EventBusAppBase extends TestClientBase {
   @Override
   public void stop() {
     if (!isLocal()) {
-      ((TestEventBus)eb).close(new SimpleHandler() {
+      eb.close(new SimpleHandler() {
         public void handle() {
           EventBusAppBase.super.stop();
         }

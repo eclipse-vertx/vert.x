@@ -49,6 +49,9 @@ public class EventBusImpl extends EventBus {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
+  private static final String DEFAULT_CLUSTER_PROVIDER_CLASS_NAME =
+      "org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager";
+  private static final int DEFAULT_CLUSTER_PORT = 2550;
   private final ServerID serverID;
   private final NetServer server;
   private final AsyncMultiMap<String, ServerID> subs;  // Multimap name -> Collection<node ids>
@@ -57,23 +60,40 @@ public class EventBusImpl extends EventBus {
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
   private final Map<String, HandlerInfo> handlersByID = new ConcurrentHashMap<>();
 
-  /*
-  Non clustered event bus
+  /**
+   * Create a non clustered event bus
    */
-  protected EventBusImpl() {
+  public EventBusImpl() {
     // Just some dummy server ID
-    this.serverID = new ServerID(2550, "localhost");
+    this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
     this.server = null;
     this.subs = null;
   }
 
-  /*
-  Clustered event bus
-   */
-  protected EventBusImpl(ServerID serverID, ClusterManager clusterManager) {
-    this.serverID = serverID;
-    subs = clusterManager.getMultiMap("subs");
-    this.server = setServer();
+  public EventBusImpl(String clusterHost) {
+    this(DEFAULT_CLUSTER_PORT, clusterHost, null);
+  }
+
+  public EventBusImpl(int clusterPort, String clusterHost) {
+    this(clusterPort, clusterHost, null);
+  }
+
+  public EventBusImpl(int clusterPort, String clusterHost, String clusterProviderClassName) {
+    if (clusterProviderClassName == null) {
+      clusterProviderClassName = DEFAULT_CLUSTER_PROVIDER_CLASS_NAME;
+    }
+    try {
+      final Class clusterProvider = Class.forName(clusterProviderClassName);
+      final ServerID clusterServerID = new ServerID(clusterPort, clusterHost);
+      ClusterManager mgr = (ClusterManager) clusterProvider.newInstance();
+      this.serverID = clusterServerID;
+      subs = mgr.getMultiMap("subs");
+      this.server = setServer();
+    } catch (Exception e) {
+      log.error("Failed to create cluster manager", e);
+      throw new IllegalArgumentException(e);
+    }
+
   }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
@@ -227,7 +247,7 @@ public class EventBusImpl extends EventBus {
     return registerHandler(address, handler, null);
   }
 
-  protected void close(Handler<Void> doneHandler) {
+  public void close(Handler<Void> doneHandler) {
     server.close(doneHandler);
   }
 

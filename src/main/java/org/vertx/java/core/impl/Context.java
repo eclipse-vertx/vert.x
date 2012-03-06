@@ -23,7 +23,9 @@ public interface Context {
 
   void execute(Runnable task);
 
-  void setExtraData(Object data);
+  void setDeploymentContext(DeploymentContext deploymentContext);
 
-  Object getExtraData();
+  DeploymentContext getDeploymentContext();
+
+  void reportException(Throwable t);
 }

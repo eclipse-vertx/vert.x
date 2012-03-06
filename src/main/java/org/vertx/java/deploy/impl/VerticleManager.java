@@ -18,7 +18,8 @@ package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
+import org.vertx.java.core.impl.DeploymentContext;
 import org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory;
 import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
 import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
@@ -88,15 +89,6 @@ public class VerticleManager {
   public Logger getLogger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
-  }
-
-  public void reportException(Throwable t) {
-    VerticleHolder holder = getVerticleHolder();
-    if (holder != null) {
-      holder.deployment.factory.reportException(t);
-    } else {
-      log.error("Unhandled exception", t);
-    }
   }
 
   public synchronized String deploy(boolean worker, String name, final String main,
@@ -191,7 +183,7 @@ public class VerticleManager {
             addVerticle(deployment, verticle);
             verticle.start();
           } catch (Throwable t) {
-            reportException(t);
+            VertxInternal.instance.reportException(t);
             doUndeploy(deploymentName, doneHandler);
           }
           aggHandler.started();
@@ -253,13 +245,13 @@ public class VerticleManager {
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger, deployment.config);
     deployment.verticles.add(holder);
-    context.setExtraData(holder);
+    context.setDeploymentContext(holder);
   }
 
   private VerticleHolder getVerticleHolder() {
     Context context = VertxInternal.instance.getContext();
     if (context != null) {
-      VerticleHolder holder = (VerticleHolder)context.getExtraData();
+      VerticleHolder holder = (VerticleHolder)context.getDeploymentContext();
       return holder;
     } else {
       return null;
@@ -293,7 +285,7 @@ public class VerticleManager {
             try {
               holder.verticle.stop();
             } catch (Throwable t) {
-              reportException(t);
+              VertxInternal.instance.reportException(t);
             }
             count.undeployed();
             LoggerFactory.removeLogger(holder.loggerName);
@@ -310,7 +302,7 @@ public class VerticleManager {
     }
   }
 
-  private static class VerticleHolder {
+  private static class VerticleHolder implements DeploymentContext {
     final Deployment deployment;
     final Context context;
     final Verticle verticle;
@@ -328,6 +320,10 @@ public class VerticleManager {
       this.loggerName = loggerName;
       this.logger = logger;
       this.config = config;
+    }
+
+    public void reportException(Throwable t) {
+      deployment.factory.reportException(t);
     }
   }
 

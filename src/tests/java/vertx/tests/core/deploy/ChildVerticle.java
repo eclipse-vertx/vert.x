@@ -16,7 +16,7 @@
 
 package vertx.tests.core.deploy;
 
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.eventbus.EventBus;
 
 /**

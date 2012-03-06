@@ -17,7 +17,7 @@
 package vertx.tests.busmods.workqueue;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;

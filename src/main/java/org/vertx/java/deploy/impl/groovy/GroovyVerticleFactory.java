@@ -18,7 +18,7 @@ package org.vertx.java.deploy.impl.groovy;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
-import org.vertx.java.core.Verticle;
+import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 

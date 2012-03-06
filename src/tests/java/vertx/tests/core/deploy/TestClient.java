@@ -20,6 +20,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.deploy.Container;
 import org.vertx.java.framework.TestClientBase;
 
 /**
@@ -50,12 +51,12 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    Vertx.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
+    Container.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
   }
 
   public void testUndeploy() {
 
-    final String id = Vertx.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
+    final String id = Container.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
 
     Vertx.instance.setTimer(100, new Handler<Long>() {
       public void handle(Long tid) {
@@ -67,7 +68,7 @@ public class TestClient extends TestClientBase {
             }
           }
         });
-        Vertx.instance.undeployVerticle(id);
+        Container.instance.undeployVerticle(id);
       }
     });
 
