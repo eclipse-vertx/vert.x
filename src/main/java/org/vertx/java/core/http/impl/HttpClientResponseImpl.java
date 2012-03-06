@@ -37,7 +37,6 @@ public class HttpClientResponseImpl extends HttpClientResponse {
   private static final Logger log = LoggerFactory.getLogger(HttpClientResponseImpl.class);
 
   private final ClientConnection conn;
-  private final Thread th;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
@@ -48,25 +47,21 @@ public class HttpClientResponseImpl extends HttpClientResponse {
   // Cache these for performance
   private Map<String, String> trailers;
 
-  HttpClientResponseImpl(ClientConnection conn, HttpResponse response, Thread th) {
+  HttpClientResponseImpl(ClientConnection conn, HttpResponse response) {
     super(response.getStatus().getCode(), response.getStatus().getReasonPhrase());
     this.conn = conn;
     this.response = response;
-    this.th = th;
   }
 
   public String getHeader(String key) {
-    checkThread();
     return response.getHeader(key);
   }
 
   public Set<String> getHeaderNames() {
-    checkThread();
     return response.getHeaderNames();
   }
 
   public String getTrailer(String key) {
-    checkThread();
     return trailer.getHeader(key);
   }
 
@@ -89,44 +84,36 @@ public class HttpClientResponseImpl extends HttpClientResponse {
   }
 
   public Set<String> getTrailerNames() {
-    checkThread();
     return trailer.getHeaderNames();
   }
 
   public void dataHandler(Handler<Buffer> dataHandler) {
-    checkThread();
     this.dataHandler = dataHandler;
   }
 
   public void endHandler(Handler<Void> endHandler) {
-    checkThread();
     this.endHandler = endHandler;
   }
 
   public void exceptionHandler(Handler<Exception> exceptionHandler) {
-    checkThread();
     this.exceptionHandler = exceptionHandler;
   }
 
   public void pause() {
-    checkThread();
     conn.pause();
   }
 
   public void resume() {
-    checkThread();
     conn.resume();
   }
 
   void handleChunk(Buffer data) {
-    checkThread();
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
   }
 
   void handleEnd(HttpChunkTrailer trailer) {
-    checkThread();
     this.trailer = trailer;
     if (endHandler != null) {
       endHandler.handle(null);
@@ -134,16 +121,9 @@ public class HttpClientResponseImpl extends HttpClientResponse {
   }
 
   void handleException(Exception e) {
-    checkThread();
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     }
   }
 
-  private void checkThread() {
-    // All ops must always be invoked on same thread
-    if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
-    }
-  }
 }

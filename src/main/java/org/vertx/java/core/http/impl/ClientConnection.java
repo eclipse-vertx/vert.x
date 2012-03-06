@@ -121,7 +121,7 @@ class ClientConnection extends AbstractConnection {
             client.handleException(new IOException("Websocket connection attempt returned HTTP status code " + resp.statusCode));
           }
         }
-      }, context, Thread.currentThread(), this);
+      }, context, this);
       shake.fillInRequest(req, (ssl ? "http://" : "https://") + hostHeader);
       req.end();
     } catch (Exception e) {
@@ -177,7 +177,7 @@ class ClientConnection extends AbstractConnection {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    HttpClientResponseImpl nResp = new HttpClientResponseImpl(this, resp, req.th);
+    HttpClientResponseImpl nResp = new HttpClientResponseImpl(this, resp);
     currentResponse = nResp;
     req.handleResponse(nResp);
   }

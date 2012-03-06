@@ -47,8 +47,8 @@ public class HttpClientRequestImpl extends HttpClientRequest {
 
   HttpClientRequestImpl(final HttpClientImpl client, final String method, final String uri,
                         final Handler<HttpClientResponse> respHandler,
-                        final Context context, final Thread th) {
-    this(client, method, uri, respHandler, context, th, false);
+                        final Context context) {
+    this(client, method, uri, respHandler, context, false);
   }
 
   /*
@@ -57,22 +57,21 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   */
   HttpClientRequestImpl(final HttpClientImpl client, final String method, final String uri,
                         final Handler<HttpClientResponse> respHandler,
-                        final Context context, final Thread th,
+                        final Context context,
                         final ClientConnection conn) {
-    this(client, method, uri, respHandler, context, th, true);
+    this(client, method, uri, respHandler, context, true);
     this.conn = conn;
     conn.setCurrentRequest(this);
   }
 
   private HttpClientRequestImpl(final HttpClientImpl client, final String method, final String uri,
                                 final Handler<HttpClientResponse> respHandler,
-                                final Context context, final Thread th, final boolean raw) {
+                                final Context context, final boolean raw) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.chunked = false;
     this.respHandler = respHandler;
     this.context = context;
-    this.th = th;
     this.raw = raw;
   }
 
@@ -82,7 +81,6 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   private Handler<Void> continueHandler;
   private final Context context;
   private final boolean raw;
-  final Thread th;
 
   private boolean chunked;
   private ClientConnection conn;
@@ -148,7 +146,6 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   }
 
   public HttpClientRequestImpl write(String chunk, Handler<Void> doneHandler) {
-    checkThread();
     checkComplete();
     return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
   }
@@ -243,14 +240,12 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   }
 
   void handleDrained() {
-    checkThread();
     if (drainHandler != null) {
       drainHandler.handle(null);
     }
   }
 
   void handleException(Exception e) {
-    checkThread();
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     } else {
@@ -300,10 +295,7 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   }
 
   private void connected(ClientConnection conn) {
-    checkThread();
-
     conn.setCurrentRequest(this);
-
     this.conn = conn;
 
     // If anything was written or the request ended before we got the connection, then
@@ -384,20 +376,12 @@ public class HttpClientRequestImpl extends HttpClientRequest {
   }
 
   private void check() {
-    checkThread();
     checkComplete();
   }
 
   private void checkComplete() {
     if (completed) {
       throw new IllegalStateException("Request already complete");
-    }
-  }
-
-  private void checkThread() {
-    // All ops must always be invoked on same thread
-    if (Thread.currentThread() != th) {
-      throw new IllegalStateException("Invoked with wrong thread, actual: " + Thread.currentThread() + " expected: " + th);
     }
   }
 

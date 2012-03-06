@@ -113,6 +113,14 @@ public class VertxImpl implements VertxInternal {
     return false;
   }
 
+  public boolean isWorker() {
+    Context context = getContext();
+    if (context != null) {
+      return context instanceof WorkerContext;
+    }
+    return false;
+  }
+
   public long setPeriodic(long delay, final Handler<Long> handler) {
     return setTimeout(delay, true, handler);
   }

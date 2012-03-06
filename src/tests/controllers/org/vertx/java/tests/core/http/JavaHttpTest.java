@@ -17,9 +17,19 @@
 package org.vertx.java.tests.core.http;
 
 import org.junit.Test;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.core.streams.Pump;
 import org.vertx.java.framework.TestBase;
 import vertx.tests.core.http.CountServer;
 import vertx.tests.core.http.DrainingServer;
@@ -28,6 +38,9 @@ import vertx.tests.core.http.InstanceCheckServer;
 import vertx.tests.core.http.PausingServer;
 import vertx.tests.core.http.TLSServer;
 import vertx.tests.core.http.TLSTestParams;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -81,23 +94,31 @@ public class JavaHttpTest extends TestBase {
   }
 
   @Test
-  public void testCreateServerNoContext() throws Exception {
-//    try {
-//      new HttpServer();
-//      fail("Should throw exception");
-//    } catch (IllegalStateException e) {
-//      // Ok
-//    }
-  }
+  public void testNoContext() throws Exception {
 
-  @Test
-  public void testCreateClientNoContext() throws Exception {
-//    try {
-//      new HttpClient();
-//      fail("Should throw exception");
-//    } catch (IllegalStateException e) {
-//      // Ok
-//    }
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    final HttpServer server = new HttpServer();
+    server.requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.end();
+      }
+    });
+    server.listen(8080);
+
+    final HttpClient client = new HttpClient().setPort(8080);
+    client.getNow("some-uri", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        server.close(new SimpleHandler() {
+          public void handle() {
+            client.close();
+            latch.countDown();
+          }
+        });
+      }
+    });
+
+    assertTrue(latch.await(5, TimeUnit.SECONDS));
   }
 
   public void testSimpleGET() {

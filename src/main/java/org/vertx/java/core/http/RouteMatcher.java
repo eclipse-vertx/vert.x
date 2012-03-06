@@ -63,6 +63,8 @@ import java.util.regex.Pattern;
  * Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
  * a particular request, the first matching one will be used.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {
