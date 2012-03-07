@@ -51,9 +51,10 @@ public interface Vertx {
   boolean cancelTimer(long id);
 
   /**
-   * Call the specified event handler asynchronously on the next "tick" of the event loop.
+   * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
+   * been processed
    */
-  void nextTick(Handler<Void> handler);
+  void runOnLoop(Handler<Void> handler);
 
   /**
    * Is the current thread an event loop thread?

@@ -151,7 +151,7 @@ public abstract class ConnectionBase {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
         setContext();
-        Vertx.instance.nextTick(new SimpleHandler() {
+        Vertx.instance.runOnLoop(new SimpleHandler() {
           public void handle() {
             if (channelFuture.isSuccess()) {
               doneHandler.handle(null);

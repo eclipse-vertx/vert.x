@@ -70,7 +70,7 @@ public class PerfClient implements Verticle {
       }
     };
     if (!socket.writeQueueFull()) {
-      Vertx.instance.nextTick(handler);
+      Vertx.instance.runOnLoop(handler);
     } else {
       socket.drainHandler(handler);
     }

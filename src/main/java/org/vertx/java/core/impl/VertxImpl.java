@@ -128,7 +128,7 @@ public class VertxImpl implements VertxInternal {
     return setTimeout(delay, false, handler);
   }
 
-  public void nextTick(final Handler<Void> handler) {
+  public void runOnLoop(final Handler<Void> handler) {
     Context context = getOrAssignContext();
     context.execute(new Runnable() {
       public void run() {
