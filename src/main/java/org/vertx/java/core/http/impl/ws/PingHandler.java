@@ -18,9 +18,9 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.MessageEvent;
+import io.netty.channel.SimpleChannelUpstreamHandler;
 
 import static org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType;
 

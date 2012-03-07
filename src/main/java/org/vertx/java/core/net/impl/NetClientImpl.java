@@ -16,24 +16,24 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelState;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.handler.ssl.SslHandler;
-import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.bootstrap.ClientBootstrap;
+import io.netty.buffer.ChannelBuffer;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPipelineFactory;
+import io.netty.channel.ChannelState;
+import io.netty.channel.ChannelStateEvent;
+import io.netty.channel.Channels;
+import io.netty.channel.ExceptionEvent;
+import io.netty.channel.MessageEvent;
+import io.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
@@ -234,9 +234,20 @@ public class NetClientImpl {
     }
 
     if (bootstrap == null) {
+
+      VertxWorkerPool pool = new VertxWorkerPool();
+      EventLoopContext ectx;
+      if (context instanceof EventLoopContext) {
+        //It always will be
+        ectx = (EventLoopContext)context;
+      } else {
+        ectx = null;
+      }
+      pool.addWorker(ectx.getWorker());
+
       channelFactory = new NioClientSocketChannelFactory(
-          VertxInternal.instance.getAcceptorPool(),
-          VertxInternal.instance.getWorkerPool());
+          VertxInternal.instance.getAcceptorPool(), 1,
+          pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -255,16 +266,6 @@ public class NetClientImpl {
         }
       });
     }
-
-    //Client connections share context with caller
-    EventLoopContext ectx;
-    if (context instanceof EventLoopContext) {
-      //It always will be
-      ectx = (EventLoopContext)context;
-    } else {
-      ectx = null;
-    }
-    channelFactory.setWorker(ectx.getWorker());
 
     bootstrap.setOptions(tcpHelper.generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
@@ -306,7 +307,7 @@ public class NetClientImpl {
                         - 1);
                   }
                 });
-               }
+              }
             });
           } else {
             failed(ch, channelFuture.getCause());
@@ -347,7 +348,7 @@ public class NetClientImpl {
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+    public void channelClosed(ChannelHandlerContext chctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocketImpl sock = socketMap.remove(ch);
       if (sock != null) {
@@ -369,7 +370,7 @@ public class NetClientImpl {
     }
 
     @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    public void channelInterestChanged(ChannelHandlerContext chctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocketImpl sock = socketMap.get(ch);
       ChannelState state = e.getState();
@@ -383,7 +384,7 @@ public class NetClientImpl {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    public void exceptionCaught(ChannelHandlerContext chctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
