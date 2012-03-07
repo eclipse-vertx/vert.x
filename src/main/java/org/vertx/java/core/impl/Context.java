@@ -23,9 +23,9 @@ public interface Context {
 
   void execute(Runnable task);
 
-  void setDeploymentContext(DeploymentContext deploymentContext);
+  void setDeploymentHandle(DeploymentHandle deploymentHandle);
 
-  DeploymentContext getDeploymentContext();
+  DeploymentHandle getDeploymentHandle();
 
   void reportException(Throwable t);
 }
