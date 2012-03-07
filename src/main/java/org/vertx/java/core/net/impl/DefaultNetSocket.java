@@ -109,7 +109,7 @@ public class DefaultNetSocket extends NetSocket {
   public void drainHandler(Handler<Void> drainHandler) {
     checkThread();
     this.drainHandler = drainHandler;
-    Vertx.instance.nextTick(new SimpleHandler() {
+    Vertx.instance.runOnLoop(new SimpleHandler() {
       public void handle() {
         callDrainHandler(); //If the channel is already drained, we want to call it immediately
       }

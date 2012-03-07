@@ -43,4 +43,13 @@ module Vertx
     org.vertx.java.core.Vertx.instance.cancelTimer(id)
   end
 
+  # Put the handler on the event queue for this loop so it will be run asynchronously
+  # ASAP after this event has been processed
+  # @param [Proc] proc a proc representing the code that will be run ASAP
+  # @param [Block] hndlr a block representing the code that will be run ASAP
+  def Vertx.run_on_loop(proc = nil, &hndlr)
+    hndlr = proc if proc
+    org.vertx.java.core.Vertx.instance.runOnLoop(hndlr)
+  end
+
 end

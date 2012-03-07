@@ -65,7 +65,7 @@ public class Sender implements Verticle, Handler<Message<String>> {
         eb.send(address, "some message");
         count++;
        // System.out.println("Sent message " + count);
-        Vertx.instance.nextTick(new SimpleHandler() {
+        Vertx.instance.runOnLoop(new SimpleHandler() {
           public void handle() {
             sendMessage();
           }
