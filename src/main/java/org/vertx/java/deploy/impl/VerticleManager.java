@@ -19,7 +19,7 @@ package org.vertx.java.deploy.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.DeploymentContext;
+import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -245,13 +245,13 @@ public class VerticleManager {
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger, deployment.config);
     deployment.verticles.add(holder);
-    context.setDeploymentContext(holder);
+    context.setDeploymentHandle(holder);
   }
 
   private VerticleHolder getVerticleHolder() {
     Context context = VertxInternal.instance.getContext();
     if (context != null) {
-      VerticleHolder holder = (VerticleHolder)context.getDeploymentContext();
+      VerticleHolder holder = (VerticleHolder)context.getDeploymentHandle();
       return holder;
     } else {
       return null;
@@ -302,7 +302,7 @@ public class VerticleManager {
     }
   }
 
-  private static class VerticleHolder implements DeploymentContext {
+  private static class VerticleHolder implements DeploymentHandle {
     final Deployment deployment;
     final Context context;
     final Verticle verticle;

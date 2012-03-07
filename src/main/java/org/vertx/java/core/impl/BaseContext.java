@@ -26,15 +26,15 @@ public abstract class BaseContext implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(BaseContext.class);
 
-  private DeploymentContext deploymentContext;
+  private DeploymentHandle deploymentContext;
 
   private VertxInternal vertx = VertxInternal.instance;
 
-  public void setDeploymentContext(DeploymentContext deploymentContext) {
-    this.deploymentContext = deploymentContext;
+  public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
+    this.deploymentContext = deploymentHandle;
   }
 
-  public DeploymentContext getDeploymentContext() {
+  public DeploymentHandle getDeploymentHandle() {
     return deploymentContext;
   }
 

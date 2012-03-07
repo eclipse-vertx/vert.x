@@ -19,7 +19,7 @@ package org.vertx.java.core.impl;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface DeploymentContext {
+public interface DeploymentHandle {
 
   void reportException(Throwable t);
 }
