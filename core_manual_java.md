@@ -9,6 +9,7 @@ As an example we'll write a simple TCP echo server. The server just accepts conn
 
 Copy the following into a text editor and save it as `server.java`
 
+    import org.vertx.java.deploy.*;
     import org.vertx.java.core.*;
     import org.vertx.java.core.net.*;
     import org.vertx.java.core.streams.Pump;
@@ -48,7 +49,7 @@ And notice how data you send (and hit enter) is echoed back to you.
 
 Congratulations! You've written your first verticle.
 
-Every Java verticle must implement the interface `org.vertx.java.core.Verticle`. This interface has a `start` method which is called by vert.x when the verticle is started.
+Every Java verticle must implement the interface `org.vertx.java.deploy.Verticle`. This interface has a `start` method which is called by vert.x when the verticle is started.
         
 ## Verticle clean-up
 
@@ -56,9 +57,9 @@ The method `stop` is called when the verticle is undeployed. You should always p
         
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle by calling `getConfig` on the `Vertx` singleton instance.
+If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle by calling `getConfig` on the `org.vertx.java.deploy.Container` singleton instance.
 
-    JsonObject config = Vertx.instance.getConfig();
+    JsonObject config = Container.instance.getConfig();
     
     System.out.println("Config is " + config);
     
@@ -66,9 +67,9 @@ The config returned is an instance of `org.vertx.java.core.json.JsonObject`, whi
 
 ## Logging from a Verticle
 
-Each verticle is given its own logger. To get a reference to it invoke the `getLogger` method on the `Vertx` singleton:
+Each verticle is given its own logger. To get a reference to it invoke the `getLogger` method on the `org.vertx.java.deploy.Container` singleton:
 
-    Logger logger = Vertx.instance.getLogger();
+    Logger logger = Container.instance.getLogger();
     
     logger.info("I am logging something");
     
@@ -93,11 +94,11 @@ You can deploy and undeploy verticles programmatically from inside another verti
 
 ## Deploying a simple verticle
 
-To deploy a verticle programmatically call the function `deployVerticle`. The return value of `vertx.deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+To deploy a verticle programmatically call the function `deployVerticle` on the `org.vertx.java.deploy.Container` singleton instance. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
 
 To deploy a single instance of a verticle :
 
-    String id = Vertx.instance.deployVerticle(main);    
+    String id = Container.instance.deployVerticle(main);    
     
 Where `main` is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.
     
@@ -108,7 +109,7 @@ JSON configuration can be passed to a verticle that is deployed programmatically
     JsonObject config = new JsonObject();
     config.putString("foo", "wibble");
     config.putBoolean("bar", false);
-    Vertx.instance.deployVerticle("foo.ChildVerticle", config);  
+    Container.instance.deployVerticle("foo.ChildVerticle", config);  
             
 Then, in `ChildVerticle` you can access the config via `getConfig` as previously explained.
     
@@ -120,7 +121,7 @@ For example, you could create a verticle `AppStarter` as follows:
 
     // Application config
     
-    JsonObject appConfig = Vertx.instance.getConfig();
+    JsonObject appConfig = Container.instance.getConfig();
     
     JsonObject verticle1Config = appConfig.getObject("verticle1_conf");
     JsonObject verticle2Config = appConfig.getObject("verticle2_conf");
@@ -130,11 +131,11 @@ For example, you could create a verticle `AppStarter` as follows:
         
     // Start the verticles that make up the app  
     
-    Vertx.instance.deployVerticle("verticle1.js", verticle1Config);
-    Vertx.instance.deployVerticle("verticle2.rb", verticle2Config);
-    Vertx.instance.deployVerticle("foo.Verticle3", verticle3Config);
-    Vertx.instance.deployWorkerVerticle("foo.Verticle4", verticle4Config);
-    Vertx.instance.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
+    Container.instance.deployVerticle("verticle1.js", verticle1Config);
+    Container.instance.deployVerticle("verticle2.rb", verticle2Config);
+    Container.instance.deployVerticle("foo.Verticle3", verticle3Config);
+    Container.instance.deployWorkerVerticle("foo.Verticle4", verticle4Config);
+    Container.instance.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
         
 Then create a file 'config.json" with the actual JSON config in it (see main manual on configuring verticles):
     
@@ -174,7 +175,7 @@ Alternatively, even if you choose to write your main verticles in Java, you coul
 
 By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances as follows:
 
-    Vertx.instance.deployVerticle("foo.ChildVerticle", 10);   
+    Container.instance.deployVerticle("foo.ChildVerticle", 10);   
   
 The above example would deploy 10 instances.
 
@@ -182,7 +183,7 @@ The above example would deploy 10 instances.
 
 The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a handler as the final argument to `deployVerticle`:
 
-    Vertx.instance.deployVerticle("foo.ChildVerticle", 10, new SimpleHandler() {
+    Container.instance.deployVerticle("foo.ChildVerticle", 10, new SimpleHandler() {
         public void handle() {
             System.out.println("The verticle has been deployed");
         }
@@ -198,9 +199,9 @@ The `deployVerticle` method deploys standard (non worker) verticles. If you want
 
 Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
 
-    String deploymentID = Vertx.instance.deployVerticle(main);  
+    String deploymentID = Container.instance.deployVerticle(main);  
     
-    Vertx.instance.undeployVerticle(deploymentID);    
+    Container.instance.undeployVerticle(deploymentID);    
 
             
 # The Event Bus
