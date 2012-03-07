@@ -28,6 +28,8 @@ Just use the jar `vertx-core.jar` which is available as a separate download or i
 
 You then have full access to the core vert.x API. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
 
+There is a caveat here. When running vert.x outside a verticle you don't have the isolation benefits that a verticle brings, so you will need to be more careful about sharing state between different event loops.
+
 ## Concepts in vert.x
 
 In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.

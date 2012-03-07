@@ -123,6 +123,7 @@
 <p>If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality directly in your own pre-existing Spring Framework or other Java application, then you can do this too.</p>
 <p>Just use the jar <code>vertx-core.jar</code> which is available as a separate download or in the <code>lib/jars</code> directory in the distribution.</p>
 <p>You then have full access to the core vert.x API. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.</p>
+<p>There is a caveat here. When running vert.x outside a verticle you don't have the isolation benefits that a verticle brings, so you will need to be more careful about sharing state between different event loops.</p>
 <h2 id="concepts-in-vertx">Concepts in vert.x</h2><br/>
 <p>In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.</p>
 <h3 id="verticle">Verticle</h3><br/>
