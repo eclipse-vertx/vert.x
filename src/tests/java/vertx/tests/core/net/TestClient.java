@@ -44,7 +44,6 @@ public class TestClient extends TestClientBase {
 
   @Override
   public void start() {
-    System.out.println("in testclient.start");
     super.start();
     client = new NetClient();
     tu.appReady();
