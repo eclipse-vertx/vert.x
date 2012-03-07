@@ -260,8 +260,9 @@
 <h1 id="writing-verticles">Writing Verticles</h1><br/>
 <p>We previously discussed how a verticle is the unit of deployment in vert.x. Let's look in more detail about how to write a verticle.</p>
 <p>As an example we'll write a simple TCP echo server. The server just accepts connections and any data received by it is echoed back on the connection.</p>
-<p>Copy the following into a text editor and save it as <code>server.java</code></p>
-<pre class="prettyprint">import org.vertx.java.core.*;
+<p>Copy the following into a text editor and save it as <code>Server.java</code></p>
+<pre class="prettyprint">import org.vertx.java.deploy.*;
+import org.vertx.java.core.*;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.streams.Pump;
 
@@ -296,19 +297,19 @@ public class Server implements Verticle {
 <p>And notice how data you send (and hit enter) is echoed back to you.         <br/>
 </p>
 <p>Congratulations! You've written your first verticle.</p>
-<p>Every Java verticle must implement the interface <code>org.vertx.java.core.Verticle</code>. This interface has a <code>start</code> method which is called by vert.x when the verticle is started.</p>
+<p>Every Java verticle must implement the interface <code>org.vertx.java.deploy.Verticle</code>. This interface has a <code>start</code> method which is called by vert.x when the verticle is started.</p>
 <h2 id="verticle-clean-up">Verticle clean-up</h2><br/>
 <p>The method <code>stop</code> is called when the verticle is undeployed. You should always provide such a function if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers. </p>
 <h2 id="getting-configuration-in-a-verticle">Getting Configuration in a Verticle</h2><br/>
-<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle by calling <code>getConfig</code> on the <code>Vertx</code> singleton instance.</p>
-<pre class="prettyprint">JsonObject config = Vertx.instance.getConfig();
+<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle by calling <code>getConfig</code> on the <code>org.vertx.java.deploy.Container</code> singleton instance.</p>
+<pre class="prettyprint">JsonObject config = Container.instance.getConfig();
 
 System.out.println("Config is " + config);
 </pre>
 <p>The config returned is an instance of <code>org.vertx.java.core.json.JsonObject</code>, which is a class which represents JSON objects (unsurprisingly!). You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.</p>
 <h2 id="logging-from-a-verticle">Logging from a Verticle</h2><br/>
-<p>Each verticle is given its own logger. To get a reference to it invoke the <code>getLogger</code> method on the <code>Vertx</code> singleton:</p>
-<pre class="prettyprint">Logger logger = Vertx.instance.getLogger();
+<p>Each verticle is given its own logger. To get a reference to it invoke the <code>getLogger</code> method on the <code>org.vertx.java.deploy.Container</code> singleton:</p>
+<pre class="prettyprint">Logger logger = Container.instance.getLogger();
 
 logger.info("I am logging something");
 </pre>
@@ -328,9 +329,9 @@ logger.info("I am logging something");
 <h1 id="deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</h1><br/>
 <p>You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle. </p>
 <h2 id="deploying-a-simple-verticle">Deploying a simple verticle</h2><br/>
-<p>To deploy a verticle programmatically call the function <code>deployVerticle</code>. The return value of <code>vertx.deployVerticle</code> is the unique id of the deployment, which can be used later to undeploy the verticle.</p>
+<p>To deploy a verticle programmatically call the function <code>deployVerticle</code> on the <code>org.vertx.java.deploy.Container</code> singleton instance. The return value of <code>deployVerticle</code> is the unique id of the deployment, which can be used later to undeploy the verticle.</p>
 <p>To deploy a single instance of a verticle :</p>
-<pre class="prettyprint">String id = Vertx.instance.deployVerticle(main);
+<pre class="prettyprint">String id = Container.instance.deployVerticle(main);
 </pre>
 <p>Where <code>main</code> is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
@@ -338,7 +339,7 @@ logger.info("I am logging something");
 <pre class="prettyprint">JsonObject config = new JsonObject();
 config.putString("foo", "wibble");
 config.putBoolean("bar", false);
-Vertx.instance.deployVerticle("foo.ChildVerticle", config);
+Container.instance.deployVerticle("foo.ChildVerticle", config);
 </pre>
 <p>Then, in <code>ChildVerticle</code> you can access the config via <code>getConfig</code> as previously explained.</p>
 <h2 id="using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</h2><br/>
@@ -346,7 +347,7 @@ Vertx.instance.deployVerticle("foo.ChildVerticle", config);
 <p>For example, you could create a verticle <code>AppStarter</code> as follows:</p>
 <pre class="prettyprint">// Application config
 
-JsonObject appConfig = Vertx.instance.getConfig();
+JsonObject appConfig = Container.instance.getConfig();
 
 JsonObject verticle1Config = appConfig.getObject("verticle1_conf");
 JsonObject verticle2Config = appConfig.getObject("verticle2_conf");
@@ -356,11 +357,11 @@ JsonObject verticle5Config = appConfig.getObject("verticle5_conf");
 
 // Start the verticles that make up the app
 
-Vertx.instance.deployVerticle("verticle1.js", verticle1Config);
-Vertx.instance.deployVerticle("verticle2.rb", verticle2Config);
-Vertx.instance.deployVerticle("foo.Verticle3", verticle3Config);
-Vertx.instance.deployWorkerVerticle("foo.Verticle4", verticle4Config);
-Vertx.instance.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
+Container.instance.deployVerticle("verticle1.js", verticle1Config);
+Container.instance.deployVerticle("verticle2.rb", verticle2Config);
+Container.instance.deployVerticle("foo.Verticle3", verticle3Config);
+Container.instance.deployWorkerVerticle("foo.Verticle4", verticle4Config);
+Container.instance.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
 </pre>
 <p>Then create a file 'config.json" with the actual JSON config in it (see main manual on configuring verticles):</p>
 <pre class="prettyprint">{
@@ -394,12 +395,12 @@ Vertx.instance.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
 <p>Alternatively, even if you choose to write your main verticles in Java, you could maintain a single JavaScript verticle as an app starter - JavaScript has much better JSON support than Java, so you can maintain the whole JSON config nicely in the verticle itself. Take a look at the JavaScript core guide to see how to do that.</p>
 <h2 id="specifying-number-of-instances">Specifying number of instances</h2><br/>
 <p>By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances as follows:</p>
-<pre class="prettyprint">Vertx.instance.deployVerticle("foo.ChildVerticle", 10);
+<pre class="prettyprint">Container.instance.deployVerticle("foo.ChildVerticle", 10);
 </pre>
 <p>The above example would deploy 10 instances.</p>
 <h2 id="getting-notified-when-deployment-is-complete">Getting Notified when Deployment is complete</h2><br/>
 <p>The actual verticle deployment is asynchronous and might not complete until some time after the call to <code>deployVerticle</code> has returned. If you want to be notified when the verticle has completed being deployed, you can pass a handler as the final argument to <code>deployVerticle</code>:</p>
-<pre class="prettyprint">Vertx.instance.deployVerticle("foo.ChildVerticle", 10, new SimpleHandler() {
+<pre class="prettyprint">Container.instance.deployVerticle("foo.ChildVerticle", 10, new SimpleHandler() {
     public void handle() {
         System.out.println("The verticle has been deployed");
     }
@@ -411,9 +412,9 @@ Vertx.instance.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
 <p>The <code>deployVerticle</code> method deploys standard (non worker) verticles. If you want to deploy worker verticles use the <code>deployWorkerVerticle</code> method. This method takes the same parameters as <code>deployVerticle</code> with the same meanings.</p>
 <h2 id="undeploying-a-verticle">Undeploying a Verticle</h2><br/>
 <p>Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function <code>undeployVerticle</code> passing in the deployment id that was returned from the call to <code>deployVerticle</code></p>
-<pre class="prettyprint">String deploymentID = Vertx.instance.deployVerticle(main);
+<pre class="prettyprint">String deploymentID = Container.instance.deployVerticle(main);
 
-Vertx.instance.undeployVerticle(deploymentID);
+Container.instance.undeployVerticle(deploymentID);
 </pre>
 <h1 id="the-event-bus">The Event Bus</h1><br/>
 <p>The event bus is the nervous system of vert.x.</p>

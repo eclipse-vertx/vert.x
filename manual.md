@@ -20,6 +20,14 @@ Some of the key highlights include:
 
 * Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.
 
+## Vert.x Embedded
+
+If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality directly in your own pre-existing Spring Framework or other Java application, then you can do this too.
+
+Just use the jar `vertx-core.jar` which is available as a separate download or in the `lib/jars` directory in the distribution.
+
+You then have full access to the core vert.x API. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
+
 ## Concepts in vert.x
 
 In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.
@@ -68,9 +76,9 @@ The only way to make it scale is have a 100% non blocking api. There are two way
 
 * Use an asynchronous, event based API. Let the system call you when events occur. Do not block waiting for things to happen.
 
-* Use some kind of co-routine approach. Co-routines allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However co-routines are not currently supported across all the different languages, or versions of languages that we support in vert.x.
+* Use [continuations] (http://en.wikipedia.org/wiki/Continuation). Continuations allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However continuations are not currently supported across all the different languages, or versions of languages that we support in vert.x.
 
-Vert.x currently takes the event-based api approach. As support for coroutines in various languages matures we will consider also supporting a co-routine based approach in the api.
+Vert.x currently takes the event-based api approach. As support for continuations in various languages matures we will consider also supporting them in the api.
 
 ### Event Loops
 

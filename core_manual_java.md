@@ -7,7 +7,7 @@ We previously discussed how a verticle is the unit of deployment in vert.x. Let'
 
 As an example we'll write a simple TCP echo server. The server just accepts connections and any data received by it is echoed back on the connection.
 
-Copy the following into a text editor and save it as `server.java`
+Copy the following into a text editor and save it as `Server.java`
 
     import org.vertx.java.deploy.*;
     import org.vertx.java.core.*;
