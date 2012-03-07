@@ -21,6 +21,8 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -31,9 +33,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.Handshake17;
-import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -102,15 +102,15 @@ class ClientConnection extends AbstractConnection {
         public void handle(HttpClientResponse resp) {
           if (resp.statusCode == 101) {
             try {
-              shake.onComplete(resp, new CompletionHandler<Void>() {
-                public void handle(Future<Void> fut) {
+              shake.onComplete(resp, new AsyncResultHandler<Void>() {
+                public void handle(AsyncResult<Void> fut) {
                   if (fut.succeeded()) {
                     //We upgraded ok
                     p.replace("encoder", "wsencoder", shake.getEncoder(false));
                     ws = new DefaultWebSocket(null, ClientConnection.this, null);
                     wsConnect.handle(ws);
                   } else {
-                    client.handleException(fut.exception());
+                    client.handleException(fut.exception);
                   }
                 }
               });

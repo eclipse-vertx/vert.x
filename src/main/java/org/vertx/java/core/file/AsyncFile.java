@@ -21,11 +21,7 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.Deferred;
-import org.vertx.java.core.impl.DeferredAction;
-import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -65,7 +61,7 @@ public class AsyncFile {
   private boolean closed;
   private ReadStream readStream;
   private WriteStream writeStream;
-  private Deferred<Void> closedDeferred;
+  private Runnable closedDeferred;
   private long writesOutstanding;
 
   AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
@@ -92,7 +88,7 @@ public class AsyncFile {
    * Close the file. The actual close happens asychronously.
    */
   public void close() {
-    closeDeferred().execute();
+    closeInternal(null);
   }
 
   /**
@@ -100,7 +96,7 @@ public class AsyncFile {
    * The handler will be called when the close is complete, or an error occurs.
    */
   public void close(AsyncResultHandler handler) {
-    wrapHandler(closeDeferred().execute(), handler);
+    closeInternal(handler);
   }
 
   /**
@@ -112,7 +108,9 @@ public class AsyncFile {
    * The handler will be called when the close is complete, or an error occurs.
    */
   public void write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
-    wrapHandler(writeDeferred(buffer, position).execute(), handler);
+    check();
+    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
+    doWrite(bb, position, handler);
   }
 
   /**
@@ -125,7 +123,9 @@ public class AsyncFile {
    * The handler will be called when the close is complete, or an error occurs.
    */
   public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
-    wrapHandler(readDeferred(buffer, offset, position, length).execute(), handler);
+    check();
+    ByteBuffer bb = ByteBuffer.allocate(length);
+    doRead(buffer, offset, bb, position, handler);
   }
 
   /**
@@ -147,19 +147,17 @@ public class AsyncFile {
           final int length = buffer.length();
           ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
 
-          Deferred<Void> deferred = doWrite(bb, pos);
-          deferred.execute();
-          deferred.handler(new CompletionHandler<Void>() {
+          doWrite(bb, pos, new AsyncResultHandler<Void>() {
 
-            public void handle(Future<Void> deferred) {
+            public void handle(AsyncResult<Void> deferred) {
               if (deferred.succeeded()) {
                 checkContext();
                 checkDrained();
                 if (writesOutstanding == 0 && closedDeferred != null) {
-                  closedDeferred.execute();
+                  closedDeferred.run();
                 }
               } else {
-                handleException(deferred.exception());
+                handleException(deferred.exception);
               }
             }
           });
@@ -317,7 +315,7 @@ public class AsyncFile {
    * The actual flush will happen asynchronously.
    */
   public void flush() {
-    flushDeferred().execute();
+    doFlush(null);
   }
 
   /**
@@ -326,22 +324,26 @@ public class AsyncFile {
    * @param handler
    */
   public void flush(AsyncResultHandler handler) {
-    wrapHandler(flushDeferred().execute(), handler);
+    doFlush(handler);
   }
 
-  private Deferred<Void> doWrite(final ByteBuffer buff, final int position) {
-    writesOutstanding += buff.limit();
-
-    DeferredAction<Void> sd = new DeferredAction<Void>() {
-      public void run() {
-        doWrite(buff, position, this);
+  private void doFlush(AsyncResultHandler handler) {
+    checkClosed();
+    checkContext();
+    new BlockingAction<Void>(handler) {
+      public Void action() throws Exception {
+        ch.force(false);
+        return null;
       }
-    };
-
-    return sd;
+    }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final DeferredAction<Void> deferred) {
+  private void doWrite(final ByteBuffer buff, final int position, final AsyncResultHandler<Void> handler) {
+    writesOutstanding += buff.limit();
+    writeInternal(buff, position, handler);
+  }
+
+  private void writeInternal(final ByteBuffer buff, final int position, final AsyncResultHandler<Void> handler) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -353,13 +355,13 @@ public class AsyncFile {
           // partial write
           pos += bytesWritten;
           // resubmit
-          doWrite(buff, pos, deferred);
+          writeInternal(buff, pos, handler);
         } else {
           // It's been fully written
           context.execute(new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              deferred.setResult(null);
+              handler.handle(new AsyncResult<>((Void) null));
             }
           });
         }
@@ -370,7 +372,7 @@ public class AsyncFile {
           final Exception e = (Exception) exc;
           context.execute(new Runnable() {
             public void run() {
-              deferred.setException(e);
+              handler.handle(new AsyncResult(e));
             }
           });
         } else {
@@ -380,19 +382,7 @@ public class AsyncFile {
     });
   }
 
-  private Deferred<Buffer> doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position) {
-    DeferredAction<Buffer> sd = new DeferredAction<Buffer>() {
-      public void run() {
-        doRead(writeBuff, offset, buff, position, this);
-      }
-    };
-
-    return sd;
-  }
-
-  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final DeferredAction<Buffer> deferred) {
-
-
+  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final AsyncResultHandler<Buffer> handler) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -403,7 +393,7 @@ public class AsyncFile {
           public void run() {
             buff.flip();
             writeBuff.setBytes(offset, buff);
-            deferred.setResult(writeBuff);
+            handler.handle(new AsyncResult<>(writeBuff));
           }
         });
       }
@@ -416,7 +406,7 @@ public class AsyncFile {
           // partial read
           pos += bytesRead;
           // resubmit
-          doRead(writeBuff, offset, buff, pos, deferred);
+          doRead(writeBuff, offset, buff, pos, handler);
         } else {
           // It's been fully written
           done();
@@ -428,7 +418,7 @@ public class AsyncFile {
           final Exception e = (Exception) exc;
           context.execute(new Runnable() {
             public void run() {
-              deferred.setException(e);
+              handler.handle(new AsyncResult(e));
             }
           });
         } else {
@@ -456,75 +446,33 @@ public class AsyncFile {
     }
   }
 
-  private Deferred<Void> flushDeferred() {
-    checkClosed();
-    checkContext();
-    return new BlockingAction<Void>() {
-      public Void action() throws Exception {
-        ch.force(false);
-        return null;
-      }
-    };
+  private void doClose(AsyncResultHandler<Void> handler) {
+    AsyncResult<Void> res;
+    try {
+      ch.close();
+      res = new AsyncResult<>((Void)null);
+    } catch (IOException e) {
+      res = new AsyncResult<Void>(e);
+    }
+    if (handler != null) {
+      handler.handle(res);
+    }
   }
 
-  private Deferred<Buffer> readDeferred(Buffer buffer, int offset, int position, int length) {
-    check();
-    ByteBuffer bb = ByteBuffer.allocate(length);
-    return doRead(buffer, offset, bb, position);
-  }
-
-  private Deferred<Void> writeDeferred(Buffer buffer, int position) {
-    check();
-    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
-    return doWrite(bb, position);
-  }
-
-
-  private Deferred<Void> closeDeferred() {
+  private void closeInternal(final AsyncResultHandler<Void> handler) {
     check();
 
     closed = true;
 
-    Deferred<Void> deferred = new DeferredAction<Void>() {
-
-      @Override
-      public Deferred<Void> execute() {
-        if (!complete) {
-          if (writesOutstanding == 0) {
-            run();
-            complete = true;
-          } else {
-            closedDeferred = this;
-          }
+    if (writesOutstanding == 0) {
+      doClose(handler);
+    } else {
+      closedDeferred = new Runnable() {
+        public void run() {
+          doClose(handler);
         }
-        return this;
-      }
-
-      public void run() {
-        try {
-          ch.close();
-          setResult(null);
-        } catch (IOException e) {
-          setException(e);
-        }
-      }
-    };
-
-    return deferred;
+      };
+    }
   }
-
-  private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
-    fut.handler(new CompletionHandler<T>() {
-      public void handle(Future<T> event) {
-        if (event.succeeded()) {
-          handler.handle(new AsyncResult<T>(event.result()));
-        } else {
-          handler.handle(new AsyncResult<T>(event.exception()));
-        }
-      }
-    });
-  }
-
-
 
 }

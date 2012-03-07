@@ -16,9 +16,9 @@
 
 package vertx.tests.core.blockingaction;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.CompletionHandler;
-import org.vertx.java.core.impl.Future;
 import org.vertx.java.framework.TestClientBase;
 
 /**
@@ -55,30 +55,30 @@ public class TestClient extends TestClientBase {
 
     for (int i = 0; i < numActions; i++) {
       // One that succeeeds
-      new BlockingAction<String>() {
+      new BlockingAction<String>(new AsyncResultHandler<String>() {
+        public void handle(AsyncResult<String> event) {
+          tu.azzert(event.succeeded());
+          tu.azzert("foo".equals(event.result));
+          agg.complete();
+        }
+      }) {
         public String action() throws Exception {
           return "foo";
         }
-      }.handler(new CompletionHandler<String>() {
-        public void handle(Future<String> event) {
-          tu.azzert(event.succeeded());
-          tu.azzert("foo".equals(event.result()));
-          agg.complete();
-        }
-      }).execute();
+      }.run();
 
       // One that throws an exception
-      new BlockingAction<String>() {
+      new BlockingAction<String>(new AsyncResultHandler<String>() {
+        public void handle(AsyncResult<String> event) {
+          tu.azzert(!event.succeeded());
+          tu.azzert("Wibble".equals(event.exception.getMessage()));
+          agg.complete();
+        }
+      }) {
         public String action() throws Exception {
           throw new Exception("Wibble");
         }
-      }.handler(new CompletionHandler<String>() {
-        public void handle(Future<String> event) {
-          tu.azzert(!event.succeeded());
-          tu.azzert("Wibble".equals(event.exception().getMessage()));
-          agg.complete();
-        }
-      }).execute();
+      }.run();
     }
   }
 
