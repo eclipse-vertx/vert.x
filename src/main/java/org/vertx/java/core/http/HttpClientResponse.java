@@ -30,7 +30,9 @@ import java.util.Set;
  * An instance of this class is provided to the user via an {@link org.vertx.java.core.Handler}
  * instance that was specified when one of the* HTTP method operations, or the
  * generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)}
- * method was called on an instance of {@link HttpClient}.
+ * method was called on an instance of {@link HttpClient}.*
+ * <p>
+ * Instances of this class are not thread-safe
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

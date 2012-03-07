@@ -25,7 +25,7 @@ module Vertx
       json_str = JSON.generate(config)
       config = org.vertx.java.core.json.JsonObject.new(json_str)
     end
-    org.vertx.java.core.Vertx.instance.deployVerticle(main, config, instances, block)
+    org.vertx.java.deploy.Container.instance.deployVerticle(main, config, instances, block)
   end
 
   # Deploy a workerverticle. The actual deploy happens asynchronously
@@ -38,20 +38,20 @@ module Vertx
       json_str = JSON.generate(config)
       config = org.vertx.java.core.json.JsonObject.new(json_str)
     end
-    org.vertx.java.core.Vertx.instance.deployWorkerVerticle(main, config, instances, block)
+    org.vertx.java.deploy.Container.instance.deployWorkerVerticle(main, config, instances, block)
   end
 
   # Undeploy a verticle
   # @param id [String] The unique id of the deployment
   def Vertx.undeploy_verticle(id)
-    org.vertx.java.core.Vertx.instance.undeployVerticle(id)
+    org.vertx.java.deploy.Container.instance.undeployVerticle(id)
   end
 
   # Get config for the verticle
   # @return [Hash] The JSON config for the verticle
   def Vertx.config
     if !defined? @@j_conf
-      @@j_conf = org.vertx.java.core.Vertx.instance.getConfig
+      @@j_conf = org.vertx.java.deploy.Container.instance.getConfig
       @@j_conf = JSON.parse(@@j_conf.encode) if @@j_conf
     end
     @@j_conf

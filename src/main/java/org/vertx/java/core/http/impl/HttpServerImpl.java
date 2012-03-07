@@ -110,11 +110,8 @@ public class HttpServerImpl {
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
   public HttpServerImpl() {
-    ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Can only be used from an event loop");
-    }
-    if (!VertxInternal.instance.isEventLoop()) {
+    ctx = VertxInternal.instance.getOrAssignContext();
+    if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
   }
@@ -211,10 +208,10 @@ public class HttpServerImpl {
         actualServer = shared;
       }
       if (requestHandler != null) {
-        actualServer.reqHandlerManager.addHandler(requestHandler);
+        actualServer.reqHandlerManager.addHandler(requestHandler, ctx);
       }
       if (wsHandler != null) {
-        actualServer.wsHandlerManager.addHandler(wsHandler);
+        actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
       }
     }
     return this;
@@ -231,10 +228,10 @@ public class HttpServerImpl {
     synchronized (servers) {
 
       if (requestHandler != null) {
-        actualServer.reqHandlerManager.removeHandler(requestHandler);
+        actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
       }
       if (wsHandler != null) {
-        actualServer.wsHandlerManager.removeHandler(wsHandler);
+        actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
       }
 
       if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
@@ -480,7 +477,7 @@ public class HttpServerImpl {
                 }
               }
             };
-            WebSocketImpl ws = new WebSocketImpl(theURI.getPath(), wsConn, connectRunnable);
+            DefaultWebSocket ws = new DefaultWebSocket(theURI.getPath(), wsConn, connectRunnable);
             wsConn.handleWebsocketConnect(ws);
             if (ws.rejected) {
               if (firstHandler == null) {

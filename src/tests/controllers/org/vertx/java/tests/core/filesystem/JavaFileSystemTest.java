@@ -19,7 +19,8 @@ package org.vertx.java.tests.core.filesystem;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -28,6 +29,8 @@ import org.vertx.java.framework.TestBase;
 import vertx.tests.core.filesystem.TestClient;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -340,319 +343,27 @@ public class JavaFileSystemTest extends TestBase {
 
   @Test
   public void testExistsNoContext() throws Exception {
-    try {
-      FileSystem.instance.exists("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testChmod1NoContext() throws Exception {
-    try {
-      FileSystem.instance.chmod("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
+    final CountDownLatch latch = new CountDownLatch(1);
+    FileSystem.instance.exists("foo", new AsyncResultHandler<Boolean>() {
+      public void handle(AsyncResult event) {
+        assert(Vertx.instance.isEventLoop());
+        latch.countDown();
+      }
+    });
+    assert(latch.await(5, TimeUnit.SECONDS));
   }
 
   @Test
-  public void testChmod2NoContext() throws Exception {
-    try {
-      FileSystem.instance.chmod("foo", "bar", "quux", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
+  public void testOpenNoContext() throws Exception {
+    final CountDownLatch latch = new CountDownLatch(1);
+    FileSystem.instance.open("foo", new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult event) {
+        assert (Vertx.instance.isEventLoop());
+        latch.countDown();
+      }
+    });
+    assert(latch.await(5, TimeUnit.SECONDS));
   }
 
-  @Test
-  public void testCopy1NoContext() throws Exception {
-    try {
-      FileSystem.instance.copy("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testCopy2NoContext() throws Exception {
-    try {
-      FileSystem.instance.copy("foo", "bar", true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testCreateFile1NoContext() throws Exception {
-    try {
-      FileSystem.instance.createFile("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testCreateFile2NoContext() throws Exception {
-    try {
-      FileSystem.instance.createFile("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testDelete1NoContext() throws Exception {
-    try {
-      FileSystem.instance.delete("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testDelete2NoContext() throws Exception {
-    try {
-      FileSystem.instance.delete("foo", true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testFSPropsNoContext() throws Exception {
-    try {
-      FileSystem.instance.fsProps("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testLinkNoContext() throws Exception {
-    try {
-      FileSystem.instance.link("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testLpropsNoContext() throws Exception {
-    try {
-      FileSystem.instance.lprops("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testMkdir1NoContext() throws Exception {
-    try {
-      FileSystem.instance.mkdir("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testMkdir2NoContext() throws Exception {
-    try {
-      FileSystem.instance.mkdir("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testMkdir3NoContext() throws Exception {
-    try {
-      FileSystem.instance.mkdir("foo", true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testMkdir4NoContext() throws Exception {
-    try {
-      FileSystem.instance.mkdir("foo", "bar", true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testMoveNoContext() throws Exception {
-    try {
-      FileSystem.instance.move("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testOpen1NoContext() throws Exception {
-    try {
-      FileSystem.instance.open("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testOpen2NoContext() throws Exception {
-    try {
-      FileSystem.instance.open("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testOpen3NoContext() throws Exception {
-    try {
-      FileSystem.instance.open("foo", "bar", true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testOpen4NoContext() throws Exception {
-    try {
-      FileSystem.instance.open("foo", "bar", true, true, true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testOpen5NoContext() throws Exception {
-    try {
-      FileSystem.instance.open("foo", "bar", true, true, true, true, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testPropsNoContext() throws Exception {
-    try {
-      FileSystem.instance.props("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testReadDirNoContext() throws Exception {
-    try {
-      FileSystem.instance.readDir("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testReadDir2NoContext() throws Exception {
-    try {
-      FileSystem.instance.readDir("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testReadFileNoContext() throws Exception {
-    try {
-      FileSystem.instance.readFile("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testReadSymLinkNoContext() throws Exception {
-    try {
-      FileSystem.instance.readSymlink("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testSymLinkNoContext() throws Exception {
-    try {
-      FileSystem.instance.symlink("foo", "bar", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testTruncateNoContext() throws Exception {
-    try {
-      FileSystem.instance.truncate("foo", 1234, createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-
-  @Test
-  public void testUnlinkNoContext() throws Exception {
-    try {
-      FileSystem.instance.unlink("foo", createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
-
-  @Test
-  public void testWriteFileNoContext() throws Exception {
-    try {
-      FileSystem.instance.writeFile("foo", Buffer.create("foo"), createHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // Ok
-    }
-  }
 
 }

@@ -30,7 +30,7 @@ if (!vertx.setTimer) {
     org.vertx.java.core.Vertx.instance.cancelTimer(id);
   }
 
-  vertx.nextTick = function(handler) {
-    org.vertx.java.core.Vertx.instance.nextTick(handler);
+  vertx.runOnLoop = function(handler) {
+    org.vertx.java.core.Vertx.instance.runOnLoop(handler);
   }
 }

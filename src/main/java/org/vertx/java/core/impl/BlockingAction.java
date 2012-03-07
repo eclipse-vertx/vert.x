@@ -30,11 +30,14 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
 
   private static final Logger log = LoggerFactory.getLogger(BlockingAction.class);
 
+  protected Context context;
+
   /**
    * Run the blocking action using a thread from the worker pool.
    */
   protected void run() {
-    final Context context = VertxInternal.instance.getContext();
+    context = VertxInternal.instance.getOrAssignContext();
+
     Runnable runner = new Runnable() {
       public void run() {
         try {
