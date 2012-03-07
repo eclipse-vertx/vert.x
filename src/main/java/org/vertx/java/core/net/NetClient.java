@@ -17,7 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.net.impl.NetClientImpl;
+import org.vertx.java.core.net.impl.DefaultNetClient;
 
 /**
  * NetClient is an asynchronous factory for TCP or SSL connections
@@ -27,17 +27,25 @@ import org.vertx.java.core.net.impl.NetClientImpl;
  * This client supports a configurable number of connection attempts and a configurable
  * delay between attempts.
  * <p>
+ * This class is a thread safe and can safely be used by different threads.
+ * <p>
+ * If an instance is instantiated from an event loop then the handlers
+ * of the instance will always be called on that same event loop.
+ * If an instance is instantiated from some other arbitrary Java thread then
+ * and event loop will be assigned to the instance and used when any of its handlers
+ * are called.
+ * <p>
+ * Instances cannot be used from worker verticles
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetClient {
 
-  private NetClientImpl client = new NetClientImpl();
+  private DefaultNetClient client = new DefaultNetClient();
 
   /**
    * Create a new {@code NetClient}
    */
   public NetClient() {
-    super();
   }
 
   /**
@@ -46,7 +54,7 @@ public class NetClient {
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
+  public synchronized NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
     client.connect(port, host, connectHandler);
     return this;
   }
@@ -57,14 +65,14 @@ public class NetClient {
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient connect(int port, Handler<NetSocket> connectCallback) {
+  public synchronized NetClient connect(int port, Handler<NetSocket> connectCallback) {
     return connect(port, "localhost", connectCallback);
   }
 
   /**
    * Close the client. Any sockets which have not been closed manually will be closed here.
    */
-  public void close() {
+  public synchronized void close() {
     client.close();
   }
 
@@ -72,7 +80,7 @@ public class NetClient {
    * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
    * to connect a further number of times, before it fails. Default value is zero.
    */
-  public NetClient setReconnectAttempts(int attempts) {
+  public synchronized NetClient setReconnectAttempts(int attempts) {
     client.setReconnectAttempts(attempts);
     return this;
   }
@@ -80,14 +88,14 @@ public class NetClient {
   /**
    * Get the number of reconnect attempts
    */
-  public int getReconnectAttempts() {
+  public synchronized int getReconnectAttempts() {
     return client.getReconnectAttempts();
   }
 
   /**
    * Set the reconnect interval, in milliseconds
    */
-  public NetClient setReconnectInterval(long interval) {
+  public synchronized NetClient setReconnectInterval(long interval) {
     client.setReconnectInterval(interval);
     return this;
   }
@@ -95,7 +103,7 @@ public class NetClient {
   /**
    * Get the reconnect interval, in milliseconds.
    */
-  public long getReconnectInterval() {
+  public synchronized long getReconnectInterval() {
     return client.getReconnectInterval();
   }
 
@@ -103,7 +111,7 @@ public class NetClient {
    * Set the exception handler. Any exceptions that occur during connect or later on will be notified via the {@code handler}.
    * If no handler is supplied any exceptions will be printed to {@link System#err}
    */
-  public void exceptionHandler(Handler<Exception> handler) {
+  public synchronized void exceptionHandler(Handler<Exception> handler) {
     client.exceptionHandler(handler);
   }
 
@@ -113,7 +121,7 @@ public class NetClient {
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetClient setSSL(boolean ssl) {
+  public synchronized NetClient setSSL(boolean ssl) {
     client.setSSL(ssl);
     return this;
   }
@@ -125,7 +133,7 @@ public class NetClient {
    * requests client authentication.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetClient setKeyStorePath(String path) {
+  public synchronized NetClient setKeyStorePath(String path) {
     client.setKeyStorePath(path);
     return this;
   }
@@ -135,7 +143,7 @@ public class NetClient {
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetClient setKeyStorePassword(String pwd) {
+  public synchronized NetClient setKeyStorePassword(String pwd) {
     client.setKeyStorePassword(pwd);
     return this;
   }
@@ -148,7 +156,7 @@ public class NetClient {
    * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetClient setTrustStorePath(String path) {
+  public synchronized NetClient setTrustStorePath(String path) {
     client.setTrustStorePath(path);
     return this;
   }
@@ -158,7 +166,7 @@ public class NetClient {
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetClient setTrustStorePassword(String pwd) {
+  public synchronized NetClient setTrustStorePassword(String pwd) {
     client.setTrustStorePassword(pwd);
     return this;
   }
@@ -169,7 +177,7 @@ public class NetClient {
    * Use this with caution as you may be exposed to "main in the middle" attacks
    * @param trustAll Set to true if you want to trust all server certificates
    */
-  public NetClient setTrustAll(boolean trustAll) {
+  public synchronized NetClient setTrustAll(boolean trustAll) {
     client.setTrustAll(trustAll);
     return this;
   }
@@ -179,7 +187,7 @@ public class NetClient {
    * will turned <b>off</b> for the TCP connections created by this instance.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setTCPNoDelay(boolean tcpNoDelay) {
+  public synchronized NetClient setTCPNoDelay(boolean tcpNoDelay) {
     client.setTCPNoDelay(tcpNoDelay);
     return this;
   }
@@ -188,7 +196,7 @@ public class NetClient {
    * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setSendBufferSize(int size) {
+  public synchronized NetClient setSendBufferSize(int size) {
     client.setSendBufferSize(size);
     return this;
   }
@@ -197,7 +205,7 @@ public class NetClient {
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setReceiveBufferSize(int size) {
+  public synchronized NetClient setReceiveBufferSize(int size) {
     client.setReceiveBufferSize(size);
     return this;
   }
@@ -206,7 +214,7 @@ public class NetClient {
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setTCPKeepAlive(boolean keepAlive) {
+  public synchronized NetClient setTCPKeepAlive(boolean keepAlive) {
     client.setTCPKeepAlive(keepAlive);
     return this;
   }
@@ -215,7 +223,7 @@ public class NetClient {
    * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setReuseAddress(boolean reuse) {
+  public synchronized NetClient setReuseAddress(boolean reuse) {
     client.setReuseAddress(reuse);
     return this;
   }
@@ -224,7 +232,7 @@ public class NetClient {
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setSoLinger(boolean linger) {
+  public synchronized NetClient setSoLinger(boolean linger) {
     client.setSoLinger(linger);
     return this;
   }
@@ -233,7 +241,7 @@ public class NetClient {
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetClient setTrafficClass(int trafficClass) {
+  public synchronized NetClient setTrafficClass(int trafficClass) {
     client.setTrafficClass(trafficClass);
     return this;
   }
@@ -241,21 +249,21 @@ public class NetClient {
   /**
    * @return true if Nagle's algorithm is disabled.
    */
-  public Boolean isTCPNoDelay() {
+  public synchronized Boolean isTCPNoDelay() {
     return client.isTCPNoDelay();
   }
 
   /**
    * @return The TCP send buffer size
    */
-  public Integer getSendBufferSize() {
+  public synchronized Integer getSendBufferSize() {
     return client.getSendBufferSize();
   }
 
   /**
    * @return The TCP receive buffer size
    */
-  public Integer getReceiveBufferSize() {
+  public synchronized Integer getReceiveBufferSize() {
     return client.getReceiveBufferSize();
   }
 
@@ -263,7 +271,7 @@ public class NetClient {
    *
    * @return true if TCP keep alive is enabled
    */
-  public Boolean isTCPKeepAlive() {
+  public synchronized Boolean isTCPKeepAlive() {
     return client.isTCPKeepAlive();
   }
 
@@ -279,7 +287,7 @@ public class NetClient {
    *
    * @return the value of TCP so linger
    */
-  public Boolean isSoLinger() {
+  public synchronized Boolean isSoLinger() {
     return client.isSoLinger();
   }
 
@@ -287,7 +295,7 @@ public class NetClient {
    *
    * @return the value of TCP traffic class
    */
-  public Integer getTrafficClass() {
+  public synchronized Integer getTrafficClass() {
     return client.getTrafficClass();
   }
 
@@ -295,7 +303,7 @@ public class NetClient {
    *
    * @return true if this client will make SSL connections
    */
-  public boolean isSSL() {
+  public synchronized boolean isSSL() {
     return client.isSSL();
   }
 
@@ -303,7 +311,7 @@ public class NetClient {
    *
    * @return true if this client will trust all server certificates.
    */
-  public boolean isTrustAll() {
+  public synchronized boolean isTrustAll() {
     return client.isTrustAll();
   }
 
@@ -311,7 +319,7 @@ public class NetClient {
    *
    * @return The path to the key store
    */
-  public String getKeyStorePath() {
+  public synchronized String getKeyStorePath() {
     return client.getKeyStorePath();
   }
 
@@ -319,7 +327,7 @@ public class NetClient {
    *
    * @return The keystore password
    */
-  public String getKeyStorePassword() {
+  public synchronized String getKeyStorePassword() {
     return client.getKeyStorePassword();
   }
 
@@ -327,7 +335,7 @@ public class NetClient {
    *
    * @return The trust store path
    */
-  public String getTrustStorePath() {
+  public synchronized String getTrustStorePath() {
     return client.getTrustStorePath();
   }
 
@@ -335,7 +343,7 @@ public class NetClient {
    *
    * @return The trust store password
    */
-  public String getTrustStorePassword() {
+  public synchronized String getTrustStorePassword() {
     return client.getTrustStorePassword();
   }
 }

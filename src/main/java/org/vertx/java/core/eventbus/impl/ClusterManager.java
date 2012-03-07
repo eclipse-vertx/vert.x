@@ -16,18 +16,12 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import java.util.Map;
-import java.util.Set;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface ClusterManager {
-  AsyncMultiMap getMultiMap(String name);
 
-  Set getSet(String name);
-
-  Map getMap(String name);
+  SubsMap getSubsMap(String name);
 
   void close();
 }

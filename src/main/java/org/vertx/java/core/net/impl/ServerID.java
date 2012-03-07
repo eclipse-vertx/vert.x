@@ -16,17 +16,12 @@
 
 package org.vertx.java.core.net.impl;
 
-import com.hazelcast.nio.DataSerializable;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerID implements Serializable, DataSerializable {
+public class ServerID implements Serializable {
   public int port;
   public String host;
 
@@ -56,18 +51,6 @@ public class ServerID implements Serializable, DataSerializable {
     int result = port;
     result = 31 * result + (host != null ? host.hashCode() : 0);
     return result;
-  }
-
-  @Override
-  public void writeData(DataOutput dataOutput) throws IOException {
-    dataOutput.writeInt(port);
-    dataOutput.writeUTF(host);
-  }
-
-  @Override
-  public void readData(DataInput dataInput) throws IOException {
-    port = dataInput.readInt();
-    host = dataInput.readUTF();
   }
 
   public String toString() {

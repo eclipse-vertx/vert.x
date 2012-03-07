@@ -18,10 +18,10 @@ package org.vertx.java.examples.eventbus;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Verticle;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.deploy.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -65,7 +65,7 @@ public class Sender implements Verticle, Handler<Message<String>> {
         eb.send(address, "some message");
         count++;
        // System.out.println("Sent message " + count);
-        Vertx.instance.nextTick(new SimpleHandler() {
+        Vertx.instance.runOnLoop(new SimpleHandler() {
           public void handle() {
             sendMessage();
           }

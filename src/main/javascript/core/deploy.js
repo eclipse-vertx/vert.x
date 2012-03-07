@@ -30,9 +30,9 @@ if (!vertx.deployVerticle) {
       }
       if (!doneHandler) doneHandler = null;
       if (worker) {
-        return org.vertx.java.core.Vertx.instance.deployWorkerVerticle(main, config, instances, doneHandler);
+        return org.vertx.java.deploy.Container.instance.deployWorkerVerticle(main, config, instances, doneHandler);
       } else {
-        return org.vertx.java.core.Vertx.instance.deployVerticle(main, config, instances, doneHandler);
+        return org.vertx.java.deploy.Container.instance.deployVerticle(main, config, instances, doneHandler);
       }
     }
 
@@ -46,14 +46,10 @@ if (!vertx.deployVerticle) {
 
     vertx.undeployVerticle = function(name, doneHandler) {
       if (!doneHandler) doneHandler = null;
-      org.vertx.java.core.Vertx.instance.undeployVerticle(name, doneHandler);
+      org.vertx.java.deploy.Container.instance.undeployVerticle(name, doneHandler);
     }
 
-    vertx.exit = function() {
-       org.vertx.java.core.Vertx.instance.exit();
-    }
-
-    var j_conf = org.vertx.java.core.Vertx.instance.getConfig();
+    var j_conf = org.vertx.java.deploy.Container.instance.getConfig();
     vertx.config =  j_conf == null ? null : JSON.parse(j_conf.encode());
 
   })();

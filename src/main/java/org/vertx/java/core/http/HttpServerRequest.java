@@ -35,6 +35,8 @@ import java.util.Set;
  * <p>Each instance of this class is associated with a correspondin
  * {@link HttpServerResponse} instance via the {@code response} field.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class HttpServerRequest extends HttpReadStreamBase {

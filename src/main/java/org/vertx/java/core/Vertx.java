@@ -17,8 +17,6 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.impl.VertxImpl;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
 
 /**
  * A singleton instance of Vertx is available to all verticles.
@@ -53,9 +51,10 @@ public interface Vertx {
   boolean cancelTimer(long id);
 
   /**
-   * Call the specified event handler asynchronously on the next "tick" of the event loop.
+   * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
+   * been processed
    */
-  void nextTick(Handler<Void> handler);
+  void runOnLoop(Handler<Void> handler);
 
   /**
    * Is the current thread an event loop thread?
@@ -64,102 +63,8 @@ public interface Vertx {
   boolean isEventLoop();
 
   /**
-   * Deploy a worker verticle programmatically
-   * @param main The main of the verticle
-   * @return Unique deployment id
+   * Is the current thread an worker thread?
+   * @return true if current thread is an worker thread
    */
-  String deployWorkerVerticle(String main);
-
-  /**
-   * Deploy a worker verticle programmatically
-   * @param main The main of the verticle
-   * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
-   */
-  String deployWorkerVerticle(String main, int instances);
-
-  /**
-   * Deploy a worker verticle programmatically
-   * @param main The main of the verticle
-   * @param config JSON config to provide to the verticle
-   * @return Unique deployment id
-   */
-  String deployWorkerVerticle(String main, JsonObject config);
-
-  /**
-   * Deploy a worker verticle programmatically
-   * @param main The main of the verticle
-   * @param config JSON config to provide to the verticle
-   * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
-   */
-  String deployWorkerVerticle(String main, JsonObject config, int instances);
-
-  /**
-   * Deploy a worker verticle programmatically
-   * @param main The main of the verticle
-   * @param config JSON config to provide to the verticle
-   * @param instances The number of instances to deploy (defaults to 1)
-   * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
-   */
-  String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler);
-
-  /**
-   * Deploy a worker verticle programmatically
-   * @param main The main of the verticle
-   * @return Unique deployment id
-   */
-  String deployVerticle(String main);
-
-  /**
-   * Deploy a verticle programmatically
-   * @param main The main of the verticle
-   * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
-   */
-  String deployVerticle(String main, int instances);
-
-  /**
-   * Deploy a verticle programmatically
-   * @param main The main of the verticle
-   * @param config JSON config to provide to the verticle
-   * @return Unique deployment id
-   */
-  String deployVerticle(String main, JsonObject config);
-
-  /**
-   * Deploy a verticle programmatically
-   * @param main The main of the verticle
-   * @param config JSON config to provide to the verticle
-   * @param instances The number of instances to deploy (defaults to 1)
-   * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
-   */
-  String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler);
-
-  /**
-   * Undeploy a verticle
-   * @param deploymentID The deployment ID
-   */
-  void undeployVerticle(String deploymentID);
-
-  /**
-   * Undeploy a verticle
-   * @param deploymentID The deployment ID
-   * @param doneHandler The handler will be called when undeployment is complete
-   */
-  void undeployVerticle(String deploymentID, Handler<Void> doneHandler);
-
-  /**
-   * Get the verticle configuration
-   * @return a JSON object representing the configuration
-   */
-  JsonObject getConfig();
-
-  /**
-   * Get the verticle logger
-   * @return The logger
-   */
-  Logger getLogger();
+  boolean isWorker();
 }

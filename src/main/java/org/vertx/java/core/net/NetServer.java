@@ -17,23 +17,30 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.net.impl.NetServerImpl;
-import org.vertx.java.core.net.impl.TCPSSLHelper;
+import org.vertx.java.core.net.impl.DefaultNetServer;
 
 /**
  * Represents a TCP or SSL server
  * <p>
+ * This class is a thread safe and can safely be used by different threads.
+ * <p>
+ * If an instance is instantiated from an event loop then the handlers
+ * of the instance will always be called on that same event loop.
+ * If an instance is instantiated from some other arbitrary Java thread then
+ * and event loop will be assigned to the instance and used when any of its handlers
+ * are called.
+ * <p>
+ * Instances cannot be used from worker verticles
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServer {
 
-  private final NetServerImpl server = new NetServerImpl();
+  private final DefaultNetServer server = new DefaultNetServer();
 
   /**
    * Create a new NetServer instance.
    */
   public NetServer() {
-    super();
     setReuseAddress(true);
   }
 
@@ -43,7 +50,7 @@ public class NetServer {
    * connect handler.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer connectHandler(Handler<NetSocket> connectHandler) {
+  public synchronized NetServer connectHandler(Handler<NetSocket> connectHandler) {
     server.connectHandler(connectHandler);
     return this;
   }
@@ -52,7 +59,7 @@ public class NetServer {
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer listen(int port) {
+  public synchronized NetServer listen(int port) {
     server.listen(port);
     return this;
   }
@@ -62,7 +69,7 @@ public class NetServer {
    * be a host name or an IP address.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer listen(int port, String host) {
+  public synchronized NetServer listen(int port, String host) {
     server.listen(port, host);
     return this;
   }
@@ -70,7 +77,7 @@ public class NetServer {
   /**
    * Close the server. This will close any currently open connections.
    */
-  public void close() {
+  public synchronized void close() {
     server.close();
   }
 
@@ -78,7 +85,7 @@ public class NetServer {
    * Close the server. This will close any currently open connections. The event handler {@code done} will be called
    * when the close is complete.
    */
-  public void close(final Handler<Void> done) {
+  public synchronized void close(final Handler<Void> done) {
     server.close(done);
   }
 
@@ -88,7 +95,7 @@ public class NetServer {
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetServer setSSL(boolean ssl) {
+  public synchronized NetServer setSSL(boolean ssl) {
     server.setSSL(ssl);
     return this;
   }
@@ -99,7 +106,7 @@ public class NetServer {
    * The SSL key store is a standard Java Key Store, and, if on the server side will contain the server certificate.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetServer setKeyStorePath(String path) {
+  public synchronized NetServer setKeyStorePath(String path) {
     server.setKeyStorePath(path);
     return this;
   }
@@ -109,7 +116,7 @@ public class NetServer {
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetServer setKeyStorePassword(String pwd) {
+  public synchronized NetServer setKeyStorePassword(String pwd) {
     server.setKeyStorePassword(pwd);
     return this;
   }
@@ -121,7 +128,7 @@ public class NetServer {
    * any clients that the server trusts - this is only necessary if client authentication is enabled.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetServer setTrustStorePath(String path) {
+  public synchronized NetServer setTrustStorePath(String path) {
     server.setTrustStorePath(path);
     return this;
   }
@@ -131,7 +138,7 @@ public class NetServer {
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetServer setTrustStorePassword(String pwd) {
+  public synchronized NetServer setTrustStorePassword(String pwd) {
     server.setTrustStorePassword(pwd);
     return this;
   }
@@ -142,7 +149,7 @@ public class NetServer {
    * to the server trust store.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public NetServer setClientAuthRequired(boolean required) {
+  public synchronized NetServer setClientAuthRequired(boolean required) {
     server.setClientAuthRequired(required);
     return this;
   }
@@ -152,7 +159,7 @@ public class NetServer {
    * will turned <b>off</b> for the TCP connections created by this instance.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
+  public synchronized NetServer setTCPNoDelay(boolean tcpNoDelay) {
     server.setTCPNoDelay(tcpNoDelay);
     return this;
   }
@@ -161,7 +168,7 @@ public class NetServer {
    * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setSendBufferSize(int size) {
+  public synchronized NetServer setSendBufferSize(int size) {
     server.setSendBufferSize(size);
     return this;
   }
@@ -170,7 +177,7 @@ public class NetServer {
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setReceiveBufferSize(int size) {
+  public synchronized NetServer setReceiveBufferSize(int size) {
     server.setReceiveBufferSize(size);
     return this;
   }
@@ -179,7 +186,7 @@ public class NetServer {
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setTCPKeepAlive(boolean keepAlive) {
+  public synchronized NetServer setTCPKeepAlive(boolean keepAlive) {
     server.setTCPKeepAlive(keepAlive);
     return this;
   }
@@ -188,7 +195,7 @@ public class NetServer {
    * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setReuseAddress(boolean reuse) {
+  public synchronized NetServer setReuseAddress(boolean reuse) {
     server.setReuseAddress(reuse);
     return this;
   }
@@ -197,7 +204,7 @@ public class NetServer {
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setSoLinger(boolean linger) {
+  public synchronized NetServer setSoLinger(boolean linger) {
     server.setSoLinger(linger);
     return this;
   }
@@ -206,7 +213,7 @@ public class NetServer {
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public NetServer setTrafficClass(int trafficClass) {
+  public synchronized NetServer setTrafficClass(int trafficClass) {
     server.setTrafficClass(trafficClass);
     return this;
   }
@@ -214,21 +221,21 @@ public class NetServer {
   /**
    * @return true if Nagle's algorithm is disabled.
    */
-  public Boolean isTCPNoDelay() {
+  public synchronized Boolean isTCPNoDelay() {
     return server.isTCPNoDelay();
   }
 
   /**
    * @return The TCP send buffer size
    */
-  public Integer getSendBufferSize() {
+  public synchronized Integer getSendBufferSize() {
     return server.getSendBufferSize();
   }
 
   /**
    * @return The TCP receive buffer size
    */
-  public Integer getReceiveBufferSize() {
+  public synchronized Integer getReceiveBufferSize() {
     return server.getReceiveBufferSize();
   }
 
@@ -236,7 +243,7 @@ public class NetServer {
    *
    * @return true if TCP keep alive is enabled
    */
-  public Boolean isTCPKeepAlive() {
+  public synchronized Boolean isTCPKeepAlive() {
     return server.isTCPKeepAlive();
   }
 
@@ -244,7 +251,7 @@ public class NetServer {
    *
    * @return The value of TCP reuse address
    */
-  public Boolean isReuseAddress() {
+  public synchronized Boolean isReuseAddress() {
     return server.isReuseAddress();
   }
 
@@ -252,7 +259,7 @@ public class NetServer {
    *
    * @return the value of TCP so linger
    */
-  public Boolean isSoLinger() {
+  public synchronized Boolean isSoLinger() {
     return server.isSoLinger();
   }
 
@@ -260,7 +267,7 @@ public class NetServer {
    *
    * @return the value of TCP traffic class
    */
-  public Integer getTrafficClass() {
+  public synchronized Integer getTrafficClass() {
     return server.getTrafficClass();
   }
 
@@ -268,7 +275,7 @@ public class NetServer {
    *
    * @return true if this server will make SSL connections
    */
-  public boolean isSSL() {
+  public synchronized boolean isSSL() {
     return server.isSSL();
   }
 
@@ -276,7 +283,7 @@ public class NetServer {
    *
    * @return The path to the key store
    */
-  public String getKeyStorePath() {
+  public synchronized String getKeyStorePath() {
     return server.getKeyStorePath();
   }
 
@@ -284,7 +291,7 @@ public class NetServer {
    *
    * @return The keystore password
    */
-  public String getKeyStorePassword() {
+  public synchronized String getKeyStorePassword() {
     return server.getKeyStorePassword();
   }
 
@@ -292,7 +299,7 @@ public class NetServer {
    *
    * @return The trust store path
    */
-  public String getTrustStorePath() {
+  public synchronized String getTrustStorePath() {
     return server.getTrustStorePath();
   }
 
@@ -300,7 +307,7 @@ public class NetServer {
    *
    * @return The trust store password
    */
-  public String getTrustStorePassword() {
+  public synchronized String getTrustStorePassword() {
     return server.getTrustStorePassword();
   }
 

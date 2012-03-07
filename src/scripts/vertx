@@ -17,7 +17,9 @@ DIRNAME=`dirname "$PRG"`
 
 CLASSPATH=\
 $DIRNAME/../conf:\
-$DIRNAME/../lib/jars/vert.x.jar:$DIRNAME/../lib/jars/netty.jar:\
+$DIRNAME/../lib/jars/vert.x-core.jar:\
+$DIRNAME/../lib/jars/vert.x-platform.jar:\
+$DIRNAME/../lib/jars/netty.jar:\
 $DIRNAME/../lib/jars/jackson-core.jar:$DIRNAME/../lib/jars/jackson-mapper.jar:\
 $DIRNAME/../lib/jars/hazelcast.jar:\
 $DIRNAME/../lib/jars/jruby.jar:\
@@ -29,4 +31,4 @@ $DIRNAME/../lib/ruby:\
 $DIRNAME/../lib/javascript
 
 java -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties -Djruby.home=$JRUBY_HOME\
- -cp $CLASSPATH org.vertx.java.core.deploy.impl.cli.VertxMgr "$@"
+ -cp $CLASSPATH org.vertx.java.deploy.impl.cli.VertxMgr "$@"
