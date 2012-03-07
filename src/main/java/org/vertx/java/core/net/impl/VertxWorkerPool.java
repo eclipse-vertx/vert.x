@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
-import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import io.netty.channel.socket.nio.NioWorker;
+import io.netty.channel.socket.nio.WorkerPool;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -27,13 +27,9 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetServerWorkerPool extends NioWorkerPool {
+public class VertxWorkerPool implements WorkerPool<NioWorker> {
 
-  private static final Logger log = LoggerFactory.getLogger(NetServerWorkerPool.class);
-
-  public NetServerWorkerPool() {
-    super(0, null);
-  }
+  private static final Logger log = LoggerFactory.getLogger(VertxWorkerPool.class);
 
   private int pos;
 

@@ -16,26 +16,26 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.ssl.SslHandler;
+import io.netty.bootstrap.ClientBootstrap;
+import io.netty.buffer.ChannelBuffer;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPipelineFactory;
+import io.netty.channel.ChannelStateEvent;
+import io.netty.channel.Channels;
+import io.netty.channel.ExceptionEvent;
+import io.netty.channel.MessageEvent;
+import io.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.HttpChunk;
+import io.netty.handler.codec.http.HttpChunkTrailer;
+import io.netty.handler.codec.http.HttpRequestEncoder;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -50,6 +50,7 @@ import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.impl.VertxWorkerPool;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 
 import javax.net.ssl.SSLEngine;
@@ -326,9 +327,18 @@ public class HttpClientImpl {
   private void internalConnect(final Handler<ClientConnection> connectHandler, final Context context) {
 
     if (bootstrap == null) {
+      VertxWorkerPool pool = new VertxWorkerPool();
+      EventLoopContext ectx;
+      if (context instanceof EventLoopContext) {
+        //It always will be
+        ectx = (EventLoopContext)context;
+      } else {
+        ectx = null;
+      }
+      pool.addWorker(ectx.getWorker());
       channelFactory = new NioClientSocketChannelFactory(
-          VertxInternal.instance.getAcceptorPool(),
-          VertxInternal.instance.getWorkerPool());
+          VertxInternal.instance.getAcceptorPool(), 1,
+          pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -348,14 +358,6 @@ public class HttpClientImpl {
         }
       });
     }
-    EventLoopContext ectx;
-    if (context instanceof EventLoopContext) {
-      //It always will be
-      ectx = (EventLoopContext)context;
-    } else {
-      ectx = null;
-    }
-    channelFactory.setWorker(ectx.getWorker());
     bootstrap.setOptions(tcpHelper.generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -426,7 +428,7 @@ public class HttpClientImpl {
   private class ClientHandler extends SimpleChannelUpstreamHandler {
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+    public void channelClosed(ChannelHandlerContext chctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.remove(ch);
       if (conn != null) {
@@ -439,7 +441,7 @@ public class HttpClientImpl {
     }
 
     @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    public void channelInterestChanged(ChannelHandlerContext chctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.get(ch);
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
@@ -450,7 +452,7 @@ public class HttpClientImpl {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    public void exceptionCaught(ChannelHandlerContext chctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();

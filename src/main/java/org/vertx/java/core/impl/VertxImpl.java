@@ -16,11 +16,11 @@
 
 package org.vertx.java.core.impl;
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
-import org.jboss.netty.channel.socket.nio.NioWorkerPool;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
+import io.netty.channel.socket.nio.NioWorker;
+import io.netty.channel.socket.nio.NioWorkerPool;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.json.JsonObject;
@@ -223,7 +223,7 @@ public class VertxImpl implements VertxInternal {
         result = workerPool;
         if (result == null) {
           corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
-          workerPool = result = new NioWorkerPool(corePoolSize, corePool);
+          workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
         }
       }
     }

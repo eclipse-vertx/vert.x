@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
+import io.netty.channel.socket.nio.NioWorker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
@@ -36,10 +36,10 @@ public class HandlerManager<T> {
 
   private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
 
-  private final NetServerWorkerPool availableWorkers;
+  private final VertxWorkerPool availableWorkers;
   private Map<NioWorker, Handlers> handlerMap = new ConcurrentHashMap<>();
 
-  public HandlerManager(NetServerWorkerPool availableWorkers) {
+  public HandlerManager(VertxWorkerPool availableWorkers) {
     this.availableWorkers = availableWorkers;
   }
 
