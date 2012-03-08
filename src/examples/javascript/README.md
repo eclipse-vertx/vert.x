@@ -265,7 +265,7 @@ You will need an instance of MongoDB server (with default settings) running on l
 
 To run it simply `cd` into the webapp directory and `vertx run app.js`
 
-Then point your browser at https://localhost:8080 and start shopping!
+Then point your browser at https://localhost:8080 and start shopping!  (note it's https not http!)
 
 To fully understand this example please follow the web app tutorial on the website
 
