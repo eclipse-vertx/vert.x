@@ -29,7 +29,7 @@ Open a text editor and copy the following into it:
         req.response.sendFile('web' + req.path);
       } else {
         req.response.statusCode = 404;
-        req.response.end;
+        req.response.end();
       }
     }).listen(8080, 'localhost');
     
