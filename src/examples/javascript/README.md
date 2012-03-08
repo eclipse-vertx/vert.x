@@ -215,6 +215,30 @@ vertx run sockjs/sockjs.js
 
 Then point your browser at: http://localhost:8080
 
+## EventBus
+
+A simple event bus example.
+
+handler.js registers an event bus handler and displays a message when a message is received
+
+sender.js sends a message every second.
+
+You can start as many of each handler and sender as you like on the same node or on different nodes of the network.
+
+To run a handler
+
+vertx run eventbus/handler.js -cluster
+
+vertx run eventbus/sender.js -cluster
+
+Notes:
+
+If you are running more than one on the same node then make sure you specify a unique -cluster-port for each one.
+
+If you have more than one network address on your machine, select the one you want to use using -cluster-host
+
+You may also have to edit the '<interfaces>` element in `conf/cluster.xml` to select the interface you want to use.
+
 ## Eventbus Bridge
 
 This example shows how the vert.x event bus can extend to client side JavaScript.
