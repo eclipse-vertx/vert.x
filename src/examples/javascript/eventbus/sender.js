@@ -20,7 +20,7 @@ var count = 0
 sendMessage();
 
 function sendMessage() {
-  //for (var i = 0; i < batchSize / 2; i++) {
+  for (var i = 0; i < batchSize / 2; i++) {
     if (credits > 0) {
       credits--;
       eb.send(address, "some-message");
@@ -30,7 +30,7 @@ function sendMessage() {
     else {
       return;
     }
-  //}
+  }
   vertx.runOnLoop(sendMessage);
 }
 
