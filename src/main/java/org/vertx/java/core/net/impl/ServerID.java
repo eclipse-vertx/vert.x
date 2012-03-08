@@ -22,6 +22,7 @@ import java.io.Serializable;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServerID implements Serializable {
+
   public int port;
   public String host;
 
@@ -41,7 +42,7 @@ public class ServerID implements Serializable {
     ServerID serverID = (ServerID) o;
 
     if (port != serverID.port) return false;
-    if (host != null ? !host.equals(serverID.host) : serverID.host != null) return false;
+    if (!host.equals(serverID.host)) return false;
 
     return true;
   }
@@ -49,7 +50,7 @@ public class ServerID implements Serializable {
   @Override
   public int hashCode() {
     int result = port;
-    result = 31 * result + (host != null ? host.hashCode() : 0);
+    result = 31 * result + host.hashCode();
     return result;
   }
 
