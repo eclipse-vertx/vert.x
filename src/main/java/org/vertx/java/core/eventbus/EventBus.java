@@ -317,5 +317,21 @@ public abstract class EventBus {
    * @return The handler id which is the same as the address
    */
   public abstract String registerHandler(String address, Handler<? extends Message> handler);
+
+  /**
+   * Registers a local handler against the specified address. The handler info won't
+   * be propagated across the cluster
+   * @param address The address top register it at
+   * @param handler The handler
+   * @return The handler id which is the same as the address
+   */
+  public abstract String registerLocalHandler(String address, Handler<? extends Message> handler);
+
+  /**
+   * Registers a local handler against a uniquely generated address, the address is returned as the id
+   * @param handler
+   * @return The handler id which is the same as the address
+   */
+  public abstract String registerLocalHandler(Handler<? extends Message> handler);
 }
 

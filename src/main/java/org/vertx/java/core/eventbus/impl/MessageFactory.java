@@ -23,6 +23,7 @@ import org.vertx.java.core.buffer.Buffer;
  */
 public class MessageFactory {
 
+  static final byte TYPE_PING = 0;
   static final byte TYPE_BUFFER = 1;
   static final byte TYPE_BOOLEAN = 2;
   static final byte TYPE_BYTEARRAY = 3;
@@ -39,6 +40,8 @@ public class MessageFactory {
   static BaseMessage read(Buffer buff) {
     byte type = buff.getByte(0);
     switch (type) {
+      case TYPE_PING:
+        return new PingMessage(buff);
       case TYPE_BUFFER:
         return new BufferMessage(buff);
       case TYPE_BOOLEAN:

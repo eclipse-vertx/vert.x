@@ -50,7 +50,7 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
       }
     };
     this.writeHandlerID = UUID.randomUUID().toString();
-    EventBus.instance.registerHandler(writeHandlerID, writeHandler);
+    EventBus.instance.registerLocalHandler(writeHandlerID, writeHandler);
   }
 
   public void close() {

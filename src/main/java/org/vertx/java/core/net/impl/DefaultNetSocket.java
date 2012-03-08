@@ -49,7 +49,7 @@ public class DefaultNetSocket extends NetSocket {
           writeBuffer(msg.body);
         }
       };
-      EventBus.instance.registerHandler(writeHandlerID, writeHandler);
+      EventBus.instance.registerLocalHandler(writeHandlerID, writeHandler);
     }
   }
 

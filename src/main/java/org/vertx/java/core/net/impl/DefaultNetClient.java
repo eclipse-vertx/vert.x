@@ -224,7 +224,7 @@ public class DefaultNetClient {
   }
 
   private void connect(final int port, final String host, final Handler<NetSocket> connectHandler,
-                            final int remainingAttempts) {
+                       final int remainingAttempts) {
 
     if (bootstrap == null) {
       channelFactory = new NioClientSocketChannelFactory(
