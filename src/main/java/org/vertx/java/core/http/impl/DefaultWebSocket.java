@@ -57,13 +57,13 @@ public class DefaultWebSocket extends ServerWebSocket {
         writeBinaryFrame(msg.body);
       }
     };
-    EventBus.instance.registerHandler(binaryHandlerID, binaryHandler);
+    EventBus.instance.registerLocalHandler(binaryHandlerID, binaryHandler);
     textHandler = new Handler<Message<String>>() {
       public void handle(Message<String> msg) {
         writeTextFrame(msg.body);
       }
     };
-    EventBus.instance.registerHandler(textHandlerID, textHandler);
+    EventBus.instance.registerLocalHandler(textHandlerID, textHandler);
     this.connectRunnable = connectRunnable;
   }
 

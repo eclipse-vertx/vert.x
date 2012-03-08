@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<project name="vert.x" default="jar-core" basedir=".">
+<project name="vert.x" default="jars" basedir=".">
 
   <description>
     Build script for vert.x
@@ -127,6 +127,8 @@
       <exclude name="**/core/**/*.class"/>
     </jar>
   </target>
+
+  <target name="jars" depends="jar-core,jar-platform"/>
 
   <target name="clean" description="clean up">
     <delete dir="${target}"/>

@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-load('vertx.js')
+package org.vertx.java.core.eventbus.impl;
 
-var eb = vertx.EventBus;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.net.impl.ServerID;
 
-var address = 'example.address'
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class PingMessage extends StringMessage {
 
-vertx.setPeriodic(2000, sendMessage)
+  public PingMessage(ServerID sender) {
+    super("ping", "ping");
+    this.sender = sender;
+  }
 
-var count = 0
+  public PingMessage(Buffer readBuff) {
+    super(readBuff);
+  }
 
-function sendMessage() {
-  var msg = "some-message-" + count++;
-  eb.send(address, msg);
-  stdout.println("sent message " + msg)
-}
-
-function vertxStop() {
+  protected byte type() {
+    return MessageFactory.TYPE_PING;
+  }
 }

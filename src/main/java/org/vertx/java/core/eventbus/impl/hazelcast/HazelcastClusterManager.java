@@ -58,7 +58,7 @@ public class HazelcastClusterManager implements ClusterManager {
           }
         }
       } else {
-        log.warn("Cannot find cluster.xml. Using default cluster configuration");
+        log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
         cfg = null;
       }
       //We use the default instance
