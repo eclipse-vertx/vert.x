@@ -69,7 +69,7 @@ if (!vertx.EventBus) {
       });
     }
 
-    that.registerHandler = function(address, handler) {
+    function registerHandler(address, handler, localOnly) {
       checkHandlerParams(address, handler);
 
       var wrapped = wrappedHandler(handler);
@@ -78,7 +78,19 @@ if (!vertx.EventBus) {
       // have to keep track of it :(
       handlerMap[handler] = wrapped;
 
-      jEventBus.registerHandler(address, wrapped);
+      if (localOnly) {
+        jEventBus.registerLocalHandler(address, wrapped);
+      } else {
+        jEventBus.registerHandler(address, wrapped);
+      }
+    }
+
+    that.registerLocalHandler = function(address, handler) {
+      registerHandler(address, handler, true);
+    };
+
+    that.registerHandler = function(address, handler) {
+      registerHandler(address, handler, false);
     };
 
     that.unregisterHandler = function(address, handler) {

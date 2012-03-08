@@ -16,15 +16,10 @@
 
 package org.vertx.java.core.file;
 
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.Future;
-import org.vertx.java.core.impl.SynchronousAction;
-import org.vertx.java.core.impl.VertxInternal;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -74,14 +69,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void copy(String from, String to, AsyncResultHandler<Void> handler) {
-    wrapHandler(copyDeferred(from, to).execute(), handler);
+    copyInternal(from, to, handler).run();
   }
 
   /**
    * Synchronous version of {@link #copy(String, String, AsyncResultHandler)}
    */
   public void copySync(String from, String to) throws Exception {
-    copyDeferred(from, to).action();
+    copyInternal(from, to, null).action();
   }
 
   /**
@@ -92,14 +87,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
-    wrapHandler(copyDeferred(from, to, recursive).execute(), handler);
+    copyInternal(from, to, recursive, handler).run();
   }
 
   /**
    * Synchronous version of {@link #copy(String, String, boolean, AsyncResultHandler)}
    */
   public void copySync(String from, String to, boolean recursive) throws Exception {
-    copyDeferred(from, to, recursive).action();
+    copyInternal(from, to, recursive, null).action();
   }
 
   /**
@@ -108,14 +103,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void move(String from, String to, AsyncResultHandler<Void> handler) {
-    wrapHandler(moveDeferred(from, to).execute(), handler);
+    moveInternal(from, to, handler).run();
   }
 
   /**
    * Synchronous version of {@link #move(String, String, AsyncResultHandler)}
    */
   public void moveSync(String from, String to) throws Exception {
-    moveDeferred(from, to).action();
+    moveInternal(from, to, null).action();
   }
 
   /**
@@ -124,14 +119,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void truncate(String path, long len, AsyncResultHandler<Void> handler) {
-    wrapHandler(truncateDeferred(path, len).execute(), handler);
+    truncateInternal(path, len, handler).run();
   }
 
   /**
    * Synchronous version of {@link #truncate(String, long, AsyncResultHandler)}
    */
   public void truncateSync(String path, long len) throws Exception {
-    truncateDeferred(path, len).action();
+    truncateInternal(path, len, null).action();
   }
 
   /**
@@ -141,14 +136,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void chmod(String path, String perms, AsyncResultHandler<Void> handler) {
-    wrapHandler(chmodDeferred(path, perms).execute(), handler);
+    chmodInternal(path, perms, handler).run();
   }
 
   /**
    * Synchronous version of {@link #chmod(String, String, AsyncResultHandler)}
    */
   public void chmodSync(String path, String perms) throws Exception {
-    chmodDeferred(path, perms).action();
+    chmodInternal(path, perms, null).action();
   }
 
 
@@ -161,14 +156,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
-    wrapHandler(chmodDeferred(path, perms, dirPerms).execute(), handler);
+    chmodInternal(path, perms, dirPerms, handler).run();
   }
 
   /**
    * Synchronous version of {@link #chmod(String, String, String, AsyncResultHandler)}
    */
   public void chmodSync(String path, String perms, String dirPerms) throws Exception {
-    chmodDeferred(path, perms, dirPerms).action();
+    chmodInternal(path, perms, dirPerms, null).action();
   }
 
   /**
@@ -177,14 +172,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void props(String path, AsyncResultHandler<FileProps> handler) {
-    wrapHandler(propsDeferred(path).execute(), handler);
+    propsInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #props(String, AsyncResultHandler)}
    */
   public FileProps propsSync(String path) throws Exception {
-    return propsDeferred(path).action();
+    return propsInternal(path, null).action();
   }
 
   /**
@@ -193,14 +188,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void lprops(String path, AsyncResultHandler<FileProps> handler) {
-    wrapHandler(lpropsDeferred(path).execute(), handler);
+    lpropsInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #lprops(String, AsyncResultHandler)}
    */
   public FileProps lpropsSync(String path) throws Exception {
-    return lpropsDeferred(path).action();
+    return lpropsInternal(path, null).action();
   }
 
   /**
@@ -208,14 +203,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void link(String link, String existing, AsyncResultHandler<Void> handler) {
-    wrapHandler(linkDeferred(link, existing).execute(), handler);
+    linkInternal(link, existing, handler).run();
   }
 
   /**
    * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
    */
   public void linkSync(String link, String existing) throws Exception {
-    linkDeferred(link, existing).action();
+    linkInternal(link, existing, null).action();
   }
 
   /**
@@ -223,14 +218,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void symlink(String link, String existing, AsyncResultHandler<Void> handler) {
-    wrapHandler(symlinkDeferred(link, existing).execute(), handler);
+    symlinkInternal(link, existing, handler).run();
   }
 
   /**
    * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
    */
   public void symlinkSync(String link, String existing) throws Exception {
-    symlinkDeferred(link, existing).action();
+    symlinkInternal(link, existing, null).action();
   }
 
   /**
@@ -238,14 +233,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void unlink(String link, AsyncResultHandler<Void> handler) {
-    wrapHandler(unlinkDeferred(link).execute(), handler);
+    unlinkInternal(link, handler).run();
   }
 
   /**
    * Synchronous version of {@link #unlink(String, AsyncResultHandler)}
    */
   public void unlinkSync(String link) throws Exception {
-    unlinkDeferred(link).action();
+    unlinkInternal(link, null).action();
   }
 
   /**
@@ -253,14 +248,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void readSymlink(String link, AsyncResultHandler<String> handler) {
-    wrapHandler(readSymlinkDeferred(link).execute(), handler);
+    readSymlinkInternal(link, handler).run();
   }
 
   /**
    * Synchronous version of {@link #readSymlink(String, AsyncResultHandler)}
    */
   public String readSymlinkSync(String link) throws Exception {
-    return readSymlinkDeferred(link).action();
+    return readSymlinkInternal(link, null).action();
   }
 
   /**
@@ -268,14 +263,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void delete(String path, AsyncResultHandler<Void> handler) {
-    wrapHandler(deleteDeferred(path).execute(), handler);
+    deleteInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #delete(String, AsyncResultHandler)}
    */
   public void deleteSync(String path) throws Exception {
-    deleteDeferred(path).action();
+    deleteInternal(path, null).action();
   }
 
   /**
@@ -284,14 +279,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
-    wrapHandler(deleteDeferred(path, recursive).execute(), handler);
+    deleteInternal(path, recursive, handler).run();
   }
 
   /**
    * Synchronous version of {@link #delete(String, boolean, AsyncResultHandler)}
    */
   public void deleteSync(String path, boolean recursive) throws Exception {
-    deleteDeferred(path, recursive).action();
+    deleteInternal(path, recursive, null).action();
   }
 
   /**
@@ -300,14 +295,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void mkdir(String path, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path).execute(), handler);
+    mkdirInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #mkdir(String, AsyncResultHandler)}
    */
   public void mkdirSync(String path) throws Exception {
-    mkdirDeferred(path).action();
+    mkdirInternal(path, null).action();
   }
 
   /**
@@ -318,14 +313,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path, createParents).execute(), handler);
+    mkdirInternal(path, createParents, handler).run();
   }
 
   /**
    * Synchronous version of {@link #mkdir(String, boolean, AsyncResultHandler)}
    */
   public void mkdirSync(String path, boolean createParents) throws Exception {
-    mkdirDeferred(path, createParents).action();
+    mkdirInternal(path, createParents, null).action();
   }
 
 
@@ -338,14 +333,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path, perms).execute(), handler);
+    mkdirInternal(path, perms, handler).run();
   }
 
   /**
    * Synchronous version of {@link #mkdir(String, String, AsyncResultHandler)}
    */
   public void mkdirSync(String path, String perms) throws Exception {
-    mkdirDeferred(path, perms).action();
+    mkdirInternal(path, perms, null).action();
   }
 
   /**
@@ -359,14 +354,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs
    */
   public void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
-    wrapHandler(mkdirDeferred(path, perms, createParents).execute(), handler);
+    mkdirInternal(path, perms, createParents, handler).run();
   }
 
   /**
    * Synchronous version of {@link #mkdir(String, String, boolean, AsyncResultHandler)}
    */
   public void mkdirSync(String path, String perms, boolean createParents) throws Exception {
-    mkdirDeferred(path, perms, createParents).action();
+    mkdirInternal(path, perms, createParents, null).action();
   }
 
   /**
@@ -375,14 +370,14 @@ public class FileSystem {
    * The result is an array of String representing the paths of the files inside the directory.
    */
   public void readDir(String path, AsyncResultHandler<String[]> handler) {
-    wrapHandler(readDirDeferred(path).execute(), handler);
+    readDirInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #readDir(String, AsyncResultHandler)}
    */
   public String[] readDirSync(String path) throws Exception {
-    return readDirDeferred(path).action();
+    return readDirInternal(path, null).action();
   }
 
   /**
@@ -392,14 +387,14 @@ public class FileSystem {
    * The result is an array of String representing the paths of the files inside the directory.
    */
   public void readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
-    wrapHandler(readDirDeferred(path, filter).execute(), handler);
+    readDirInternal(path, filter, handler).run();
   }
 
   /**
    * Synchronous version of {@link #readDir(String, String, AsyncResultHandler)}
    */
   public String[] readDirSync(String path, String filter) throws Exception {
-    return readDirDeferred(path, filter).action();
+    return readDirInternal(path, filter, null).action();
   }
 
   /**
@@ -408,14 +403,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void readFile(String path, AsyncResultHandler<Buffer> handler) {
-    wrapHandler(readFileDeferred(path).execute(), handler);
+    readFileInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #readFile(String, AsyncResultHandler)}
    */
   public Buffer readFileSync(String path) throws Exception {
-    return readFileDeferred(path).action();
+    return readFileInternal(path, null).action();
   }
 
   /**
@@ -423,14 +418,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
-    wrapHandler(writeFileDeferred(path, data).execute(), handler);
+    writeFileInternal(path, data, handler).run();
   }
 
   /**
    * Synchronous version of {@link #writeFile(String, Buffer, AsyncResultHandler)}
    */
   public void writeFileSync(String path, Buffer data) throws Exception {
-    writeFileDeferred(path, data).action();
+    writeFileInternal(path, data, null).action();
   }
 
   /**
@@ -440,14 +435,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path).execute(), handler);
+    openInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #open(String, AsyncResultHandler)}
    */
   public AsyncFile openSync(String path) throws Exception {
-    return openDeferred(path).action();
+    return openInternal(path, null).action();
   }
 
   /**
@@ -458,14 +453,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms).execute(), handler);
+    openInternal(path, perms, handler).run();
   }
 
   /**
    * Synchronous version of {@link #open(String, String, AsyncResultHandler)}
    */
   public AsyncFile openSync(String path, String perms) throws Exception {
-    return openDeferred(path, perms).action();
+    return openInternal(path, perms, null).action();
   }
 
   /**
@@ -477,14 +472,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms, createNew).execute(), handler);
+    openInternal(path, perms, createNew, handler).run();
   }
 
   /**
    * Synchronous version of {@link #open(String, String, boolean, AsyncResultHandler)}
    */
   public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
-    return openDeferred(path, perms, createNew).action();
+    return openInternal(path, perms, createNew, null).action();
   }
 
   /**
@@ -498,14 +493,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms, read, write, createNew).execute(), handler);
+    openInternal(path, perms, read, write, createNew, handler).run();
   }
 
   /**
    * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, AsyncResultHandler)}
    */
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
-    return openDeferred(path, perms, read, write, createNew).action();
+    return openInternal(path, perms, read, write, createNew, null).action();
   }
 
   /**
@@ -521,14 +516,14 @@ public class FileSystem {
    */
   public void open(String path, String perms, boolean read, boolean write, boolean createNew,
                    boolean flush, AsyncResultHandler<AsyncFile> handler) {
-    wrapHandler(openDeferred(path, perms, read, write, createNew, flush).execute(), handler);
+    openInternal(path, perms, read, write, createNew, flush, handler).run();
   }
 
   /**
    * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, boolean, AsyncResultHandler)}
    */
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
-    return openDeferred(path, perms, read, write, createNew, flush).action();
+    return openInternal(path, perms, read, write, createNew, flush, null).action();
   }
 
   /**
@@ -536,14 +531,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void createFile(String path, AsyncResultHandler<Void> handler) {
-    wrapHandler(createFileDeferred(path).execute(), handler);
+    createFileInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #createFile(String, AsyncResultHandler)}
    */
   public void createFileSync(String path) throws Exception {
-    createFileDeferred(path).action();
+    createFileInternal(path, null).action();
   }
 
   /**
@@ -551,14 +546,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void createFile(String path, String perms, AsyncResultHandler<Void> handler) {
-    wrapHandler(createFileDeferred(path, perms).execute(), handler);
+    createFileInternal(path, perms, handler).run();
   }
 
   /**
    * Synchronous version of {@link #createFile(String, String, AsyncResultHandler)}
    */
   public void createFileSync(String path, String perms) throws Exception {
-    createFileDeferred(path, perms).action();
+    createFileInternal(path, perms, null).action();
   }
 
   /**
@@ -566,14 +561,14 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void exists(String path, AsyncResultHandler<Boolean> handler) {
-    wrapHandler(existsDeferred(path).execute(), handler);
+    existsInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #exists(String, AsyncResultHandler)}
    */
   public boolean existsSync(String path) throws Exception {
-    return existsDeferred(path).action();
+    return existsInternal(path, null).action();
   }
 
   /**
@@ -581,43 +576,25 @@ public class FileSystem {
    * The handler will be called when the operation completes or an error occurs.
    */
   public void fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
-    wrapHandler(fsPropsDeferred(path).execute(), handler);
+    fsPropsInternal(path, handler).run();
   }
 
   /**
    * Synchronous version of {@link #fsProps(String, AsyncResultHandler)}
    */
   public FileSystemProps fsPropsSync(String path) throws Exception {
-    return fsPropsDeferred(path).action();
+    return fsPropsInternal(path, null).action();
   }
 
-  private void checkContext() {
-    if (VertxInternal.instance.getContext() == null) {
-      throw new IllegalStateException("Can't use file system outside an event loop");
-    }
+  private BlockingAction<Void> copyInternal(String from, String to, AsyncResultHandler<Void> handler) {
+    return copyInternal(from, to, false, handler);
   }
 
-  private <T> void wrapHandler(Future<T> fut, final AsyncResultHandler<T> handler) {
-    fut.handler(new CompletionHandler<T>() {
-      public void handle(Future<T> event) {
-        if (event.succeeded()) {
-          handler.handle(new AsyncResult<T>(event.result()));
-        } else {
-          handler.handle(new AsyncResult<T>(event.exception()));
-        }
-      }
-    });
-  }
-
-  private SynchronousAction<Void> copyDeferred(String from, String to) {
-    return copyDeferred(from, to, false);
-  }
-
-  private SynchronousAction<Void> copyDeferred(String from, String to, final boolean recursive) {
-    checkContext();
+  private BlockingAction<Void> copyInternal(String from, String to, final boolean recursive, AsyncResultHandler<Void> handler) {
+    
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         try {
           if (recursive) {
@@ -654,12 +631,12 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> moveDeferred(String from, String to) {
-    checkContext();
+  private BlockingAction<Void> moveInternal(String from, String to, AsyncResultHandler<Void> handler) {
+    
     //TODO atomic moves - but they have different semantics, e.g. on Linux if target already exists it is overwritten
     final Path source = Paths.get(from);
     final Path target = Paths.get(to);
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         try {
           Files.move(source, target);
@@ -673,9 +650,9 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> truncateDeferred(final String path, final long len) {
-     checkContext();
-     return new BlockingAction<Void>() {
+  private BlockingAction<Void> truncateInternal(final String path, final long len, AsyncResultHandler<Void> handler) {
+     
+     return new BlockingAction<Void>(handler) {
        public Void action() throws Exception {
          if (len < 0) {
            throw new FileSystemException("Cannot truncate file to size < 0");
@@ -698,16 +675,16 @@ public class FileSystem {
      };
   }
 
-  private SynchronousAction<Void> chmodDeferred(String path, String perms) {
-    return chmodDeferred(path, perms, null);
+  private BlockingAction<Void> chmodInternal(String path, String perms, AsyncResultHandler<Void> handler) {
+    return chmodInternal(path, perms, null, handler);
   }
 
-  private SynchronousAction<Void> chmodDeferred(String path, String perms, String dirPerms) {
-    checkContext();
+  private BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+    
     final Path target = Paths.get(path);
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         try {
           if (dirPermissions != null) {
@@ -735,18 +712,18 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<FileProps> propsDeferred(String path) {
-    return props(path, true);
+  private BlockingAction<FileProps> propsInternal(String path, AsyncResultHandler<FileProps> handler) {
+    return props(path, true, handler);
   }
 
-  private SynchronousAction<FileProps> lpropsDeferred(String path) {
-    return props(path, false);
+  private BlockingAction<FileProps> lpropsInternal(String path, AsyncResultHandler<FileProps> handler) {
+    return props(path, false, handler);
   }
 
-  private SynchronousAction<FileProps> props(String path, final boolean followLinks) {
-    checkContext();
+  private BlockingAction<FileProps> props(String path, final boolean followLinks, AsyncResultHandler<FileProps> handler) {
+    
     final Path target = Paths.get(path);
-    return new BlockingAction<FileProps>() {
+    return new BlockingAction<FileProps>(handler) {
       public FileProps action() throws Exception {
         try {
           BasicFileAttributes attrs;
@@ -763,19 +740,19 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> linkDeferred(String link, String existing) {
-    return link(link, existing, false);
+  private BlockingAction<Void> linkInternal(String link, String existing, AsyncResultHandler<Void> handler) {
+    return link(link, existing, false, handler);
   }
 
-  private SynchronousAction<Void> symlinkDeferred(String link, String existing) {
-    return link(link, existing, true);
+  private BlockingAction<Void> symlinkInternal(String link, String existing, AsyncResultHandler<Void> handler) {
+    return link(link, existing, true, handler);
   }
 
-  private SynchronousAction<Void> link(String link, String existing, final boolean symbolic) {
-    checkContext();
+  private BlockingAction<Void> link(String link, String existing, final boolean symbolic, AsyncResultHandler<Void> handler) {
+    
     final Path source = Paths.get(link);
     final Path target = Paths.get(existing);
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         try {
           if (symbolic) {
@@ -791,14 +768,14 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> unlinkDeferred(String link) {
-    return deleteDeferred(link);
+  private BlockingAction<Void> unlinkInternal(String link, AsyncResultHandler<Void> handler) {
+    return deleteInternal(link, handler);
   }
 
-  private SynchronousAction<String> readSymlinkDeferred(String link) {
-    checkContext();
+  private BlockingAction<String> readSymlinkInternal(String link, AsyncResultHandler<String> handler) {
+    
     final Path source = Paths.get(link);
-    return new BlockingAction<String>() {
+    return new BlockingAction<String>(handler) {
       public String action() throws Exception {
         try {
           return Files.readSymbolicLink(source).toString();
@@ -809,14 +786,14 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> deleteDeferred(String path) {
-    return deleteDeferred(path, false);
+  private BlockingAction<Void> deleteInternal(String path, AsyncResultHandler<Void> handler) {
+    return deleteInternal(path, false, handler);
   }
 
-  private SynchronousAction<Void> deleteDeferred(String path, final boolean recursive) {
-    checkContext();
+  private BlockingAction<Void> deleteInternal(String path, final boolean recursive, AsyncResultHandler<Void> handler) {
+    
     final Path source = Paths.get(path);
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         if (recursive) {
           Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
@@ -847,23 +824,23 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> mkdirDeferred(String path) {
-    return mkdirDeferred(path, null, false);
+  private BlockingAction<Void> mkdirInternal(String path, AsyncResultHandler<Void> handler) {
+    return mkdirInternal(path, null, false, handler);
   }
 
-  private SynchronousAction<Void> mkdirDeferred(String path, boolean createParents) {
-    return mkdirDeferred(path, null, createParents);
+  private BlockingAction<Void> mkdirInternal(String path, boolean createParents, AsyncResultHandler<Void> handler) {
+    return mkdirInternal(path, null, createParents, handler);
   }
 
-  private SynchronousAction<Void> mkdirDeferred(String path, String perms) {
-    return mkdirDeferred(path, perms, false);
+  private BlockingAction<Void> mkdirInternal(String path, String perms, AsyncResultHandler<Void> handler) {
+    return mkdirInternal(path, perms, false, handler);
   }
 
-  private SynchronousAction<Void> mkdirDeferred(String path, final String perms, final boolean createParents) {
-    checkContext();
+  private BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, AsyncResultHandler<Void> handler) {
+    
     final Path source = Paths.get(path);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         try {
           if (createParents) {
@@ -889,13 +866,13 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<String[]> readDirDeferred(String path) {
-    return readDirDeferred(path, null);
+  private BlockingAction<String[]> readDirInternal(String path, AsyncResultHandler<String[]> handler) {
+    return readDirInternal(path, null, handler);
   }
 
-  private SynchronousAction<String[]> readDirDeferred(final String path, final String filter) {
-    checkContext();
-    return new BlockingAction<String[]>() {
+  private BlockingAction<String[]> readDirInternal(final String path, final String filter, AsyncResultHandler<String[]> handler) {
+    
+    return new BlockingAction<String[]>(handler) {
       public String[] action() throws Exception {
         File file = new File(path);
         if (!file.exists()) {
@@ -931,9 +908,9 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Buffer> readFileDeferred(final String path) {
-    checkContext();
-    return new BlockingAction<Buffer>() {
+  private BlockingAction<Buffer> readFileInternal(final String path, AsyncResultHandler<Buffer> handler) {
+    
+    return new BlockingAction<Buffer>(handler) {
       public Buffer action() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
@@ -943,9 +920,9 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Void> writeFileDeferred(final String path, final Buffer data) {
-    checkContext();
-    return new BlockingAction<Void>() {
+  private BlockingAction<Void> writeFileInternal(final String path, final Buffer data, AsyncResultHandler<Void> handler) {
+    
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         Path target = Paths.get(path);
         Files.write(target, data.getBytes());
@@ -954,50 +931,44 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<AsyncFile> openDeferred(String path) {
-    return openDeferred(path, null, true, true, true, false);
+  private BlockingAction<AsyncFile> openInternal(String path, AsyncResultHandler<AsyncFile> handler) {
+    return openInternal(path, null, true, true, true, false, handler);
   }
 
-  private SynchronousAction<AsyncFile> openDeferred(String path, String perms) {
-    return openDeferred(path, perms, true, true, true, false);
+  private BlockingAction<AsyncFile> openInternal(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
+    return openInternal(path, perms, true, true, true, false, handler);
   }
 
-  private SynchronousAction<AsyncFile> openDeferred(String path, String perms, boolean createNew) {
-    return openDeferred(path, perms, true, true, createNew, false);
+  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+    return openInternal(path, perms, true, true, createNew, false, handler);
   }
 
-  private SynchronousAction<AsyncFile> openDeferred(String path, String perms, boolean read, boolean write, boolean createNew) {
-    return openDeferred(path, perms, read, write, createNew, false);
+  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+    return openInternal(path, perms, read, write, createNew, false, handler);
   }
 
-  private SynchronousAction<AsyncFile> openDeferred(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean flush) {
-    final Context ctx = VertxInternal.instance.getContext();
-    if (ctx == null) {
-      throw new IllegalStateException("Can't use file system from outside an event loop");
-    }
-    final Thread th = Thread.currentThread();
-    return new BlockingAction<AsyncFile>() {
+  private BlockingAction<AsyncFile> openInternal(final String path, final String perms, final boolean read, final boolean write, final boolean createNew,
+                   final boolean flush, AsyncResultHandler<AsyncFile> handler) {
+    return new BlockingAction<AsyncFile>(handler) {
       public AsyncFile action() throws Exception {
-        return doOpen(path, perms, read, write, createNew, flush, ctx, th);
+        return doOpen(path, perms, read, write, createNew, flush, context);
       }
     };
   }
 
   private AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
-                           boolean flush, Context context,
-                           Thread th) throws Exception {
+                           boolean flush, Context context) throws Exception {
     return new AsyncFile(path, perms, read, write, createNew, flush, context);
   }
 
-  private SynchronousAction<Void> createFileDeferred(String path) {
-    return createFileDeferred(path, null);
+  private BlockingAction<Void> createFileInternal(String path, AsyncResultHandler<Void> handler) {
+    return createFileInternal(path, null, handler);
   }
 
-  private SynchronousAction<Void> createFileDeferred(final String path, final String perms) {
-    checkContext();
+  private BlockingAction<Void> createFileInternal(final String path, final String perms, AsyncResultHandler<Void> handler) {
+    
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    return new BlockingAction<Void>() {
+    return new BlockingAction<Void>(handler) {
       public Void action() throws Exception {
         try {
           Path target = Paths.get(path);
@@ -1014,9 +985,9 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<Boolean> existsDeferred(final String path) {
-    checkContext();
-    return new BlockingAction<Boolean>() {
+  private BlockingAction<Boolean> existsInternal(final String path, AsyncResultHandler<Boolean> handler) {
+    
+    return new BlockingAction<Boolean>(handler) {
       public Boolean action() throws Exception {
         File file = new File(path);
         return file.exists();
@@ -1024,9 +995,9 @@ public class FileSystem {
     };
   }
 
-  private SynchronousAction<FileSystemProps> fsPropsDeferred(final String path) {
-    checkContext();
-    return new BlockingAction<FileSystemProps>() {
+  private BlockingAction<FileSystemProps> fsPropsInternal(final String path, AsyncResultHandler<FileSystemProps> handler) {
+    
+    return new BlockingAction<FileSystemProps>(handler) {
       public FileSystemProps action() throws Exception {
         Path target = Paths.get(path);
         FileStore fs = Files.getFileStore(target);

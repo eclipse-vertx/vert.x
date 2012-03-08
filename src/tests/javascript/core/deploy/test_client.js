@@ -34,9 +34,7 @@ function testDeploy() {
 
 function testUndeploy() {
 
-  var id = vertx.deployVerticle("core/deploy/child.js");
-
-  vertx.setTimer(100, function() {
+  var id = vertx.deployVerticle("core/deploy/child.js", null, 1, function() {
     eb.registerHandler("test-handler", function MyHandler(message) {
       if ("stopped" === message) {
         eb.unregisterHandler("test-handler", MyHandler);

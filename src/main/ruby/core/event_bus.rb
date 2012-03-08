@@ -66,21 +66,35 @@ module Vertx
     # Register a handler.
     # @param address [String] The address to register for. Any messages sent to that address will be
     # received by the handler. A single handler can be registered against many addresses.
+    # @param local_only [Boolean] If true then handler won't be propagated across cluster
     # @param message_hndlr [Block] The handler
     # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
-    def EventBus.register_handler(address, &message_hndlr)
+    def EventBus.register_handler(address, local_only = false, &message_hndlr)
       raise "An address must be specified" if !address
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(message_hndlr)
-      id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
+      if local_only
+        id = org.vertx.java.core.eventbus.EventBus.instance.registerLocalHandler(address, internal)
+      else
+        id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(address, internal)
+      end
       @@handler_map[id] = internal
       id
     end
 
-    def EventBus.register_simple_handler(&message_hndlr)
+    # Registers a handler against a uniquely generated address, the address is returned as the id
+    # received by the handler. A single handler can be registered against many addresses.
+    # @param local_only [Boolean] If true then handler won't be propagated across cluster
+    # @param message_hndlr [Block] The handler
+    # @return [FixNum] id of the handler which can be used in {EventBus.unregister_handler}
+    def EventBus.register_simple_handler(local_only = false, &message_hndlr)
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(message_hndlr)
-      id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(internal)
+      if local_only
+        id = org.vertx.java.core.eventbus.EventBus.instance.registerLocalHandler(internal)
+      else
+        id = org.vertx.java.core.eventbus.EventBus.instance.registerHandler(internal)
+      end
       @@handler_map[id] = internal
       id
     end

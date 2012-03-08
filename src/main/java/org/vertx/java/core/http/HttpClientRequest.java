@@ -42,6 +42,8 @@ import java.util.Map;
  * <p>
  * This class supports both chunked and non-chunked HTTP.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * An example of using this class is as follows:
  * <p>
  * <pre>
@@ -59,6 +61,8 @@ import java.util.Map;
  * req.end();
  *
  * </pre>
+ *
+ *
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

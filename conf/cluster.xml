@@ -13,7 +13,7 @@
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+                <interface>192.168.1.16</interface>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -22,6 +22,8 @@
             </aws>
         </join>
         <!--
+        If you have more than one network interface, edit this to select which
+        one you want to use
         <interfaces enabled="true">
             <interface>192.168.1.*</interface>
         </interfaces>
@@ -55,7 +57,7 @@
         </asymmetric-encryption>
     </network>
     <executor-service>
-        <core-pool-size>1</core-pool-size>
+        <core-pool-size>4</core-pool-size>
         <max-pool-size>20</max-pool-size>
         <keep-alive-seconds>60</keep-alive-seconds>
     </executor-service>
@@ -117,7 +119,7 @@
             hz.HIGHER_HITS   ; entry with the higher hits wins.
             hz.LATEST_UPDATE ; entry with the latest update wins.
         -->
-        <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
+        <merge-policy>hz.LATEST_UPDATE</merge-policy>
 
     </map>
 </hazelcast>

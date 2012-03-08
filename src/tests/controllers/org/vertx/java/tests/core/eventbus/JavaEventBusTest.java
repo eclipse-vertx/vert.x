@@ -17,12 +17,18 @@
 package org.vertx.java.tests.core.eventbus;
 
 import org.junit.Test;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestBase;
 import vertx.tests.core.eventbus.LocalClient;
 import vertx.tests.core.eventbus.LocalPeer;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -101,6 +107,20 @@ public class JavaEventBusTest extends TestBase {
   @Test
   public void testRegisterNoAddress() {
     startTest(getMethodName());
+  }
+
+  public void testNoContext() throws Exception {
+    final EventBus eb = EventBus.instance;
+    final CountDownLatch latch = new CountDownLatch(1);
+    eb.registerHandler("foo", new Handler<Message<String>>() {
+      public void handle(Message<String> msg) {
+        assert("bar".equals(msg.body));
+        eb.unregisterHandler("foo", this);
+        latch.countDown();
+      }
+    });
+    eb.send("foo", "bar");
+    assert(latch.await(5, TimeUnit.SECONDS));
   }
 
 }

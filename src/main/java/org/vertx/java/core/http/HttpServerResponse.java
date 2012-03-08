@@ -40,6 +40,8 @@ import java.util.Map;
  * serving files from the server since buffers do not have to be read one by one
  * from the file and written to the outgoing socket.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class HttpServerResponse implements WriteStream {
