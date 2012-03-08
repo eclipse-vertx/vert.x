@@ -14,7 +14,7 @@ var handler = function() {
 
 eb.registerHandler(creditsAddress, handler);
 
-var credits = batchSize;
+var credits = 0;
 var count = 0
 
 sendMessage();
