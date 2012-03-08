@@ -1,0 +1,1068 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Vertx::HttpServerRequest
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (H)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
+     &raquo; 
+    <span class="title">HttpServerRequest</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Vertx::HttpServerRequest
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Vertx::HttpServerRequest</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+      <dt class="r2">Includes:</dt>
+      <dd class="r2"><span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span></dd>
+      
+    
+  
+  
+  
+    <dt class="r1 last">Defined in:</dt>
+    <dd class="r1 last">src/main/ruby/core/http.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+Encapsulates a server-side HTTP request.
+</p>
+<p>
+An instance of this class is created for each request that is handled by
+the server and is passed to the user via the handler specified using
+<span class='object_link'><a href="HttpServer.html#request_handler-instance_method" title="Vertx::HttpServer#request_handler (method)">Vertx::HttpServer#request_handler</a></span>.
+</p>
+<p>
+Each instance of this class is associated with a corresponding
+<span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span> instance via the field <span class='object_link'><a href="#response-instance_method" title="Vertx::HttpServerRequest#response (method)">#response</a></span>.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div>
+
+  
+  
+  
+  
+
+
+  
+  
+  
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#_to_java_request-instance_method" title="#_to_java_request (instance method)">- (Object) <strong>_to_java_request</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#body_handler-instance_method" title="#body_handler (instance method)">- (Object) <strong>body_handler</strong>(&amp;hndlr) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Set a handler to receive the entire body in one go - do not use this for
+large bodies.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#header-instance_method" title="#header (instance method)">- (String) <strong>header</strong>(key) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Get a header value.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#header_names-instance_method" title="#header_names (instance method)">- (Set) <strong>header_names</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Get all the header names from the response.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#headers-instance_method" title="#headers (instance method)">- (Hash) <strong>headers</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Get all the headers in the request.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#method-instance_method" title="#method (instance method)">- (String) <strong>method</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The HTTP method, one of HEAD, OPTIONS, GET, POST, PUT, DELETE, CONNECT,
+TRACE.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#params-instance_method" title="#params (instance method)">- (Hash) <strong>params</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The request parameters.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#path-instance_method" title="#path (instance method)">- (Object) <strong>path</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#query-instance_method" title="#query (instance method)">- (Object) <strong>query</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#response-instance_method" title="#response (instance method)">- (HttpServerResponse) <strong>response</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+to send the response back to the client.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#uri-instance_method" title="#uri (instance method)">- (String) <strong>uri</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The uri of the request.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="ReadStream.html#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">#data_handler</a></span>, <span class='object_link'><a href="ReadStream.html#end_handler-instance_method" title="Vertx::ReadStream#end_handler (method)">#end_handler</a></span>, <span class='object_link'><a href="ReadStream.html#exception_handler-instance_method" title="Vertx::ReadStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="ReadStream.html#pause-instance_method" title="Vertx::ReadStream#pause (method)">#pause</a></span>, <span class='object_link'><a href="ReadStream.html#resume-instance_method" title="Vertx::ReadStream#resume (method)">#resume</a></span></p>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="_to_java_request-instance_method">
+  
+    - (<tt>Object</tt>) <strong>_to_java_request</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+630
+631
+632</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 630</span>
+
+<span class='def def kw'>def</span> <span class='_to_java_request identifier id'>_to_java_request</span>
+  <span class='@j_del ivar id'>@j_del</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="body_handler-instance_method">
+  
+    - (<tt>Object</tt>) <strong>body_handler</strong>(&amp;hndlr) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Set a handler to receive the entire body in one go - do not use this for
+large bodies
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+626
+627
+628</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 626</span>
+
+<span class='def def kw'>def</span> <span class='body_handler identifier id'>body_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='bodyHandler identifier id'>bodyHandler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="header-instance_method">
+  
+    - (<tt>String</tt>) <strong>header</strong>(key) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Get a header value
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>key.</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The key of the header.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+the header value.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+588
+589
+590</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 588</span>
+
+<span class='def def kw'>def</span> <span class='header identifier id'>header</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getHeader identifier id'>getHeader</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="header_names-instance_method">
+  
+    - (<tt>Set</tt>) <strong>header_names</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Get all the header names from the response.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Set</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+. A Set of header names
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 612</span>
+
+<span class='def def kw'>def</span> <span class='header_names identifier id'>header_names</span>
+  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='@header_names ivar id'>@header_names</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
+    <span class='names identifier id'>names</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getHeaderNames identifier id'>getHeaderNames</span>
+    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='names identifier id'>names</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
+    <span class='@header_names ivar id'>@header_names</span> <span class='assign token'>=</span> <span class='Set constant id'>Set</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
+      <span class='name identifier id'>name</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
+      <span class='@header_names ivar id'>@header_names</span><span class='dot token'>.</span><span class='add identifier id'>add</span><span class='lparen token'>(</span><span class='name identifier id'>name</span><span class='rparen token'>)</span>
+    <span class='end end kw'>end</span>
+  <span class='end end kw'>end</span>
+  <span class='@header_names ivar id'>@header_names</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="headers-instance_method">
+  
+    - (<tt>Hash</tt>) <strong>headers</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Get all the headers in the request. If the response contains multiple
+headers with the same key, the values will be concatenated together into a
+single header with the same key value, with each value separated by a
+comma, as specified by
+<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2" target="_parent" title="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2</a>.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+. A Hash of headers.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+608</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 597</span>
+
+<span class='def def kw'>def</span> <span class='headers identifier id'>headers</span>
+  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='@headers ivar id'>@headers</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
+    <span class='hdrs identifier id'>hdrs</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getAllHeaders identifier id'>getAllHeaders</span>
+    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='hdrs identifier id'>hdrs</span><span class='dot token'>.</span><span class='entrySet identifier id'>entrySet</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
+    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='lbrace token'>{</span><span class='rbrace token'>}</span>
+    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
+      <span class='entry identifier id'>entry</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
+      <span class='@headers ivar id'>@headers</span><span class='lbrack token'>[</span><span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getKey identifier id'>getKey</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getValue identifier id'>getValue</span>
+    <span class='end end kw'>end</span>
+  <span class='end end kw'>end</span>
+  <span class='@headers ivar id'>@headers</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="method-instance_method">
+  
+    - (<tt>String</tt>) <strong>method</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The HTTP method, one of HEAD, OPTIONS, GET, POST, PUT, DELETE, CONNECT,
+TRACE
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The HTTP method, one of HEAD, OPTIONS, GET, POST, PUT, DELETE, CONNECT,
+TRACE
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+548
+549
+550</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 548</span>
+
+<span class='def def kw'>def</span> <span class='method identifier id'>method</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='method identifier id'>method</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="params-instance_method">
+  
+    - (<tt>Hash</tt>) <strong>params</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The request parameters
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The request parameters
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+576
+577</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 566</span>
+
+<span class='def def kw'>def</span> <span class='params identifier id'>params</span>
+  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='@params ivar id'>@params</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
+    <span class='prms identifier id'>prms</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getAllParams identifier id'>getAllParams</span>
+    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='prms identifier id'>prms</span><span class='dot token'>.</span><span class='entrySet identifier id'>entrySet</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
+    <span class='@params ivar id'>@params</span> <span class='assign token'>=</span> <span class='lbrace token'>{</span><span class='rbrace token'>}</span>
+    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
+      <span class='entry identifier id'>entry</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
+      <span class='@params ivar id'>@params</span><span class='lbrack token'>[</span><span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getKey identifier id'>getKey</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getValue identifier id'>getValue</span>
+    <span class='end end kw'>end</span>
+  <span class='end end kw'>end</span>
+  <span class='@params ivar id'>@params</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="path-instance_method">
+  
+    - (<tt>Object</tt>) <strong>path</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+557
+558
+559</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 557</span>
+
+<span class='def def kw'>def</span> <span class='path identifier id'>path</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='path identifier id'>path</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="query-instance_method">
+  
+    - (<tt>Object</tt>) <strong>query</strong> 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+561
+562
+563</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 561</span>
+
+<span class='def def kw'>def</span> <span class='query identifier id'>query</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='query identifier id'>query</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="response-instance_method">
+  
+    - (<tt><span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span></tt>) <strong>response</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+to send the response back to the client.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The response. Each instance of this class has an <span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">Vertx::HttpServerResponse</a></span>
+instance attached to it. This is used
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+581
+582
+583</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 581</span>
+
+<span class='def def kw'>def</span> <span class='response identifier id'>response</span>
+  <span class='@resp ivar id'>@resp</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="uri-instance_method">
+  
+    - (<tt>String</tt>) <strong>uri</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The uri of the request. For example
+&#8216;http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&amp;someotherparam=x&#8217;
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The uri of the request. For example
+&#8216;http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&amp;someotherparam=x&#8217;
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+553
+554
+555</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 553</span>
+
+<span class='def def kw'>def</span> <span class='uri identifier id'>uri</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='uri identifier id'>uri</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Thu Mar 08 16:12:04 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
