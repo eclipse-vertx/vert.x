@@ -24,7 +24,7 @@ Some of the key highlights include:
 
 If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality directly in your own pre-existing Spring Framework or other Java application, then you can do this too.
 
-Just use the jar `vertx-core.jar` which is available as a separate download or in the `lib/jars` directory in the distribution.
+Just use the jar `vertx-core.jar` which is available in the `lib/jars` directory in the distribution.
 
 You then have full access to the core vert.x API. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
 
