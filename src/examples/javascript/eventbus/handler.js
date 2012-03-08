@@ -34,6 +34,8 @@ var handler = function(message) {
 
 eb.registerHandler(address, handler);
 
+eb.send(creditsAddress, null);
+
 function vertxStop() {
   eb.unregisterHandler(address, handler);
 }

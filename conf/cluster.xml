@@ -13,7 +13,7 @@
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+                <interface>192.168.1.16</interface>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -21,11 +21,9 @@
                 <region>us-east-1</region>
             </aws>
         </join>
-        <!--
         <interfaces enabled="true">
             <interface>192.168.1.*</interface>
         </interfaces>
-        -->
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES,

@@ -395,6 +395,12 @@ public class DefaultEventBus extends EventBus {
   }
 
   private void cleanupConnection(String address, ServerID serverID, ConnectionHolder holder) {
+    if (holder.timeoutID != -1) {
+      Vertx.instance.cancelTimer(holder.timeoutID);
+    }
+    if (holder.pingTimeoutID != -1) {
+      Vertx.instance.cancelTimer(holder.pingTimeoutID);
+    }
     try {
       holder.socket.close();
     } catch (Exception ignore) {
@@ -405,7 +411,7 @@ public class DefaultEventBus extends EventBus {
     // So we only actually remove the entry if no new entry has been added
     if (connections.remove(serverID, holder)) {
       connections.remove(serverID);
-      log.debug("Cluster connection closed: " + serverID);
+      log.debug("Cluster connection closed: " + serverID + " holder " + holder);
       if (subs != null) {
         removeSub(address, serverID, null);
       }
@@ -470,13 +476,13 @@ public class DefaultEventBus extends EventBus {
   }
 
   private void schedulePing(final String address, final ConnectionHolder holder) {
-    Vertx.instance.setTimer(PING_INTERVAL, new Handler<Long>() {
-      public void handle(Long timerID) {
+    holder.pingTimeoutID = Vertx.instance.setTimer(PING_INTERVAL, new Handler<Long>() {
+      public void handle(Long ignore) {
         // If we don't get a pong back in time we close the connection
         holder.timeoutID = Vertx.instance.setTimer(PING_REPLY_INTERVAL, new Handler<Long>() {
           public void handle(Long timerID) {
             // Didn't get pong in time - consider connection dead
-            log.debug("No pong from server " + serverID + " - will consider it dead");
+            log.debug("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
             cleanupConnection(address, serverID, holder);
           }
         });
@@ -566,7 +572,8 @@ public class DefaultEventBus extends EventBus {
     volatile NetSocket socket;
     final List<BaseMessage> pending = new ArrayList<>();
     boolean connected;
-    long timeoutID;
+    long timeoutID = -1;
+    long pingTimeoutID = -1;
 
     private ConnectionHolder(NetClient client) {
       this.client = client;
