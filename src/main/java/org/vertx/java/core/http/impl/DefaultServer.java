@@ -89,34 +89,34 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerImpl {
+public class DefaultServer {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultServer.class);
 
-  private static final Map<ServerID, HttpServerImpl> servers = new HashMap<>();
+  private static final Map<ServerID, DefaultServer> servers = new HashMap<>();
 
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context ctx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
+  private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
 
   private ServerID id;
-  private HttpServerImpl actualServer;
+  private DefaultServer actualServer;
   private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  public HttpServerImpl() {
+  public DefaultServer() {
     ctx = VertxInternal.instance.getOrAssignContext();
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
   }
 
-  public HttpServerImpl requestHandler(Handler<HttpServerRequest> requestHandler) {
+  public DefaultServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     this.requestHandler = requestHandler;
     return this;
   }
@@ -125,7 +125,7 @@ public class HttpServerImpl {
     return requestHandler;
   }
 
-  public HttpServerImpl websocketHandler(Handler<ServerWebSocket> wsHandler) {
+  public DefaultServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     this.wsHandler = wsHandler;
     return this;
   }
@@ -134,11 +134,11 @@ public class HttpServerImpl {
     return wsHandler;
   }
 
-  public HttpServerImpl listen(int port) {
+  public DefaultServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  public HttpServerImpl listen(int port, String host) {
+  public DefaultServer listen(int port, String host) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -150,7 +150,7 @@ public class HttpServerImpl {
 
     synchronized (servers) {
       id = new ServerID(port, host);
-      HttpServerImpl shared = servers.get(id);
+      DefaultServer shared = servers.get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
@@ -248,27 +248,27 @@ public class HttpServerImpl {
     }
   }
 
-  public HttpServerImpl setSSL(boolean ssl) {
+  public DefaultServer setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
-  public HttpServerImpl setKeyStorePath(String path) {
+  public DefaultServer setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
-  public HttpServerImpl setKeyStorePassword(String pwd) {
+  public DefaultServer setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
-  public HttpServerImpl setTrustStorePath(String path) {
+  public DefaultServer setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
-  public HttpServerImpl setTrustStorePassword(String pwd) {
+  public DefaultServer setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
@@ -277,36 +277,36 @@ public class HttpServerImpl {
     tcpHelper.setClientAuthRequired(required);
   }
 
-  public HttpServerImpl setTCPNoDelay(boolean tcpNoDelay) {
+  public DefaultServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
-  public HttpServerImpl setSendBufferSize(int size) {
+  public DefaultServer setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
-  public HttpServerImpl setReceiveBufferSize(int size) {
+  public DefaultServer setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
-  public HttpServerImpl setTCPKeepAlive(boolean keepAlive) {
+  public DefaultServer setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
-  public HttpServerImpl setReuseAddress(boolean reuse) {
+  public DefaultServer setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
-  public HttpServerImpl setSoLinger(boolean linger) {
+  public DefaultServer setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
-  public HttpServerImpl setTrafficClass(int trafficClass) {
+  public DefaultServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }

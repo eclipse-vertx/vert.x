@@ -201,8 +201,6 @@ public class DefaultWebSocket extends ServerWebSocket {
   void handleException(Exception e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
-    } else {
-      VertxInternal.instance.reportException(e);
     }
   }
 

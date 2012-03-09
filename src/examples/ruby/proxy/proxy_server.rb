@@ -27,7 +27,7 @@ include Vertx
     req.response.status_code = c_res.status_code
     req.response.put_headers(c_res.headers)
     c_res.data_handler do |data|
-      puts "Proxying response payload: #{data}"
+      puts "Proxying response body: #{data}"
       req.response.write_buffer(data);
     end
     c_res.end_handler { req.response.end }
@@ -35,7 +35,7 @@ include Vertx
 
   c_req.put_headers(req.headers)
   req.data_handler do |data|
-    puts "Proxying request payload #{data}"
+    puts "Proxying request body #{data}"
     c_req.write_buffer(data)
   end
   req.end_handler { c_req.end }

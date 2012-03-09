@@ -94,8 +94,8 @@ class WebSocketTransport extends BaseTransport {
       this.session = session;
     }
 
-    public void sendFrame(final String payload) {
-      ws.writeTextFrame(payload);
+    public void sendFrame(final String body) {
+      ws.writeTextFrame(body);
     }
   }
 }

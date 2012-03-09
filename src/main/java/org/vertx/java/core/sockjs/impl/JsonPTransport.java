@@ -135,7 +135,7 @@ class JsonPTransport extends BaseTransport {
     }
 
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
 
       if (!headersWritten) {
         req.response.setChunked(true);
@@ -145,11 +145,11 @@ class JsonPTransport extends BaseTransport {
         headersWritten = true;
       }
 
-      payload = escapeForJavaScript(payload);
+      body = escapeForJavaScript(body);
 
       StringBuilder sb = new StringBuilder();
       sb.append(callback).append("(\"");
-      sb.append(payload);
+      sb.append(body);
       sb.append("\");\r\n");
 
       //End the response and close the HTTP connection

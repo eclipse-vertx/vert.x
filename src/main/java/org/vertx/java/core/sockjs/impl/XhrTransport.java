@@ -132,7 +132,7 @@ class XhrTransport extends BaseTransport {
       this.session = session;
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
@@ -149,9 +149,9 @@ class XhrTransport extends BaseTransport {
       super(req, session);
     }
 
-    public void sendFrame(String payload) {
-      super.sendFrame(payload);
-      req.response.end(payload + "\n", true);
+    public void sendFrame(String body) {
+      super.sendFrame(body);
+      req.response.end(body + "\n", true);
       session.resetListener();
     }
   }
@@ -166,14 +166,14 @@ class XhrTransport extends BaseTransport {
       this.maxBytesStreaming = maxBytesStreaming;
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
       boolean hr = headersWritten;
-      super.sendFrame(payload);
+      super.sendFrame(body);
       if (!hr) {
         req.response.write(H_BLOCK);
       }
-      String spayload = payload + "\n";
-      Buffer buff = Buffer.create(spayload);
+      String sbody = body + "\n";
+      Buffer buff = Buffer.create(sbody);
       req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
