@@ -254,21 +254,21 @@ public class SockJSServerImpl {
 
   private static final String IFRAME_TEMPLATE =
       "<!DOCTYPE html>\n" +
-          "<html>\n" +
-          "<head>\n" +
-          "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
-          "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-          "  <script>\n" +
-          "    document.domain = document.domain;\n" +
-          "    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
-          "  </script>\n" +
-          "  <script src=\"{{ sockjs_url }}\"></script>\n" +
-          "</head>\n" +
-          "<payload>\n" +
-          "  <h2>Don't panic!</h2>\n" +
-          "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
-          "</payload>\n" +
-          "</html>";
+      "<html>\n" +
+      "<head>\n" +
+      "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
+      "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
+      "  <script>\n" +
+      "    document.domain = document.domain;\n" +
+      "    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
+      "  </script>\n" +
+      "  <script src=\"{{ sockjs_url }}\"></script>\n" +
+      "</head>\n" +
+      "<body>\n" +
+      "  <h2>Don't panic!</h2>\n" +
+      "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
+      "</body>\n" +
+      "</html>";
 
   // For debug only
   public static void main(String[] args) throws Exception {
@@ -277,7 +277,7 @@ public class SockJSServerImpl {
         HttpServer httpServer = new HttpServer();
         SockJSServerImpl sjsServer = new SockJSServerImpl(httpServer);
         sjsServer.installTestApplications();
-        httpServer.listen(8080);
+        httpServer.listen(8081);
       }
     });
 

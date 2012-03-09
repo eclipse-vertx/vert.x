@@ -29,8 +29,8 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
 
   private static final Logger log = LoggerFactory.getLogger(ByteArrayMessage.class);
 
-  ByteArrayMessage(String address, byte[] payload) {
-    super(address, payload);
+  ByteArrayMessage(String address, byte[] body) {
+    super(address, body);
   }
 
   public ByteArrayMessage(Buffer readBuff) {

@@ -58,7 +58,7 @@ class EventSourceTransport extends BaseTransport {
       this.req = req;
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
         req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
@@ -69,7 +69,7 @@ class EventSourceTransport extends BaseTransport {
       }
       StringBuilder sb = new StringBuilder();
       sb.append("data: ");
-      sb.append(payload);
+      sb.append(body);
       sb.append("\r\n\r\n");
       req.response.write(sb.toString());
     }

@@ -41,7 +41,7 @@ class HtmlFileTransport extends BaseTransport {
     "<html><head>\n" +
     "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
     "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-    "</head><payload><h2>Don't panic!</h2>\n" +
+    "</head><body><h2>Don't panic!</h2>\n" +
     "  <script>\n" +
     "    document.domain = document.domain;\n" +
     "    var c = parent.{{ callback }};\n" +
@@ -96,7 +96,7 @@ class HtmlFileTransport extends BaseTransport {
       this.callback = callback;
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
         req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
@@ -106,10 +106,10 @@ class HtmlFileTransport extends BaseTransport {
         req.response.write(htmlFile);
         headersWritten = true;
       }
-      payload = escapeForJavaScript(payload);
+      body = escapeForJavaScript(body);
       StringBuilder sb = new StringBuilder();
       sb.append("<script>\np(\"");
-      sb.append(payload);
+      sb.append(body);
       sb.append("\");\n</script>\r\n");
       req.response.write(sb.toString());
     }

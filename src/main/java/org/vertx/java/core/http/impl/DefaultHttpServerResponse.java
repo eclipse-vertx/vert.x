@@ -246,7 +246,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
   private void sendNotFound() {
     statusCode = HttpResponseStatus.NOT_FOUND.getCode();
-    end("<html><payload>Resource not found</payload><html>");
+    end("<html><body>Resource not found</body><html>");
   }
 
   void handleDrained() {
@@ -312,7 +312,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     writtenBytes += chunk.readableBytes();
     if (!chunked && writtenBytes > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "payload BEFORE sending any data if you are not using HTTP chunked encoding. "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
           + "Current written: " + written + " Current Content-Length: " + contentLength);
     }
 
