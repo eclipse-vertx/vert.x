@@ -23,7 +23,6 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.UUID;
 
