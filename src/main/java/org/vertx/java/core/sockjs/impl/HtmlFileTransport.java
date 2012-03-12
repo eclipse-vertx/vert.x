@@ -118,12 +118,16 @@ class HtmlFileTransport extends BaseTransport {
       sb.append(body);
       sb.append("\");\n</script>\r\n");
       Buffer buff = Buffer.create(sb.toString());
-      req.response.write(buff);
-      bytesSent += buff.length();
-      if (bytesSent >= maxBytesStreaming) {
-        // Reset and close the connection
-        session.resetListener();
-        req.response.end(true);
+      try {
+        req.response.write(buff);
+        bytesSent += buff.length();
+        if (bytesSent >= maxBytesStreaming) {
+          // Reset and close the connection
+          session.resetListener();
+          req.response.end(true);
+        }
+      } catch (IllegalStateException e) {
+        // Channel is closed - ignore
       }
     }
 

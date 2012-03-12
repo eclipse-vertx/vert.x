@@ -209,7 +209,24 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
   private ChannelFuture channelFuture;
 
+  private void closeConnection() {
+    channelFuture.addListener(new ChannelFutureListener() {
+      public void operationComplete(ChannelFuture future) throws Exception {
+        conn.close();
+      }
+    });
+  }
+
   public void end(boolean closeConnection) {
+
+    if (written) {
+      if (closeConnection) {
+        closeConnection();
+      }
+      // Already written - ignore
+      return;
+    }
+
     checkWritten();
     writeHead();
     if (chunked) {
@@ -223,11 +240,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     }
 
     if (closeConnection || !keepAlive) {
-      channelFuture.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          conn.close();
-        }
-      });
+      closeConnection();
     }
 
     written = true;

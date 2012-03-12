@@ -107,13 +107,14 @@ class BaseTransport {
     }
   }
 
-  static void setCORS(HttpServerRequest req) {
+  static void setCORS(HttpServerRequest req, boolean headers) {
     String origin = req.getHeader("Origin");
     if (origin == null) {
       origin = "*";
     }
     req.response.putHeader("Access-Control-Allow-Origin", origin);
     req.response.putHeader("Access-Control-Allow-Credentials", "true");
+    req.response.putHeader("Access-Control-Allow-Headers", "Content-Type");
   }
 
   private static final long RAND_OFFSET = 2l << 30;
@@ -130,7 +131,7 @@ class BaseTransport {
         // Java ints are signed, so we need to use a long and add the offset so
         // the result is not negative
         json.putNumber("entropy", RAND_OFFSET + new Random().nextInt());
-        setCORS(req);
+        setCORS(req, false);
         req.response.end(json.encode());
       }
     };
@@ -146,7 +147,7 @@ class BaseTransport {
         req.response.putHeader("Expires", expires);
         req.response.putHeader("Access-Control-Allow-Methods", methods);
         req.response.putHeader("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
-        setCORS(req);
+        setCORS(req, false);
         setJSESSIONID(config, req);
         req.response.statusCode = 204;
         req.response.end();

@@ -78,12 +78,16 @@ class EventSourceTransport extends BaseTransport {
       sb.append(body);
       sb.append("\r\n\r\n");
       Buffer buff = Buffer.create(sb.toString());
-      req.response.write(buff);
-      bytesSent += buff.length();
-      if (bytesSent >= maxBytesStreaming) {
-        // Reset and close the connection
-        session.resetListener();
-        req.response.end(true);
+      try {
+        req.response.write(buff);
+        bytesSent += buff.length();
+        if (bytesSent >= maxBytesStreaming) {
+          // Reset and close the connection
+          session.resetListener();
+          req.response.end(false);
+        }
+      } catch (IllegalStateException e) {
+        // Channel closed - ignore
       }
     }
 

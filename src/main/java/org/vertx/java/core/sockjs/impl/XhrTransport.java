@@ -116,7 +116,7 @@ class XhrTransport extends BaseTransport {
         } else {
           req.response.putHeader("Content-Type", "text/plain; charset=UTF-8");
           setJSESSIONID(config, req);
-          setCORS(req);
+          setCORS(req, true);
           req.response.statusCode = 204;
           req.response.end();
         }
@@ -139,7 +139,7 @@ class XhrTransport extends BaseTransport {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
-        setCORS(req);
+        setCORS(req, false);
         req.response.setChunked(true);
         headersWritten = true;
       }
