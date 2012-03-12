@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
@@ -43,19 +44,24 @@ class EventSourceTransport extends BaseTransport {
       public void handle(final HttpServerRequest req) {
         String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
-        session.register(new EventSourceListener(req));
+        session.register(new EventSourceListener(config.getMaxBytesStreaming(), req, session));
       }
     });
   }
 
   private class EventSourceListener implements TransportListener {
 
+    final int maxBytesStreaming;
     final HttpServerRequest req;
+    final Session session;
 
     boolean headersWritten;
+    int bytesSent;
 
-    EventSourceListener(HttpServerRequest req) {
+    EventSourceListener(int maxBytesStreaming, HttpServerRequest req, Session session) {
+      this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
+      this.session = session;
     }
 
     public void sendFrame(String body) {
@@ -71,7 +77,18 @@ class EventSourceTransport extends BaseTransport {
       sb.append("data: ");
       sb.append(body);
       sb.append("\r\n\r\n");
-      req.response.write(sb.toString());
+      Buffer buff = Buffer.create(sb.toString());
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        session.resetListener();
+        req.response.end(true);
+      }
+    }
+
+    public void close() {
+      req.response.end(true);
     }
 
   }

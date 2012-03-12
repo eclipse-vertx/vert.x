@@ -21,6 +21,8 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.impl.StringEscapeUtils;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.AppConfig;
@@ -29,6 +31,7 @@ import org.vertx.java.core.sockjs.SockJSSocket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -51,8 +54,11 @@ class BaseTransport {
                                Handler<SockJSSocket> sockHandler) {
     Session session = sessions.get(sessionID);
     if (session == null) {
-      session = new Session(timeout, heartbeatPeriod, sockHandler, new SimpleHandler() {
+      session = new Session(sessionID, timeout, heartbeatPeriod, sockHandler);
+      final Session theSession = session;
+      session.setTimeoutHandler(new SimpleHandler() {
         public void handle() {
+          theSession.shutdown();
           sessions.remove(sessionID);
         }
       });
@@ -110,6 +116,26 @@ class BaseTransport {
     req.response.putHeader("Access-Control-Allow-Credentials", "true");
   }
 
+  private static final long RAND_OFFSET = 2l << 30;
+
+  static Handler<HttpServerRequest> createInfoHandler(final AppConfig config) {
+    return new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.putHeader("Content-Type", "application/json; charset=UTF-8");
+        req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        JsonObject json = new JsonObject();
+        json.putBoolean("websocket", !config.getDisabledTransports().contains(Transport.WEBSOCKETS));
+        json.putBoolean("cookie_needed", config.isInsertJSESSIONID());
+        json.putArray("origins", new JsonArray().add("*:*"));
+        // Java ints are signed, so we need to use a long and add the offset so
+        // the result is not negative
+        json.putNumber("entropy", RAND_OFFSET + new Random().nextInt());
+        setCORS(req);
+        req.response.end(json.encode());
+      }
+    };
+  }
+
   static Handler<HttpServerRequest> createCORSOptionsHandler(final AppConfig config, final String methods) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -118,7 +144,7 @@ class BaseTransport {
         long oneYearms = oneYearSeconds * 1000;
         String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYearms));
         req.response.putHeader("Expires", expires);
-        req.response.putHeader("Allow", methods);
+        req.response.putHeader("Access-Control-Allow-Methods", methods);
         req.response.putHeader("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
         setCORS(req);
         setJSESSIONID(config, req);

@@ -22,4 +22,6 @@ package org.vertx.java.core.sockjs.impl;
 interface TransportListener {
 
   void sendFrame(String body);
+
+  void close();
 }

@@ -17,8 +17,10 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -88,6 +90,7 @@ class XhrTransport extends BaseTransport {
                                final boolean streaming, final AppConfig config) {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+
         String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
 
@@ -111,7 +114,7 @@ class XhrTransport extends BaseTransport {
         if (!session.handleMessages(msgs)) {
           sendInvalidJSON(req.response);
         } else {
-          req.response.putHeader("Content-Type", "text/plain");
+          req.response.putHeader("Content-Type", "text/plain; charset=UTF-8");
           setJSESSIONID(config, req);
           setCORS(req);
           req.response.statusCode = 204;
@@ -141,18 +144,26 @@ class XhrTransport extends BaseTransport {
         headersWritten = true;
       }
     }
+
+    public void close() {
+    }
   }
 
   private class XhrPollingListener extends BaseXhrListener {
 
-    XhrPollingListener(HttpServerRequest req, Session session) {
+    XhrPollingListener(HttpServerRequest req, final Session session) {
       super(req, session);
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {
       super.sendFrame(body);
-      req.response.end(body + "\n", true);
+      req.response.end(body + "\n", false);
       session.resetListener();
+    }
+
+    public void close() {
+      req.response.end(true);
     }
   }
 
@@ -161,9 +172,10 @@ class XhrTransport extends BaseTransport {
     int bytesSent;
     int maxBytesStreaming;
 
-    XhrStreamingListener(int maxBytesStreaming, HttpServerRequest req, Session session) {
+    XhrStreamingListener(int maxBytesStreaming, HttpServerRequest req, final Session session) {
       super(req, session);
       this.maxBytesStreaming = maxBytesStreaming;
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {
@@ -177,10 +189,25 @@ class XhrTransport extends BaseTransport {
       req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
-        // Reset and close the connection
         session.resetListener();
         req.response.end(true);
       }
     }
+
+    public void close() {
+      req.response.end(true);
+    }
   }
+
+  private void addCloseHandler(HttpServerResponse resp, final Session session) {
+    resp.closeHandler(new SimpleHandler() {
+      public void handle() {
+        // Connection has been closed fron the client or network error so
+        // we remove the session
+        session.shutdown();
+        sessions.remove(session.getID());
+      }
+    });
+  }
+
 }

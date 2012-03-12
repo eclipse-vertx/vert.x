@@ -16,10 +16,10 @@
 
 package org.vertx.java.core.sockjs.impl;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
@@ -40,9 +40,10 @@ class Session extends SockJSSocket {
   private Handler<Buffer> dataHandler;
   private boolean closed;
   private boolean openWritten;
+  private final String id;
   private final long timeout;
   private final Handler<SockJSSocket> sockHandler;
-  private final Handler<Void> timeoutHandler;
+  private Handler<Void> timeoutHandler;
   private long heartbeatID = -1;
   private long timeoutTimerID = -1;
   private boolean paused;
@@ -50,16 +51,15 @@ class Session extends SockJSSocket {
   private int messagesSize;
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
-  private ObjectMapper mapper = new ObjectMapper();
 
   Session(long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
-    this(-1, heartbeatPeriod, sockHandler, null);
+    this(null, -1, heartbeatPeriod, sockHandler);
   }
 
-  Session(long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler,  Handler<Void> timeoutHandler) {
+  Session(String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+    this.id = id;
     this.timeout = timeout;
     this.sockHandler = sockHandler;
-    this.timeoutHandler = timeoutHandler;
 
     // Start a heartbeat
 
@@ -125,12 +125,29 @@ class Session extends SockJSSocket {
     this.endHandler = endHandler;
   }
 
+  public void shutdown() {
+    if (heartbeatID != -1) {
+      Vertx.instance.cancelTimer(heartbeatID);
+    }
+    if (timeoutTimerID != -1) {
+      Vertx.instance.cancelTimer(timeoutTimerID);
+    }
+  }
+
   public void close() {
     closed = true;
   }
 
+  public String getID() {
+    return id;
+  }
+
   boolean isClosed() {
     return closed;
+  }
+
+  void setTimeoutHandler(Handler<Void> timeoutHandler) {
+    this.timeoutHandler = timeoutHandler;
   }
 
   void resetListener() {
@@ -152,20 +169,9 @@ class Session extends SockJSSocket {
   }
 
   void writePendingMessages() {
-
-    String json;
-    try {
-      json = mapper.writeValueAsString(pendingWrites.toArray());
-    } catch (Exception e) {
-      // Should never happen
-      log.error("Failed to stringify JSON", e);
-      return;
-    }
-
+    String json = JsonCodec.encode(pendingWrites.toArray());
     listener.sendFrame("a" + json);
-
     pendingWrites.clear();
-
     if (drainHandler != null && messagesSize <= maxQueueSize / 2) {
       Handler<Void> dh = drainHandler;
       drainHandler = null;
@@ -175,8 +181,15 @@ class Session extends SockJSSocket {
 
   void register(final TransportListener lst) {
 
-    if (this.listener != null) {
+    if (closed) {
+      // Closed by the application
+      writeClosed(lst);
+      // And close the listener request
+      lst.close();
+    } else if (this.listener != null) {
       writeClosed(lst, 2010, "Another connection still open");
+      // And close the listener request
+      lst.close();
     } else {
 
       this.listener = lst;
@@ -196,8 +209,8 @@ class Session extends SockJSSocket {
           // Could have already been closed by the user
           writeClosed(lst);
           resetListener();
+          lst.close();
         } else {
-
           if (!pendingWrites.isEmpty()) {
             writePendingMessages();
           }
@@ -206,28 +219,28 @@ class Session extends SockJSSocket {
     }
   }
 
-  private String[] parseMessageString(String msgs) {
 
-    String[] parts;
+  private String[] parseMessageString(String msgs) {
     try {
+      String[] parts;
       if (msgs.startsWith("[")) {
         //JSON array
-        parts = mapper.readValue(msgs, String[].class);
+        parts = (String[])JsonCodec.decodeValue(msgs, String[].class);
       } else {
         //JSON string
-        String str = mapper.readValue(msgs, String.class);
+        String str = (String)JsonCodec.decodeValue(msgs, String.class);
         parts = new String[] { str };
       }
-    } catch (Exception e) {
-      // Invalid JSON
+      return parts;
+    } catch (DecodeException e) {
       return null;
     }
-
-    return parts;
   }
 
   boolean handleMessages(String messages) {
+
     String[] msgArr = parseMessageString(messages);
+
     if (msgArr == null) {
       return false;
     } else {

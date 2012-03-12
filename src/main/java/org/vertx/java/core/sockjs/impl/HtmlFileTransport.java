@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
@@ -80,20 +81,25 @@ class HtmlFileTransport extends BaseTransport {
 
         String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
-        session.register(new HtmlFileListener(req, callback));
+        session.register(new HtmlFileListener(config.getMaxBytesStreaming(), req, callback, session));
       }
     });
   }
 
   private class HtmlFileListener implements TransportListener {
 
+    final int maxBytesStreaming;
     final HttpServerRequest req;
     final String callback;
+    final Session session;
     boolean headersWritten;
+    int bytesSent;
 
-    HtmlFileListener(HttpServerRequest req, String callback) {
+    HtmlFileListener(int maxBytesStreaming, HttpServerRequest req, String callback, Session session) {
+      this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
       this.callback = callback;
+      this.session = session;
     }
 
     public void sendFrame(String body) {
@@ -111,7 +117,18 @@ class HtmlFileTransport extends BaseTransport {
       sb.append("<script>\np(\"");
       sb.append(body);
       sb.append("\");\n</script>\r\n");
-      req.response.write(sb.toString());
+      Buffer buff = Buffer.create(sb.toString());
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        session.resetListener();
+        req.response.end(true);
+      }
+    }
+
+    public void close() {
+      req.response.end(true);
     }
   }
 }

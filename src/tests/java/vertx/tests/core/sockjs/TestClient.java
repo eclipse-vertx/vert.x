@@ -18,15 +18,18 @@ package vertx.tests.core.sockjs;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
+import org.vertx.java.deploy.Container;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
@@ -107,6 +110,8 @@ public class TestClient extends TestClientBase {
   }
 
   public void testXHRPolling() {
+    
+    final Logger log = Container.instance.getLogger();
 
     final HttpServer server = new HttpServer();
     SockJSServer sockJSServer = new SockJSServer(server);
@@ -145,36 +150,38 @@ public class TestClient extends TestClientBase {
 
         resp.endHandler(new SimpleHandler() {
           public void handle() {
+
             tu.azzert(TestUtils.buffersEqual(Buffer.create("o\n"), buff));
 
-            client.post("/app/path/serverid/sessionid2/xhr", new Handler<HttpClientResponse>() {
+              client.post("/app/path/serverid/sessionid2/xhr", new Handler<HttpClientResponse>() {
 
-              public void handle(HttpClientResponse resp) {
+                public void handle(HttpClientResponse resp) {
 
-                final Buffer buff = Buffer.create(0);
+                  final Buffer buff = Buffer.create(0);
 
-                resp.dataHandler(new Handler<Buffer>() {
-                  public void handle(Buffer data) {
-                    buff.appendBuffer(data);
-                  }
-                });
+                  resp.dataHandler(new Handler<Buffer>() {
+                    public void handle(Buffer data) {
+                      buff.appendBuffer(data);
+                    }
+                  });
 
-                resp.endHandler(new SimpleHandler() {
-                  public void handle() {
-                    tu.azzert(TestUtils.buffersEqual(buffRec, buff));
+                  resp.endHandler(new SimpleHandler() {
+                    public void handle() {
 
-                    client.close();
+                      tu.azzert(TestUtils.buffersEqual(buffRec, buff));
 
-                    server.close(new SimpleHandler() {
-                      public void handle() {
-                        tu.testComplete();
-                      }
-                    });
-                  }
-                });
+                      client.close();
 
-              }
-            }).end();
+                      server.close(new SimpleHandler() {
+                        public void handle() {
+                          tu.testComplete();
+                        }
+                      });
+                    }
+                  });
+
+                }
+              }).end();
           }
         });
       }
@@ -189,6 +196,7 @@ public class TestClient extends TestClientBase {
     });
 
     req.end(strSend);
+
   }
 
 }

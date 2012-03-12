@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -27,6 +28,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerResponse;
@@ -53,6 +55,8 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
   private final ServerConnection conn;
   private final HttpResponse response;
+  private final HttpVersion version;
+  private final boolean keepAlive;
   private HttpChunkTrailer trailer;
   private boolean headWritten;
   private boolean written;
@@ -63,17 +67,22 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   private long writtenBytes;
   private boolean chunked;
 
-  DefaultHttpServerResponse(ServerConnection conn) {
+  DefaultHttpServerResponse(ServerConnection conn, HttpVersion version, boolean keepAlive) {
     this.conn = conn;
-    this.response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
+    this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK);
+    this.version = version;
+    this.keepAlive = keepAlive;
   }
 
   public DefaultHttpServerResponse setChunked(boolean chunked) {
     checkWritten();
-    if (writtenBytes > 0) {
-      throw new IllegalStateException("Cannot set chunked after data has been written on response");
+    // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
+    if (version != HttpVersion.HTTP_1_0) {
+      if (writtenBytes > 0) {
+        throw new IllegalStateException("Cannot set chunked after data has been written on response");
+      }
+      this.chunked = chunked;
     }
-    this.chunked = chunked;
     return this;
   }
 
@@ -198,6 +207,8 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     end(false);
   }
 
+  private ChannelFuture channelFuture;
+
   public void end(boolean closeConnection) {
     checkWritten();
     writeHead();
@@ -208,8 +219,17 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       } else {
         nettyChunk = trailer;
       }
-      conn.write(nettyChunk);
+      channelFuture = conn.write(nettyChunk);
     }
+
+    if (closeConnection || !keepAlive) {
+      channelFuture.addListener(new ChannelFutureListener() {
+        public void operationComplete(ChannelFuture future) throws Exception {
+          conn.close();
+        }
+      });
+    }
+
     written = true;
     conn.responseComplete();
   }
@@ -236,7 +256,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       }
 
       conn.write(response);
-      conn.sendFile(file);
+      channelFuture = conn.sendFile(file);
       headWritten = written = true;
       conn.responseComplete();
     }
@@ -297,12 +317,15 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
           new HttpResponseStatus(statusCode, statusMessage);
       response.setStatus(status);
+      if (version == HttpVersion.HTTP_1_0 && keepAlive) {
+        response.setHeader("Connection", "Keep-Alive");
+      }
       if (chunked) {
         response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      } else if (contentLength == 0) {
+      } else if (version != HttpVersion.HTTP_1_0 && contentLength == 0) {
         response.setHeader(Names.CONTENT_LENGTH, "0");
       }
-      conn.write(response);
+      channelFuture = conn.write(response);
       headWritten = true;
     }
   }
@@ -310,7 +333,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   private DefaultHttpServerResponse write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
     checkWritten();
     writtenBytes += chunk.readableBytes();
-    if (!chunked && writtenBytes > contentLength) {
+    if (version != HttpVersion.HTTP_1_0 && !chunked && writtenBytes > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
           + "Current written: " + written + " Current Content-Length: " + contentLength);
