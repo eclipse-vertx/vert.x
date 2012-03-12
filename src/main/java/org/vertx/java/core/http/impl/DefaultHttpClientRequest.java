@@ -286,7 +286,11 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
       //they can capture any exceptions on connection
       client.getConnection(new Handler<ClientConnection>() {
         public void handle(ClientConnection conn) {
-          connected(conn);
+          if (!conn.isClosed()) {
+            connected(conn);
+          } else {
+            connect();
+          }
         }
       }, context);
 

@@ -89,11 +89,11 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultServer {
+public class DefaultHttpServer {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultServer.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
-  private static final Map<ServerID, DefaultServer> servers = new HashMap<>();
+  private static final Map<ServerID, DefaultHttpServer> servers = new HashMap<>();
 
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context ctx;
@@ -104,19 +104,19 @@ public class DefaultServer {
   private boolean listening;
 
   private ServerID id;
-  private DefaultServer actualServer;
+  private DefaultHttpServer actualServer;
   private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  public DefaultServer() {
+  public DefaultHttpServer() {
     ctx = VertxInternal.instance.getOrAssignContext();
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
   }
 
-  public DefaultServer requestHandler(Handler<HttpServerRequest> requestHandler) {
+  public DefaultHttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     this.requestHandler = requestHandler;
     return this;
   }
@@ -125,7 +125,7 @@ public class DefaultServer {
     return requestHandler;
   }
 
-  public DefaultServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
+  public DefaultHttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     this.wsHandler = wsHandler;
     return this;
   }
@@ -134,11 +134,11 @@ public class DefaultServer {
     return wsHandler;
   }
 
-  public DefaultServer listen(int port) {
+  public DefaultHttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  public DefaultServer listen(int port, String host) {
+  public DefaultHttpServer listen(int port, String host) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -150,7 +150,7 @@ public class DefaultServer {
 
     synchronized (servers) {
       id = new ServerID(port, host);
-      DefaultServer shared = servers.get(id);
+      DefaultHttpServer shared = servers.get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
@@ -248,27 +248,27 @@ public class DefaultServer {
     }
   }
 
-  public DefaultServer setSSL(boolean ssl) {
+  public DefaultHttpServer setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
-  public DefaultServer setKeyStorePath(String path) {
+  public DefaultHttpServer setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
-  public DefaultServer setKeyStorePassword(String pwd) {
+  public DefaultHttpServer setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
-  public DefaultServer setTrustStorePath(String path) {
+  public DefaultHttpServer setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
-  public DefaultServer setTrustStorePassword(String pwd) {
+  public DefaultHttpServer setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
@@ -277,36 +277,36 @@ public class DefaultServer {
     tcpHelper.setClientAuthRequired(required);
   }
 
-  public DefaultServer setTCPNoDelay(boolean tcpNoDelay) {
+  public DefaultHttpServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
-  public DefaultServer setSendBufferSize(int size) {
+  public DefaultHttpServer setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
-  public DefaultServer setReceiveBufferSize(int size) {
+  public DefaultHttpServer setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
-  public DefaultServer setTCPKeepAlive(boolean keepAlive) {
+  public DefaultHttpServer setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
-  public DefaultServer setReuseAddress(boolean reuse) {
+  public DefaultHttpServer setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
-  public DefaultServer setSoLinger(boolean linger) {
+  public DefaultHttpServer setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
-  public DefaultServer setTrafficClass(int trafficClass) {
+  public DefaultHttpServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
@@ -396,6 +396,10 @@ public class DefaultServer {
     private void sendError(String err, HttpResponseStatus status, Channel ch) {
       HttpResponse resp = new DefaultHttpResponse(HTTP_1_1, status);
       resp.setChunked(false);
+      if (status.getCode() == METHOD_NOT_ALLOWED.getCode()) {
+        // SockJS requires this
+        resp.setHeader("allow", "GET");
+      }
       if (err != null) {
         ChannelBuffer buff = ChannelBuffers.copiedBuffer(err.getBytes(Charset.forName("UTF-8")));
         resp.setHeader("Content-Length", err.length());
@@ -403,6 +407,7 @@ public class DefaultServer {
       } else {
         resp.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
+
       ch.write(resp);
     }
 

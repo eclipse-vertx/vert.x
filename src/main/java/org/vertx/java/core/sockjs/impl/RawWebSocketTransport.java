@@ -24,48 +24,76 @@ import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSSocket;
-
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class WebSocketTransport extends BaseTransport {
+class RawWebSocketTransport {
 
   private static final Logger log = LoggerFactory.getLogger(WebSocketTransport.class);
 
-  WebSocketTransport(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, Map<String, Session> sessions,
-                     final AppConfig config,
-            final Handler<SockJSSocket> sockHandler) {
-    super(sessions, config);
-    String wsRE = basePath + COMMON_PATH_ELEMENT_RE + "websocket";
+  private class RawWSSockJSSocket extends SockJSSocket {
+
+    private WebSocket ws;
+
+    RawWSSockJSSocket(WebSocket ws) {
+      this.ws = ws;
+    }
+
+    public void dataHandler(Handler<Buffer> handler) {
+      ws.dataHandler(handler);
+    }
+
+    public void pause() {
+      ws.pause();
+    }
+
+    public void resume() {
+      ws.resume();
+    }
+
+    public void writeBuffer(Buffer data) {
+      ws.writeBuffer(data);
+    }
+
+    public void setWriteQueueMaxSize(int maxQueueSize) {
+      ws.setWriteQueueMaxSize(maxQueueSize);
+    }
+
+    public boolean writeQueueFull() {
+      return ws.writeQueueFull();
+    }
+
+    public void drainHandler(Handler<Void> handler) {
+      ws.drainHandler(handler);
+    }
+
+    public void exceptionHandler(Handler<Exception> handler) {
+      ws.exceptionHandler(handler);
+    }
+
+    public void endHandler(Handler<Void> endHandler) {
+      ws.endHandler(endHandler);
+    }
+
+    public void close() {
+      super.close();
+      ws.close();
+    }
+
+  }
+
+  RawWebSocketTransport(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath,
+                        final Handler<SockJSSocket> sockHandler) {
+
+    String wsRE = basePath + "/websocket";
 
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
-
-        final Session session = new Session(config.getHeartbeatPeriod(), sockHandler);
-        session.register(new WebSocketListener(match.ws, session));
-
-        match.ws.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
-            if (!session.isClosed()) {
-              String msgs = data.toString();
-
-              if (msgs.equals("")) {
-                //Ignore empty frames
-              } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||
-                         (msgs.startsWith("\"") && msgs.endsWith("\""))) {
-                session.handleMessages(msgs);
-              } else {
-                //Invalid JSON - we close the connection
-                match.ws.close();
-              }
-            }
-          }
-        });
+        SockJSSocket sock = new RawWSSockJSSocket(match.ws);
+        sockHandler.handle(sock);
       }
     });
 
@@ -85,22 +113,4 @@ class WebSocketTransport extends BaseTransport {
     });
   }
 
-  private static class WebSocketListener implements TransportListener {
-
-    final WebSocket ws;
-    final Session session;
-
-    WebSocketListener(WebSocket ws, Session session) {
-      this.ws = ws;
-      this.session = session;
-    }
-
-    public void sendFrame(final String body) {
-      ws.writeTextFrame(body);
-    }
-
-    public void close() {
-      ws.close();
-    }
-  }
 }

@@ -115,6 +115,7 @@ class JsonPTransport extends BaseTransport {
           sendInvalidJSON(req.response);
         } else {
           setJSESSIONID(config, req);
+          req.response.putHeader("Content-Type", "text/plain; charset=UTF-8");
           req.response.end("ok");
         }
       }
@@ -158,6 +159,10 @@ class JsonPTransport extends BaseTransport {
 
       req.response.end(true);
       session.resetListener();
+    }
+
+    public void close() {
+      req.response.end(true);
     }
   }
 }

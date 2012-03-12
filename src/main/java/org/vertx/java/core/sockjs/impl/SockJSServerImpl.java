@@ -111,6 +111,10 @@ public class SockJSServerImpl {
     rm.postWithRegEx(prefix + "\\/chunking_test", createChunkingTestHandler());
     rm.optionsWithRegEx(prefix + "\\/chunking_test", BaseTransport.createCORSOptionsHandler(config, "OPTIONS, POST"));
 
+    // Info
+    rm.getWithRegEx(prefix + "\\/info", BaseTransport.createInfoHandler(config));
+    rm.optionsWithRegEx(prefix + "\\/info", BaseTransport.createCORSOptionsHandler(config, "OPTIONS, GET"));
+
     // Transports
 
     Set<Transport> enabledTransports = new HashSet<>();
@@ -137,6 +141,7 @@ public class SockJSServerImpl {
     }
     if (enabledTransports.contains(Transport.WEBSOCKETS)) {
       new WebSocketTransport(wsMatcher, rm, prefix, sessions, config, sockHandler);
+      new RawWebSocketTransport(wsMatcher, rm, prefix, sockHandler);
     }
     // Catch all for any other requests on this app
 
@@ -280,7 +285,6 @@ public class SockJSServerImpl {
         httpServer.listen(8081);
       }
     });
-
     Thread.sleep(Long.MAX_VALUE);
   }
 
@@ -288,7 +292,7 @@ public class SockJSServerImpl {
   These applications are required by the SockJS protocol and QUnit tests
    */
   public void installTestApplications() {
-    installApp(new AppConfig().setPrefix("/echo"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/echo").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
@@ -297,14 +301,14 @@ public class SockJSServerImpl {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/close"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/close").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.close();
       }
     });
     Set<Transport> disabled = new HashSet<>();
     disabled.add(Transport.WEBSOCKETS);
-    installApp(new AppConfig().setPrefix("/disabled_websocket_echo").setDisabledTransports(disabled),
+    installApp(new AppConfig().setPrefix("/disabled_websocket_echo").setMaxBytesStreaming(4096).setDisabledTransports(disabled),
         new Handler<SockJSSocket>() {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
@@ -314,7 +318,7 @@ public class SockJSServerImpl {
             });
           }
         });
-    installApp(new AppConfig().setPrefix("/ticker"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/ticker").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         final long timerID = Vertx.instance.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
@@ -328,7 +332,7 @@ public class SockJSServerImpl {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/amplify"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/amplify").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       long timerID;
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
@@ -348,7 +352,7 @@ public class SockJSServerImpl {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/broadcast"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/broadcast").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       final Set<String> connections = SharedData.instance.getSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID);
