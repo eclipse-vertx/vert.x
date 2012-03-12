@@ -49,15 +49,15 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SockJSServerImpl {
+public class DefaultSockJSServer {
 
-  private static final Logger log = LoggerFactory.getLogger(SockJSServerImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultSockJSServer.class);
 
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions = new HashMap<>();
 
-  public SockJSServerImpl(HttpServer httpServer) {
+  public DefaultSockJSServer(HttpServer httpServer) {
     Handler<HttpServerRequest> prevHandler = httpServer.requestHandler();
     final Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
 
@@ -193,7 +193,7 @@ public class SockJSServerImpl {
       public void handle(HttpServerRequest req) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
 
-        BaseTransport.setCORS(req);
+        BaseTransport.setCORS(req, false);
         req.response.setChunked(true);
 
         Buffer h = Buffer.create(2);
@@ -280,7 +280,7 @@ public class SockJSServerImpl {
     VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
         HttpServer httpServer = new HttpServer();
-        SockJSServerImpl sjsServer = new SockJSServerImpl(httpServer);
+        DefaultSockJSServer sjsServer = new DefaultSockJSServer(httpServer);
         sjsServer.installTestApplications();
         httpServer.listen(8081);
       }

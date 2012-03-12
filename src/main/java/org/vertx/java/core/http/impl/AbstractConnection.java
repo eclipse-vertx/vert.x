@@ -38,7 +38,7 @@ public abstract class AbstractConnection extends ConnectionBase {
     if (channel.isOpen()) {
       return channel.write(obj);
     } else {
-      return null;
+      throw new IllegalStateException("Channel is closed");
     }
   }
 

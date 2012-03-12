@@ -157,7 +157,7 @@ class JsonPTransport extends BaseTransport {
 
       req.response.write(sb.toString());
 
-      req.response.end(true);
+      req.response.end(false);
       session.resetListener();
     }
 
