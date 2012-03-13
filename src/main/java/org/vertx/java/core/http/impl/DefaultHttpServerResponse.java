@@ -66,6 +66,8 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   private long contentLength;
   private long writtenBytes;
   private boolean chunked;
+  private boolean closed;
+  private ChannelFuture channelFuture;
 
   DefaultHttpServerResponse(ServerConnection conn, HttpVersion version, boolean keepAlive) {
     this.conn = conn;
@@ -175,57 +177,44 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   }
 
   public void end(String chunk) {
-    end(chunk, false);
-  }
-
-  public void end(String chunk, boolean closeConnection) {
-    end(Buffer.create(chunk), closeConnection);
+    end(Buffer.create(chunk));
   }
 
   public void end(String chunk, String enc) {
-    end(chunk, enc, false);
-  }
-
-  public void end(String chunk, String enc, boolean closeConnection) {
-    end(Buffer.create(chunk, enc), closeConnection);
+    end(Buffer.create(chunk, enc));
   }
 
   public void end(Buffer chunk) {
-    end(chunk, false);
-  }
-
-  public void end(Buffer chunk, boolean closeConnection) {
     if (!chunked && contentLength == 0) {
       contentLength = chunk.length();
       response.setHeader(Names.CONTENT_LENGTH, String.valueOf(contentLength));
     }
     write(chunk);
-    end(closeConnection);
+    end();
+  }
+
+  private void closeConnAfterWrite() {
+    if (channelFuture != null) {
+      channelFuture.addListener(new ChannelFutureListener() {
+        public void operationComplete(ChannelFuture future) throws Exception {
+          conn.close();
+        }
+      });
+    }
+  }
+
+  public void close() {
+    if (!closed) {
+      if (headWritten) {
+        closeConnAfterWrite();
+      } else {
+        conn.close();
+      }
+      closed = true;
+    }
   }
 
   public void end() {
-    end(false);
-  }
-
-  private ChannelFuture channelFuture;
-
-  private void closeConnection() {
-    channelFuture.addListener(new ChannelFutureListener() {
-      public void operationComplete(ChannelFuture future) throws Exception {
-        conn.close();
-      }
-    });
-  }
-
-  public void end(boolean closeConnection) {
-
-    if (written) {
-      if (closeConnection) {
-        closeConnection();
-      }
-      // Already written - ignore
-      return;
-    }
 
     checkWritten();
     writeHead();
@@ -239,8 +228,8 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       channelFuture = conn.write(nettyChunk);
     }
 
-    if (closeConnection || !keepAlive) {
-      closeConnection();
+    if (!keepAlive) {
+      closeConnAfterWrite();
     }
 
     written = true;

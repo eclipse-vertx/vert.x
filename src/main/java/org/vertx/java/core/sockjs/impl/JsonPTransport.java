@@ -122,17 +122,19 @@ class JsonPTransport extends BaseTransport {
     });
   }
 
-  private class JsonPListener implements TransportListener {
+  private class JsonPListener extends BaseListener {
 
     final HttpServerRequest req;
     final Session session;
     final String callback;
     boolean headersWritten;
+    boolean closed;
 
     JsonPListener(HttpServerRequest req, Session session, String callback) {
       this.req = req;
       this.session = session;
       this.callback = callback;
+      addCloseHandler(req.response, session, sessions);
     }
 
 
@@ -156,13 +158,20 @@ class JsonPTransport extends BaseTransport {
       //End the response and close the HTTP connection
 
       req.response.write(sb.toString());
-
-      req.response.end(false);
-      session.resetListener();
+      close();
     }
 
     public void close() {
-      req.response.end(true);
+      if (!closed) {
+        try {
+          session.resetListener();
+          req.response.end();
+          req.response.close();
+          closed = true;
+        } catch (IllegalStateException e) {
+          // Underlying connection might alreadu be closed - that's fine
+        }
+      }
     }
   }
 }

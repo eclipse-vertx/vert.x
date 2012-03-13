@@ -86,7 +86,7 @@ class HtmlFileTransport extends BaseTransport {
     });
   }
 
-  private class HtmlFileListener implements TransportListener {
+  private class HtmlFileListener extends BaseListener {
 
     final int maxBytesStreaming;
     final HttpServerRequest req;
@@ -94,12 +94,14 @@ class HtmlFileTransport extends BaseTransport {
     final Session session;
     boolean headersWritten;
     int bytesSent;
+    boolean closed;
 
     HtmlFileListener(int maxBytesStreaming, HttpServerRequest req, String callback, Session session) {
       this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
       this.callback = callback;
       this.session = session;
+      addCloseHandler(req.response, session, sessions);
     }
 
     public void sendFrame(String body) {
@@ -118,21 +120,25 @@ class HtmlFileTransport extends BaseTransport {
       sb.append(body);
       sb.append("\");\n</script>\r\n");
       Buffer buff = Buffer.create(sb.toString());
-      try {
-        req.response.write(buff);
-        bytesSent += buff.length();
-        if (bytesSent >= maxBytesStreaming) {
-          // Reset and close the connection
-          session.resetListener();
-          req.response.end(true);
-        }
-      } catch (IllegalStateException e) {
-        // Channel is closed - ignore
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        close();
       }
     }
 
     public void close() {
-      req.response.end(true);
+      if (!closed) {
+        try {
+          session.resetListener();
+          req.response.end();
+          req.response.close();
+          closed = true;
+        } catch (IllegalStateException e) {
+          // Underlying connection might alreadu be closed - that's fine
+        }
+      }
     }
   }
 }
