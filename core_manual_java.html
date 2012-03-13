@@ -199,6 +199,7 @@
 <li><a href="#specifying-matches">Specifying matches.</a></li>
 <li><a href="#extracting-parameters-from-the-path">Extracting parameters from the path</a></li>
 <li><a href="#extracting-params-using-regular-expressions">Extracting params using Regular Expressions</a></li>
+<li><a href="#handling-requests-where-nothing-matches">Handling requests where nothing matches</a></li>
 </ul>
 </li>
 <li><a href="#websockets">WebSockets</a><ul>
@@ -1671,14 +1672,11 @@ routeMatcher.allWithRegEx("\\/([^\\/]+)\\/([^\\/]+)", new Handler&lt;HttpServerR
 server.requestHandler(routeMatcher).listen(8080, "localhost");
 </pre>
 <p>Run the above and point your browser at <code>http://localhost:8080/animals/cats</code>.</p>
-<p>It will display 'first is animals and second is cats'.       <br/>
-</p>
-<p>You can use regular expressions as catch all when no other matches apply, e.g.</p>
-<pre class="prettyprint">// Catch all - serve the index page
-
-routeMatcher.allWithRegEx(".*", new Handler&lt;HttpServerRequest&gt;() {
+<h2 id="handling-requests-where-nothing-matches">Handling requests where nothing matches</h2><br/>
+<p>You can use the <code>noMatch</code> method to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.</p>
+<pre class="prettyprint">routeMatcher.noMatch(new Handler&lt;HttpServerRequest&gt;() {
     public void handle(HttpServerRequest req) {
-        req.response.sendFile("route_match/index.html"); 
+        req.response.end("Nothing matched");'
     }
 });
 </pre>

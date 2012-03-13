@@ -200,6 +200,7 @@
 <li><a href="#specifying-matches">Specifying matches.</a></li>
 <li><a href="#extracting-parameters-from-the-path">Extracting parameters from the path</a></li>
 <li><a href="#extracting-params-using-regular-expressions">Extracting params using Regular Expressions</a></li>
+<li><a href="#handling-requests-where-nothing-matches">Handling requests where nothing matches</a></li>
 </ul>
 </li>
 <li><a href="#websockets">WebSockets</a><ul>
@@ -1456,11 +1457,9 @@ server.request_handler(route_matcher).listen(8080, 'localhost')
 <p>Run the above and point your browser at <code>http://localhost:8080/animals/cats</code>.</p>
 <p>It will display 'first is animals and second is cats'.  <br/>
 </p>
-<p>You can use regular expressions as catch all when no other matches apply, e.g.</p>
-<pre class="prettyprint"># Catch all - serve the index page
-routeMatcher.all_re('.*') do |req|
-  req.response.send_file('route_match/index.html')
-end
+<h2 id="handling-requests-where-nothing-matches">Handling requests where nothing matches</h2><br/>
+<p>You can use the <code>no_match</code> method to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.</p>
+<pre class="prettyprint">route_matcher.no_match { |req| req.response.end('Nothing matched') }
 </pre>
 <h1 id="websockets">WebSockets</h1><br/>
 <p><a href="http://en.wikipedia.org/wiki/WebSocket">WebSockets</a> are a feature of HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).</p>
