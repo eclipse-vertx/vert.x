@@ -1,0 +1,749 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Vertx::RecordParser
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (R)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
+     &raquo; 
+    <span class="title">RecordParser</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Vertx::RecordParser
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Vertx::RecordParser</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/parsetools.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+A helper class which allows you to easily parse protocols which are
+delimited by a sequence of bytes, or fixed size records.
+</p>
+<p>
+Instances of this class take as input <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> instances containing raw
+bytes, and output records. For example, if I had a simple ASCII text
+protocol delimited by &#8217;\n&#8217; and the input was the following:
+</p>
+<pre class="code">
+  <span class='buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>\<span class='nHOW identifier id'>nHOW</span> <span class='ARE constant id'>ARE</span> <span class='Y constant id'>Y</span>
+  <span class='buffer2 identifier id'>buffer2</span><span class='symbol val'>:OU?</span>\<span class='nI identifier id'>nI</span> <span class='AM constant id'>AM</span>
+  <span class='buffer3 identifier id'>buffer3</span><span class='colon op'>:</span> <span class='DOING constant id'>DOING</span> <span class='OK constant id'>OK</span>
+  <span class='buffer4 identifier id'>buffer4</span><span class='symbol val'>:\</span><span class='n identifier id'>n</span>
+</pre>
+<p>
+Then the output would be:
+</p>
+<pre class="code">
+  <span class='buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>
+  <span class='buffer2 identifier id'>buffer2</span><span class='symbol val'>:HOW</span> <span class='ARE constant id'>ARE</span> <span class='YOU? constant id'>YOU?</span>
+  <span class='buffer3 identifier id'>buffer3</span><span class='symbol val'>:I</span> <span class='AM constant id'>AM</span> <span class='DOING constant id'>DOING</span> <span class='OK constant id'>OK</span>
+</pre>
+<p>
+Instances of this class can be changed between delimited mode and fixed
+size record mode on the fly as individual records are read, this allows you
+to parse protocols where, for example, the first 5 records might all be
+fixed size (of potentially different sizes), followed by some delimited
+records, followed by more fixed size records.
+</p>
+<p>
+Instances of this class can&#8217;t currently be used for protocols where
+the text is encoded with something other than a 1-1 byte-char mapping. TODO
+extend this class to cope with arbitrary character encodings.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Author:</h3>
+<ul class="author">
+  
+    <li>
+      
+      
+      
+      
+        
+        <div class='inline'><p>
+<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div>
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#new_delimited-class_method" title="new_delimited (class method)">+ (RecordParser) <strong>new_delimited</strong>(delim, proc = nil, &amp;output_block) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Create a new RecordParser instance, initially in delimited mode, and where
+the delimiter can be represented by a delimiter string endcoded in latin-1
+.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#new_fixed-class_method" title="new_fixed (class method)">+ (RecordParser) <strong>new_fixed</strong>(size, proc = nil, &amp;output_block) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Create a new RecordParser instance, initially in fixed size mode.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#delimited_mode-instance_method" title="#delimited_mode (instance method)">- (Object) <strong>delimited_mode</strong>(delim) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Flip the parser into delimited mode.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#fixed_size_mode-instance_method" title="#fixed_size_mode (instance method)">- (Object) <strong>fixed_size_mode</strong>(size) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Flip the parser into fixed size mode.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#input-instance_method" title="#input (instance method)">- (Object) <strong>input</strong>(data) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+This method is called to provide the parser with data.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="new_delimited-class_method">
+  
+    + (<tt><span class='object_link'><a href="" title="Vertx::RecordParser (class)">RecordParser</a></span></tt>) <strong>new_delimited</strong>(delim, proc = nil, &amp;output_block) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Create a new RecordParser instance, initially in delimited mode, and where
+the delimiter can be represented by a delimiter string endcoded in latin-1
+. Don&#8217;t use this if your String contains other than latin-1
+characters.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>delim.</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The delimiter string.
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>proc</span>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A proc to be used as the output handler
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>output_block</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A block to be used as the output handler
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="" title="Vertx::RecordParser (class)">RecordParser</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a new RecordParser
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+67
+68
+69
+70</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 67</span>
+
+<span class='def def kw'>def</span> <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new_delimited identifier id'>new_delimited</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span>
+  <span class='output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='parsetools identifier id'>parsetools</span><span class='dot token'>.</span><span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='newDelimited identifier id'>newDelimited</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='comma token'>,</span> <span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="new_fixed-class_method">
+  
+    + (<tt><span class='object_link'><a href="" title="Vertx::RecordParser (class)">RecordParser</a></span></tt>) <strong>new_fixed</strong>(size, proc = nil, &amp;output_block) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Create a new RecordParser instance, initially in fixed size mode.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>size.</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The initial record size.
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>proc</span>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A proc to be used as the output handler
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>output_block</span>
+      
+      
+        <span class='type'>(<tt>Block</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+A block to be used as the output handler
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="" title="Vertx::RecordParser (class)">RecordParser</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+a new RecordParser
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+77
+78
+79
+80</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 77</span>
+
+<span class='def def kw'>def</span> <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new_fixed identifier id'>new_fixed</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span>
+  <span class='output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='parsetools identifier id'>parsetools</span><span class='dot token'>.</span><span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='newFixed identifier id'>newFixed</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='comma token'>,</span> <span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="delimited_mode-instance_method">
+  
+    - (<tt>Object</tt>) <strong>delimited_mode</strong>(delim) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Flip the parser into delimited mode. This method can be called multiple
+times with different values of delim while data is being parsed.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>delim.</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The delimiter string.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+85
+86
+87</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 85</span>
+
+<span class='def def kw'>def</span> <span class='delimited_mode identifier id'>delimited_mode</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='rparen token'>)</span>
+  <span class='@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='delimitedMode identifier id'>delimitedMode</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="fixed_size_mode-instance_method">
+  
+    - (<tt>Object</tt>) <strong>fixed_size_mode</strong>(size) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Flip the parser into fixed size mode. This method can be called multiple
+times with different values of size while data is being parsed.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>size.</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The record size.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+92
+93
+94</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 92</span>
+
+<span class='def def kw'>def</span> <span class='fixed_size_mode identifier id'>fixed_size_mode</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='rparen token'>)</span>
+  <span class='@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='fixedSizeMode identifier id'>fixedSizeMode</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="input-instance_method">
+  
+    - (<tt>Object</tt>) <strong>input</strong>(data) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+This method is called to provide the parser with data.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>data.</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+Input data to the parser.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+57
+58
+59</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 57</span>
+
+<span class='def def kw'>def</span> <span class='input identifier id'>input</span><span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='rparen token'>)</span>
+  <span class='@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='handle identifier id'>handle</span><span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Tue Mar 13 16:43:35 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
