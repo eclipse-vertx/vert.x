@@ -24,7 +24,7 @@
   <property name="target" value="target"/>
   <property name="core-jar-file" value="vert.x-core.jar"/>
   <property name="platform-jar-file" value="vert.x-platform.jar"/>
-  <property name="version-number" value="1.0.beta2"/>
+  <property name="version-number" value="1.0.beta3"/>
   <property name="dist-build-base" value="${target}/dist-build"/>
   <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
   <property name="java-src-root" value="src/main/java"/>
