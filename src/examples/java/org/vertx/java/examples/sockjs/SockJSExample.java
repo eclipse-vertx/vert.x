@@ -32,6 +32,12 @@ public class SockJSExample implements Verticle {
   public void start() {
     server = new HttpServer();
 
+    server.requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        if (req.path.equals("/")) req.response.sendFile("sockjs/index.html"); // Serve the html
+      }
+    });
+
     SockJSServer sockServer = new SockJSServer(server);
 
     sockServer.installApp(new AppConfig().setPrefix("/testapp"), new Handler<SockJSSocket>() {
@@ -44,12 +50,7 @@ public class SockJSExample implements Verticle {
       }
     });
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        if (req.path.equals("/")) req.response.sendFile("sockjs/index.html"); // Serve the html
-      }
-    }).listen(8080);
-
+    server.listen(8080);
   }
 
   public void stop() {

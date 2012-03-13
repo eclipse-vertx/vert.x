@@ -13,7 +13,7 @@ you can run vertx is application server mode. See the wiki for more information)
 
 (for full help on deploying just type vertx from the command line)
 
-(from this directory)
+(all examples should be run from this directory unless otherwise stated (e.g. the webapp example))
 
 vertx run <example script name>
 

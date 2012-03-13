@@ -14,8 +14,6 @@
   ~ limitations under the License.
   -->
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
     <title>SockJS Test</title>
@@ -23,7 +21,7 @@
 </head>
 <body>
 
-<script type="text/javascript">
+<script>
    var sock = new SockJS('http://localhost:8080/testapp');
    sock.onopen = function() {
        console.log('open');
@@ -42,7 +40,7 @@
         console.log("sending message")
         sock.send(message);
      } else {
-        sock("The socket is not open.");
+        console.log("The socket is not open.");
      }
    }
 </script>
