@@ -1703,12 +1703,11 @@ Run the above and point your browser at `http://localhost:8080/animals/cats`.
 
 It will display 'first is animals and second is cats'.         
     
-You can use regular expressions as catch all when no other matches apply, e.g.
+## Handling requests where nothing matches
 
-    // Catch all - serve the index page
-    routeMatcher.allWithRegEx('.*', function(req) {
-      req.response.sendFile("route_match/index.html");
-    });    
+You can use the `noMatch` function to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.
+
+    routeMatcher.noMatch(function(req) { req.response.end("Nothing matched"); });
 
 # WebSockets
 
