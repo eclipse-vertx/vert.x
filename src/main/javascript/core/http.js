@@ -509,6 +509,10 @@ if (!vertx.HttpServer) {
         j_rm.allWithRegEx(pattern, wrappedRequestHandler(handler));
       }
 
+      this.noMatch = function(handler) {
+        j_rm.noMatch(wrappedRequestHandler(handler));
+      }
+
       this._to_java_handler = function() {
         return j_rm;
       }

@@ -1259,12 +1259,6 @@ public class HttpTestClient extends TestClientBase {
           //OK
         }
         try {
-          resp.end(true);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
           resp.end("foo");
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
@@ -1278,24 +1272,6 @@ public class HttpTestClient extends TestClientBase {
         }
         try {
           resp.end("foo", "UTF-8");
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.end("foo", true);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.end(buff, true);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.end("foo", "UTF-8", true);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK

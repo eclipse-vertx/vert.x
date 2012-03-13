@@ -45,6 +45,8 @@ class BaseTransport {
 
   protected static final String COMMON_PATH_ELEMENT_RE = "\\/[^\\/\\.]+\\/([^\\/\\.]+)\\/";
 
+  private static final long RAND_OFFSET = 2l << 30;
+
   public BaseTransport(Map<String, Session> sessions, AppConfig config) {
     this.sessions = sessions;
     this.config = config;
@@ -82,6 +84,22 @@ class BaseTransport {
     return str;
   }
 
+  protected static abstract class BaseListener implements TransportListener {
+
+    protected void addCloseHandler(HttpServerResponse resp, final Session session,
+                                   final Map<String, Session> sessions) {
+      resp.closeHandler(new SimpleHandler() {
+        public void handle() {
+          // Connection has been closed fron the client or network error so
+          // we remove the session
+          session.shutdown();
+          sessions.remove(session.getID());
+          close();
+        }
+      });
+    }
+  }
+
   static void setJSESSIONID(AppConfig config, HttpServerRequest req) {
     String cookies = req.getHeader("Cookie");
     if (config.isInsertJSESSIONID()) {
@@ -107,7 +125,7 @@ class BaseTransport {
     }
   }
 
-  static void setCORS(HttpServerRequest req, boolean headers) {
+  static void setCORS(HttpServerRequest req) {
     String origin = req.getHeader("Origin");
     if (origin == null) {
       origin = "*";
@@ -116,8 +134,6 @@ class BaseTransport {
     req.response.putHeader("Access-Control-Allow-Credentials", "true");
     req.response.putHeader("Access-Control-Allow-Headers", "Content-Type");
   }
-
-  private static final long RAND_OFFSET = 2l << 30;
 
   static Handler<HttpServerRequest> createInfoHandler(final AppConfig config) {
     return new Handler<HttpServerRequest>() {
@@ -131,7 +147,7 @@ class BaseTransport {
         // Java ints are signed, so we need to use a long and add the offset so
         // the result is not negative
         json.putNumber("entropy", RAND_OFFSET + new Random().nextInt());
-        setCORS(req, false);
+        setCORS(req);
         req.response.end(json.encode());
       }
     };
@@ -147,7 +163,7 @@ class BaseTransport {
         req.response.putHeader("Expires", expires);
         req.response.putHeader("Access-Control-Allow-Methods", methods);
         req.response.putHeader("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
-        setCORS(req, false);
+        setCORS(req);
         setJSESSIONID(config, req);
         req.response.statusCode = 204;
         req.response.end();

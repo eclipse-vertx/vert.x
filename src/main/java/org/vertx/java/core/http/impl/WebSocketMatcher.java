@@ -17,6 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.logging.Logger;
@@ -42,6 +43,7 @@ public class WebSocketMatcher implements Handler<ServerWebSocket> {
 
   private Map<String, String> params;
   private Handler<Match> handler;
+  private Handler<Match> noMatchHandler;
 
   @Override
   public void handle(ServerWebSocket ws) {
@@ -68,7 +70,11 @@ public class WebSocketMatcher implements Handler<ServerWebSocket> {
         return;
       }
     }
-    ws.reject();
+    if (noMatchHandler != null) {
+      noMatchHandler.handle(new Match(null, ws));
+    } else {
+      ws.reject();
+    }
   }
 
   public void addRegEx(String regex, Handler<Match> handler) {
@@ -93,6 +99,16 @@ public class WebSocketMatcher implements Handler<ServerWebSocket> {
     String regex = sb.toString();
     PatternBinding binding = new PatternBinding(Pattern.compile(regex), groups, handler);
     bindings.add(binding);
+  }
+
+  /**
+   * Specify a handler that will be called when no other handlers match.
+   * If this handler is not specified default behaviour is to reject the websocket
+   * (i.e. return 404 to the websocket client in the handshake)
+   * @param handler
+   */
+  public void noMatch(Handler<Match> handler) {
+    noMatchHandler = handler;
   }
 
   private static class PatternBinding {

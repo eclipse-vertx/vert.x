@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
@@ -45,27 +46,8 @@ class WebSocketTransport extends BaseTransport {
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
-
         final Session session = new Session(config.getHeartbeatPeriod(), sockHandler);
         session.register(new WebSocketListener(match.ws, session));
-
-        match.ws.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
-            if (!session.isClosed()) {
-              String msgs = data.toString();
-
-              if (msgs.equals("")) {
-                //Ignore empty frames
-              } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||
-                         (msgs.startsWith("\"") && msgs.endsWith("\""))) {
-                session.handleMessages(msgs);
-              } else {
-                //Invalid JSON - we close the connection
-                match.ws.close();
-              }
-            }
-          }
-        });
       }
     });
 
@@ -89,18 +71,45 @@ class WebSocketTransport extends BaseTransport {
 
     final WebSocket ws;
     final Session session;
+    boolean closed;
 
-    WebSocketListener(WebSocket ws, Session session) {
+    WebSocketListener(final WebSocket ws, final Session session) {
       this.ws = ws;
       this.session = session;
+      ws.dataHandler(new Handler<Buffer>() {
+        public void handle(Buffer data) {
+          if (!session.isClosed()) {
+            String msgs = data.toString();
+            if (msgs.equals("")) {
+              //Ignore empty frames
+            } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||
+                       (msgs.startsWith("\"") && msgs.endsWith("\""))) {
+              session.handleMessages(msgs);
+            } else {
+              //Invalid JSON - we close the connection
+              close();
+            }
+          }
+        }
+      });
+      ws.closedHandler(new SimpleHandler() {
+        public void handle() {
+          closed = true;
+        }
+      });
     }
 
     public void sendFrame(final String body) {
-      ws.writeTextFrame(body);
+      if (!closed) {
+        ws.writeTextFrame(body);
+      }
     }
 
     public void close() {
-      ws.close();
+      if (!closed) {
+        ws.close();
+        closed = true;
+      }
     }
   }
 }

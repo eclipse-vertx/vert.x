@@ -26,6 +26,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -57,27 +58,20 @@ public class DefaultSockJSServer {
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions = new HashMap<>();
 
-  public DefaultSockJSServer(HttpServer httpServer) {
-    Handler<HttpServerRequest> prevHandler = httpServer.requestHandler();
-    final Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
+  public DefaultSockJSServer(final HttpServer httpServer) {
+
+    // Any previous request and websocket handlers will become default handlers
+    // if nothing else matches
+    rm.noMatch(httpServer.requestHandler());
+    wsMatcher.noMatch(new Handler<WebSocketMatcher.Match>() {
+      Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
+      public void handle(WebSocketMatcher.Match match) {
+        wsHandler.handle(match.ws);
+      }
+    });
 
     httpServer.requestHandler(rm);
     httpServer.websocketHandler(wsMatcher);
-
-    // Preserve any previous handlers as the default handlers, if the requests don't match any app URLs they
-    // will be called
-
-    if (prevHandler != null) {
-      rm.allWithRegEx(".*", prevHandler);
-    }
-
-    if (wsHandler != null) {
-      wsMatcher.addRegEx(".*", new Handler<WebSocketMatcher.Match>() {
-        public void handle(WebSocketMatcher.Match match) {
-          wsHandler.handle(match.ws);
-        }
-      });
-    }
   }
 
   public void installApp(AppConfig config,
@@ -193,7 +187,7 @@ public class DefaultSockJSServer {
       public void handle(HttpServerRequest req) {
         req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
 
-        BaseTransport.setCORS(req, false);
+        BaseTransport.setCORS(req);
         req.response.setChunked(true);
 
         Buffer h = Buffer.create(2);

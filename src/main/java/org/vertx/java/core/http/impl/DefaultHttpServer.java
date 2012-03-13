@@ -146,8 +146,6 @@ public class DefaultHttpServer {
       throw new IllegalStateException("Listen already called");
     }
 
-    listening = true;
-
     synchronized (servers) {
       id = new ServerID(port, host);
       DefaultHttpServer shared = servers.get(id);
@@ -214,6 +212,7 @@ public class DefaultHttpServer {
         actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
       }
     }
+    listening = true;
     return this;
   }
 

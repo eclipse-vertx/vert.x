@@ -163,6 +163,9 @@ class Session extends SockJSSocket {
           if (endHandler != null) {
             endHandler.handle(null);
           }
+          if (listener != null) {
+            listener.close();
+          }
         }
       });
     }

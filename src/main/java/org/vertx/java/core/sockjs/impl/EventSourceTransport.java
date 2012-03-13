@@ -49,7 +49,7 @@ class EventSourceTransport extends BaseTransport {
     });
   }
 
-  private class EventSourceListener implements TransportListener {
+  private class EventSourceListener extends BaseListener {
 
     final int maxBytesStreaming;
     final HttpServerRequest req;
@@ -57,11 +57,13 @@ class EventSourceTransport extends BaseTransport {
 
     boolean headersWritten;
     int bytesSent;
+    boolean closed;
 
     EventSourceListener(int maxBytesStreaming, HttpServerRequest req, Session session) {
       this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
       this.session = session;
+      addCloseHandler(req.response, session, sessions);
     }
 
     public void sendFrame(String body) {
@@ -78,21 +80,25 @@ class EventSourceTransport extends BaseTransport {
       sb.append(body);
       sb.append("\r\n\r\n");
       Buffer buff = Buffer.create(sb.toString());
-      try {
-        req.response.write(buff);
-        bytesSent += buff.length();
-        if (bytesSent >= maxBytesStreaming) {
-          // Reset and close the connection
-          session.resetListener();
-          req.response.end(false);
-        }
-      } catch (IllegalStateException e) {
-        // Channel closed - ignore
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        close();
       }
     }
 
     public void close() {
-      req.response.end(true);
+      if (!closed) {
+        try {
+          session.resetListener();
+          req.response.end();
+          req.response.close();
+        } catch (IllegalStateException e) {
+          // Underlying connection might alreadu be closed - that's fine
+        }
+        closed = true;
+      }
     }
 
   }
