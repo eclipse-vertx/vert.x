@@ -178,9 +178,6 @@ Edit `web_server.rb` so it looks like:
 
     @server = HttpServer.new
 
-    # Link up the client side to the server side event bus
-    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'}, [])
-
     @server.request_handler do |req|
       if req.path == '/'
         req.response.send_file('web/index.html')
@@ -190,7 +187,12 @@ Edit `web_server.rb` so it looks like:
         req.response.status_code = 404
         req.response.end
       end
-    end.listen(8080, 'localhost')
+    end
+
+    # Link up the client side to the server side event bus
+    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'}, [])
+
+    @server.listen(8080, 'localhost')
 
     def vertx_stop 
       server.close

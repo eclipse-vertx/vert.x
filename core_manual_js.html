@@ -161,6 +161,7 @@
 <li><a href="#setting-status-code-and-message">Setting Status Code and Message</a><ul>
 <li><a href="#writing-http-responses">Writing HTTP responses</a></li>
 <li><a href="#ending-http-responses">Ending HTTP responses</a></li>
+<li><a href="#closing-the-underlying-connection">Closing the underlying connection</a></li>
 <li><a href="#response-headers">Response headers</a></li>
 <li><a href="#chunked-http-responses-and-trailers">Chunked HTTP Responses and Trailers</a></li>
 </ul>
@@ -1148,13 +1149,9 @@ request.response.write(myBuffer);
 <p>The function can also be called with a string or Buffer in the same way <code>write</code> is called. In this case it's just the same as calling write with a string or Buffer followed by calling <code>end</code> with no arguments. For example:</p>
 <pre class="prettyprint">request.response.end("That's all folks");
 </pre>
-<p>You can also optionally call <code>end</code> with a final boolean argument. If this argument is <code>true</code> then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.</p>
-<pre class="prettyprint">// End response and close connection
-request.response.end(true);
-</pre>
-<p>Or:</p>
-<pre class="prettyprint">// Write something, end response and close connection
-request.response.end("That's really all folks", true);
+<h4 id="closing-the-underlying-connection">Closing the underlying connection</h4><br/>
+<p>You can close the underlying TCP connection of the request by calling the <code>close</code> function.</p>
+<pre class="prettyprint">request.response.close();
 </pre>
 <h4 id="response-headers">Response headers</h4><br/>
 <p>Individual HTTP response headers can be written using the <code>putHeader</code> method. For example:</p>

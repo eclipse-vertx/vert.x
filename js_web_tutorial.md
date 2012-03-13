@@ -173,10 +173,7 @@ Edit `web_server.js` so it looks like:
     load('vertx.js');
 
     var server = new vertx.HttpServer();
-        
-    // Link up the client side to the server side event bus
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
-    
+
     server.requestHandler(function(req) {
       if (req.path === '/') {
         req.response.sendFile('web/index.html');
@@ -186,8 +183,13 @@ Edit `web_server.js` so it looks like:
         req.response.statusCode = 404;
         req.response.end;
       }
-    }).listen(8080, 'localhost');
-    
+    });
+
+    // Link up the client side to the server side event bus
+    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+
+    server.listen(8080, 'localhost');
+
     function vertxStop() {
       server.close();
     }

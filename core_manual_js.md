@@ -1208,16 +1208,11 @@ The function can also be called with a string or Buffer in the same way `write` 
 
     request.response.end("That's all folks");
 
-You can also optionally call `end` with a final boolean argument. If this argument is `true` then the underlying connection will be closed when the response has been written, otherwise the underlying connection will be left open.
+#### Closing the underlying connection
 
-    // End response and close connection
-    request.response.end(true);
-    
-Or:
+You can close the underlying TCP connection of the request by calling the `close` function.
 
-    // Write something, end response and close connection
-    request.response.end("That's really all folks", true);
-    
+    request.response.close();
 
 #### Response headers
 
