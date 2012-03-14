@@ -1,0 +1,7 @@
+Pre-requisities: python markdown, xsltproc, vert.x (for the web server)
+
+To build user manual: ./genmanual.sh
+
+To run local web server for development: ./runserver.sh
+
+Point browser at http://localhost:8181
