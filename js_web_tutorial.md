@@ -734,6 +734,10 @@ This tutorial gives you just a taste of the kinds of things you can do with vert
 With just a couple of handfuls of code you have created a real, scalable web-app.
 
 
+
+> Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.
+
+
        
         
 
