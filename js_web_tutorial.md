@@ -43,7 +43,7 @@ If the request is for the root, we just serve `index.html`. Otherwise we serve a
 
 If the path url contains the string `..` we just return a 404. This is to prevent someone reading files outside of the `web` directory.    
 
-Save it as `web-server.js`.
+Save it as `web_server.js`.
 
 Now, create a directory called web with a file `index.html` in it:
 
@@ -255,7 +255,7 @@ To do this we will create a script called `static_data.js` which just inserts ca
 
 Copy `static_data.js` into your directory as follows:
 
-    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/demo/static_data.js .
+    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/javascript/webapp/static_data.js .
 
 We want to insert the static data only after the persistor verticle has completed starting up so we edit `app.js` as follows:
 

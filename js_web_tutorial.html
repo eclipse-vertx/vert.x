@@ -90,7 +90,7 @@ function vertxStop() {
 <p>If the request is for the root, we just serve <code>index.html</code>. Otherwise we serve a file from the <code>web</code> directory corresponding to the path requested.</p>
 <p>If the path url contains the string <code>..</code> we just return a 404. This is to prevent someone reading files outside of the <code>web</code> directory.  <br/>
 </p>
-<p>Save it as <code>web-server.js</code>.</p>
+<p>Save it as <code>web_server.js</code>.</p>
 <p>Now, create a directory called web with a file <code>index.html</code> in it:</p>
 <pre class="prettyprint">tim@Ethel:~/tutorial$ mkdir web
 tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/index.html
@@ -252,7 +252,7 @@ function vertxStop() {
 <p>We're almost at the point where the client side app can see the catalogue data. But first we need to insert some static data.</p>
 <p>To do this we will create a script called <code>static_data.js</code> which just inserts catalogue and other data needed by the application in the database. It does this by sending JSON messages on the event bus.</p>
 <p>Copy <code>static_data.js</code> into your directory as follows:</p>
-<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/demo/static_data.js .
+<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/javascript/webapp/static_data.js .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>app.js</code> as follows:</p>
 <pre class="prettyprint">vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf, 1, function() {
