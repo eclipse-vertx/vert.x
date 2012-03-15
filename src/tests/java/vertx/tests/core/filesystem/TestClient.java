@@ -806,7 +806,7 @@ public class TestClient extends TestClientBase {
         if (ar.exception != null) {
           tu.exception(ar.exception, "failed to read");
         } else {
-          tu.azzert(TestUtils.buffersEqual(Buffer.create(content), ar.result));
+          tu.azzert(TestUtils.buffersEqual(new Buffer(content), ar.result));
           tu.testComplete();
         }
       }
@@ -816,7 +816,7 @@ public class TestClient extends TestClientBase {
 
   public void testWriteFile() throws Exception {
     final byte[] content = TestUtils.generateRandomByteArray(1000);
-    final Buffer buff = Buffer.create(content);
+    final Buffer buff = new Buffer(content);
     final String fileName = "some-file.dat";
     AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> ar) {
@@ -833,7 +833,7 @@ public class TestClient extends TestClientBase {
             tu.exception(e, "failed to read");
             return;
           }
-          tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+          tu.azzert(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
           tu.testComplete();
         }
       }
@@ -847,7 +847,7 @@ public class TestClient extends TestClientBase {
     final int chunks = 10;
 
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
-    final Buffer buff = Buffer.create(content);
+    final Buffer buff = new Buffer(content);
 
     FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, false, true, true, true, new AsyncResultHandler<AsyncFile>() {
       int count;
@@ -869,7 +869,7 @@ public class TestClient extends TestClientBase {
                       tu.exception(e, "Failed to read file");
                       return;
                     }
-                    Buffer read = Buffer.create(readBytes);
+                    Buffer read = new Buffer(readBytes);
                     tu.azzert(TestUtils.buffersEqual(buff, read));
                     tu.testComplete();
                   }
@@ -891,14 +891,14 @@ public class TestClient extends TestClientBase {
     final int chunkSize = 1000;
     final int chunks = 10;
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
-    final Buffer expected = Buffer.create(content);
+    final Buffer expected = new Buffer(content);
     createFile(fileName, content);
     FileSystem.instance.open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
       int reads;
       public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
         if (ar.exception == null) {
-          final Buffer buff = Buffer.create(chunks * chunkSize);
+          final Buffer buff = new Buffer(chunks * chunkSize);
           for (int i = 0; i < chunks; i++) {
             ar.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new AsyncResultHandler<Buffer>() {
               public void handle(AsyncResult<Buffer> ar) {
@@ -926,7 +926,7 @@ public class TestClient extends TestClientBase {
     final int chunkSize = 1000;
     final int chunks = 10;
     byte[] content = TestUtils.generateRandomByteArray(chunkSize * chunks);
-    final Buffer buff = Buffer.create(content);
+    final Buffer buff = new Buffer(content);
     FileSystem.instance.open(TEST_DIR + pathSep + fileName, new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkContext();
@@ -960,7 +960,7 @@ public class TestClient extends TestClientBase {
                   tu.exception(e, "failed to read");
                   return;
                 }
-                tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(readBytes)));
+                tu.azzert(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
                 tu.testComplete();
               }
             }
@@ -984,7 +984,7 @@ public class TestClient extends TestClientBase {
         tu.checkContext();
         if (ar.exception == null) {
           ReadStream rs = ar.result.getReadStream();
-          final Buffer buff = Buffer.create(0);
+          final Buffer buff = new Buffer();
 
           rs.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer data) {
@@ -1003,7 +1003,7 @@ public class TestClient extends TestClientBase {
           rs.endHandler(new SimpleHandler() {
             public void handle() {
               tu.checkContext();
-              tu.azzert(TestUtils.buffersEqual(buff, Buffer.create(content)));
+              tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
               tu.testComplete();
             }
           });
@@ -1057,7 +1057,7 @@ public class TestClient extends TestClientBase {
                             tu.exception(e, "failed to read");
                             return;
                           }
-                          tu.azzert(TestUtils.buffersEqual(Buffer.create(content), Buffer.create(readBytes)));
+                          tu.azzert(TestUtils.buffersEqual(new Buffer(content), new Buffer(readBytes)));
                           tu.testComplete();
                         }
                       }

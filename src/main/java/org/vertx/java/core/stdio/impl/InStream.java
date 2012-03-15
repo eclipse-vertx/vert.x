@@ -98,7 +98,7 @@ public class InStream extends StreamBase implements ReadStream {
               System.arraycopy(buff, 0, buff2, 0, bytesRead);
               buff = buff2;
             }
-            final Buffer ret = Buffer.create(buff);
+            final Buffer ret = new Buffer(buff);
             context.execute(new Runnable() {
               public void run() {
                 if (!paused && dataHandler != null) {

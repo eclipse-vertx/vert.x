@@ -49,7 +49,7 @@ public abstract class VertxCommand implements Serializable {
       oos.writeObject(this);
       oos.flush();
       byte[] bytes = baos.toByteArray();
-      Buffer buff = Buffer.create(4 + bytes.length);
+      Buffer buff = new Buffer(4 + bytes.length);
       buff.appendInt(bytes.length);
       buff.appendBytes(bytes);
       if (doneHandler == null) {

@@ -94,7 +94,7 @@ class Session extends SockJSSocket {
 
     if (dataHandler != null) {
       for (String msg: this.pendingReads) {
-        dataHandler.handle(Buffer.create(msg));
+        dataHandler.handle(new Buffer(msg));
       }
     }
   }
@@ -250,7 +250,7 @@ class Session extends SockJSSocket {
       if (dataHandler != null) {
         for (String msg : msgArr) {
           if (!paused) {
-            dataHandler.handle(Buffer.create(msg));
+            dataHandler.handle(new Buffer(msg));
           } else {
             pendingReads.add(msg);
           }

@@ -78,7 +78,7 @@ public class Handshake00 implements Handshake {
     req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, this.challenge.getKey1String());
     req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, this.challenge.getKey2String());
 
-    Buffer buff = Buffer.create(6);
+    Buffer buff = new Buffer(6);
     buff.appendBytes(challenge.getKey3());
     buff.appendByte((byte) '\r');
     buff.appendByte((byte) '\n');
@@ -124,7 +124,7 @@ public class Handshake00 implements Handshake {
 
   public void onComplete(HttpClientResponse response, final AsyncResultHandler<Void> doneHandler) {
 
-    final Buffer buff = Buffer.create(16);
+    final Buffer buff = new Buffer(16);
     response.dataHandler(new Handler<Buffer>() {
       public void handle(Buffer data) {
         buff.appendBuffer(data);

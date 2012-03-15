@@ -157,11 +157,11 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   }
 
   public DefaultHttpServerResponse write(String chunk, String enc) {
-    return write(Buffer.create(chunk, enc).getChannelBuffer(), null);
+    return write(new Buffer(chunk, enc).getChannelBuffer(), null);
   }
 
   public DefaultHttpServerResponse write(String chunk) {
-    return write(Buffer.create(chunk).getChannelBuffer(), null);
+    return write(new Buffer(chunk).getChannelBuffer(), null);
   }
 
   public DefaultHttpServerResponse write(Buffer chunk, Handler<Void> doneHandler) {
@@ -169,19 +169,19 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   }
 
   public DefaultHttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler) {
-    return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk, enc).getChannelBuffer(), doneHandler);
   }
 
   public DefaultHttpServerResponse write(String chunk, Handler<Void> doneHandler) {
-    return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk).getChannelBuffer(), doneHandler);
   }
 
   public void end(String chunk) {
-    end(Buffer.create(chunk));
+    end(new Buffer(chunk));
   }
 
   public void end(String chunk, String enc) {
-    end(Buffer.create(chunk, enc));
+    end(new Buffer(chunk, enc));
   }
 
   public void end(Buffer chunk) {

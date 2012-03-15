@@ -201,7 +201,7 @@ def http_method(ssl, method, chunked)
     @tu.azzert(req.params['param2'] == 'vparam2')
     req.response.put_header('rheader1', 'vrheader1')
     req.response.put_header('rheader2', 'vrheader2')
-    body = Buffer.create(0)
+    body = Buffer.create()
     req.data_handler do |data|
       @tu.check_context
       body.append_buffer(data)
@@ -235,7 +235,7 @@ def http_method(ssl, method, chunked)
     @tu.azzert(200 == resp.status_code)
     @tu.azzert('vrheader1' == resp.headers['rheader1'])
     @tu.azzert('vrheader2' == resp.headers['rheader2'])
-    body = Buffer.create(0)
+    body = Buffer.create()
     resp.data_handler do |data|
       @tu.check_context
       body.append_buffer(data)

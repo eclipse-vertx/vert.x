@@ -17,7 +17,6 @@
 package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.logging.Logger;
