@@ -195,6 +195,34 @@ public class Buffer {
   }
 
   /**
+   * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
+   * and ending at position {@code end - 1}
+   */
+  public Buffer getBuffer(int start, int end) {
+    return new Buffer(getBytes(start, end));
+  }
+
+  /**
+   * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
+   * and ending at position {@code end - 1} interpreted as a String in the specified encoding
+   */
+  public String getString(int start, int end, String enc) {
+    byte[] bytes = getBytes(start, end);
+    Charset cs = Charset.forName(enc);
+    return new String(bytes, cs);
+  }
+
+  /**
+   * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
+   * and ending at position {@code end - 1} interpreted as a String in UTF-8 encoding
+   */
+  public String getString(int start, int end) {
+    byte[] bytes = getBytes(start, end);
+    Charset cs = Charset.forName("UTF-8");
+    return new String(bytes, cs);
+  }
+
+  /**
    * Appends the specified {@code Buffer} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
@@ -380,7 +408,7 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} endoded in UTF-8.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
-  public Buffer setBytes(int pos, String str) {
+  public Buffer setString(int pos, String str) {
     return setBytes(pos, str, CharsetUtil.UTF_8);
   }
 
@@ -388,7 +416,7 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in encoding {@code enc}.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
-  public Buffer setBytes(int pos, String str, String enc) {
+  public Buffer setString(int pos, String str, String enc) {
     return setBytes(pos, str, Charset.forName(enc));
   }
 
@@ -398,14 +426,6 @@ public class Buffer {
    */
   public int length() {
     return buffer.writerIndex();
-  }
-
-  /**
-   * Returns a copy of a sub-sequence the Buffer starting at position {@code start}
-   * and ending at position {@code end - 1}.
-   */
-  public Buffer copy(int start, int end) {
-    return new Buffer(buffer.copy(start, end - start));
   }
 
   /**

@@ -221,7 +221,7 @@ public class JavaRecordParserTest extends TestCase {
       if (chunkPos == chunkSizes.length) chunkPos = 0;
       int end = pos + chunkSize;
       end = end <= input.length() ? end : input.length();
-      Buffer sub = input.copy(pos, end);
+      Buffer sub = input.getBuffer(pos, end);
       parser.handle(sub);
       pos += chunkSize;
     }

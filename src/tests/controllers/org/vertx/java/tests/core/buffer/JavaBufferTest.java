@@ -571,7 +571,7 @@ public class JavaBufferTest extends TestCase {
   private void testSetBytesString(Buffer buff) throws Exception {
 
     String str = TestUtils.randomUnicodeString(100);
-    buff.setBytes(50, str);
+    buff.setString(50, str);
 
     byte[] b1 = buff.getBytes(50, buff.length());
     String str2 = new String(b1, "UTF-8");
@@ -595,7 +595,7 @@ public class JavaBufferTest extends TestCase {
     Buffer buff = TestUtils.generateRandomBuffer(100);
     assertTrue(TestUtils.buffersEqual(buff, buff.copy()));
 
-    Buffer copy = buff.copy(0, buff.length());
+    Buffer copy = buff.getBuffer(0, buff.length());
     assertTrue(TestUtils.buffersEqual(buff, copy));
 
     //Make sure they don't share underlying buffer
