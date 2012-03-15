@@ -150,19 +150,6 @@
 
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
-    <exclude name="org/vertx/java/tests/old/**/*Test.class"/>
-    <exclude name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
-  </fileset>
-
-  <!-- You will need  a mailer (use sendmail)
-  running on localhost:25 -->
-  <fileset id="mailer-tests.fs" dir="${tests-target}">
-    <include name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
-  </fileset>
-
-  <!-- You will need a MongoDB instance running locally -->
-  <fileset id="persistor-tests.fs" dir="${tests-target}">
-    <include name="org/vertx/java/tests/busmods/persistor/*Test.class"/>
   </fileset>
 
   <fileset id="test-one.fs" dir="${tests-target}">
@@ -172,21 +159,6 @@
   <target name="tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="main-tests.fs"/>
-    </antcall>
-  </target>
-
-  <target name="all-tests" depends="tests, mailer-tests, persistor-tests">
-  </target>
-
-  <target name="mailer-tests">
-    <antcall target="internal-tests">
-      <param name="tests-fs" value="mailer-tests.fs"/>
-    </antcall>
-  </target>
-
-  <target name="persistor-tests">
-    <antcall target="internal-tests">
-      <param name="tests-fs" value="persistor-tests.fs"/>
     </antcall>
   </target>
 
