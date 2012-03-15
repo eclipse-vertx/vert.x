@@ -226,23 +226,26 @@ public class DefaultHttpServer {
 
     synchronized (servers) {
 
-      if (requestHandler != null) {
-        actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
-      }
-      if (wsHandler != null) {
-        actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
-      }
+      if (actualServer != null) {
 
-      if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
-        // The actual server still has handlers so we don't actually close it
-        if (done != null) {
-          executeCloseDone(ctx, done);
+        if (requestHandler != null) {
+          actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
         }
-      } else {
-        // No Handlers left so close the actual server
-        // The done handler needs to be executed on the context that calls close, NOT the context
-        // of the actual server
-        actualServer.actualClose(ctx, done);
+        if (wsHandler != null) {
+          actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
+        }
+
+        if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
+          // The actual server still has handlers so we don't actually close it
+          if (done != null) {
+            executeCloseDone(ctx, done);
+          }
+        } else {
+          // No Handlers left so close the actual server
+          // The done handler needs to be executed on the context that calls close, NOT the context
+          // of the actual server
+          actualServer.actualClose(ctx, done);
+        }
       }
     }
   }

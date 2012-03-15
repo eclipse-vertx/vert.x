@@ -855,7 +855,7 @@ public class TestClient extends TestClientBase {
         tu.checkContext();
         if (ar.exception == null) {
           for (int i = 0; i < chunks; i++) {
-            Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
+            Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
             ar.result.write(chunk, i * chunkSize, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> ar) {
@@ -941,7 +941,7 @@ public class TestClient extends TestClientBase {
           });
 
           for (int i = 0; i < chunks; i++) {
-            Buffer chunk = buff.copy(i * chunkSize, (i + 1) * chunkSize);
+            Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
             ws.writeBuffer(chunk);
           }
