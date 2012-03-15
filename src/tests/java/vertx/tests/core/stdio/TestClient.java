@@ -52,12 +52,12 @@ public class TestClient extends TestClientBase {
     } catch (UnsupportedEncodingException e) {
       bytes = null;
     }
-    final Buffer buffin = Buffer.create(bytes);
+    final Buffer buffin = new Buffer(bytes);
     InputStream is = new ByteArrayInputStream(bytes);
 
     InStream in = new InStream(is);
 
-    final Buffer received = Buffer.create(0);
+    final Buffer received = new Buffer();
 
     in.dataHandler(new Handler<Buffer>() {
       public void handle(Buffer data) {

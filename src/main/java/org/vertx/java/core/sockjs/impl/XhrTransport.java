@@ -17,10 +17,8 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -44,7 +42,7 @@ class XhrTransport extends BaseTransport {
       bytes[i] = (byte)'h';
     }
     bytes[bytes.length - 1] = (byte)'\n';
-    H_BLOCK = Buffer.create(bytes);
+    H_BLOCK = new Buffer(bytes);
   }
 
   XhrTransport(RouteMatcher rm, String basePath, final Map<String, Session> sessions, final AppConfig config,
@@ -197,7 +195,7 @@ class XhrTransport extends BaseTransport {
         req.response.write(H_BLOCK);
       }
       String sbody = body + "\n";
-      Buffer buff = Buffer.create(sbody);
+      Buffer buff = new Buffer(sbody);
       req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {

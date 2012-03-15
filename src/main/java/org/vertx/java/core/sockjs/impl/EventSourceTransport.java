@@ -79,7 +79,7 @@ class EventSourceTransport extends BaseTransport {
       sb.append("data: ");
       sb.append(body);
       sb.append("\r\n\r\n");
-      Buffer buff = Buffer.create(sb.toString());
+      Buffer buff = new Buffer(sb.toString());
       req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {

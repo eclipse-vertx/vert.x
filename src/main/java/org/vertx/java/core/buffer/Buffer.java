@@ -26,9 +26,6 @@ import java.nio.charset.Charset;
 /**
  * <p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as necessary to accomodate any bytes written to it.</p>
  *
- * <p>Buffer instances should always be created using the static factory methods that take the form {@code createXXX}.
- * Factory methods exist for creating Buffer instances from a {@code byte[]} and a {@code String}.</p>
- *
  * <p>There are two ways to write data to a Buffer: The first method involves methods that take the form {@code setXXX}.
  * These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
  * has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
@@ -47,8 +44,15 @@ import java.nio.charset.Charset;
  */
 public class Buffer {
 
-  //vert.x buffers are always dynamic
+  // vert.x buffers are always dynamic
   private DynamicChannelBuffer buffer;
+
+  /**
+   * Create an empty buffer
+   */
+  public Buffer() {
+    this(0);
+  }
 
   /**
    * Creates a new empty Buffer that is expected to have a size of {@code initialSizeHint} after data has been
@@ -56,29 +60,29 @@ public class Buffer {
    * is merely a hint to the system for how much memory to initially allocate to the buffer to prevent excessive
    * automatic re-allocations as data is written to it.
    */
-  public static Buffer create(int initialSizeHint) {
-    return new Buffer(ChannelBuffers.dynamicBuffer(initialSizeHint));
+  public Buffer(int initialSizeHint) {
+    this(ChannelBuffers.dynamicBuffer(initialSizeHint));
   }
 
   /**
    * Create a new Buffer that contains the contents of the {@code byte[] bytes}
    */
-  public static Buffer create(byte[] bytes) {
-    return new Buffer(ChannelBuffers.wrappedBuffer(bytes));
+  public Buffer(byte[] bytes) {
+    this(ChannelBuffers.wrappedBuffer(bytes));
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded according to the encoding {@code enc}
    */
-  public static Buffer create(String str, String enc) {
-    return new Buffer(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+  public Buffer(String str, String enc) {
+    this(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded with UTF-8 encoding
    */
-  public static Buffer create(String str) {
-    return Buffer.create(str, "UTF-8");
+  public Buffer(String str) {
+    this(str, "UTF-8");
   }
 
   /**

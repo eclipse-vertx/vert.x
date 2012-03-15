@@ -44,7 +44,7 @@ class BufferMessage extends BaseMessage<Buffer> {
       int buffLength = readBuff.getInt(pos);
       pos += 4;
       byte[] bytes = readBuff.getBytes(pos, pos + buffLength);
-      body = Buffer.create(bytes);
+      body = new Buffer(bytes);
     }
   }
 

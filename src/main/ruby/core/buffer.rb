@@ -45,15 +45,15 @@ module Vertx
 
     # Creates a new empty buffer. The {#length} of the buffer immediately after creation will be zero.
     # @param initial_size_hint [FixNum] is a hint to the system for how much memory to initially allocate to the buffer to prevent excessive automatic re-allocations as data is written to it.
-    def Buffer.create(initial_size_hint)
-      Buffer.new(org.vertx.java.core.buffer.Buffer.create(initial_size_hint))
+    def Buffer.create(initial_size_hint = 0)
+      Buffer.new(org.vertx.java.core.buffer.Buffer.new(initial_size_hint))
     end
 
     # Create a new Buffer from a String
     # @param str [String] The String to encode into the Buffer
     # @param enc [String] Encoding to use. Defaults to "UTF-8"
     def Buffer.create_from_str(str, enc = "UTF-8")
-      Buffer.new(org.vertx.java.core.buffer.Buffer.create(str, enc))
+      Buffer.new(org.vertx.java.core.buffer.Buffer.new(str, enc))
     end
 
     # Return a String representation of the buffer.

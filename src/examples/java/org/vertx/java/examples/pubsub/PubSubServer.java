@@ -50,7 +50,7 @@ public class PubSubServer implements Verticle {
               Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
               for (String actorID : actorIDs) {
                 System.out.println("Sending to verticle");
-                EventBus.instance.send(actorID, Buffer.create(parts[2]));
+                EventBus.instance.send(actorID, new Buffer(parts[2]));
               }
             }
           }

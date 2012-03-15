@@ -224,7 +224,7 @@ public class AsyncFile {
         void doRead() {
           if (!readInProgress) {
             readInProgress = true;
-            Buffer buff = Buffer.create(BUFFER_SIZE);
+            Buffer buff = new Buffer(BUFFER_SIZE);
             read(buff, 0, pos, BUFFER_SIZE, new AsyncResultHandler<Buffer>() {
 
               public void handle(AsyncResult<Buffer> ar) {

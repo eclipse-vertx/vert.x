@@ -53,7 +53,7 @@ public class DefaultEventBus extends EventBus {
 
   private static final String DEFAULT_CLUSTER_PROVIDER_CLASS_NAME =
       "org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager";
-  private static final Buffer PONG = Buffer.create(new byte[] { (byte)1 });
+  private static final Buffer PONG = new Buffer(new byte[] { (byte)1 });
   private static final long PING_INTERVAL = 5000;
   private static final long PING_REPLY_INTERVAL = 5000;
   private static final int DEFAULT_CLUSTER_PORT = 2550;

@@ -26,7 +26,6 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -190,10 +189,10 @@ public class DefaultSockJSServer {
         BaseTransport.setCORS(req);
         req.response.setChunked(true);
 
-        Buffer h = Buffer.create(2);
+        Buffer h = new Buffer(2);
         h.appendString("h\n");
 
-        Buffer hs = Buffer.create(2050);
+        Buffer hs = new Buffer(2050);
         for (int i = 0; i < 2048; i++) {
           hs.appendByte((byte) ' ');
         }
@@ -316,7 +315,7 @@ public class DefaultSockJSServer {
       public void handle(final SockJSSocket sock) {
         final long timerID = Vertx.instance.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
-            sock.writeBuffer(Buffer.create("tick!"));
+            sock.writeBuffer(new Buffer("tick!"));
           }
         });
         sock.endHandler(new SimpleHandler() {
@@ -337,7 +336,7 @@ public class DefaultSockJSServer {
               n = 1;
             }
             int num = (int)Math.pow(2, n);
-            Buffer buff = Buffer.create(num);
+            Buffer buff = new Buffer(num);
             for (int i = 0; i < num; i++) {
               buff.appendByte((byte)'x');
             }
