@@ -97,8 +97,17 @@
 <li><a href="#shared-sets">Shared Sets</a></li>
 </ul>
 </li>
-<li><a href="#buffers">Buffers</a></li>
-<li><a href="#json">JSON</a></li>
+<li><a href="#buffers">Buffers</a><ul>
+<li><a href="#creating-buffers">Creating Buffers</a></li>
+<li><a href="#writing-to-a-buffer">Writing to a Buffer</a><ul>
+<li><a href="#appending-to-a-buffer">Appending to a Buffer</a></li>
+<li><a href="#random-access-buffer-writes">Random access buffer writes</a></li>
+</ul>
+</li>
+<li><a href="#reading-from-a-buffer">Reading from a Buffer</a></li>
+<li><a href="#other-buffer-methods">Other buffer methods:</a></li>
+</ul>
+</li>
 <li><a href="#delayed-and-periodic-tasks">Delayed and Periodic Tasks</a><ul>
 <li><a href="#one-shot-timers">One-shot Timers</a></li>
 <li><a href="#periodic-timers">Periodic Timers</a></li>
@@ -522,9 +531,124 @@ set.add('some-value');
 <p><strong>TODO</strong> - More on set API</p>
 <p>API - atomic updates etc</p>
 <h1 id="buffers">Buffers</h1><br/>
-<p><strong>TODO</strong></p>
-<h1 id="json">JSON</h1><br/>
-<p><strong>TODO</strong></p>
+<p>Most data in vert.x is shuffled around using instances of <code>Vertx::Buffer</code>.</p>
+<p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it.</p>
+<h2 id="creating-buffers">Creating Buffers</h2><br/>
+<p>Create an empty buffer</p>
+<pre class="prettyprint">buff = Vertx::Buffer.create
+</pre>
+<p>Create a buffer from a String. The String will be encoded in the buffer using UTF-8.</p>
+<pre class="prettyprint">buff = Vertx::Buffer.create_from_str("some-string")
+</pre>
+<p>Create a buffer from a String: The String will be encoded using the specified encoding, e.g:</p>
+<pre class="prettyprint">buff = Vertx::Buffer.create_from_str("some-string", "UTF-16")
+</pre>
+<p>Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.</p>
+<p>Note that buffers created this way <em>are empty</em>. It does not create a buffer filled with zeros up to the specified size.</p>
+<pre class="prettyprint">buff = Vertx::Buffer.create(100000)
+</pre>
+<h2 id="writing-to-a-buffer">Writing to a Buffer</h2><br/>
+<p>There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to write outside the bounds of the buffer.</p>
+<h3 id="appending-to-a-buffer">Appending to a Buffer</h3><br/>
+<p>To append to a buffer, you use the <code>append_XXX</code> methods. Append methods exist for appending other buffers, String, Float and FixNum.</p>
+<p>When appending a FixNum you have to specify how many bytes you want to append this as in the buffer. Valid values are 1, 2, 4, 8. All FixNums are appended as signed integer values.</p>
+<p>When appending a Float you have to specify how many bytes you want to append this as in the buffer. Valid values are 4, 8, representing a single precision 32-bit IEEE 754 and a double precision 64-bit IEEE 754 floating point number respectively.</p>
+<p>The return value of the <code>append_XXX</code> methods is the buffer itself, so these can be chained:</p>
+<pre class="prettyprint">buff = Vertx::Buffer.create
+
+buff.append_fixnum(100, 1) # Append a single byte in the buffer
+buff.append_fixnum(231243, 8) # Append number as 8 bytes in the buffer
+buff.append_str('foo').append_float(23.4232, 4) # Appends can be chained
+
+socket.write_buffer(buff)
+</pre>
+<p>Appending FixNums:</p>
+<pre class="prettyprint">buff.append_fixnum(100, 1)   # Append number as single signed byte
+
+buff.append_fixnum(100, 2)   # Append number as signed integer in two bytes
+
+buff.append_fixnum(100, 4)   # Append number as signed integer in four bytes
+
+buff.append_fixnum(100, 8)   # Append number as signed integer in eight bytes
+</pre>
+<p>Appending Floats:</p>
+<pre class="prettyprint">buff.append_float(12.234, 4)    # Append number as a 32-bit IEEE 754 floating point number (4 bytes)
+
+buff.append_float(12.234, 8)    # Append number as a 64-bit IEEE 754 floating point number (8 bytes)
+</pre>
+<p>Appending buffers</p>
+<pre class="prettyprint">buff.append_buffer(other_buffer)    # Append other_buffer to buff
+</pre>
+<p>Appending strings</p>
+<pre class="prettyprint">buff.append_str(str)                      # Append string as UTF-8 encoded bytes
+
+buff.append_str(str, 'UTF-16')            # Append string as sequence of bytes in specified encodingt
+</pre>
+<h3 id="random-access-buffer-writes">Random access buffer writes</h3><br/>
+<p>You can also write into the buffer at a specific index, by using the <code>set_XXX</code> methods. Set methods exist for other buffers, String, Float and FixNum. All the set methods take an index as the first argument - this represents the position in the buffer where to start writing the data.</p>
+<p>When setting a FixNum you have to specify how many bytes you want to set this as in the buffer. Valid values are 1, 2, 4, 8.</p>
+<p>When setting a Float you have to specify how many bytes you want to set this as in the buffer. Valid values are 4, 8.</p>
+<p>The buffer will always expand as necessary to accomodate the data.</p>
+<pre class="prettyprint">buff = Vertx::Buffer.create
+
+buff.set_fixnum(0, 4, 123123) # Set number as 4 bytes written at index 0 
+buff.set_float(1000, 8, 414.123123123) # Set float as 8 bytes at index 1000
+</pre>
+<p>To set FixNums:</p>
+<pre class="prettyprint">buff.set_fixnum(100, 123, 1)    # Set number as a single signed byte at position 100
+
+buff.set_fixnum(100, 123, 2)    # Set number as a signed two byte integer at position 100
+
+buff.set_fixnum(100, 123, 4)    # Set number as a signed four byte integer at position 100
+
+buff.set_fixnum(100, 123, 8)    # Set number as a signed eight byte integer at position 100
+</pre>
+<p>To set Floats:</p>
+<pre class="prettyprint">buff.set_float(100, 1.234, 4)   # Set the number as a 32-bit IEEE 754 floating point number (4 bytes) at pos 100
+
+buff.set_float(100, 1.234, 8)   # Set the number as a 64-bit IEEE 754 floating point number (4 bytes) at pos 100
+</pre>
+<p>To set a buffer</p>
+<pre class="prettyprint">buff.set_buffer(100, other_buffer)
+</pre>
+<p>To set a string</p>
+<pre class="prettyprint">buff.set_string(100, str) # Set the string using UTF-8 encoding
+
+buff.set_string(100, str, 'UTF-16') # Set the string using the specified encoding
+</pre>
+<h2 id="reading-from-a-buffer">Reading from a Buffer</h2><br/>
+<p>Data is read from a buffer using the <code>get_XXX</code> methods. Get methods exist for byte, FixNum and Float. The first argument to these methods is an index in the buffer from where to get the data.</p>
+<p>When reading FixNum values the data in the buffer is interpreted as a signed integer value.</p>
+<pre class="prettyprint">num = buff.get_byte(100)                 # Get a byte from pos 100 in buffer
+
+num = buff.get_fixnum(100, 1)            # Same as get_byte
+
+num = buff.get_fixnum(100, 2)            # Get two bytes as signed integer from pos 100
+
+num = buff.get_fixnum(100, 4)            # Get four bytes as signed integer from pos 100
+
+num = buff.get_fixnum(100, 8)            # Get eight bytes as signed integer from pos 100
+</pre>
+<p>Floats:</p>
+<pre class="prettyprint">num = buff.get_float(100, 4)             # Get four bytes as a 32-bit IEEE 754 floating point number from pos 100
+
+num = buff.get_float(100, 8)             # Get eight bytes as a 32-bit IEEE 754 floating point number from pos 100
+</pre>
+<p>Strings:</p>
+<pre class="prettyprint">str = buff.get_string(100, 110)           # Get 10 bytes from pos 100 interpreted as UTF-8 string
+
+str = buff.get_string(100, 110, 'UTF-16') # Get 10 bytes from pos 100 interpreted in specified encoding
+</pre>
+<p>Buffers:</p>
+<pre class="prettyprint">other_buff = buff.get_buffer(100, 110)    # Get 10 bytes as a new buffer starting at position 100
+</pre>
+<h2 id="other-buffer-methods">Other buffer methods:</h2><br/>
+<ul>
+<li><code>length</code>. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.</li>
+<li><code>copy</code>. Copy the entire buffer</li>
+</ul>
+<p>See the Yardoc for more detailed method level documentation.  <br/>
+</p>
 <h1 id="delayed-and-periodic-tasks">Delayed and Periodic Tasks</h1><br/>
 <p>It's very common in vert.x to want to perform an action after a delay, or periodically.</p>
 <p>In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.</p>

@@ -385,11 +385,147 @@ API - atomic updates etc
 
 # Buffers
 
-**TODO**
+Most data in vert.x is shuffled around using buffers.
 
-# JSON
+A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
 
-**TODO**
+## Creating Buffers
+
+Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
+
+    var buff = new vertx.Buffer('some-string');
+    
+Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
+
+    var buff = new vertx.Buffer('some-string', 'UTF-16');
+    
+Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.
+
+Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
+        
+    var buff = new vertx.Buffer(100000);   
+    
+## Writing to a Buffer
+
+There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to write outside the bounds of the buffer.
+
+### Appending to a Buffer
+
+To append to a buffer, you use the `appendXXX` methods. Append methods exist for appending other buffers, strings and numbers.
+
+The return value of the `appendXXX` methods is the buffer itself, so these can be chained:
+
+    var buff = new vertx.Buffer();
+    
+    buff.appendInt(123).appendString("hello").appendChar('\n');
+    
+    socket.writeBuffer(buff);
+    
+If you want to append a number as an integer to a buffer you must specify how you want to encode it in the buffer
+
+    buff.appendByte(number);  // To append the number as 8 bits (signed)
+    
+    buff.appendShort(number); // To append the number as 16 bits (signed)
+    
+    buff.appendInt(number);   // To append the number as 32 bits (signed)
+    
+    buff.appendLong(number);  // To append the number as 64 bits (signed)
+    
+With floats, you have to specify whether you want to write the number as a 32 bit or 64 bit double precision float
+
+    buff.appendFloat(number);  // To append the number as a 32-bit IEEE 754 floating point number
+    
+    buff.appendDouble(number); // To append the number as a 64-bit IEEE 754 double precision floating point number
+    
+With strings you can specify the encoding, or it will default to UTF-8:
+
+    buff.appendString("hello"); // Write string as UTF-8
+    
+    buff.appendString("hello", "UTF-16"); // Write string in specified encoding    
+    
+Use `appendBuffer` to append another buffer
+
+    buff.appendBuffer(anotherBuffer);    
+
+### Random access buffer writes
+
+You can also write into the buffer at a specific index, by using the `setXXX` methods. Set methods exist for other buffers, string and numbers. All the set methods take an index as the first argument - this represents the position in the buffer where to start writing the data.
+
+The buffer will always expand as necessary to accomodate the data.
+
+    var buff = new vertx.Buffer();
+    
+    buff.setInt(1000, 123);
+    buff.setBytes(0, "hello");
+    
+Similarly to the `appendXXX` methods, when you set a number as an integer you must specify how you want to encode it in the buffer
+
+    buff.setByte(pos, number);  // To set the number as 8 bits (signed)
+    
+    buff.setShort(pos, number); // To set the number as 16 bits (signed)
+    
+    buff.setInt(pos, number);   // To set the number as 32 bits (signed)
+    
+    buff.setLong(pos, number);  // To set the number as 64 bits (signed)
+    
+Also with floats, you have to specify whether you want to set the number as a 32 bit or 64 bit double precision float
+
+    buff.setFloat(pos, number);  // To set the number as a 32-bit IEEE 754 floating point number
+    
+    buff.setDouble(pos, number); // To set the number as a 64-bit IEEE 754 double precision floating point number
+    
+To set strings use the `setString` methods:
+
+    buff.setString(pos, "hello");           // Write string in default UTF-8 encoding
+    
+    buff.setString(pos, "hello", "UTF-16"); // Write the string in the specified encoding     
+    
+Use `setBuffer` to set another buffer:
+
+    buff.setBuffer(pos, anotherBuffer);      
+    
+## Reading from a Buffer
+
+Data is read from a buffer using the `getXXX` methods. Get methods exist for strings and numbers. The first argument to these methods is an index in the buffer from where to get the data.
+
+    Buffer buff = ...;
+    for (int i = 0; i < buff.length(); i += 4) {
+        System.out.println("int value at " + i + " is " + buff.getInt(i));
+    }
+    
+To read data as integers, you must specify how many bits you want to read:
+
+    var num = buff.getByte(pos);   // Read signed 8 bits
+    
+    var num = buff.getShort(pos);  // Read signed 16 bits
+    
+    var num = buff.getInt(pos);    // Read signed 32 bits
+    
+    var num = buff.getLong(pos);   // Read signed 64 bits  
+    
+And with floats, you must specify if you want to read the number as a 32 bit or 64 bit floating point number:
+
+    var num = buff.getFloat(pos);    // Read a 32-bit IEEE 754 floating point number
+    
+    var num = buff.getDouble(pos);   // Read as a 64-bit IEEE 754 double precision floating point number 
+    
+You can read data as strings
+
+    var str = buff.getString(pos, end); // Read from pos to end interpreted as a string in UTF-8 encoding.    
+    
+    var str = buff.getString(pos, end, 'UTF-16'); // Read from pos to end interpreted as a string in the specified encoding.
+    
+Or as buffers
+
+    var subBuffer = buff.getBuffer(pos, end); // Read from pos to end into another buffer    
+    
+## Other buffer methods:
+
+* `length()`. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.
+* `copy()`. Copy the entire buffer
+
+See the JavaDoc for more detailed method level documentation.    
+
 
 # Delayed and Periodic Tasks
 

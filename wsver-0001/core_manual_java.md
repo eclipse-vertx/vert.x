@@ -426,7 +426,6 @@ And then, in a different verticle you can access it:
     
     // etc
     
-**TODO** More on map API
     
 ## Shared Sets
 
@@ -444,12 +443,110 @@ And then, in a different verticle:
         
 # Buffers
 
-**TODO**
+Most data in vert.x is shuffled around using instances of `org.vertx.java.core.buffer.Buffer`.
+
+A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
+
+## Creating Buffers
+
+Create a new empty buffer:
+
+    Buffer buff = new Buffer();
+
+Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
+
+    Buffer buff = new Buffer("some-string");
+    
+Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
+
+    Buffer buff = new Buffer("some-string", "UTF-16");
+    
+Create a buffer from a byte[]
+
+    byte[] bytes = new byte[] { ... };
+    new Buffer(bytes);
+    
+Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.
+
+Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
+        
+    Buffer buff = new Buffer(100000);        
+    
+## Writing to a Buffer
+
+There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to get an `IndexOutOfBoundsException` with a buffer.
+
+### Appending to a Buffer
+
+To append to a buffer, you use the `appendXXX` methods. Append methods exist for appending other buffers, byte[], String and all primitive types.
+
+The return value of the `appendXXX` methods is the buffer itself, so these can be chained:
+
+    Buffer buff = new Buffer();
+    
+    buff.appendInt(123).appendString("hello").appendChar('\n');
+    
+    socket.writeBuffer(buff);
+
+### Random access buffer writes
+
+You can also write into the buffer at a specific index, by using the `setXXX` methods. Set methods exist for other buffers, byte[], String and all primitive types. All the set methods take an index as the first argument - this represents the position in the buffer where to start writing the data.
+
+The buffer will always expand as necessary to accomodate the data.
+
+    Buffer buff = new Buffer();
+    
+    buff.setInt(1000, 123);
+    buff.setBytes(0, "hello");
+    
+## Reading from a Buffer
+
+Data is read from a buffer using the `getXXX` methods. Get methods exist for byte[], String and all primitive types. The first argument to these methods is an index in the buffer from where to get the data.
+
+    Buffer buff = ...;
+    for (int i = 0; i < buff.length(); i += 4) {
+        System.out.println("int value at " + i + " is " + buff.getInt(i));
+    }
+    
+## Other buffer methods:
+
+* `length()`. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.
+* `copy()`. Copy the entire buffer
+
+
+See the JavaDoc for more detailed method level documentation.    
+
 
 # JSON
 
-**TODO**
+Whereas JavaScript has first class support for JSON, and Ruby has Hash literals which make representing JSON easy within code, things aren't so easy in Java.
 
+For this reason, if you want to use JSON from within your Java verticles, we provide some simple JSON classes which represent a JSON object and a JSON array. These classes provide methods for setting and getting all types supported in JSON on an object or array.
+
+A JSON object is represented by instances of `org.vertx.java.core.json.JsonObject`. A JSON array is represented by instances of `org.vertx.java.core.json.JsonArray`.
+
+A usage example would be using a Java verticle to send or receive JSON messages from the event bus.
+
+    EventBus eb = EventBus.instance;
+    
+    JsonObject obj = new JsonObject().setString("foo", "wibble")
+                                     .setNumber("age", 1000);
+                                     
+    eb.send("some-address", obj);
+    
+    
+    // ....
+    // And in a handler somewhere:
+    
+    public void handle(Message<JsonObject> message) {
+        System.out.println("foo is " + message.body.getString("foo");
+        System.out.println("age is " + message.body.getNumber("age");
+    }    
+    
+Methods also existing for converting this objects to and from their JSON serialized forms.  
+
+Please see the JavaDoc for the full Java Json API.    
+    
 # Delayed and Periodic Tasks
 
 It's very common in vert.x to want to perform an action after a delay, or periodically.
@@ -641,7 +738,7 @@ To write data to a socket, you invoke the `write` function. This function can be
 
 With a single buffer:
 
-    Buffer myBuffer = Buffer.create(...);
+    Buffer myBuffer = new Buffer(...);
     sock.write(myBuffer);
     
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
@@ -1219,7 +1316,7 @@ In many cases, you know the body is not large and you just want to receive it in
     server.requestHandler(new Handler<HttpServerRequest>() {
         public void handle(HttpServerRequest request) {
         
-            final Buffer body = Buffer.create(0);
+            final Buffer body = new Buffer(0);
             
             request.dataHandler(new Handler<Buffer>() {
                 public void handle(Buffer buffer) {
@@ -1666,7 +1763,7 @@ As with a server request, if you wanted to read the entire response body before 
     client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
         public void handle(HttpClientResponse resp) {
         
-            final Buffer body = Buffer.create(0);
+            final Buffer body = new Buffer(0);
         
             resp.dataHandler(new Handler<Buffer>() {
                 public void handle(Buffer data) {
@@ -1912,7 +2009,7 @@ The `websocket` instance also has method `writeBinaryFrame` for writing binary d
 
 Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling 
 
-    websocket.writeBuffer(Buffer.create("some-string"));    
+    websocket.writeBuffer(new Buffer("some-string"));    
 
 ### Rejecting WebSockets
 
@@ -2558,7 +2655,7 @@ Here is an example of random access writes:
             if (ar.exception == null) {    
                 AsyncFile asyncFile = ar.result;            
                 // File open, write a buffer 5 times into a file              
-                Buffer buff = Buffer.create("foo");
+                Buffer buff = new Buffer("foo");
                 for (int i = 0; i < 5; i++) {
                     asyncFile.write(buff, buff.length() * i, new AsyncResultHandler<Void>() {
                         public void handle(AsyncResult ar) {
@@ -2597,7 +2694,7 @@ Here's an example of random access reads:
         public void handle(AsyncResult<AsyncFile> ar) {
             if (ar.exception == null) {    
                 AsyncFile asyncFile = ar.result;            
-                Buffer buff = Buffer.create(1000);
+                Buffer buff = new Buffer(1000);
                 for (int i = 0; i < 10; i++) {
                     asyncFile.read(buff, i * 100, i * 100, 100, new AsyncResultHandler<Buffer>() {
                         public void handle(AsyncResult<Buffer> ar) {

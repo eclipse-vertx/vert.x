@@ -97,8 +97,17 @@
 <li><a href="#shared-sets">Shared Sets</a></li>
 </ul>
 </li>
-<li><a href="#buffers">Buffers</a></li>
-<li><a href="#json">JSON</a></li>
+<li><a href="#buffers">Buffers</a><ul>
+<li><a href="#creating-buffers">Creating Buffers</a></li>
+<li><a href="#writing-to-a-buffer">Writing to a Buffer</a><ul>
+<li><a href="#appending-to-a-buffer">Appending to a Buffer</a></li>
+<li><a href="#random-access-buffer-writes">Random access buffer writes</a></li>
+</ul>
+</li>
+<li><a href="#reading-from-a-buffer">Reading from a Buffer</a></li>
+<li><a href="#other-buffer-methods">Other buffer methods:</a></li>
+</ul>
+</li>
 <li><a href="#delayed-and-periodic-tasks">Delayed and Periodic Tasks</a><ul>
 <li><a href="#one-shot-timers">One-shot Timers</a></li>
 <li><a href="#periodic-timers">Periodic Timers</a></li>
@@ -534,9 +543,118 @@ set.add('some-value');
 <p>API - atomic updates etc  <br/>
 </p>
 <h1 id="buffers">Buffers</h1><br/>
-<p><strong>TODO</strong></p>
-<h1 id="json">JSON</h1><br/>
-<p><strong>TODO</strong></p>
+<p>Most data in vert.x is shuffled around using buffers.</p>
+<p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it. You can perhaps think of a buffer as smart byte array.</p>
+<h2 id="creating-buffers">Creating Buffers</h2><br/>
+<p>Create a buffer from a String. The String will be encoded in the buffer using UTF-8.</p>
+<pre class="prettyprint">var buff = new vertx.Buffer('some-string');
+</pre>
+<p>Create a buffer from a String: The String will be encoded using the specified encoding, e.g:</p>
+<pre class="prettyprint">var buff = new vertx.Buffer('some-string', 'UTF-16');
+</pre>
+<p>Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.</p>
+<p>Note that buffers created this way <em>are empty</em>. It does not create a buffer filled with zeros up to the specified size.</p>
+<pre class="prettyprint">var buff = new vertx.Buffer(100000);
+</pre>
+<h2 id="writing-to-a-buffer">Writing to a Buffer</h2><br/>
+<p>There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to write outside the bounds of the buffer.</p>
+<h3 id="appending-to-a-buffer">Appending to a Buffer</h3><br/>
+<p>To append to a buffer, you use the <code>appendXXX</code> methods. Append methods exist for appending other buffers, strings and numbers.</p>
+<p>The return value of the <code>appendXXX</code> methods is the buffer itself, so these can be chained:</p>
+<pre class="prettyprint">var buff = new vertx.Buffer();
+
+buff.appendInt(123).appendString("hello").appendChar('\n');
+
+socket.writeBuffer(buff);
+</pre>
+<p>If you want to append a number as an integer to a buffer you must specify how you want to encode it in the buffer</p>
+<pre class="prettyprint">buff.appendByte(number);  // To append the number as 8 bits (signed)
+
+buff.appendShort(number); // To append the number as 16 bits (signed)
+
+buff.appendInt(number);   // To append the number as 32 bits (signed)
+
+buff.appendLong(number);  // To append the number as 64 bits (signed)
+</pre>
+<p>With floats, you have to specify whether you want to write the number as a 32 bit or 64 bit double precision float</p>
+<pre class="prettyprint">buff.appendFloat(number);  // To append the number as a 32-bit IEEE 754 floating point number
+
+buff.appendDouble(number); // To append the number as a 64-bit IEEE 754 double precision floating point number
+</pre>
+<p>With strings you can specify the encoding, or it will default to UTF-8:</p>
+<pre class="prettyprint">buff.appendString("hello"); // Write string as UTF-8
+
+buff.appendString("hello", "UTF-16"); // Write string in specified encoding
+</pre>
+<p>Use <code>appendBuffer</code> to append another buffer</p>
+<pre class="prettyprint">buff.appendBuffer(anotherBuffer);
+</pre>
+<h3 id="random-access-buffer-writes">Random access buffer writes</h3><br/>
+<p>You can also write into the buffer at a specific index, by using the <code>setXXX</code> methods. Set methods exist for other buffers, string and numbers. All the set methods take an index as the first argument - this represents the position in the buffer where to start writing the data.</p>
+<p>The buffer will always expand as necessary to accomodate the data.</p>
+<pre class="prettyprint">var buff = new vertx.Buffer();
+
+buff.setInt(1000, 123);
+buff.setBytes(0, "hello");
+</pre>
+<p>Similarly to the <code>appendXXX</code> methods, when you set a number as an integer you must specify how you want to encode it in the buffer</p>
+<pre class="prettyprint">buff.setByte(pos, number);  // To set the number as 8 bits (signed)
+
+buff.setShort(pos, number); // To set the number as 16 bits (signed)
+
+buff.setInt(pos, number);   // To set the number as 32 bits (signed)
+
+buff.setLong(pos, number);  // To set the number as 64 bits (signed)
+</pre>
+<p>Also with floats, you have to specify whether you want to set the number as a 32 bit or 64 bit double precision float</p>
+<pre class="prettyprint">buff.setFloat(pos, number);  // To set the number as a 32-bit IEEE 754 floating point number
+
+buff.setDouble(pos, number); // To set the number as a 64-bit IEEE 754 double precision floating point number
+</pre>
+<p>To set strings use the <code>setString</code> methods:</p>
+<pre class="prettyprint">buff.setString(pos, "hello");           // Write string in default UTF-8 encoding
+
+buff.setString(pos, "hello", "UTF-16"); // Write the string in the specified encoding
+</pre>
+<p>Use <code>setBuffer</code> to set another buffer:</p>
+<pre class="prettyprint">buff.setBuffer(pos, anotherBuffer);
+</pre>
+<h2 id="reading-from-a-buffer">Reading from a Buffer</h2><br/>
+<p>Data is read from a buffer using the <code>getXXX</code> methods. Get methods exist for strings and numbers. The first argument to these methods is an index in the buffer from where to get the data.</p>
+<pre class="prettyprint">Buffer buff = ...;
+for (int i = 0; i &lt; buff.length(); i += 4) {
+    System.out.println("int value at " + i + " is " + buff.getInt(i));
+}
+</pre>
+<p>To read data as integers, you must specify how many bits you want to read:</p>
+<pre class="prettyprint">var num = buff.getByte(pos);   // Read signed 8 bits
+
+var num = buff.getShort(pos);  // Read signed 16 bits
+
+var num = buff.getInt(pos);    // Read signed 32 bits
+
+var num = buff.getLong(pos);   // Read signed 64 bits
+</pre>
+<p>And with floats, you must specify if you want to read the number as a 32 bit or 64 bit floating point number:</p>
+<pre class="prettyprint">var num = buff.getFloat(pos);    // Read a 32-bit IEEE 754 floating point number
+
+var num = buff.getDouble(pos);   // Read as a 64-bit IEEE 754 double precision floating point number
+</pre>
+<p>You can read data as strings</p>
+<pre class="prettyprint">var str = buff.getString(pos, end); // Read from pos to end interpreted as a string in UTF-8 encoding.
+
+var str = buff.getString(pos, end, 'UTF-16'); // Read from pos to end interpreted as a string in the specified encoding.
+</pre>
+<p>Or as buffers</p>
+<pre class="prettyprint">var subBuffer = buff.getBuffer(pos, end); // Read from pos to end into another buffer
+</pre>
+<h2 id="other-buffer-methods">Other buffer methods:</h2><br/>
+<ul>
+<li><code>length()</code>. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.</li>
+<li><code>copy()</code>. Copy the entire buffer</li>
+</ul>
+<p>See the JavaDoc for more detailed method level documentation.  <br/>
+</p>
 <h1 id="delayed-and-periodic-tasks">Delayed and Periodic Tasks</h1><br/>
 <p>It's very common in vert.x to want to perform an action after a delay, or periodically.</p>
 <p>In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.</p>

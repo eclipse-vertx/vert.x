@@ -381,11 +381,158 @@ API - atomic updates etc
 
 # Buffers
 
-**TODO**
+Most data in vert.x is shuffled around using instances of `Vertx::Buffer`.
 
-# JSON
+A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it.
 
-**TODO**
+## Creating Buffers
+
+Create an empty buffer
+
+    buff = Vertx::Buffer.create
+
+Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
+
+    buff = Vertx::Buffer.create_from_str("some-string")
+    
+Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
+
+    buff = Vertx::Buffer.create_from_str("some-string", "UTF-16")
+    
+Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.
+
+Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
+        
+    buff = Vertx::Buffer.create(100000)        
+    
+## Writing to a Buffer
+
+There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to write outside the bounds of the buffer.
+
+### Appending to a Buffer
+
+To append to a buffer, you use the `append_XXX` methods. Append methods exist for appending other buffers, String, Float and FixNum.
+
+When appending a FixNum you have to specify how many bytes you want to append this as in the buffer. Valid values are 1, 2, 4, 8. All FixNums are appended as signed integer values.
+
+When appending a Float you have to specify how many bytes you want to append this as in the buffer. Valid values are 4, 8, representing a single precision 32-bit IEEE 754 and a double precision 64-bit IEEE 754 floating point number respectively.
+
+The return value of the `append_XXX` methods is the buffer itself, so these can be chained:
+
+    buff = Vertx::Buffer.create
+    
+    buff.append_fixnum(100, 1) # Append a single byte in the buffer
+    buff.append_fixnum(231243, 8) # Append number as 8 bytes in the buffer
+    buff.append_str('foo').append_float(23.4232, 4) # Appends can be chained
+    
+    socket.write_buffer(buff)
+    
+Appending FixNums:
+
+    buff.append_fixnum(100, 1)   # Append number as single signed byte
+    
+    buff.append_fixnum(100, 2)   # Append number as signed integer in two bytes
+    
+    buff.append_fixnum(100, 4)   # Append number as signed integer in four bytes    
+    
+    buff.append_fixnum(100, 8)   # Append number as signed integer in eight bytes    
+    
+Appending Floats:
+
+    buff.append_float(12.234, 4)    # Append number as a 32-bit IEEE 754 floating point number (4 bytes)
+    
+    buff.append_float(12.234, 8)    # Append number as a 64-bit IEEE 754 floating point number (8 bytes)    
+    
+Appending buffers
+
+    buff.append_buffer(other_buffer)    # Append other_buffer to buff    
+    
+Appending strings
+
+    buff.append_str(str)                      # Append string as UTF-8 encoded bytes    
+    
+    buff.append_str(str, 'UTF-16')            # Append string as sequence of bytes in specified encodingt
+
+### Random access buffer writes
+
+You can also write into the buffer at a specific index, by using the `set_XXX` methods. Set methods exist for other buffers, String, Float and FixNum. All the set methods take an index as the first argument - this represents the position in the buffer where to start writing the data.
+
+When setting a FixNum you have to specify how many bytes you want to set this as in the buffer. Valid values are 1, 2, 4, 8.
+
+When setting a Float you have to specify how many bytes you want to set this as in the buffer. Valid values are 4, 8.
+
+The buffer will always expand as necessary to accomodate the data.
+
+    buff = Vertx::Buffer.create
+    
+    buff.set_fixnum(0, 4, 123123) # Set number as 4 bytes written at index 0 
+    buff.set_float(1000, 8, 414.123123123) # Set float as 8 bytes at index 1000
+    
+To set FixNums:
+
+    buff.set_fixnum(100, 123, 1)    # Set number as a single signed byte at position 100     
+    
+    buff.set_fixnum(100, 123, 2)    # Set number as a signed two byte integer at position 100         
+    
+    buff.set_fixnum(100, 123, 4)    # Set number as a signed four byte integer at position 100             
+    
+    buff.set_fixnum(100, 123, 8)    # Set number as a signed eight byte integer at position 100             
+    
+To set Floats:
+
+    buff.set_float(100, 1.234, 4)   # Set the number as a 32-bit IEEE 754 floating point number (4 bytes) at pos 100   
+    
+    buff.set_float(100, 1.234, 8)   # Set the number as a 64-bit IEEE 754 floating point number (4 bytes) at pos 100    
+    
+To set a buffer
+
+    buff.set_buffer(100, other_buffer)
+    
+To set a string
+
+    buff.set_string(100, str) # Set the string using UTF-8 encoding        
+           
+    buff.set_string(100, str, 'UTF-16') # Set the string using the specified encoding
+           
+## Reading from a Buffer
+
+Data is read from a buffer using the `get_XXX` methods. Get methods exist for byte, FixNum and Float. The first argument to these methods is an index in the buffer from where to get the data.
+
+When reading FixNum values the data in the buffer is interpreted as a signed integer value.
+
+    num = buff.get_byte(100)                 # Get a byte from pos 100 in buffer
+    
+    num = buff.get_fixnum(100, 1)            # Same as get_byte
+    
+    num = buff.get_fixnum(100, 2)            # Get two bytes as signed integer from pos 100
+    
+    num = buff.get_fixnum(100, 4)            # Get four bytes as signed integer from pos 100 
+    
+    num = buff.get_fixnum(100, 8)            # Get eight bytes as signed integer from pos 100       
+    
+Floats:
+
+    num = buff.get_float(100, 4)             # Get four bytes as a 32-bit IEEE 754 floating point number from pos 100
+    
+    num = buff.get_float(100, 8)             # Get eight bytes as a 32-bit IEEE 754 floating point number from pos 100    
+
+Strings:
+
+    str = buff.get_string(100, 110)           # Get 10 bytes from pos 100 interpreted as UTF-8 string
+    
+    str = buff.get_string(100, 110, 'UTF-16') # Get 10 bytes from pos 100 interpreted in specified encoding
+    
+Buffers:
+
+    other_buff = buff.get_buffer(100, 110)    # Get 10 bytes as a new buffer starting at position 100      
+    
+    
+## Other buffer methods:
+
+* `length`. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.
+* `copy`. Copy the entire buffer
+
+See the Yardoc for more detailed method level documentation.    
 
 # Delayed and Periodic Tasks
 
