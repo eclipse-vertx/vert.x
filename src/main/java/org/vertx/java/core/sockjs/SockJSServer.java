@@ -20,7 +20,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.impl.SockJSServerImpl;
+import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 /**
  *
@@ -58,14 +58,14 @@ public class SockJSServer {
 
   private static final Logger log = LoggerFactory.getLogger(SockJSServer.class);
 
-  private final SockJSServerImpl serverImpl;
+  private final DefaultSockJSServer serverDefault;
 
   /**
    * Create a new SockJSServer.
    * @param httpServer - you must pass in an HttpServer instance
    */
   public SockJSServer(HttpServer httpServer) {
-    serverImpl = new SockJSServerImpl(httpServer);
+    serverDefault = new DefaultSockJSServer(httpServer);
   }
 
   /**
@@ -75,7 +75,7 @@ public class SockJSServer {
    */
   public void installApp(AppConfig config,
                          final Handler<SockJSSocket> sockHandler) {
-    serverImpl.installApp(config, sockHandler);
+    serverDefault.installApp(config, sockHandler);
   }
 
 }

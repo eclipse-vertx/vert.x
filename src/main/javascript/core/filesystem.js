@@ -253,14 +253,14 @@ if (!vertx.FileSystem) {
 
     vertx.FileSystem.writeFile = function(path, data, handler) {
       if (typeof data === 'string') {
-        data = org.vertx.java.core.buffer.Buffer.create(data);
+        data = new org.vertx.java.core.buffer.Buffer(data);
       }
       j_fs.writeFile(path, data, wrapHandler(handler));
     }
 
     vertx.FileSystem.writeFileSync = function(path, data) {
       if (typeof data === 'string') {
-        data = org.vertx.java.core.buffer.Buffer.create(data);
+        data = new org.vertx.java.core.buffer.Buffer(data);
       }
       j_fs.writeFileSync(path, data);
     }

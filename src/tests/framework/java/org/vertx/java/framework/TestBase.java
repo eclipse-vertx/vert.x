@@ -89,8 +89,6 @@ public class TestBase extends TestCase {
 
               String type = message.body.getString("type");
 
-              //System.out.println("******************* Got message: " + type);
-
               switch (type) {
                 case EventFields.TRACE_EVENT:
                   log.trace(message.body.getString(EventFields.TRACE_MESSAGE_FIELD));

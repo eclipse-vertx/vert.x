@@ -91,7 +91,7 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
         if (jsonMessage.replyAddress != null) {
           envelope.putString("replyAddress", jsonMessage.replyAddress);
         }
-        sock.writeBuffer(Buffer.create(envelope.encode()));
+        sock.writeBuffer(new Buffer(envelope.encode()));
       }
 
       private void handleRegister(final String address) {

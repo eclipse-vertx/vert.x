@@ -13,7 +13,7 @@ you can run vertx is application server mode. See the wiki for more information)
 
 (for full help on deploying just type vertx from the command line)
 
-(from this directory)
+(all examples should be run from this directory unless otherwise stated (e.g. the webapp example))
 
 vertx run <example script name>
 
@@ -241,7 +241,7 @@ You will need an instance of MongoDB server (with default settings) running on l
 
 To run it simply `cd` into the webapp directory and `vertx run app.rb`
 
-Then point your browser at https://localhost:8080 and start shopping!
+Then point your browser at https://localhost:8080 and start shopping! (Note it's https not http!)
 
 To fully understand this example please follow the web app tutorial on the website
 

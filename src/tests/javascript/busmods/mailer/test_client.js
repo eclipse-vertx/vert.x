@@ -29,7 +29,7 @@ function testMailer() {
     from: user,
     to: user,
     subject: 'this is the subject',
-    body: 'this is the payload'
+    body: 'this is the body'
   }
 
   eb.send("test.mailer", msg, function(msg) {
@@ -43,7 +43,7 @@ function testMailerError() {
     from: "wdok wdqwd qd",
     to: user,
     subject: 'this is the subject',
-    body: 'this is the payload'
+    body: 'this is the body'
   }
 
   eb.send("test.mailer", msg, function(msg) {

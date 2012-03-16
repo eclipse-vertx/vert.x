@@ -1,40 +1,30 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 load('vertx.js')
 
 var eb = vertx.EventBus;
 
 var address = 'example.address'
-var creditsAddress = 'example.credits'
-
-var batchSize = 10000;
-
-var received = 0
-var count = 0
-
-var start = null;
 
 var handler = function(message) {
-  received++;
-  if (received == batchSize) {
-    eb.send(creditsAddress, null);
-    received = 0;
-  }
-  count++;
-  if (count % batchSize == 0) {
-    // stdout.println("Received " + count);
-    if (start == null) {
-      start = new Date();
-    } else {
-      var now = new Date();
-      var elapsed = now.getTime() - start.getTime();
-      var rate = 1000 * (count + 0.0) / (elapsed);
-      stdout.println("rate: " + rate + " msgs/sec");
-    }
-  }
+  stdout.println('Received message ' + message)
 }
 
 eb.registerHandler(address, handler);
-
-eb.send(creditsAddress, null);
 
 function vertxStop() {
   eb.unregisterHandler(address, handler);

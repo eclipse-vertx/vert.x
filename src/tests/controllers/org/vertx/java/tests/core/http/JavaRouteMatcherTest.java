@@ -134,4 +134,11 @@ public class JavaRouteMatcherTest extends TestBase {
   public void testRouteNoMatchRegex() {
     startTest(getMethodName());
   }
+  public void testRouteNoMatchHandlerPattern() {
+    startTest(getMethodName());
+  }
+
+  public void testRouteNoMatchHandlerRegex() {
+    startTest(getMethodName());
+  }
 }

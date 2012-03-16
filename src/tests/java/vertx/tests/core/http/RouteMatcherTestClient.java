@@ -18,6 +18,7 @@ package vertx.tests.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -190,22 +191,32 @@ public class RouteMatcherTestClient extends TestClientBase {
 
   public void testRouteNoMatchPattern() {
     Map<String, String> params = new HashMap<>();
-    testRoute(false, "foo", params, "GET", "bar", false);
+    testRoute(false, "foo", params, "GET", "bar", false, false);
   }
 
   public void testRouteNoMatchRegex() {
     Map<String, String> params = new HashMap<>();
-    testRoute(true, "foo", params, "GET", "bar", false);
+    testRoute(true, "foo", params, "GET", "bar", false, false);
+  }
+
+  public void testRouteNoMatchHandlerPattern() {
+    Map<String, String> params = new HashMap<>();
+    testRoute(false, "foo", params, "GET", "bar", false, true);
+  }
+
+  public void testRouteNoMatchHandlerRegex() {
+    Map<String, String> params = new HashMap<>();
+    testRoute(true, "foo", params, "GET", "bar", false, true);
   }
 
 
   private void testRoute(final boolean regex, final String pattern, final Map<String, String> params,
                          final String method, final String uri)  {
-    testRoute(regex, pattern, params, method, uri, true);
+    testRoute(regex, pattern, params, method, uri, true, false);
   }
 
   private void testRoute(final boolean regex, final String pattern, final Map<String, String> params,
-                         final String method, final String uri, final boolean shouldPass)  {
+                         final String method, final String uri, final boolean shouldPass, final boolean noMatchHandler)  {
 
     RouteMatcher matcher = new RouteMatcher();
 
@@ -285,6 +296,16 @@ public class RouteMatcherTestClient extends TestClientBase {
         break;
     }
 
+    final String noMatchResponseBody = "oranges";
+
+    if (noMatchHandler) {
+      matcher.noMatch(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+          req.response.end(noMatchResponseBody);
+        }
+      });
+    }
+
     final HttpServer server = new HttpServer();
     server.requestHandler(matcher);
     server.listen(8080, "localhost");
@@ -295,15 +316,19 @@ public class RouteMatcherTestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         if (shouldPass) {
           tu.azzert(200 == resp.statusCode);
+          closeClientAndServer(client, server);
+        } else if (noMatchHandler) {
+          tu.azzert(200 == resp.statusCode);
+          resp.bodyHandler(new Handler<Buffer>() {
+            public void handle(Buffer body) {
+              tu.azzert(noMatchResponseBody.equals(body.toString()));
+              closeClientAndServer(client, server);
+            }
+          });
         } else {
           tu.azzert(404 == resp.statusCode);
+          closeClientAndServer(client, server);
         }
-        client.close();
-        server.close(new SimpleHandler() {
-          public void handle() {
-            tu.testComplete();
-          }
-        });
       }
     };
 
@@ -342,5 +367,14 @@ public class RouteMatcherTestClient extends TestClientBase {
     }
 
     req.end();
+  }
+
+  private void closeClientAndServer(HttpClient client, HttpServer server) {
+    client.close();
+    server.close(new SimpleHandler() {
+      public void handle() {
+        tu.testComplete();
+      }
+    });
   }
 }

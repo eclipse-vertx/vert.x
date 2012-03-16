@@ -151,6 +151,10 @@ class ClientConnection extends AbstractConnection {
     channel.close();
   }
 
+  boolean isClosed() {
+    return !channel.isOpen();
+  }
+
   //TODO - combine these with same in ServerConnection and NetSocket
 
   void handleInterestedOpsChanged() {
@@ -238,6 +242,9 @@ class ClientConnection extends AbstractConnection {
   }
 
   ChannelFuture write(Object obj) {
+    if (!channel.isOpen()) {
+      throw new IllegalStateException("Connection is closed");
+    }
     return channel.write(obj);
   }
 

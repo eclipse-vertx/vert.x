@@ -29,8 +29,8 @@ class BufferMessage extends BaseMessage<Buffer> {
 
   private static final Logger log = LoggerFactory.getLogger(BufferMessage.class);
 
-  BufferMessage(String address, Buffer payload) {
-    super(address, payload);
+  BufferMessage(String address, Buffer body) {
+    super(address, body);
   }
 
   public BufferMessage(Buffer readBuff) {
@@ -43,8 +43,8 @@ class BufferMessage extends BaseMessage<Buffer> {
       pos++;
       int buffLength = readBuff.getInt(pos);
       pos += 4;
-      byte[] payload = readBuff.getBytes(pos, pos + buffLength);
-      body = Buffer.create(payload);
+      byte[] bytes = readBuff.getBytes(pos, pos + buffLength);
+      body = new Buffer(bytes);
     }
   }
 

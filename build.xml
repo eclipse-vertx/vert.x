@@ -24,7 +24,7 @@
   <property name="target" value="target"/>
   <property name="core-jar-file" value="vert.x-core.jar"/>
   <property name="platform-jar-file" value="vert.x-platform.jar"/>
-  <property name="version-number" value="1.0.beta1"/>
+  <property name="version-number" value="1.0.beta4"/>
   <property name="dist-build-base" value="${target}/dist-build"/>
   <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
   <property name="java-src-root" value="src/main/java"/>
@@ -150,19 +150,6 @@
 
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
-    <exclude name="org/vertx/java/tests/old/**/*Test.class"/>
-    <exclude name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
-  </fileset>
-
-  <!-- You will need  a mailer (use sendmail)
-  running on localhost:25 -->
-  <fileset id="mailer-tests.fs" dir="${tests-target}">
-    <include name="org/vertx/java/tests/busmods/mailer/*Test.class"/>
-  </fileset>
-
-  <!-- You will need a MongoDB instance running locally -->
-  <fileset id="persistor-tests.fs" dir="${tests-target}">
-    <include name="org/vertx/java/tests/busmods/persistor/*Test.class"/>
   </fileset>
 
   <fileset id="test-one.fs" dir="${tests-target}">
@@ -172,21 +159,6 @@
   <target name="tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="main-tests.fs"/>
-    </antcall>
-  </target>
-
-  <target name="all-tests" depends="tests, mailer-tests, persistor-tests">
-  </target>
-
-  <target name="mailer-tests">
-    <antcall target="internal-tests">
-      <param name="tests-fs" value="mailer-tests.fs"/>
-    </antcall>
-  </target>
-
-  <target name="persistor-tests">
-    <antcall target="internal-tests">
-      <param name="tests-fs" value="persistor-tests.fs"/>
     </antcall>
   </target>
 
@@ -217,9 +189,9 @@
       <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
       <packageset dir="${java-src-root}" defaultexcludes="yes">
         <include name="org/vertx/java/core/**"/>
-        <exclude name="org/vertx/java/core/**/impl/**"/>
-        <exclude name="org/vertx/java/core/composition/**"/>
+        <include name="org/vertx/java/deploy/**"/>
         <include name="org/vertx/java/busmods/**"/>
+        <exclude name="org/vertx/java/**/impl/**"/>
       </packageset>
     </javadoc>
   </target>
@@ -286,9 +258,14 @@
     <!-- We need to use exec since the ant copy task does not preserve file permissions -->
     <mkdir dir="${dist-build}/bin"/>
 
+    <!-- We use cp so we can preserve file attributes. No shell so can't use wildcards :( -->
     <exec executable="cp">
       <arg value="src/scripts/vertx"/>
       <arg value="${dist-build}/bin/vertx"/>
+    </exec>
+    <exec executable="cp">
+      <arg value="src/scripts/vertx.bat"/>
+      <arg value="${dist-build}/bin/vertx.bat"/>
     </exec>
 
     <copy todir="${dist-build}/examples">
@@ -305,6 +282,9 @@
 
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/eventbusbridge"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/webapp/web/js"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
 
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>

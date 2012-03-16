@@ -162,7 +162,7 @@ public class RecordParser implements Handler<Buffer> {
       buff = null;
       pos = 0;
     } else {
-      buff = buff.copy(start, len);
+      buff = buff.getBuffer(start, len);
       pos = buff.length();
     }
     start = 0;
@@ -174,7 +174,7 @@ public class RecordParser implements Handler<Buffer> {
       if (buff.getByte(pos) == delim[delimPos]) {
         delimPos++;
         if (delimPos == delim.length) {
-          Buffer ret = buff.copy(start, pos - delim.length + 1);
+          Buffer ret = buff.getBuffer(start, pos - delim.length + 1);
           start = pos + 1;
           delimPos = 0;
           output.handle(ret);
@@ -187,7 +187,7 @@ public class RecordParser implements Handler<Buffer> {
     int len = buff.length();
     while (len - start >= recordSize && !reset) {
       int end = start + recordSize;
-      Buffer ret = buff.copy(start, end);
+      Buffer ret = buff.getBuffer(start, end);
       start = end;
       pos = start - 1;
       output.handle(ret);

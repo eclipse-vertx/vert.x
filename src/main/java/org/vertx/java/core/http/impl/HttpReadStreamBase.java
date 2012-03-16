@@ -34,7 +34,7 @@ public abstract class HttpReadStreamBase implements ReadStream {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   public void bodyHandler(final Handler<Buffer> bodyHandler) {
-    final Buffer body = Buffer.create(0);
+    final Buffer body = new Buffer();
     dataHandler(new Handler<Buffer>() {
       public void handle(Buffer buff) {
         body.appendBuffer(buff);

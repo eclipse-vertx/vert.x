@@ -56,8 +56,8 @@ import java.util.Map;
  *
  * req.putHeader("some-header", "hello");
  * req.putHeader("Content-Length", 5);
- * req.write(Buffer.create(new byte[]{1, 2, 3, 4, 5}));
- * req.write(Buffer.create(new byte[]{6, 7, 8, 9, 10}));
+ * req.write(new Buffer(new byte[]{1, 2, 3, 4, 5}));
+ * req.write(new Buffer(new byte[]{6, 7, 8, 9, 10}));
  * req.end();
  *
  * </pre>

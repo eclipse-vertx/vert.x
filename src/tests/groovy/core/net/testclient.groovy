@@ -19,7 +19,7 @@ void test1() {
     }
 
     String str = "hello"
-    socket << Buffer.create(str)
+    socket << new Buffer(str)
   })
 }
 

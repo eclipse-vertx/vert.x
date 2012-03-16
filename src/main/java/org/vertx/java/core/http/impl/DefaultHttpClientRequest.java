@@ -132,12 +132,12 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
 
   public DefaultHttpClientRequest write(String chunk) {
     check();
-    return write(Buffer.create(chunk).getChannelBuffer(), null);
+    return write(new Buffer(chunk).getChannelBuffer(), null);
   }
 
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
-    return write(Buffer.create(chunk, enc).getChannelBuffer(), null);
+    return write(new Buffer(chunk, enc).getChannelBuffer(), null);
   }
 
   public DefaultHttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
@@ -147,12 +147,12 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
 
   public DefaultHttpClientRequest write(String chunk, Handler<Void> doneHandler) {
     checkComplete();
-    return write(Buffer.create(chunk).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk).getChannelBuffer(), doneHandler);
   }
 
   public DefaultHttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
     check();
-    return write(Buffer.create(chunk, enc).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk, enc).getChannelBuffer(), doneHandler);
   }
 
   public void setWriteQueueMaxSize(int maxSize) {
@@ -206,11 +206,11 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
   }
 
   public void end(String chunk) {
-    end(Buffer.create(chunk));
+    end(new Buffer(chunk));
   }
 
   public void end(String chunk, String enc) {
-    end(Buffer.create(chunk, enc));
+    end(new Buffer(chunk, enc));
   }
 
   public void end(Buffer chunk) {
@@ -286,7 +286,11 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
       //they can capture any exceptions on connection
       client.getConnection(new Handler<ClientConnection>() {
         public void handle(ClientConnection conn) {
-          connected(conn);
+          if (!conn.isClosed()) {
+            connected(conn);
+          } else {
+            connect();
+          }
         }
       }, context);
 
@@ -343,7 +347,7 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
 
     if (!raw && !chunked && written > contentLength) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "payload BEFORE sending any data if you are not using HTTP chunked encoding. "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
           + "Current written: " + written + " Current Content-Length: " + contentLength);
     }
 

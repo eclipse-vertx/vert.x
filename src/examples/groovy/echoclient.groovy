@@ -12,7 +12,7 @@ for (int i in 0..<10) {
     // Now send some data
     String str = "hello $index\n"
     print "Net client sending: $str"
-    socket << Buffer.create(str)
+    socket << new Buffer(str)
   }.rcurry(i))
 }
 
