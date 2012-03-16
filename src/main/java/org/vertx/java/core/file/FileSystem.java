@@ -914,7 +914,7 @@ public class FileSystem {
       public Buffer action() throws Exception {
         Path target = Paths.get(path);
         byte[] bytes = Files.readAllBytes(target);
-        Buffer buff = Buffer.create(bytes);
+        Buffer buff = new Buffer(bytes);
         return buff;
       }
     };

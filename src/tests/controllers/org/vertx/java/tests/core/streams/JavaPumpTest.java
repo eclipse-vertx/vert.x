@@ -39,7 +39,7 @@ public class JavaPumpTest extends TestCase {
     for (int i = 0; i < 10; i++) { // Repeat a few times
       p.start();
 
-      Buffer inp = Buffer.create(0);
+      Buffer inp = new Buffer();
       for (int j = 0; j < 10; j++) {
         Buffer b = TestUtils.generateRandomBuffer(100);
         inp.appendBuffer(b);
@@ -66,7 +66,7 @@ public class JavaPumpTest extends TestCase {
     p.start();
 
     for (int i = 0; i < 10; i++) {   // Repeat a few times
-      Buffer inp = Buffer.create(0);
+      Buffer inp = new Buffer();
       for (int j = 0; j < 4; j++) {
         Buffer b = TestUtils.generateRandomBuffer(100);
         inp.appendBuffer(b);
@@ -84,7 +84,7 @@ public class JavaPumpTest extends TestCase {
 
       TestUtils.buffersEqual(inp, ws.received);
       ws.clearReceived();
-      inp = Buffer.create(0);
+      inp = new Buffer();
       assertFalse(rs.paused);
       assertEquals(i + 1, rs.pauseCount);
       assertEquals(i + 1, rs.resumeCount);
@@ -128,12 +128,12 @@ public class JavaPumpTest extends TestCase {
   private class FakeWriteStream implements WriteStream {
 
     int maxSize;
-    Buffer received = Buffer.create(0);
+    Buffer received = new Buffer();
     Handler<Void> drainHandler;
 
     void clearReceived() {
       boolean callDrain = writeQueueFull();
-      received = Buffer.create(0);
+      received = new Buffer();
       if (callDrain && drainHandler != null) {
         drainHandler.handle(null);
       }

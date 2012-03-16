@@ -83,16 +83,16 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
       buffer.readBytes(mask);
     }
 
-    byte[] payload = new byte[(int) length];
+    byte[] body = new byte[(int) length];
 
-    buffer.readBytes(payload);
+    buffer.readBytes(body);
     if (masked) {
-      for (int i = 0; i < payload.length; ++i) {
-        payload[i] = (byte) (payload[i] ^ mask[i % 4]);
+      for (int i = 0; i < body.length; ++i) {
+        body[i] = (byte) (body[i] ^ mask[i % 4]);
       }
     }
 
-    ChannelBuffer data = ChannelBuffers.wrappedBuffer(payload);
+    ChannelBuffer data = ChannelBuffers.wrappedBuffer(body);
 
     FrameType frameType = decodeFrameType(opcode);
 

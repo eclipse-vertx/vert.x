@@ -179,18 +179,20 @@ public class DefaultNetServer {
     listening = false;
     synchronized (servers) {
 
-      actualServer.handlerManager.removeHandler(connectHandler, ctx);
+      if (actualServer != null) {
+        actualServer.handlerManager.removeHandler(connectHandler, ctx);
 
-      if (actualServer.handlerManager.hasHandlers()) {
-        // The actual server still has handlers so we don't actually close it
-        if (done != null) {
-          executeCloseDone(ctx, done);
+        if (actualServer.handlerManager.hasHandlers()) {
+          // The actual server still has handlers so we don't actually close it
+          if (done != null) {
+            executeCloseDone(ctx, done);
+          }
+        } else {
+          // No Handlers left so close the actual server
+          // The done handler needs to be executed on the context that calls close, NOT the context
+          // of the actual server
+          actualServer.actualClose(ctx, done);
         }
-      } else {
-        // No Handlers left so close the actual server
-        // The done handler needs to be executed on the context that calls close, NOT the context
-        // of the actual server
-        actualServer.actualClose(ctx, done);
       }
     }
   }

@@ -49,35 +49,28 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SockJSServerImpl {
+public class DefaultSockJSServer {
 
-  private static final Logger log = LoggerFactory.getLogger(SockJSServerImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultSockJSServer.class);
 
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions = new HashMap<>();
 
-  public SockJSServerImpl(HttpServer httpServer) {
-    Handler<HttpServerRequest> prevHandler = httpServer.requestHandler();
-    final Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
+  public DefaultSockJSServer(final HttpServer httpServer) {
+
+    // Any previous request and websocket handlers will become default handlers
+    // if nothing else matches
+    rm.noMatch(httpServer.requestHandler());
+    wsMatcher.noMatch(new Handler<WebSocketMatcher.Match>() {
+      Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
+      public void handle(WebSocketMatcher.Match match) {
+        wsHandler.handle(match.ws);
+      }
+    });
 
     httpServer.requestHandler(rm);
     httpServer.websocketHandler(wsMatcher);
-
-    // Preserve any previous handlers as the default handlers, if the requests don't match any app URLs they
-    // will be called
-
-    if (prevHandler != null) {
-      rm.allWithRegEx(".*", prevHandler);
-    }
-
-    if (wsHandler != null) {
-      wsMatcher.addRegEx(".*", new Handler<WebSocketMatcher.Match>() {
-        public void handle(WebSocketMatcher.Match match) {
-          wsHandler.handle(match.ws);
-        }
-      });
-    }
   }
 
   public void installApp(AppConfig config,
@@ -111,6 +104,10 @@ public class SockJSServerImpl {
     rm.postWithRegEx(prefix + "\\/chunking_test", createChunkingTestHandler());
     rm.optionsWithRegEx(prefix + "\\/chunking_test", BaseTransport.createCORSOptionsHandler(config, "OPTIONS, POST"));
 
+    // Info
+    rm.getWithRegEx(prefix + "\\/info", BaseTransport.createInfoHandler(config));
+    rm.optionsWithRegEx(prefix + "\\/info", BaseTransport.createCORSOptionsHandler(config, "OPTIONS, GET"));
+
     // Transports
 
     Set<Transport> enabledTransports = new HashSet<>();
@@ -137,6 +134,7 @@ public class SockJSServerImpl {
     }
     if (enabledTransports.contains(Transport.WEBSOCKETS)) {
       new WebSocketTransport(wsMatcher, rm, prefix, sessions, config, sockHandler);
+      new RawWebSocketTransport(wsMatcher, rm, prefix, sockHandler);
     }
     // Catch all for any other requests on this app
 
@@ -191,10 +189,10 @@ public class SockJSServerImpl {
         BaseTransport.setCORS(req);
         req.response.setChunked(true);
 
-        Buffer h = Buffer.create(2);
+        Buffer h = new Buffer(2);
         h.appendString("h\n");
 
-        Buffer hs = Buffer.create(2050);
+        Buffer hs = new Buffer(2050);
         for (int i = 0; i < 2048; i++) {
           hs.appendByte((byte) ' ');
         }
@@ -254,33 +252,32 @@ public class SockJSServerImpl {
 
   private static final String IFRAME_TEMPLATE =
       "<!DOCTYPE html>\n" +
-          "<html>\n" +
-          "<head>\n" +
-          "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
-          "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-          "  <script>\n" +
-          "    document.domain = document.domain;\n" +
-          "    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
-          "  </script>\n" +
-          "  <script src=\"{{ sockjs_url }}\"></script>\n" +
-          "</head>\n" +
-          "<payload>\n" +
-          "  <h2>Don't panic!</h2>\n" +
-          "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
-          "</payload>\n" +
-          "</html>";
+      "<html>\n" +
+      "<head>\n" +
+      "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
+      "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
+      "  <script>\n" +
+      "    document.domain = document.domain;\n" +
+      "    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
+      "  </script>\n" +
+      "  <script src=\"{{ sockjs_url }}\"></script>\n" +
+      "</head>\n" +
+      "<body>\n" +
+      "  <h2>Don't panic!</h2>\n" +
+      "  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
+      "</body>\n" +
+      "</html>";
 
   // For debug only
   public static void main(String[] args) throws Exception {
     VertxInternal.instance.startOnEventLoop(new Runnable() {
       public void run() {
         HttpServer httpServer = new HttpServer();
-        SockJSServerImpl sjsServer = new SockJSServerImpl(httpServer);
+        DefaultSockJSServer sjsServer = new DefaultSockJSServer(httpServer);
         sjsServer.installTestApplications();
-        httpServer.listen(8080);
+        httpServer.listen(8081);
       }
     });
-
     Thread.sleep(Long.MAX_VALUE);
   }
 
@@ -288,7 +285,7 @@ public class SockJSServerImpl {
   These applications are required by the SockJS protocol and QUnit tests
    */
   public void installTestApplications() {
-    installApp(new AppConfig().setPrefix("/echo"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/echo").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
@@ -297,14 +294,14 @@ public class SockJSServerImpl {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/close"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/close").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.close();
       }
     });
     Set<Transport> disabled = new HashSet<>();
     disabled.add(Transport.WEBSOCKETS);
-    installApp(new AppConfig().setPrefix("/disabled_websocket_echo").setDisabledTransports(disabled),
+    installApp(new AppConfig().setPrefix("/disabled_websocket_echo").setMaxBytesStreaming(4096).setDisabledTransports(disabled),
         new Handler<SockJSSocket>() {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
@@ -314,11 +311,11 @@ public class SockJSServerImpl {
             });
           }
         });
-    installApp(new AppConfig().setPrefix("/ticker"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/ticker").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         final long timerID = Vertx.instance.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
-            sock.writeBuffer(Buffer.create("tick!"));
+            sock.writeBuffer(new Buffer("tick!"));
           }
         });
         sock.endHandler(new SimpleHandler() {
@@ -328,7 +325,7 @@ public class SockJSServerImpl {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/amplify"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/amplify").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       long timerID;
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
@@ -339,7 +336,7 @@ public class SockJSServerImpl {
               n = 1;
             }
             int num = (int)Math.pow(2, n);
-            Buffer buff = Buffer.create(num);
+            Buffer buff = new Buffer(num);
             for (int i = 0; i < num; i++) {
               buff.appendByte((byte)'x');
             }
@@ -348,7 +345,7 @@ public class SockJSServerImpl {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/broadcast"), new Handler<SockJSSocket>() {
+    installApp(new AppConfig().setPrefix("/broadcast").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       final Set<String> connections = SharedData.instance.getSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID);

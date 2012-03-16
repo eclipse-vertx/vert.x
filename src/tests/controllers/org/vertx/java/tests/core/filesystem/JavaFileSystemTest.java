@@ -39,6 +39,8 @@ public class JavaFileSystemTest extends TestBase {
 
   private static final Logger log = LoggerFactory.getLogger(JavaFileSystemTest.class);
 
+  private static String TMP_DIR = System.getProperty("java.io.tmpdir");
+
   private Map<String, Object> params;
 
   @Override
@@ -344,7 +346,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testExistsNoContext() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    FileSystem.instance.exists("foo", new AsyncResultHandler<Boolean>() {
+    FileSystem.instance.exists(TMP_DIR + "/foo", new AsyncResultHandler<Boolean>() {
       public void handle(AsyncResult event) {
         assert(Vertx.instance.isEventLoop());
         latch.countDown();
@@ -356,7 +358,7 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpenNoContext() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    FileSystem.instance.open("foo", new AsyncResultHandler<AsyncFile>() {
+    FileSystem.instance.open(TMP_DIR + "/foo", new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult event) {
         assert (Vertx.instance.isEventLoop());
         latch.countDown();
