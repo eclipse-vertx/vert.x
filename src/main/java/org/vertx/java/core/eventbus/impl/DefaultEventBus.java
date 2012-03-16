@@ -37,6 +37,7 @@ import org.vertx.java.core.parsetools.RecordParser;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -301,6 +302,7 @@ public class DefaultEventBus extends EventBus {
   }
 
   private void send(final BaseMessage message, final Handler replyHandler) {
+    try {
     Context context = VertxInternal.instance.getOrAssignContext();
     try {
       message.sender = serverID;
@@ -343,6 +345,13 @@ public class DefaultEventBus extends EventBus {
       if (context != null) {
         VertxInternal.instance.setContext(context);
       }
+    }
+    } catch (ConcurrentModificationException e) {
+      e.printStackTrace();
+      throw e;
+    } catch (NullPointerException e) {
+      e.printStackTrace();
+      throw e;
     }
   }
 

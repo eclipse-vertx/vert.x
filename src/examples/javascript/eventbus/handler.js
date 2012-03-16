@@ -24,18 +24,7 @@ var handler = function(message) {
   stdout.println('Received message ' + message)
 }
 
-register();
-
-function unregister() {
-  eb.unregisterHandler(address, handler);
-  vertx.setTimer(5000, function() {
-    register()
-  })
-}
-
-function register() {
-  eb.registerHandler(address, handler);
-}
+eb.registerHandler(address, handler);
 
 function vertxStop() {
   eb.unregisterHandler(address, handler);
