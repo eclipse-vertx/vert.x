@@ -1,0 +1,265 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Vertx::SockJSBridge
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (S)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
+     &raquo; 
+    <span class="title">SockJSBridge</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Vertx::SockJSBridge
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Vertx::SockJSBridge</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/event_bus.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+A SockJSBridge bridges between SockJS and the event bus. Bridging allows
+the event bus to be extended to client side in-browser JavaScript.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div>
+
+
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">- (SockJSBridge) <strong>initialize</strong>(http_server, sjs_config, permitted) </a>
+    
+
+    
+  </span>
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Create a new SockJSBridge.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <p class="signature first" id="initialize-instance_method">
+  
+    - (<tt><span class='object_link'><a href="" title="Vertx::SockJSBridge (class)">SockJSBridge</a></span></tt>) <strong>initialize</strong>(http_server, sjs_config, permitted) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Create a new SockJSBridge
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>http_server</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="HttpServer.html" title="Vertx::HttpServer (class)">HttpServer</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+An HTTP server
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>sjs_config</span>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+Config for SockJS server
+</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>permitted</span>
+      
+      
+        <span class='type'>(<tt>[Hash]</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+Array of JSON objects (Hashes) representing permitted matches
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+215
+216
+217
+218
+219
+220</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 215</span>
+
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='comma token'>,</span> <span class='sjs_config identifier id'>sjs_config</span><span class='comma token'>,</span> <span class='permitted identifier id'>permitted</span><span class='rparen token'>)</span>
+  <span class='@sjs_server ivar id'>@sjs_server</span> <span class='assign token'>=</span> <span class='SockJSServer constant id'>SockJSServer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='rparen token'>)</span>
+  <span class='handler identifier id'>handler</span> <span class='assign token'>=</span> <span class='SockJSBridgeHandler constant id'>SockJSBridgeHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+  <span class='handler identifier id'>handler</span><span class='dot token'>.</span><span class='add_permitted identifier id'>add_permitted</span><span class='lparen token'>(</span><span class='mult op'>*</span><span class='permitted identifier id'>permitted</span><span class='rparen token'>)</span>
+  <span class='@sjs_server ivar id'>@sjs_server</span><span class='dot token'>.</span><span class='install_app identifier id'>install_app</span><span class='lparen token'>(</span><span class='sjs_config identifier id'>sjs_config</span><span class='comma token'>,</span> <span class='handler identifier id'>handler</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+</div>
+    
+    <div id="footer">
+  Generated on Tue Mar 13 16:43:35 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
