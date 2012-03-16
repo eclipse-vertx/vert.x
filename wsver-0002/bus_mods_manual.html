@@ -1,0 +1,680 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link rel="stylesheet/less" href="bootstrap/less/bootstrap.less">
+  <script src="less-1.2.1.min.js"></script>
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <title>Vert.x BusMods Manual</title>
+</head>
+
+<body onload="prettyPrint()">
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/vert.x">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li class="active"><a href="/vert.x">Home</a></li>
+          <li><a href="https://github.com/purplefox/vert.x/downloads">Download</a></li>
+          <li><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
+          <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+        <h1 style="font-size: 35px;">BusMods Manual</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+<div>
+<div class="toc">
+<ul>
+<li><a href="#bus-modules">Bus Modules</a><ul>
+<li><a href="#what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</a><ul>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#addresses">Addresses</a></li>
+<li><a href="#clearing-up-handlers">Clearing Up Handlers</a></li>
+</ul>
+</li>
+<li><a href="#out-of-the-box-busmods">Out of the box busmods</a><ul>
+<li><a href="#instantiating-out-of-the-box-busmods">Instantiating out-of-the-box busmods</a></li>
+<li><a href="#mongodb-persistor">MongoDB Persistor</a><ul>
+<li><a href="#dependencies">Dependencies</a></li>
+<li><a href="#name">Name</a></li>
+<li><a href="#configuration_1">Configuration</a></li>
+<li><a href="#operations">Operations</a><ul>
+<li><a href="#save">Save</a></li>
+<li><a href="#find">Find</a><ul>
+<li><a href="#batching">Batching</a></li>
+</ul>
+</li>
+<li><a href="#find-one">Find One</a></li>
+<li><a href="#delete">Delete</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#mailer">Mailer</a><ul>
+<li><a href="#dependencies_1">Dependencies</a></li>
+<li><a href="#name_1">Name</a></li>
+<li><a href="#configuration_2">Configuration</a></li>
+<li><a href="#sending-emails">Sending Emails</a></li>
+</ul>
+</li>
+<li><a href="#authentication-manager">Authentication Manager</a><ul>
+<li><a href="#dependencies_2">Dependencies</a></li>
+<li><a href="#name_2">Name</a></li>
+<li><a href="#configuration_3">Configuration</a></li>
+<li><a href="#operations_1">Operations</a><ul>
+<li><a href="#login">Login</a></li>
+<li><a href="#logout">Logout</a></li>
+<li><a href="#validate">Validate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#work-queue">Work Queue</a><ul>
+<li><a href="#dependencies_3">Dependencies</a></li>
+<li><a href="#name_3">Name</a></li>
+<li><a href="#configuration_4">Configuration</a></li>
+<li><a href="#operations_2">Operations</a><ul>
+<li><a href="#send">Send</a></li>
+<li><a href="#register">Register</a></li>
+<li><a href="#unregister">Unregister</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<h1 id="bus-modules">Bus Modules</h1><br/>
+<h2 id="what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</h2><br/>
+<p>A <em>busmod</em> is a verticle that communicates on the event bus with over verticles by sending JSON messages.</p>
+<p>Since it communicates only with JSON messages then the busmod is instantly usable by other verticles irrespective of which language they are written in, since all the supported languages allow sending and receiving JSON messages from the event bus. </p>
+<p>JSON is the <em>lingua franca</em> of vert.x</p>
+<p>You don't have to write your application modules as busmods but it's highly recommended you do since it will make them easily and consistently usable from other verticles.</p>
+<p>There are a few more conventions that should be followed when writing busmods:</p>
+<h3 id="configuration">Configuration</h3><br/>
+<p>Configuration for a busmod (if any) should be specified using a JSON configuration file when deploying from the command line using <code>vertx run</code> or <code>vertx deploy</code> or passed in when deploying a busmod programmatically.</p>
+<p>Applying configuration this way allows it to be easily and consistently configured irrespective of the language.</p>
+<h3 id="addresses">Addresses</h3><br/>
+<p>Each busmod will register one or more handlers at specific addresses so it can receive messages on the event bus. As a convention, the main address should be passed to the busmod in the JSON configuration.</p>
+<p>If a busmod provides more than one function it often makes sense for it to register more than one handler. If it does so, a good convention for handler names is to use the main address as the root and create sub addresses from there, separated by dot <code>.</code>. For example, the <code>WorkQueue</code> busmod registers handlers at the following addresses, assuming the main address is <code>test.workQueue</code></p>
+<ul>
+<li><code>test.workQueue</code>. Main handler registered at this address. Messages sent to this address are added to the queue</li>
+<li>`test.workQueue.register . Messages sent to this address are requests to register a processor with the queue.</li>
+<li>`test.workQueue.unregister . Messages sent to this address are requests to unregister a processor with the queue.</li>
+</ul>
+<h3 id="clearing-up-handlers">Clearing Up Handlers</h3><br/>
+<p>Remember to unregister any handlers in the cleanup function of the verticle.</p>
+<h2 id="out-of-the-box-busmods">Out of the box busmods</h2><br/>
+<p>The vert.x distribution contains several out-of-the-box budmods that you can use in your applications. These busmods are designed to handle common things that you might want to do in applications.</p>
+<h4 id="instantiating-out-of-the-box-busmods">Instantiating out-of-the-box busmods</h4><br/>
+<p>You can instantiate any out of the box busmo from the command line using <code>vertx run</code> or <code>vertx deploy</code> like any other verticle, e.g.</p>
+<pre class="prettyprint">vertx run &lt;bus_mode_name&gt; -conf &lt;config_file&gt;
+</pre>
+<p>Or programmatically</p>
+<pre class="prettyprint">vertx.deployWorkerVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
+</pre>
+<h3 id="mongodb-persistor">MongoDB Persistor</h3><br/>
+<p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.</p>
+<p>This is a worker busmod and must be started as a worker verticle.</p>
+<h4 id="dependencies">Dependencies</h4><br/>
+<p>This busmod requires a MongoDB server to be available on the network.</p>
+<h4 id="name">Name</h4><br/>
+<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.persistor.MongoPersistor</code>.</p>
+<p>There's also a JavaScript wrapper for it with the name <code>busmods/mongo_persistor.js</code></p>
+<h4 id="configuration_1">Configuration</h4><br/>
+<p>The MongoDB busmod requires the following configuration:</p>
+<pre class="prettyprint">{
+    "address": &lt;address&gt;,
+    "host": &lt;host&gt;,
+    "port": &lt;port&gt;
+    "db_name": &lt;db_name&gt;    
+}
+</pre>
+<p>For example:</p>
+<pre class="prettyprint">{
+    "address": "test.my_persistor",
+    "host": "192.168.1.100",
+    "port": 27000
+    "db_name": "my_db"
+}
+</pre>
+<p>Let's take a look at each field in turn:</p>
+<ul>
+<li><code>address</code> The main address for the busmod. Every busmod has a main address.</li>
+<li><code>host</code> Host name or ip address of the MongoDB instance. Defaults to <code>localhost</code>.</li>
+<li><code>port</code> Port at which the MongoDB instance is listening. Defaults to <code>27017</code>.</li>
+<li><code>db_name</code> Name of the database in the MongoDB instance to use. This parameter is mandatory. If you want to access different MongoDB databases you can create multiple instances of this busmod.</li>
+</ul>
+<h4 id="operations">Operations</h4><br/>
+<p>The busmod supports the following operations</p>
+<h5 id="save">Save</h5><br/>
+<p>Saves a document in the database.</p>
+<p>To save a document send a JSON message to the busmod main address:</p>
+<pre class="prettyprint">{
+    "action": "save",
+    "collection": &lt;collection&gt;,
+    "document": &lt;document&gt;
+}
+</pre>
+<p>Where:
+<em> <code>collection</code> is the name of the MongoDB collection that you wish to save the document in. This field is mandatory.
+</em> <code>document</code> is the JSON document that you wish to save.</p>
+<p>An example would be:</p>
+<pre class="prettyprint">{
+    "action": "save",
+    "collection": "users",
+    "document": {
+        "name": "tim",
+        "age": 1000,
+        "shoesize", 3.14159,
+        "username", "tim",
+        "password", "wibble"
+    }
+}
+</pre>
+<p>When the save complete successfully, a reply message is sent back to the sender with the following data:</p>
+<pre class="prettyprint">{
+    "status": "ok"
+}
+</pre>
+<p>The reply will also contain a field <code>_id</code> if the document that was saved didn't specifiy an id, this will be an automatically generated UUID, for example:</p>
+<pre class="prettyprint">{
+    "status": "ok"
+    "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
+}
+</pre>
+<p>If you save a document which already possesses an <code>_id</code> field, and a document with the same id already exists in the database, then the document will be updated. </p>
+<p>If an error occurs in saving the document a reply is returned:</p>
+<pre class="prettyprint">{
+    "status": "error",
+    "message": &lt;message&gt;
+}
+</pre>
+<p>Where <code>message</code> is an error message.  <br/>
+</p>
+<h5 id="find">Find</h5><br/>
+<p>Finds matching documents in the database.</p>
+<p>To find documents send a JSON message to the busmod main address:</p>
+<pre class="prettyprint">{
+    "action": "find",
+    "collection": &lt;collection&gt;,
+    "match": &lt;match&gt;,
+    "limit": &lt;limit&gt;,
+    "batch_size": &lt;batch_size&gt;
+}
+</pre>
+<p>Where:
+<em> <code>collection</code> is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
+</em> <code>match</code> is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
+<em> <code>limit</code> is a number which determines the maximum total number of documents to return. This is optional. By default all documents are returned.
+</em> <code>batch_size</code> is a number which determines how many documents to return in each reply JSON message. It's optional and the default value is <code>100</code>. Batching is discussed in more detail below.</p>
+<p>An example would be:</p>
+<pre class="prettyprint">{
+    "action": "find",
+    "collection": "orders",
+    "match": {
+        "item": "cheese"
+    }
+}
+</pre>
+<p>This would return all orders where the <code>item</code> field has the value <code>cheese</code>. </p>
+<p>When the find complete successfully, a reply message is sent back to the sender with the following data:</p>
+<pre class="prettyprint">{
+    "status": "ok",
+    "results": &lt;results&gt;
+}
+</pre>
+<p>Where <code>results</code> is a JSON array containing the results of the find operation. For example:</p>
+<pre class="prettyprint">{
+    "status": "ok",
+    "results": [
+        {
+            "user": "tim",
+            "item": "cheese",
+            "total": 123.45
+        },
+        {
+            "user": "bob",
+            "item": "cheese",
+            "total": 12.23
+        },
+        {
+            "user": "jane",
+            "item": "cheese",
+            "total": 50.05
+        }
+    ]
+}
+</pre>
+<p>If an error occurs in finding the documents a reply is returned:</p>
+<pre class="prettyprint">{
+    "status": "error",
+    "message": &lt;message&gt;
+}
+</pre>
+<p>Where <code>message</code> is an error message. </p>
+<h6 id="batching">Batching</h6><br/>
+<p>If a find returns many documents we do not want to load them all up into memory at once and send them in a single JSON message since this could result in the server running out of RAM.</p>
+<p>Instead, if there are more than <code>batch_size</code> documents to be found, the busmod will send a maxium of <code>batch_size</code> documents in each reply, and send multiple replies.</p>
+<p>When you receive a reply to the find message containing <code>batch_size</code> documents the <code>status</code> field of the reply will be set to <code>more-exist</code> if there are more documents available.</p>
+<p>To get the next batch of documents you just reply to the reply with an empty JSON message, and specify a reply handler in which to receive the next batch.</p>
+<p>For instance, in JavaScript you might do something like:</p>
+<pre class="prettyprint">function processResults(results) {
+    // Process the data
+}
+
+function createReplyHandler() {
+    return new function(reply, replier) {
+        // Got some results - process them
+        processResults(reply.results);
+        if (reply.status === 'more-exist') {
+            // Get next batch
+            replier({}, createReplyHandler());
+        }
+    }
+}
+
+// Send the find request
+eb.send('foo.myPersistor', {
+    action: 'find',
+    collection: 'items',
+    matcher: {}        
+}, createReplyHandler());
+</pre>
+<p>If there is more data to be requested and you do not reply to get the next batch within a timeout (10 seconds), then the underlying MongoDB cursor will be closed, and any further attempts to request more will fail.  <br/>
+</p>
+<h5 id="find-one">Find One</h5><br/>
+<p>Finds a single matching document in the database.</p>
+<p>To find a document send a JSON message to the busmod main address:</p>
+<pre class="prettyprint">{
+    "action": "findone",
+    "collection": &lt;collection&gt;,
+    "match": &lt;match&gt;
+}
+</pre>
+<p>Where:
+<em> <code>collection</code> is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
+</em> <code>match</code> is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.</p>
+<p>If more than one document matches, just the first one will be returned.</p>
+<p>An example would be:</p>
+<pre class="prettyprint">{
+    "action": "findone",
+    "collection": "items",
+    "match": {
+        "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
+    }
+}
+</pre>
+<p>This would return the item with the specified id.</p>
+<p>When the find complete successfully, a reply message is sent back to the sender with the following data:</p>
+<pre class="prettyprint">{
+    "status": "ok",
+    "result": &lt;result&gt;
+}
+</pre>
+<p>If an error occurs in finding the documents a reply is returned:</p>
+<pre class="prettyprint">{
+    "status": "error",
+    "message": &lt;message&gt;
+}
+</pre>
+<p>Where <code>message</code> is an error message. </p>
+<h5 id="delete">Delete</h5><br/>
+<p>Deletes a matching documents in the database.</p>
+<p>To delete documents send a JSON message to the busmod main address:</p>
+<pre class="prettyprint">{
+    "action": "delete",
+    "collection": &lt;collection&gt;,
+    "match": &lt;match&gt;
+}
+</pre>
+<p>Where:
+<em> <code>collection</code> is the name of the MongoDB collection that you wish to delete from. This field is mandatory.
+</em> <code>match</code> is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.</p>
+<p>All documents that match will be deleted.</p>
+<p>An example would be:</p>
+<pre class="prettyprint">{
+    "action": "delete",
+    "collection": "items",
+    "match": {
+        "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
+    }
+}
+</pre>
+<p>This would delete the item with the specified id.</p>
+<p>When the find complete successfully, a reply message is sent back to the sender with the following data:</p>
+<pre class="prettyprint">{
+    "status": "ok",
+    "number": &lt;number&gt;
+}
+</pre>
+<p>Where <code>number</code> is the number of documents deleted.  <br/>
+</p>
+<p>If an error occurs in finding the documents a reply is returned:</p>
+<pre class="prettyprint">{
+    "status": "error",
+    "message": &lt;message&gt;
+}
+</pre>
+<p>Where <code>message</code> is an error message. </p>
+<h3 id="mailer">Mailer</h3><br/>
+<p>This busmod allows emails to be sent via SMTP.</p>
+<h4 id="dependencies_1">Dependencies</h4><br/>
+<p>This busmod requires a mail server to be available.</p>
+<h4 id="name_1">Name</h4><br/>
+<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.mailer.Mailer</code>.</p>
+<p>There's also a JavaScript wrapper for it with the name <code>busmods/mailer.js</code>.</p>
+<p>Mailer is a worker busmod and must be started as a worker verticle.</p>
+<h4 id="configuration_2">Configuration</h4><br/>
+<p>The mailer busmod requires the following configuration:</p>
+<pre class="prettyprint">{
+    "address": &lt;address&gt;,
+    "host": &lt;host&gt;,
+    "port": &lt;port&gt;,
+    "ssl": &lt;ssl&gt;,
+    "auth": &lt;auth&gt;,
+    "username": &lt;username&gt;,
+    "password": &lt;password&gt;   
+}
+</pre>
+<p>Let's take a look at each field in turn:</p>
+<ul>
+<li><code>address</code> The main address for the busmod. Every busmod has a main address.</li>
+<li><code>host</code> Host name or ip address of the maile server instance. Defaults to <code>localhost</code>.</li>
+<li><code>port</code> Port at which the mail server is listening. Defaults to <code>25</code>.</li>
+<li><code>ssl</code> If <code>true</code> then use ssl, otherwise don't use ssl. Default is <code>false</code>.</li>
+<li><code>auth</code> If <code>true</code> use authentication, otherwise don't use authentication. Default is <code>false</code>.</li>
+<li><code>username</code> If using authentication, the username. Default is <code>null</code>.</li>
+<li><code>password</code> If using authentication, the password. Default is <code>null</code>.</li>
+</ul>
+<p>For example, to send to a local server on port 25:</p>
+<pre class="prettyprint">{
+    "address": "test.my_mailer"
+}
+</pre>
+<p>Or to a gmail account:</p>
+<pre class="prettyprint">{
+    "address": "test.my_mailer"
+    "host": "smtp.googlemail.com",
+    "port": 465,
+    "ssl": true,
+    "auth": true,
+    "username": "tim",
+    "password": "password"
+}
+</pre>
+<h4 id="sending-emails">Sending Emails</h4><br/>
+<p>To send an email just send a JSON message to the main address of the mailer. The JSON message representing the email should have the following structure:</p>
+<pre class="prettyprint">{
+    "from": &lt;from&gt;,
+    "to": &lt;to|to_list&gt;,        
+    "cc": &lt;cc|cc_list&gt;
+    "bcc": &lt;bcc|bcc_list&gt;
+    "subject": &lt;subject&gt;
+    "body": &lt;body&gt;
+}
+</pre>
+<p>Where:</p>
+<ul>
+<li><code>from</code> is the sender address of the email. Must be a well-formed email address.</li>
+<li><code>to</code> to is either a single well formed email address representing the recipient or a JSON array of email addresses representing the recipients. This field is mandatory.</li>
+<li><code>cc</code> to is either a single well formed email address representing a cc recipient or a JSON array of email addresses representing the cc list. This field is optional.</li>
+<li><code>bcc</code> to is either a single well formed email address representing a bcc recipient or a JSON array of email addresses representing the bcc list. This field is optional.</li>
+<li><code>subject</code> is the subject of the email. This field is mandatory.</li>
+<li><code>body</code> is the body of the email. This field is mandatory.</li>
+</ul>
+<p>For example, to send a mail to a single recipient:</p>
+<pre class="prettyprint">{
+    "from": "tim@wibble.com",
+    "to": "bob@wobble.com",                
+    "subject": "Congratulations on your new armadillo!",
+    "body": "Dear Bob, great to here you have purchased......"
+}
+</pre>
+<p>Or to send to multiple recipients:</p>
+<pre class="prettyprint">{
+    "from": "tim@wibble.com",
+    "to": ["bob@wobble.com", "jane@tribble.com"],                
+    "subject": "Sadly, my aardvark George, has been arrested.",
+    "body": "All, I'm afraid George was found...."
+}
+</pre>
+<h3 id="authentication-manager">Authentication Manager</h3><br/>
+<p>This busmod verifies usernames and passwords in a MongoDB database and generates time-limited session ids. These session ids can be passed around the event bus.</p>
+<p>The authentication manager can also verify a session id. This allows session ids to be passed around the event bus and validated if particular busmods want to find out if the user is logged in.</p>
+<p>A typical usage would be:</p>
+<ul>
+<li>Login with username and password. Obtain session id.</li>
+<li>Do something (e.g. place an order). Pass session id with order message.</li>
+<li>Order busmod verifies session id before placing order. If verifies ok, then order is allowed to be placed.</li>
+</ul>
+<p>Sessions time out after a certain amount of time. After that time, they will not verify as ok.</p>
+<p>This busmod should not be run as a worker.</p>
+<h4 id="dependencies_2">Dependencies</h4><br/>
+<p>This busmod requires a MongoDB persistor busmod to be running to allow searching for usernames and passwords.</p>
+<h4 id="name_2">Name</h4><br/>
+<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.auth.AuthManager</code>.</p>
+<p>There's also a JavaScript wrapper for it with the name <code>busmods/auth_mgr.js</code></p>
+<h4 id="configuration_3">Configuration</h4><br/>
+<p>This busmod requires the following configuration:</p>
+<pre class="prettyprint">{
+    "address": &lt;address&gt;,
+    "user_collection": &lt;user_collection&gt;,
+    "persistor_address": &lt;persistor_address&gt;,
+    "session_timeout": &lt;session_timeout&gt;   
+}
+</pre>
+<p>For example:</p>
+<pre class="prettyprint">{
+    "address": "test.my_authmgr",
+    "user_collection": "users",
+    "persistor_address": "test.my_persistor",
+    "session_timeout": 900000
+}
+</pre>
+<p>Let's take a look at each field in turn:</p>
+<ul>
+<li><code>address</code> The main address for the busmod. Every busmod has a main address.</li>
+<li><code>user_collection</code> The MongoDB collection in which to search for usernames and passwords. This field is mandatory.</li>
+<li><code>persistor_address</code> Address of the persistor busmod to use for usernames and passwords. This field is mandatory.</li>
+<li><code>session_timeout</code> Timeout of a session, in milliseconds. This field is optional. Default value is <code>1800000</code> (30 minutes).</li>
+</ul>
+<h4 id="operations_1">Operations</h4><br/>
+<h5 id="login">Login</h5><br/>
+<p>Login with a username and password and obtain a session id if successful.</p>
+<p>To login, send a JSON message to the address given by the main address of the busmod + <code>.login</code>. For example if the main address is <code>test.authManager</code>, you send the message to <code>test.authManager.login</code>.</p>
+<p>The JSON message should have the following structure:</p>
+<pre class="prettyprint">{
+    "username": &lt;username&gt;,
+    "password": &lt;password&gt;
+}
+</pre>
+<p>If login is successful a reply will be returned:</p>
+<pre class="prettyprint">{
+    "status": "ok",
+    "sessionID": &lt;sesson_id&gt;    
+}
+</pre>
+<p>Where <code>session_id</code> is a unique session id.</p>
+<p>If login is unsuccessful the following reply will be returned:</p>
+<pre class="prettyprint">{
+    "status": "denied"    
+}
+</pre>
+<h5 id="logout">Logout</h5><br/>
+<p>Logout and close a session. Any subsequent attempts to validate the session id will fail.</p>
+<p>To login, send a JSON message to the address given by the main address of the busmod + <code>.logout</code>. For example if the main address is <code>test.authManager</code>, you send the message to <code>test.authManager.logout</code>.</p>
+<p>The JSON message should have the following structure:</p>
+<pre class="prettyprint">{
+    "sessionID": &lt;session_id&gt;
+}
+</pre>
+<p>Where <code>session_id</code> is a unique session id. </p>
+<p>If logout is successful the following reply will be returned:</p>
+<pre class="prettyprint">{
+    "status": "ok"    
+}
+</pre>
+<p>Otherwise, if the session id is not known about:</p>
+<pre class="prettyprint">{
+    "status": "error"    
+}
+</pre>
+<h5 id="validate">Validate</h5><br/>
+<p>Validates a session id.</p>
+<p>To validate, send a JSON message to the address given by the main address of the busmod + <code>.validate</code>. For example if the main address is <code>test.authManager</code>, you send the message to <code>test.authManager.validate</code>.</p>
+<p>The JSON message should have the following structure:</p>
+<pre class="prettyprint">{
+    "sessionID": &lt;session_id&gt;
+}
+</pre>
+<p>Where <code>session_id</code> is a unique session id. </p>
+<p>If the session is valid the following reply will be returned:</p>
+<pre class="prettyprint">{
+    "status": "ok",
+    "username": &lt;username&gt;    
+}
+</pre>
+<p>Where <code>username</code> is the username of the user.  <br/>
+</p>
+<p>Otherwise, if the session is not valid. I.e. it has expired or never existed in the first place.</p>
+<pre class="prettyprint">{
+    "status": "denied"    
+}
+</pre>
+<h3 id="work-queue">Work Queue</h3><br/>
+<p>This busmod queues messages (work) sent to it, and then forwards the work to one of many processors that may be attached to it, if available.</p>
+<p>Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.</p>
+<p>Multiple processors can register for work with the work queue.</p>
+<p>The work queue is useful for use cases where you have a lot of work to process and want to share this work out amongst many processors.</p>
+<p>One example would be processing an order queue - each order must only be processed once, but we can have many processors (potentially on different machines) processing each order.</p>
+<p>Another example would be in computational intensive tasks where the task can be split into N pieces and processed in parallel by different nodes. In other words, a compute cluster.</p>
+<p>This busmod should not be run as a worker.</p>
+<h4 id="dependencies_3">Dependencies</h4><br/>
+<p>If this queue is persistent, the busmod requires a MongoDB persistor busmod to be running for persisting the queue data. [WIP]</p>
+<h4 id="name_3">Name</h4><br/>
+<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.workqueue.WorkQueue</code>.</p>
+<p>There's also a JavaScript wrapper for it with the name <code>busmods/work_queue.js</code></p>
+<h4 id="configuration_4">Configuration</h4><br/>
+<p>This busmod requires the following configuration:</p>
+<pre class="prettyprint">{
+    "address": &lt;address&gt;,
+    "process_timeout": &lt;process_timeout&gt;,
+    "persistor_address": &lt;persistor_address&gt;,
+    "collection": &lt;collection&gt;   
+}
+</pre>
+<p>Where:  <br/>
+</p>
+<ul>
+<li><code>address</code> The main address for the busmod. Every busmod has a main address.</li>
+<li><code>process_timeout</code> The processing timeout, in milliseconds for each item of work. If work is not processed before the timeout, it is returned to the queue and made available to other processors. This field is optional. Default value is <code>300000</code> (5 minutes).</li>
+<li><code>persistor_address</code> If specified, this queue is persistent and this is the address of the persistor busmod to use for persistence. This field is optional.</li>
+<li><code>collection</code> If persistent, the collection in the persistor where to persist the queue. This field is optional.</li>
+</ul>
+<p>An example, non persistent configuration would be:</p>
+<pre class="prettyprint">{
+    "address": "test.orderQueue"
+}
+</pre>
+<p>An example, persistent configuration would be:</p>
+<pre class="prettyprint">{
+    "address": "test.orderQueue",
+    "persistor_address": "test.myPersistor",
+    "collection": "order_queue"
+}
+</pre>
+<h4 id="operations_2">Operations</h4><br/>
+<h5 id="send">Send</h5><br/>
+<p>To send data to the work queue, just send a JSON message to the main address of the busmod. The JSON message can have any structure you like - the work queue does not look at it.</p>
+<p>Once the send has been accepted, and queued a reply message will be sent:</p>
+<pre class="prettyprint">{
+    "status": "ok"
+}
+</pre>
+<p>If a problem occurs with the queueing, an error reply will be sent:</p>
+<pre class="prettyprint">{
+    "status": "error"
+    "message": &lt;message&gt;
+}
+</pre>
+<p>Where <code>message</code> is an error message.  <br/>
+</p>
+<h5 id="register">Register</h5><br/>
+<p>This is how a processor registers with the work queue. A processor is just an arbitrary handler on the event bus. To register itselfs as a processor, a JSON message is sent to the address given by the main address of the busmod + <code>.register</code>. For example if the main address is <code>test.orderQueue</code>, you send the message to <code>test.orderQueue.register</code>.</p>
+<p>The message should have the following structure:</p>
+<pre class="prettyprint">{
+    "processor": &lt;processor&gt;
+}
+</pre>
+<p>Where <code>processor</code> is the address of the processors handler. For example, if the processor has registered a handler at address <code>processor1</code>, then it would send the message:</p>
+<pre class="prettyprint">{
+    "processor": "processor1"
+}
+</pre>
+<p>When this message is received at the work queue, the work queue registers this address as a processor interested in work. When work arrives it will send the work off to any available processors, in a round-robin fashion.</p>
+<p>When a processor receives some work, and has completed its processing. It should reply to the message with an empty reply. This tells the work queue that the work has been processed and can be forgotten about. If a reply is not received within <code>process_timeout</code> milliseconds then it will be assumed that the processor failed, and the work will be made available for other processors to process.</p>
+<p>Once the register is complete, a reply message will be sent:</p>
+<pre class="prettyprint">{
+    "status": "ok"
+}
+</pre>
+<h5 id="unregister">Unregister</h5><br/>
+<p>This is how a processor unregisters with the work queue. To unregister itselfs as a processor, a JSON message is sent to the address given by the main address of the busmod + <code>.unregister</code>. For example if the main address is <code>test.orderQueue</code>, you send the message to <code>test.orderQueue.unregister</code>.</p>
+<p>The message should have the following structure:</p>
+<pre class="prettyprint">{
+    "processor": &lt;processor&gt;
+}
+</pre>
+<p>Once the work queue receives the message, the processor will be unregistered and will receive no more work from the queue.</p>
+<p>Once the unregister is complete, a reply message will be sent:</p>
+<pre class="prettyprint">{
+    "status": "ok"
+}
+</pre>
+<p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

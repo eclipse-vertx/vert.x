@@ -1,0 +1,21 @@
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+  background-color: #000000;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 200;
+  color: #666600;
+}
+
+.highlight_title {
+  font-size: 18px;
+  font-weight: 200;
+  color: #666600;
+}
+
+.feat_hilights {
+  color: #666600;
+}
