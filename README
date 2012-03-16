@@ -1,7 +1,13 @@
 Pre-requisities: python markdown, xsltproc, vert.x (for the web server)
 
-To build user manual: ./genmanual.sh
+To build user manual:
+
+cd into version directory
+
+./genmanual.sh
 
 To run local web server for development: ./runserver.sh
 
 Point browser at http://localhost:8181
+
+Each new release create new version dir and search and replace old dir for new dir in all files
