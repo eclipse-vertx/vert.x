@@ -119,7 +119,11 @@ public class DefaultHttpClient {
   public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
-        conn.toWebSocket(uri, wsConnect, wsVersion);
+        if (!conn.isClosed()) {
+          conn.toWebSocket(uri, wsConnect, wsVersion);
+        } else {
+          connectWebsocket(uri, wsVersion, wsConnect);
+        }
       }
     }, ctx);
   }

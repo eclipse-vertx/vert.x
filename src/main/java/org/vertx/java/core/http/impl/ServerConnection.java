@@ -23,6 +23,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -232,8 +233,8 @@ class ServerConnection extends AbstractConnection {
     return super.isSSL();
   }
 
-  protected void sendFile(File file) {
-    super.sendFile(file);
+  protected ChannelFuture sendFile(File file) {
+    return super.sendFile(file);
   }
 
   private void processMessage(Object msg) {
@@ -251,7 +252,10 @@ class ServerConnection extends AbstractConnection {
       String uri = request.getUri();
       String path = theURI.getPath();
       String query = theURI.getQuery();
-      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this);
+      HttpVersion ver = request.getProtocolVersion();
+      boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
+          (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.getHeader("Connection")));
+      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this, request.getProtocolVersion(), keepAlive);
       DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
       handleRequest(req, resp);
 

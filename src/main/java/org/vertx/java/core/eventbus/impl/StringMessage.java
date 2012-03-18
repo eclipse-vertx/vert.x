@@ -32,8 +32,8 @@ class StringMessage extends BaseMessage<String> {
 
   private byte[] encoded;
 
-  StringMessage(String address, String payload) {
-    super(address, payload);
+  StringMessage(String address, String body) {
+    super(address, body);
   }
 
   public StringMessage(Buffer readBuff) {

@@ -29,8 +29,8 @@ class BooleanMessage extends BaseMessage<Boolean> {
 
   private static final Logger log = LoggerFactory.getLogger(BooleanMessage.class);
 
-  BooleanMessage(String address, Boolean payload) {
-    super(address, payload);
+  BooleanMessage(String address, Boolean body) {
+    super(address, body);
   }
 
   public BooleanMessage(Buffer readBuff) {

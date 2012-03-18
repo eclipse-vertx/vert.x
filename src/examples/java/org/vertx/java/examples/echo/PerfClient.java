@@ -51,7 +51,7 @@ public class PerfClient implements Verticle {
           }
         });
 
-        Buffer buff = Buffer.create(new byte[packetSize]);
+        Buffer buff = new Buffer(new byte[packetSize]);
 
         sendData(socket, buff);
       }

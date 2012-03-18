@@ -21,10 +21,6 @@ public class BridgeServer implements Verticle {
   public void start() throws Exception {
     server = new HttpServer();
 
-    List<JsonObject> permitted = new ArrayList<>();
-    permitted.add(new JsonObject()); // Let everything through
-    new SockJSBridge(server, new AppConfig().setPrefix("/eventbus"), permitted);
-
     // Also serve the static resources. In real life this would probably be done by a CDN
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -32,6 +28,10 @@ public class BridgeServer implements Verticle {
         if (req.path.endsWith("vertxbus.js")) req.response.sendFile("eventbusbridge/vertxbus.js"); // Serve the js
       }
     });
+
+    List<JsonObject> permitted = new ArrayList<>();
+    permitted.add(new JsonObject()); // Let everything through
+    new SockJSBridge(server, new AppConfig().setPrefix("/eventbus"), permitted);
 
     server.listen(8080);
   }

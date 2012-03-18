@@ -55,7 +55,7 @@ public class JavaRecordParserTest extends TestCase {
 
     expected = lineList.toArray(expected);
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
-    Buffer inp = Buffer.create(totLength);
+    Buffer inp = new Buffer(totLength);
     for (int i = 0; i < lines; i++) {
       inp.appendBuffer(expected[i]);
     }
@@ -106,7 +106,7 @@ public class JavaRecordParserTest extends TestCase {
 
     MyHandler out = new MyHandler();
     Buffer[] expected = new Buffer[lines];
-    Buffer input = Buffer.create(100);
+    Buffer input = new Buffer(100);
     expected[0] = TestUtils.generateRandomBuffer(10);
     input.appendBuffer(expected[0]);
     types.add(expected[0].length());
@@ -117,24 +117,24 @@ public class JavaRecordParserTest extends TestCase {
     expected[2] = TestUtils.generateRandomBuffer(50, true, delim[0]);
     input.appendBuffer(expected[2]);
     types.add(delim);
-    input.appendBuffer(Buffer.create(delim));
+    input.appendBuffer(new Buffer(delim));
     expected[3] = TestUtils.generateRandomBuffer(1000);
     input.appendBuffer(expected[3]);
     types.add(expected[3].length());
     expected[4] = TestUtils.generateRandomBuffer(230, true, delim[0]);
     input.appendBuffer(expected[4]);
     types.add(delim);
-    input.appendBuffer(Buffer.create(delim));
+    input.appendBuffer(new Buffer(delim));
     delim = new byte[]{17};
     expected[5] = TestUtils.generateRandomBuffer(341, true, delim[0]);
     input.appendBuffer(expected[5]);
     types.add(delim);
-    input.appendBuffer(Buffer.create(delim));
+    input.appendBuffer(new Buffer(delim));
     delim = new byte[]{54, -32, 0};
     expected[6] = TestUtils.generateRandomBuffer(1234, true, delim[0]);
     input.appendBuffer(expected[6]);
     types.add(delim);
-    input.appendBuffer(Buffer.create(delim));
+    input.appendBuffer(new Buffer(delim));
     expected[7] = TestUtils.generateRandomBuffer(100);
     input.appendBuffer(expected[7]);
     types.add(expected[7].length());
@@ -155,10 +155,10 @@ public class JavaRecordParserTest extends TestCase {
 
     expected = lineList.toArray(expected);
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
-    Buffer inp = Buffer.create(totLength + lines * delim.length);
+    Buffer inp = new Buffer(totLength + lines * delim.length);
     for (int i = 0; i < lines; i++) {
       inp.appendBuffer(expected[i]);
-      inp.appendBuffer(Buffer.create(delim));
+      inp.appendBuffer(new Buffer(delim));
     }
 
     //We then try every combination of chunk size up to twice the input string length
@@ -221,7 +221,7 @@ public class JavaRecordParserTest extends TestCase {
       if (chunkPos == chunkSizes.length) chunkPos = 0;
       int end = pos + chunkSize;
       end = end <= input.length() ? end : input.length();
-      Buffer sub = input.copy(pos, end);
+      Buffer sub = input.getBuffer(pos, end);
       parser.handle(sub);
       pos += chunkSize;
     }

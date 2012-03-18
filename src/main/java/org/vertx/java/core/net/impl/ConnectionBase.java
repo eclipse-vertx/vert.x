@@ -189,7 +189,7 @@ public abstract class ConnectionBase {
     return channel.getPipeline().get(SslHandler.class) != null;
   }
 
-  protected void sendFile(File file) {
+  protected ChannelFuture sendFile(File file) {
     final RandomAccessFile raf;
     try {
       raf = new RandomAccessFile(file, "r");
@@ -211,8 +211,10 @@ public abstract class ConnectionBase {
           raf.close();
         }
       });
+      return writeFuture;
     } catch (IOException e) {
       handleException(e);
+      return null;
     }
   }
 }

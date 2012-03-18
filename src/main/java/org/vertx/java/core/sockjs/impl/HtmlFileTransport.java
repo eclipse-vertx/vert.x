@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
@@ -41,7 +42,7 @@ class HtmlFileTransport extends BaseTransport {
     "<html><head>\n" +
     "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
     "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-    "</head><payload><h2>Don't panic!</h2>\n" +
+    "</head><body><h2>Don't panic!</h2>\n" +
     "  <script>\n" +
     "    document.domain = document.domain;\n" +
     "    var c = parent.{{ callback }};\n" +
@@ -80,23 +81,30 @@ class HtmlFileTransport extends BaseTransport {
 
         String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
-        session.register(new HtmlFileListener(req, callback));
+        session.register(new HtmlFileListener(config.getMaxBytesStreaming(), req, callback, session));
       }
     });
   }
 
-  private class HtmlFileListener implements TransportListener {
+  private class HtmlFileListener extends BaseListener {
 
+    final int maxBytesStreaming;
     final HttpServerRequest req;
     final String callback;
+    final Session session;
     boolean headersWritten;
+    int bytesSent;
+    boolean closed;
 
-    HtmlFileListener(HttpServerRequest req, String callback) {
+    HtmlFileListener(int maxBytesStreaming, HttpServerRequest req, String callback, Session session) {
+      this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
       this.callback = callback;
+      this.session = session;
+      addCloseHandler(req.response, session, sessions);
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
         req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
@@ -106,12 +114,31 @@ class HtmlFileTransport extends BaseTransport {
         req.response.write(htmlFile);
         headersWritten = true;
       }
-      payload = escapeForJavaScript(payload);
+      body = escapeForJavaScript(body);
       StringBuilder sb = new StringBuilder();
       sb.append("<script>\np(\"");
-      sb.append(payload);
+      sb.append(body);
       sb.append("\");\n</script>\r\n");
-      req.response.write(sb.toString());
+      Buffer buff = new Buffer(sb.toString());
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        close();
+      }
+    }
+
+    public void close() {
+      if (!closed) {
+        try {
+          session.resetListener();
+          req.response.end();
+          req.response.close();
+          closed = true;
+        } catch (IllegalStateException e) {
+          // Underlying connection might alreadu be closed - that's fine
+        }
+      }
     }
   }
 }

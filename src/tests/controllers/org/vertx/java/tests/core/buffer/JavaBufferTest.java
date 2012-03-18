@@ -33,9 +33,9 @@ public class JavaBufferTest extends TestCase {
 
     int bytesLen = 100;
     byte[] bytes = TestUtils.generateRandomByteArray(bytesLen);
-    Buffer toAppend = Buffer.create(bytes);
+    Buffer toAppend = new Buffer(bytes);
 
-    Buffer b = Buffer.create(0);
+    Buffer b = new Buffer();
     b.appendBuffer(toAppend);
     assertEquals(b.length(), bytes.length);
 
@@ -50,7 +50,7 @@ public class JavaBufferTest extends TestCase {
     int bytesLen = 100;
     byte[] bytes = TestUtils.generateRandomByteArray(bytesLen);
 
-    Buffer b = Buffer.create(0);
+    Buffer b = new Buffer();
     b.appendBytes(bytes);
     assertEquals(b.length(), bytes.length);
     assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
@@ -64,7 +64,7 @@ public class JavaBufferTest extends TestCase {
     int bytesLen = 100;
     byte[] bytes = TestUtils.generateRandomByteArray(bytesLen);
 
-    Buffer b = Buffer.create(0);
+    Buffer b = new Buffer();
     for (int i = 0; i < bytesLen; i++) {
       b.appendByte(bytes[i]);
     }
@@ -80,7 +80,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testAppendByte2() throws Exception {
     int bytesLen = 100;
-    Buffer b = Buffer.create(TestUtils.generateRandomByteArray(bytesLen));
+    Buffer b = new Buffer(TestUtils.generateRandomByteArray(bytesLen));
     b.setByte(b.length(), (byte) 9);
 
   }
@@ -91,7 +91,7 @@ public class JavaBufferTest extends TestCase {
     String str = TestUtils.randomUnicodeString(100);
     byte[] sb = str.getBytes("UTF-8");
 
-    Buffer b = Buffer.create(0);
+    Buffer b = new Buffer();
     b.appendString(str);
     assertEquals(b.length(), sb.length);
     assertTrue(str.equals(b.toString("UTF-8")));
@@ -107,7 +107,7 @@ public class JavaBufferTest extends TestCase {
     int bytesLen = 100;
     byte[] bytes = TestUtils.generateRandomByteArray(bytesLen);
 
-    Buffer b = Buffer.create(bytes);
+    Buffer b = new Buffer(bytes);
     try {
       b.getByte(bytesLen);
       fail();
@@ -327,7 +327,7 @@ public class JavaBufferTest extends TestCase {
     int bytesLen = 100;
     byte[] bytes = TestUtils.generateRandomByteArray(bytesLen);
 
-    Buffer b = Buffer.create(bytes);
+    Buffer b = new Buffer(bytes);
     for (int i = 0; i < bytesLen; i++) {
       assertEquals(bytes[i], b.getByte(i));
     }
@@ -336,7 +336,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetInt() throws Exception {
     int numInts = 100;
-    Buffer b = Buffer.create(numInts * 4);
+    Buffer b = new Buffer(numInts * 4);
     for (int i = 0; i < numInts; i++) {
       b.setInt(i * 4, i);
     }
@@ -349,7 +349,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetLong() throws Exception {
     int numLongs = 100;
-    Buffer b = Buffer.create(numLongs * 8);
+    Buffer b = new Buffer(numLongs * 8);
     for (int i = 0; i < numLongs; i++) {
       b.setLong(i * 8, i);
     }
@@ -362,7 +362,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetFloat() throws Exception {
     int numFloats = 100;
-    Buffer b = Buffer.create(numFloats * 4);
+    Buffer b = new Buffer(numFloats * 4);
     for (int i = 0; i < numFloats; i++) {
       b.setFloat(i * 4, i);
     }
@@ -375,7 +375,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetDouble() throws Exception {
     int numDoubles = 100;
-    Buffer b = Buffer.create(numDoubles * 8);
+    Buffer b = new Buffer(numDoubles * 8);
     for (int i = 0; i < numDoubles; i++) {
       b.setDouble(i * 8, i);
     }
@@ -388,7 +388,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetShort() throws Exception {
     int numShorts = 100;
-    Buffer b = Buffer.create(numShorts * 2);
+    Buffer b = new Buffer(numShorts * 2);
     for (short i = 0; i < numShorts; i++) {
       b.setShort(i * 2, i);
     }
@@ -401,7 +401,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetBytes() throws Exception {
     byte[] bytes = TestUtils.generateRandomByteArray(100);
-    Buffer b = Buffer.create(bytes);
+    Buffer b = new Buffer(bytes);
 
     assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
   }
@@ -409,7 +409,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testGetBytes2() throws Exception {
     byte[] bytes = TestUtils.generateRandomByteArray(100);
-    Buffer b = Buffer.create(bytes);
+    Buffer b = new Buffer(bytes);
 
     byte[] sub = new byte[bytes.length / 2];
     System.arraycopy(bytes, bytes.length / 4, sub, 0, bytes.length / 2);
@@ -420,12 +420,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetInt() throws Exception {
-    testSetInt(Buffer.create(numSets * 4));
+    testSetInt(new Buffer(numSets * 4));
   }
 
   @Test
   public void testSetIntExpandBuffer() throws Exception {
-    testSetInt(Buffer.create(0));
+    testSetInt(new Buffer());
   }
 
   private void testSetInt(Buffer buff) throws Exception {
@@ -439,12 +439,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetLong() throws Exception {
-    testSetLong(Buffer.create(numSets * 8));
+    testSetLong(new Buffer(numSets * 8));
   }
 
   @Test
   public void testSetLongExpandBuffer() throws Exception {
-    testSetLong(Buffer.create(0));
+    testSetLong(new Buffer());
   }
 
   private void testSetLong(Buffer buff) throws Exception {
@@ -458,12 +458,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetByte() throws Exception {
-    testSetByte(Buffer.create(numSets));
+    testSetByte(new Buffer(numSets));
   }
 
   @Test
   public void testSetByteExpandBuffer() throws Exception {
-    testSetByte(Buffer.create(0));
+    testSetByte(new Buffer());
   }
 
   private void testSetByte(Buffer buff) throws Exception {
@@ -477,12 +477,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetFloat() throws Exception {
-    testSetFloat(Buffer.create(numSets * 4));
+    testSetFloat(new Buffer(numSets * 4));
   }
 
   @Test
   public void testSetFloatExpandBuffer() throws Exception {
-    testSetFloat(Buffer.create(0));
+    testSetFloat(new Buffer());
   }
 
   private void testSetFloat(Buffer buff) throws Exception {
@@ -496,12 +496,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetDouble() throws Exception {
-    testSetDouble(Buffer.create(numSets * 8));
+    testSetDouble(new Buffer(numSets * 8));
   }
 
   @Test
   public void testSetDoubleExpandBuffer() throws Exception {
-    testSetDouble(Buffer.create(0));
+    testSetDouble(new Buffer());
   }
 
   private void testSetDouble(Buffer buff) throws Exception {
@@ -516,12 +516,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetShort() throws Exception {
-    testSetShort(Buffer.create(numSets * 2));
+    testSetShort(new Buffer(numSets * 2));
   }
 
   @Test
   public void testSetShortExpandBuffer() throws Exception {
-    testSetShort(Buffer.create(0));
+    testSetShort(new Buffer());
   }
 
   private void testSetShort(Buffer buff) throws Exception {
@@ -536,12 +536,12 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testSetBytesBuffer() throws Exception {
-    testSetBytesBuffer(Buffer.create(150));
+    testSetBytesBuffer(new Buffer(150));
   }
 
   @Test
   public void testSetBytesBufferExpandBuffer() throws Exception {
-    testSetShort(Buffer.create(0));
+    testSetShort(new Buffer());
   }
 
   private void testSetBytesBuffer(Buffer buff) throws Exception {
@@ -549,29 +549,29 @@ public class JavaBufferTest extends TestCase {
     Buffer b = TestUtils.generateRandomBuffer(100);
     buff.setBuffer(50, b);
     byte[] b2 = buff.getBytes(50, 150);
-    assertTrue(TestUtils.buffersEqual(b, Buffer.create(b2)));
+    assertTrue(TestUtils.buffersEqual(b, new Buffer(b2)));
 
     byte[] b3 = TestUtils.generateRandomByteArray(100);
     buff.setBytes(50, b3);
     byte[] b4 = buff.getBytes(50, 150);
-    assertTrue(TestUtils.buffersEqual(Buffer.create(b3), Buffer.create(b4)));
+    assertTrue(TestUtils.buffersEqual(new Buffer(b3), new Buffer(b4)));
   }
 
 
   @Test
   public void testSetBytesString() throws Exception {
-    testSetBytesString(Buffer.create(150));
+    testSetBytesString(new Buffer(150));
   }
 
   @Test
   public void testSetBytesStringExpandBuffer() throws Exception {
-    testSetBytesString(Buffer.create(0));
+    testSetBytesString(new Buffer());
   }
 
   private void testSetBytesString(Buffer buff) throws Exception {
 
     String str = TestUtils.randomUnicodeString(100);
-    buff.setBytes(50, str);
+    buff.setString(50, str);
 
     byte[] b1 = buff.getBytes(50, buff.length());
     String str2 = new String(b1, "UTF-8");
@@ -584,7 +584,7 @@ public class JavaBufferTest extends TestCase {
   @Test
   public void testToString() throws Exception {
     String str = TestUtils.randomUnicodeString(100);
-    Buffer buff = Buffer.create(str);
+    Buffer buff = new Buffer(str);
     assertEquals(str, buff.toString());
 
     //TODO toString with encoding
@@ -595,7 +595,7 @@ public class JavaBufferTest extends TestCase {
     Buffer buff = TestUtils.generateRandomBuffer(100);
     assertTrue(TestUtils.buffersEqual(buff, buff.copy()));
 
-    Buffer copy = buff.copy(0, buff.length());
+    Buffer copy = buff.getBuffer(0, buff.length());
     assertTrue(TestUtils.buffersEqual(buff, copy));
 
     //Make sure they don't share underlying buffer
@@ -605,20 +605,20 @@ public class JavaBufferTest extends TestCase {
 
   @Test
   public void testCreateBuffers() throws Exception {
-    Buffer buff = Buffer.create(1000);
+    Buffer buff = new Buffer(1000);
     assertEquals(0, buff.length());
 
     String str = TestUtils.randomUnicodeString(100);
-    buff = Buffer.create(str);
+    buff = new Buffer(str);
     assertEquals(buff.length(), str.getBytes("UTF-8").length);
     assertEquals(str, buff.toString());
 
     // TODO create with string with encoding
 
     byte[] bytes = TestUtils.generateRandomByteArray(100);
-    buff = Buffer.create(bytes);
+    buff = new Buffer(bytes);
     assertEquals(buff.length(), bytes.length);
-    assertTrue(TestUtils.buffersEqual(Buffer.create(bytes), Buffer.create(buff.getBytes())));
+    assertTrue(TestUtils.buffersEqual(new Buffer(bytes), new Buffer(buff.getBytes())));
 
   }
 

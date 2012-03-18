@@ -759,6 +759,11 @@ module Vertx
       end
     end
 
+    # Close the underlying TCP connection
+    def close
+      @j_del.close
+    end
+
 
   end
 
@@ -1084,6 +1089,15 @@ module Vertx
     def all_re(pattern, proc = nil, &hndlr)
       hndlr = proc if proc
       @j_del.allWithRegEx(pattern) { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
+    end
+
+    # Specify a handler that will be called when nothing matches
+    # Default behaviour is to return a 404
+    # @param [Proc] proc A proc to be used as the handler
+    # @param [Block] hndlr A block to be used as the handler
+    def no_match(proc = nil, &hndlr)
+      hndlr = proc if proc
+      @j_del.noMatch { |j_req| hndlr.call(HttpServerRequest.new(j_req)) }
     end
 
   end

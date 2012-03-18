@@ -89,34 +89,34 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerImpl {
+public class DefaultHttpServer {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
-  private static final Map<ServerID, HttpServerImpl> servers = new HashMap<>();
+  private static final Map<ServerID, DefaultHttpServer> servers = new HashMap<>();
 
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context ctx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap();
+  private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
 
   private ServerID id;
-  private HttpServerImpl actualServer;
+  private DefaultHttpServer actualServer;
   private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  public HttpServerImpl() {
+  public DefaultHttpServer() {
     ctx = VertxInternal.instance.getOrAssignContext();
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
   }
 
-  public HttpServerImpl requestHandler(Handler<HttpServerRequest> requestHandler) {
+  public DefaultHttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     this.requestHandler = requestHandler;
     return this;
   }
@@ -125,7 +125,7 @@ public class HttpServerImpl {
     return requestHandler;
   }
 
-  public HttpServerImpl websocketHandler(Handler<ServerWebSocket> wsHandler) {
+  public DefaultHttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     this.wsHandler = wsHandler;
     return this;
   }
@@ -134,11 +134,11 @@ public class HttpServerImpl {
     return wsHandler;
   }
 
-  public HttpServerImpl listen(int port) {
+  public DefaultHttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  public HttpServerImpl listen(int port, String host) {
+  public DefaultHttpServer listen(int port, String host) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -146,11 +146,9 @@ public class HttpServerImpl {
       throw new IllegalStateException("Listen already called");
     }
 
-    listening = true;
-
     synchronized (servers) {
       id = new ServerID(port, host);
-      HttpServerImpl shared = servers.get(id);
+      DefaultHttpServer shared = servers.get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
@@ -214,6 +212,7 @@ public class HttpServerImpl {
         actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
       }
     }
+    listening = true;
     return this;
   }
 
@@ -227,48 +226,51 @@ public class HttpServerImpl {
 
     synchronized (servers) {
 
-      if (requestHandler != null) {
-        actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
-      }
-      if (wsHandler != null) {
-        actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
-      }
+      if (actualServer != null) {
 
-      if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
-        // The actual server still has handlers so we don't actually close it
-        if (done != null) {
-          executeCloseDone(ctx, done);
+        if (requestHandler != null) {
+          actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
         }
-      } else {
-        // No Handlers left so close the actual server
-        // The done handler needs to be executed on the context that calls close, NOT the context
-        // of the actual server
-        actualServer.actualClose(ctx, done);
+        if (wsHandler != null) {
+          actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
+        }
+
+        if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
+          // The actual server still has handlers so we don't actually close it
+          if (done != null) {
+            executeCloseDone(ctx, done);
+          }
+        } else {
+          // No Handlers left so close the actual server
+          // The done handler needs to be executed on the context that calls close, NOT the context
+          // of the actual server
+          actualServer.actualClose(ctx, done);
+        }
       }
     }
   }
 
-  public HttpServerImpl setSSL(boolean ssl) {
+  public DefaultHttpServer setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
-  public HttpServerImpl setKeyStorePath(String path) {
+  public DefaultHttpServer setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
-  public HttpServerImpl setKeyStorePassword(String pwd) {
+  public DefaultHttpServer setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
-  public HttpServerImpl setTrustStorePath(String path) {
+  public DefaultHttpServer setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
-  public HttpServerImpl setTrustStorePassword(String pwd) {
+  public DefaultHttpServer setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
@@ -277,36 +279,36 @@ public class HttpServerImpl {
     tcpHelper.setClientAuthRequired(required);
   }
 
-  public HttpServerImpl setTCPNoDelay(boolean tcpNoDelay) {
+  public DefaultHttpServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
-  public HttpServerImpl setSendBufferSize(int size) {
+  public DefaultHttpServer setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
-  public HttpServerImpl setReceiveBufferSize(int size) {
+  public DefaultHttpServer setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
-  public HttpServerImpl setTCPKeepAlive(boolean keepAlive) {
+  public DefaultHttpServer setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
-  public HttpServerImpl setReuseAddress(boolean reuse) {
+  public DefaultHttpServer setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
-  public HttpServerImpl setSoLinger(boolean linger) {
+  public DefaultHttpServer setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
-  public HttpServerImpl setTrafficClass(int trafficClass) {
+  public DefaultHttpServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
@@ -396,6 +398,10 @@ public class HttpServerImpl {
     private void sendError(String err, HttpResponseStatus status, Channel ch) {
       HttpResponse resp = new DefaultHttpResponse(HTTP_1_1, status);
       resp.setChunked(false);
+      if (status.getCode() == METHOD_NOT_ALLOWED.getCode()) {
+        // SockJS requires this
+        resp.setHeader("allow", "GET");
+      }
       if (err != null) {
         ChannelBuffer buff = ChannelBuffers.copiedBuffer(err.getBytes(Charset.forName("UTF-8")));
         resp.setHeader("Content-Length", err.length());
@@ -403,6 +409,7 @@ public class HttpServerImpl {
       } else {
         resp.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
+
       ch.write(resp);
     }
 

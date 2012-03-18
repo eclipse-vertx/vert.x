@@ -29,8 +29,8 @@ class LongMessage extends BaseMessage<Long> {
 
   private static final Logger log = LoggerFactory.getLogger(LongMessage.class);
 
-  LongMessage(String address, Long payload) {
-    super(address, payload);
+  LongMessage(String address, Long body) {
+    super(address, body);
   }
 
   public LongMessage(Buffer readBuff) {

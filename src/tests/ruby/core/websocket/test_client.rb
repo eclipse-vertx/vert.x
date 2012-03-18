@@ -55,7 +55,7 @@ def echo(binary)
   @client.connect_web_socket("/someurl") do |ws|
     @tu.check_context
 
-    received = Buffer.create(0)
+    received = Buffer.create()
 
     ws.data_handler do |buff|
       @tu.check_context

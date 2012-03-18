@@ -54,12 +54,7 @@ public class JsonObject {
    * @param jsonString The string form of a JSON object
    */
   public JsonObject(String jsonString) {
-    try {
-      map = Json.mapper.readValue(jsonString, Map.class);
-      } catch (Exception e) {
-      e.printStackTrace();
-      throw new DecodeException("Failed to decode JSON object from string: " + jsonString);
-    }
+    map = (Map)Json.decodeValue(jsonString, Map.class);
   }
 
   public JsonObject putString(String fieldName, String value) {

@@ -83,7 +83,7 @@ public abstract class BaseMessage<T> extends Message<T> {
     int length = 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
         4 + (replyAddress == null ? 0 : replyAddress.length()) +
         getBodyLength();
-    Buffer totBuff = Buffer.create(length);
+    Buffer totBuff = new Buffer(length);
     totBuff.appendInt(0);
     totBuff.appendByte(type());
     writeString(totBuff, address);
