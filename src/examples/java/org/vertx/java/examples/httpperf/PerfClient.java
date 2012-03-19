@@ -57,7 +57,7 @@ public class PerfClient implements Verticle, Handler<HttpClientResponse> {
   }
 
   public void start() {
-    client = new HttpClient().setPort(8080).setHost("192.168.1.16").setMaxPoolSize(MAX_CONNS);
+    client = new HttpClient().setPort(8080).setHost("localhost").setMaxPoolSize(MAX_CONNS);
     makeRequest();
   }
 
