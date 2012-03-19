@@ -21,23 +21,21 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.deploy.Verticle;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class RateCounter implements Verticle, Handler<Message<Integer>> {
 
   private long start;
 
-  private AtomicInteger count = new AtomicInteger(0);
+  private long count = 0;
 
   public void handle(Message<Integer> msg) {
     if (start == 0) {
       start = System.currentTimeMillis();
     }
-    int curr = count.addAndGet(msg.body);
-    if (curr % 100000 == 0) {
+    count += msg.body;
+    if (count % 100000 == 0) {
       long now = System.currentTimeMillis();
-      double rate = 1000 * (double)curr / (now - start);
-      System.out.println(System.identityHashCode(count) + " reqs/sec: " + rate);
+      double rate = 1000 * (double)count / (now - start);
+      System.out.println("Reqs/sec: " + rate);
     }
   }
 
