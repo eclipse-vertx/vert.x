@@ -16,6 +16,18 @@
 
 load('vertx.js')
 
+// We set the buffer sizes small so we don't run out of RAM - each connection
+// will have its own buffer
+
+// You will also probably need to increase your ulimit for file handles
+// default maximum is really small on most OSes.
+// Google it to find out how to do that, it depends on your OS
+
+// The other barrier you will hit on the client side is each connection gets its
+// own ephemeral port on the client side, and all ports must like 0-65535
+// So to really test how many connections vert.x can handle, you need to test the
+// server with multiple clients on different machines.
+
 var client = new vertx.NetClient().setSendBufferSize(2048).setReceiveBufferSize(2048);
 
 var numConns = 50000;
@@ -25,7 +37,7 @@ var received = 0;
 connect(0);
 
 function connect(num) {
-  client.connect(1234, function(sock) {
+  client.connect(1234, 'localhost', function(sock) {
     stdout.println("connected " + num);
 
     sock.dataHandler(function(buffer) {
