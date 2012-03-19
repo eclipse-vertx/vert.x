@@ -31,7 +31,7 @@ public class PerfServer implements Verticle {
         //req.response.end();
         req.response.sendFile("httpperf/foo.html");
       }
-    }).listen(8080, "192.168.1.16");
+    }).listen(8080, "localhost");
   }
 
   public void stop() {
