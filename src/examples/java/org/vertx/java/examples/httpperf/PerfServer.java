@@ -28,8 +28,11 @@ public class PerfServer implements Verticle {
   public void start() {
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        //req.response.end();
-        req.response.sendFile("httpperf/foo.html");
+        // Just return OK
+        req.response.end();
+
+        // If you want to serve a real file uncomment this and comment previous line
+        //req.response.sendFile("httpperf/foo.html");
       }
     }).listen(8080, "localhost");
   }

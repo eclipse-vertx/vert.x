@@ -594,7 +594,6 @@ public class DefaultEventBus extends EventBus {
       schedulePing(address, ConnectionHolder.this);
       for (BaseMessage message : pending) {
         message.write(socket);
-        log.info("wrote pending");
       }
       pending.clear();
     }
