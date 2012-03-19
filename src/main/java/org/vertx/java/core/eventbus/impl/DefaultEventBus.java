@@ -40,8 +40,10 @@ import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -427,61 +429,27 @@ public class DefaultEventBus extends EventBus {
     }
   }
 
-  private void sendRemote(final ServerID serverID, final BaseMessage message) {
 
-    //We need to deal with the fact that connecting can take some time and is async, and we cannot
-    //block to wait for it. So we add any sends to a pending list if not connected yet.
-    //Once we connect we send them.
+  private void sendRemote(final ServerID serverID, final BaseMessage message) {
+    // We need to deal with the fact that connecting can take some time and is async, and we cannot
+    // block to wait for it. So we add any sends to a pending list if not connected yet.
+    // Once we connect we send them.
+    // This can also be invoked concurrently from different threads, so it gets a little
+    // tricky
     ConnectionHolder holder = connections.get(serverID);
     if (holder == null) {
       NetClient client = new NetClient();
       holder = new ConnectionHolder(client);
       ConnectionHolder prevHolder = connections.putIfAbsent(serverID, holder);
       if (prevHolder != null) {
-        holder = prevHolder;
+        // Another one sneaked in
+        prevHolder = holder;
       }
-      holder.pending.add(message);
-      final ConnectionHolder fholder = holder;
-      client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
-        public void handle(final NetSocket socket) {
-          fholder.socket = socket;
-          fholder.connected = true;
-          socket.exceptionHandler(new Handler<Exception>() {
-            public void handle(Exception e) {
-              cleanupConnection(message.address, serverID, fholder);
-            }
-          });
-          socket.closedHandler(new SimpleHandler() {
-            public void handle() {
-              cleanupConnection(message.address, serverID, fholder);
-            }
-          });
-          for (BaseMessage message : fholder.pending) {
-            message.write(socket);
-          }
-          socket.dataHandler(new Handler<Buffer>() {
-            public void handle(Buffer data) {
-              // Got a pong back
-              Vertx.instance.cancelTimer(fholder.timeoutID);
-              schedulePing(message.address, fholder);
-            }
-          });
-          // Start a pinger
-          schedulePing(message.address, fholder);
-        }
-      });
-      client.exceptionHandler(new Handler<Exception>() {
-        public void handle(Exception e) {
-          cleanupConnection(message.address, serverID, fholder);
-        }
-      });
-    } else {
-      if (holder.connected) {
-        message.write(holder.socket);
-      } else {
-        holder.pending.add(message);
+      else {
+        holder.connect(client, serverID, message.address);
       }
     }
+    holder.writeMessage(message);
   }
 
   private void schedulePing(final String address, final ConnectionHolder holder) {
@@ -576,16 +544,74 @@ public class DefaultEventBus extends EventBus {
     }
   }
 
-  private static class ConnectionHolder {
+  private class ConnectionHolder {
     final NetClient client;
     volatile NetSocket socket;
-    final List<BaseMessage> pending = new ArrayList<>();
-    boolean connected;
+    final Queue<BaseMessage> pending = new ConcurrentLinkedQueue<>();
+    volatile boolean connected;
     long timeoutID = -1;
     long pingTimeoutID = -1;
 
     private ConnectionHolder(NetClient client) {
       this.client = client;
+    }
+
+    void writeMessage(BaseMessage message) {
+      if (connected) {
+        log.info("writing immediately");
+        message.write(socket);
+      } else {
+        synchronized (this) {
+          if (connected) {
+            message.write(socket);
+          } else {
+            pending.add(message);
+            log.info("adding to pending");
+          }
+        }
+      }
+    }
+
+    synchronized void connected(NetSocket socket, final String address) {
+      this.socket = socket;
+      connected = true;
+      socket.exceptionHandler(new Handler<Exception>() {
+        public void handle(Exception e) {
+          cleanupConnection(address, serverID, ConnectionHolder.this);
+        }
+      });
+      socket.closedHandler(new SimpleHandler() {
+        public void handle() {
+          cleanupConnection(address, serverID, ConnectionHolder.this);
+        }
+      });
+      socket.dataHandler(new Handler<Buffer>() {
+        public void handle(Buffer data) {
+          // Got a pong back
+          Vertx.instance.cancelTimer(timeoutID);
+          schedulePing(address, ConnectionHolder.this);
+        }
+      });
+      // Start a pinger
+      schedulePing(address, ConnectionHolder.this);
+      for (BaseMessage message : pending) {
+        message.write(socket);
+        log.info("wrote pending");
+      }
+      pending.clear();
+    }
+
+    void connect(NetClient client, final ServerID serverID, final String address) {
+      client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
+        public void handle(final NetSocket socket) {
+          connected(socket, address);
+        }
+      });
+      client.exceptionHandler(new Handler<Exception>() {
+        public void handle(Exception e) {
+          cleanupConnection(address, serverID, ConnectionHolder.this);
+        }
+      });
     }
   }
 

@@ -62,13 +62,12 @@ class ServerConnection extends AbstractConnection {
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
 
-  ServerConnection(Channel channel, Context context, Thread th) {
-    super(channel, context, th);
+  ServerConnection(Channel channel, Context context) {
+    super(channel, context);
   }
 
   @Override
   public void pause() {
-    checkThread();
     if (!paused) {
       paused = true;
     }
@@ -76,7 +75,6 @@ class ServerConnection extends AbstractConnection {
 
   @Override
   public void resume() {
-    checkThread();
     if (paused) {
       paused = false;
       checkNextTick();

@@ -47,8 +47,8 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    */
   public final String writeHandlerID;
 
-  protected NetSocket(Channel channel, String writeHandlerID, Context context, Thread th) {
-    super(channel, context, th);
+  protected NetSocket(Channel channel, String writeHandlerID, Context context) {
+    super(channel, context);
     this.writeHandlerID = writeHandlerID;
   }
 

@@ -41,8 +41,8 @@ public class DefaultNetSocket extends NetSocket {
   private Handler<Void> drainHandler;
   private Handler<Message<Buffer>> writeHandler;
 
-  public DefaultNetSocket(Channel channel, Context context, Thread th) {
-    super(channel, UUID.randomUUID().toString(), context, th);
+  public DefaultNetSocket(Channel channel, Context context) {
+    super(channel, UUID.randomUUID().toString(), context);
     if (EventBus.instance != null) {
       writeHandler = new Handler<Message<Buffer>>() {
         public void handle(Message<Buffer> msg) {
@@ -97,17 +97,14 @@ public class DefaultNetSocket extends NetSocket {
   }
 
   public void dataHandler(Handler<Buffer> dataHandler) {
-    checkThread();
     this.dataHandler = dataHandler;
   }
 
   public void endHandler(Handler<Void> endHandler) {
-    checkThread();
     this.endHandler = endHandler;
   }
 
   public void drainHandler(Handler<Void> drainHandler) {
-    checkThread();
     this.drainHandler = drainHandler;
     Vertx.instance.runOnLoop(new SimpleHandler() {
       public void handle() {
@@ -117,7 +114,6 @@ public class DefaultNetSocket extends NetSocket {
   }
 
   public void sendFile(String filename) {
-    checkThread();
     File f = new File(filename);
     super.sendFile(f);
   }
@@ -164,7 +160,6 @@ public class DefaultNetSocket extends NetSocket {
   }
 
   private ChannelFuture doWrite(ChannelBuffer buff) {
-    checkThread();
     return channel.write(buff);
   }
 
