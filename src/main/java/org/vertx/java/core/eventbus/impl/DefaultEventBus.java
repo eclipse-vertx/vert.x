@@ -558,7 +558,6 @@ public class DefaultEventBus extends EventBus {
 
     void writeMessage(BaseMessage message) {
       if (connected) {
-        log.info("writing immediately");
         message.write(socket);
       } else {
         synchronized (this) {
@@ -566,7 +565,6 @@ public class DefaultEventBus extends EventBus {
             message.write(socket);
           } else {
             pending.add(message);
-            log.info("adding to pending");
           }
         }
       }
