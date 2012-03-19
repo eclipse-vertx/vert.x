@@ -19,4 +19,4 @@ Some of the key highlights include:
 
 *If you don't want the whole vert.x platform, vert.x can also be used embedded directly in your Java applications*
 
-**Please see the [website](http://purplefox.github.com/vert.x/) for full documentation and information on vert.x**
+**Please see the [website](http://vertx.io/) for full documentation and information on vert.x**
