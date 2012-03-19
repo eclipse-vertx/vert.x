@@ -468,7 +468,7 @@ public class DefaultHttpServer {
               throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
             }
 
-            final ServerConnection wsConn = new ServerConnection(ch, wsHandler.context, ch.getWorker().getThread());
+            final ServerConnection wsConn = new ServerConnection(ch, wsHandler.context);
             wsConn.wsHandler(wsHandler.handler);
             Runnable connectRunnable = new Runnable() {
               public void run() {
@@ -501,7 +501,7 @@ public class DefaultHttpServer {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
-              conn = new ServerConnection(ch, reqHandler.context, ch.getWorker().getThread());
+              conn = new ServerConnection(ch, reqHandler.context);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);

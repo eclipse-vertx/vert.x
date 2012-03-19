@@ -30,8 +30,8 @@ public abstract class AbstractConnection extends ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractConnection.class);
 
-  protected AbstractConnection(Channel channel, Context context, Thread th) {
-    super(channel, context, th);
+  protected AbstractConnection(Channel channel, Context context) {
+    super(channel, context);
   }
 
   ChannelFuture write(Object obj) {

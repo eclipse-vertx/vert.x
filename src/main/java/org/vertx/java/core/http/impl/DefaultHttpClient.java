@@ -393,8 +393,7 @@ public class DefaultHttpClient {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
         final ClientConnection conn = new ClientConnection(DefaultHttpClient.this, ch,
-            host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx,
-            Thread.currentThread());
+            host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx);
         conn.closedHandler(new SimpleHandler() {
           public void handle() {
             pool.connectionClosed();

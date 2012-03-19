@@ -50,8 +50,8 @@ class ClientConnection extends AbstractConnection {
 
   ClientConnection(DefaultHttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,
-                   Context context, Thread th) {
-    super(channel, context, th);
+                   Context context) {
+    super(channel, context);
     this.client = client;
     this.hostHeader = hostHeader;
     this.ssl = ssl;
