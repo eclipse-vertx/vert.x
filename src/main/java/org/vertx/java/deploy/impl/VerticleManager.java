@@ -162,8 +162,6 @@ public class VerticleManager {
       parent.childDeployments.add(deploymentName);
     }
 
-    log.info("deploying " + instances + " instances");
-
     for (int i = 0; i < instances; i++) {
 
       // Launch the verticle instance

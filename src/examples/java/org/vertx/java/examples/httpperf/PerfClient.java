@@ -18,7 +18,6 @@ package org.vertx.java.examples.httpperf;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -32,8 +31,11 @@ public class PerfClient implements Verticle, Handler<HttpClientResponse> {
 
   private int count = 0;
 
-  private static final int CREDITS_BATCH = 5;
-  private static final int MAX_CONNS = 100;
+  // This determines the degree of pipelining
+  private static final int CREDITS_BATCH = 500;
+
+  // Number of connections to create
+  private static final int MAX_CONNS = 10;
 
   private int requestCredits = CREDITS_BATCH;
 
@@ -69,7 +71,7 @@ public class PerfClient implements Verticle, Handler<HttpClientResponse> {
     if (start == 0) {
       start = System.currentTimeMillis();
     }
-    if (requestCredits > 0) {
+    while (requestCredits > 0) {
       client.getNow("/", this);
       requestCredits--;
     }

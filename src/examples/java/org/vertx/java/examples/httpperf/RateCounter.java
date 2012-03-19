@@ -17,12 +17,8 @@
 package org.vertx.java.examples.httpperf;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.deploy.Verticle;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +34,7 @@ public class RateCounter implements Verticle, Handler<Message<Integer>> {
       start = System.currentTimeMillis();
     }
     int curr = count.addAndGet(msg.body);
-    if (curr % 10000 == 0) {
+    if (curr % 100000 == 0) {
       long now = System.currentTimeMillis();
       double rate = 1000 * (double)curr / (now - start);
       System.out.println(System.identityHashCode(count) + " reqs/sec: " + rate);
