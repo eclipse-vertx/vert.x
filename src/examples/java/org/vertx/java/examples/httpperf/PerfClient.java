@@ -24,8 +24,6 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.deploy.Verticle;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class PerfClient implements Verticle, Handler<HttpClientResponse> {
 
   private HttpClient client;
@@ -59,7 +57,7 @@ public class PerfClient implements Verticle, Handler<HttpClientResponse> {
   }
 
   public void start() {
-    client = new HttpClient().setPort(8080).setHost("localhost").setMaxPoolSize(MAX_CONNS);
+    client = new HttpClient().setPort(8080).setHost("192.168.1.16").setMaxPoolSize(MAX_CONNS);
     makeRequest();
   }
 
