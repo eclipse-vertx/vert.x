@@ -134,11 +134,6 @@ public class Handshake00 implements Handshake {
     });
     response.endHandler(new SimpleHandler() {
       public void handle() {
-
-        for (String header: response.getHeaderNames()) {
-          log.info(header + ":" + response.getHeader(header));
-        }
-
         byte[] bytes = buff.getBytes();
         AsyncResult<Void> res;
         try {
