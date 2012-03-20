@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.socket.nio.NioWorker;
+import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;

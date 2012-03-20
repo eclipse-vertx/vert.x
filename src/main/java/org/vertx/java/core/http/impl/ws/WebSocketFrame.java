@@ -18,7 +18,7 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import io.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * A Web Socket frame that represents either text or binary data.

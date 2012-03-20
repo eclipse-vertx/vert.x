@@ -21,14 +21,14 @@
 
 package org.vertx.java.core.http.impl.ws.hybi08;
 
-import io.netty.channel.ChannelHandler;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.impl.ws.Handshake;
@@ -44,12 +44,14 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author Michael Dobozy
  * @author Bob McWhirter
+ *
+ * Adapted by Tim Fox
  */
 public class Handshake08 implements Handshake {
 
   private static Logger log = LoggerFactory.getLogger(Handshake08.class);
 
-  protected WebSocketChallenge08 challenge;
+  protected final WebSocketChallenge08 challenge;
 
   protected String getWebSocketLocation(HttpRequest request) {
     return "ws://" + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
@@ -77,14 +79,16 @@ public class Handshake08 implements Handshake {
     req.putHeader("Sec-WebSocket-Key", this.challenge.getNonceBase64());
   }
 
-  public HttpResponse generateResponse(HttpRequest request) throws Exception {
+  public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
         new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
     response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
 
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     String origin = request.getHeader(Names.ORIGIN);
-    if (origin != null) {
+    if (origin == null) {
+      origin = serverOrigin;
+    } else {
       response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
     }
     response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));

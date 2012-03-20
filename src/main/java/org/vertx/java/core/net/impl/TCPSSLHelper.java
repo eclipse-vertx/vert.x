@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.socket.nio.NioSocketChannel;
+import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
