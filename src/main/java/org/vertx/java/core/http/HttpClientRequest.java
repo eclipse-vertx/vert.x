@@ -42,6 +42,8 @@ import java.util.Map;
  * <p>
  * This class supports both chunked and non-chunked HTTP.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * An example of using this class is as follows:
  * <p>
  * <pre>
@@ -54,11 +56,13 @@ import java.util.Map;
  *
  * req.putHeader("some-header", "hello");
  * req.putHeader("Content-Length", 5);
- * req.write(Buffer.create(new byte[]{1, 2, 3, 4, 5}));
- * req.write(Buffer.create(new byte[]{6, 7, 8, 9, 10}));
+ * req.write(new Buffer(new byte[]{1, 2, 3, 4, 5}));
+ * req.write(new Buffer(new byte[]{6, 7, 8, 9, 10}));
  * req.end();
  *
  * </pre>
+ *
+ *
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -185,7 +185,7 @@ public class TestUtils {
 
   public static Buffer generateRandomBuffer(int length, boolean avoid, byte avoidByte) {
     byte[] line = generateRandomByteArray(length, avoid, avoidByte);
-    return Buffer.create(line);
+    return new Buffer(line);
   }
 
   public static String randomUnicodeString(int length) {

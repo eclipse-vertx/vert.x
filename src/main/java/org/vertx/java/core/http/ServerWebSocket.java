@@ -22,6 +22,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 /**
  * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ServerWebSocket extends WebSocket {

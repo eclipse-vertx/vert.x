@@ -43,7 +43,7 @@ public abstract class Message<T>  {
   public String replyAddress;
 
   /**
-   * Same as {@code reply(T message)} but with an empty payload
+   * Same as {@code reply(T message)} but with an empty body
    */
   public void reply() {
     reply(null);

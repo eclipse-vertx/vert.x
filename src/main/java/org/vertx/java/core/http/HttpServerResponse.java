@@ -40,6 +40,8 @@ import java.util.Map;
  * serving files from the server since buffers do not have to be read one by one
  * from the file and written to the outgoing socket.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class HttpServerResponse implements WriteStream {
@@ -211,49 +213,27 @@ public abstract class HttpServerResponse implements WriteStream {
   public abstract HttpServerResponse write(String chunk, Handler<Void> doneHandler);
 
   /**
-   * Same as {@link #end(String, boolean)} called with closeConnection = false
+   * Same as {@link #end(Buffer)} but writes a String with the default encoding
    */
   public abstract void end(String chunk);
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the default encoding
-   */
-  public abstract void end(String chunk, boolean closeConnection);
-
-  /**
-   * Same as {@link #end(String, String, boolean)} called with closeConnection = false
+   * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    */
   public abstract void end(String chunk, String enc);
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the specified encoding
-   */
-  public abstract void end(String chunk, String enc, boolean closeConnection);
-
-  /**
-   * Same as {@link #end(Buffer, boolean)} called with closeConnection = false
-   */
-  public abstract void end(Buffer chunk);
-
-  /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
-   * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
-  public abstract void end(Buffer chunk, boolean closeConnection);
-
-  /**
-   * Like {@link #end(boolean)} called with closeConnection = false
-   */
-  public abstract void end();
+  public abstract void end(Buffer chunk);
 
   /**
    * Ends the response. If no data has been written to the response body,
    * the actual response won't get written until this method gets called.<p>
    * Once the response has ended, it cannot be used any more.
-   * @param closeConnection if true then the underlying HTTP connection will be closed too
    */
-  public abstract void end(boolean closeConnection);
+  public abstract void end();
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly
@@ -262,5 +242,10 @@ public abstract class HttpServerResponse implements WriteStream {
    * This is a very efficient way to serve files.<p>
    */
   public abstract HttpServerResponse sendFile(String filename);
+
+  /**
+   * Close the underlying TCP connection
+   */
+  public abstract void close();
 
 }

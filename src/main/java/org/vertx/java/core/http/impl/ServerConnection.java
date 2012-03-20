@@ -23,6 +23,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -53,21 +54,20 @@ class ServerConnection extends AbstractConnection {
 
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private HttpServerRequestImpl currentRequest;
-  private HttpServerResponseImpl pendingResponse;
-  private WebSocketImpl ws;
+  private DefaultHttpServerRequest currentRequest;
+  private DefaultHttpServerResponse pendingResponse;
+  private DefaultWebSocket ws;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
 
-  ServerConnection(Channel channel, Context context, Thread th) {
-    super(channel, context, th);
+  ServerConnection(Channel channel, Context context) {
+    super(channel, context);
   }
 
   @Override
   public void pause() {
-    checkThread();
     if (!paused) {
       paused = true;
     }
@@ -75,7 +75,6 @@ class ServerConnection extends AbstractConnection {
 
   @Override
   public void resume() {
-    checkThread();
     if (paused) {
       paused = false;
       checkNextTick();
@@ -115,7 +114,7 @@ class ServerConnection extends AbstractConnection {
     channel.close();
   }
 
-  private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
+  private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {
     setContext();
     try {
       this.currentRequest = req;
@@ -162,7 +161,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWebsocketConnect(WebSocketImpl ws) {
+  void handleWebsocketConnect(DefaultWebSocket ws) {
     try {
       if (wsHandler != null) {
         setContext();
@@ -232,8 +231,8 @@ class ServerConnection extends AbstractConnection {
     return super.isSSL();
   }
 
-  protected void sendFile(File file) {
-    super.sendFile(file);
+  protected ChannelFuture sendFile(File file) {
+    return super.sendFile(file);
   }
 
   private void processMessage(Object msg) {
@@ -251,8 +250,11 @@ class ServerConnection extends AbstractConnection {
       String uri = request.getUri();
       String path = theURI.getPath();
       String query = theURI.getQuery();
-      HttpServerResponseImpl resp = new HttpServerResponseImpl(this);
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, method, uri, path, query, resp, request);
+      HttpVersion ver = request.getProtocolVersion();
+      boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
+          (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.getHeader("Connection")));
+      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this, request.getProtocolVersion(), keepAlive);
+      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
       handleRequest(req, resp);
 
       ChannelBuffer requestBody = request.getContent();
@@ -301,7 +303,7 @@ class ServerConnection extends AbstractConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpChunk)) {
       sentCheck = true;
-      Vertx.instance.nextTick(new SimpleHandler() {
+      Vertx.instance.runOnLoop(new SimpleHandler() {
         public void handle() {
           sentCheck = false;
           if (!paused) {

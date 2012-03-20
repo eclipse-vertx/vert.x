@@ -17,10 +17,10 @@
 package org.vertx.java.examples.ssl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.deploy.Verticle;
 
 public class SSLServer implements Verticle {
 

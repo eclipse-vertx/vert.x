@@ -47,11 +47,7 @@ public class JsonArray implements Iterable<Object> {
   }
 
   public JsonArray(String jsonString) {
-    try {
-      list = Json.mapper.readValue(jsonString, List.class);
-      } catch (Exception e) {
-      throw new DecodeException("Failed to decode JSON array from string: " + jsonString);
-    }
+    list = (List)Json.decodeValue(jsonString, List.class);
   }
 
   public JsonArray addString(String str) {

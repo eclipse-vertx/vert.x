@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.logging.Logger;
@@ -43,22 +44,29 @@ class EventSourceTransport extends BaseTransport {
       public void handle(final HttpServerRequest req) {
         String sessionID = req.getAllParams().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
-        session.register(new EventSourceListener(req));
+        session.register(new EventSourceListener(config.getMaxBytesStreaming(), req, session));
       }
     });
   }
 
-  private class EventSourceListener implements TransportListener {
+  private class EventSourceListener extends BaseListener {
 
+    final int maxBytesStreaming;
     final HttpServerRequest req;
+    final Session session;
 
     boolean headersWritten;
+    int bytesSent;
+    boolean closed;
 
-    EventSourceListener(HttpServerRequest req) {
+    EventSourceListener(int maxBytesStreaming, HttpServerRequest req, Session session) {
+      this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
+      this.session = session;
+      addCloseHandler(req.response, session, sessions);
     }
 
-    public void sendFrame(String payload) {
+    public void sendFrame(String body) {
       if (!headersWritten) {
         req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
         req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
@@ -69,9 +77,28 @@ class EventSourceTransport extends BaseTransport {
       }
       StringBuilder sb = new StringBuilder();
       sb.append("data: ");
-      sb.append(payload);
+      sb.append(body);
       sb.append("\r\n\r\n");
-      req.response.write(sb.toString());
+      Buffer buff = new Buffer(sb.toString());
+      req.response.write(buff);
+      bytesSent += buff.length();
+      if (bytesSent >= maxBytesStreaming) {
+        // Reset and close the connection
+        close();
+      }
+    }
+
+    public void close() {
+      if (!closed) {
+        try {
+          session.resetListener();
+          req.response.end();
+          req.response.close();
+        } catch (IllegalStateException e) {
+          // Underlying connection might alreadu be closed - that's fine
+        }
+        closed = true;
+      }
     }
 
   }

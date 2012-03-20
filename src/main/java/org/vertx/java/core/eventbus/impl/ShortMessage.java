@@ -29,8 +29,8 @@ class ShortMessage extends BaseMessage<Short> {
 
   private static final Logger log = LoggerFactory.getLogger(ShortMessage.class);
 
-  ShortMessage(String address, Short payload) {
-    super(address, payload);
+  ShortMessage(String address, Short body) {
+    super(address, body);
   }
 
   public ShortMessage(Buffer readBuff) {

@@ -47,5 +47,7 @@ public interface VertxInternal extends Vertx {
 
   Context startInBackground(Runnable runnable);
 
+  Context getOrAssignContext();
+
   void reportException(Throwable t);
 }

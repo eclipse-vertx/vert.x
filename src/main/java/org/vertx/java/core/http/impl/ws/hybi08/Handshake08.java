@@ -29,11 +29,11 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.impl.ws.Handshake;
-import org.vertx.java.core.impl.CompletionHandler;
-import org.vertx.java.core.impl.SimpleFuture;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -103,15 +103,15 @@ public class Handshake08 implements Handshake {
     return response;
   }
 
-  public void onComplete(HttpClientResponse response, final CompletionHandler<Void> doneHandler) throws Exception {
+  public void onComplete(HttpClientResponse response, final AsyncResultHandler<Void> doneHandler) throws Exception {
     String challengeResponse = response.getHeader("Sec-WebSocket-Accept");
-    SimpleFuture<Void> fut = new SimpleFuture<>();
+    AsyncResult<Void> res;
     if (challenge.verify(challengeResponse)) {
-      fut.setResult(null);
+      res = new AsyncResult<>((Void)null);
     } else {
-      fut.setException(new Exception("Invalid websocket handshake response"));
+      res = new AsyncResult<>(new Exception("Invalid websocket handshake response"));
     }
-    doneHandler.handle(fut);
+    doneHandler.handle(res);
   }
 
   public ChannelHandler getEncoder(boolean server) {

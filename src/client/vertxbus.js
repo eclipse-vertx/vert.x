@@ -5,17 +5,13 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Tim Fox
- * Description: Client side JavaScript for the vert.x event bus. Requires SockJS
- *
  */
 
 var vertx = vertx || {};
@@ -32,14 +28,9 @@ vertx.EventBus = function(url, options) {
   that.onclose = null;
 
   that.send = function(address, message, replyHandler) {
-    checkSpecified("address", address);
-    checkSpecified("message", message);
-    if (replyHandler && !isFunction(replyHandler)) {
-      throw new Error("replyHandler must be a function");
-    }
-    if (typeof message != 'object') {
-      throw new Error("Message to send must be a JSON object");
-    }
+    checkSpecified("address", 'string', address);
+    checkSpecified("message", 'object', message);
+    checkSpecified("replyHandler", 'function', replyHandler, true);
     checkOpen();
     var envelope = { type : "send",
                      address: address,
@@ -54,10 +45,8 @@ vertx.EventBus = function(url, options) {
   }
 
   that.registerHandler = function(address, handler) {
-    checkSpecified("address", address);
-    if (handler && !isFunction(handler)) {
-      throw new Error("handler must be a function");
-    }
+    checkSpecified("address", 'string', address);
+    checkSpecified("handler", 'function', handler);
     checkOpen();
     var handlers = handlerMap[address];
     if (!handlers) {
@@ -73,9 +62,8 @@ vertx.EventBus = function(url, options) {
   }
 
   that.unregisterHandler = function(address, handler) {
-    if (handler && !isFunction(handler)) {
-      throw new Error("handler must be a function");
-    }
+    checkSpecified("address", 'string', address);
+    checkSpecified("handler", 'function', handler);
     checkOpen();
     var handlers = handlerMap[address];
     if (handlers) {
@@ -131,8 +119,11 @@ vertx.EventBus = function(url, options) {
     }
     var handlers = handlerMap[address];
     if (handlers) {
-      for (var i  = 0; i < handlers.length; i++) {
-        handlers[i](body, replyHandler);
+      // We make a copy since the handler might get unregistered from within the
+      // handler itself, which would screw up our iteration
+      var copy = handlers.slice(0);
+      for (var i  = 0; i < copy.length; i++) {
+        copy[i](body, replyHandler);
       }
     } else {
       // Might be a reply message
@@ -150,9 +141,12 @@ vertx.EventBus = function(url, options) {
     }
   }
 
-  function checkSpecified(paramName, param) {
-    if (!param) {
-      throw new Error(paramName + " parameter must be specified");
+  function checkSpecified(paramName, paramType, param, optional) {
+    if (!optional && !param) {
+      throw new Error("Parameter " + paramName + " must be specified");
+    }
+    if (param && typeof param != paramType) {
+      throw new Error("Parameter " + paramName + " must be of type " + paramType);
     }
   }
 

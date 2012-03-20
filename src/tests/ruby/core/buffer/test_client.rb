@@ -21,7 +21,7 @@ require "test_utils"
 def test_append_buff
   buff_len = 100
   buff1 = create_buffer(buff_len)
-  buff2 = Buffer.create(0)
+  buff2 = Buffer.create
   buff2.append_buffer(buff1)
   @tu.azzert(buff_len == buff2.length, 'Invalid length')
   @tu.test_complete
@@ -44,7 +44,7 @@ def test_append_fixnum_8
 end
 
 def append_fixnum(num_bytes)
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   for i in -128..127
     buff1.append_fixnum(i << ((num_bytes -1) * 8), num_bytes)
   end
@@ -64,7 +64,7 @@ def test_append_float_8
 end
 
 def append_float(num_bytes)
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   for i in 0..99
     buff1.append_float(i, num_bytes)
   end
@@ -76,7 +76,7 @@ def append_float(num_bytes)
 end
 
 def test_append_string_1
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   str = "piajdioasdioasdoiasdjiqjiqdjiqwjidqwid"
   buff1.append_str(str)
   @tu.azzert(str == buff1.to_s)
@@ -84,7 +84,7 @@ def test_append_string_1
 end
 
 def test_append_string_2
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   str = "piajdioasdioasdoiasdjiqjiqdjiqwjidqwid"
   buff1.append_str(str, 'UTF-8')
   @tu.azzert(str == buff1.to_s('UTF-8'))
@@ -109,7 +109,7 @@ def test_set_fixnum_8
 end
 
 def set_fixnum(num_bytes)
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   for i in -128..127
     buff1.set_fixnum((i + 128) * num_bytes, i << ((num_bytes -1) * 8), num_bytes)
   end
@@ -129,7 +129,7 @@ def test_set_float_8
 end
 
 def set_float(num_bytes)
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   for i in 0..99
     buff1.set_float(i * num_bytes, i, num_bytes)
   end
@@ -141,7 +141,7 @@ def set_float(num_bytes)
 end
 
 def test_length
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   @tu.azzert(buff1.length == 0)
   num = 50
   for i in 0..num - 1
@@ -163,7 +163,7 @@ def test_copy
 end
 
 def test_create
-  buff1 = Buffer.create(0)
+  buff1 = Buffer.create
   @tu.azzert(0 == buff1.length)
   buff2 = Buffer.create(100)
   @tu.azzert(0 == buff1.length)

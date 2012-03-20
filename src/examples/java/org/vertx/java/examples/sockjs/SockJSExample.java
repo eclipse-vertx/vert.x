@@ -17,15 +17,13 @@
 package org.vertx.java.examples.sockjs;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
+import org.vertx.java.deploy.Verticle;
 
 public class SockJSExample implements Verticle {
 
@@ -33,6 +31,12 @@ public class SockJSExample implements Verticle {
 
   public void start() {
     server = new HttpServer();
+
+    server.requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        if (req.path.equals("/")) req.response.sendFile("sockjs/index.html"); // Serve the html
+      }
+    });
 
     SockJSServer sockServer = new SockJSServer(server);
 
@@ -46,12 +50,7 @@ public class SockJSExample implements Verticle {
       }
     });
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        if (req.path.equals("/")) req.response.sendFile("sockjs/index.html"); // Serve the html
-      }
-    }).listen(8080);
-
+    server.listen(8080);
   }
 
   public void stop() {

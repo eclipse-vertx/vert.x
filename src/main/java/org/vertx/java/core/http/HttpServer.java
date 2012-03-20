@@ -17,20 +17,29 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.impl.HttpServerImpl;
+import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * An HTTP and WebSockets server
  * <p>
+ * This class is a thread safe and can safely be used by different threads.
+ * <p>
+ * If an instance is instantiated from an event loop then the handlers
+ * of the instance will always be called on that same event loop.
+ * If an instance is instantiated from some other arbitrary Java thread then
+ * and event loop will be assigned to the instance and used when any of its handlers
+ * are called.
+ * <p>
+ * Instances cannot be used from worker verticles
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServer {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
 
-  private final HttpServerImpl server = new HttpServerImpl();
+  private final DefaultHttpServer server = new DefaultHttpServer();
   
   /**
    * Create an {@code HttpServer}
@@ -44,7 +53,7 @@ public class HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
+  public synchronized HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     server.requestHandler(requestHandler);
     return this;
   }
@@ -53,7 +62,7 @@ public class HttpServer {
    * Get the request handler
    * @return The request handler
    */
-  public Handler<HttpServerRequest> requestHandler() {
+  public synchronized Handler<HttpServerRequest> requestHandler() {
     return server.requestHandler();
   }
 
@@ -63,7 +72,7 @@ public class HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
+  public synchronized HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     server.websocketHandler(wsHandler);
     return this;
   }
@@ -72,7 +81,7 @@ public class HttpServer {
    * Get the websocket handler
    * @return The websocket handler
    */
-  public Handler<ServerWebSocket> websocketHandler() {
+  public synchronized Handler<ServerWebSocket> websocketHandler() {
     return server.websocketHandler();
   }
 
@@ -81,7 +90,7 @@ public class HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer listen(int port) {
+  public synchronized HttpServer listen(int port) {
     server.listen(port);
     return this;
   }
@@ -91,7 +100,7 @@ public class HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  public HttpServer listen(int port, String host) {
+  public synchronized HttpServer listen(int port, String host) {
     server.listen(port, host); 
     return this;
   }
@@ -99,7 +108,7 @@ public class HttpServer {
   /**
    * Close the server. Any open HTTP connections will be closed.
    */
-  public void close() {
+  public synchronized void close() {
     server.close();
   }
 
@@ -107,7 +116,7 @@ public class HttpServer {
    * Close the server. Any open HTTP connections will be closed. {@code doneHandler} will be called when the close
    * is complete.
    */
-  public void close(final Handler<Void> done) {
+  public synchronized void close(final Handler<Void> done) {
     server.close(done);
   }
   
@@ -115,7 +124,7 @@ public class HttpServer {
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public HttpServer setSSL(boolean ssl) {
+  public synchronized HttpServer setSSL(boolean ssl) {
     server.setSSL(ssl);
     return this;
   }
@@ -126,7 +135,7 @@ public class HttpServer {
    * The SSL key store is a standard Java Key Store, and, if on the tcpHelper side will contain the tcpHelper certificate.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public HttpServer setKeyStorePath(String path) {
+  public synchronized HttpServer setKeyStorePath(String path) {
     server.setKeyStorePath(path);
     return this;
   }
@@ -136,7 +145,7 @@ public class HttpServer {
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public HttpServer setKeyStorePassword(String pwd) {
+  public synchronized HttpServer setKeyStorePassword(String pwd) {
     server.setKeyStorePassword(pwd);
     return this;
   }
@@ -148,7 +157,7 @@ public class HttpServer {
    * any clients that the server trusts - this is only necessary if client authentication is enabled.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public HttpServer setTrustStorePath(String path) {
+  public synchronized HttpServer setTrustStorePath(String path) {
     server.setTrustStorePath(path);
     return this;
   }
@@ -158,7 +167,7 @@ public class HttpServer {
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public HttpServer setTrustStorePassword(String pwd) {
+  public synchronized HttpServer setTrustStorePassword(String pwd) {
     server.setTrustStorePassword(pwd);
     return this;
   }
@@ -169,7 +178,7 @@ public class HttpServer {
    * to the server trust store.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public HttpServer setClientAuthRequired(boolean required) {
+  public synchronized HttpServer setClientAuthRequired(boolean required) {
     server.setClientAuthRequired(required);
     return this;
   }
@@ -179,7 +188,7 @@ public class HttpServer {
    * will turned <b>off</b> for the TCP connections created by this instance.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
+  public synchronized HttpServer setTCPNoDelay(boolean tcpNoDelay) {
     server.setTCPNoDelay(tcpNoDelay);
     return this;
   }
@@ -188,7 +197,7 @@ public class HttpServer {
    * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setSendBufferSize(int size) {
+  public synchronized HttpServer setSendBufferSize(int size) {
     server.setSendBufferSize(size);
     return this;
   }
@@ -197,7 +206,7 @@ public class HttpServer {
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setReceiveBufferSize(int size) {
+  public synchronized HttpServer setReceiveBufferSize(int size) {
     server.setReceiveBufferSize(size);
     return this;
   }
@@ -206,7 +215,7 @@ public class HttpServer {
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setTCPKeepAlive(boolean keepAlive) {
+  public synchronized HttpServer setTCPKeepAlive(boolean keepAlive) {
     server.setTCPKeepAlive(keepAlive);
     return this;
   }
@@ -215,7 +224,7 @@ public class HttpServer {
    * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setReuseAddress(boolean reuse) {
+  public synchronized HttpServer setReuseAddress(boolean reuse) {
     server.setReuseAddress(reuse);
     return this;
   }
@@ -224,7 +233,7 @@ public class HttpServer {
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setSoLinger(boolean linger) {
+  public synchronized HttpServer setSoLinger(boolean linger) {
     server.setSoLinger(linger);
     return this;
   }
@@ -233,7 +242,7 @@ public class HttpServer {
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public HttpServer setTrafficClass(int trafficClass) {
+  public synchronized HttpServer setTrafficClass(int trafficClass) {
     server.setTrafficClass(trafficClass);
     return this;
   }
@@ -241,21 +250,21 @@ public class HttpServer {
   /**
    * @return true if Nagle's algorithm is disabled.
    */
-  public Boolean isTCPNoDelay() {
+  public synchronized Boolean isTCPNoDelay() {
     return server.isTCPNoDelay();
   }
 
   /**
    * @return The TCP send buffer size
    */
-  public Integer getSendBufferSize() {
+  public synchronized Integer getSendBufferSize() {
     return server.getSendBufferSize();
   }
 
   /**
    * @return The TCP receive buffer size
    */
-  public Integer getReceiveBufferSize() {
+  public synchronized Integer getReceiveBufferSize() {
     return server.getReceiveBufferSize();
   }
 
@@ -263,7 +272,7 @@ public class HttpServer {
    *
    * @return true if TCP keep alive is enabled
    */
-  public Boolean isTCPKeepAlive() {
+  public synchronized Boolean isTCPKeepAlive() {
     return server.isTCPKeepAlive();
   }
 
@@ -271,7 +280,7 @@ public class HttpServer {
    *
    * @return The value of TCP reuse address
    */
-  public Boolean isReuseAddress() {
+  public synchronized Boolean isReuseAddress() {
     return server.isReuseAddress();
   }
 
@@ -279,7 +288,7 @@ public class HttpServer {
    *
    * @return the value of TCP so linger
    */
-  public Boolean isSoLinger() {
+  public synchronized Boolean isSoLinger() {
     return server.isSoLinger();
   }
 
@@ -287,7 +296,7 @@ public class HttpServer {
    *
    * @return the value of TCP traffic class
    */
-  public Integer getTrafficClass() {
+  public synchronized Integer getTrafficClass() {
     return server.getTrafficClass();
   }
 
@@ -295,7 +304,7 @@ public class HttpServer {
    *
    * @return true if this server will make SSL connections
    */
-  public boolean isSSL() {
+  public synchronized boolean isSSL() {
     return server.isSSL();
   }
 
@@ -303,7 +312,7 @@ public class HttpServer {
    *
    * @return The path to the key store
    */
-  public String getKeyStorePath() {
+  public synchronized String getKeyStorePath() {
     return server.getKeyStorePath();
   }
 
@@ -311,7 +320,7 @@ public class HttpServer {
    *
    * @return The keystore password
    */
-  public String getKeyStorePassword() {
+  public synchronized String getKeyStorePassword() {
     return server.getKeyStorePassword();
   }
 
@@ -319,7 +328,7 @@ public class HttpServer {
    *
    * @return The trust store path
    */
-  public String getTrustStorePath() {
+  public synchronized String getTrustStorePath() {
     return server.getTrustStorePath();
   }
 
@@ -327,7 +336,7 @@ public class HttpServer {
    *
    * @return The trust store password
    */
-  public String getTrustStorePassword() {
+  public synchronized String getTrustStorePassword() {
     return server.getTrustStorePassword();
   }
 }

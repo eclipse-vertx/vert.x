@@ -33,6 +33,9 @@ import java.util.UUID;
  * {@link ReadStream} and {@link WriteStream} so it can be used with {@link org.vertx.java.core.streams.Pump} to enable
  * flow control.</p>
  *
+ * Instances of this class are not thread-safe
+ * <p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class SockJSSocket implements ReadStream, WriteStream {
@@ -47,7 +50,7 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
       }
     };
     this.writeHandlerID = UUID.randomUUID().toString();
-    EventBus.instance.registerHandler(writeHandlerID, writeHandler);
+    EventBus.instance.registerLocalHandler(writeHandlerID, writeHandler);
   }
 
   public void close() {

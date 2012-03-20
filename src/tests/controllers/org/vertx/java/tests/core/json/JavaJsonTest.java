@@ -18,6 +18,8 @@ package org.vertx.java.tests.core.json;
 
 import org.junit.Test;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.framework.TestBase;
 
 /**
@@ -27,6 +29,8 @@ import org.vertx.java.framework.TestBase;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JavaJsonTest extends TestBase {
+
+  private static final Logger log = LoggerFactory.getLogger(JavaJsonTest.class);
 
   @Override
   protected void setUp() throws Exception {
@@ -45,6 +49,5 @@ public class JavaJsonTest extends TestBase {
     JsonObject obj2 = new JsonObject(str);
     assertEquals("bar", obj2.getString("foo"));
   }
-
 
 }

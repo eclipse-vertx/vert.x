@@ -25,7 +25,7 @@ var server = new vertx.HttpServer().requestHandler(function(req) {
     req.response.statusCode = c_res.statusCode;
     req.response.putAllHeaders(c_res.headers());
     c_res.dataHandler(function(data) {
-      stdout.println("Proxying response payload: " + data);
+      stdout.println("Proxying response body: " + data);
       req.response.writeBuffer(data);
     });
     c_res.endHandler(function() { req.response.end() });
@@ -33,7 +33,7 @@ var server = new vertx.HttpServer().requestHandler(function(req) {
 
   c_req.putAllHeaders(req.headers());
   req.dataHandler(function(data) {
-    stdout.println("Proxying request payload " + data);
+    stdout.println("Proxying request body " + data);
     c_req.writeBuffer(data);
   });
   req.endHandler(function() { c_req.end() });

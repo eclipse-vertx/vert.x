@@ -164,7 +164,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
             eb.unregisterHandler(address, this);
             handled = true;
-            msg.reply(Buffer.create("reply" + address));
+            msg.reply(new Buffer("reply" + address));
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {

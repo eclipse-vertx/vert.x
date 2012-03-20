@@ -19,11 +19,11 @@ package vertx.tests.busmods.mailer;
 import org.vertx.java.busmods.mailer.Mailer;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.deploy.Container;
 import org.vertx.java.framework.TestClientBase;
 
 /**
@@ -40,7 +40,7 @@ public class TestClient extends TestClientBase {
     super.start();
     JsonObject config = new JsonObject();
     config.putString("address", "test.mailer");
-    mailerID = Vertx.instance.deployWorkerVerticle(Mailer.class.getName(), config, 1, new SimpleHandler() {
+    mailerID = Container.instance.deployWorkerVerticle(Mailer.class.getName(), config, 1, new SimpleHandler() {
       public void handle() {
         tu.appReady();
       }

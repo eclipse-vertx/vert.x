@@ -29,6 +29,8 @@ import org.vertx.java.core.streams.WriteStream;
  * <p>
  * On the server side, the subclass {@link ServerWebSocket} is used instead.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class WebSocket implements ReadStream, WriteStream {

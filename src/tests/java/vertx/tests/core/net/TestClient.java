@@ -309,8 +309,8 @@ public class TestClient extends TestClientBase {
         final int numChunks = 100;
         final int chunkSize = 100;
 
-        final Buffer received = Buffer.create(0);
-        final Buffer sent = Buffer.create(0);
+        final Buffer received = new Buffer();
+        final Buffer sent = new Buffer();
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
@@ -356,10 +356,10 @@ public class TestClient extends TestClientBase {
         tu.checkContext();
 
         final String str = TestUtils.randomUnicodeString(1000);
-        final Buffer sentBuff = enc == null ? Buffer.create(str) : Buffer.create(str, enc);
+        final Buffer sentBuff = enc == null ? new Buffer(str) : new Buffer(str, enc);
 
         //We will receive the buffer in fragments which may not be valid strings (since multi-byte chars)
-        final Buffer received = Buffer.create(0);
+        final Buffer received = new Buffer();
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
@@ -525,7 +525,7 @@ public class TestClient extends TestClientBase {
   public void testWriteWithCompletion() {
     final int numSends = 10;
     final int sendSize = 100;
-    final Buffer sentBuff = Buffer.create(0);
+    final Buffer sentBuff = new Buffer();
 
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
@@ -653,8 +653,8 @@ public class TestClient extends TestClientBase {
         final int numChunks = 100;
         final int chunkSize = 100;
 
-        final Buffer received = Buffer.create(0);
-        final Buffer sent = Buffer.create(0);
+        final Buffer received = new Buffer();
+        final Buffer sent = new Buffer();
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {

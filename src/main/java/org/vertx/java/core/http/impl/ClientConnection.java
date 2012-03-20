@@ -21,6 +21,8 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -31,9 +33,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.Handshake17;
-import org.vertx.java.core.impl.CompletionHandler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.Future;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -48,27 +48,27 @@ class ClientConnection extends AbstractConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  ClientConnection(HttpClientImpl client, Channel channel, String hostHeader, boolean ssl,
+  ClientConnection(DefaultHttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,
-                   Context context, Thread th) {
-    super(channel, context, th);
+                   Context context) {
+    super(channel, context);
     this.client = client;
     this.hostHeader = hostHeader;
     this.ssl = ssl;
     this.keepAlive = keepAlive;
   }
 
-  final HttpClientImpl client;
+  final DefaultHttpClient client;
   final String hostHeader;
   boolean keepAlive;
   private final boolean ssl;
   private boolean wsHandshakeConnection;
 
-  private volatile HttpClientRequestImpl currentRequest;
+  private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<HttpClientRequestImpl> requests = new ConcurrentLinkedQueue();
-  private volatile HttpClientResponseImpl currentResponse;
-  private WebSocketImpl ws;
+  private final Queue<DefaultHttpClientRequest> requests = new ConcurrentLinkedQueue();
+  private volatile DefaultHttpClientResponse currentResponse;
+  private DefaultWebSocket ws;
 
   void toWebSocket(final String uri,
                    final Handler<WebSocket> wsConnect,
@@ -98,19 +98,19 @@ class ClientConnection extends AbstractConnection {
       wsHandshakeConnection = true;
 
       // Create a raw request
-      HttpClientRequestImpl req = new HttpClientRequestImpl(client, "GET", uri, new Handler<HttpClientResponse>() {
+      DefaultHttpClientRequest req = new DefaultHttpClientRequest(client, "GET", uri, new Handler<HttpClientResponse>() {
         public void handle(HttpClientResponse resp) {
           if (resp.statusCode == 101) {
             try {
-              shake.onComplete(resp, new CompletionHandler<Void>() {
-                public void handle(Future<Void> fut) {
+              shake.onComplete(resp, new AsyncResultHandler<Void>() {
+                public void handle(AsyncResult<Void> fut) {
                   if (fut.succeeded()) {
                     //We upgraded ok
                     p.replace("encoder", "wsencoder", shake.getEncoder(false));
-                    ws = new WebSocketImpl(null, ClientConnection.this, null);
+                    ws = new DefaultWebSocket(null, ClientConnection.this, null);
                     wsConnect.handle(ws);
                   } else {
-                    client.handleException(fut.exception());
+                    client.handleException(fut.exception);
                   }
                 }
               });
@@ -121,7 +121,7 @@ class ClientConnection extends AbstractConnection {
             client.handleException(new IOException("Websocket connection attempt returned HTTP status code " + resp.statusCode));
           }
         }
-      }, context, Thread.currentThread(), this);
+      }, context, this);
       shake.fillInRequest(req, (ssl ? "http://" : "https://") + hostHeader);
       req.end();
     } catch (Exception e) {
@@ -151,6 +151,10 @@ class ClientConnection extends AbstractConnection {
     channel.close();
   }
 
+  boolean isClosed() {
+    return !channel.isOpen();
+  }
+
   //TODO - combine these with same in ServerConnection and NetSocket
 
   void handleInterestedOpsChanged() {
@@ -166,7 +170,7 @@ class ClientConnection extends AbstractConnection {
 
 
   void handleResponse(HttpResponse resp) {
-    HttpClientRequestImpl req;
+    DefaultHttpClientRequest req;
     if (resp.getStatus().getCode() == 100) {
       //If we get a 100 continue it will be followed by the real response later, so we don't remove it yet
       req = requests.peek();
@@ -177,7 +181,7 @@ class ClientConnection extends AbstractConnection {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    HttpClientResponseImpl nResp = new HttpClientResponseImpl(this, resp, req.th);
+    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(this, resp);
     currentResponse = nResp;
     req.handleResponse(nResp);
   }
@@ -238,10 +242,13 @@ class ClientConnection extends AbstractConnection {
   }
 
   ChannelFuture write(Object obj) {
+    if (!channel.isOpen()) {
+      throw new IllegalStateException("Connection is closed");
+    }
     return channel.write(obj);
   }
 
-  void setCurrentRequest(HttpClientRequestImpl req) {
+  void setCurrentRequest(DefaultHttpClientRequest req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }

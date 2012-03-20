@@ -35,8 +35,8 @@ def test_echo
     sends = 10
     size = 100
 
-    sent = Buffer.create(0)
-    received = Buffer.create(0)
+    sent = Buffer.create()
+    received = Buffer.create()
 
     socket.data_handler { |data|
       @tu.check_context
@@ -99,8 +99,8 @@ def test_echo_ssl
     sends = 10
     size = 100
 
-    sent = Buffer.create(0)
-    received = Buffer.create(0)
+    sent = Buffer.create()
+    received = Buffer.create()
 
     socket.data_handler { |data|
       @tu.check_context

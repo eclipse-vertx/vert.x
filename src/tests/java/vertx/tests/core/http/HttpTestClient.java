@@ -308,8 +308,8 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(req.write("foo") == req);
     tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req);
     tu.azzert(req.write("foo", new SimpleHandler() { public void handle() {} }) == req);
-    tu.azzert(req.write(Buffer.create("foo")) == req);
-    tu.azzert(req.write(Buffer.create("foo"), new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write(new Buffer("foo")) == req);
+    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req);
     tu.testComplete();
   }
 
@@ -339,8 +339,8 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(req.response.write("foo") == req.response);
           tu.azzert(req.response.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req.response);
           tu.azzert(req.response.write("foo", new SimpleHandler() { public void handle() {} }) == req.response);
-          tu.azzert(req.response.write(Buffer.create("foo")) == req.response);
-          tu.azzert(req.response.write(Buffer.create("foo"), new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write(new Buffer("foo")) == req.response);
+          tu.azzert(req.response.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req.response);
           tu.azzert(req.response.putAllHeaders(new HashMap<String, Object>()) == req.response);
           tu.azzert(req.response.putAllTrailers(new HashMap<String, Object>()) == req.response);
           tu.azzert(req.response.putHeader("foo", "bar") == req.response);
@@ -603,7 +603,7 @@ public class HttpTestClient extends TestClientBase {
 
       }
     };
-    Buffer buff = Buffer.create(0);
+    Buffer buff = new Buffer();
     Map<String, String> map = new HashMap<>();
 
     try {
@@ -782,9 +782,9 @@ public class HttpTestClient extends TestClientBase {
     final Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.create(body);
+      bodyBuff = new Buffer(body);
     } else {
-      bodyBuff = Buffer.create(body, encoding);
+      bodyBuff = new Buffer(body, encoding);
     }
 
     startServer(new Handler<HttpServerRequest>() {
@@ -859,7 +859,7 @@ public class HttpTestClient extends TestClientBase {
 
   private void testRequestBodyWriteBuffer(boolean chunked, boolean waitCompletion) {
 
-    final Buffer body = Buffer.create(0);
+    final Buffer body = new Buffer();
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -968,9 +968,9 @@ public class HttpTestClient extends TestClientBase {
     final Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.create(body);
+      bodyBuff = new Buffer(body);
     } else {
-      bodyBuff = Buffer.create(body, encoding);
+      bodyBuff = new Buffer(body, encoding);
     }
 
     startServer(new Handler<HttpServerRequest>() {
@@ -1238,7 +1238,7 @@ public class HttpTestClient extends TestClientBase {
 
           }
         };
-        Buffer buff = Buffer.create(0);
+        Buffer buff = new Buffer();
         Map<String, String> map = new HashMap<>();
 
         HttpServerResponse resp = req.response;
@@ -1259,12 +1259,6 @@ public class HttpTestClient extends TestClientBase {
           //OK
         }
         try {
-          resp.end(true);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
           resp.end("foo");
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
@@ -1278,24 +1272,6 @@ public class HttpTestClient extends TestClientBase {
         }
         try {
           resp.end("foo", "UTF-8");
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.end("foo", true);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.end(buff, true);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.end("foo", "UTF-8", true);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
@@ -1461,9 +1437,9 @@ public class HttpTestClient extends TestClientBase {
     final Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.create(body);
+      bodyBuff = new Buffer(body);
     } else {
-      bodyBuff = Buffer.create(body, encoding);
+      bodyBuff = new Buffer(body, encoding);
     }
 
     startServer(new Handler<HttpServerRequest>() {
@@ -1534,7 +1510,7 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseBodyWriteBuffer(final boolean chunked, final boolean waitCompletion) {
 
-    final Buffer body = Buffer.create(0);
+    final Buffer body = new Buffer();
 
     final int numWrites = 10;
     final int chunkSize = 100;
@@ -1643,9 +1619,9 @@ public class HttpTestClient extends TestClientBase {
     final Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.create(body);
+      bodyBuff = new Buffer(body);
     } else {
-      bodyBuff = Buffer.create(body, encoding);
+      bodyBuff = new Buffer(body, encoding);
     }
 
     startServer(new Handler<HttpServerRequest>() {

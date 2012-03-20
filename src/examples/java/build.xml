@@ -23,7 +23,7 @@
   <property name="src" value="."/>
   <property name="output" value="classes"/>
   <property name="libs" value="../../../lib/main"/>
-  <property name="vertx-classes" value="../../../target/core/classes"/>
+  <property name="vertx-classes" value="../../../target/java/classes"/>
 
   <property name="quux-output" value="quux-out"/>
 
