@@ -16,11 +16,11 @@
 
 package org.vertx.java.core.impl;
 
-import io.netty.channel.socket.nio.NioWorker;
-import io.netty.channel.socket.nio.NioWorkerPool;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
+import org.jboss.netty.channel.socket.nio.NioWorker;
+import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.deploy.impl.VerticleManager;
 import org.vertx.java.core.json.JsonObject;

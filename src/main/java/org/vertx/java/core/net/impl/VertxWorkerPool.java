@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.socket.nio.NioWorker;
-import io.netty.channel.socket.nio.WorkerPool;
+import org.jboss.netty.channel.socket.nio.NioWorker;
+import org.jboss.netty.channel.socket.nio.WorkerPool;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 

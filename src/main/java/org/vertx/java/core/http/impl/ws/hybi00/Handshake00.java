@@ -21,16 +21,16 @@
 
 package org.vertx.java.core.http.impl.ws.hybi00;
 
-import io.netty.buffer.ChannelBuffer;
-import io.netty.buffer.ChannelBuffers;
-import io.netty.channel.ChannelHandler;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -50,12 +50,14 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author Michael Dobozy
  * @author Bob McWhirter
+ *
+ * Adapted by Tim Fox
  */
 public class Handshake00 implements Handshake {
 
   private static Logger log = LoggerFactory.getLogger(Handshake08.class);
 
-  private WebSocketChallenge00 challenge;
+  private final WebSocketChallenge00 challenge;
 
   protected String getWebSocketLocation(HttpRequest request) {
     return "ws://" + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
@@ -85,15 +87,16 @@ public class Handshake00 implements Handshake {
     req.write(buff);
   }
 
-  public HttpResponse generateResponse(HttpRequest request) throws Exception {
+  public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
 
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-00"));
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
     String origin = request.getHeader(Names.ORIGIN);
-    if (origin != null) {
-      response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, request.getHeader(Names.ORIGIN));
+    if (origin == null) {
+      origin = serverOrigin;
     }
+    response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
     response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));
 
     String protocol = request.getHeader(Names.SEC_WEBSOCKET_PROTOCOL);
@@ -122,7 +125,7 @@ public class Handshake00 implements Handshake {
     return response;
   }
 
-  public void onComplete(HttpClientResponse response, final CompletionHandler<Void> doneHandler) {
+  public void onComplete(final HttpClientResponse response, final CompletionHandler<Void> doneHandler) {
 
     final Buffer buff = Buffer.create(16);
     response.dataHandler(new Handler<Buffer>() {
@@ -132,6 +135,11 @@ public class Handshake00 implements Handshake {
     });
     response.endHandler(new SimpleHandler() {
       public void handle() {
+
+        for (String header: response.getHeaderNames()) {
+          log.info(header + ":" + response.getHeader(header));
+        }
+
         byte[] bytes = buff.getBytes();
         SimpleFuture<Void> fut = new SimpleFuture<>();
         try {

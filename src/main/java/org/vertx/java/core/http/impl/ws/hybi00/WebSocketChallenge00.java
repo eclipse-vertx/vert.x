@@ -21,8 +21,8 @@
 
 package org.vertx.java.core.http.impl.ws.hybi00;
 
-import io.netty.buffer.ChannelBuffer;
-import io.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 
 import java.nio.ByteOrder;
 import java.security.MessageDigest;

@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import io.netty.util.CharsetUtil;
+import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;

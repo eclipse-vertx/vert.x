@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.impl;
 
-import io.netty.channel.socket.nio.NioWorker;
+import org.jboss.netty.channel.socket.nio.NioWorker;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

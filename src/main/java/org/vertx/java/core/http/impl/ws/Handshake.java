@@ -16,9 +16,9 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import io.netty.channel.ChannelHandler;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.CompletionHandler;
@@ -32,7 +32,7 @@ public interface Handshake {
 
   void onComplete(HttpClientResponse response, CompletionHandler<Void> doneHandler) throws Exception;
 
-  HttpResponse generateResponse(HttpRequest request) throws Exception;
+  HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception;
 
   ChannelHandler getEncoder(boolean server);
 
