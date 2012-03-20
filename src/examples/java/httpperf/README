@@ -36,6 +36,10 @@ node nodejs-server.js
 
 and compare the performance.
 
+You can run a clustered node.js too:
+
+node nodejs-cluster-server.js
+
 Also.. you can run a vert.x JavaScript server instead of a Java one if you like:
 
 vertx run vertx-server.js -instances 8
