@@ -98,9 +98,6 @@ public class Handshake08 implements Handshake {
     String key = request.getHeader("Sec-WebSocket-Key");
     String solution = WebSocketChallenge08.solve(key);
     response.addHeader("Sec-WebSocket-Accept", solution);
-    //We add a content length header otherwise the netty decoder on the client side
-    //will never decoded the handshake (bug in Netty??)
-    response.addHeader("Content-Length", 0);
     response.setChunked(false);
     return response;
   }
