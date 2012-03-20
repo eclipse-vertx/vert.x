@@ -88,9 +88,8 @@ public class Handshake08 implements Handshake {
     String origin = request.getHeader(Names.ORIGIN);
     if (origin == null) {
       origin = serverOrigin;
-    } else {
-      response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
     }
+    response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
     response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));
     String protocol = request.getHeader(Names.SEC_WEBSOCKET_PROTOCOL);
     if (protocol != null) {
@@ -99,6 +98,9 @@ public class Handshake08 implements Handshake {
     String key = request.getHeader("Sec-WebSocket-Key");
     String solution = WebSocketChallenge08.solve(key);
     response.addHeader("Sec-WebSocket-Accept", solution);
+    //We add a content length header otherwise the netty decoder on the client side
+    //will never decoded the handshake (bug in Netty??)
+    response.addHeader("Content-Length", 0);
     response.setChunked(false);
     return response;
   }
