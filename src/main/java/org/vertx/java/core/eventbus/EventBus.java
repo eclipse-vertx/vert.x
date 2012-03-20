@@ -19,6 +19,7 @@ package org.vertx.java.core.eventbus;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -54,17 +55,21 @@ public abstract class EventBus {
   private static final Logger log = LoggerFactory.getLogger(EventBus.class);
 
   /**
-   * The event bus instance. Use this to obtain an instance of the event bus from within application code.
+   * The event bus instance.
    */
-  public static EventBus instance;
+  public static EventBus instance = new DefaultEventBus();
 
-  public static void initialize(EventBus bus) {
-    if (instance != null) {
-      throw new IllegalStateException("Cannot call initialize more than once");
-    }
-    instance = bus;
+  public static void setClustered(String hostname) {
+    instance = new DefaultEventBus(hostname);
   }
 
+  public static void setClustered(int port, String hostname) {
+    instance = new DefaultEventBus(port, hostname);
+  }
+
+  public static void setClustered(int port, String hostname, String clusterProviderClassName) {
+    instance = new DefaultEventBus(port, hostname, clusterProviderClassName);
+  }
 
   /**
    * Send a JSON object as a message
@@ -313,5 +318,20 @@ public abstract class EventBus {
    */
   public abstract String registerHandler(String address, Handler<? extends Message> handler);
 
+  /**
+   * Registers a local handler against the specified address. The handler info won't
+   * be propagated across the cluster
+   * @param address The address top register it at
+   * @param handler The handler
+   * @return The handler id which is the same as the address
+   */
+  public abstract String registerLocalHandler(String address, Handler<? extends Message> handler);
+
+  /**
+   * Registers a local handler against a uniquely generated address, the address is returned as the id
+   * @param handler
+   * @return The handler id which is the same as the address
+   */
+  public abstract String registerLocalHandler(Handler<? extends Message> handler);
 }
 

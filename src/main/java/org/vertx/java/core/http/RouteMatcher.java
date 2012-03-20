@@ -63,6 +63,8 @@ import java.util.regex.Pattern;
  * Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
  * a particular request, the first matching one will be used.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {
@@ -78,6 +80,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   private List<PatternBinding> traceBindings = new ArrayList<>();
   private List<PatternBinding> connectBindings = new ArrayList<>();
   private List<PatternBinding> patchBindings = new ArrayList<>();
+  private Handler<HttpServerRequest> noMatchHandler;
 
   @Override
   public void handle(HttpServerRequest request) {
@@ -308,6 +311,15 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     addRegEx(regex, handler, patchBindings);
   }
 
+  /**
+   * Specify a handler that will be called when no other handlers match.
+   * If this handler is not specified default behaviour is to return a 404
+   * @param handler
+   */
+  public void noMatch(Handler<HttpServerRequest> handler) {
+    noMatchHandler = handler;
+  }
+
 
   private void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
     // We need to search for any :<token name> tokens in the String and replace them with named capture groups
@@ -354,9 +366,13 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
         return;
       }
     }
-    // If we get here it wasn't routed
-    request.response.statusCode = 404;
-    request.response.end();
+    if (noMatchHandler != null) {
+      noMatchHandler.handle(request);
+    } else {
+      // Default 404
+      request.response.statusCode = 404;
+      request.response.end();
+    }
   }
 
   private static class PatternBinding {

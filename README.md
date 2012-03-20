@@ -17,4 +17,6 @@ Some of the key highlights include:
 
 * Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.
 
-**Please see the [website](http://purplefox.github.com/vert.x/) for full documentation and information on vert.x**
+*If you don't want the whole vert.x platform, vert.x can also be used embedded directly in your Java applications*
+
+**Please see the [website](http://vertx.io/) for full documentation and information on vert.x**

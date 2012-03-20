@@ -74,7 +74,7 @@
   }
 
   $(document).ready(function () {
-    $('payload').tabs('ul[data-tabs] li > a, ul[data-pills] > li > a')
+    $('body').tabs('ul[data-tabs] li > a, ul[data-pills] > li > a')
   })
 
 }( window.jQuery || window.ender );

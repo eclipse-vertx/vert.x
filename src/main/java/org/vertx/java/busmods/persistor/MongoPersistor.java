@@ -25,13 +25,14 @@ import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.Container;
+import org.vertx.java.deploy.Verticle;
 
 import java.net.UnknownHostException;
 import java.util.UUID;
@@ -180,7 +181,7 @@ public class MongoPersistor extends BusModBase implements Verticle, Handler<Mess
       // Set a timeout, if the user doesn't reply within 10 secs, close the cursor
       final long timerID = Vertx.instance.setTimer(10000, new Handler<Long>() {
         public void handle(Long timerID) {
-          Vertx.instance.getLogger().warn("Closing DB cursor on timeout");
+          Container.instance.getLogger().warn("Closing DB cursor on timeout");
           try {
             cursor.close();
           } catch (Exception ignore) {

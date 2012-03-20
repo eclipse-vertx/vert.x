@@ -1,8 +1,7 @@
 load('vertx.js')
 
 var server = new vertx.HttpServer().websocketHandler(function(ws) {
-  var pump = new vertx.Pump(ws, ws);
-  pump.start();
+  ws.dataHandler( function(buffer) { ws.writeTextFrame(buffer.toString()) });
 }).requestHandler(function(req) {
   if (req.uri == "/") req.response.sendFile("websockets/ws.html")
 }).listen(8080)

@@ -134,7 +134,7 @@ public class WebsocketsTestClient extends TestClientBase {
     client.connectWebsocket(path, version, new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
         tu.checkContext();
-        final Buffer received = Buffer.create(0);
+        final Buffer received = new Buffer();
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.checkContext();
@@ -145,16 +145,16 @@ public class WebsocketsTestClient extends TestClientBase {
             }
           }
         });
-        final Buffer sent = Buffer.create(0);
+        final Buffer sent = new Buffer();
         for (int i = 0; i < sends; i++) {
           if (binary) {
-            Buffer buff = Buffer.create(TestUtils.generateRandomByteArray(bsize));
+            Buffer buff = new Buffer(TestUtils.generateRandomByteArray(bsize));
             ws.writeBinaryFrame(buff);
             sent.appendBuffer(buff);
           } else {
             String str = TestUtils.randomAlphaString(100);
             ws.writeTextFrame(str);
-            sent.appendBuffer(Buffer.create(str, "UTF-8"));
+            sent.appendBuffer(new Buffer(str, "UTF-8"));
           }
         }
       }
@@ -165,7 +165,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     final String path = "/some/path";
 
-    final Buffer buff = Buffer.create("AAA");
+    final Buffer buff = new Buffer("AAA");
 
     server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
@@ -176,7 +176,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     client.connectWebsocket(path, version, new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
-        final Buffer received = Buffer.create(0);
+        final Buffer received = new Buffer();
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             received.appendBuffer(data);

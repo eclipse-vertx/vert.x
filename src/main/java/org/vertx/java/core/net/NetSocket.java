@@ -32,6 +32,8 @@ import org.vertx.java.core.streams.WriteStream;
  * when a connection to a server is made, or on the server side by a {@link NetServer}
  * when a server accepts a connection.
  * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
@@ -45,8 +47,8 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    */
   public final String writeHandlerID;
 
-  protected NetSocket(Channel channel, String writeHandlerID, Context context, Thread th) {
-    super(channel, context, th);
+  protected NetSocket(Channel channel, String writeHandlerID, Context context) {
+    super(channel, context);
     this.writeHandlerID = writeHandlerID;
   }
 

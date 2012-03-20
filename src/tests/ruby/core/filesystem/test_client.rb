@@ -84,7 +84,7 @@ def test_async_file
     @tu.azzert(err == nil)
     num_chunks = 100;
     chunk_size = 1000;
-    tot_buff = Buffer.create(0)
+    tot_buff = Buffer.create()
     written =0
     for i in 0..num_chunks - 1
       buff = TestUtils.gen_buffer(chunk_size)
@@ -94,7 +94,7 @@ def test_async_file
         written += 1
         if written == num_chunks
           # all written
-          tot_read = Buffer.create(0)
+          tot_read = Buffer.create()
           read = 0
           for j in 0..num_chunks - 1
             pos = j * chunk_size
@@ -126,7 +126,7 @@ def test_async_file_streams
     @tu.azzert(err == nil)
     num_chunks = 100;
     chunk_size = 1000;
-    tot_buff = Buffer.create(0)
+    tot_buff = Buffer.create()
     write_stream = file.write_stream
     for i in 0..num_chunks - 1
       buff = TestUtils.gen_buffer(chunk_size)
@@ -138,7 +138,7 @@ def test_async_file_streams
         @tu.check_context
         @tu.azzert(err == nil)
         read_stream = file.read_stream
-        tot_read = Buffer.create(0)
+        tot_read = Buffer.create()
         read_stream.data_handler do |data|
           tot_read.append_buffer(data)
         end

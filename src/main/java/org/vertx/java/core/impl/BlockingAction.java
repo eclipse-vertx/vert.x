@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 
 /**
  * <p>Internal class used to run specific blocking actions on the worker pool.</p>
@@ -26,30 +26,40 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BlockingAction<T> extends SynchronousAction<T> {
+public abstract class BlockingAction<T>  {
 
-  private static final Logger log = LoggerFactory.getLogger(BlockingAction.class);
+  protected Context context;
+
+  private final AsyncResultHandler handler;
+
+  public BlockingAction(AsyncResultHandler handler) {
+    this.handler = handler;
+  }
 
   /**
    * Run the blocking action using a thread from the worker pool.
    */
-  protected void run() {
-    final Context context = VertxInternal.instance.getContext();
+  public void run() {
+    context = VertxInternal.instance.getOrAssignContext();
+
     Runnable runner = new Runnable() {
       public void run() {
         try {
-          final T result = action();
-          context.execute(new Runnable() {
-            public void run() {
-              setResult(result);
-            }
-          });
-        } catch (final Exception e) {
-          context.execute(new Runnable() {
-            public void run() {
-              setException(e);
-            }
-          });
+          AsyncResult<T> res;
+          try {
+            final T result = action();
+            res = new AsyncResult<>(result);
+          } catch (final Exception e) {
+            res = new AsyncResult<>(e);
+          }
+          if (handler != null) {
+            final AsyncResult<T> theRes = res;
+            context.execute(new Runnable() {
+              public void run() {
+                handler.handle(theRes);
+              }
+            });
+          }
         } catch (Throwable t) {
           VertxInternal.instance.reportException(t);
         }
@@ -58,5 +68,7 @@ public abstract class BlockingAction<T> extends SynchronousAction<T> {
 
     VertxInternal.instance.getBackgroundPool().execute(runner);
   }
+
+  public abstract T action() throws Exception;
 
 }

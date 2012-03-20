@@ -17,13 +17,13 @@
 package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Verticle;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.deploy.Verticle;
 
 import java.util.Set;
 
@@ -50,7 +50,7 @@ public class PubSubServer implements Verticle {
               Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
               for (String actorID : actorIDs) {
                 System.out.println("Sending to verticle");
-                EventBus.instance.send(actorID, Buffer.create(parts[2]));
+                EventBus.instance.send(actorID, new Buffer(parts[2]));
               }
             }
           }

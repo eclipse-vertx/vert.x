@@ -29,8 +29,8 @@ class IntMessage extends BaseMessage<Integer> {
 
   private static final Logger log = LoggerFactory.getLogger(IntMessage.class);
 
-  IntMessage(String address, Integer payload) {
-    super(address, payload);
+  IntMessage(String address, Integer body) {
+    super(address, body);
   }
 
   public IntMessage(Buffer readBuff) {

@@ -22,6 +22,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.Container;
 
 /**
  * Base helper class for Java busmods
@@ -46,7 +47,7 @@ public abstract class BusModBase {
    * Start the busmod
    */
   protected void start() {
-    config = Vertx.instance.getConfig();
+    config = Container.instance.getConfig();
     address = config.getString("address");
     if (address == null) {
       throw new IllegalArgumentException("address must be specified in config for busmod");

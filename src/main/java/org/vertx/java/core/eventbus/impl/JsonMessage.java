@@ -33,8 +33,8 @@ class JsonMessage extends BaseMessage<JsonObject> {
 
   private byte[] encoded;
 
-  JsonMessage(String address, JsonObject payload) {
-    super(address, payload);
+  JsonMessage(String address, JsonObject body) {
+    super(address, body);
   }
 
   private JsonMessage(JsonMessage other) {

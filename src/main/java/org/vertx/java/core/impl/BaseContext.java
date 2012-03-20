@@ -16,21 +16,34 @@
 
 package org.vertx.java.core.impl;
 
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class BaseContext implements Context {
 
-  private Object extraData;
+  private static final Logger log = LoggerFactory.getLogger(BaseContext.class);
+
+  private DeploymentHandle deploymentContext;
 
   private VertxInternal vertx = VertxInternal.instance;
 
-  public void setExtraData(Object data) {
-    this.extraData = data;
+  public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
+    this.deploymentContext = deploymentHandle;
   }
 
-  public Object getExtraData() {
-    return extraData;
+  public DeploymentHandle getDeploymentHandle() {
+    return deploymentContext;
+  }
+
+  public void reportException(Throwable t) {
+    if (deploymentContext != null) {
+      deploymentContext.reportException(t);
+    } else {
+      log.error("Unhandled exception", t);
+    }
   }
 
   protected Runnable wrapTask(final Runnable task) {

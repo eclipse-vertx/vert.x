@@ -26,9 +26,6 @@ import java.nio.charset.Charset;
 /**
  * <p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as necessary to accomodate any bytes written to it.</p>
  *
- * <p>Buffer instances should always be created using the static factory methods that take the form {@code createXXX}.
- * Factory methods exist for creating Buffer instances from a {@code byte[]} and a {@code String}.</p>
- *
  * <p>There are two ways to write data to a Buffer: The first method involves methods that take the form {@code setXXX}.
  * These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
  * has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
@@ -47,8 +44,15 @@ import java.nio.charset.Charset;
  */
 public class Buffer {
 
-  //vert.x buffers are always dynamic
+  // vert.x buffers are always dynamic
   private DynamicChannelBuffer buffer;
+
+  /**
+   * Create an empty buffer
+   */
+  public Buffer() {
+    this(0);
+  }
 
   /**
    * Creates a new empty Buffer that is expected to have a size of {@code initialSizeHint} after data has been
@@ -56,29 +60,29 @@ public class Buffer {
    * is merely a hint to the system for how much memory to initially allocate to the buffer to prevent excessive
    * automatic re-allocations as data is written to it.
    */
-  public static Buffer create(int initialSizeHint) {
-    return new Buffer(ChannelBuffers.dynamicBuffer(initialSizeHint));
+  public Buffer(int initialSizeHint) {
+    this(ChannelBuffers.dynamicBuffer(initialSizeHint));
   }
 
   /**
    * Create a new Buffer that contains the contents of the {@code byte[] bytes}
    */
-  public static Buffer create(byte[] bytes) {
-    return new Buffer(ChannelBuffers.wrappedBuffer(bytes));
+  public Buffer(byte[] bytes) {
+    this(ChannelBuffers.wrappedBuffer(bytes));
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded according to the encoding {@code enc}
    */
-  public static Buffer create(String str, String enc) {
-    return new Buffer(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+  public Buffer(String str, String enc) {
+    this(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded with UTF-8 encoding
    */
-  public static Buffer create(String str) {
-    return Buffer.create(str, "UTF-8");
+  public Buffer(String str) {
+    this(str, "UTF-8");
   }
 
   /**
@@ -188,6 +192,34 @@ public class Buffer {
     byte[] arr = new byte[end - start];
     buffer.getBytes(start, arr, 0, end - start);
     return arr;
+  }
+
+  /**
+   * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
+   * and ending at position {@code end - 1}
+   */
+  public Buffer getBuffer(int start, int end) {
+    return new Buffer(getBytes(start, end));
+  }
+
+  /**
+   * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
+   * and ending at position {@code end - 1} interpreted as a String in the specified encoding
+   */
+  public String getString(int start, int end, String enc) {
+    byte[] bytes = getBytes(start, end);
+    Charset cs = Charset.forName(enc);
+    return new String(bytes, cs);
+  }
+
+  /**
+   * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
+   * and ending at position {@code end - 1} interpreted as a String in UTF-8 encoding
+   */
+  public String getString(int start, int end) {
+    byte[] bytes = getBytes(start, end);
+    Charset cs = Charset.forName("UTF-8");
+    return new String(bytes, cs);
   }
 
   /**
@@ -376,7 +408,7 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} endoded in UTF-8.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
-  public Buffer setBytes(int pos, String str) {
+  public Buffer setString(int pos, String str) {
     return setBytes(pos, str, CharsetUtil.UTF_8);
   }
 
@@ -384,7 +416,7 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in encoding {@code enc}.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
-  public Buffer setBytes(int pos, String str, String enc) {
+  public Buffer setString(int pos, String str, String enc) {
     return setBytes(pos, str, Charset.forName(enc));
   }
 
@@ -394,14 +426,6 @@ public class Buffer {
    */
   public int length() {
     return buffer.writerIndex();
-  }
-
-  /**
-   * Returns a copy of a sub-sequence the Buffer starting at position {@code start}
-   * and ending at position {@code end - 1}.
-   */
-  public Buffer copy(int start, int end) {
-    return new Buffer(buffer.copy(start, end - start));
   }
 
   /**
