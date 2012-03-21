@@ -1,13 +1,19 @@
 apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'eclipse'
+apply plugin: 'idea'
 
-version = '1.0.beta1'
+version = '1.0.beta4'
+
+// Java 7 is required
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
 
 repositories {
     flatDir(dirs: file('lib/main'))
 }
 
+// Adds JARs contained in lib/ to classpath
 dependencies {
   compile fileTree('lib/main').matching {
     include '*.jar'
@@ -18,38 +24,74 @@ dependencies {
   groovy module(':groovy-all:1.8.6')
 }
 
+// Declares specific folders as part of the source code
+// Ruby and javascript files are considered resources as they are not compiled
 sourceSets {
+  main {
+    resources {
+      srcDir 'src/main/javascript'
+      srcDir 'src/main/ruby'
+    }
+  }
   test {
-    java.srcDirs = [file('src/tests/java'), file('src/tests/controllers'), file('src/tests/framework/java'), file('src/tests/testapps/java')]
-    resources.srcDirs = [file('src/tests/java')]
+    java {
+      srcDir 'src/tests/java'
+      srcDir 'src/tests/controllers'
+      srcDir 'src/tests/framework/java'
+      srcDir 'src/tests/testapps/java'
+    }
+    groovy {
+      srcDir 'src/tests/groovy'
+      srcDir 'src/tests/framework/groovy'
+    }
+    resources {
+      srcDir 'src/tests/javascript'
+      srcDir 'src/tests/framework/javascript'
+      srcDir 'src/tests/ruby'
+      srcDir 'src/tests/framework/ruby'
+      srcDir 'src/tests/keystores'
+      srcDir 'conf'
+    }
   }
 }
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
 
+// Builds vert.x-core
+task jarCore(type: Jar) {
+  baseName = "vert.x-core"
+  version = ""
+  
+  from sourceSets.main.output.classesDir 
+  include "org/vertx/java/core/**"
+  include "org/vertx/groovy/**"
+}
+
+// Builds vert.x-platform
 jar {
-  version = ''
+  dependsOn jarCore
+  baseName = "vert.x-platform"
+  version = ""
+  include "org/vertx/java/deploy/**"
+  include "org/vertx/java/busmods/**"
 }
 
 test {
-  useTestNG()
-  include "**/*Test.class"
   systemProperty "java.util.logging.config.file", "conf/logging.properties"
-}
+  systemProperty "jruby.home", System.getenv("JRUBY_HOME")
+  jvmArgs '-XX:MaxPermSize=128m'
 
-task rubyTests(type: Exec, dependsOn: testClasses) {
-  group = 'verification'
-  workingDir = file('src/tests/ruby')
-  executable = file('src/tests/ruby/run_tests.sh')
+  include "org/vertx/java/tests/**/*Test.class"
+
+  // Uncomment the line below if you want to see output from the tests
+  //testLogging.showStandardStreams = true
 }
 
 task yardoc(type: Exec) {
-    rubySrc = "src/main/ruby/core/**"
-    vertxRbSrc = "src/main/ruby/vertx.rb"
-    licenseSrc = "LICENSE.txt"
-    readmeSrc = "README.md"
-    destDir = "target/docs/ruby/api/"
+    def rubySrc = "src/main/ruby/core/**"
+    def vertxRbSrc = "src/main/ruby/vertx.rb"
+    def licenseSrc = "LICENSE.txt"
+    def readmeSrc = "README.md"
+    def destDir = "$docsDir/ruby/yardoc/"
 
     inputs.files licenseSrc, vertxRbSrc, readmeSrc
     inputs.dir rubySrc
@@ -60,13 +102,16 @@ task yardoc(type: Exec) {
                    vertxRbSrc, rubySrc, "-", licenseSrc]
 }
 
-distSpec = copySpec {
+def distSpec = copySpec {
   into('lib/java') {
     from jar, configurations.compile
   }
   into('lib/ruby') {
     from 'src/main/ruby'
     include '**/*.rb'
+  }
+  into('lib/javascript') {
+    from 'src/main/javascript'
   }
   into('lib/groovy') {
     from 'src/main/groovy'
@@ -90,12 +135,40 @@ distSpec = copySpec {
   }
   into('examples') {
     from 'src/examples'
+    exclude "**/vertx-dev"
+    exclude "**/build.xml"
+    exclude "**/classes/**"
+    exclude "**/build-dist.xml"
+    exclude "java/classes/**/*.class"
+    exclude "java/eventbusbridge/vertxbus.js"
+  }
+  
+  into('examples/java') {
+    from 'src/examples/java/build-dist.xml' 
+    rename "build-dist.xml", "build.xml"
+  }
+
+  into('examples/java/eventbusbridge') {
+    from('src/client/vertxbus.js')
+  }
+  into('examples/ruby/eventbusbridge') {
+    from('src/client/vertxbus.js')
+  }
+  into('examples/ruby/webapp/web/js') {
+    from('src/client/vertxbus.js')
+  }
+  into('examples/javascript/eventbusbridge') {
+    from('src/client/vertxbus.js')
+  }
+  into('examples/javascript/webapp/web/js') {
+    from('src/client/vertxbus.js')
   }
 
   from 'LICENSE.txt', "README.md", "rel-notes/release-notes-${version}.txt"
 }
 
 
+// Builds the distributable zip
 task dist(type: Zip) {
   description = 'Builds the distribution.'
   group = 'build'
@@ -104,6 +177,16 @@ task dist(type: Zip) {
   }
 }
 
+// Builds the distributable tar.gz
+task tarDist(type: Tar) {
+  into("$project.name-$version") {
+    with distSpec
+  }
+  compression = org.gradle.api.tasks.bundling.Compression.GZIP
+}
+
+// Synchronizes results of the build with VERTX_HOME, as if the application had
+// been installed from a zip of tar.gz.
 task install(type: Sync) {
   with distSpec
   if (System.getenv()['VERTX_HOME']) {
@@ -114,12 +197,7 @@ task install(type: Sync) {
   }
 }
 
-task tarDist(type: Tar) {
-  into("$project.name-$version") {
-    with distSpec
-  }
-  compression = org.gradle.api.tasks.bundling.Compression.GZIP
-}
 
+// Creates the Gradle wrapper
 task wrapper(type: Wrapper)
 
