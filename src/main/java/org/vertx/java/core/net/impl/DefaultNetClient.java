@@ -313,7 +313,7 @@ public class DefaultNetClient {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
         VertxInternal.instance.setContext(ctx);
-        DefaultNetSocket sock = new DefaultNetSocket(ch, ctx, Thread.currentThread());
+        DefaultNetSocket sock = new DefaultNetSocket(ch, ctx);
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
       }

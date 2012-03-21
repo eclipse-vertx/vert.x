@@ -380,7 +380,7 @@ public class DefaultNetServer {
     private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       handler.context.execute(new Runnable() {
         public void run() {
-          DefaultNetSocket sock = new DefaultNetSocket(ch, handler.context, Thread.currentThread());
+          DefaultNetSocket sock = new DefaultNetSocket(ch, handler.context);
           socketMap.put(ch, sock);
           handler.handler.handle(sock);
         }
