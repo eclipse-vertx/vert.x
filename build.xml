@@ -251,6 +251,7 @@
         <fileset dir="${target}/${javadoc-dir}"/>
     </copy>
 
+    <mkdir dir="${target}/${rubydoc-dir}"/>
     <copy todir="${dist-build}/${rubydoc-dir}">
         <fileset dir="${target}/${rubydoc-dir}"/>
     </copy>
