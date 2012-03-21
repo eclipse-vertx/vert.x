@@ -3,7 +3,7 @@ apply plugin: 'groovy'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-version = '1.0.beta4'
+version = '1.0.beta5'
 
 // Java 7 is required
 sourceCompatibility = "1.7"
