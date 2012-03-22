@@ -16,38 +16,78 @@
 
 package org.vertx.groovy.core.http
 
-class HttpServerRequest  {
+import org.vertx.java.core.Handler
+import org.vertx.java.core.buffer.Buffer
+import org.vertx.groovy.core.streams.ReadStream
 
-  @Delegate org.vertx.java.core.http.HttpServerRequest wrappedRequest
+class HttpServerRequest implements ReadStream {
+
+  private final org.vertx.java.core.http.HttpServerRequest jRequest
+  
   private final HttpServerResponse wrappedResponse
 
-  HttpServerRequest(request) {
-    this.wrappedRequest = request
-    this.wrappedResponse = new HttpServerResponse(request.response)
+  HttpServerRequest(org.vertx.java.core.http.HttpServerRequest jRequest) {
+    this.jRequest = jRequest
+    this.wrappedResponse = new HttpServerResponse(jRequest.response)
   }
 
-  def getResponse() {
-    return this.wrappedResponse
+  HttpServerResponse getResponse() {
+    this.wrappedResponse
   }
 
-  def getMethod() {
-    return wrappedRequest.method
+  String getMethod() {
+    jRequest.method
   }
 
-  def getUri() {
-    return wrappedRequest.uri
+  String getUri() {
+    jRequest.uri
   }
 
-  def getPath() {
-    return wrappedRequest.path
+  String getPath() {
+    jRequest.path
   }
 
-  def getQuery() {
-    return wrappedRequest.query
+  String getQuery() {
+    jRequest.query
   }
 
-  def getAt(String header) {
-    return wrappedRequest.getHeader(header)
+  String getHeader(String key) {
+    jRequest.getHeader(key)
   }
 
+  Set<String> getHeaderNames() {
+    jRequest.getHeaderNames()
+  }
+
+  Map<String, String> getAllHeaders() {
+    jRequest.getAllHeaders()
+  }
+
+  Map<String, String> getAllParams() {
+    jRequest.getAllParams()
+  }
+
+  void dataHandler(Closure dataHandler) {
+    jRequest.dataHandler({dataHandler.call(new Buffer(it))} as Handler)
+  }
+
+  void exceptionHandler(Closure handler) {
+    jRequest.exceptionHandler(handler as Handler)
+  }
+
+  void pause() {
+    jRequest.pause()
+  }
+
+  void resume() {
+    jRequest.resume()
+  }
+
+  void endHandler(Closure handler) {
+    jRequest.endHandler(handler)
+  }
+
+  void bodyHandler(Closure bodyHandler) {
+    jRequest.dataHandler({bodyHandler.call(new Buffer(it))} as Handler)
+  }
 }

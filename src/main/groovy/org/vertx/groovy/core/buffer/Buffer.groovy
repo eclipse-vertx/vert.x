@@ -23,7 +23,7 @@ import java.nio.ByteBuffer
  */
 class Buffer extends org.vertx.java.core.buffer.Buffer {
 
-  protected org.vertx.java.core.buffer.Buffer jBuffer
+  protected final org.vertx.java.core.buffer.Buffer jBuffer
 
   private Buffer(org.vertx.java.core.buffer.Buffer jBuffer) {
     this.jBuffer = jBuffer
