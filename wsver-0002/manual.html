@@ -117,7 +117,7 @@
 <p>Polyglot. Write your application components in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).</p>
 </li>
 <li>
-<p>No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.</p>
+<p>Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.</p>
 </li>
 <li>
 <p>Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.</p>
@@ -146,8 +146,7 @@
 <h3 id="polyglot">Polyglot</h3><br/>
 <p>We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby and Java, but we aim to support Groovy, Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.</p>
 <h3 id="concurrency">Concurrency</h3><br/>
-<p>A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief!</p>
-<p>Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. </p>
+<p>A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief since you don't have to synchronize access to your state. This means a whole class of race conditions disappear, and OS thread deadlocks are a thing of the past. </p>
 <h3 id="event-based-programming-model">Event-based Programming Model</h3><br/>
 <p>Vert.x provides an event-based programming model, similar to frameworks such as node.js.</p>
 <p>Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives.</p>

@@ -12,7 +12,7 @@ Some of the key highlights include:
 
 * Polyglot. Write your application components in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).
 
-* No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.
+* Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.
 
 * Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.
 
@@ -54,9 +54,7 @@ We want you to be able to develop your verticles in a choice of programming lang
 
 ### Concurrency
 
-A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief!
-
-Gone are the days of worrying about race conditions, locks, mutexes, volatile variables and synchronization. 
+A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief since you don't have to synchronize access to your state. This means a whole class of race conditions disappear, and OS thread deadlocks are a thing of the past. 
 
 ### Event-based Programming Model
 
