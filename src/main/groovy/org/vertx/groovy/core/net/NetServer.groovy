@@ -17,23 +17,22 @@ package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
 
-class NetServer {
-
-  private jServer
+class NetServer extends org.vertx.java.core.net.NetServer {
 
   NetServer() {
-    jServer = new org.vertx.java.core.net.NetServer()
+    super()
   }
 
-  def connectHandler(hndlr) {
-    jServer.connectHandler(wrapHandler(hndlr))
+  NetServer connectHandler(Closure hndlr) {
+    super.connectHandler(wrapHandler(hndlr))
+    this
   }
 
-  def listen(int port) {
-    jServer.listen(port)
+  void close(Closure hndlr) {
+    super.close(hndlr as Handler)
   }
 
-  protected wrapHandler(hndlr) {
+  private wrapHandler(hndlr) {
     return {hndlr.call(new NetSocket(it))} as Handler
   }
 
