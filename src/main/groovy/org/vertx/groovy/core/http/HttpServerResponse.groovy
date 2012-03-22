@@ -16,35 +16,141 @@
 
 package org.vertx.groovy.core.http
 
-class HttpServerResponse {
+import org.vertx.java.core.Handler
+import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.groovy.core.streams.WriteStream
 
-  @Delegate org.vertx.java.core.http.HttpServerResponse wrappedResponse
+class HttpServerResponse implements WriteStream {
 
-  HttpServerResponse(response) {
-    this.wrappedResponse = response
+  private final org.vertx.java.core.http.HttpServerResponse jResponse
+
+  HttpServerResponse(org.vertx.java.core.http.HttpServerResponse jResponse) {
+    this.jResponse = jResponse
   }
 
-  def getStatusCode() {
-    return wrappedResponse.statusCode
+  int getStatusCode() {
+    return jResponse.statusCode
   }
 
   void setStatusCode(int code) {
-    wrappedResponse.statusCode = code
+    jResponse.statusCode = code
   }
 
-  def getStatusMessage() {
-    return wrappedResponse.statusMessage
+  String getStatusMessage() {
+    return jResponse.statusMessage
   }
 
   void setStatusMessage(String msg) {
-    wrappedResponse.statusMessage = msg
+    jResponse.statusMessage = msg
   }
 
-  def putAt(String header, value) {
-    wrappedResponse.putHeader(header, value)
+  HttpServerResponse setChunked(boolean chunked) {
+    jResponse.setChunked(true)
+    this
   }
 
-  def leftShift(buff) {
-    wrappedResponse.write(buff)
+  HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
+    jResponse.putAllHeaders(m)
+    this
   }
+
+  HttpServerResponse putTrailer(String key, Object value) {
+    jResponse.putTrailer(key, value)
+    this
+  }
+
+  HttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
+    jResponse.putAllTrailers(m);
+    this
+  }
+
+  void setWriteQueueMaxSize(int size) {
+    jResponse.setWriteQueueMaxSize(size)
+  }
+
+  boolean writeQueueFull() {
+    jResponse.writeQueueFull()
+  }
+
+  void drainHandler(Closure handler) {
+    jResponse.drainHandler(handler as Handler)
+  }
+
+  void exceptionHandler(Closure handler) {
+    jResponse.exceptionHandler(handler as Handler)
+  }
+
+  void closeHandler(Closure handler) {
+    jResponse.closeHandler(handler as Handler)
+  }
+
+  void writeBuffer(Buffer chunk) {
+    jResponse.writeBuffer(chunk.jBuffer)
+  }
+
+  HttpServerResponse write(Buffer chunk) {
+    jResponse.write(chunk.jBuffer)
+    this
+  }
+
+  HttpServerResponse write(String chunk, String enc) {
+    jResponse.write(chunk, enc)
+    this
+  }
+
+  HttpServerResponse write(String chunk) {
+    jResponse.write(chunk)
+    this
+  }
+
+  HttpServerResponse write(Buffer chunk, Closure doneHandler) {
+    jResponse.write(chunk, doneHandler as Handler)
+    this
+  }
+
+  HttpServerResponse write(String chunk, String enc, Closure doneHandler) {
+    jResponse.write(chunk, enc, doneHandler as Handler)
+    this
+  }
+
+  HttpServerResponse write(String chunk, Closure doneHandler) {
+    jResponse.write(chunk, doneHandler as Handler)
+    this
+  }
+
+  void end(String chunk) {
+    jResponse.end(chunk)
+  }
+
+  void end(String chunk, String enc) {
+    jResponse.end(chunk, enc)
+  }
+
+  void end(Buffer chunk) {
+    jResponse.end(chunk.jBuffer)
+  }
+
+  void end() {
+    jResponse.end()
+  }
+
+  HttpServerResponse sendFile(String filename) {
+    jResponse.sendFile(filename)
+    this
+  }
+
+  void close() {
+    jResponse.close()
+  }
+
+  HttpServerResponse leftShift(Buffer buff) {
+    jResponse.write(buff.jBuffer)
+    this
+  }
+
+  HttpServerResponse leftShift(String str) {
+    jResponse.write(str)
+    this
+  }
+
 }

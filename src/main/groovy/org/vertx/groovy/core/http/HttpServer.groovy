@@ -20,15 +20,30 @@ import org.vertx.java.core.Handler
 
 class HttpServer extends org.vertx.java.core.http.HttpServer {
 
-  def requestHandler(Closure hndlr) {
+  private Closure reqHandler;
+  private Closure wsHandler;
+
+  HttpServer requestHandler(Closure hndlr) {
     super.requestHandler(wrapRequestHandler(hndlr))
+    this.reqHandler = hndlr
+    this
   }
 
-  def websocketHandler(Closure hndlr) {
+  Closure requestHandler() {
+    reqHandler;
+  }
+
+  HttpServer websocketHandler(Closure hndlr) {
     super.websocketHandler(wrapWebsocketHandler(hndlr))
+    this.wsHandler = hndlr
+    this
   }
 
-  def close(Closure hndlr) {
+  Closure websocketHandler() {
+    wsHandler;
+  }
+
+  void close(Closure hndlr) {
     super.close(hndlr as Handler)
   }
 
