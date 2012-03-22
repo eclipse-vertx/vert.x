@@ -17,21 +17,96 @@
 package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
+import org.vertx.groovy.core.streams.WriteStream
+import org.vertx.groovy.core.streams.ReadStream
+import org.vertx.groovy.core.buffer.Buffer
 
-class NetSocket {
+class NetSocket implements ReadStream, WriteStream {
 
-  private jSocket
+  private org.vertx.java.core.net.NetSocket jSocket;
 
   NetSocket(jSocket) {
-    this.jSocket = jSocket
+    this.jSocket = jSocket;
   }
 
-  def dataHandler(hndlr) {
-    jSocket.dataHandler(hndlr as Handler)
+  void writeBuffer(Buffer data) {
+    write(data)
   }
 
-  def write(buff) {
-    jSocket.write(buff)
+  NetSocket write(Buffer data) {
+    jSocket.write(data.jBuffer)
+    this
+  }
+
+  NetSocket write(String str) {
+    jSocket.write(str)
+    this
+  }
+
+  NetSocket write(String str, String enc) {
+    jSocket.write(str, enc)
+    this
+  }
+
+  NetSocket write(Buffer data, Closure doneHandler) {
+    jSocket.write(data.jBuffer, doneHandler as Handler)
+    this
+  }
+
+  NetSocket write(String str, Closure doneHandler) {
+    jSocket.write(str, doneHandler as Handler)
+    this
+  }
+
+  NetSocket write(String str, String enc, Closure doneHandler) {
+    jSocket.write(str, enc, doneHandler as Handler)
+    this
+  }
+
+  void dataHandler(Closure dataHandler) {
+    jSocket.dataHandler({
+      dataHandler.call(new Buffer(it))
+    } as Handler)
+  }
+
+  void endHandler(Closure endHandler) {
+    jSocket.endHandler(endHandler as Handler)
+  }
+
+  void drainHandler(Closure drainHandler) {
+    jSocket.drainHandler(drainHandler as Handler)
+  }
+
+  void sendFile(String filename) {
+    jSocket.sendFile(filename)
+  }
+
+  void pause() {
+    jSocket.pause()
+  }
+
+  void resume() {
+    jSocket.resume()
+  }
+
+  void setWriteQueueMaxSize(int size) {
+    jSocket.setWriteQueueMaxSize(size)
+  }
+
+  boolean writeQueueFull() {
+    jSocket.writeQueueFull()
+  }
+
+  void close() {
+    jSocket.close()
+  }
+
+  void exceptionHandler(Closure handler) {
+    jSocket.exceptionHandler(handler as Handler)
+  }
+
+  void closedHandler(Closure handler) {
+    jSocket.closedHandler(handler as Handler)
   }
 
   /**
@@ -41,6 +116,7 @@ class NetSocket {
   def leftShift(buff) {
     write(buff)
   }
+
 
 }
 

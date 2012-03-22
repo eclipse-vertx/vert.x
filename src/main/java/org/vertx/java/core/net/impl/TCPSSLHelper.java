@@ -300,7 +300,7 @@ public class TCPSSLHelper {
   private KeyManager[] getKeyMgrs(final String ksPath, final String ksPassword) throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     KeyStore ks = loadStore(ksPath, ksPassword);
-    fact.init(ks, ksPassword.toCharArray());
+    fact.init(ks, ksPassword != null ? ksPassword.toCharArray(): null);
     return fact.getKeyManagers();
   }
 
@@ -309,7 +309,7 @@ public class TCPSSLHelper {
     InputStream in = null;
     try {
       in = new FileInputStream(new File(ksPath));
-      ks.load(in, ksPassword.toCharArray());
+      ks.load(in, ksPassword != null ? ksPassword.toCharArray(): null);
     } finally {
       if (in != null) {
         try {

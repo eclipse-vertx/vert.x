@@ -13,24 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.groovy.core.net
 
-import org.vertx.java.core.Handler
+package org.vertx.groovy.core.streams
 
-class NetClient extends org.vertx.java.core.net.NetClient {
-
-  NetClient connect(int port, Closure hndlr) {
-    super.connect(port, wrapHandler(hndlr))
-    this
-  }
-
-  NetClient connect(int port, String host, Closure hndlr) {
-    super.connect(port, host, wrapHandler(hndlr))
-    this
-  }
-
-  private wrapHandler(hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
-  }
-
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+class Pump {
 }
