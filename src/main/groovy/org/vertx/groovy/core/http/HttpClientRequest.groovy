@@ -47,7 +47,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   void writeBuffer(Buffer chunk) {
-    jRequest.writeBuffer(chunk.jBuffer)
+    jRequest.writeBuffer(chunk.toJavaBuffer())
   }
 
   HttpClientRequest write(Buffer chunk) {
@@ -65,17 +65,17 @@ class HttpClientRequest implements WriteStream {
     this
   }
 
-  HttpClientRequest write(Buffer chunk, Closure doneHandler) {
-    jRequest.write(chunk.jBuffer, doneHandler as Handler)
+  HttpClientRequest write(Buffer chunk, doneHandler) {
+    jRequest.write(chunk.toJavaBuffer(), doneHandler as Handler)
     this
   }
 
-  HttpClientRequest write(String chunk, Closure doneHandler) {
+  HttpClientRequest write(String chunk, doneHandler) {
     jRequest.write(chunk, doneHandler as Handler)
     this
   }
 
-  HttpClientRequest write(String chunk, String enc, Closure doneHandler) {
+  HttpClientRequest write(String chunk, String enc, doneHandler) {
     jRequest.write(chunk, enc, doneHandler as Handler)
     this
   }
@@ -88,15 +88,15 @@ class HttpClientRequest implements WriteStream {
     jRequest.writeQueueFull()
   }
 
-  void drainHandler(Closure handler) {
+  void drainHandler(handler) {
     jRequest.drainHandler(handler as Handler)
   }
 
-  void exceptionHandler(Closure handler) {
+  void exceptionHandler(handler) {
     jRequest.exceptionHandler(handler as Handler)
   }
 
-  void continueHandler(Closure handler) {
+  void continueHandler(handler) {
     jRequest.continueHandler(handler as Handler)
   }
 
@@ -114,7 +114,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   void end(Buffer chunk) {
-    jRequest.end(chunk.jBuffer)
+    jRequest.end(chunk.toJavaBuffer())
   }
 
   void end() {
@@ -122,7 +122,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   HttpClientRequest leftShift(Buffer buff) {
-    jRequest.write(buff.jBuffer)
+    jRequest.write(buff.toJavaBuffer())
     this
   }
 

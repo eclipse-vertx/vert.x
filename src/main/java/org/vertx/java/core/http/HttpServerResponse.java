@@ -114,61 +114,11 @@ public abstract class HttpServerResponse implements WriteStream {
   public abstract HttpServerResponse putAllTrailers(Map<String, ? extends Object> m);
 
   /**
-   * Data is queued until it is actually sent. To set the point at which the queue
-   * is considered "full" call this method
-   * specifying the {@code maxSize} in bytes.<p>
-   * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
-   * between different streams and perform flow control.
-   */
-  public abstract void setWriteQueueMaxSize(int size);
-
-  /**
-   * If the amount of data that is currently queued is greater than the write
-   * queue max size see {@link #setWriteQueueMaxSize(int)}
-   * then the response queue is considered full.<p>
-   * Data can still be written to the response even if the write queue is deemed full,
-   * however it should be used as indicator
-   * to stop writing and push back on the source of the data, otherwise you risk
-   * running out of available RAM.<p>
-   * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
-   * between different streams and perform flow control.
-   *
-   * @return {@code true} if the write queue is full, {@code false} otherwise
-   */
-  public abstract boolean writeQueueFull();
-
-  /**
-   * This method sets a drain handler {@code handler} on the response.
-   * The drain handler will be called when write queue is no longer
-   * full and it is safe to write to it again.<p>
-   * The drain handler is actually called when the write queue size reaches
-   * <b>half</b> the write queue max size to prevent thrashing.
-   * This method is used as part of a flow control strategy, e.g. it is used by
-   * the {@link org.vertx.java.core.streams.Pump} class to pump data
-   * between different streams.
-   *
-   * @param handler
-   */
-  public abstract void drainHandler(Handler<Void> handler);
-
-  /**
-   * Set {@code handler} as an exception handler on the response. Any exceptions that occur
-   * will be notified by calling the handler. If the response has no handler than any exceptions occurring will be
-   * output to {@link System#err}
-   */
-  public abstract void exceptionHandler(Handler<Exception> handler);
-
-  /**
    * Set a close handler for the response. This will be called if the underlying connection closes before the response
    * is complete.
    * @param handler
    */
   public abstract void closeHandler(Handler<Void> handler);
-
-  /**
-   * Write a {@link Buffer} to the response body.
-   */
-  public abstract void writeBuffer(Buffer chunk);
 
   /**
    * Write a {@link Buffer} to the response body.<p>

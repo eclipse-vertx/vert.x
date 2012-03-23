@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.groovy.core.net
 
-import org.vertx.java.core.Handler
+package org.vertx.groovy.core.http;
 
-class NetServer extends org.vertx.java.core.net.NetServer {
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class ServerWebSocket extends WebSocket {
 
-  NetServer() {
-    super()
+  private final org.vertx.java.core.http.ServerWebSocket jSWS;
+
+  protected ServerWebSocket(org.vertx.java.core.http.ServerWebSocket jSWS) {
+    super(jSWS);
+    this.jSWS = jSWS;
   }
 
-  NetServer connectHandler(hndlr) {
-    super.connectHandler(wrapHandler(hndlr))
-    this
+  String getPath() {
+    jSWS.path
   }
 
-  void close(hndlr) {
-    super.close(hndlr as Handler)
+  void reject() {
+    jSWS.reject()
   }
-
-  private wrapHandler(hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
-  }
-
 }

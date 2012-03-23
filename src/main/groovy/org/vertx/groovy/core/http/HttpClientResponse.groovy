@@ -55,15 +55,15 @@ class HttpClientResponse implements ReadStream {
     jResponse.getTrailerNames()
   }
 
-  void dataHandler(Closure dataHandler) {
+  void dataHandler(dataHandler) {
     jResponse.dataHandler({dataHandler.call(new Buffer(it))} as Handler)
   }
 
-  void endHandler(Closure endHandler) {
+  void endHandler(endHandler) {
     jResponse.endHandler(endHandler as Handler)
   }
 
-  void exceptionHandler(Closure exceptionHandler) {
+  void exceptionHandler(exceptionHandler) {
     jResponse.exceptionHandler(exceptionHandler as Handler)
   }
 
@@ -75,7 +75,7 @@ class HttpClientResponse implements ReadStream {
     jResponse.resume()
   }
 
-  void bodyHandler(Closure bodyHandler) {
+  void bodyHandler(bodyHandler) {
     jResponse.dataHandler({bodyHandler.call(new Buffer(it))} as Handler)
   }
 }

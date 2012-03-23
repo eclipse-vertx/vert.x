@@ -94,39 +94,4 @@ public abstract class HttpClientResponse extends HttpReadStreamBase {
    * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
    */
   public abstract Set<String> getTrailerNames();
-
-  /**
-   * Specify a data handler for the response. If the response has a body, the {@code dataHandler} will get called when some of the response body has
-   * been read from the wire. If the response is chunked, then it will be called once for each HTTP chunk, otherwise it
-   * will be called one or more times until the full response body has been delivered.<p>
-   * If the response has no body it will not be called at all.
-   *
-   * @param dataHandler
-   */
-  public abstract void dataHandler(Handler<Buffer> dataHandler);
-
-  /**
-   * Specify an end handler for the response. The {@code endHandler} is called once the entire response has been read.
-   */
-  public abstract void endHandler(Handler<Void> endHandler);
-
-  /**
-   * Specify an exception handler for the response. The {@code exceptionHandler} is called if an exception occurs
-   * when handling the response.
-   */
-  public abstract void exceptionHandler(Handler<Exception> exceptionHandler);
-
-  /**
-   * Pause the response. Once the response has been paused, the system will stop reading any more chunks of the response
-   * from the wire, thus pushing back to the server. You may however still receive a few more chunks corresponding to those
-   * chunks which have already been read but not delivered to the {@link #dataHandler} yet.<p>
-   * Pause is often used in conjunction with a {@link org.vertx.java.core.streams.Pump} to pump data between streams and implement flow control.
-   */
-  public abstract void pause();
-
-  /**
-   * Resume a paused response. The response will resume receiving chunks of the response from the wire.<p>
-   * Resume is often used in conjunction with a {@link org.vertx.java.core.streams.Pump} to pump data between streams and implement flow control.
-   */
-  public abstract void resume();
 }

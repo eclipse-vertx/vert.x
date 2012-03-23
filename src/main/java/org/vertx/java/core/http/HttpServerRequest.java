@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.impl.HttpReadStreamBase;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -99,39 +97,4 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
    * Returns a map of all the parameters in the request
    */
   public abstract Map<String, String> getAllParams();
-
-  /**
-   * Specify a data handler for the request. If the request has a body, the {@code dataHandler} will get called when some of the request body has
-   * been read from the wire. If the request is chunked, then it will be called once for each HTTP chunk, otherwise it
-   * will be called one or more times until the full request body has been received.<p>
-   * If the request has no body it will not be called at all.
-   *
-   * @param dataHandler
-   */
-  public abstract void dataHandler(Handler<Buffer> dataHandler);
-
-  /**
-   * Specify an exception handler for the request. The {@code exceptionHandler} is called if an exception occurs
-   * when handling the request.
-   */
-  public abstract void exceptionHandler(Handler<Exception> handler);
-
-  /**
-   * Pause the request. Once the request has been paused, the system will stop reading any more chunks of the request
-   * from the wire until it is resumed.<p>
-   * Pause is often used in conjunction with a {@link org.vertx.java.core.streams.Pump} to pump data between streams and implement flow control.
-   */
-  public abstract void pause();
-
-  /**
-   * Resume a paused request. The request will resume receiving chunks of the request body from the wire.<p>
-   * Resume is often used in conjunction with a {@link org.vertx.java.core.streams.Pump} to pump data between streams and implement flow control.
-   */
-  public abstract void resume();
-
-  /**
-   * Specify an end handler for the request. The {@code endHandler} is called once the entire request has been read.
-   */
-  public abstract void endHandler(Handler<Void> handler);
-
 }

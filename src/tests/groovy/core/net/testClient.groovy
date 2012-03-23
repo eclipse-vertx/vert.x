@@ -11,7 +11,7 @@ tu.checkContext()
 client = null
 
 void testEcho() {
-  echo(false)  
+  echo(false)
 }
 
 void testEchoSSL() {
