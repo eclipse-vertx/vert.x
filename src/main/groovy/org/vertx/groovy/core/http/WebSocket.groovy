@@ -44,7 +44,7 @@ class WebSocket  {
   }
 
   void dataHandler(handler) {
-    jWS.dataHandler(handler as Handler)
+    jWS.dataHandler({handler.call(new Buffer(it))} as Handler)
   }
 
   void pause() {
@@ -64,7 +64,7 @@ class WebSocket  {
   }
 
   void writeBuffer(Buffer data) {
-    jWS.writeBuffer(data)
+    jWS.writeBuffer(data.toJavaBuffer())
   }
 
   void setWriteQueueMaxSize(int maxSize) {
@@ -78,5 +78,17 @@ class WebSocket  {
   void drainHandler(handler) {
     jWS.drainHandler(handler as Handler)
   }
+
+  void leftShift(Buffer buff) {
+    writeBuffer(buff)
+    this
+  }
+
+  void leftShift(String str) {
+    writeTextFrame(str)
+    this
+  }
+
+
 
 }
