@@ -17,8 +17,8 @@
 package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
-import org.vertx.java.core.buffer.Buffer
 import org.vertx.groovy.core.streams.ReadStream
+import org.vertx.groovy.core.buffer.Buffer
 
 class HttpServerRequest implements ReadStream {
 
@@ -84,7 +84,7 @@ class HttpServerRequest implements ReadStream {
   }
 
   void endHandler(handler) {
-    jRequest.endHandler(handler)
+    jRequest.endHandler(handler as Handler)
   }
 
   void bodyHandler(bodyHandler) {

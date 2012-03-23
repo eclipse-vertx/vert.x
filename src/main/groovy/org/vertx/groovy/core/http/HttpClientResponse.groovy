@@ -18,7 +18,7 @@ package org.vertx.groovy.core.http
 
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.java.core.Handler
-import org.vertx.java.core.buffer.Buffer
+import org.vertx.groovy.core.buffer.Buffer
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -29,6 +29,14 @@ class HttpClientResponse implements ReadStream {
 
   HttpClientResponse(org.vertx.java.core.http.HttpClientResponse jResponse) {
     this.jResponse = jResponse
+  }
+
+  int getStatusCode() {
+    jResponse.statusCode
+  }
+
+  String getStatusMessage() {
+    jResponse.statusMessage
   }
 
   String getHeader(String key) {

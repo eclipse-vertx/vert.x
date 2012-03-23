@@ -49,6 +49,11 @@ class HttpServerResponse implements WriteStream {
     this
   }
 
+  HttpServerResponse putHeader(String key, Object value) {
+    jResponse.putHeader(key, value)
+    this
+  }
+
   HttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
     jResponse.putAllHeaders(m)
     this
