@@ -8,8 +8,6 @@ import org.vertx.groovy.core.buffer.Buffer
 tu = new TestUtils()
 tu.checkContext()
 
-client = null
-
 void testEcho() {
   echo(false)
 }
@@ -104,7 +102,6 @@ tu.registerTests(this)
 tu.appReady()
 
 void vertxStop() {
-  if (client != null) client.close()
   tu.unregisterAll()
   tu.appStopped()
 }
