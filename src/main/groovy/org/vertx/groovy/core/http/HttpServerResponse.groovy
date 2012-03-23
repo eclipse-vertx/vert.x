@@ -72,24 +72,24 @@ class HttpServerResponse implements WriteStream {
     jResponse.writeQueueFull()
   }
 
-  void drainHandler(Closure handler) {
+  void drainHandler(handler) {
     jResponse.drainHandler(handler as Handler)
   }
 
-  void exceptionHandler(Closure handler) {
+  void exceptionHandler(handler) {
     jResponse.exceptionHandler(handler as Handler)
   }
 
-  void closeHandler(Closure handler) {
+  void closeHandler(handler) {
     jResponse.closeHandler(handler as Handler)
   }
 
   void writeBuffer(Buffer chunk) {
-    jResponse.writeBuffer(chunk.jBuffer)
+    jResponse.writeBuffer(chunk.toJavaBuffer())
   }
 
   HttpServerResponse write(Buffer chunk) {
-    jResponse.write(chunk.jBuffer)
+    jResponse.write(chunk.toJavaBuffer())
     this
   }
 
@@ -103,17 +103,17 @@ class HttpServerResponse implements WriteStream {
     this
   }
 
-  HttpServerResponse write(Buffer chunk, Closure doneHandler) {
+  HttpServerResponse write(Buffer chunk, doneHandler) {
     jResponse.write(chunk, doneHandler as Handler)
     this
   }
 
-  HttpServerResponse write(String chunk, String enc, Closure doneHandler) {
+  HttpServerResponse write(String chunk, String enc, doneHandler) {
     jResponse.write(chunk, enc, doneHandler as Handler)
     this
   }
 
-  HttpServerResponse write(String chunk, Closure doneHandler) {
+  HttpServerResponse write(String chunk, doneHandler) {
     jResponse.write(chunk, doneHandler as Handler)
     this
   }
@@ -127,7 +127,7 @@ class HttpServerResponse implements WriteStream {
   }
 
   void end(Buffer chunk) {
-    jResponse.end(chunk.jBuffer)
+    jResponse.end(chunk.toJavaBuffer())
   }
 
   void end() {
@@ -144,7 +144,7 @@ class HttpServerResponse implements WriteStream {
   }
 
   HttpServerResponse leftShift(Buffer buff) {
-    jResponse.write(buff.jBuffer)
+    jResponse.write(buff.toJavaBuffer())
     this
   }
 

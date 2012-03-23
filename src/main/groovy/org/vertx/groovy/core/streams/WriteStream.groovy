@@ -46,11 +46,11 @@ interface WriteStream {
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
    * queue has been reduced to maxSize / 2. See {@link org.vertx.java.core.streams.Pump} for an example of this being used.
    */
-  void drainHandler(Closure handler)
+  void drainHandler(handler)
 
   /**
    * Set an exception handler on the stream
    */
-  void exceptionHandler(Closure handler)
+  void exceptionHandler(handler)
 
 }

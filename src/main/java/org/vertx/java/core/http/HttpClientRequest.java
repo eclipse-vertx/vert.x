@@ -97,11 +97,6 @@ public abstract class HttpClientRequest implements WriteStream {
   public abstract HttpClientRequest putAllHeaders(Map<String, ? extends Object> m);
 
   /**
-   * Write a {@link Buffer} to the request body.
-   */
-  public abstract void writeBuffer(Buffer chunk);
-
-  /**
    * Write a {@link Buffer} to the request body.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
@@ -142,43 +137,6 @@ public abstract class HttpClientRequest implements WriteStream {
    * @return A reference to this, so multiple method calls can be chained.
    */
   public abstract HttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler);
-
-  /**
-   * Data is queued until it is actually sent. To set the point at which the queue is considered "full" call this method
-   * specifying the {@code maxSize} in bytes.<p>
-   * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
-   * between different streams and perform flow control.
-   */
-  public abstract void setWriteQueueMaxSize(int maxSize);
-  /**
-   * If the amount of data that is currently queued is greater than the write queue max size see {@link #setWriteQueueMaxSize(int)}
-   * then the request queue is considered full.<p>
-   * Data can still be written to the request even if the write queue is deemed full, however it should be used as indicator
-   * to stop writing and push back on the source of the data, otherwise you risk running out of available RAM.<p>
-   * This method is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
-   * between different streams and perform flow control.
-   *
-   * @return {@code true} if the write queue is full, {@code false} otherwise
-   */
-  public abstract boolean writeQueueFull();
-
-  /**
-   * This method sets a drain handler {@code handler} on the request. The drain handler will be called when write queue is no longer
-   * full and it is safe to write to it again.<p>
-   * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent thrashing.
-   * This method is used as part of a flow control strategy, e.g. it is used by the {@link org.vertx.java.core.streams.Pump} class to pump data
-   * between different streams.
-   *
-   * @param handler
-   */
-  public abstract void drainHandler(Handler<Void> handler);
-
-  /**
-   * Set {@code handler} as an exception handler on the request. Any exceptions that occur, either at connection setup time or later
-   * will be notified by calling the handler. If the request has no handler than any exceptions occurring will be
-   * output to {@link System#err}
-   */
-  public abstract void exceptionHandler(Handler<Exception> handler);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}

@@ -19,12 +19,12 @@ import org.vertx.java.core.Handler
 
 class NetClient extends org.vertx.java.core.net.NetClient {
 
-  NetClient connect(int port, Closure hndlr) {
+  NetClient connect(int port, hndlr) {
     super.connect(port, wrapHandler(hndlr))
     this
   }
 
-  NetClient connect(int port, String host, Closure hndlr) {
+  NetClient connect(int port, String host, hndlr) {
     super.connect(port, host, wrapHandler(hndlr))
     this
   }

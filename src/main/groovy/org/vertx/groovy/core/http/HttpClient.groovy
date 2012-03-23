@@ -25,67 +25,67 @@ import org.vertx.java.core.http.WebSocketVersion
  */
 class HttpClient extends org.vertx.java.core.http.HttpClient {
 
-  void exceptionHandler(Closure handler) {
+  void exceptionHandler(handler) {
     super.exceptionHandler(handler as Handler)
   }
 
-  void connectWebsocket(String uri, Closure handler) {
+  void connectWebsocket(String uri, handler) {
     connectWebsocket(uri, WebSocketVersion.HYBI_17, handler)
   }
 
-  void connectWebsocket(String uri, WebSocketVersion version, Closure handler) {
+  void connectWebsocket(String uri, WebSocketVersion version, handler) {
     super.connectWebsocket(uri, version, {handler.call(new WebSocket(it))} as Handler)
   }
 
-  void getNow(String uri, Closure responseHandler) {
+  void getNow(String uri, responseHandler) {
     super.getNow(uri, wrapResponseHandler(responseHandler))
   }
 
-  void getNow(String uri, Map<String, ? extends Object> headers, Closure responseHandler) {
+  void getNow(String uri, Map<String, ? extends Object> headers, responseHandler) {
     super.getNow(uri, headers, wrapResponseHandler(responseHandler))
   }
 
-  HttpClientRequest options(String uri, Closure responseHandler) {
+  HttpClientRequest options(String uri, responseHandler) {
     new HttpClientRequest(super.options(uri, wrapResponseHandler(responseHandler)))
   }
 
-  HttpClientRequest get(String uri, Closure responseHandler) {
+  HttpClientRequest get(String uri, responseHandler) {
     request("GET", uri, responseHandler)
   }
 
-  HttpClientRequest head(String uri, Closure responseHandler) {
+  HttpClientRequest head(String uri, responseHandler) {
     request("HEAD", uri, responseHandler)
   }
 
-  HttpClientRequest post(String uri, Closure responseHandler) {
+  HttpClientRequest post(String uri, responseHandler) {
     request("POST", uri, responseHandler)
   }
 
-  HttpClientRequest put(String uri, Closure responseHandler) {
+  HttpClientRequest put(String uri, responseHandler) {
     request("PUT", uri, responseHandler)
   }
 
-  HttpClientRequest delete(String uri, Closure responseHandler) {
+  HttpClientRequest delete(String uri, responseHandler) {
     request("DELETE", uri, responseHandler)
   }
 
-  HttpClientRequest trace(String uri, Closure responseHandler) {
+  HttpClientRequest trace(String uri, responseHandler) {
     request("TRACE", uri, responseHandler)
   }
 
-  HttpClientRequest connect(String uri, Closure responseHandler) {
+  HttpClientRequest connect(String uri, responseHandler) {
     request("CONNECT", uri, responseHandler)
   }
 
-  HttpClientRequest patch(String uri, Closure responseHandler) {
+  HttpClientRequest patch(String uri, responseHandler) {
     request("PATCH", uri, responseHandler)
   }
 
-  HttpClientRequest request(String method, String uri, Closure responseHandler) {
+  HttpClientRequest request(String method, String uri, responseHandler) {
     new HttpClientRequest(super.request(method, uri, wrapResponseHandler(responseHandler)))
   }
 
-  private Handler wrapResponseHandler(Closure handler) {
+  private Handler wrapResponseHandler(handler) {
     return {handler.call(new HttpClientResponse(it))} as Handler
   }
 

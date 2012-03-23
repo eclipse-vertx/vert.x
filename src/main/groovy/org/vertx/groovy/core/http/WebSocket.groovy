@@ -17,30 +17,66 @@
 package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
+import org.vertx.groovy.core.buffer.Buffer
 
-class WebSocket {
+class WebSocket  {
 
-  @Delegate org.vertx.java.core.http.WebSocket wrappedSocket
+  private final org.vertx.java.core.http.WebSocket jWS;
 
-  WebSocket(webSocket) {
-    this.wrappedSocket = webSocket
+  WebSocket(org.vertx.java.core.http.WebSocket jWS) {
+    this.jWS = jWS
   }
 
-  def getUri() { return wrappedSocket.uri }
-
-  def dataHandler(Closure hndlr) {
-    wrappedSocket.dataHandler(hndlr as Handler)
+  void writeBinaryFrame(Buffer data) {
+    jWS.writeBinaryFrame(data.toJavaBuffer())
   }
 
-  def endHandler(Closure hndlr) {
-    wrappedSocket.endHandler(hndlr as Handler)
+  void writeTextFrame(String str) {
+    jWS.writeTextFrame(str)
   }
 
-  def exceptionHandler(Closure hndlr) {
-    wrappedSocket.exceptionHandler(hndlr as Handler)
+  void closedHandler(handler) {
+    jWS.closedHandler(handler as Handler)
   }
 
-  def closedHandler(Closure hndlr) {
-    wrappedSocket.closedHandler(hndlr as Handler)
+  void close() {
+    jWS.close();
   }
+
+  void dataHandler(handler) {
+    jWS.dataHandler(handler as Handler)
+  }
+
+  void pause() {
+    jWS.pause()
+  }
+
+  void resume() {
+    jWS.resume()
+  }
+
+  void exceptionHandler(handler) {
+    jWS.exceptionHandler(handler as Handler)
+  }
+
+  void endHandler(endHandler) {
+    jWS.endHandler(endHandler as Handler)
+  }
+
+  void writeBuffer(Buffer data) {
+    jWS.writeBuffer(data)
+  }
+
+  void setWriteQueueMaxSize(int maxSize) {
+    jWS.setWriteQueueMaxSize(maxSize)
+  }
+
+  boolean writeQueueFull() {
+    jWS.writeQueueFull()
+  }
+
+  void drainHandler(handler) {
+    jWS.drainHandler(handler as Handler)
+  }
+
 }
