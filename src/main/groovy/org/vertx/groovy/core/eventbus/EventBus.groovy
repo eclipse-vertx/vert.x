@@ -17,6 +17,9 @@
 package org.vertx.groovy.core.eventbus
 
 import org.vertx.java.core.Handler
+import org.vertx.java.core.json.JsonObject
+import org.vertx.java.core.AsyncResultHandler
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -37,32 +40,85 @@ class EventBus {
     org.vertx.java.core.eventbus.EventBus.setClustered(port, hostname, clusterProviderClassName)
   }
 
+  private Map handlerMap = new ConcurrentHashMap()
+
   private org.vertx.java.core.eventbus.EventBus jEB() {
     org.vertx.java.core.eventbus.EventBus.instance
   }
 
+  private def convertMessage(message) {
+    if (message instanceof Map) {
+      message = new JsonObject(message)
+    }
+    message
+  }
+
+  private def wrapHandler(replyHandler) {
+    if (replyHandler != null) {
+      def wrapped = { replyHandler.call(new Message(it)) } as Handler
+      return wrapped
+    } else {
+      return null;
+    }
+  }
+
   void send(String address, message, replyHandler = null) {
-    jEB().send(address, message, replyHandler as Handler)
+    if (message != null) {
+      message = convertMessage(message)
+      jEB().send(address, convertMessage(message), wrapHandler(replyHandler))
+    } else {
+      // Just choose an overloaded method...
+      jEB().send(address, (String)null, wrapHandler(replyHandler))
+    }
   }
 
   String registerHandler(String address, handler, resultHandler = null) {
-    jEB().registerHandler(address, handler as Handler, resultHandler as Handler)
+    def wrapped = wrapHandler(handler)
+    handlerMap.put(handler, wrapped)
+    jEB().registerHandler(address, wrapped, resultHandler as AsyncResultHandler)
   }
 
   String registerLocalHandler(String address, handler, resultHandler = null) {
-    jEB().registerLocalHandler(address, handler as Handler, resultHandler as Handler)
+    def wrapped = wrapHandler(handler)
+    handlerMap.put(handler, wrapped)
+    jEB().registerLocalHandler(address, wrapped, resultHandler as AsyncResultHandler)
   }
 
   String registerSimpleHandler(handler, resultHandler = null) {
-    jEB().registerHandler(handler as Handler, resultHandler as Handler)
+    jEB().registerHandler(wrapHandler(handler), resultHandler as AsyncResultHandler)
   }
 
   void unregisterHandler(String address, handler, resultHandler = null) {
-    jEB().unregisterHandler(address, handler as Handler, resultHandler as Handler)
+    def wrapped = handlerMap.remove(handler)
+    if (wrapped != null) {
+      jEB().unregisterHandler(address, wrapped, resultHandler as AsyncResultHandler)
+    }
   }
 
   void unregisterSimpleHandler(String id, resultHandler = null) {
-    jEB().unregisterHandler(id, resultHandler as Handler)
+    jEB().unregisterHandler(id, resultHandler as AsyncResultHandler)
+  }
+
+  class Message {
+
+    def body
+
+    private org.vertx.java.core.eventbus.Message jMessage;
+
+    private Message(org.vertx.java.core.eventbus.Message jMessage) {
+      if (jMessage.body instanceof JsonObject) {
+        this.body = jMessage.body.toMap()
+      } else {
+        this.body = jMessage.body
+      }
+      this.jMessage = jMessage
+    }
+
+    def reply(message, replyHandler = null) {
+      message = convertMessage(message)
+      jMessage.reply(message, wrapHandler(replyHandler))
+    }
   }
 
 }
+

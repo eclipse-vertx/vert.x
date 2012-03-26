@@ -178,4 +178,8 @@ public class JsonObject {
     return true;
   }
 
+  public Map<String, Object> toMap() {
+    return map;
+  }
+
 }
