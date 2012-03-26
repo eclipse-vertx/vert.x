@@ -61,7 +61,7 @@ def testSimple() {
     tu.azzert(!handled)
     assertSent(msg.body)
     eb.unregisterHandler(address, myHandler)
-    //handled = true
+    handled = true
     tu.testComplete()
   })
 
@@ -113,7 +113,7 @@ def testWithReply() {
     tu.azzert(!handled)
     assertSent(msg.body)
     eb.unregisterHandler(address, myHandler)
-    //handled = true
+    handled = true
     msg.reply(reply)
   })
 
