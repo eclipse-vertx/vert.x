@@ -106,6 +106,7 @@
         <pathelement path="core-lib-classpath"/>
         <pathelement location="${java-target}"/>
       </classpath>
+      <include name="org/vertx/groovy/core/**/*.groovy"/>
     </groovyc>
   </target>
 
@@ -116,6 +117,14 @@
       <include name="org/vertx/java/deploy/**/*.java"/>
       <include name="org/vertx/java/busmods/**/*.java"/>
     </javac>
+    <groovyc srcdir="${groovy-src-root}" destdir="${java-target}">
+      <classpath>
+        <pathelement path="core-lib-classpath"/>
+        <pathelement location="${java-target}"/>
+      </classpath>
+      <include name="org/vertx/groovy/deploy/**/*.groovy"/>
+      <include name="org/vertx/groovy/busmods/**/*.groovy"/>
+    </groovyc>
   </target>
 
   <target name="jar-core" depends="compile-core" description="generate the core jar">
@@ -124,7 +133,8 @@
 
   <target name="jar-platform" depends="compile-platform" description="generate the platform jar">
     <jar jarfile="${target}/${platform-jar-file}" basedir="${java-target}">
-      <exclude name="**/core/**/*.class"/>
+      <exclude name="**/core/**/*"/>
+      <exclude name="**/core/"/>
     </jar>
   </target>
 

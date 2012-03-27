@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.core
+package org.vertx.java.tests.core.parsetools;
 
-class Wibble {
+import org.vertx.java.framework.TestBase;
 
-  private Closure cl
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class GroovyRecordParserTest extends TestBase {
 
-  def quux(Closure cl) {
-    this.cl = cl
-    23
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    startApp("core/parsetools/testClient.groovy");
   }
 
-  def call() {
-    cl.call()
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
+  public void testDelimited() {
+    startTest(getMethodName());
+  }
+
+  public void testFixed() {
+    startTest(getMethodName());
   }
 }
-
-
-def w = new Wibble()
-
-def l = 0
-
-l = w.quux({
-  println "l is " + l
-})
-
-w.call()

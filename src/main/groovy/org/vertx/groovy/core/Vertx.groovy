@@ -30,26 +30,52 @@ class Vertx {
   private Vertx() {
   }
 
+  /**
+   * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with
+   * the id of the timer.
+   * @return the unique ID of the timer
+   */
   long setTimer(long delay, Closure handler) {
     jVertex.setTimer(delay, handler as Handler)
   }
 
+  /**
+   * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
+   * the id of the timer.
+   * @return the unique ID of the timer
+   */
   long setPeriodic(long delay, Closure handler) {
     jVertex.setPeriodic(delay, handler as Handler)
   }
 
+  /**
+   * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
+   * {@code false} if the timer does not exist.
+   */
   void cancelTimer(long timerID) {
     jVertex.cancelTimer(timerID)
   }
 
+  /**
+   * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
+   * been processed
+   */
   void runOnLoop(Closure handler) {
     jVertex.runOnLoop(handler as Handler)
   }
 
+  /**
+   * Is the current thread an event loop thread?
+   * @return true if current thread is an event loop thread
+   */
   boolean isEventLoop() {
     jVertex.isEventLoop()
   }
 
+  /**
+   * Is the current thread an worker thread?
+   * @return true if current thread is an worker thread
+   */
   boolean isWorker() {
     jVertex.isWorker()
   }
