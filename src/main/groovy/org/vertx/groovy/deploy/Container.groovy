@@ -14,27 +14,20 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy;
+package org.vertx.groovy.deploy
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.deploy.impl.VerticleManager;
-
-import java.net.URL;
+import org.vertx.java.core.json.JsonObject
+import org.vertx.java.core.Handler
+import org.vertx.java.core.logging.Logger
 
 /**
- * This class represents the container in which a verticle runs
- * <p>
- * It contains methods to programmatically deploy other verticles, undeploy
- * verticles, get the configuration for a verticle and get the logger for a
- * verticle
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Container {
-
-  public static final Container instance = new Container();
+class Container {
+  
+  static final Container instance = new Container();
+  
+  private org.vertx.java.deploy.Container jContainer = org.vertx.java.deploy.Container.instance;
 
   private Container() {
   }
@@ -44,8 +37,8 @@ public class Container {
    * @param main The main of the verticle
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main) {
-    return deployWorkerVerticle(main, null, 1);
+  String deployWorkerVerticle(String main) {
+    jContainer.deployWorkerVerticle(main)
   }
 
   /**
@@ -54,8 +47,8 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, int instances) {
-    return deployWorkerVerticle(main, null, 1);
+  String deployWorkerVerticle(String main, int instances) {
+    jContainer.deployWorkerVerticle(main, instances)
   }
 
   /**
@@ -64,8 +57,8 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, JsonObject config) {
-    return deployWorkerVerticle(main, config, 1);
+  String deployWorkerVerticle(String main, Map<String, Object> config) {
+    jContainer.deployWorkerVerticle(main, new JsonObject(config))
   }
 
   /**
@@ -75,8 +68,8 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, JsonObject config, int instances) {
-    return deployWorkerVerticle(main, config, instances, null);
+  String deployWorkerVerticle(String main, Map<String, Object> config, int instances) {
+    jContainer.deployWorkerVerticle(main, new JsonObject(config), instances)
   }
 
   /**
@@ -87,9 +80,8 @@ public class Container {
    * @param doneHandler The handler will be called when deployment is complete
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    URL[] currURLs = VerticleManager.instance.getDeploymentURLs();
-    return VerticleManager.instance.deploy(true, null, main, config, currURLs, instances, doneHandler);
+  String deployWorkerVerticle(String main, JsonObject config, int instances, Closure doneHandler) {
+    jContainer.deployWorkerVerticle(main, new JsonObject(config), instances, doneHandler as Handler)
   }
 
   /**
@@ -97,8 +89,8 @@ public class Container {
    * @param main The main of the verticle
    * @return Unique deployment id
    */
-  public String deployVerticle(String main) {
-    return deployVerticle(main, null, 1);
+  String deployVerticle(String main) {
+    jContainer.deployVerticle(main)
   }
 
   /**
@@ -107,8 +99,8 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, int instances) {
-    return deployVerticle(main, null, 1);
+  String deployVerticle(String main, int instances) {
+    jContainer.deployVerticle(main, instances)
   }
 
   /**
@@ -117,8 +109,8 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, JsonObject config) {
-    return deployVerticle(main, config, 1);
+  String deployVerticle(String main, Map<String, Object> config) {
+    jContainer.deployVerticle(main, new JsonObject(config))
   }
 
   /**
@@ -128,8 +120,8 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, JsonObject config, int instances) {
-    return deployVerticle(main, config, instances, null);
+  String deployVerticle(String main, Map<String, Object> config, int instances) {
+    jContainer.deployVerticle(main, new JsonObject(config), instances)
   }
 
   /**
@@ -140,17 +132,16 @@ public class Container {
    * @param doneHandler The handler will be called when deployment is complete
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    URL[] currURLs = VerticleManager.instance.getDeploymentURLs();
-    return VerticleManager.instance.deploy(false, null, main, config, currURLs, instances, doneHandler);
+  String deployVerticle(String main, Map<String, Object> config, int instances, Closure doneHandler) {
+    jContainer.deployVerticle(main, new JsonObject(config), instances, doneHandler as Handler)
   }
 
   /**
    * Undeploy a verticle
    * @param deploymentID The deployment ID
    */
-  public void undeployVerticle(String deploymentID) {
-    undeployVerticle(deploymentID, null);
+  void undeployVerticle(String deploymentID) {
+    jContainer.undeployVerticle(deploymentID)
   }
 
   /**
@@ -158,24 +149,23 @@ public class Container {
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
-    VerticleManager.instance.undeploy(deploymentID, doneHandler);
+  void undeployVerticle(String deploymentID, Closure doneHandler) {
+    jContainer.undeployVerticle(deploymentID, doneHandler as Handler)
   }
 
   /**
    * Get the verticle configuration
-   * @return a JSON object representing the configuration
+   * @return a {@link java.util.Map} representing the JSON configuration
    */
-  public JsonObject getConfig() {
-    return VerticleManager.instance.getConfig();
+  Map<String, Object> getConfig() {
+    jContainer.getConfig().toMap()
   }
 
   /**
    * Get the verticle logger
    * @return The logger
    */
-  public Logger getLogger() {
-    return VerticleManager.instance.getLogger();
+  Logger getLogger() {
+    jContainer.getLogger()
   }
-
 }
