@@ -19,11 +19,11 @@ var vertx = vertx || {};
 if (!vertx.setTimer) {
 
   vertx.setTimer = function(delay, handler) {
-    org.vertx.java.core.Vertx.instance.setTimer(delay, handler);
+    return org.vertx.java.core.Vertx.instance.setTimer(delay, handler);
   }
 
   vertx.setPeriodic = function(interval, handler) {
-    org.vertx.java.core.Vertx.instance.setPeriodic(interval, handler);
+    return org.vertx.java.core.Vertx.instance.setPeriodic(interval, handler);
   }
 
   vertx.cancelTimer = function(id) {

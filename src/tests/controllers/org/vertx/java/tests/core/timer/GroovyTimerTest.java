@@ -25,14 +25,14 @@ import vertx.tests.core.timer.TestClient;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaTimerTest extends TestBase {
+public class GroovyTimerTest extends TestBase {
 
-private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
+  private static final Logger log = LoggerFactory.getLogger(GroovyTimerTest.class);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp(TestClient.class.getName());
+    startApp("core/timer/testClient.groovy");
   }
 
   @Override
@@ -47,11 +47,6 @@ private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
 
   @Test
   public void testPeriodic() throws Exception {
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testTimings() throws Exception {
     startTest(getMethodName());
   }
 

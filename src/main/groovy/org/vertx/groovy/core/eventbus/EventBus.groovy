@@ -26,12 +26,24 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class EventBus {
 
+  /**
+   * The event bus instance.
+   */
   static EventBus instance = new EventBus()
 
+  /**
+   * To use a clustered event bus on specified hostname use this method
+   * @param hostname The hostname or ip address
+   */
   static void setClustered(String hostname) {
     org.vertx.java.core.eventbus.EventBus.setClustered(hostname)
   }
 
+  /**
+   * To use a clustered event bus on specified port and hostname use this method
+   * @param port The port
+   * @param hostname The hostname or ip address
+   */
   static void setClustered(int port, String hostname) {
     org.vertx.java.core.eventbus.EventBus.setClustered(port, hostname)
   }
@@ -62,6 +74,14 @@ class EventBus {
     }
   }
 
+  /**
+   * Send a message on the event bus.
+   * Message can be a java.util.Map (Representing a JSON message), a String, boolean,
+   * byte, short, int, long, float, double or {@link org.vertx.java.core.buffer.Buffer}
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
   void send(String address, message, replyHandler = null) {
     if (message != null) {
       message = convertMessage(message)
@@ -72,22 +92,51 @@ class EventBus {
     }
   }
 
+  /**
+   * Registers a handler against the specified address
+   * @param address The address to register it at
+   * @param handler The handler
+   * @param resultHandler Optional completion handler. If specified, then when the register has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   * @return The handler id which is the same as the address
+   */
   String registerHandler(String address, handler, resultHandler = null) {
     def wrapped = wrapHandler(handler)
     handlerMap.put(handler, wrapped)
     jEB().registerHandler(address, wrapped, resultHandler as AsyncResultHandler)
   }
 
+  /**
+   * Registers a local handler against the specified address. The handler info won't
+   * be propagated across the cluster
+   * @param address The address to register it at
+   * @param handler The handler
+   * @return The handler id which is the same as the address
+   */
   String registerLocalHandler(String address, handler, resultHandler = null) {
     def wrapped = wrapHandler(handler)
     handlerMap.put(handler, wrapped)
     jEB().registerLocalHandler(address, wrapped, resultHandler as AsyncResultHandler)
   }
 
+  /**
+   * Registers a handler against a uniquely generated address, the address is returned as the id
+   * @param handler
+   * @param resultHandler Optional result handler. If specified, then when the register has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   * @return The handler id which is the same as the address
+   */
   String registerSimpleHandler(handler, resultHandler = null) {
     jEB().registerHandler(wrapHandler(handler), resultHandler as AsyncResultHandler)
   }
 
+  /**
+   * Unregisters a handler given the address and the handler
+   * @param address The address the handler was registered to
+   * @param handler The handler
+   * @param resultHandler Optional completion handler. If specified, then when the unregister has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
   void unregisterHandler(String address, handler, resultHandler = null) {
     def wrapped = handlerMap.remove(handler)
     if (wrapped != null) {
@@ -95,15 +144,27 @@ class EventBus {
     }
   }
 
+  /**
+   * Unregister a handler given the unique handler id
+   * @param id The handler id
+   * @param resultHandler Optional completion handler. If specified, then when the unregister has been
+   * propagated to all nodes of the event bus, the handler will be called.
+   */
   void unregisterSimpleHandler(String id, resultHandler = null) {
     jEB().unregisterHandler(id, resultHandler as AsyncResultHandler)
   }
 
+  /**
+   * Represents a message delivered to a handler
+   */
   class Message {
 
+    /**
+     * The body of the message
+     */
     def body
 
-    private org.vertx.java.core.eventbus.Message jMessage;
+    private org.vertx.java.core.eventbus.Message jMessage
 
     private Message(org.vertx.java.core.eventbus.Message jMessage) {
       if (jMessage.body instanceof JsonObject) {
@@ -114,6 +175,13 @@ class EventBus {
       this.jMessage = jMessage
     }
 
+    /**
+   * Reply to this message. If the message was sent specifying a reply handler, that handler will be
+   * called when it has received a reply. If the message wasn't sent specifying a receipt handler
+   * this method does nothing.
+   * @param message The reply message
+     @param replyHandler Optional reply handler, so you can get a reply to your reply
+   */
     def reply(message, replyHandler = null) {
       message = convertMessage(message)
       jMessage.reply(message, wrapHandler(replyHandler))
