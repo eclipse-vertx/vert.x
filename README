@@ -4,7 +4,7 @@ To build user manual:
 
 cd into version directory
 
-./genmanual.sh
+./gen_site.sh
 
 To run local web server for development: ./runserver.sh
 
