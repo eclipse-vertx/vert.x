@@ -108,9 +108,6 @@ function testPumpFile() {
         var pump = new vertx.Pump(rs, ws);
         pump.start();
         rs.endHandler(function() {
-          // TODO For now using handler() - this will disappear when we can wrap
-          // AsyncFile properly and have a close method which takes a handler
-          //TODO TODO
           file1.close(function() {
             file2.close(function() {
               fs.readFile(to, function(err, res) {

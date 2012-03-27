@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.framework.TestBase;
-import vertx.tests.core.timer.TestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

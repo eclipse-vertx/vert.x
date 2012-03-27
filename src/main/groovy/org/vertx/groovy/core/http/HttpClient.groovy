@@ -19,7 +19,6 @@ package org.vertx.groovy.core.http
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.WebSocketVersion
 
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

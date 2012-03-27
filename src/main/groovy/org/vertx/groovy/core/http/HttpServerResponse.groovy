@@ -16,9 +16,9 @@
 
 package org.vertx.groovy.core.http
 
-import org.vertx.java.core.Handler
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.WriteStream
+import org.vertx.java.core.Handler
 
 class HttpServerResponse implements WriteStream {
 

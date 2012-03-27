@@ -15,8 +15,8 @@
  */
 package org.vertx.groovy.framework
 
-import org.vertx.java.core.Handler
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.java.core.Handler
 
 class TestUtils extends org.vertx.java.framework.TestUtils {
 
