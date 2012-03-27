@@ -16,10 +16,10 @@
 
 package org.vertx.groovy.core.eventbus
 
+import java.util.concurrent.ConcurrentHashMap
+import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
-import org.vertx.java.core.AsyncResultHandler
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

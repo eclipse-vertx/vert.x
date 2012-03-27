@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.core.timer;
+package org.vertx.java.tests.core.filesystem;
 
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
@@ -24,14 +24,14 @@ import org.vertx.java.framework.TestBase;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaScriptTimerTest extends TestBase {
+public class GroovyFileSystemTest extends TestBase {
 
-private static final Logger log = LoggerFactory.getLogger(JavaScriptTimerTest.class);
+  private static final Logger log = LoggerFactory.getLogger(GroovyFileSystemTest.class);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp("core/timer/test_client.js");
+    startApp("core/filesystem/testClient.groovy");
   }
 
   @Override
@@ -40,12 +40,27 @@ private static final Logger log = LoggerFactory.getLogger(JavaScriptTimerTest.cl
   }
 
   @Test
-  public void testOneOff() throws Exception {
+  public void testCopy() throws Exception {
     startTest(getMethodName());
   }
 
   @Test
-  public void testPeriodic() throws Exception {
+  public void testMove() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testReadDir() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testPumpFile() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testProps() throws Exception {
     startTest(getMethodName());
   }
 

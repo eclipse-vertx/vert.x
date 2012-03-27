@@ -16,10 +16,10 @@
 
 package org.vertx.groovy.core.net
 
-import org.vertx.java.core.Handler
-import org.vertx.groovy.core.streams.WriteStream
-import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.groovy.core.streams.ReadStream
+import org.vertx.groovy.core.streams.WriteStream
+import org.vertx.java.core.Handler
 
 class NetSocket implements ReadStream, WriteStream {
 
