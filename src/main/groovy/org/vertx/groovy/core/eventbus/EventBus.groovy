@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
+import org.vertx.groovy.core.buffer.Buffer
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -61,6 +62,8 @@ class EventBus {
   private def convertMessage(message) {
     if (message instanceof Map) {
       message = new JsonObject(message)
+    } else if (message instanceof Buffer) {
+      message = ((Buffer)message).toJavaBuffer()
     }
     message
   }

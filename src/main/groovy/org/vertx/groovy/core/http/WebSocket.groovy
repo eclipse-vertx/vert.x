@@ -89,6 +89,13 @@ class WebSocket  {
     this
   }
 
+  String getBinaryHandlerID() {
+    jWS.binaryHandlerID
+  }
+
+  String getTextHandlerID() {
+    jWS.textHandlerID
+  }
 
 
 }
