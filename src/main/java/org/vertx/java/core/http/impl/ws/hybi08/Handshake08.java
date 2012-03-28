@@ -44,12 +44,14 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author Michael Dobozy
  * @author Bob McWhirter
+ *
+ * Adapted by Tim Fox
  */
 public class Handshake08 implements Handshake {
 
   private static Logger log = LoggerFactory.getLogger(Handshake08.class);
 
-  protected WebSocketChallenge08 challenge;
+  protected final WebSocketChallenge08 challenge;
 
   protected String getWebSocketLocation(HttpRequest request) {
     return "ws://" + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
@@ -77,16 +79,17 @@ public class Handshake08 implements Handshake {
     req.putHeader("Sec-WebSocket-Key", this.challenge.getNonceBase64());
   }
 
-  public HttpResponse generateResponse(HttpRequest request) throws Exception {
+  public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
         new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
     response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
 
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     String origin = request.getHeader(Names.ORIGIN);
-    if (origin != null) {
-      response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
+    if (origin == null) {
+      origin = serverOrigin;
     }
+    response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
     response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));
     String protocol = request.getHeader(Names.SEC_WEBSOCKET_PROTOCOL);
     if (protocol != null) {

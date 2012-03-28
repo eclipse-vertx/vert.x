@@ -58,6 +58,7 @@ public class TestClient extends TestClientBase {
   // The tests
 
   public void testClientDefaults() {
+    System.out.println("In test clienr defaults");
     tu.azzert(!client.isSSL());
     tu.azzert(client.getKeyStorePassword() == null);
     tu.azzert(client.getKeyStorePath() == null);

@@ -17,6 +17,10 @@
 package org.vertx.java.core.net.impl;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.EventLoopContext;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -81,16 +85,10 @@ public class TCPSSLHelper {
   Currently Netty does not provide all events for a connection on the same thread - e.g. connection open
   connection bound etc are provided on the acceptor thread.
   In vert.x we must ensure all events are executed on the correct event loop for the context
-  So for now we need to do this manually by checking the thread and executing it on the event loop
-  thread if it's not the right one.
   This code will go away if Netty acts like a proper event loop.
    */
   public void runOnCorrectThread(NioSocketChannel nch, Runnable runnable) {
-    if (Thread.currentThread() != nch.getWorker().getThread()) {
-      nch.getWorker().scheduleOtherTask(runnable);
-    } else {
-      runnable.run();
-    }
+    nch.getWorker().executeInIoThread(runnable, false);
   }
 
   public Map<String, Object> generateConnectionOptions() {
