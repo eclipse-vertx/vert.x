@@ -18,6 +18,7 @@ package org.vertx.groovy.core.sockjs
 
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.groovy.core.streams.WriteStream
+import org.vertx.groovy.core.buffer.Buffer
 
 /**
  *
@@ -40,8 +41,18 @@ abstract class SockJSSocket implements ReadStream, WriteStream {
     this.jSocket = jSocket
   }
 
-  public void close() {
+  void close() {
     jSocket.close()
+  }
+
+  SockJSSocket leftShift(Buffer buff) {
+    writeBuffer(buff)
+    this
+  }
+
+  SockJSSocket leftShift(String str) {
+    writeBuffer(new Buffer(str))
+    this
   }
 
 }

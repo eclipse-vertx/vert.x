@@ -33,7 +33,7 @@ server.requestHandler { req ->
   }
 }
 
-new SockJSBridge(server, new AppConfig().setPrefix('/eventbus'),
+new SockJSBridge(server, new AppConfig(prefix: '/eventbus'),
   [
     // Allow calls to get static album data from the persistor
     [

@@ -61,7 +61,7 @@ class SockJSServer {
    * @param httpServer - you must pass in an HttpServer instance
    */
   public SockJSServer(HttpServer httpServer) {
-    jServer = new SockJSServer(httpServer)
+    jServer = new org.vertx.java.core.sockjs.SockJSServer(httpServer)
   }
 
   /**
@@ -73,10 +73,10 @@ class SockJSServer {
                          Closure sockHandler) {
     jServer.installApp(config, {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
-      sockHandler.call(new SockJSSocket() {
+      sockHandler.call(new SockJSSocket(jSock) {
         
         void dataHandler(Object handler) {
-          it.dataHandler({handler.call(new Buffer(it))} as Handler)
+          it.dataHandler({ handler.call(new Buffer(it)) } as Handler)
         }
 
         void pause() {
