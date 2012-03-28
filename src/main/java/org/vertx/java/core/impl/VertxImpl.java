@@ -161,7 +161,7 @@ public class VertxImpl implements VertxInternal {
         result = workerPool;
         if (result == null) {
           corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
-          workerPool = result = new NioWorkerPool(corePoolSize, corePool);
+          workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
         }
       }
     }

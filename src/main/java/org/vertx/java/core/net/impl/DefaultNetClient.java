@@ -227,9 +227,20 @@ public class DefaultNetClient {
                        final int remainingAttempts) {
 
     if (bootstrap == null) {
+
+      VertxWorkerPool pool = new VertxWorkerPool();
+      EventLoopContext ectx;
+      if (ctx instanceof EventLoopContext) {
+        //It always will be
+        ectx = (EventLoopContext)ctx;
+      } else {
+        ectx = null;
+      }
+      pool.addWorker(ectx.getWorker());
+
       channelFactory = new NioClientSocketChannelFactory(
-          VertxInternal.instance.getAcceptorPool(),
-          VertxInternal.instance.getWorkerPool());
+          VertxInternal.instance.getAcceptorPool(), 1,
+          pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -248,17 +259,6 @@ public class DefaultNetClient {
         }
       });
     }
-
-    //Client connections share context with caller
-    EventLoopContext ectx;
-    if (ctx instanceof EventLoopContext) {
-      //It always will be
-      ectx = (EventLoopContext)ctx;
-    } else {
-      ectx = null;
-    }
-    channelFactory.setWorker(ectx.getWorker());
-
     bootstrap.setOptions(tcpHelper.generateConnectionOptions());
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -299,7 +299,7 @@ public class DefaultNetClient {
                         - 1);
                   }
                 });
-               }
+              }
             });
           } else {
             failed(ch, channelFuture.getCause());
@@ -340,7 +340,7 @@ public class DefaultNetClient {
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+    public void channelClosed(ChannelHandlerContext chctx, ChannelStateEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final DefaultNetSocket sock = socketMap.remove(ch);
       if (sock != null) {
@@ -362,7 +362,7 @@ public class DefaultNetClient {
     }
 
     @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    public void channelInterestChanged(ChannelHandlerContext chctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final DefaultNetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
@@ -376,7 +376,7 @@ public class DefaultNetClient {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    public void exceptionCaught(ChannelHandlerContext chctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();

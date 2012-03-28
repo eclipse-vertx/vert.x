@@ -35,10 +35,10 @@ public class HandlerManager<T> {
 
   private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
 
-  private final NetServerWorkerPool availableWorkers;
+  private final VertxWorkerPool availableWorkers;
   private Map<NioWorker, Handlers> handlerMap = new ConcurrentHashMap<>();
 
-  public HandlerManager(NetServerWorkerPool availableWorkers) {
+  public HandlerManager(VertxWorkerPool availableWorkers) {
     this.availableWorkers = availableWorkers;
   }
 

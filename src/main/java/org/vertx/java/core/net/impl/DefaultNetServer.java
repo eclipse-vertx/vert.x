@@ -74,7 +74,7 @@ public class DefaultNetServer {
   private boolean listening;
   private ServerID id;
   private DefaultNetServer actualServer;
-  private final NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
+  private final VertxWorkerPool availableWorkers = new VertxWorkerPool();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultNetServer() {

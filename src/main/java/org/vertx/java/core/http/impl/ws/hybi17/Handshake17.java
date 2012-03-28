@@ -53,7 +53,6 @@ public class Handshake17 extends Handshake08 {
   }
 
   public Handshake17() throws NoSuchAlgorithmException {
-    super();
   }
 
   public void fillInRequest(HttpClientRequest req, String hostHeader) throws Exception {

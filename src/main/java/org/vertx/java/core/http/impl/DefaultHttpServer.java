@@ -48,6 +48,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
@@ -62,7 +63,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.HandlerHolder;
 import org.vertx.java.core.net.impl.HandlerManager;
-import org.vertx.java.core.net.impl.NetServerWorkerPool;
+import org.vertx.java.core.net.impl.VertxWorkerPool;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 
@@ -102,10 +103,11 @@ public class DefaultHttpServer {
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
+  private String serverOrigin;
 
   private ServerID id;
   private DefaultHttpServer actualServer;
-  private NetServerWorkerPool availableWorkers = new NetServerWorkerPool();
+  private VertxWorkerPool availableWorkers = new VertxWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
@@ -147,6 +149,7 @@ public class DefaultHttpServer {
     }
 
     synchronized (servers) {
+      serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
       id = new ServerID(port, host);
       DefaultHttpServer shared = servers.get(id);
       if (shared == null) {
@@ -474,7 +477,7 @@ public class DefaultHttpServer {
               public void run() {
                 connectionMap.put(ch, wsConn);
                 try {
-                  HttpResponse resp = shake.generateResponse(request);
+                  HttpResponse resp = shake.generateResponse(request, serverOrigin);
                   ChannelPipeline p = ch.getPipeline();
                   p.replace("decoder", "wsdecoder", shake.getDecoder());
                   ch.write(resp);

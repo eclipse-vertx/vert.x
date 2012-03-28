@@ -32,7 +32,7 @@ public interface Handshake {
 
   void onComplete(HttpClientResponse response, AsyncResultHandler<Void> doneHandler) throws Exception;
 
-  HttpResponse generateResponse(HttpRequest request) throws Exception;
+  HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception;
 
   ChannelHandler getEncoder(boolean server);
 
