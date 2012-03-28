@@ -146,4 +146,24 @@ public class JsonArray implements Iterable<Object> {
     }
     return true;
   }
+
+  public Object[] toArray() {
+    return convertList(list);
+  }
+
+  static Object[] convertList(List list) {
+    Object[] arr = new Object[list.size()];
+    int index = 0;
+    for (Object obj: list) {
+      if (obj instanceof Map) {
+        arr[index] = JsonObject.convertMap((Map)obj);
+      } else if (obj instanceof List) {
+        arr[index] = convertList((List)obj);
+      } else {
+        arr[index] = obj;
+      }
+      index++;
+    }
+    return arr;
+  }
 }

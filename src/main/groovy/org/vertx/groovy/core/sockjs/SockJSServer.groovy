@@ -61,7 +61,7 @@ class SockJSServer {
    * @param httpServer - you must pass in an HttpServer instance
    */
   public SockJSServer(HttpServer httpServer) {
-    jServer = new SockJSServer(httpServer.toJavaServer())
+    jServer = new SockJSServer(httpServer)
   }
 
   /**

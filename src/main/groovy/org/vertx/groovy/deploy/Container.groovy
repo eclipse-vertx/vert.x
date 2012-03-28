@@ -80,7 +80,7 @@ class Container {
    * @param doneHandler The handler will be called when deployment is complete
    * @return Unique deployment id
    */
-  String deployWorkerVerticle(String main, JsonObject config, int instances, Closure doneHandler) {
+  String deployWorkerVerticle(String main, Map<String, Object> config, int instances, Closure doneHandler) {
     jContainer.deployWorkerVerticle(main, new JsonObject(config), instances, doneHandler as Handler)
   }
 
