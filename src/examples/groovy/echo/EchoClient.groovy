@@ -1,8 +1,5 @@
-package echo
-
 import org.vertx.groovy.core.net.NetClient
 import org.vertx.groovy.core.buffer.Buffer
-
 
 new NetClient().connect(1234, "localhost") { socket->
 
