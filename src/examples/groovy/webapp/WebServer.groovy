@@ -18,10 +18,8 @@ import org.vertx.java.core.sockjs.AppConfig
 * limitations under the License.
 */
 
-def server = new HttpServer()
-    .setSSL(true)
-    .setKeyStorePath('server-keystore.jks')
-    .setKeyStorePassword('wibble')
+def server =
+  new HttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
 
 // Serve the static resources
 server.requestHandler { req ->
