@@ -45,19 +45,22 @@ def appConf = [
 
 def container = Container.instance
 
-// Deploy the busmods
+container.with {
 
-container.deployWorkerVerticle('busmods/mongo_persistor.js', appConf['persistor_conf'], 1, {
-  container.deployVerticle('StaticData.groovy');
-})
-container.deployVerticle('busmods/auth_mgr.js', appConf['auth_mgr_conf'])
-container.deployWorkerVerticle('busmods/mailer.js', appConf['mailer_conf'])
+  // Deploy the busmods
 
+  deployWorkerVerticle('busmods/mongo_persistor.js', appConf['persistor_conf'], 1, {
+    deployVerticle('StaticData.groovy');
+  })
+  deployVerticle('busmods/auth_mgr.js', appConf['auth_mgr_conf'])
+  deployWorkerVerticle('busmods/mailer.js', appConf['mailer_conf'])
 
-// Start the order manager
+  // Start the order manager
 
-container.deployVerticle('OrderMgr.groovy')
+  deployVerticle('OrderMgr.groovy')
 
-// Start the web server
+  // Start the web server
 
-container.deployVerticle('WebServer.groovy')
+  deployVerticle('WebServer.groovy')
+
+}
