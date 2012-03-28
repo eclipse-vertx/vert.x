@@ -117,6 +117,10 @@ class NetSocket implements ReadStream, WriteStream {
     write(buff)
   }
 
+  String getWriteHandlerID() {
+    jSocket.writeHandlerID
+  }
+
 
 }
 
