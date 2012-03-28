@@ -1,11 +1,10 @@
 package echo
 
 import org.vertx.groovy.core.net.NetServer
+import org.vertx.groovy.core.streams.Pump
 
 server = new NetServer().connectHandler { socket ->
-  socket.dataHandler { buffer ->
-    socket.write buffer
-  }
+  new Pump(socket, socket).start()
 }.listen(1234)
 
 
