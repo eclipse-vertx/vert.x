@@ -306,8 +306,10 @@
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/eventbusbridge"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
 
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>
