@@ -18,40 +18,78 @@ package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
 
+/**
+ * An HTTP and WebSockets server
+ * <p>
+ * This class is a thread safe and can safely be used by different threads.
+ * <p>
+ * If an instance is instantiated from an event loop then the handlers
+ * of the instance will always be called on that same event loop.
+ * If an instance is instantiated from some other arbitrary Java thread then
+ * and event loop will be assigned to the instance and used when any of its handlers
+ * are called.
+ * <p>
+ * Instances cannot be used from worker verticles
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 class HttpServer extends org.vertx.java.core.http.HttpServer {
 
   private reqHandler;
   private wsHandler;
 
+  /**
+   * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
+   * instances of {@link HttpServerRequest} will be created and passed to this handler.
+   *
+   * @return a reference to this, so methods can be chained.
+   */
   HttpServer requestHandler(Closure hndlr) {
     super.requestHandler(wrapRequestHandler(hndlr))
     this.reqHandler = hndlr
     this
   }
 
+  /**
+   * Get the request handler
+   * @return The request handler
+   */
   def getRequestHandler() {
     return reqHandler;
   }
 
+  /**
+   * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
+   * new {@link WebSocket} instance will be created and passed to the handler.
+   *
+   * @return a reference to this, so methods can be chained.
+   */
   HttpServer websocketHandler(Closure hndlr) {
     super.websocketHandler(wrapWebsocketHandler(hndlr))
     this.wsHandler = hndlr
     this
   }
 
+  /**
+   * Get the websocket handler
+   * @return The websocket handler
+   */
   def getWebsocketHandler() {
     wsHandler;
   }
 
+  /**
+   * Close the server. Any open HTTP connections will be closed. {@code hndlr} will be called when the close
+   * is complete.
+   */
   void close(Closure hndlr) {
     super.close(hndlr as Handler)
   }
 
-  protected wrapRequestHandler(Closure hndlr) {
+  private wrapRequestHandler(Closure hndlr) {
     return {hndlr.call(new HttpServerRequest(it))} as Handler
   }
 
-  protected wrapWebsocketHandler(Closure hndlr) {
+  private wrapWebsocketHandler(Closure hndlr) {
     return {hndlr.call(new ServerWebSocket(it))} as Handler
   }
 

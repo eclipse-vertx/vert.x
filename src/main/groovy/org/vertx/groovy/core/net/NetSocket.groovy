@@ -21,90 +21,143 @@ import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
 
+/**
+ * Represents a socket-like interface to a TCP or SSL connection on either the
+ * client or the server side.
+ * <p>
+ * Instances of this class is created on the client side by an {@link NetClient}
+ * when a connection to a server is made, or on the server side by a {@link NetServer}
+ * when a server accepts a connection.
+ * <p>
+ * Instances of this class are not thread-safe
+ * <p>
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 class NetSocket implements ReadStream, WriteStream {
 
   private org.vertx.java.core.net.NetSocket jSocket;
 
-  NetSocket(jSocket) {
+  protected NetSocket(jSocket) {
     this.jSocket = jSocket;
   }
 
+  /** {@inheritDoc} */
   void writeBuffer(Buffer data) {
     write(data)
   }
 
+  /**
+   * Write a {@link Buffer} to the request body.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   NetSocket write(Buffer data) {
     jSocket.write(data.toJavaBuffer())
     this
   }
 
+  /**
+   * Write a {@link String} to the connection, encoded in UTF-8.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   NetSocket write(String str) {
     jSocket.write(str)
     this
   }
 
+  /**
+   * Write a {@link String} to the connection, encoded using the encoding {@code enc}.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   NetSocket write(String str, String enc) {
     jSocket.write(str, enc)
     this
   }
 
+  /**
+   * Write a {@link Buffer} to the connection. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   NetSocket write(Buffer data, Closure doneHandler) {
     jSocket.write(data.toJavaBuffer(), doneHandler as Handler)
     this
   }
 
+  /**
+   * Write a {@link String} to the connection, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   NetSocket write(String str, Closure doneHandler) {
     jSocket.write(str, doneHandler as Handler)
     this
   }
 
+  /**
+   * Write a {@link String} to the connection, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * @return A reference to this, so multiple method calls can be chained.
+   */
   NetSocket write(String str, String enc, Closure doneHandler) {
     jSocket.write(str, enc, doneHandler as Handler)
     this
   }
 
+  /** {@inheritDoc} */
   void dataHandler(Closure dataHandler) {
     jSocket.dataHandler({
       dataHandler.call(new Buffer(it))
     } as Handler)
   }
 
+  /** {@inheritDoc} */
   void endHandler(Closure endHandler) {
     jSocket.endHandler(endHandler as Handler)
   }
 
+  /** {@inheritDoc} */
   void drainHandler(Closure drainHandler) {
     jSocket.drainHandler(drainHandler as Handler)
   }
 
+  /**
+   * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system. This is a very efficient way to stream files.<p>
+   */
   void sendFile(String filename) {
     jSocket.sendFile(filename)
   }
 
+  /** {@inheritDoc} */
   void pause() {
     jSocket.pause()
   }
 
+  /** {@inheritDoc} */
   void resume() {
     jSocket.resume()
   }
 
+  /** {@inheritDoc} */
   void setWriteQueueMaxSize(int size) {
     jSocket.setWriteQueueMaxSize(size)
   }
 
+  /** {@inheritDoc} */
   boolean writeQueueFull() {
     jSocket.writeQueueFull()
   }
 
+  /**
+   * Close the socket
+   */
   void close() {
     jSocket.close()
   }
 
+  /** {@inheritDoc} */
   void exceptionHandler(Closure handler) {
     jSocket.exceptionHandler(handler as Handler)
   }
 
+  /** {@inheritDoc} */
   void closedHandler(Closure handler) {
     jSocket.closedHandler(handler as Handler)
   }
@@ -117,6 +170,13 @@ class NetSocket implements ReadStream, WriteStream {
     write(buff)
   }
 
+  /**
+   * @return When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
+   * handler is given by {@code writeHandlerID}.<p>
+   * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
+   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
+   * allows you to write data to other connections which are owned by different event loops.
+   */
   String getWriteHandlerID() {
     jSocket.writeHandlerID
   }

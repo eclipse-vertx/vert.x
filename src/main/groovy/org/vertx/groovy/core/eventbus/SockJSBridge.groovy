@@ -21,11 +21,21 @@ import org.vertx.java.core.sockjs.AppConfig
 import org.vertx.java.core.json.JsonObject
 
 /**
+ * A SockJSBridge bridges between SockJS and the event bus.
+ * <p>
+ * Bridging allows the event bus to be extended to client side in-browser JavaScript.
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class SockJSBridge {
   private final org.vertx.java.core.eventbus.SockJSBridge jBridge;
 
+  /**
+   * Create a new SockJSBridge
+   * @param server an HTTP server instance
+   * @param sjsConfig config for the SockJS server
+   * @param permitted List of JSON objects representing message matches permitted
+   */
   SockJSBridge(HttpServer server, AppConfig sjsConfig, List<Map<String, Object>> permitted) {
     List<JsonObject> jList = new ArrayList<>();
     for (Map<String, Object> map: permitted) {
