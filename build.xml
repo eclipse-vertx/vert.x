@@ -53,6 +53,7 @@
 
   <property name="javadoc-dir" value="docs/java/api"/>
   <property name="rubydoc-dir" value="docs/ruby/api"/>
+  <property name="groovydoc-dir" value="docs/groovy/api"/>
 
   <property environment="env"/>
 
@@ -90,6 +91,10 @@
            classname="org.codehaus.groovy.ant.Groovyc"
            classpathref="core-lib-classpath"/>
 
+  <taskdef name="groovydoc"
+         classname="org.codehaus.groovy.ant.Groovydoc"
+         classpathref="core-lib-classpath"/>
+
   <target name="init">
     <!-- Create the time stamp -->
     <tstamp/>
@@ -106,6 +111,7 @@
         <pathelement path="core-lib-classpath"/>
         <pathelement location="${java-target}"/>
       </classpath>
+      <include name="org/vertx/groovy/core/**/*.groovy"/>
     </groovyc>
   </target>
 
@@ -116,6 +122,14 @@
       <include name="org/vertx/java/deploy/**/*.java"/>
       <include name="org/vertx/java/busmods/**/*.java"/>
     </javac>
+    <groovyc srcdir="${groovy-src-root}" destdir="${java-target}">
+      <classpath>
+        <pathelement path="core-lib-classpath"/>
+        <pathelement location="${java-target}"/>
+      </classpath>
+      <include name="org/vertx/groovy/deploy/**/*.groovy"/>
+      <include name="org/vertx/groovy/busmods/**/*.groovy"/>
+    </groovyc>
   </target>
 
   <target name="jar-core" depends="compile-core" description="generate the core jar">
@@ -124,7 +138,8 @@
 
   <target name="jar-platform" depends="compile-platform" description="generate the platform jar">
     <jar jarfile="${target}/${platform-jar-file}" basedir="${java-target}">
-      <exclude name="**/core/**/*.class"/>
+      <exclude name="**/core/**/*"/>
+      <exclude name="**/core/"/>
     </jar>
   </target>
 
@@ -183,8 +198,8 @@
     </junit>
   </target>
 
-  <target name="javadoc" depends="compile-core">
-    <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
+  <target name="javadoc" depends="compile-platform">
+    <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="Vert.x Java API"
              classpathref="core-lib-classpath" Public="true">
       <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
       <packageset dir="${java-src-root}" defaultexcludes="yes">
@@ -196,6 +211,13 @@
     </javadoc>
   </target>
 
+  <target name="groovydoc" depends="compile-platform">
+    <groovydoc destdir="${target}/${groovydoc-dir}" author="true" use="true" windowtitle="Vert.x Groovy API"
+       private="false" doctitle="Vert.x Groovy API" header="Vert.x GroovyAPI" sourcepath="${groovy-src-root}"
+       packagenames="**/core/**.*,**/deploy/**.*,**/busmods/**.*">
+    </groovydoc>
+  </target>
+
   <!--
   Needs:
   jruby -S gem install yard
@@ -205,7 +227,7 @@
     <exec executable="yardoc"/>
   </target>
 
-  <target name="dist" depends="javadoc,yardoc,jar-core,jar-platform">
+  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
@@ -284,8 +306,10 @@
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/eventbusbridge"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
 
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>

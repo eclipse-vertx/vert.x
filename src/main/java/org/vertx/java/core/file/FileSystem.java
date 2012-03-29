@@ -146,7 +146,6 @@ public class FileSystem {
     chmodInternal(path, perms, null).action();
   }
 
-
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
    * The permission String takes the form rwxr-x--- as
@@ -275,7 +274,7 @@ public class FileSystem {
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.<p>
-   * If the path represents a directory, then the directory and its contents will be deleted recursively.<p>
+   * If the path represents a directory and recursive = true then the directory and its contents will be deleted recursively.<p>
    * The handler will be called when the operation completes or an error occurs
    */
   public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {

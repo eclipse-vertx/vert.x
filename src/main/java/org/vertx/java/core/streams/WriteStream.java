@@ -42,6 +42,7 @@ public interface WriteStream {
    * if there is more than {@code maxSize} bytes in the write queue. This is used as an indicator by classes such as
    * {@code Pump} to provide flow control.
    */
+
   void setWriteQueueMaxSize(int maxSize);
 
   /**

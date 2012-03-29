@@ -32,6 +32,12 @@ import java.util.List;
  */
 public class SockJSBridge {
 
+  /**
+   * Create a new SockJSBridge
+   * @param server an HTTP server instance
+   * @param sjsConfig config for the SockJS server
+   * @param permitted List of JSON objects representing message matches permitted
+   */
   public SockJSBridge(HttpServer server, AppConfig sjsConfig, List<JsonObject> permitted) {
     SockJSServer sjsServer = new SockJSServer(server);
     SockJSBridgeHandler handler = new SockJSBridgeHandler();

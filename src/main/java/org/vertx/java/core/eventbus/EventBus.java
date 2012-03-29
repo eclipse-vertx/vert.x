@@ -59,10 +59,19 @@ public abstract class EventBus {
    */
   public static EventBus instance = new DefaultEventBus();
 
+  /**
+   * To use a clustered event bus on specified hostname use this method
+   * @param hostname The hostname or ip address
+   */
   public static void setClustered(String hostname) {
     instance = new DefaultEventBus(hostname);
   }
 
+  /**
+   * To use a clustered event bus on specified port and hostname use this method
+   * @param port The port
+   * @param hostname The hostname or ip address
+   */
   public static void setClustered(int port, String hostname) {
     instance = new DefaultEventBus(port, hostname);
   }
@@ -301,7 +310,7 @@ public abstract class EventBus {
 
   /**
    * Registers a handler against the specified address
-   * @param address The address top register it at
+   * @param address The address to register it at
    * @param handler The handler
    * @param resultHandler Optional completion handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
@@ -312,7 +321,7 @@ public abstract class EventBus {
 
   /**
    * Registers a handler against the specified address
-   * @param address The address top register it at
+   * @param address The address to register it at
    * @param handler The handler
    * @return The handler id which is the same as the address
    */
@@ -321,7 +330,7 @@ public abstract class EventBus {
   /**
    * Registers a local handler against the specified address. The handler info won't
    * be propagated across the cluster
-   * @param address The address top register it at
+   * @param address The address to register it at
    * @param handler The handler
    * @return The handler id which is the same as the address
    */

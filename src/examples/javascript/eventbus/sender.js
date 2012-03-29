@@ -29,6 +29,3 @@ function sendMessage() {
   eb.send(address, msg);
   stdout.println("sent message " + msg)
 }
-
-function vertxStop() {
-}

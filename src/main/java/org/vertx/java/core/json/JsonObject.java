@@ -178,4 +178,24 @@ public class JsonObject {
     return true;
   }
 
+  public Map<String, Object> toMap() {
+    return convertMap(map);
+  }
+
+  static Map<String, Object> convertMap(Map<String, Object> map) {
+    Map<String, Object> converted = new HashMap<>(map.size());
+    for (Map.Entry<String, Object> entry: map.entrySet()) {
+      Object obj = entry.getValue();
+      if (obj instanceof Map) {
+        Map jm = (Map)obj;
+        converted.put(entry.getKey(), convertMap(jm));
+      } else if (obj instanceof List) {
+        List list = (List)obj;
+        converted.put(entry.getKey(), JsonArray.convertList(list));
+      } else {
+        converted.put(entry.getKey(), obj);
+      }
+    }
+    return converted;
+  }
 }
