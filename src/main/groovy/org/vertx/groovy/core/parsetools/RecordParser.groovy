@@ -18,15 +18,16 @@ package org.vertx.groovy.core.parsetools
 
 import org.vertx.java.core.Handler
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.java.core.parsetools.RecordParser as JRecordParser
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class RecordParser {
 
-  private final org.vertx.java.core.parsetools.RecordParser jParser
+  private final JRecordParser jParser
 
-  private RecordParser(org.vertx.java.core.parsetools.RecordParser jParser) {
+  private RecordParser(JRecordParser jParser) {
     this.jParser = jParser
   }
 
@@ -38,7 +39,7 @@ class RecordParser {
    * @return The byte[] form of the string
    */
   public static byte[] latin1StringToBytes(String str) {
-    return org.vertx.java.core.parsetools.RecordParser.latin1StringToBytes(str)
+    return JRecordParser.latin1StringToBytes(str)
   }
 
   /**
@@ -47,7 +48,7 @@ class RecordParser {
    * {@code output} Will receive whole records which have been parsed.
    */
   public static RecordParser newDelimited(String delim, Closure output) {
-    return new RecordParser(org.vertx.java.core.parsetools.RecordParser.newDelimited(delim, {output.call(new Buffer(it))} as Handler))
+    return new RecordParser(JRecordParser.newDelimited(delim, {output(new Buffer(it))} as Handler))
   }
 
   /**
@@ -56,7 +57,7 @@ class RecordParser {
    * {@code output} Will receive whole records which have been parsed.
    */
   public static RecordParser newDelimited(byte[] delim, Closure output) {
-    return new RecordParser(org.vertx.java.core.parsetools.RecordParser.newDelimited(delim, {output.call(new Buffer(it))} as Handler))
+    return new RecordParser(JRecordParser.newDelimited(delim, {output(new Buffer(it))} as Handler))
   }
 
   /**
@@ -65,7 +66,7 @@ class RecordParser {
    * {@code output} Will receive whole records which have been parsed.
    */
   public static RecordParser newFixed(int size, Closure output) {
-    return new RecordParser(org.vertx.java.core.parsetools.RecordParser.newFixed(size, {output.call(new Buffer(it))} as Handler))
+    return new RecordParser(JRecordParser.newFixed(size, {output(new Buffer(it))} as Handler))
   }
 
   /**
@@ -103,7 +104,7 @@ class RecordParser {
   }
 
   public void setOutput(Closure output) {
-    jParser.setOutput({output.call(new Buffer(it))} as Handler)
+    jParser.setOutput({output(new Buffer(it))} as Handler)
   }
 
   public void handle(Buffer data) {

@@ -21,6 +21,7 @@ import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.java.core.Handler
+import org.vertx.java.core.file.AsyncFile as JAsyncFile
 
 /**
  * Represents a file on the file-system which can be read from, or written to asynchronously.
@@ -30,9 +31,9 @@ import org.vertx.java.core.Handler
  * @author <a href="http://tfox.org">Tim Fox</a>
   */
 class AsyncFile{
-  private final org.vertx.java.core.file.AsyncFile jFile
+  private final JAsyncFile jFile
 
-  AsyncFile(org.vertx.java.core.file.AsyncFile jFile) {
+  AsyncFile(JAsyncFile jFile) {
     this.jFile = jFile
   }
 
@@ -114,7 +115,7 @@ class AsyncFile{
     return new ReadStream() {
 
       void dataHandler(Closure handler) {
-        jRS.dataHandler({handler.call(new Buffer(it))} as Handler)
+        jRS.dataHandler({handler(new Buffer(it))} as Handler)
       }
 
       void pause() {

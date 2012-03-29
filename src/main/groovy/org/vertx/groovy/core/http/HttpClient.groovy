@@ -20,6 +20,7 @@ import org.vertx.java.core.Handler
 import org.vertx.java.core.http.WebSocketVersion
 
 /**
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HttpClient extends org.vertx.java.core.http.HttpClient {
@@ -45,7 +46,7 @@ class HttpClient extends org.vertx.java.core.http.HttpClient {
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
   void connectWebsocket(String uri, WebSocketVersion version, Closure handler) {
-    super.connectWebsocket(uri, version, {handler.call(new WebSocket(it))} as Handler)
+    super.connectWebsocket(uri, version, {handler(new WebSocket(it))} as Handler)
   }
 
   /**
@@ -149,7 +150,7 @@ class HttpClient extends org.vertx.java.core.http.HttpClient {
   }
 
   private Handler wrapResponseHandler(Closure handler) {
-    return {handler.call(new HttpClientResponse(it))} as Handler
+    return {handler(new HttpClientResponse(it))} as Handler
   }
 
 }

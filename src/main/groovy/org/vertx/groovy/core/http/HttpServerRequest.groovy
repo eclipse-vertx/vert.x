@@ -19,21 +19,23 @@ package org.vertx.groovy.core.http
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.java.core.Handler
+import org.vertx.java.core.http.HttpServerRequest as JHttpServerRequest
 
 /**
  * Represents  a server-side HTTP request.
  * <p>
  * Instances of this class are not thread-safe
  * <p>
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HttpServerRequest implements ReadStream {
 
-  private final org.vertx.java.core.http.HttpServerRequest jRequest
+  private final JHttpServerRequest jRequest
   
   private final HttpServerResponse wrappedResponse
 
-  protected HttpServerRequest(org.vertx.java.core.http.HttpServerRequest jRequest) {
+  protected HttpServerRequest(JHttpServerRequest jRequest) {
     this.jRequest = jRequest
     this.wrappedResponse = new HttpServerResponse(jRequest.response)
   }
@@ -113,12 +115,12 @@ class HttpServerRequest implements ReadStream {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   void bodyHandler(Closure bodyHandler) {
-    jRequest.dataHandler({bodyHandler.call(new Buffer(it))} as Handler)
+    jRequest.dataHandler({bodyHandler(new Buffer(it))} as Handler)
   }
 
   /** {@inheritDoc} */
   void dataHandler(Closure dataHandler) {
-    jRequest.dataHandler({dataHandler.call(new Buffer(it))} as Handler)
+    jRequest.dataHandler({dataHandler(new Buffer(it))} as Handler)
   }
 
   /** {@inheritDoc} */

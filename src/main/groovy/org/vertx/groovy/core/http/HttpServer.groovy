@@ -30,6 +30,7 @@ import org.vertx.java.core.Handler
  * are called.
  * <p>
  * Instances cannot be used from worker verticles
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HttpServer extends org.vertx.java.core.http.HttpServer {
@@ -53,7 +54,7 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
    * Get the request handler
    * @return The request handler
    */
-  def getRequestHandler() {
+  Closure getRequestHandler() {
     return reqHandler;
   }
 
@@ -73,7 +74,7 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
    * Get the websocket handler
    * @return The websocket handler
    */
-  def getWebsocketHandler() {
+  Closure getWebsocketHandler() {
     wsHandler;
   }
 
@@ -86,11 +87,11 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
   }
 
   private wrapRequestHandler(Closure hndlr) {
-    return {hndlr.call(new HttpServerRequest(it))} as Handler
+    return {hndlr(new HttpServerRequest(it))} as Handler
   }
 
   private wrapWebsocketHandler(Closure hndlr) {
-    return {hndlr.call(new ServerWebSocket(it))} as Handler
+    return {hndlr(new ServerWebSocket(it))} as Handler
   }
 
 }

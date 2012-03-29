@@ -18,6 +18,9 @@ package org.vertx.groovy.core.streams
 
 import org.vertx.java.core.Handler
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.java.core.streams.ReadStream as JReadStream
+import org.vertx.java.core.streams.WriteStream as JWriteStream
+import org.vertx.java.core.streams.Pump as JPump
 
 /**
  * <p>Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
@@ -37,13 +40,13 @@ import org.vertx.groovy.core.buffer.Buffer
  */
 class Pump {
 
-  private org.vertx.java.core.streams.Pump jPump
+  private JPump jPump
 
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
    */
   Pump(ReadStream rs, WriteStream ws) {
-    jPump = new org.vertx.java.core.streams.Pump(new org.vertx.java.core.streams.ReadStream() {
+    jPump = new JPump(new JReadStream() {
       
       void dataHandler(Handler<org.vertx.java.core.buffer.Buffer> handler) {
         rs.dataHandler({handler.handle(it.toJavaBuffer())})
@@ -66,7 +69,7 @@ class Pump {
       }
 
     },
-    new org.vertx.java.core.streams.WriteStream() {
+    new JWriteStream() {
       
       void writeBuffer(org.vertx.java.core.buffer.Buffer data) {
         ws.writeBuffer(new Buffer(data))

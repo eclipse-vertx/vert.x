@@ -17,6 +17,7 @@
 package org.vertx.groovy.core.eventbus
 
 import org.vertx.java.core.json.JsonObject
+import  org.vertx.java.core.eventbus.Message as JMessage
 
 /*
 * Represents a message delivered to a handler
@@ -29,9 +30,9 @@ class Message {
    */
   def body
 
-  private org.vertx.java.core.eventbus.Message jMessage
+  private JMessage jMessage
 
-  private Message(org.vertx.java.core.eventbus.Message jMessage) {
+  private Message(JMessage jMessage) {
     if (jMessage.body instanceof JsonObject) {
       this.body = jMessage.body.toMap()
     } else {
@@ -47,7 +48,7 @@ class Message {
  * @param message The reply message
    @param replyHandler Optional reply handler, so you can get a reply to your reply
  */
-  def reply(message, Closure replyHandler = null) {
+  void reply(message, Closure replyHandler = null) {
     message = EventBus.convertMessage(message)
     jMessage.reply(message, EventBus.wrapHandler(replyHandler))
   }

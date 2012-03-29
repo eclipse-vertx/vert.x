@@ -37,6 +37,7 @@ import org.vertx.java.core.Handler
  * <p>
  * Instances of this class are not thread-safe
  * <p>
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HttpServerResponse implements WriteStream {

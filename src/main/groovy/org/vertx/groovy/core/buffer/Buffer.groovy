@@ -18,6 +18,8 @@ package org.vertx.groovy.core.buffer
 
 import java.nio.ByteBuffer
 
+import org.vertx.java.core.buffer.Buffer as JBuffer
+
 /**
  * <p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as necessary to accomodate any bytes written to it.</p>
  *
@@ -39,9 +41,9 @@ import java.nio.ByteBuffer
  */
 class Buffer extends org.vertx.java.core.buffer.Buffer {
 
-  private final org.vertx.java.core.buffer.Buffer jBuffer
+  private final JBuffer jBuffer
 
-  private Buffer(org.vertx.java.core.buffer.Buffer jBuffer) {
+  private Buffer(JBuffer jBuffer) {
     this.jBuffer = jBuffer
   }
 
@@ -49,7 +51,7 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
    * Create an empty buffer
    */
   Buffer() {
-    jBuffer = new org.vertx.java.core.buffer.Buffer();
+    jBuffer = new JBuffer();
   }
 
   /**
@@ -59,28 +61,28 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
    * automatic re-allocations as data is written to it.
    */
   Buffer(int initialSizeHint) {
-    jBuffer = new org.vertx.java.core.buffer.Buffer(initialSizeHint);
+    jBuffer = new JBuffer(initialSizeHint);
   }
 
   /**
    * Create a new Buffer that contains the contents of the {@code byte[] bytes}
    */
   Buffer(byte[] bytes) {
-    jBuffer = new org.vertx.java.core.buffer.Buffer(bytes);
+    jBuffer = new JBuffer(bytes);
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded according to the encoding {@code enc}
    */
   Buffer(String str, String enc) {
-    jBuffer = new org.vertx.java.core.buffer.Buffer(str, enc);
+    jBuffer = new JBuffer(str, enc);
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded with UTF-8 encoding
    */
   Buffer(String str) {
-    jBuffer = new org.vertx.java.core.buffer.Buffer(str);
+    jBuffer = new JBuffer(str);
   }
 
   /**
@@ -91,6 +93,14 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
    */
   byte getByte(int pos) {
     jBuffer.getByte(pos)
+  }
+
+  /**
+   * Same as {@link #getByte(int)}
+   *
+   */
+  byte getAt(int pos) {
+    getByte(pos)
   }
 
   /**
@@ -347,12 +357,26 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   }
 
   /**
+   * Same as {@link #setByte(int, byte)}
+   */
+  void putAt(int pos, byte b) {
+    setByte(pos, b)
+  }
+
+  /**
    * Sets the {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
   Buffer setInt(int pos, int i) {
     jBuffer.setInt(pos, i)
     this
+  }
+
+  /**
+   * Same as {@link #setInt(int, int)}
+   */
+  void putAt(int pos, int i) {
+    setInt(pos, i)
   }
 
   /**
@@ -365,12 +389,26 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   }
 
   /**
+   * Same as {@link #setLong(int, long)}
+   */
+  void putAt(int pos, long l) {
+    setLong(pos, l)
+  }
+
+  /**
    * Sets the {@code double} at position {@code pos} in the Buffer to the value {@code i}.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
   Buffer setDouble(int pos, double d) {
     jBuffer.setDouble(pos, d)
     this
+  }
+
+  /**
+   * Same as {@link #setDouble(int, double)}
+   */
+  void putAt(int pos, double d) {
+    setDouble(pos, d)
   }
 
   /**
@@ -383,12 +421,26 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   }
 
   /**
+   * Same as {@link #setFloat(int, float)}
+   */
+  void putAt(int pos, float f) {
+    setFloat(pos, f)
+  }
+
+  /**
    * Sets the {@code short} at position {@code pos} in the Buffer to the value {@code i}.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
   Buffer setShort(int pos, short s) {
     jBuffer.setShort(pos, s)
     this
+  }
+
+  /**
+   * Same as {@link #setShort(int, short)}
+   */
+  void putAt(int pos, short s) {
+    setShort(pos, s)
   }
 
   /**
@@ -401,12 +453,26 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   }
 
   /**
+   * Same as {@link #setBuffer(int, Buffer)}
+   */
+  void putAt(int pos, Buffer b) {
+    setBuffer(pos, b)
+  }
+
+  /**
    * Sets the bytes at position {@code pos} in the Buffer to the value {@code b}.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
   Buffer setBytes(int pos, ByteBuffer b) {
     jBuffer.setBytes(pos, b)
     this
+  }
+
+  /**
+   * Same as {@link #setBytes(int, ByteBuffer)}
+   */
+  void putAt(int pos, ByteBuffer b) {
+    setBytes(pos, b)
   }
 
   /**
@@ -419,12 +485,26 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   }
 
   /**
+   * Same as {@link #setBytes(int, byte[])}
+   */
+  void putAt(int pos, byte[] b) {
+    setBytes(pos, b)
+  }
+
+  /**
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} endoded in UTF-8.<p>
    * The buffer will expand as necessary to accomodate any value written.
    */
   Buffer setString(int pos, String str) {
     jBuffer.setString(pos, str)
     this
+  }
+
+  /**
+   * Same as {@link #setString(int, String)}
+   */
+  void putAt(int pos, String str) {
+    setString(pos, str)
   }
 
   /**
@@ -462,7 +542,7 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   /**
    * Returns the underlying Java buffer
    */
-  org.vertx.java.core.buffer.Buffer toJavaBuffer() {
+  JBuffer toJavaBuffer() {
     jBuffer
   }
 

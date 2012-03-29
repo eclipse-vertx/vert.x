@@ -19,6 +19,8 @@ package org.vertx.groovy.core
 import org.vertx.java.core.Handler
 
 /**
+ *
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class Vertx {

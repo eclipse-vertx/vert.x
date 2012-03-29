@@ -17,11 +17,11 @@
 package org.vertx.groovy.core.file
 
 import org.vertx.java.core.AsyncResultHandler
-import org.vertx.groovy.core.file.AsyncFile
 import org.vertx.java.core.file.FileProps
 import org.vertx.java.core.file.FileSystemProps
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.AsyncResult
+import org.vertx.java.core.file.FileSystem as JFileSystem
 
 /**
  *
@@ -40,7 +40,7 @@ class FileSystem {
 
   static FileSystem instance = new FileSystem()
 
-  private org.vertx.java.core.file.FileSystem jFS = org.vertx.java.core.file.FileSystem.instance
+  private JFileSystem jFS = JFileSystem.instance
 
   private FileSystem() {
   }
@@ -320,9 +320,9 @@ class FileSystem {
   void open(String path, String perms = null, boolean read = true, boolean write = true, boolean createNew = true, boolean flush = false, Closure handler) {
     jFS.open(path, perms, read, write, createNew, flush, { result ->
       if (result.succeeded()) {
-        handler.call(new AsyncResult<AsyncFile>(new AsyncFile(result.result)))
+        handler(new AsyncResult<AsyncFile>(new AsyncFile(result.result)))
       } else {
-        handler.call(result)
+        handler(result)
       }
     } as AsyncResultHandler)
   }
