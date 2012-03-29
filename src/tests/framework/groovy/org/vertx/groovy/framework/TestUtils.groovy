@@ -15,6 +15,7 @@
  */
 package org.vertx.groovy.framework
 
+import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
 
 class TestUtils extends org.vertx.java.framework.TestUtils {
@@ -24,4 +25,7 @@ class TestUtils extends org.vertx.java.framework.TestUtils {
     super.register(testName, handler as Handler)
   }
 
+  static Buffer generateRandomBuffer(int length) {
+    new Buffer(org.vertx.java.framework.TestUtils.generateRandomBuffer(length, false, (byte) 0))
+  }
 }

@@ -35,10 +35,8 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;

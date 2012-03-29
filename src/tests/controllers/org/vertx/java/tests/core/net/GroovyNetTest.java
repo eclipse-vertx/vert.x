@@ -31,7 +31,7 @@ public class GroovyNetTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    startApp("core/net/testclient.groovy");
+    startApp("core/net/testClient.groovy");
   }
 
   @Override
@@ -40,8 +40,12 @@ public class GroovyNetTest extends TestBase {
   }
 
   @Test
-  public void test1() throws Exception {
-    startApp("core/net/EchoServer.groovy");
+  public void testEcho() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoSSL() throws Exception {
     startTest(getMethodName());
   }
 

@@ -23,10 +23,11 @@ var server = new vertx.NetServer().connectHandler(function(socket) {
       var topicName = line.split(",", 2)[1]
       stdout.println("subscribing to " + topicName);
       var topic = vertx.getSet(topicName);
+      topic.add(socket.writeHandlerID)
     } else if (line.indexOf("unsubscribe,") == 0) {
-      var topicNname = line.split(",", 2)[1]
+      var topicName = line.split(",", 2)[1]
       stdout.println("unsubscribing from " + topicName);
-      var topic = vertx.getSet(topiName)
+      var topic = vertx.getSet(topicName)
       topic.remove(socket.writeHandlerID)
       if (topic.isEmpty()) {
         vertx.removeSet(topicName)

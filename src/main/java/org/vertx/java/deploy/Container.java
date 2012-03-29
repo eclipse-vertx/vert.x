@@ -121,6 +121,13 @@ public class Container {
     return deployVerticle(main, config, 1);
   }
 
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
   public String deployVerticle(String main, JsonObject config, int instances) {
     return deployVerticle(main, config, instances, null);
   }

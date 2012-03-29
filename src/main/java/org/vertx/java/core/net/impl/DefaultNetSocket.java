@@ -28,6 +28,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 
 import java.io.File;
@@ -35,6 +37,8 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class DefaultNetSocket extends NetSocket {
+
+  private static final Logger log = LoggerFactory.getLogger(DefaultNetSocket.class);
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -52,7 +56,6 @@ public class DefaultNetSocket extends NetSocket {
       EventBus.instance.registerLocalHandler(writeHandlerID, writeHandler);
     }
   }
-
 
   public void writeBuffer(Buffer data) {
     doWrite(data.getChannelBuffer());

@@ -55,17 +55,4 @@ private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
     startTest(getMethodName());
   }
 
-  @Test
-  public void testNoContext() throws Exception {
-//    try {
-//      Vertx.instance.setTimer(10, new Handler<Long>() {
-//        public void handle(Long timerID) {
-//        }
-//      });
-//      fail("Should throw exception");
-//    } catch (IllegalStateException e) {
-//      // Ok
-//    }
-  }
-
 }

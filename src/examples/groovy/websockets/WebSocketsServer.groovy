@@ -19,16 +19,9 @@ package websockets
 import org.vertx.groovy.core.http.HttpServer
 
 server = new HttpServer().websocketHandler { ws ->
-  if (ws.uri == "/myapp") {
-    ws.dataHandler { data ->
-      ws.writeTextFrame(data.toString())
-    }
-  } else {
-    // Reject it
-    ws.close()
-  }
+  ws.dataHandler { data -> ws.writeTextFrame(data.toString()) }
 }.requestHandler { req ->
-  if (req.uri == "/") req.response.sendFile("websockets/ws.html") // Serve the html
+  if (req.uri == "/") req.response.sendFile("websockets/ws.html")
 }.listen(8080)
 
 void vertxStop() {
