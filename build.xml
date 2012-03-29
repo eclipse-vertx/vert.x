@@ -199,7 +199,7 @@
   </target>
 
   <target name="javadoc" depends="compile-platform">
-    <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
+    <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="Vert.x Java API"
              classpathref="core-lib-classpath" Public="true">
       <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
       <packageset dir="${java-src-root}" defaultexcludes="yes">
@@ -212,8 +212,8 @@
   </target>
 
   <target name="groovydoc" depends="compile-platform">
-    <groovydoc destdir="${target}/${groovydoc-dir}" author="true" use="true" windowtitle="vert.x Groovy API"
-       private="false" doctitle="vert.x Groovy API" sourcepath="${groovy-src-root}"
+    <groovydoc destdir="${target}/${groovydoc-dir}" author="true" use="true" windowtitle="Vert.x Groovy API"
+       private="false" doctitle="Vert.x Groovy API" header="Vert.x GroovyAPI" sourcepath="${groovy-src-root}"
        packagenames="**/core/**.*,**/deploy/**.*,**/busmods/**.*">
     </groovydoc>
   </target>
