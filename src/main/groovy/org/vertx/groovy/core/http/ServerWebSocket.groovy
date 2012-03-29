@@ -15,10 +15,13 @@
  */
 
 
-
 package org.vertx.groovy.core.http;
 
 /**
+ * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}
+ * <p>
+ * Instances of this class are not thread-safe
+ * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServerWebSocket extends WebSocket {
@@ -30,10 +33,21 @@ public class ServerWebSocket extends WebSocket {
     this.jSWS = jSWS;
   }
 
+  /**
+   * @return The path the websocket is attempting to connect at
+   */
   String getPath() {
     jSWS.path
   }
 
+  /**
+   * Reject the WebSocket<p>
+   * Calling this method from the websocketHandler gives you the opportunity to reject
+   * the websocket, which will cause the websocket handshake to fail by returning
+   * a 404 response code.<p>
+   * You might use this method, if for example you only want to accept websockets
+   * with a particular path.
+   */
   void reject() {
     jSWS.reject()
   }

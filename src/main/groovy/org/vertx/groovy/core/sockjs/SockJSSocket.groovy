@@ -37,19 +37,30 @@ abstract class SockJSSocket implements ReadStream, WriteStream {
 
   private final org.vertx.java.core.sockjs.SockJSSocket jSocket
 
-  SockJSSocket(org.vertx.java.core.sockjs.SockJSSocket jSocket) {
+  protected SockJSSocket(org.vertx.java.core.sockjs.SockJSSocket jSocket) {
     this.jSocket = jSocket
   }
 
+  /**
+   * Close the socket
+   */
   void close() {
     jSocket.close()
   }
 
+  /**
+   * Write a Buffer to the socket
+   * @return reference to this so operations can be chained
+   */
   SockJSSocket leftShift(Buffer buff) {
     writeBuffer(buff)
     this
   }
 
+  /**
+   * Write a String to the socket
+   * @return reference to this so operations can be chained
+   */
   SockJSSocket leftShift(String str) {
     writeBuffer(new Buffer(str))
     this

@@ -17,13 +17,44 @@ package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
 
+/**
+ * NetClient is an asynchronous factory for TCP or SSL connections
+ * <p>
+ * Multiple connections to different servers can be made using the same instance.
+ * <p>
+ * This client supports a configurable number of connection attempts and a configurable
+ * delay between attempts.
+ * <p>
+ * This class is a thread safe and can safely be used by different threads.
+ * <p>
+ * If an instance is instantiated from an event loop then the handlers
+ * of the instance will always be called on that same event loop.
+ * If an instance is instantiated from some other arbitrary Java thread then
+ * and event loop will be assigned to the instance and used when any of its handlers
+ * are called.
+ * <p>
+ * Instances cannot be used from worker verticles
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 class NetClient extends org.vertx.java.core.net.NetClient {
 
+  /**
+   * Attempt to open a connection to a server at the specific {@code port} and host localhost
+   * The connect is done asynchronously and on success, a
+   * {@link NetSocket} instance is supplied via the {@code hndlr} instance
+   * @return a reference to this so multiple method calls can be chained together
+   */
   NetClient connect(int port, hndlr) {
     super.connect(port, wrapHandler(hndlr))
     this
   }
 
+  /**
+   * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
+   * {@code host} can be a valid host name or IP addresss. The connect is done asynchronously and on success, a
+   * {@link NetSocket} instance is supplied via the {@code hndlr} instance
+   * @return a reference to this so multiple method calls can be chained together
+   */
   NetClient connect(int port, String host, Closure hndlr) {
     super.connect(port, host, wrapHandler(hndlr))
     this
