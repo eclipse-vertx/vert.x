@@ -53,6 +53,7 @@
 
   <property name="javadoc-dir" value="docs/java/api"/>
   <property name="rubydoc-dir" value="docs/ruby/api"/>
+  <property name="groovydoc-dir" value="docs/groovy/api"/>
 
   <property environment="env"/>
 
@@ -89,6 +90,10 @@
   <taskdef name="groovyc"
            classname="org.codehaus.groovy.ant.Groovyc"
            classpathref="core-lib-classpath"/>
+
+  <taskdef name="groovydoc"
+         classname="org.codehaus.groovy.ant.Groovydoc"
+         classpathref="core-lib-classpath"/>
 
   <target name="init">
     <!-- Create the time stamp -->
@@ -193,7 +198,7 @@
     </junit>
   </target>
 
-  <target name="javadoc" depends="compile-core">
+  <target name="javadoc" depends="compile-platform">
     <javadoc destdir="${target}/${javadoc-dir}" author="true" version="false" use="true" windowtitle="vert.x Java API"
              classpathref="core-lib-classpath" Public="true">
       <doctitle><![CDATA[<h1>vert.x Java API</h1>]]></doctitle>
@@ -206,6 +211,13 @@
     </javadoc>
   </target>
 
+  <target name="groovydoc" depends="compile-platform">
+    <groovydoc destdir="${target}/${groovydoc-dir}" author="true" use="true" windowtitle="vert.x Groovy API"
+       private="false" doctitle="vert.x Groovy API" sourcepath="${groovy-src-root}"
+       packagenames="**/core/**.*,**/deploy/**.*,**/busmods/**.*">
+    </groovydoc>
+  </target>
+
   <!--
   Needs:
   jruby -S gem install yard
@@ -215,7 +227,7 @@
     <exec executable="yardoc"/>
   </target>
 
-  <target name="dist" depends="javadoc,yardoc,jar-core,jar-platform">
+  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
