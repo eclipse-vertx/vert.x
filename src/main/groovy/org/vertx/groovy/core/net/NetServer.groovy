@@ -23,16 +23,16 @@ class NetServer extends org.vertx.java.core.net.NetServer {
     super()
   }
 
-  NetServer connectHandler(hndlr) {
+  NetServer connectHandler(Closure hndlr) {
     super.connectHandler(wrapHandler(hndlr))
     this
   }
 
-  void close(hndlr) {
+  void close(Closure hndlr) {
     super.close(hndlr as Handler)
   }
 
-  private wrapHandler(hndlr) {
+  private wrapHandler(Closure hndlr) {
     return {hndlr.call(new NetSocket(it))} as Handler
   }
 

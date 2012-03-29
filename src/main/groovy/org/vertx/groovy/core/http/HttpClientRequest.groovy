@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+
 package org.vertx.groovy.core.http
 
 import org.vertx.groovy.core.buffer.Buffer
@@ -65,17 +67,17 @@ class HttpClientRequest implements WriteStream {
     this
   }
 
-  HttpClientRequest write(Buffer chunk, doneHandler) {
+  HttpClientRequest write(Buffer chunk, Closure doneHandler) {
     jRequest.write(chunk.toJavaBuffer(), doneHandler as Handler)
     this
   }
 
-  HttpClientRequest write(String chunk, doneHandler) {
+  HttpClientRequest write(String chunk, Closure doneHandler) {
     jRequest.write(chunk, doneHandler as Handler)
     this
   }
 
-  HttpClientRequest write(String chunk, String enc, doneHandler) {
+  HttpClientRequest write(String chunk, String enc, Closure doneHandler) {
     jRequest.write(chunk, enc, doneHandler as Handler)
     this
   }
@@ -88,15 +90,15 @@ class HttpClientRequest implements WriteStream {
     jRequest.writeQueueFull()
   }
 
-  void drainHandler(handler) {
+  void drainHandler(Closure handler) {
     jRequest.drainHandler(handler as Handler)
   }
 
-  void exceptionHandler(handler) {
+  void exceptionHandler(Closure handler) {
     jRequest.exceptionHandler(handler as Handler)
   }
 
-  void continueHandler(handler) {
+  void continueHandler(Closure handler) {
     jRequest.continueHandler(handler as Handler)
   }
 

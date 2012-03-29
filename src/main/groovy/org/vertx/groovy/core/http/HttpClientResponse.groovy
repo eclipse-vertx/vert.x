@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+
 package org.vertx.groovy.core.http
 
 import org.vertx.groovy.core.buffer.Buffer
@@ -63,15 +65,15 @@ class HttpClientResponse implements ReadStream {
     jResponse.getTrailerNames()
   }
 
-  void dataHandler(dataHandler) {
+  void dataHandler(Closure dataHandler) {
     jResponse.dataHandler({dataHandler.call(new Buffer(it))} as Handler)
   }
 
-  void endHandler(endHandler) {
+  void endHandler(Closure endHandler) {
     jResponse.endHandler(endHandler as Handler)
   }
 
-  void exceptionHandler(exceptionHandler) {
+  void exceptionHandler(Closure exceptionHandler) {
     jResponse.exceptionHandler(exceptionHandler as Handler)
   }
 
@@ -83,7 +85,7 @@ class HttpClientResponse implements ReadStream {
     jResponse.resume()
   }
 
-  void bodyHandler(bodyHandler) {
+  void bodyHandler(Closure bodyHandler) {
     jResponse.dataHandler({bodyHandler.call(new Buffer(it))} as Handler)
   }
 }

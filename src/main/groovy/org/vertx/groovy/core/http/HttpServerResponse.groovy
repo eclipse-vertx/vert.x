@@ -77,15 +77,15 @@ class HttpServerResponse implements WriteStream {
     jResponse.writeQueueFull()
   }
 
-  void drainHandler(handler) {
+  void drainHandler(Closure handler) {
     jResponse.drainHandler(handler as Handler)
   }
 
-  void exceptionHandler(handler) {
+  void exceptionHandler(Closure handler) {
     jResponse.exceptionHandler(handler as Handler)
   }
 
-  void closeHandler(handler) {
+  void closeHandler(Closure handler) {
     jResponse.closeHandler(handler as Handler)
   }
 
@@ -108,17 +108,17 @@ class HttpServerResponse implements WriteStream {
     this
   }
 
-  HttpServerResponse write(Buffer chunk, doneHandler) {
+  HttpServerResponse write(Buffer chunk, Closure doneHandler) {
     jResponse.write(chunk, doneHandler as Handler)
     this
   }
 
-  HttpServerResponse write(String chunk, String enc, doneHandler) {
+  HttpServerResponse write(String chunk, String enc, Closure doneHandler) {
     jResponse.write(chunk, enc, doneHandler as Handler)
     this
   }
 
-  HttpServerResponse write(String chunk, doneHandler) {
+  HttpServerResponse write(String chunk, Closure doneHandler) {
     jResponse.write(chunk, doneHandler as Handler)
     this
   }

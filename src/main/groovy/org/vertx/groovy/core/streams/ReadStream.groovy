@@ -24,7 +24,7 @@ interface ReadStream  {
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */
-  void dataHandler(handler)
+  void dataHandler(Closure handler)
 
   /**
    * Pause the {@code ReadStream}. After calling this, the ReadStream will aim to send no more data to the {@code
@@ -40,11 +40,11 @@ interface ReadStream  {
   /**
    * Set an exception handler.
    */
-  void exceptionHandler(handler)
+  void exceptionHandler(Closure handler)
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
    */
-  void endHandler(handler);
+  void endHandler(Closure handler);
 
 }

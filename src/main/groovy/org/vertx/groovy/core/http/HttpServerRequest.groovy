@@ -67,11 +67,11 @@ class HttpServerRequest implements ReadStream {
     jRequest.getAllParams()
   }
 
-  void dataHandler(dataHandler) {
+  void dataHandler(Closure dataHandler) {
     jRequest.dataHandler({dataHandler.call(new Buffer(it))} as Handler)
   }
 
-  void exceptionHandler(handler) {
+  void exceptionHandler(Closure handler) {
     jRequest.exceptionHandler(handler as Handler)
   }
 
@@ -83,11 +83,11 @@ class HttpServerRequest implements ReadStream {
     jRequest.resume()
   }
 
-  void endHandler(handler) {
+  void endHandler(Closure handler) {
     jRequest.endHandler(handler as Handler)
   }
 
-  void bodyHandler(bodyHandler) {
+  void bodyHandler(Closure bodyHandler) {
     jRequest.dataHandler({bodyHandler.call(new Buffer(it))} as Handler)
   }
 

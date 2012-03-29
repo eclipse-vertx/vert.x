@@ -60,7 +60,7 @@ def sendEmail(email, items) {
 
   def body = 'Thank you for your order\n\nYou bought:\n\n'
   def totPrice = 0.0
-  for (i = 0; i < items.length; i++) {
+  for (i in 0 ..< items.length) {
     def quant = items[i]['quantity']
     def album = items[i]['album']
     def linePrice = quant * album.price
