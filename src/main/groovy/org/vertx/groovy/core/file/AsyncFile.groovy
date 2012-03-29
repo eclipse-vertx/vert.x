@@ -95,11 +95,11 @@ class AsyncFile{
         return jWS.writeQueueFull()
       }
 
-      void drainHandler(handler) {
+      void drainHandler(Closure handler) {
         jWS.drainHandler(handler as Handler)        
       }
 
-      void exceptionHandler(handler) {
+      void exceptionHandler(Closure handler) {
         jWS.exceptionHandler(handler as Handler)        
       }
     }
@@ -113,7 +113,7 @@ class AsyncFile{
     
     return new ReadStream() {
 
-      void dataHandler(Object handler) {
+      void dataHandler(Closure handler) {
         jRS.dataHandler({handler.call(new Buffer(it))} as Handler)
       }
 
@@ -125,11 +125,11 @@ class AsyncFile{
         jRS.resume()
       }
 
-      void exceptionHandler(Object handler) {
+      void exceptionHandler(Closure handler) {
         jRS.exceptionHandler(handler as Handler)
       }
 
-      void endHandler(Object handler) {
+      void endHandler(Closure handler) {
         jRS.endHandler(handler as Handler)
       }
 

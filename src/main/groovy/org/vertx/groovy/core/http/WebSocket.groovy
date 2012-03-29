@@ -43,7 +43,7 @@ class WebSocket  {
     jWS.close();
   }
 
-  void dataHandler(handler) {
+  void dataHandler(Closure handler) {
     jWS.dataHandler({handler.call(new Buffer(it))} as Handler)
   }
 
@@ -55,11 +55,11 @@ class WebSocket  {
     jWS.resume()
   }
 
-  void exceptionHandler(handler) {
+  void exceptionHandler(Closure handler) {
     jWS.exceptionHandler(handler as Handler)
   }
 
-  void endHandler(endHandler) {
+  void endHandler(Closure endHandler) {
     jWS.endHandler(endHandler as Handler)
   }
 
@@ -75,7 +75,7 @@ class WebSocket  {
     jWS.writeQueueFull()
   }
 
-  void drainHandler(handler) {
+  void drainHandler(Closure handler) {
     jWS.drainHandler(handler as Handler)
   }
 

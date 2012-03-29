@@ -55,28 +55,6 @@ class EventBus {
 
   private Map handlerMap = new ConcurrentHashMap()
 
-  private org.vertx.java.core.eventbus.EventBus jEB() {
-    org.vertx.java.core.eventbus.EventBus.instance
-  }
-
-  private def convertMessage(message) {
-    if (message instanceof Map) {
-      message = new JsonObject(message)
-    } else if (message instanceof Buffer) {
-      message = ((Buffer)message).toJavaBuffer()
-    }
-    message
-  }
-
-  private def wrapHandler(replyHandler) {
-    if (replyHandler != null) {
-      def wrapped = { replyHandler.call(new Message(it)) } as Handler
-      return wrapped
-    } else {
-      return null;
-    }
-  }
-
   /**
    * Send a message on the event bus.
    * Message can be a java.util.Map (Representing a JSON message), a String, boolean,
@@ -85,7 +63,7 @@ class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  void send(String address, message, replyHandler = null) {
+  void send(String address, message, Closure replyHandler = null) {
     if (message != null) {
       message = convertMessage(message)
       jEB().send(address, convertMessage(message), wrapHandler(replyHandler))
@@ -103,7 +81,7 @@ class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
-  String registerHandler(String address, handler, resultHandler = null) {
+  String registerHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = wrapHandler(handler)
     handlerMap.put(handler, wrapped)
     jEB().registerHandler(address, wrapped, resultHandler as AsyncResultHandler)
@@ -116,7 +94,7 @@ class EventBus {
    * @param handler The handler
    * @return The handler id which is the same as the address
    */
-  String registerLocalHandler(String address, handler, resultHandler = null) {
+  String registerLocalHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = wrapHandler(handler)
     handlerMap.put(handler, wrapped)
     jEB().registerLocalHandler(address, wrapped, resultHandler as AsyncResultHandler)
@@ -129,7 +107,7 @@ class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
-  String registerSimpleHandler(handler, resultHandler = null) {
+  String registerSimpleHandler(handler, Closure resultHandler = null) {
     jEB().registerHandler(wrapHandler(handler), resultHandler as AsyncResultHandler)
   }
 
@@ -140,7 +118,7 @@ class EventBus {
    * @param resultHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  void unregisterHandler(String address, handler, resultHandler = null) {
+  void unregisterHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = handlerMap.remove(handler)
     if (wrapped != null) {
       jEB().unregisterHandler(address, wrapped, resultHandler as AsyncResultHandler)
@@ -153,43 +131,34 @@ class EventBus {
    * @param resultHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  void unregisterSimpleHandler(String id, resultHandler = null) {
+  void unregisterSimpleHandler(String id, Closure resultHandler = null) {
     jEB().unregisterHandler(id, resultHandler as AsyncResultHandler)
   }
 
-  /**
-   * Represents a message delivered to a handler
-   */
-  class Message {
+  private org.vertx.java.core.eventbus.EventBus jEB() {
+    org.vertx.java.core.eventbus.EventBus.instance
+  }
 
-    /**
-     * The body of the message
-     */
-    def body
-
-    private org.vertx.java.core.eventbus.Message jMessage
-
-    private Message(org.vertx.java.core.eventbus.Message jMessage) {
-      if (jMessage.body instanceof JsonObject) {
-        this.body = jMessage.body.toMap()
-      } else {
-        this.body = jMessage.body
-      }
-      this.jMessage = jMessage
+  protected static def convertMessage(message) {
+    if (message instanceof Map) {
+      message = new JsonObject(message)
+    } else if (message instanceof Buffer) {
+      message = ((Buffer)message).toJavaBuffer()
     }
+    message
+  }
 
-    /**
-   * Reply to this message. If the message was sent specifying a reply handler, that handler will be
-   * called when it has received a reply. If the message wasn't sent specifying a receipt handler
-   * this method does nothing.
-   * @param message The reply message
-     @param replyHandler Optional reply handler, so you can get a reply to your reply
-   */
-    def reply(message, replyHandler = null) {
-      message = convertMessage(message)
-      jMessage.reply(message, wrapHandler(replyHandler))
+  protected static def wrapHandler(replyHandler) {
+    if (replyHandler != null) {
+      def wrapped = { replyHandler.call(new Message(it)) } as Handler
+      return wrapped
+    } else {
+      return null;
     }
   }
+
+
+
 
 }
 

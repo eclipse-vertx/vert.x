@@ -23,11 +23,11 @@
         </join>
         <!--
         If you have more than one network interface, edit this to select which
-        one you want to use
+        one you want to use -->
         <interfaces enabled="true">
-            <interface>192.168.1.*</interface>
+            <interface>192.168.1.16</interface>
         </interfaces>
-        -->
+        
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES,

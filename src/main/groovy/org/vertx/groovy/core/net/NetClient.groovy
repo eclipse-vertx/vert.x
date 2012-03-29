@@ -24,12 +24,12 @@ class NetClient extends org.vertx.java.core.net.NetClient {
     this
   }
 
-  NetClient connect(int port, String host, hndlr) {
+  NetClient connect(int port, String host, Closure hndlr) {
     super.connect(port, host, wrapHandler(hndlr))
     this
   }
 
-  private wrapHandler(hndlr) {
+  private wrapHandler(Closure hndlr) {
     return {hndlr.call(new NetSocket(it))} as Handler
   }
 

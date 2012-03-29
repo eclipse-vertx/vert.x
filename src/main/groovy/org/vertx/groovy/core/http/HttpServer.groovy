@@ -23,7 +23,7 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
   private reqHandler;
   private wsHandler;
 
-  HttpServer requestHandler(hndlr) {
+  HttpServer requestHandler(Closure hndlr) {
     super.requestHandler(wrapRequestHandler(hndlr))
     this.reqHandler = hndlr
     this
@@ -33,7 +33,7 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
     return reqHandler;
   }
 
-  HttpServer websocketHandler(hndlr) {
+  HttpServer websocketHandler(Closure hndlr) {
     super.websocketHandler(wrapWebsocketHandler(hndlr))
     this.wsHandler = hndlr
     this
@@ -43,15 +43,15 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
     wsHandler;
   }
 
-  void close(hndlr) {
+  void close(Closure hndlr) {
     super.close(hndlr as Handler)
   }
 
-  protected wrapRequestHandler(hndlr) {
+  protected wrapRequestHandler(Closure hndlr) {
     return {hndlr.call(new HttpServerRequest(it))} as Handler
   }
 
-  protected wrapWebsocketHandler(hndlr) {
+  protected wrapWebsocketHandler(Closure hndlr) {
     return {hndlr.call(new ServerWebSocket(it))} as Handler
   }
 

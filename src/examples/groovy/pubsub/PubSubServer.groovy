@@ -41,7 +41,7 @@ server = new NetServer().connectHandler { socket ->
       println "publishing to ${sp[1]} with ${sp[2]}"
       def topic = SharedData.instance.getSet(sp[1])
       def tarr = topic.toArray();
-      for (i = 0; i < tarr.length; i++) {
+      for (i in 0 ..< tarr.length) {
         EventBus.instance.send(tarr[i], new Buffer(sp[2]))
       }
     }

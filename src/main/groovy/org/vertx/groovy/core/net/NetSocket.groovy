@@ -48,32 +48,32 @@ class NetSocket implements ReadStream, WriteStream {
     this
   }
 
-  NetSocket write(Buffer data, doneHandler) {
+  NetSocket write(Buffer data, Closure doneHandler) {
     jSocket.write(data.toJavaBuffer(), doneHandler as Handler)
     this
   }
 
-  NetSocket write(String str, doneHandler) {
+  NetSocket write(String str, Closure doneHandler) {
     jSocket.write(str, doneHandler as Handler)
     this
   }
 
-  NetSocket write(String str, String enc, doneHandler) {
+  NetSocket write(String str, String enc, Closure doneHandler) {
     jSocket.write(str, enc, doneHandler as Handler)
     this
   }
 
-  void dataHandler(dataHandler) {
+  void dataHandler(Closure dataHandler) {
     jSocket.dataHandler({
       dataHandler.call(new Buffer(it))
     } as Handler)
   }
 
-  void endHandler(endHandler) {
+  void endHandler(Closure endHandler) {
     jSocket.endHandler(endHandler as Handler)
   }
 
-  void drainHandler(drainHandler) {
+  void drainHandler(Closure drainHandler) {
     jSocket.drainHandler(drainHandler as Handler)
   }
 
@@ -101,11 +101,11 @@ class NetSocket implements ReadStream, WriteStream {
     jSocket.close()
   }
 
-  void exceptionHandler(handler) {
+  void exceptionHandler(Closure handler) {
     jSocket.exceptionHandler(handler as Handler)
   }
 
-  void closedHandler(handler) {
+  void closedHandler(Closure handler) {
     jSocket.closedHandler(handler as Handler)
   }
 

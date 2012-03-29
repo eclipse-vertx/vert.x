@@ -75,7 +75,7 @@ class SockJSServer {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
       sockHandler.call(new SockJSSocket(jSock) {
         
-        void dataHandler(Object handler) {
+        void dataHandler(Closure handler) {
           it.dataHandler({ handler.call(new Buffer(it)) } as Handler)
         }
 
@@ -91,11 +91,11 @@ class SockJSServer {
           jSock.resume()
         }
 
-        void exceptionHandler(Object handler) {
+        void exceptionHandler(Closure handler) {
           jSock.exceptionHandler(handler as Handler)
         }
 
-        void endHandler(Object handler) {
+        void endHandler(Closure handler) {
           jSock.endHandler(handler as Handler)
         }
 
@@ -107,7 +107,7 @@ class SockJSServer {
           jSock.writeQueueFull()
         }
 
-        void drainHandler(Object handler) {
+        void drainHandler(Closure handler) {
           jSock.drainHandler(handler as Handler)
         }
 

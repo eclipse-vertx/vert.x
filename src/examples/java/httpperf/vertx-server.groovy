@@ -1,6 +1,4 @@
-import org.vertx.java.core.shareddata.SharedData
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.core.eventbus.EventBus
+import org.vertx.groovy.core.http.HttpServer
 
 /*
 * Copyright 2011-2012 the original author or authors.
@@ -18,21 +16,7 @@ import org.vertx.groovy.core.eventbus.EventBus
 * limitations under the License.
 */
 
-def conns = SharedData.instance.getSet('conns')
+new HttpServer().requestHandler { req ->
+  req.response.end()
+}.listen(8080, 'localhost')
 
-def eb = EventBus.instance
-
-server = new NetServer().connectHandler { socket ->
-  conns.add(socket.getWriteHandlerID())
-  socket.dataHandler { data ->
-    def aconns = conns.toArray()
-    for (i in 0 ..< aconns.length) {
-      eb.send(aconns[i], data)
-    }
-  }
-  socket.closedHandler{ conns.remove(socket.getWriteHandlerID()) }
-}.listen(1234)
-
-def vertxStop() {
-  server.close()
-}
