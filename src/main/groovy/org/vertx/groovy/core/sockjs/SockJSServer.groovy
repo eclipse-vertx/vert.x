@@ -20,6 +20,7 @@ import org.vertx.groovy.core.http.HttpServer
 import org.vertx.java.core.sockjs.AppConfig
 import org.vertx.java.core.Handler
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
 
 /**
  *
@@ -54,14 +55,14 @@ import org.vertx.groovy.core.buffer.Buffer
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class SockJSServer {
-  private org.vertx.java.core.sockjs.SockJSServer jServer;
+  private JSockJSServer jServer;
 
   /**
    * Create a new SockJSServer.
    * @param httpServer - you must pass in an HttpServer instance
    */
   public SockJSServer(HttpServer httpServer) {
-    jServer = new org.vertx.java.core.sockjs.SockJSServer(httpServer)
+    jServer = new JSockJSServer(httpServer)
   }
 
   /**
@@ -73,10 +74,10 @@ class SockJSServer {
                          Closure sockHandler) {
     jServer.installApp(config, {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
-      sockHandler.call(new SockJSSocket(jSock) {
+      sockHandler(new SockJSSocket(jSock) {
         
         void dataHandler(Closure handler) {
-          it.dataHandler({ handler.call(new Buffer(it)) } as Handler)
+          it.dataHandler({ handler(new Buffer(it)) } as Handler)
         }
 
         void pause() {

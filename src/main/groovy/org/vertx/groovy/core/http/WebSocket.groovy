@@ -20,6 +20,7 @@ import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.groovy.core.streams.ReadStream
+import org.vertx.java.core.http.WebSocket as JWebSocket
 
 /**
  * Represents an HTML 5 Websocket
@@ -31,13 +32,14 @@ import org.vertx.groovy.core.streams.ReadStream
  * <p>
  * Instances of this class are not thread-safe
  * <p>
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class WebSocket implements ReadStream, WriteStream {
 
-  private final org.vertx.java.core.http.WebSocket jWS;
+  private final JWebSocket jWS;
 
-  protected WebSocket(org.vertx.java.core.http.WebSocket jWS) {
+  protected WebSocket(JWebSocket jWS) {
     this.jWS = jWS
   }
 
@@ -71,7 +73,7 @@ class WebSocket implements ReadStream, WriteStream {
 
   /** {@inheritDoc} */
   void dataHandler(Closure handler) {
-    jWS.dataHandler({handler.call(new Buffer(it))} as Handler)
+    jWS.dataHandler({handler(new Buffer(it))} as Handler)
   }
 
   /** {@inheritDoc} */

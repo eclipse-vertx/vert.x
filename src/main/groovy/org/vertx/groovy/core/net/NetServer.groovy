@@ -29,6 +29,7 @@ import org.vertx.java.core.Handler
  * are called.
  * <p>
  * Instances cannot be used from worker verticles
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class NetServer extends org.vertx.java.core.net.NetServer {
@@ -56,8 +57,8 @@ class NetServer extends org.vertx.java.core.net.NetServer {
     super.close(hndlr as Handler)
   }
 
-  private wrapHandler(Closure hndlr) {
-    return {hndlr.call(new NetSocket(it))} as Handler
+  private Handler wrapHandler(Closure hndlr) {
+    return {hndlr(new NetSocket(it))} as Handler
   }
 
 }

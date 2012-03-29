@@ -19,6 +19,7 @@ package org.vertx.groovy.core.eventbus
 import org.vertx.groovy.core.http.HttpServer
 import org.vertx.java.core.sockjs.AppConfig
 import org.vertx.java.core.json.JsonObject
+import org.vertx.java.core.eventbus.SockJSBridge as JSockJSBridge
 
 /**
  * A SockJSBridge bridges between SockJS and the event bus.
@@ -28,7 +29,7 @@ import org.vertx.java.core.json.JsonObject
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class SockJSBridge {
-  private final org.vertx.java.core.eventbus.SockJSBridge jBridge;
+  private final JSockJSBridge jBridge;
 
   /**
    * Create a new SockJSBridge
@@ -41,6 +42,6 @@ class SockJSBridge {
     for (Map<String, Object> map: permitted) {
       jList.add(new JsonObject(map));
     }
-    jBridge = new org.vertx.java.core.eventbus.SockJSBridge(server, sjsConfig, jList);
+    jBridge = new JSockJSBridge(server, sjsConfig, jList);
   }
 }

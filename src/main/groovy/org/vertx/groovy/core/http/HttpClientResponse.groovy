@@ -110,12 +110,12 @@ class HttpClientResponse implements ReadStream {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   void bodyHandler(Closure bodyHandler) {
-    jResponse.dataHandler({bodyHandler.call(new Buffer(it))} as Handler)
+    jResponse.dataHandler({bodyHandler(new Buffer(it))} as Handler)
   }
 
   /** {@inheritDoc} */
   void dataHandler(Closure dataHandler) {
-    jResponse.dataHandler({dataHandler.call(new Buffer(it))} as Handler)
+    jResponse.dataHandler({dataHandler(new Buffer(it))} as Handler)
   }
 
   /** {@inheritDoc} */

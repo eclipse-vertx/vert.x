@@ -19,6 +19,7 @@ package org.vertx.groovy.deploy
 import org.vertx.java.core.json.JsonObject
 import org.vertx.java.core.Handler
 import org.vertx.java.core.logging.Logger
+import org.vertx.java.deploy.Container as JContainer
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -27,7 +28,7 @@ class Container {
   
   static final Container instance = new Container();
   
-  private org.vertx.java.deploy.Container jContainer = org.vertx.java.deploy.Container.instance;
+  private JContainer jContainer = JContainer.instance;
 
   private Container() {
   }

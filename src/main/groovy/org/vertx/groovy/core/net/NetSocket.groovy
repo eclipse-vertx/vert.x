@@ -20,6 +20,7 @@ import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
+import org.vertx.java.core.net.NetSocket as JNetSocket
 
 /**
  * Represents a socket-like interface to a TCP or SSL connection on either the
@@ -31,13 +32,14 @@ import org.vertx.java.core.Handler
  * <p>
  * Instances of this class are not thread-safe
  * <p>
+ * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class NetSocket implements ReadStream, WriteStream {
 
-  private org.vertx.java.core.net.NetSocket jSocket;
+  private JNetSocket jSocket;
 
-  protected NetSocket(jSocket) {
+  protected NetSocket(JNetSocket jSocket) {
     this.jSocket = jSocket;
   }
 
@@ -103,7 +105,7 @@ class NetSocket implements ReadStream, WriteStream {
   /** {@inheritDoc} */
   void dataHandler(Closure dataHandler) {
     jSocket.dataHandler({
-      dataHandler.call(new Buffer(it))
+      dataHandler(new Buffer(it))
     } as Handler)
   }
 
@@ -166,7 +168,7 @@ class NetSocket implements ReadStream, WriteStream {
    * Alias for {@link #write} so that we can use the left shift operator
    * in Groovy, just as we do with other writables.
    */
-  def leftShift(buff) {
+  NetSocket leftShift(buff) {
     write(buff)
   }
 

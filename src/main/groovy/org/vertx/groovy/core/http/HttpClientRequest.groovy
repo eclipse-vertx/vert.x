@@ -21,6 +21,7 @@ package org.vertx.groovy.core.http
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
+import org.vertx.java.core.http.HttpClientRequest as JHttpClientRequest
 
 /**
  * Represents a client-side HTTP request.<p>
@@ -64,9 +65,9 @@ import org.vertx.java.core.Handler
  */
 class HttpClientRequest implements WriteStream {
 
-  private final org.vertx.java.core.http.HttpClientRequest jRequest;
+  private final JHttpClientRequest jRequest;
 
-  protected HttpClientRequest(org.vertx.java.core.http.HttpClientRequest jRequest) {
+  protected HttpClientRequest(JHttpClientRequest jRequest) {
     this.jRequest = jRequest
   }
 

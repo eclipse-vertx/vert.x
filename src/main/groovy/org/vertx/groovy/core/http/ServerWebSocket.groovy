@@ -17,6 +17,8 @@
 
 package org.vertx.groovy.core.http;
 
+import org.vertx.java.core.http.ServerWebSocket as JServerWebSocket
+
 /**
  * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}
  * <p>
@@ -26,9 +28,9 @@ package org.vertx.groovy.core.http;
  */
 public class ServerWebSocket extends WebSocket {
 
-  private final org.vertx.java.core.http.ServerWebSocket jSWS;
+  private final JServerWebSocket jSWS;
 
-  protected ServerWebSocket(org.vertx.java.core.http.ServerWebSocket jSWS) {
+  protected ServerWebSocket(JServerWebSocket jSWS) {
     super(jSWS);
     this.jSWS = jSWS;
   }

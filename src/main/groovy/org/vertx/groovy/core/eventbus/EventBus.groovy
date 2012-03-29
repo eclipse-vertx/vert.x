@@ -21,6 +21,7 @@ import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.java.core.eventbus.EventBus as JEventBus
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -37,7 +38,7 @@ class EventBus {
    * @param hostname The hostname or ip address
    */
   static void setClustered(String hostname) {
-    org.vertx.java.core.eventbus.EventBus.setClustered(hostname)
+    JEventBus.setClustered(hostname)
   }
 
   /**
@@ -46,11 +47,11 @@ class EventBus {
    * @param hostname The hostname or ip address
    */
   static void setClustered(int port, String hostname) {
-    org.vertx.java.core.eventbus.EventBus.setClustered(port, hostname)
+    JEventBus.setClustered(port, hostname)
   }
 
   static void setClustered(int port, String hostname, String clusterProviderClassName) {
-    org.vertx.java.core.eventbus.EventBus.setClustered(port, hostname, clusterProviderClassName)
+    JEventBus.setClustered(port, hostname, clusterProviderClassName)
   }
 
   private Map handlerMap = new ConcurrentHashMap()
@@ -135,11 +136,11 @@ class EventBus {
     jEB().unregisterHandler(id, resultHandler as AsyncResultHandler)
   }
 
-  private org.vertx.java.core.eventbus.EventBus jEB() {
-    org.vertx.java.core.eventbus.EventBus.instance
+  private JEventBus jEB() {
+    JEventBus.instance
   }
 
-  protected static def convertMessage(message) {
+  protected static convertMessage(message) {
     if (message instanceof Map) {
       message = new JsonObject(message)
     } else if (message instanceof Buffer) {
@@ -148,9 +149,9 @@ class EventBus {
     message
   }
 
-  protected static def wrapHandler(replyHandler) {
+  protected static wrapHandler(replyHandler) {
     if (replyHandler != null) {
-      def wrapped = { replyHandler.call(new Message(it)) } as Handler
+      def wrapped = { replyHandler(new Message(it)) } as Handler
       return wrapped
     } else {
       return null;

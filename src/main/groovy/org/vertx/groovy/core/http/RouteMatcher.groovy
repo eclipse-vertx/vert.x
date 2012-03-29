@@ -18,6 +18,7 @@
 package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
+import org.vertx.java.core.http.RouteMatcher as JRouteMatcher
 
 /**
  *
@@ -57,9 +58,9 @@ import org.vertx.java.core.Handler
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class RouteMatcher extends org.vertx.java.core.http.RouteMatcher {
+class RouteMatcher extends JRouteMatcher {
 
-  private final org.vertx.java.core.http.RouteMatcher jRM = new org.vertx.java.core.http.RouteMatcher()
+  private final JRouteMatcher jRM = new JRouteMatcher()
 
   /**
    * Specify a handler that will be called for a matching HTTP GET
@@ -257,8 +258,8 @@ class RouteMatcher extends org.vertx.java.core.http.RouteMatcher {
     return { jRM.handle(it.toJavaRequest())}
   }
 
-  private def wrapHandler(Closure handler) {
-    return {handler.call(new HttpServerRequest(it))} as Handler
+  private Handler wrapHandler(Closure handler) {
+    return {handler(new HttpServerRequest(it))} as Handler
   }
 
 
