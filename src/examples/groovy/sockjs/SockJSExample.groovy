@@ -1,7 +1,3 @@
-import org.vertx.groovy.core.http.HttpServer
-import org.vertx.groovy.core.sockjs.SockJSServer
-import org.vertx.java.core.sockjs.AppConfig
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -17,6 +13,10 @@ import org.vertx.java.core.sockjs.AppConfig
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+import org.vertx.groovy.core.http.HttpServer
+import org.vertx.groovy.core.sockjs.SockJSServer
+import org.vertx.java.core.sockjs.AppConfig
 
 server = new HttpServer()
 
