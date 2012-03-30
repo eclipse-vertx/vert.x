@@ -25,11 +25,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class Client implements Verticle {
 
-  private HttpClient client;
-
   public void start() {
-    client = new HttpClient();
-    HttpClientRequest req = client.setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
+    HttpClientRequest req = new HttpClient().setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
         response.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
@@ -47,6 +44,5 @@ public class Client implements Verticle {
   }
 
   public void stop() {
-    client.close();
   }
 }

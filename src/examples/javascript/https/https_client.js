@@ -24,7 +24,3 @@ client.getNow('/', function(resp) {
     stdout.println("Got data " + body);
   })
 });
-
-function vertxStop() {
-  client.close();
-}

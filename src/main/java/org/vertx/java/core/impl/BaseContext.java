@@ -19,6 +19,9 @@ package org.vertx.java.core.impl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -29,6 +32,8 @@ public abstract class BaseContext implements Context {
   private DeploymentHandle deploymentContext;
 
   private VertxInternal vertx = VertxInternal.instance;
+
+  private List<Runnable> closeHooks;
 
   public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
     this.deploymentContext = deploymentHandle;
@@ -43,6 +48,25 @@ public abstract class BaseContext implements Context {
       deploymentContext.reportException(t);
     } else {
       log.error("Unhandled exception", t);
+    }
+  }
+
+  public void addCloseHook(Runnable hook) {
+    if (closeHooks == null) {
+      closeHooks = new ArrayList<>();
+    }
+    closeHooks.add(hook);
+  }
+
+  public void runCloseHooks() {
+    if (closeHooks != null) {
+      for (Runnable hook: closeHooks) {
+        try {
+          hook.run();
+        } catch (Throwable t) {
+          reportException(t);
+        }
+      }
     }
   }
 

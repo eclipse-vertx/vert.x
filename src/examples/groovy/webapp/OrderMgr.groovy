@@ -83,7 +83,3 @@ def sendEmail(email, items) {
 
 address = "demo.orderMgr"
 eb.registerHandler(address, handler)
-
-def vertxStop() {
-  eb.unregisterHandler(address, handler)
-}

@@ -30,7 +30,3 @@ server.requestHandler { req ->
 new SockJSBridge(server, new AppConfig(prefix: '/eventbus'), [[:]])
 
 server.listen(8080)
-
-def vertxStop() {
-  server.close()
-}

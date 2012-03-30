@@ -34,6 +34,5 @@ public class ResourceLoadExample implements Verticle {
   }
 
   public void stop() {
-
   }
 }

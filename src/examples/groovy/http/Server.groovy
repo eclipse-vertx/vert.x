@@ -16,12 +16,6 @@ import org.vertx.groovy.core.http.HttpServer
 * limitations under the License.
 */
 
-server = new HttpServer()
-
-server.requestHandler { req ->
+new HttpServer().requestHandler { req ->
   req.response.end "<html><body><h1>Hello from vert.x!</h1></body></html>"
 }.listen(8080, 'localhost')
-
-def vertxStop() {
-  server.close()
-}

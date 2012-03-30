@@ -83,6 +83,11 @@ public class DefaultHttpClient {
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx.addCloseHook(new Runnable() {
+      public void run() {
+        close();
+      }
+    });
   }
 
   public void exceptionHandler(Handler<Exception> handler) {

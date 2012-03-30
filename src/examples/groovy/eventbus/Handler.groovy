@@ -23,5 +23,3 @@ address = 'example.address'
 handler = { message -> println "Received message ${message.body}" }
 
 eb.registerHandler(address, handler)
-
-def vertxStop() { eb.unregisterHandler(address, handler) }

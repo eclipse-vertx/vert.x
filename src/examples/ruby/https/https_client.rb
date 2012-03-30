@@ -15,16 +15,12 @@
 require "vertx"
 include Vertx
 
-@client = HttpClient.new
-@client.ssl = true
-@client.port = 4443
-@client.host = "localhost"
-@client.trust_all = true
-@client.get_now("/") do |resp|
+client = HttpClient.new
+client.ssl = true
+client.port = 4443
+client.host = "localhost"
+client.trust_all = true
+client.get_now("/") do |resp|
   puts "Got response #{resp.status_code}"
   resp.data_handler { |buffer| puts "Got data #{buffer}"  }
-end
-
-def vertx_stop
-  @client.close
 end

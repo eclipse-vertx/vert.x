@@ -15,19 +15,14 @@
 require "vertx"
 include Vertx
 
-@server = HttpServer.new
+server = HttpServer.new
 
 # Serve the index page
-@server.request_handler { |req| req.response.send_file("sockjs/index.html") if req.uri == "/"}
+server.request_handler { |req| req.response.send_file("sockjs/index.html") if req.uri == "/"}
 
 sjs_server = SockJSServer.new(@server)
 
 # The handler for the SockJS app - we just echo data back
 sjs_server.install_app({"prefix" => "/testapp"}) { |sock| sock.data_handler{ |buff| sock.write_buffer(buff) } }
 
-
-@server.listen(8080)
-
-def vertx_stop
-  @server.close
-end
+server.listen(8080)

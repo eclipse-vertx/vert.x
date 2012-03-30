@@ -24,8 +24,6 @@ import org.vertx.java.deploy.Verticle;
 
 public class RouteMatchExample implements Verticle {
 
-  private HttpServer server;
-
   public void start() {
 
     RouteMatcher rm = new RouteMatcher();
@@ -43,10 +41,9 @@ public class RouteMatchExample implements Verticle {
       }
     });
 
-    server = new HttpServer().requestHandler(rm).listen(8080);
+    new HttpServer().requestHandler(rm).listen(8080);
   }
 
   public void stop() {
-    server.close();
   }
 }

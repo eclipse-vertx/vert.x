@@ -31,7 +31,3 @@ vertx.FileSystem.props(filename, function(err, props) {
     pump.start()
   });
 });
-
-function vertxStop() {
-  client.close()
-}

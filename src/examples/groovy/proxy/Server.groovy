@@ -16,7 +16,7 @@ import org.vertx.groovy.core.http.HttpServer
 * limitations under the License.
 */
 
-server = new HttpServer().requestHandler { req ->
+new HttpServer().requestHandler { req ->
 
   println "Got request ${req.uri}"
 
@@ -39,6 +39,3 @@ server = new HttpServer().requestHandler { req ->
   }
 }.listen(8282)
 
-def vertxStop() {
-  server.close()
-}

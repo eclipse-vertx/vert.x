@@ -15,8 +15,7 @@
 require "vertx"
 include Vertx
 
-@client = NetClient.new
-@client.connect(1234, "localhost") do |socket|
+NetClient.new.connect(1234, "localhost") do |socket|
   socket.data_handler { |data| puts "Echo client received #{data.to_s}" }
   (1..10).each do |i|
     str = "hello #{i}\n"
@@ -25,9 +24,6 @@ include Vertx
   end
 end
 
-def vertx_stop
-  @client.close
-end
 
 
 

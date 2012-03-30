@@ -44,7 +44,6 @@ public class RateCounter implements Verticle, Handler<Message<Integer>> {
   }
 
   public void stop() {
-    EventBus.instance.unregisterHandler("rate-counter", this);
   }
 
 

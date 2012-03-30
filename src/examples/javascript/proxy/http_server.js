@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var server = new vertx.HttpServer().requestHandler(function(req) {
+new vertx.HttpServer().requestHandler(function(req) {
   stdout.println("Got request " + req.uri);
 
   var hdrs = req.headers();
@@ -21,7 +21,3 @@ var server = new vertx.HttpServer().requestHandler(function(req) {
     req.response.end();
   });
 }).listen(8282)
-
-function vertxStop() {
-  server.close();
-}

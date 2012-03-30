@@ -20,7 +20,7 @@ import org.vertx.groovy.core.buffer.Buffer
 * limitations under the License.
 */
 
-server = new NetServer().connectHandler { socket ->
+new NetServer().connectHandler { socket ->
   def parser = RecordParser.newDelimited("\n") { line ->
     line = line.toString().trim()
     if (line.startsWith("subscribe")) {
@@ -47,7 +47,3 @@ server = new NetServer().connectHandler { socket ->
   }
   socket.dataHandler(parser.toClosure())
 }.listen(1234)
-
-def vertxStop() {
-  server.close()
-}

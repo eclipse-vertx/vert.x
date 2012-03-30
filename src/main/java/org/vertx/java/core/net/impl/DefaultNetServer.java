@@ -82,6 +82,11 @@ public class DefaultNetServer {
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx.addCloseHook(new Runnable() {
+      public void run() {
+        close();
+      }
+    });
     tcpHelper.setReuseAddress(true);
   }
 

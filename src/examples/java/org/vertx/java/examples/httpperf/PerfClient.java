@@ -64,7 +64,6 @@ public class PerfClient implements Verticle, Handler<HttpClientResponse> {
   }
 
   public void stop() {
-    client.close();
   }
 
   private void makeRequest() {

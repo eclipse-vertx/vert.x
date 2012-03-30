@@ -25,10 +25,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class WebsocketsExample implements Verticle {
 
-  private HttpServer server;
-
   public void start() {
-    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+    new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         if (ws.path.equals("/myapp")) {
           ws.dataHandler(new Handler<Buffer>() {
@@ -48,6 +46,5 @@ public class WebsocketsExample implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

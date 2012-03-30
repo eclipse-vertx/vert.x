@@ -29,7 +29,3 @@ server = new NetServer().connectHandler { socket ->
   }
   socket.closedHandler{ conns.remove(socket.writeHandlerID) }
 }.listen(1234)
-
-def vertxStop() {
-  server.close()
-}

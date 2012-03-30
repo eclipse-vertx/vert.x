@@ -39,7 +39,3 @@ new vertx.SockJSBridge(server, {prefix : '/eventbus'},
 );
 
 server.listen(8080, 'localhost');
-
-function vertxStop() {
-  server.close();
-}

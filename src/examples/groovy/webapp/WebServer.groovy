@@ -56,7 +56,3 @@ new SockJSBridge(server, new AppConfig(prefix: '/eventbus'),
 
 server.listen(8080, 'localhost')
 
-def vertxStop() {
-  server.close()
-}
-

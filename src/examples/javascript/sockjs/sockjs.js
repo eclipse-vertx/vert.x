@@ -17,7 +17,3 @@ sjsServer.installApp({prefix: "/testapp"}, function(sock) {
 });
 
 server.listen(8080)
-
-function vertxStop() {
-  server.close()
-}

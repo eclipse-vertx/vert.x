@@ -18,13 +18,10 @@ package websockets
 
 import org.vertx.groovy.core.http.HttpServer
 
-server = new HttpServer().websocketHandler { ws ->
+new HttpServer().websocketHandler { ws ->
   ws.dataHandler { data -> ws.writeTextFrame(data.toString()) }
 }.requestHandler { req ->
   if (req.uri == "/") req.response.sendFile "websockets/ws.html"
 }.listen(8080)
 
-void vertxStop() {
-  server.close()
-}
 

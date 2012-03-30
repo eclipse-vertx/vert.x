@@ -25,10 +25,8 @@ public class SendFileExample implements Verticle {
 
   private static final String webroot = "sendfile/";
 
-  private HttpServer server;
-
   public void start() {
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (req.path.equals("/")) {
           req.response.sendFile(webroot + "index.html");
@@ -41,6 +39,5 @@ public class SendFileExample implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

@@ -29,8 +29,4 @@ var server = new vertx.NetServer().connectHandler(function(socket) {
   socket.closedHandler(function() { conns.remove(socket.writeHandlerID) });
 }).listen(1234)
 
-function vertxStop() {
-  @server.close();
-}
-
 

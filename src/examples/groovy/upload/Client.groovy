@@ -18,9 +18,7 @@ import org.vertx.groovy.core.streams.Pump
 * limitations under the License.
 */
 
-client = new HttpClient(port: 8080)
-
-def req = client.put("/someurl") { resp -> println "Response ${resp.statusCode}" }
+def req = new HttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
 def filename = "upload/upload.txt"
 FileSystem.instance.props(filename) { ares ->
   def props = ares.result
@@ -36,6 +34,4 @@ FileSystem.instance.props(filename) { ares ->
   }
 }
 
-def vertxStop() {
-  client.close()
-}
+

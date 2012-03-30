@@ -15,10 +15,10 @@
 require "vertx"
 include Vertx
 
-@server = HttpServer.new
+server = HttpServer.new
 
 # Serve the static resources
-@server.request_handler do |req|
+server.request_handler do |req|
   req.response.send_file("eventbusbridge/index.html") if req.uri == "/"
   req.response.send_file("eventbusbridge/vertxbus.js") if req.uri == "/vertxbus.js"
 end
@@ -26,8 +26,4 @@ end
 # Create a bridge that lets everything through (be careful!)
 SockJSBridge.new(@server, {"prefix" => "/eventbus"}, [{}])
 
-@server.listen(8080)
-
-def vertx_stop
-  @server.close
-end
+server.listen(8080)

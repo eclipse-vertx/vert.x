@@ -33,11 +33,9 @@ import java.nio.file.Paths;
 
 public class UploadClient implements Verticle {
 
-  private HttpClient client;
-
   public void start() throws Exception {
 
-    client = new HttpClient().setPort(8080).setHost("localhost");
+    HttpClient client = new HttpClient().setPort(8080).setHost("localhost");
 
     final HttpClientRequest req = client.put("/some-url", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
@@ -84,6 +82,5 @@ public class UploadClient implements Verticle {
   }
 
   public void stop() {
-    client.close();
   }
 }

@@ -24,10 +24,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class EchoServer implements Verticle {
 
-  private NetServer server;
-
   public void start() {
-    server = new NetServer().connectHandler(new Handler<NetSocket>() {
+    new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         new Pump(socket, socket).start();
       }
@@ -35,6 +33,5 @@ public class EchoServer implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

@@ -31,8 +31,4 @@ rm.getWithRegEx('.*') { req ->
   req.response.sendFile "route_match/index.html"
 }
 
-server = new HttpServer().requestHandler(rm).listen(8080)
-
-def vertxStop() {
-  server.close()
-}
+new HttpServer().requestHandler(rm).listen(8080)
