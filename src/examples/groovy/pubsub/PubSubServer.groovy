@@ -1,9 +1,3 @@
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.core.parsetools.RecordParser
-import org.vertx.java.core.shareddata.SharedData
-import org.vertx.groovy.core.eventbus.EventBus
-import org.vertx.groovy.core.buffer.Buffer
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -20,15 +14,24 @@ import org.vertx.groovy.core.buffer.Buffer
 * limitations under the License.
 */
 
+import org.vertx.groovy.core.net.NetServer
+import org.vertx.groovy.core.parsetools.RecordParser
+import org.vertx.java.core.shareddata.SharedData
+import org.vertx.groovy.core.eventbus.EventBus
+import org.vertx.groovy.core.buffer.Buffer
+
 new NetServer().connectHandler { socket ->
   def parser = RecordParser.newDelimited("\n") { line ->
     line = line.toString().trim()
-    if (line.startsWith("subscribe")) {
+    switch (line) {
+    case ~/subscribe\s*,.*/:
       def topicName = line.split(",", 2)[1]
       println "subscribing to ${topicName}"
       def topic = SharedData.instance.getSet(topicName)
-      topic.add(socket.writeHandlerID)
-    } else if (line.startsWith("unsubscribe")) {
+      topic << socket.writeHandlerID
+      break
+
+    case ~/unsubscribe\s*,.*/:
       def topicName = line.split(",", 2)[1]
       println "unsubscribing from ${topicName}"
       def topic = SharedData.instance.getSet(topicName)
@@ -36,13 +39,20 @@ new NetServer().connectHandler { socket ->
       if (topic.isEmpty()) {
         SharedData.instance.removeSet(topicName)
       }
-    } else if (line.startsWith("publish")) {
+      break
+
+    case ~/publish\s*,.*,.*/:
       def sp = line.split(',', 3)
       println "publishing to ${sp[1]} with ${sp[2]}"
       def topic = SharedData.instance.getSet(sp[1])
       for (id in topic) {
         EventBus.instance.send(id, new Buffer(sp[2]))
       }
+      break
+
+    default:
+      println "Unknown command '${line}'"
+      break
     }
   }
   socket.dataHandler(parser.toClosure())

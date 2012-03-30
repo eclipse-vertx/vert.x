@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package https
 
 import org.vertx.groovy.core.http.HttpServer
@@ -23,4 +22,4 @@ server =
 
 server.requestHandler { req ->
   req.response.end "<html><body><h1>Hello from vert.x!</h1></body></html>"
-}.listen(4443, 'localhost')
+}.listen(4443, "localhost")

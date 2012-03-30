@@ -1,5 +1,3 @@
-import org.vertx.groovy.core.http.HttpServer
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -15,13 +13,15 @@ import org.vertx.groovy.core.http.HttpServer
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+package proxy
+
+import org.vertx.groovy.core.http.HttpServer
 
 new HttpServer().requestHandler { req ->
 
   println "Got request ${req.uri}"
 
-  def names = req.headers.getNames()
-  for (name in names) {
+  for (name in req.headers.names) {
     println "${name}: ${req.headers[name]}"
   }
 
@@ -32,7 +32,7 @@ new HttpServer().requestHandler { req ->
     req.response.chunked = true
 
     10.times {
-      req.response << "server-data-chunk-" + it
+      req.response << "server-data-chunk-$it"
     }
 
     req.response.end()

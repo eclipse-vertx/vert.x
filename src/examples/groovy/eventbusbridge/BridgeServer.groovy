@@ -15,7 +15,6 @@
  */
 
 import org.vertx.groovy.core.eventbus.SockJSBridge
-import org.vertx.java.core.sockjs.AppConfig
 import org.vertx.groovy.core.http.HttpServer
 
 server = new HttpServer()
@@ -27,6 +26,6 @@ server.requestHandler { req ->
 }
 
 // Create a SockJS bridge which lets everything through (be careful!)
-new SockJSBridge(server, new AppConfig(prefix: '/eventbus'), [[:]])
+new SockJSBridge(server, prefix: '/eventbus', [[:]])
 
 server.listen(8080)

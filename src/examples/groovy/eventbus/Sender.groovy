@@ -1,6 +1,3 @@
-import org.vertx.groovy.core.Vertx
-import org.vertx.groovy.core.eventbus.EventBus
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -16,6 +13,8 @@ import org.vertx.groovy.core.eventbus.EventBus
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import org.vertx.groovy.core.Vertx
+import org.vertx.groovy.core.eventbus.EventBus
 
 eb = EventBus.instance
 
@@ -28,5 +27,5 @@ def count = 0
 Vertx.instance.setPeriodic(2000) {
   def msg = "some-message-${count++}"
   eb.send(address, msg)
-  println "sent message $msg"
+  println "Sent message $msg"
 }
