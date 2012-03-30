@@ -37,11 +37,22 @@ class SockJSBridge {
    * @param sjsConfig config for the SockJS server
    * @param permitted List of JSON objects representing message matches permitted
    */
-  SockJSBridge(HttpServer server, AppConfig sjsConfig, List<Map<String, Object>> permitted) {
+  SockJSBridge(HttpServer server, AppConfig sjsConfig, List<Map<String, Object>> permitted = [[:]]) {
     List<JsonObject> jList = new ArrayList<>();
     for (Map<String, Object> map: permitted) {
       jList.add(new JsonObject(map));
     }
     jBridge = new JSockJSBridge(server, sjsConfig, jList);
+  }
+
+  /**
+   * Create a new SockJSBridge
+   * @param server an HTTP server instance
+   * @param sjsConfig config for the SockJS server as a map. Used to initialise
+   * an {@link AppConfig}.
+   * @param permitted List of JSON objects representing message matches permitted
+   */
+  SockJSBridge(Map sjsConfig, HttpServer server, List<Map<String, Object>> permitted = [[:]]) {
+    this(server, new AppConfig(sjsConfig), permitted)
   }
 }

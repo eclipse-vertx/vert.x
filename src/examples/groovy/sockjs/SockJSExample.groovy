@@ -16,7 +16,6 @@
 
 import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.core.sockjs.SockJSServer
-import org.vertx.java.core.sockjs.AppConfig
 
 server = new HttpServer()
 
@@ -26,7 +25,7 @@ server.requestHandler { req ->
 }
 
 // The handler for the SockJS app - we just echo data back
-new SockJSServer(server).installApp(new AppConfig(prefix: '/testapp')) { sock ->
+new SockJSServer(server).installApp(prefix: '/testapp') { sock ->
   sock.dataHandler { buff ->
     sock << buff
   }
