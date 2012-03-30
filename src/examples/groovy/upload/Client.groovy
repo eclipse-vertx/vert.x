@@ -26,10 +26,10 @@ FileSystem.instance.props(filename) { ares ->
   def props = ares.result
   println "props is ${props}"
   def size = props.size
-  req.putHeader("Content-Length", size)
+  req.headers["Content-Length"] = size
   FileSystem.instance.open(filename) { ares2 ->
     def file = ares2.result
-    def rs = file.getReadStream()
+    def rs = file.readStream
     def pump = new Pump(rs, req)
     rs.endHandler { req.end() }
     pump.start()

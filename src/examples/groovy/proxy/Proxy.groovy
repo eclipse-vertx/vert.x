@@ -25,7 +25,7 @@ server = new HttpServer().requestHandler { req ->
   def c_req = client.request(req.method, req.uri) { c_res ->
     println "Proxying response: ${c_res.statusCode}"
     req.response.statusCode = c_res.statusCode
-    req.response.putAllHeaders(c_res.getAllHeaders())
+    req.response.headers.putAll(c_res.headers.toMap())
     c_res.dataHandler { data ->
       println "Proxying response body: $data"
       req.response << data
@@ -33,7 +33,7 @@ server = new HttpServer().requestHandler { req ->
     c_res.endHandler { req.response.end() }
   }
 
-  c_req.putAllHeaders(req.getAllHeaders())
+  c_req.headers.putAll(req.headers.toMap())
   req.dataHandler { data ->
     println "Proxying request body ${data}"
     c_req << data

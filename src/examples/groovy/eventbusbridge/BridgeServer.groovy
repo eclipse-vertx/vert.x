@@ -27,7 +27,7 @@ server.requestHandler { req ->
 }
 
 // Create a SockJS bridge which lets everything through (be careful!)
-new SockJSBridge(server, new AppConfig(prefix: '/eventbus'), [[:]]);
+new SockJSBridge(server, new AppConfig(prefix: '/eventbus'), [[:]])
 
 server.listen(8080)
 

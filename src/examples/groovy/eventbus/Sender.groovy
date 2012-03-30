@@ -28,5 +28,5 @@ def count = 0
 Vertx.instance.setPeriodic(2000) {
   def msg = "some-message-${count++}"
   eb.send(address, msg)
-  println "sent message ${msg}"
+  println "sent message $msg"
 }

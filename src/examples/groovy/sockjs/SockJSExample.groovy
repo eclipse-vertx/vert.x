@@ -22,7 +22,7 @@ server = new HttpServer()
 
 // Serve the index page
 server.requestHandler { req ->
-  if (req.uri == "/") req.response.sendFile('sockjs/index.html')
+  if (req.uri == "/") req.response.sendFile 'sockjs/index.html'
 }
 
 // The handler for the SockJS app - we just echo data back

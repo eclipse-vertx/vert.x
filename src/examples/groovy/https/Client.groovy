@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-
-
-package https
-
 import org.vertx.groovy.core.http.HttpClient
 
 client = new HttpClient(port: 4443, SSL: true, trustAll: true)
+
 client.getNow('/') { resp ->
   println "Got response ${resp.statusCode}"
-  resp.bodyHandler { body ->
-    println "Got data ${body}"
-  }
+  resp.bodyHandler { body ->  println "Got data ${body}" }
 }
 
 def vertxStop() {

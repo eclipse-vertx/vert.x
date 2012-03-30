@@ -23,16 +23,16 @@ def rm = new RouteMatcher()
 // Extract the params from the uri
 rm.get('/details/:user/:id') { req ->
   // And just spit them out in the response
-  req.response.end "User: ${req.getAllParams()['user']} ID: ${req.getAllParams()['id']}"
+  req.response.end "User: ${req.params['user']} ID: ${req.params['id']}"
 }
 
 // Catch all - serve the index page
 rm.getWithRegEx('.*') { req ->
-  req.response.sendFile("route_match/index.html")
+  req.response.sendFile "route_match/index.html"
 }
 
 server = new HttpServer().requestHandler(rm).listen(8080)
 
 def vertxStop() {
-  server.close();
+  server.close()
 }
