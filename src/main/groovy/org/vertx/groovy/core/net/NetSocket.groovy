@@ -168,8 +168,9 @@ class NetSocket implements ReadStream, WriteStream {
    * Alias for {@link #write} so that we can use the left shift operator
    * in Groovy, just as we do with other writables.
    */
-  NetSocket leftShift(buff) {
-    write(buff)
+  NetSocket leftShift(Buffer buff) {
+    writeBuffer(buff)
+    this
   }
 
   /**

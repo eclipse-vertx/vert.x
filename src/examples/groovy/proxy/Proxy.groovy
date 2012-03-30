@@ -20,11 +20,11 @@ import org.vertx.groovy.core.http.HttpServer
 client = new HttpClient(port: 8282)
 
 server = new HttpServer().requestHandler { req ->
-  println "Proxying request: ${req.getUri()}"
+  println "Proxying request: ${req.uri}"
 
-  def c_req = client.request(req.getMethod(), req.getUri()) { c_res ->
-    println "Proxying response: ${c_res.getStatusCode()}"
-    req.response.setStatusCode(c_res.getStatusCode())
+  def c_req = client.request(req.method, req.uri) { c_res ->
+    println "Proxying response: ${c_res.statusCode}"
+    req.response.statusCode = c_res.statusCode
     req.response.putAllHeaders(c_res.getAllHeaders())
     c_res.dataHandler { data ->
       println "Proxying response body: $data"

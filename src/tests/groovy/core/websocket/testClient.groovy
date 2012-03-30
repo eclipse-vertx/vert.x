@@ -27,7 +27,7 @@ tu = new TestUtils()
 tu.checkContext()
 
 server = new HttpServer()
-client = new HttpClient().setPort(8080)
+client = new HttpClient(port: 8080)
 
 def testEchoBinary() {
   echo(true)

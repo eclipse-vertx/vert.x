@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package org.vertx.groovy.core.http
 
 import org.vertx.groovy.core.buffer.Buffer
@@ -48,7 +46,7 @@ import org.vertx.java.core.http.HttpClientRequest as JHttpClientRequest
  * <pre>
  *
  * def req = httpClient.post("/some-url") { response ->
- *   System.out.println("Got response: ${response.getStatusCode()}")
+ *   println "Got response: ${response.statusCode}"
  * }
  *
  * req.putHeader("some-header", "hello")
@@ -66,9 +64,17 @@ import org.vertx.java.core.http.HttpClientRequest as JHttpClientRequest
 class HttpClientRequest implements WriteStream {
 
   private final JHttpClientRequest jRequest;
+  private final Headers headers = new Headers();
 
   protected HttpClientRequest(JHttpClientRequest jRequest) {
     this.jRequest = jRequest
+  }
+
+  /**
+   * @return The headers
+   */
+  public Headers getHeaders() {
+    return headers;
   }
 
   /**
@@ -248,7 +254,7 @@ class HttpClientRequest implements WriteStream {
    * @return @return A reference to this, so multiple method calls can be chained.
    */
   HttpClientRequest leftShift(Buffer buff) {
-    jRequest.write(buff.toJavaBuffer())
+    writeBuffer(buff)
     this
   }
 
@@ -260,5 +266,41 @@ class HttpClientRequest implements WriteStream {
   HttpClientRequest leftShift(String str) {
     jRequest.write(str)
     this
+  }
+
+   /**
+   * Represents the headers of a client request
+   */
+  class Headers {
+
+    /**
+     * Inserts a header into the request. The {@link Object#toString()} method will be called on {@code value} to determine
+     * the String value to actually use for the header value.<p>
+     *
+     * @return A reference to this, so multiple method calls can be chained.
+     */
+    HttpClientRequest put(String key, Object value) {
+      jRequest.putHeader(key, value)
+      HttpClientRequest.this
+    }
+
+    /**
+     * Same as {@link #put(String, Object)}
+     */
+    HttpClientRequest putAt(String key, Object value) {
+      put(key, value)
+    }
+
+    /**
+     * Inserts all the specified headers into the response.
+     * The {@link Object#toString()} method will be called on the header values {@code value} to determine
+     * the String value to actually use for the header value.<p>
+     *
+     * @return A reference to this, so multiple method calls can be chained.
+     */
+    HttpClientRequest putAll(Map<String, ? extends Object> m) {
+      jRequest.putAllHeaders(m)
+      HttpClientRequest.this
+    }
   }
 }

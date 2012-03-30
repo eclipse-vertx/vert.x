@@ -177,12 +177,12 @@ def testPATCHSSLChunked() {
 def httpMethod(ssl, method, chunked)  {
 
   if (ssl) {
-    server.setSSL(true)
-    server.setKeyStorePath("./src/tests/keystores/server-keystore.jks")
-    server.setKeyStorePassword("wibble")
-    server.setTrustStorePath("./src/tests/keystores/server-truststore.jks")
-    server.setTrustStorePassword("wibble")
-    server.setClientAuthRequired(true)
+    server.SSL = true
+    server.keyStorePath = "./src/tests/keystores/server-keystore.jks"
+    server.keyStorePassword = "wibble"
+    server.trustStorePath = "./src/tests/keystores/server-truststore.jks"
+    server.trustStorePassword = "wibble"
+    server.clientAuthRequired = true
   }
 
   path = "/someurl/blah.html"
@@ -191,16 +191,16 @@ def httpMethod(ssl, method, chunked)  {
 
   server.requestHandler { req ->
     tu.checkContext()
-    tu.azzert(req.uri.equals(uri))
-    tu.azzert(req.method.equals(method))
-    tu.azzert(req.path.equals(path))
-    tu.azzert(req.query.equals(query))
-    tu.azzert(req.getHeader("header1").equals("vheader1"))
-    tu.azzert(req.getHeader("header2").equals("vheader2"))
-    tu.azzert(req.getAllParams().get("param1").equals("vparam1"))
-    tu.azzert(req.getAllParams().get("param2").equals("vparam2"))
-    req.response.putHeader('rheader1', 'vrheader1')
-    req.response.putHeader('rheader2', 'vrheader2')
+    tu.azzert(req.uri == uri)
+    tu.azzert(req.method == method)
+    tu.azzert(req.path == path)
+    tu.azzert(req.query == query)
+    tu.azzert(req.headers["header1"] == "vheader1")
+    tu.azzert(req.headers["header2"] == "vheader2")
+    tu.azzert(req.params["param1"] == "vparam1")
+    tu.azzert(req.params["param2"] == "vparam2")
+    req.response.headers['rheader1'] = 'vrheader1'
+    req.response.headers['rheader2'] = 'vrheader2'
     body = new Buffer()
     req.dataHandler { data ->
       tu.checkContext()
@@ -210,12 +210,12 @@ def httpMethod(ssl, method, chunked)  {
     req.endHandler {
       tu.checkContext()
       if (!chunked) {
-        req.response.putHeader('Content-Length', body.length())
+        req.response.headers['Content-Length'] = body.length()
       }
       req.response << body
       if (chunked) {
-        req.response.putTrailer('trailer1', 'vtrailer1')
-        req.response.putTrailer('trailer2', 'vtrailer2')
+        req.response.trailers['trailer1'] = 'vtrailer1'
+        req.response.trailers['trailer2'] = 'vtrailer2'
       }
       req.response.end()
     }
@@ -223,20 +223,20 @@ def httpMethod(ssl, method, chunked)  {
   server.listen(8080)
 
   if (ssl) {
-    client.setSSL(true)
-    client.setKeyStorePath('./src/tests/keystores/client-keystore.jks')
-    client.setKeyStorePassword('wibble')
-    client.setTrustStorePath('./src/tests/keystores/client-truststore.jks')
-    client.setTrustStorePassword('wibble')
+    client.SSL = true
+    client.keyStorePath = "./src/tests/keystores/client-keystore.jks"
+    client.keyStorePassword = "wibble"
+    client.trustStorePath = "./src/tests/keystores/client-truststore.jks"
+    client.trustStorePassword = "wibble"
   }
 
   sentBuff = TestUtils.generateRandomBuffer(1000)
 
   request = client.request(method, uri, { resp ->
     tu.checkContext()
-    tu.azzert(200 == resp.getStatusCode())
-    tu.azzert('vrheader1'.equals(resp.getHeader('rheader1')))
-    tu.azzert('vrheader2'.equals(resp.getHeader('rheader2')))
+    tu.azzert(200 == resp.statusCode)
+    tu.azzert(resp.headers['rheader1'] == 'vrheader1')
+    tu.azzert(resp.headers['rheader2'] == 'vrheader2')
     body = new Buffer()
     resp.dataHandler { data ->
       tu.checkContext()
@@ -247,18 +247,18 @@ def httpMethod(ssl, method, chunked)  {
       tu.checkContext()
       tu.azzert(TestUtils.buffersEqual(sentBuff, body))
       if (chunked) {
-        tu.azzert('vtrailer1'.equals(resp.getTrailer('trailer1')))
-        tu.azzert('vtrailer2'.equals(resp.getTrailer('trailer2')))
+        tu.azzert(resp.trailers['trailer1'] == 'vtrailer1')
+        tu.azzert(resp.trailers['trailer2'] == 'vtrailer2')
       }
       tu.testComplete()
     }
   })
 
-  request.setChunked(chunked)
-  request.putHeader('header1', 'vheader1')
-  request.putHeader('header2', 'vheader2')
+  request.chunked = true
+  request.headers['header1'] = 'vheader1'
+  request.headers['header2'] = 'vheader2'
   if (!chunked) {
-    request.putHeader('Content-Length', sentBuff.length())
+    request.headers['Content-Length'] = sentBuff.length()
   }
 
   request << sentBuff
