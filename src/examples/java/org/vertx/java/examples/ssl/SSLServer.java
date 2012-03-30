@@ -24,8 +24,6 @@ import org.vertx.java.deploy.Verticle;
 
 public class SSLServer implements Verticle {
 
-  private NetServer server;
-
   public void start() {
     new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
@@ -39,6 +37,5 @@ public class SSLServer implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

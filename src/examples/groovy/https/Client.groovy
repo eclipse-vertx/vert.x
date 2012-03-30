@@ -16,13 +16,8 @@
 
 import org.vertx.groovy.core.http.HttpClient
 
-client = new HttpClient(port: 4443, SSL: true, trustAll: true)
-
-client.getNow('/') { resp ->
+new HttpClient(port: 4443, SSL: true, trustAll: true).getNow('/') { resp ->
   println "Got response ${resp.statusCode}"
   resp.bodyHandler { body ->  println "Got data ${body}" }
 }
 
-def vertxStop() {
-  client.close()
-}

@@ -29,10 +29,8 @@ import java.util.Set;
 
 public class PubSubServer implements Verticle {
 
-  private NetServer server;
-
   public void start() {
-    server = new NetServer().connectHandler(new Handler<NetSocket>() {
+    new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
           public void handle(Buffer frame) {
@@ -60,6 +58,5 @@ public class PubSubServer implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

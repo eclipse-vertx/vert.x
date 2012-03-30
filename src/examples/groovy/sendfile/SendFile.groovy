@@ -16,11 +16,8 @@ import org.vertx.groovy.core.http.HttpServer
 * limitations under the License.
 */
 
-server = new HttpServer().requestHandler { req ->
+new HttpServer().requestHandler { req ->
   def filename = "sendfile/" + (req.uri == "/" ? "index.html" : "." + req.uri)
   req.response.sendFile filename
 }.listen(8080)
 
-def vertxStop() {
-  server.close()
-}

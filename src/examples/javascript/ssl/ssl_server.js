@@ -22,10 +22,4 @@ var server = new vertx.NetServer().setSSL(true).
 
 server.connectHandler(function(sock) {
   new vertx.Pump(sock, sock).start();
-})
-
-server.listen(1234, 'localhost');
-
-function vertxStop() {
-  server.close();
-}
+}).listen(1234, 'localhost');

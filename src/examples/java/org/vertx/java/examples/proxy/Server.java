@@ -25,10 +25,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class Server implements Verticle {
 
-  private HttpServer server;
-
   public void start() {
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
@@ -55,6 +53,5 @@ public class Server implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

@@ -17,16 +17,12 @@ include Vertx
 
 conns = SharedData::get_set("conns")
 
-@server = NetServer.new.connect_handler do |socket|
+NetServer.new.connect_handler do |socket|
   conns.add(socket.write_handler_id)
   socket.data_handler do |data|
     conns.each { |address| EventBus::send(address, data) }
   end
   socket.closed_handler { conns.delete(socket.write_handler_id) }
 end.listen(1234)
-
-def vertx_stop
-  @server.close
-end
 
 

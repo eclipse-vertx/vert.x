@@ -15,12 +15,8 @@
 require "vertx"
 include Vertx
 
-@server = HttpServer.new.websocket_handler do |ws|
+HttpServer.new.websocket_handler do |ws|
   ws.data_handler { |buffer| ws.write_text_frame(buffer.to_s) }
 end.request_handler do |req|
   req.response.send_file("websockets/ws.html") if req.uri == "/"
 end.listen(8080)
-
-def vertx_stop
-  @server.close
-end

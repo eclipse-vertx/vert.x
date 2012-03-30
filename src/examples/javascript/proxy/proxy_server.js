@@ -17,7 +17,7 @@ load('vertx.js')
 
 var client = new vertx.HttpClient().setPort(8282);
 
-var server = new vertx.HttpServer().requestHandler(function(req) {
+new vertx.HttpServer().requestHandler(function(req) {
   stdout.println("Proxying request: " + req.uri);
 
   var c_req = client.request(req.method, req.uri, function(c_res) {
@@ -39,8 +39,3 @@ var server = new vertx.HttpServer().requestHandler(function(req) {
   req.endHandler(function() { c_req.end() });
 
 }).listen(8080)
-
-function vertxStop() {
-  client.close()
-  server.close()
-}

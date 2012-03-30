@@ -29,7 +29,3 @@ server.connectHandler(function(sock) {
 })
 
 server.listen(1234, 'localhost');
-
-function vertxStop() {
-  server.close();
-}

@@ -40,7 +40,3 @@ Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
   ])
 
 @server.listen(8080, 'localhost')
-
-def vertx_stop 
-  server.close
-end

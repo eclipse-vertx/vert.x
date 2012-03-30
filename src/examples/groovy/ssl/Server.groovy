@@ -22,7 +22,3 @@ server = new NetServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStoreP
 server.connectHandler { sock ->
   new Pump(sock, sock).start()
 }.listen(1234, 'localhost')
-
-def vertxStop() {
-  server.close()
-}

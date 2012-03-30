@@ -41,8 +41,3 @@ server = new HttpServer().requestHandler { req ->
   req.endHandler{ c_req.end() }
 
 }.listen(8080)
-
-def vertxStop() {
-  client.close()
-  server.close()
-}

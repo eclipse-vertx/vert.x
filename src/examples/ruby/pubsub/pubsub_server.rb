@@ -15,7 +15,7 @@
 require "vertx"
 include Vertx
 
-@server = NetServer.new.connect_handler do |socket|
+NetServer.new.connect_handler do |socket|
   parser = RecordParser.new_delimited("\n") do |line|
     line = line.to_s.rstrip
     if line.start_with?("subscribe,")
@@ -39,7 +39,3 @@ include Vertx
   end
   socket.data_handler(parser)
 end.listen(1234)
-
-def vertx_stop
-  @server.close
-end

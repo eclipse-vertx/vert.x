@@ -34,6 +34,3 @@ new SockJSServer(server).installApp(new AppConfig(prefix: '/testapp')) { sock ->
 
 server.listen(8080)
 
-def vertxStop() {
-  server.close()
-}

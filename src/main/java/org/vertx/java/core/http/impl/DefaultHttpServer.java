@@ -116,6 +116,11 @@ public class DefaultHttpServer {
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx.addCloseHook(new Runnable() {
+      public void run() {
+        close();
+      }
+    });
   }
 
   public DefaultHttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {

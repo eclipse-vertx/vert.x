@@ -16,7 +16,7 @@
 
 load('vertx.js')
 
-var server = new vertx.HttpServer().requestHandler(function(req) {
+new vertx.HttpServer().requestHandler(function(req) {
   req.pause()
   var filename = vertx.generateUUID() + ".uploaded"
   vertx.FileSystem.open(filename, function(err, file) {
@@ -31,7 +31,3 @@ var server = new vertx.HttpServer().requestHandler(function(req) {
     req.resume()
   });
 }).listen(8080)
-
-function vertxStop() {
-  server.close()
-}

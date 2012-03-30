@@ -69,6 +69,11 @@ public class DefaultNetClient {
     if (VertxInternal.instance.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx.addCloseHook(new Runnable() {
+      public void run() {
+        close();
+      }
+    });
   }
 
   public void connect(int port, String host, final Handler<NetSocket> connectHandler) {

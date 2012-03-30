@@ -14,8 +14,4 @@ rm.getWithRegEx('.*', function(req) {
   req.response.sendFile("route_match/index.html");
 });
 
-var server = new vertx.HttpServer().requestHandler(rm).listen(8080);
-
-function vertxStop() {
-  server.close();
-}
+new vertx.HttpServer().requestHandler(rm).listen(8080);

@@ -16,7 +16,7 @@
 
 load('vertx.js')
 
-var server = new vertx.NetServer().connectHandler(function(socket) {
+new vertx.NetServer().connectHandler(function(socket) {
   var parser = new vertx.DelimitedParser("\n", function(line) {
     line = line.toString().replace(/\s+$/,""); // rtrim
     if (line.indexOf("subscribe,") == 0) {
@@ -44,7 +44,3 @@ var server = new vertx.NetServer().connectHandler(function(socket) {
   });
   socket.dataHandler(parser)
 }).listen(1234)
-
-function vertxStop() {
-  server.close()
-}

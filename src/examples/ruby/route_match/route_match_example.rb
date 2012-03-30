@@ -24,8 +24,4 @@ rm.get('/details/:user/:id') { |req| req.response.end("User: #{req.params['user'
 # Catch all - serve the index page
 rm.get_re('.*') { |req| req.response.send_file("route_match/index.html")}
 
-@server = HttpServer.new.request_handler(rm).listen(8080)
-
-def vertx_stop
-  @server.close
-end
+HttpServer.new.request_handler(rm).listen(8080)

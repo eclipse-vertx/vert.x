@@ -28,14 +28,11 @@ import org.vertx.java.deploy.Verticle;
 
 public class ProxyServer implements Verticle {
 
-  private HttpClient client;
-  private HttpServer server;
-
   public void start()  {
 
-    client = new HttpClient().setHost("localhost").setPort(8282);
+    final HttpClient client = new HttpClient().setHost("localhost").setPort(8282);
 
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         System.out.println("Proxying request: " + req.uri);
         final HttpClientRequest cReq = client.request(req.method, req.uri, new Handler<HttpClientResponse>() {
@@ -75,7 +72,5 @@ public class ProxyServer implements Verticle {
   }
 
   public void stop() {
-    client.close();
-    server.close();
   }
 }

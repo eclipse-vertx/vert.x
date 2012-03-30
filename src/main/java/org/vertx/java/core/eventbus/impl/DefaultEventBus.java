@@ -359,7 +359,7 @@ public class DefaultEventBus extends EventBus {
                                  AsyncResultHandler<Void> completionHandler,
                                  boolean replyHandler, boolean localOnly) {
     Context context = VertxInternal.instance.getOrAssignContext();
-    String id = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
     if (address == null) {
       address = id;
     }
@@ -395,6 +395,12 @@ public class DefaultEventBus extends EventBus {
         callCompletionHandler(completionHandler);
       }
     }
+    context.addCloseHook(new Runnable() {
+      public void run() {
+        // Unregister handlers automatically when undeployed
+        unregisterHandler(id);
+      }
+    });
     return id;
   }
 

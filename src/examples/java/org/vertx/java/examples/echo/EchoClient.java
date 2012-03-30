@@ -30,7 +30,7 @@ public class EchoClient implements Verticle {
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            System.out.println("Net client receiving: " + buffer.toString("UTF-8"));
+            System.out.println("Net client receiving: " + buffer);
           }
         });
 

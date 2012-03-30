@@ -141,12 +141,20 @@ public class VerticleManager {
     final int instCount = instances;
 
     class AggHandler {
-      final AtomicInteger count = new AtomicInteger(0);
+      AtomicInteger count = new AtomicInteger(0);
+
+      // We need a context on which to execute the done Handler
+      // We use the current calling context (if any) or assign a new one
+      Context doneContext = VertxInternal.instance.getOrAssignContext();
 
       void started() {
         if (count.incrementAndGet() == instCount) {
           if (doneHandler != null) {
-            doneHandler.handle(null);
+            doneContext.execute(new Runnable() {
+              public void run() {
+                doneHandler.handle(null);
+              }
+            });
           }
         }
       }
@@ -202,13 +210,11 @@ public class VerticleManager {
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
-    if (deployments.isEmpty()) {
-      doneHandler.handle(null);
-    } else {
+    final UndeployCount count = new UndeployCount();
+    if (!deployments.isEmpty()) {
       // We do it this way since undeploy is itself recursive - we don't want
       // to attempt to undeploy the same verticle twice if it's a child of
       // another
-      final UndeployCount count = new UndeployCount();
       while (!deployments.isEmpty()) {
         String name = deployments.keySet().iterator().next();
         count.incRequired();
@@ -218,8 +224,8 @@ public class VerticleManager {
           }
         });
       }
-      count.setHandler(doneHandler);
     }
+    count.setHandler(doneHandler);
   }
 
   public synchronized void undeploy(String name, final Handler<Void> doneHandler) {
@@ -289,6 +295,7 @@ public class VerticleManager {
             }
             count.undeployed();
             LoggerFactory.removeLogger(holder.loggerName);
+            holder.context.runCloseHooks();
           }
         });
       }
@@ -349,6 +356,7 @@ public class VerticleManager {
     int count;
     int required;
     Handler<Void> doneHandler;
+    Context context = VertxInternal.instance.getOrAssignContext();
 
     synchronized void undeployed() {
       count++;
@@ -366,7 +374,11 @@ public class VerticleManager {
 
     void checkDone() {
       if (doneHandler != null && count == required) {
-        doneHandler.handle(null);
+        context.execute(new Runnable() {
+          public void run() {
+            doneHandler.handle(null);
+          }
+        });
       }
     }
   }

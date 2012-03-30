@@ -16,9 +16,7 @@ import org.vertx.groovy.core.http.HttpClient
 * limitations under the License.
 */
 
-client = new HttpClient(port: 8080)
-
-def request = client.put('/') { resp ->
+def request = new HttpClient(port: 8080).put('/') { resp ->
   println "Got response ${resp.statusCode}"
   resp.bodyHandler { body -> println "Got data ${body}" }
 }
@@ -28,7 +26,3 @@ request.chunked = true
 10.times { request << "client-chunk-" + it }
 
 request.end()
-
-def vertxStop() {
-  client.close()
-}

@@ -31,11 +31,9 @@ import java.util.UUID;
 
 public class UploadServer implements Verticle {
 
-  private HttpServer server;
-
   public void start() {
 
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
         // We first pause the request so we don't receive any data between now and when the file is opened
@@ -72,6 +70,5 @@ public class UploadServer implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

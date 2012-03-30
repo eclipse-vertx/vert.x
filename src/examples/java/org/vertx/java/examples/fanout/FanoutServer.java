@@ -29,12 +29,10 @@ import java.util.Set;
 
 public class FanoutServer implements Verticle {
 
-  private NetServer server;
-
   public void start()  {
     final Set<String> connections = SharedData.instance.getSet("conns");
 
-    server = new NetServer().connectHandler(new Handler<NetSocket>() {
+    new NetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         connections.add(socket.writeHandlerID);
         socket.dataHandler(new Handler<Buffer>() {
@@ -54,6 +52,5 @@ public class FanoutServer implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

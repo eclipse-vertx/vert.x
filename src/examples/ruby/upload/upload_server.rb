@@ -16,7 +16,7 @@ require "vertx"
 require "set"
 include Vertx
 
-@server = HttpServer.new.request_handler do |req|
+server = HttpServer.new.request_handler do |req|
   req.pause
   filename = (0...9).map { ('A'..'Z').to_a[rand(26)] }.join
   filename << ".uploaded"
@@ -34,7 +34,3 @@ include Vertx
     req.resume
   end
 end.listen(8080)
-
-def vertx_stop
-  @server.close
-end

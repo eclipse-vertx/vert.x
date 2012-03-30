@@ -15,10 +15,10 @@
 require "vertx"
 include Vertx
 
-@client = HttpClient.new
-@client.port = 8080
-@client.host = "localhost"
-req = @client.put("/someurl") do |resp|
+client = HttpClient.new
+client.port = 8080
+client.host = "localhost"
+req = client.put("/someurl") do |resp|
   puts "Got response #{resp.status_code}"
   resp.body_handler { |buffer| puts "Got data #{buffer}" }
 end
@@ -27,7 +27,3 @@ for i in 0..9
   req.write_str("client-data-chunk-#{i}")
 end
 req.end
-
-def vertx_stop
-  @client.close
-end

@@ -79,18 +79,18 @@ if (!vertx.EventBus) {
       handlerMap[handler] = wrapped;
 
       if (localOnly) {
-        jEventBus.registerLocalHandler(address, wrapped);
+        return jEventBus.registerLocalHandler(address, wrapped);
       } else {
-        jEventBus.registerHandler(address, wrapped);
+        return jEventBus.registerHandler(address, wrapped);
       }
     }
 
     that.registerLocalHandler = function(address, handler) {
-      registerHandler(address, handler, true);
+      return registerHandler(address, handler, true);
     };
 
     that.registerHandler = function(address, handler) {
-      registerHandler(address, handler, false);
+      return registerHandler(address, handler, false);
     };
 
     that.unregisterHandler = function(address, handler) {

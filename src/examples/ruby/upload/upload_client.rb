@@ -15,10 +15,10 @@
 require "vertx"
 include Vertx
 
-@client = HttpClient.new
-@client.port = 8080
-@client.host = "localhost"
-req = @client.put("/someurl") { |resp| puts "Response #{resp.status_code}" }
+client = HttpClient.new
+client.port = 8080
+client.host = "localhost"
+req = client.put("/someurl") { |resp| puts "Response #{resp.status_code}" }
 filename = "upload/upload.txt"
 FileSystem::props(filename) do |err, props|
   size = props.size
@@ -29,8 +29,4 @@ FileSystem::props(filename) do |err, props|
     rs.end_handler { req.end }
     pump.start
   end
-end
-
-def vertx_stop
-  @client.close
 end

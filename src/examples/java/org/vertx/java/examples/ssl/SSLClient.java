@@ -24,10 +24,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class SSLClient implements Verticle {
 
-  private NetClient client;
-
   public void start() {
-    client = new NetClient().setSSL(true).setTrustAll(true).connect(1234, "localhost", new Handler<NetSocket>() {
+    new NetClient().setSSL(true).setTrustAll(true).connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
@@ -45,6 +43,5 @@ public class SSLClient implements Verticle {
   }
 
   public void stop() {
-    client.close();
   }
 }

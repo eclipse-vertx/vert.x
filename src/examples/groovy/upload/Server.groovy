@@ -18,7 +18,7 @@ import org.vertx.groovy.core.file.FileSystem
 * limitations under the License.
 */
 
-server = new HttpServer().requestHandler { req ->
+new HttpServer().requestHandler { req ->
   req.pause()
   def filename = "${UUID.randomUUID()}.uploaded"
   FileSystem.instance.open(filename) { ares ->
@@ -34,7 +34,3 @@ server = new HttpServer().requestHandler { req ->
     req.resume()
   }
 }.listen(8080)
-
-def vertxStop() {
-  server.close()
-}

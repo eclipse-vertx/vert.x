@@ -28,4 +28,8 @@ public interface Context {
   DeploymentHandle getDeploymentHandle();
 
   void reportException(Throwable t);
+
+  void addCloseHook(Runnable hook);
+
+  void runCloseHooks();
 }

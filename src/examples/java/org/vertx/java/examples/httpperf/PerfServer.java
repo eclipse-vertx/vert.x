@@ -23,10 +23,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class PerfServer implements Verticle {
 
-  private HttpServer server;
-
   public void start() {
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         // Just return OK
         req.response.end();
@@ -38,6 +36,5 @@ public class PerfServer implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

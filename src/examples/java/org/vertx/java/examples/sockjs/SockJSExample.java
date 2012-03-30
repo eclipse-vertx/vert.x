@@ -27,10 +27,8 @@ import org.vertx.java.deploy.Verticle;
 
 public class SockJSExample implements Verticle {
 
-  private HttpServer server;
-
   public void start() {
-    server = new HttpServer();
+    HttpServer server = new HttpServer();
 
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -54,6 +52,5 @@ public class SockJSExample implements Verticle {
   }
 
   public void stop() {
-    server.close();
   }
 }

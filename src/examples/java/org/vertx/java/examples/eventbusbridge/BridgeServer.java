@@ -16,10 +16,8 @@ import java.util.List;
  */
 public class BridgeServer implements Verticle {
 
-  HttpServer server;
-
   public void start() throws Exception {
-    server = new HttpServer();
+    HttpServer server = new HttpServer();
 
     // Also serve the static resources. In real life this would probably be done by a CDN
     server.requestHandler(new Handler<HttpServerRequest>() {
@@ -36,7 +34,6 @@ public class BridgeServer implements Verticle {
     server.listen(8080);
   }
 
-  public void stop() throws Exception {
-    server.close();
+  public void stop() {
   }
 }

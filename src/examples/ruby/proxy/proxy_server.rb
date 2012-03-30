@@ -15,11 +15,11 @@
 require "vertx"
 include Vertx
 
-@client = HttpClient.new
-@client.port = 8282
-@client.host = "localhost"
+client = HttpClient.new
+client.port = 8282
+client.host = "localhost"
 
-@server = HttpServer.new.request_handler do |req|
+HttpServer.new.request_handler do |req|
   puts "Proxying request: #{req.uri}"
 
   c_req = @client.request(req.method, req.uri) do |c_res|
@@ -41,8 +41,3 @@ include Vertx
   req.end_handler { c_req.end }
 
 end.listen(8080)
-
-def vertx_stop
-  @client.close
-  @server.close
-end
