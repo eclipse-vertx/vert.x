@@ -1,9 +1,3 @@
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.core.parsetools.RecordParser
-import org.vertx.java.core.shareddata.SharedData
-import org.vertx.groovy.core.eventbus.EventBus
-import org.vertx.groovy.core.buffer.Buffer
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -19,6 +13,12 @@ import org.vertx.groovy.core.buffer.Buffer
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+import org.vertx.groovy.core.net.NetServer
+import org.vertx.groovy.core.parsetools.RecordParser
+import org.vertx.java.core.shareddata.SharedData
+import org.vertx.groovy.core.eventbus.EventBus
+import org.vertx.groovy.core.buffer.Buffer
 
 new NetServer().connectHandler { socket ->
   def parser = RecordParser.newDelimited("\n") { line ->

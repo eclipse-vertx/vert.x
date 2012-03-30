@@ -1,6 +1,3 @@
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.core.streams.Pump
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -17,8 +14,13 @@ import org.vertx.groovy.core.streams.Pump
 * limitations under the License.
 */
 
-server = new NetServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
+package ssl
+
+import org.vertx.groovy.core.net.NetServer
+import org.vertx.groovy.core.streams.Pump
+
+server = new NetServer(SSL: true, keyStorePath: "server-keystore.jks", keyStorePassword: "wibble")
 
 server.connectHandler { sock ->
   new Pump(sock, sock).start()
-}.listen(1234, 'localhost')
+}.listen(1234, "localhost")

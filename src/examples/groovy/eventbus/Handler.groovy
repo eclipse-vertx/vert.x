@@ -1,5 +1,3 @@
-import org.vertx.groovy.core.eventbus.EventBus
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -15,6 +13,7 @@ import org.vertx.groovy.core.eventbus.EventBus
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import org.vertx.groovy.core.eventbus.EventBus
 
 eb = EventBus.instance
 

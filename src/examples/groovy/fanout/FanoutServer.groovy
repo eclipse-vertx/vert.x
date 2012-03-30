@@ -1,7 +1,3 @@
-import org.vertx.java.core.shareddata.SharedData
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.core.eventbus.EventBus
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -17,15 +13,18 @@ import org.vertx.groovy.core.eventbus.EventBus
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import org.vertx.java.core.shareddata.SharedData
+import org.vertx.groovy.core.net.NetServer
+import org.vertx.groovy.core.eventbus.EventBus
 
-def conns = SharedData.instance.getSet('conns')
+conns = SharedData.instance.getSet('conns')
 
-def eb = EventBus.instance
+eb = EventBus.instance
 
 server = new NetServer().connectHandler { socket ->
-  conns.add(socket.writeHandlerID)
+  conns << socket.writeHandlerID
   socket.dataHandler { data ->
     for (id in conns) { eb.send(id, data) }
   }
-  socket.closedHandler{ conns.remove(socket.writeHandlerID) }
+  socket.closedHandler { conns.remove(socket.writeHandlerID) }
 }.listen(1234)
