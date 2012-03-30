@@ -70,8 +70,7 @@ class SockJSServer {
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sessions are created
    */
-  public void installApp(AppConfig config,
-                         Closure sockHandler) {
+  public void installApp(AppConfig config, Closure sockHandler) {
     jServer.installApp(config, {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
       sockHandler(new SockJSSocket(jSock) {
@@ -114,5 +113,15 @@ class SockJSServer {
 
       })
     } as Handler)
+  }
+
+  /**
+   * Install an application
+   * @param config The application configuration as a map. Used to initialise
+   * an instance of {@link AppConfig}.
+   * @param sockHandler A handler that will be called when new SockJS sessions are created
+   */
+  public void installApp(Map config, Closure sockHandler) {
+    installApp(new AppConfig(config), sockHandler)
   }
 }
