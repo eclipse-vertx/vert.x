@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package core.net
 
 import org.vertx.groovy.core.buffer.Buffer
@@ -18,15 +34,15 @@ void testEchoSSL() {
 
 void echo(boolean ssl) {
 
-  server = new NetServer();
+  server = new NetServer()
 
   if (ssl) {
-    server.setSSL(true)
-    server.setKeyStorePath("./src/tests/keystores/server-keystore.jks")
-    server.setKeyStorePassword("wibble")
-    server.setTrustStorePath("./src/tests/keystores/server-truststore.jks")
-    server.setTrustStorePassword("wibble")
-    server.setClientAuthRequired(true)
+    server.SSL = true
+    server.keyStorePath = "./src/tests/keystores/server-keystore.jks"
+    server.keyStorePassword = "wibble"
+    server.trustStorePath = "./src/tests/keystores/server-truststore.jks"
+    server.trustStorePassword = "wibble"
+    server.clientAuthRequired = true
   }
 
   server.connectHandler { socket ->
@@ -41,11 +57,11 @@ void echo(boolean ssl) {
   client = new NetClient()
 
   if (ssl) {
-    client.setSSL(true)
-    client.setKeyStorePath("./src/tests/keystores/client-keystore.jks")
-    client.setKeyStorePassword("wibble")
-    client.setTrustStorePath("./src/tests/keystores/client-truststore.jks")
-    client.setTrustStorePassword("wibble")
+    client.SSL = true
+    client.keyStorePath = "./src/tests/keystores/client-keystore.jks"
+    client.keyStorePassword = "wibble"
+    client.trustStorePath = "./src/tests/keystores/client-truststore.jks"
+    client.trustStorePassword = "wibble"
   }
 
   client.connect(8080, "localhost", { socket ->

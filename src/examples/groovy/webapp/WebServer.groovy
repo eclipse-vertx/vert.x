@@ -23,10 +23,10 @@ def server =
 
 // Serve the static resources
 server.requestHandler { req ->
-  if (req.getPath() == '/') {
+  if (req.path == '/') {
     req.response.sendFile('web/index.html')
-  } else if (req.getPath().indexOf('..') == -1) {
-    req.response.sendFile("web/${req.getPath()}")
+  } else if (req.path.indexOf('..') == -1) {
+    req.response.sendFile("web/${req.path}")
   } else {
     req.response.setStatusCode(404)
     req.response.end()

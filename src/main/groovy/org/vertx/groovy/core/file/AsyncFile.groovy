@@ -88,6 +88,10 @@ class AsyncFile{
         jWS.writeBuffer(data.toJavaBuffer())
       }
 
+      void leftShift(Buffer data) {
+        writeBuffer(data)
+      }
+
       void setWriteQueueMaxSize(int maxSize) {
         jWS.setWriteQueueMaxSize(maxSize)
       }
