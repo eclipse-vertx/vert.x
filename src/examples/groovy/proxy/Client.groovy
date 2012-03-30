@@ -17,14 +17,16 @@ import org.vertx.groovy.core.http.HttpClient
 */
 
 client = new HttpClient(port: 8080)
+
 def request = client.put('/') { resp ->
   println "Got response ${resp.statusCode}"
   resp.bodyHandler { body -> println "Got data ${body}" }
 }
 
-request.setChunked(true)
+request.chunked = true
 
 10.times { request << "client-chunk-" + it }
+
 request.end()
 
 def vertxStop() {

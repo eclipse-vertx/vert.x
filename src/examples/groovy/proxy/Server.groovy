@@ -17,18 +17,19 @@ import org.vertx.groovy.core.http.HttpServer
 */
 
 server = new HttpServer().requestHandler { req ->
-  println "Got request ${req.getUri()}"
 
-  def hdrs = req.getAllHeaders()
-  for (k in hdrs) {
-    println "${k}: ${hdrs[k]}"
+  println "Got request ${req.uri}"
+
+  def names = req.headers.getNames()
+  for (name in names) {
+    println "${name}: ${req.headers[name]}"
   }
 
   req.dataHandler { data -> println "Got data $data" }
 
   req.endHandler {
     // Now send back a response
-    req.response.setChunked(true)
+    req.response.chunked = true
 
     10.times {
       req.response << "server-data-chunk-" + it

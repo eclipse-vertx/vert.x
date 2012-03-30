@@ -22,9 +22,7 @@ client = new NetClient(SSL: true, trustAll: true)
 
 client.connect(1234) { sock ->
 
-  sock.dataHandler { buff ->
-    println "client receiving ${buff}"
-  }
+  sock.dataHandler { buff ->  println "client receiving ${buff}" }
 
   // Now send some data
   10.times {

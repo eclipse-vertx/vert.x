@@ -21,9 +21,7 @@ import org.vertx.groovy.core.http.HttpClient
 client = new HttpClient(port: 8080)
 client.getNow('/') { resp ->
   println "Got response ${resp.statusCode}"
-  resp.bodyHandler { body ->
-    println "Got data ${body}"
-  }
+  resp.bodyHandler { body ->  println "Got data ${body}" }
 }
 
 def vertxStop() {

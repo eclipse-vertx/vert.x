@@ -26,5 +26,5 @@ server.requestHandler { req ->
 }.listen(4443, 'localhost')
 
 def vertxStop() {
-  server.close();
+  server.close()
 }

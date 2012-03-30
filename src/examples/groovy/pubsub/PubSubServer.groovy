@@ -27,22 +27,21 @@ server = new NetServer().connectHandler { socket ->
       def topicName = line.split(",", 2)[1]
       println "subscribing to ${topicName}"
       def topic = SharedData.instance.getSet(topicName)
-      topic.add(socket.getWriteHandlerID())
+      topic.add(socket.writeHandlerID)
     } else if (line.startsWith("unsubscribe")) {
       def topicName = line.split(",", 2)[1]
       println "unsubscribing from ${topicName}"
       def topic = SharedData.instance.getSet(topicName)
-      topic.remove(socket.getWriteHandlerID())
+      topic.remove(socket.writeHandlerID)
       if (topic.isEmpty()) {
         SharedData.instance.removeSet(topicName)
       }
-     } else if (line.startsWith("publish")) {
+    } else if (line.startsWith("publish")) {
       def sp = line.split(',', 3)
       println "publishing to ${sp[1]} with ${sp[2]}"
       def topic = SharedData.instance.getSet(sp[1])
-      def tarr = topic.toArray();
-      for (i in 0 ..< tarr.length) {
-        EventBus.instance.send(tarr[i], new Buffer(sp[2]))
+      for (id in topic) {
+        EventBus.instance.send(id, new Buffer(sp[2]))
       }
     }
   }

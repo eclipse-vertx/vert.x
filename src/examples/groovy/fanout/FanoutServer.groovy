@@ -23,14 +23,11 @@ def conns = SharedData.instance.getSet('conns')
 def eb = EventBus.instance
 
 server = new NetServer().connectHandler { socket ->
-  conns.add(socket.getWriteHandlerID())
+  conns.add(socket.writeHandlerID)
   socket.dataHandler { data ->
-    def aconns = conns.toArray()
-    for (i in 0 ..< aconns.length) {
-      eb.send(aconns[i], data)
-    }
+    for (id in conns) { eb.send(id, data) }
   }
-  socket.closedHandler{ conns.remove(socket.getWriteHandlerID()) }
+  socket.closedHandler{ conns.remove(socket.writeHandlerID) }
 }.listen(1234)
 
 def vertxStop() {

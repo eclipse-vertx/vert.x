@@ -50,7 +50,7 @@ container.with {
   // Deploy the busmods
 
   deployWorkerVerticle('busmods/mongo_persistor.js', appConf['persistor_conf'], 1, {
-    deployVerticle('StaticData.groovy');
+    deployVerticle('StaticData.groovy')
   })
   deployVerticle('busmods/auth_mgr.js', appConf['auth_mgr_conf'])
   deployWorkerVerticle('busmods/mailer.js', appConf['mailer_conf'])

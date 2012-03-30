@@ -21,7 +21,7 @@ import groovy.json.JsonBuilder
 eb = EventBus.instance
 log = Container.instance.logger
 
-def handler = { orderMsg ->
+handler = { orderMsg ->
   def order = orderMsg.body
 
   log.info "Received order in order manager ${stringify(order)}"
@@ -81,9 +81,9 @@ def sendEmail(email, items) {
   log.info "sent email: ${body}"
 }
 
-def address = "demo.orderMgr"
-eb.registerHandler(address, handler);
+address = "demo.orderMgr"
+eb.registerHandler(address, handler)
 
 def vertxStop() {
-  eb.unregisterHandler(address, handler);
+  eb.unregisterHandler(address, handler)
 }

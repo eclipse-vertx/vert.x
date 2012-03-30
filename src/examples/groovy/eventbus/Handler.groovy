@@ -18,7 +18,7 @@ import org.vertx.groovy.core.eventbus.EventBus
 
 eb = EventBus.instance
 
-def address = 'example.address'
+address = 'example.address'
 
 handler = { message -> println "Received message ${message.body}" }
 
