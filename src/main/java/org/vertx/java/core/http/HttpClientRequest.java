@@ -54,8 +54,8 @@ import java.util.Map;
  *   }
  * });
  *
- * req.putHeader("some-header", "hello");
- * req.putHeader("Content-Length", 5);
+ * req.headers().put("some-header", "hello");
+ * req.headers().put("Content-Length", 5);
  * req.write(new Buffer(new byte[]{1, 2, 3, 4, 5}));
  * req.write(new Buffer(new byte[]{6, 7, 8, 9, 10}));
  * req.end();
@@ -81,20 +81,17 @@ public abstract class HttpClientRequest implements WriteStream {
   public abstract HttpClientRequest setChunked(boolean chunked);
 
   /**
-   * Inserts a header into the request. The {@link Object#toString()} method will be called on {@code value} to determine
-   * the String value to actually use for the header value.<p>
-   *
-   * @return A reference to this, so multiple method calls can be chained.
+   * @return The HTTP headers
    */
-  public abstract HttpClientRequest putHeader(String key, Object value);
+  public abstract Map<String, Object> headers();
 
   /**
-   * Inserts all the specified headers into the request. The {@link Object#toString()} method will be called on the header values {@code value} to determine
-   * the String value to actually use for the header value.<p>
-   *
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param value The header value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest putAllHeaders(Map<String, ? extends Object> m);
+  public abstract HttpClientRequest putHeader(String name, Object value);
 
   /**
    * Write a {@link Buffer} to the request body.<p>

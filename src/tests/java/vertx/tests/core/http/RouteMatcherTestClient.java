@@ -222,9 +222,9 @@ public class RouteMatcherTestClient extends TestClientBase {
 
     Handler<HttpServerRequest> handler = new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        assert (req.getAllParams().size() == params.size());
+        assert (req.params().size() == params.size());
         for (Map.Entry<String, String> entry : params.entrySet()) {
-          assert (entry.getValue().equals(req.getAllParams().get(entry.getKey())));
+          assert (entry.getValue().equals(req.params().get(entry.getKey())));
         }
         req.response.end();
       }

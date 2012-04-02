@@ -343,10 +343,6 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
-  public void testResponseSetTrailerNonChunked() {
-    startTest(getMethodName());
-  }
-
   public void testUseResponseAfterComplete() {
     startTest(getMethodName());
   }

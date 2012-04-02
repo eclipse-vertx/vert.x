@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package org.vertx.groovy.core.http
 
 import org.vertx.groovy.core.buffer.Buffer
@@ -32,8 +30,6 @@ import org.vertx.java.core.Handler
 class HttpClientResponse implements ReadStream {
 
   private final org.vertx.java.core.http.HttpClientResponse jResponse
-  private final Headers headers = new Headers()
-  private final Trailers trailers = new Trailers()
 
   protected HttpClientResponse(org.vertx.java.core.http.HttpClientResponse jResponse) {
     this.jResponse = jResponse
@@ -42,15 +38,15 @@ class HttpClientResponse implements ReadStream {
   /**
    * @return The headers of the response
    */
-  Headers getHeaders() {
-    return headers
+  Map<String, String> getHeaders() {
+    return jResponse.headers()
   }
 
   /**
    * @return The trailers of the response
    */
-  Trailers getTrailers() {
-    return trailers
+  Map<String, String> getTrailers() {
+    return jResponse.trailers()
   }
 
   /**
@@ -103,79 +99,4 @@ class HttpClientResponse implements ReadStream {
     jResponse.resume()
   }
 
-  /**
-   * Represents the headers of a client response
-   */
-  class Headers {
-    /**
-     * @return Return the HTTP request header with the name {@code key} from this request, or null if there is no such header.
-     */
-    String getHeader(String key) {
-      jResponse.getHeader(key)
-    }
-
-    /**
-     * Same as {@link #getHeader(String)}
-     */
-    String getAt(String key) {
-      getHeader(key)
-    }
-
-    /**
-     * @return Return a set of all the HTTP header names in this request
-     */
-    Set<String> getNames() {
-      jResponse.getHeaderNames()
-    }
-
-    /**
-     * @return Returns a map of all headers in the request, If the request contains multiple headers with the same key, the values
-     * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
-     * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
-     */
-    Map<String, String> toMap() {
-      jResponse.getAllHeaders()
-    }
-  }
-
-  /**
-   * Represents the trailers of a client response
-   */
-  class Trailers {
-
-    /**
-     * Returns the trailer value for the specified {@code key}, or null, if there is no such header in the response.<p>
-     * Trailers will only be available in the response if the server has sent a HTTP chunked response where headers have
-     * been inserted by the server on the last chunk. In such a case they won't be available on the client until the last chunk has
-     * been received.
-     */
-    String getTrailer(String key) {
-      jResponse.getTrailer(key)
-    }
-
-    /**
-     * Same as {@link #getTrailer(String)}
-     */
-    String getAt(String key) {
-      getTrailer(key)
-    }
-
-    /**
-     * Returns a map of all trailers in the response, If the response contains multiple trailers with the same key, the values
-     * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
-     * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.<p>
-     * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
-     */
-    Map<String, String> toMap() {
-      jResponse.getAllTrailers()
-    }
-
-    /**
-     * Returns a set of all trailer names in the response.<p>
-     * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
-     */
-    Set<String> getNames() {
-      jResponse.getTrailerNames()
-    }
-  }
 }

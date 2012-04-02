@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package core.http
+package core.eventbus
 
 import org.vertx.groovy.core.Vertx
 import org.vertx.groovy.core.eventbus.EventBus

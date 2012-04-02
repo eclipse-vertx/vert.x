@@ -42,7 +42,7 @@ class EventSourceTransport extends BaseTransport {
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        String sessionID = req.getAllParams().get("param0");
+        String sessionID = req.params().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
         session.register(new EventSourceListener(config.getMaxBytesStreaming(), req, session));
       }
@@ -68,8 +68,8 @@ class EventSourceTransport extends BaseTransport {
 
     public void sendFrame(String body) {
       if (!headersWritten) {
-        req.response.putHeader("Content-Type", "text/event-stream; charset=UTF-8");
-        req.response.putHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        req.response.headers().put("Content-Type", "text/event-stream; charset=UTF-8");
+        req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         setJSESSIONID(config, req);
         req.response.setChunked(true);
         req.response.write("\r\n");

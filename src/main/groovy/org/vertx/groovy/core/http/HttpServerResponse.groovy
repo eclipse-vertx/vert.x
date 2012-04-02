@@ -43,8 +43,6 @@ import org.vertx.java.core.Handler
 class HttpServerResponse implements WriteStream {
 
   private final org.vertx.java.core.http.HttpServerResponse jResponse
-  private final Headers headers = new Headers()
-  private final Trailers trailers = new Trailers()
 
   protected HttpServerResponse(org.vertx.java.core.http.HttpServerResponse jResponse) {
     this.jResponse = jResponse
@@ -53,15 +51,26 @@ class HttpServerResponse implements WriteStream {
   /**
    * @return The headers of the response
    */
-  Headers getHeaders() {
-    return headers
+  Map<String, Object> getHeaders() {
+    return jResponse.headers()
+  }
+
+  /**
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param value The header value
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  public HttpServerResponse putHeader(String name, Object value) {
+    getHeaders().put(name, value)
+    this
   }
 
   /**
    * @return The trailers of the response
    */
-  Trailers getTrailers() {
-    return trailers
+  Map<String, Object> getTrailers() {
+    return jResponse.trailers()
   }
 
   /**
@@ -267,80 +276,5 @@ class HttpServerResponse implements WriteStream {
     this
   }
 
-  /**
-   * Represents the headers of a server response
-   */
-  class Headers {
-    /**
-     * Inserts a header into the response. The {@link Object#toString()} method will be called on {@code value} to determine
-     * the String value to actually use for the header value.<p>
-     *
-     * @return A reference to this, so multiple method calls can be chained.
-     */
-    HttpServerResponse put(String key, Object value) {
-      jResponse.putHeader(key, value)
-      HttpServerResponse.this
-    }
-
-    /**
-     * Same as {@link #put(String, Object)}
-     */
-    HttpServerResponse putAt(String key, Object value) {
-      put(key, value)
-    }
-
-    /**
-     * Inserts all the specified headers into the response.
-     * The {@link Object#toString()} method will be called on the header values {@code value} to determine
-     * the String value to actually use for the header value.<p>
-     *
-     * @return A reference to this, so multiple method calls can be chained.
-     */
-    HttpServerResponse putAll(Map<String, ? extends Object> m) {
-      jResponse.putAllHeaders(m)
-      HttpServerResponse.this
-    }
-  }
-
-  /**
-   * Represents the trailers of a server response
-   */
-  class Trailers {
-
-     /**
-     * Inserts a trailer into the response. The {@link Object#toString()} method
-     * will be called on {@code value} to determine
-     * the String value to actually use for the trailer value.<p>
-     * Trailers are only sent if you are using a HTTP chunked response.<p>
-     *
-     * @return A reference to this, so multiple method calls can be chained.
-     */
-    HttpServerResponse put(String key, Object value) {
-      jResponse.putTrailer(key, value)
-      HttpServerResponse.this
-    }
-
-    /**
-     * Same as {@link #put(String, Object)}
-     */
-    HttpServerResponse putAt(String key, Object value) {
-      put(key, value)
-    }
-
-    /**
-     * Inserts all the specified trailers into the response.
-     * The {@link Object#toString()} method will be called on {@code value} to determine
-     * the String value to actually use for the trailer value.<p>
-     * Trailers are only sent if you are using a HTTP chunked response.<p>
-     *
-     * @return A reference to this, so multiple method calls can be chained.
-     */
-    HttpServerResponse putAll(Map<String, ? extends Object> m) {
-      jResponse.putAllTrailers(m);
-      HttpServerResponse.this
-    }
-
-
-  }
 
 }
