@@ -28,9 +28,6 @@ Issues/Ideas
 1) Consider wrapping libev in Java API
 2) Consider using disruptor https://code.google.com/p/disruptor/ as alternative to concurrent queues
 3) StartTLS
-4) Synchronous versions of filesystem ops ??
-5) Filesystem lock + watch
-6) Netty needs to implement event loop
 7) HTTP server side 100-continue handling
 8) HTTPClient should pool HTTP connections in same way as redis client, i.e. have HTTPPool and HTTPConnection class -
 otherwise can't do proper pipelining since can't guarantee same connection.
@@ -44,7 +41,6 @@ it will go into a pending list, like with HttpClientRequest
 
 9) HTTP connection reconnection.
 10) Look at Redis cluster support in client
-11) Cleanup package config and core vs optional dependencies
 12) Event bus should be paritioned into "application groups" for isolation.
 13) DHT
 14) Wire protocol so non JVM runtimes can join the event bus - provide event bus API in MRI ruby etc
@@ -59,6 +55,9 @@ which just encodes as string
 22) better error checking on parameters in ruby and js core layer
 23) Consider busmods (with dependencies) living in their own directory from "busmod" in the distro. Users can then install their own by copying busmod and deps
 into dir. This will be available to all other verticles.
+24) Redis busmod
+25) AMQP busmod
+26) CommonJS/AMD support
 
 
 

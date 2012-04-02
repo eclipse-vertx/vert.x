@@ -16,7 +16,7 @@
 
 package org.vertx.java.core;
 
-import org.vertx.java.core.impl.VertxImpl;
+import org.vertx.java.core.impl.DefaultVertx;
 
 /**
  * A singleton instance of Vertx is available to all verticles.
@@ -28,7 +28,7 @@ import org.vertx.java.core.impl.VertxImpl;
  */
 public interface Vertx {
 
-  static Vertx instance = new VertxImpl();
+  static Vertx instance = new DefaultVertx();
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with

@@ -30,7 +30,7 @@ public class RouteMatchExample implements Verticle {
 
     rm.get("/details/:user/:id", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        req.response.end("User: " + req.getAllParams().get("user") + " ID: " + req.getAllParams().get("id"));
+        req.response.end("User: " + req.params().get("user") + " ID: " + req.params().get("id"));
       }
     });
 

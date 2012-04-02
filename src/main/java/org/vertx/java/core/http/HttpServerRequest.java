@@ -77,24 +77,14 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
   public final HttpServerResponse response;
 
   /**
-   * Return the HTTP request header with the name {@code key} from this request, or null if there is no such header.
-   */
-  public abstract String getHeader(String key);
-
-  /**
-   * Return a set of all the HTTP header names in this request
-   */
-  public abstract Set<String> getHeaderNames();
-
-  /**
    * Returns a map of all headers in the request, If the request contains multiple headers with the same key, the values
    * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
    * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
    */
-  public abstract Map<String, String> getAllHeaders();
+  public abstract Map<String, String> headers();
 
   /**
    * Returns a map of all the parameters in the request
    */
-  public abstract Map<String, String> getAllParams();
+  public abstract Map<String, String> params();
 }

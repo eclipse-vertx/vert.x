@@ -38,9 +38,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VertxImpl implements VertxInternal {
+public class DefaultVertx implements VertxInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
   private int backgroundPoolSize = 1;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
@@ -58,7 +58,7 @@ public class VertxImpl implements VertxInternal {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
-  public VertxImpl() {
+  public DefaultVertx() {
     timer.start();
   }
 

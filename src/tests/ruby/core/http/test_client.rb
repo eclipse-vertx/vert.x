@@ -233,6 +233,7 @@ def http_method(ssl, method, chunked)
   request = @client.request(method, uri) do |resp|
     @tu.check_context
     @tu.azzert(200 == resp.status_code)
+
     @tu.azzert('vrheader1' == resp.headers['rheader1'])
     @tu.azzert('vrheader2' == resp.headers['rheader2'])
     body = Buffer.create()

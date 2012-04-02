@@ -60,7 +60,7 @@ class WebSocketTransport extends BaseTransport {
 
     rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        request.response.putHeader("Allow", "GET");
+        request.response.headers().put("Allow", "GET");
         request.response.statusCode = 405;
         request.response.end();
       }

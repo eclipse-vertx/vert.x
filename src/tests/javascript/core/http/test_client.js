@@ -171,10 +171,7 @@ function testPATCHSSLChunked() {
   httpMethod(true, "PATCH", true)
 }
 
-
 function httpMethod(ssl, method, chunked) {
-
-  // logger.info("In method " + method);
 
   if (ssl) {
     server.setSSL(true);
@@ -195,11 +192,12 @@ function httpMethod(ssl, method, chunked) {
     tu.azzert(req.method === method);
     tu.azzert(req.path === path);
     tu.azzert(req.query === query);
+
     tu.azzert(req.headers()['header1'] === 'vheader1');
     tu.azzert(req.headers()['header2'] === 'vheader2');
     tu.azzert(req.params()['param1'] === 'vparam1');
     tu.azzert(req.params()['param2'] === 'vparam2');
-    req.response.putHeader('rheader1', 'vrheader1');
+    req.response.headers()['rheader1'] = 'vrheader1'
     req.response.putHeader('rheader2', 'vrheader2');
     var body = new vertx.Buffer(0);
     req.dataHandler(function(data) {
@@ -210,11 +208,11 @@ function httpMethod(ssl, method, chunked) {
     req.endHandler(function() {
       tu.checkContext();
       if (!chunked) {
-        req.response.putHeader('Content-Length', '' + body.length())
+        req.response.headers()['Content-Length'] =  '' + body.length();
       }
       req.response.writeBuffer(body);
       if (chunked) {
-        req.response.putTrailer('trailer1', 'vtrailer1');
+        req.response.trailers()['trailer1'] = 'vtrailer1';
         req.response.putTrailer('trailer2', 'vtrailer2');
       }
       req.response.end();
@@ -256,7 +254,7 @@ function httpMethod(ssl, method, chunked) {
 
   request.setChunked(chunked);
   request.putHeader('header1', 'vheader1');
-  request.putHeader('header2', 'vheader2');
+  request.headers()['header2'] = 'vheader2';
   if (!chunked) {
     request.putHeader('Content-Length', '' + sent_buff.length())
   }

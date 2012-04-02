@@ -33,8 +33,6 @@ class HttpServerRequest implements ReadStream {
 
   private final JHttpServerRequest jRequest
   private final HttpServerResponse wrappedResponse
-  private final Headers headers = new Headers()
-  private final Params params = new Params()
 
   protected HttpServerRequest(JHttpServerRequest jRequest) {
     this.jRequest = jRequest
@@ -44,15 +42,15 @@ class HttpServerRequest implements ReadStream {
   /**
    * @return The headers of the request
    */
-  Headers getHeaders() {
-    return headers
+  Map<String, String> getHeaders() {
+    return jRequest.headers()
   }
 
   /**
    * @return The parameters of the request
    */
-  Params getParams() {
-    return params
+  Map<String, String> getParams() {
+    return jRequest.params()
   }
 
   /**
@@ -133,71 +131,6 @@ class HttpServerRequest implements ReadStream {
    */
   void toJavaRequest() {
     jRequest
-  }
-
-  /**
-   * Represents the headers of a server request
-   */
-  class Headers {
-    /**
-     * @return Return the HTTP request header with the name {@code key} from this request, or null if there is no such header.
-     */
-    String getHeader(String key) {
-      jRequest.getHeader(key)
-    }
-
-    /**
-     * Same as {@link #getHeader(String)}
-     */
-    String getAt(String key) {
-      getHeader(key)
-    }
-
-    /**
-     * @return Return a set of all the HTTP header names in this request
-     */
-    Set<String> getNames() {
-      jRequest.getHeaderNames()
-    }
-
-    /**
-     * @return Returns a map of all headers in the request, If the request contains multiple headers with the same key, the values
-     * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
-     * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
-     */
-    Map<String, String> toMap() {
-      jRequest.getAllHeaders()
-    }
-  }
-
-  /**
-    Represents the parameters of the request
-   */
-  class Params {
-
-    /**
-     * Get the parameter value with the specified name
-     * @param paramName
-     * @return The param value
-     */
-    String getParam(String paramName) {
-      jRequest.getAllParams().get(paramName)
-    }
-
-    /**
-     * Same as {@link #getParam(String)}
-     */
-    String getAt(String paramName) {
-      getParam(paramName)
-    }
-
-    /**
-     * @return Returns a map of all the parameters in the request
-     */
-    Map<String, String> toMap() {
-      jRequest.getAllParams()
-    }
-
   }
 
 }

@@ -301,8 +301,6 @@ public class HttpTestClient extends TestClientBase {
       }
     });
     tu.azzert(req.setChunked(true) == req);
-    tu.azzert(req.putHeader("foo", "bar") == req);
-    tu.azzert(req.putAllHeaders(new HashMap<String, Object>()) == req);
     tu.azzert(req.sendHead() == req);
     tu.azzert(req.write("foo", "UTF-8") == req);
     tu.azzert(req.write("foo") == req);
@@ -341,10 +339,6 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(req.response.write("foo", new SimpleHandler() { public void handle() {} }) == req.response);
           tu.azzert(req.response.write(new Buffer("foo")) == req.response);
           tu.azzert(req.response.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req.response);
-          tu.azzert(req.response.putAllHeaders(new HashMap<String, Object>()) == req.response);
-          tu.azzert(req.response.putAllTrailers(new HashMap<String, Object>()) == req.response);
-          tu.azzert(req.response.putHeader("foo", "bar") == req.response);
-          tu.azzert(req.response.putTrailer("foo", "bar") == req.response);
         }
         tu.testComplete();
       }
@@ -486,8 +480,8 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(query.equals(req.query));
-        tu.azzert(req.getAllParams().size() == params.size());
-        for (Map.Entry<String, String> entry : req.getAllParams().entrySet()) {
+        tu.azzert(req.params().size() == params.size());
+        for (Map.Entry<String, String> entry : req.params().entrySet()) {
           tu.azzert(entry.getValue().equals(params.get(entry.getKey())));
         }
         req.response.end();
@@ -507,7 +501,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(req.query == null);
-        tu.azzert(req.getAllParams().isEmpty());
+        tu.azzert(req.params().isEmpty());
         req.response.end();
       }
     });
@@ -524,9 +518,10 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.getAllHeaders().size() == 1);
-        tu.azzert(req.getHeader("Host").equals("localhost:8080"));
-        tu.azzert(req.getAllHeaders().get("Host").equals("localhost:8080"));
+        System.out.println("req headers size: " + req.headers().size());
+        tu.azzert(req.headers().size() == 1);
+        tu.azzert(req.headers().get("Host").equals("localhost:8080"));
+        tu.azzert(req.headers().get("Host").equals("localhost:8080"));
         req.response.end();
       }
     });
@@ -552,9 +547,9 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.getAllHeaders().size() == 1 + headers.size());
+        tu.azzert(req.headers().size() == 1 + headers.size());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-          tu.azzert(entry.getValue().equals(req.getHeader(entry.getKey())));
+          tu.azzert(entry.getValue().equals(req.headers().get(entry.getKey())));
         }
         req.response.end();
       }
@@ -568,10 +563,10 @@ public class HttpTestClient extends TestClientBase {
     });
     if (individually) {
       for (Map.Entry<String, String> header : headers.entrySet()) {
-        req.putHeader(header.getKey(), header.getValue());
+        req.headers().put(header.getKey(), header.getValue());
       }
     } else {
-      req.putAllHeaders(headers);
+      req.headers().putAll(headers);
     }
     req.end();
   }
@@ -647,18 +642,6 @@ public class HttpTestClient extends TestClientBase {
         public void handle(Exception e) {
         }
       });
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.putAllHeaders(map);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.putHeader("foo", "bar");
       tu.azzert(false, "Should throw exception");
     } catch (IllegalStateException e) {
       //OK
@@ -885,7 +868,7 @@ public class HttpTestClient extends TestClientBase {
     if (chunked) {
       req.setChunked(true);
     } else {
-      req.putHeader("Content-Length", numWrites * chunkSize);
+      req.headers().put("Content-Length", numWrites * chunkSize);
     }
     if (waitCompletion) {
       writeChunk(numWrites, chunkSize, req, body);
@@ -995,7 +978,7 @@ public class HttpTestClient extends TestClientBase {
     if (chunked) {
       req.setChunked(true);
     } else {
-      req.putHeader("Content-Length", bodyBuff.length());
+      req.headers().put("Content-Length", bodyBuff.length());
     }
     if (waitCompletion) {
       Handler<Void> doneHandler = new SimpleHandler() {
@@ -1108,10 +1091,10 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         if (individually) {
           for (Map.Entry<String, String> header : headers.entrySet()) {
-            req.response.putHeader(header.getKey(), header.getValue());
+            req.response.headers().put(header.getKey(), header.getValue());
           }
         } else {
-          req.response.putAllHeaders(headers);
+          req.response.headers().putAll(headers);
         }
         req.response.end();
       }
@@ -1120,9 +1103,9 @@ public class HttpTestClient extends TestClientBase {
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkContext();
-        tu.azzert(resp.getAllHeaders().size() == headers.size() + 1);
+        tu.azzert(resp.headers().size() == headers.size() + 1);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-          tu.azzert(entry.getValue().equals(resp.getHeader(entry.getKey())));
+          tu.azzert(entry.getValue().equals(resp.headers().get(entry.getKey())));
         }
         tu.testComplete();
       }
@@ -1147,10 +1130,10 @@ public class HttpTestClient extends TestClientBase {
         req.response.setChunked(true);
         if (individually) {
           for (Map.Entry<String, String> header : trailers.entrySet()) {
-            req.response.putTrailer(header.getKey(), header.getValue());
+            req.response.trailers().put(header.getKey(), header.getValue());
           }
         } else {
-          req.response.putAllTrailers(trailers);
+          req.response.trailers().putAll(trailers);
         }
         req.response.end();
       }
@@ -1161,9 +1144,9 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.azzert(resp.getAllTrailers().size() == trailers.size());
+            tu.azzert(resp.trailers().size() == trailers.size());
             for (Map.Entry<String, String> entry : trailers.entrySet()) {
-              tu.azzert(entry.getValue().equals(resp.getTrailer(entry.getKey())));
+              tu.azzert(entry.getValue().equals(resp.trailers().get(entry.getKey())));
             }
             tu.testComplete();
           }
@@ -1188,7 +1171,7 @@ public class HttpTestClient extends TestClientBase {
         tu.checkContext();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.azzert(resp.getAllTrailers().isEmpty());
+            tu.azzert(resp.trailers().isEmpty());
             tu.testComplete();
           }
         });
@@ -1196,34 +1179,6 @@ public class HttpTestClient extends TestClientBase {
     });
     req.end();
   }
-
-  public void testResponseSetTrailerNonChunked() {
-    startServer(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        tu.checkContext();
-        try {
-          req.response.putTrailer("foo", "bar");
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          req.response.putAllTrailers(new HashMap<String, Object>());
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        tu.testComplete();
-      }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(final HttpClientResponse resp) {
-      }
-    });
-    req.end();
-  }
-
 
   public void testUseResponseAfterComplete() {
 
@@ -1281,18 +1236,6 @@ public class HttpTestClient extends TestClientBase {
             public void handle(Exception e) {
             }
           });
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.putAllHeaders(map);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-        try {
-          resp.putHeader("foo", "bar");
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
@@ -1364,13 +1307,6 @@ public class HttpTestClient extends TestClientBase {
 
         try {
           resp.sendFile("asokdasokd");
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-
-        try {
-          resp.putAllTrailers(map);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
@@ -1522,7 +1458,7 @@ public class HttpTestClient extends TestClientBase {
         if (chunked) {
           req.response.setChunked(true);
         } else {
-          req.response.putHeader("Content-Length", numWrites * chunkSize);
+          req.response.headers().put("Content-Length", numWrites * chunkSize);
         }
         if (waitCompletion) {
           writeChunk(numWrites, chunkSize, req.response, body);
@@ -1630,7 +1566,7 @@ public class HttpTestClient extends TestClientBase {
         if (chunked) {
           req.response.setChunked(true);
         } else {
-          req.response.putHeader("Content-Length", bodyBuff.length());
+          req.response.headers().put("Content-Length", bodyBuff.length());
         }
         if (waitCompletion) {
           Handler<Void> doneHandler = new SimpleHandler() {
@@ -1704,7 +1640,7 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       int count;
       public void handle(final HttpServerRequest req) {
-        tu.azzert(count == Integer.parseInt(req.getHeader("count")));
+        tu.azzert(count == Integer.parseInt(req.headers().get("count")));
         final int theCount = count;
         count++;
         req.response.setChunked(true);
@@ -1715,7 +1651,7 @@ public class HttpTestClient extends TestClientBase {
             //wrong order if we didn't implement pipelining correctly
             Vertx.instance.setTimer((long) (10 * Math.random()), new Handler<Long>() {
               public void handle(Long timerID) {
-                req.response.putHeader("count", String.valueOf(theCount));
+                req.response.headers().put("count", String.valueOf(theCount));
                 req.response.write(buff);
                 req.response.end();
               }
@@ -1729,8 +1665,7 @@ public class HttpTestClient extends TestClientBase {
       final int theCount = count;
       HttpClientRequest req = client.request("POST", "some-uri", new Handler<HttpClientResponse>() {
         public void handle(final HttpClientResponse response) {
-          tu.azzert(theCount == Integer.parseInt(response.getHeader("count")), theCount + ":" + response.getHeader
-              ("count"));
+          tu.azzert(theCount == Integer.parseInt(response.headers().get("count")), theCount + ":" + response.headers().get("count"));
           response.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buff) {
               tu.azzert(("This is content " + theCount).equals(buff.toString()));
@@ -1742,7 +1677,7 @@ public class HttpTestClient extends TestClientBase {
         }
       });
       req.setChunked(true);
-      req.putHeader("count", String.valueOf(count));
+      req.headers().put("count", String.valueOf(count));
       req.write("This is content " + count);
       req.end();
     }
@@ -1761,7 +1696,7 @@ public class HttpTestClient extends TestClientBase {
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse response) {
         tu.azzert(response.statusCode == 200);
-        tu.azzert(file.length() == Long.valueOf(response.getHeader("Content-Length")));
+        tu.azzert(file.length() == Long.valueOf(response.headers().get("Content-Length")));
         response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(content.equals(buff.toString()));
@@ -1808,10 +1743,11 @@ public class HttpTestClient extends TestClientBase {
         });
       }
     });
-    req.putHeader("Expect", "100-continue");
+    req.headers().put("Expect", "100-continue");
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
+        System.out.println("In 100-continue handler");
         tu.checkContext();
         req.write(toSend);
         req.end();
@@ -1826,7 +1762,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        req.response.putHeader("HTTP/1.1", "100 Continue");
+        req.response.headers().put("HTTP/1.1", "100 Continue");
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.checkContext();
@@ -1848,7 +1784,7 @@ public class HttpTestClient extends TestClientBase {
       }
     });
 
-    req.putHeader("Expect", "100-continue");
+    req.headers().put("Expect", "100-continue");
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
@@ -1934,13 +1870,13 @@ public class HttpTestClient extends TestClientBase {
       HttpClientRequest req = client.get(path, new Handler<HttpClientResponse>() {
         public void handle(final HttpClientResponse response) {
           tu.azzert(response.statusCode == 200);
-          tu.azzert(theCount == Integer.parseInt(response.getHeader("count")));
+          tu.azzert(theCount == Integer.parseInt(response.headers().get("count")));
           if (theCount == numGets - 1) {
             tu.testComplete();
           }
         }
       });
-      req.putHeader("count", i);
+      req.headers().put("count", i);
       req.end();
     }
   }
