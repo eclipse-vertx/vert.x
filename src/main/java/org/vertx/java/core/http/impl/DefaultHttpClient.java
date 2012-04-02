@@ -141,7 +141,7 @@ public class DefaultHttpClient {
   public void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
-      req.putAllHeaders(headers);
+      req.headers().putAll(headers);
     }
     req.end();
   }

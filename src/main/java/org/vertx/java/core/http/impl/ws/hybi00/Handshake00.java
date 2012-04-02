@@ -73,12 +73,12 @@ public class Handshake00 implements Handshake {
 
   public void fillInRequest(HttpClientRequest req, String hostHeader) throws Exception {
 
-    req.putHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
-    req.putHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
-    req.putHeader(HttpHeaders.Names.HOST, hostHeader);
+    req.headers().put(HttpHeaders.Names.CONNECTION, "Upgrade");
+    req.headers().put(HttpHeaders.Names.UPGRADE, "WebSocket");
+    req.headers().put(HttpHeaders.Names.HOST, hostHeader);
 
-    req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, this.challenge.getKey1String());
-    req.putHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, this.challenge.getKey2String());
+    req.headers().put(HttpHeaders.Names.SEC_WEBSOCKET_KEY1, this.challenge.getKey1String());
+    req.headers().put(HttpHeaders.Names.SEC_WEBSOCKET_KEY2, this.challenge.getKey2String());
 
     Buffer buff = new Buffer(6);
     buff.appendBytes(challenge.getKey3());

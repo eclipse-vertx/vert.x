@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -57,17 +58,16 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   private final HttpResponse response;
   private final HttpVersion version;
   private final boolean keepAlive;
-  private HttpChunkTrailer trailer;
   private boolean headWritten;
   private boolean written;
   private Handler<Void> drainHandler;
   private Handler<Exception> exceptionHandler;
   private Handler<Void> closeHandler;
-  private long contentLength;
-  private long writtenBytes;
   private boolean chunked;
   private boolean closed;
   private ChannelFuture channelFuture;
+  private Map<String, Object> headers;
+  private Map<String, Object> trailers;
 
   DefaultHttpServerResponse(ServerConnection conn, HttpVersion version, boolean keepAlive) {
     this.conn = conn;
@@ -76,13 +76,24 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     this.keepAlive = keepAlive;
   }
 
+  public Map<String, Object> headers() {
+    if (headers == null) {
+      headers = new HashMap<>();
+    }
+    return headers;
+  }
+
+  public Map<String, Object> trailers() {
+    if (trailers == null) {
+      trailers = new HashMap<>();
+    }
+    return trailers;
+  }
+
   public DefaultHttpServerResponse setChunked(boolean chunked) {
     checkWritten();
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
     if (version != HttpVersion.HTTP_1_0) {
-      if (writtenBytes > 0) {
-        throw new IllegalStateException("Cannot set chunked after data has been written on response");
-      }
       this.chunked = chunked;
     }
     return this;
@@ -90,35 +101,13 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
   public DefaultHttpServerResponse putHeader(String key, Object value) {
     checkWritten();
-    response.setHeader(key, value);
-    checkContentLengthChunked(key, value);
-    return this;
-  }
-
-  public DefaultHttpServerResponse putAllHeaders(Map<String, ? extends Object> m) {
-    checkWritten();
-    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      response.setHeader(entry.getKey(), entry.getValue().toString());
-      checkContentLengthChunked(entry.getKey(), entry.getValue());
-    }
+    headers().put(key, value);
     return this;
   }
 
   public DefaultHttpServerResponse putTrailer(String key, Object value) {
-    checkChunked();
     checkWritten();
-    checkTrailer();
-    trailer.setHeader(key, value);
-    return this;
-  }
-
-  public DefaultHttpServerResponse putAllTrailers(Map<String, ? extends Object> m) {
-    checkChunked();
-    checkWritten();
-    checkTrailer();
-    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      trailer.setHeader(entry.getKey(), entry.getValue().toString());
-    }
+    trailers().put(key, value);
     return this;
   }
 
@@ -185,9 +174,8 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   }
 
   public void end(Buffer chunk) {
-    if (!chunked && contentLength == 0) {
-      contentLength = chunk.length();
-      response.setHeader(Names.CONTENT_LENGTH, String.valueOf(contentLength));
+    if (!chunked && !contentLengthSet()) {
+      headers().put(Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     write(chunk);
     end();
@@ -219,13 +207,16 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     checkWritten();
     writeHead();
     if (chunked) {
-      HttpChunk nettyChunk;
-      if (trailer == null) {
-        nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
+      if (trailers == null) {
+        HttpChunk nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
+        channelFuture = conn.write(nettyChunk);
       } else {
-        nettyChunk = trailer;
+        DefaultHttpChunkTrailer trlrs = new DefaultHttpChunkTrailer();
+        for (Map.Entry<String, Object> trailer: trailers.entrySet()) {
+          trlrs.addHeader(trailer.getKey(), trailer.getValue());
+        }
+        channelFuture = conn.write(trlrs);
       }
-      channelFuture = conn.write(nettyChunk);
     }
 
     if (!keepAlive) {
@@ -234,6 +225,14 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
     written = true;
     conn.responseComplete();
+  }
+
+  private boolean contentLengthSet() {
+    if (headers != null) {
+      return headers.containsKey(Names.CONTENT_LENGTH);
+    } else {
+      return false;
+    }
   }
 
   public DefaultHttpServerResponse sendFile(String filename) {
@@ -246,7 +245,10 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       sendNotFound();
     } else {
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-      response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+      writeHeaders();
+      if (!contentLengthSet()) {
+        response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+      }
       try {
         String contentType = Files.probeContentType(Paths.get(filename));
         if (contentType != null) {
@@ -289,28 +291,9 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     }
   }
 
-  private void checkChunked() {
-    if (!chunked) {
-      throw new IllegalStateException("Cannot set trailer for non-chunked response");
-    }
-  }
-
-  private void checkTrailer() {
-    if (trailer == null) trailer = new DefaultHttpChunkTrailer();
-  }
-
   private void checkWritten() {
     if (written) {
       throw new IllegalStateException("Response has already been written");
-    }
-  }
-
-  private void checkContentLengthChunked(String key, Object value) {
-    if (key.equals(Names.CONTENT_LENGTH)) {
-      contentLength = Integer.parseInt(value.toString());
-      chunked = false;
-    } else if (key.equals(Names.TRANSFER_ENCODING) && value.equals(HttpHeaders.Values.CHUNKED)) {
-      chunked = true;
     }
   }
 
@@ -322,9 +305,10 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       if (version == HttpVersion.HTTP_1_0 && keepAlive) {
         response.setHeader("Connection", "Keep-Alive");
       }
+      writeHeaders();
       if (chunked) {
         response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      } else if (version != HttpVersion.HTTP_1_0 && contentLength == 0) {
+      } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
         response.setHeader(Names.CONTENT_LENGTH, "0");
       }
       channelFuture = conn.write(response);
@@ -332,16 +316,22 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     }
   }
 
+  private void writeHeaders() {
+    if (headers != null) {
+      for (Map.Entry<String, Object> header: headers.entrySet()) {
+        String key = header.getKey();
+        response.setHeader(key, header.getValue());
+      }
+    }
+  }
+
   private DefaultHttpServerResponse write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
     checkWritten();
-    writtenBytes += chunk.readableBytes();
-    if (version != HttpVersion.HTTP_1_0 && !chunked && writtenBytes > contentLength) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
-          + "Current written: " + written + " Current Content-Length: " + contentLength);
-    }
-
     writeHead();
+    if (version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
+      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+    }
     Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
     ChannelFuture writeFuture = conn.write(msg);
     if (doneHandler != null) {

@@ -85,7 +85,7 @@ public class DefaultSockJSServer {
 
     rm.getWithRegEx(prefix + "\\/?", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        req.response.putHeader("Content-Type", "text/plain; charset=UTF-8");
+        req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
         req.response.end("Welcome to SockJS!\n");
       }
     });
@@ -184,7 +184,7 @@ public class DefaultSockJSServer {
       }
 
       public void handle(HttpServerRequest req) {
-        req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
+        req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
 
         BaseTransport.setCORS(req);
         req.response.setChunked(true);
@@ -220,16 +220,16 @@ public class DefaultSockJSServer {
 
         try {
           String etag = getMD5String(iframeHTML);
-          if (etag.equals(req.getHeader("if-none-match"))) {
+          if (etag.equals(req.headers().get("if-none-match"))) {
             req.response.statusCode = 304;
             req.response.end();
           } else {
-            req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
-            req.response.putHeader("Cache-Control", "public,max-age=31536000");
+            req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
+            req.response.headers().put("Cache-Control", "public,max-age=31536000");
             long oneYear = 365 * 24 * 60 * 60 * 1000;
             String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYear));
-            req.response.putHeader("Expires", expires);
-            req.response.putHeader("ETag", etag);
+            req.response.headers().put("Expires", expires);
+            req.response.headers().put("ETag", etag);
             req.response.end(iframeHTML);
           }
         } catch (Exception e) {

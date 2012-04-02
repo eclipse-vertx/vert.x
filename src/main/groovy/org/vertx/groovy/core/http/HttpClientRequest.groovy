@@ -64,7 +64,6 @@ import org.vertx.java.core.http.HttpClientRequest as JHttpClientRequest
 class HttpClientRequest implements WriteStream {
 
   private final JHttpClientRequest jRequest;
-  private final Headers headers = new Headers();
 
   protected HttpClientRequest(JHttpClientRequest jRequest) {
     this.jRequest = jRequest
@@ -73,8 +72,19 @@ class HttpClientRequest implements WriteStream {
   /**
    * @return The headers
    */
-  public Headers getHeaders() {
-    return headers;
+  public Map<String, Object> getHeaders() {
+    return jRequest.headers()
+  }
+
+  /**
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param value The header value
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  public HttpClientRequest putHeader(String name, Object value) {
+    getHeaders().put(name, value)
+    this
   }
 
   /**
@@ -84,28 +94,6 @@ class HttpClientRequest implements WriteStream {
    */
   HttpClientRequest setChunked(boolean chunked) {
     jRequest.setChunked(chunked)
-    this
-  }
-
-  /**
-   * Inserts a header into the request. The {@link Object#toString()} method will be called on {@code value} to determine
-   * the String value to actually use for the header value.<p>
-   *
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  HttpClientRequest putHeader(String key, Object value) {
-    jRequest.putHeader(key, value)
-    this
-  }
-
-  /**
-   * Inserts all the specified headers into the request. The {@link Object#toString()} method will be called on the header values {@code value} to determine
-   * the String value to actually use for the header value.<p>
-   *
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  HttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
-    jRequest.putAllHeaders(m)
     this
   }
 
@@ -268,39 +256,4 @@ class HttpClientRequest implements WriteStream {
     this
   }
 
-   /**
-   * Represents the headers of a client request
-   */
-  class Headers {
-
-    /**
-     * Inserts a header into the request. The {@link Object#toString()} method will be called on {@code value} to determine
-     * the String value to actually use for the header value.<p>
-     *
-     * @return A reference to this, so multiple method calls can be chained.
-     */
-    HttpClientRequest put(String key, Object value) {
-      jRequest.putHeader(key, value)
-      HttpClientRequest.this
-    }
-
-    /**
-     * Same as {@link #put(String, Object)}
-     */
-    HttpClientRequest putAt(String key, Object value) {
-      put(key, value)
-    }
-
-    /**
-     * Inserts all the specified headers into the response.
-     * The {@link Object#toString()} method will be called on the header values {@code value} to determine
-     * the String value to actually use for the header value.<p>
-     *
-     * @return A reference to this, so multiple method calls can be chained.
-     */
-    HttpClientRequest putAll(Map<String, ? extends Object> m) {
-      jRequest.putAllHeaders(m)
-      HttpClientRequest.this
-    }
-  }
 }

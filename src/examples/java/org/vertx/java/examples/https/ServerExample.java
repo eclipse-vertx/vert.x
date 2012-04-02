@@ -28,10 +28,10 @@ public class ServerExample implements Verticle {
       public void handle(HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
-        for (String key : req.getHeaderNames()) {
-          System.out.println(key + ":" + req.getHeader(key));
+        for (String key : req.headers().keySet()) {
+          System.out.println(key + ":" + req.headers().get(key));
         }
-        req.response.putHeader("Content-Type", "text/html; charset=UTF-8");
+        req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
         req.response.setChunked(true);
         req.response.write("<html><body><h1>Hello from vert.x!</h1></body></html>", "UTF-8").end();
       }

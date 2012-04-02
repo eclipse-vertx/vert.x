@@ -1,7 +1,3 @@
-import org.vertx.groovy.core.http.HttpServer
-import org.vertx.groovy.core.streams.Pump
-import org.vertx.groovy.core.file.FileSystem
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -17,6 +13,12 @@ import org.vertx.groovy.core.file.FileSystem
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+package upload
+
+import org.vertx.groovy.core.http.HttpServer
+import org.vertx.groovy.core.streams.Pump
+import org.vertx.groovy.core.file.FileSystem
 
 new HttpServer().requestHandler { req ->
   req.pause()
