@@ -23,7 +23,7 @@ new vertx.HttpServer().requestHandler(function(req) {
   var c_req = client.request(req.method, req.uri, function(c_res) {
     stdout.println("Proxying response: " + c_res.statusCode);
     req.response.statusCode = c_res.statusCode;
-    req.response.putAllHeaders(c_res.headers());
+    req.response.headers().putAll(c_res.headers());
     c_res.dataHandler(function(data) {
       stdout.println("Proxying response body: " + data);
       req.response.writeBuffer(data);

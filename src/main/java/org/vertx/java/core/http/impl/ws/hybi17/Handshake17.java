@@ -56,11 +56,11 @@ public class Handshake17 extends Handshake08 {
   }
 
   public void fillInRequest(HttpClientRequest req, String hostHeader) throws Exception {
-    req.putHeader("Sec-WebSocket-Version", "17");
-    req.putHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
-    req.putHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
-    req.putHeader(HttpHeaders.Names.HOST, hostHeader);
-    req.putHeader("Sec-WebSocket-Key", challenge.getNonceBase64());
+    req.headers().put("Sec-WebSocket-Version", "17");
+    req.headers().put(HttpHeaders.Names.CONNECTION, "Upgrade");
+    req.headers().put(HttpHeaders.Names.UPGRADE, "WebSocket");
+    req.headers().put(HttpHeaders.Names.HOST, hostHeader);
+    req.headers().put("Sec-WebSocket-Key", challenge.getNonceBase64());
   }
 
   public HttpResponse generateResponse(HttpRequest request) throws Exception {

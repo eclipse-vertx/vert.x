@@ -69,7 +69,7 @@ class XhrTransport extends BaseTransport {
     rm.postWithRegEx(xhrSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
-        String sessionID = req.getAllParams().get("param0");
+        String sessionID = req.params().get("param0");
 
         final Session session = sessions.get(sessionID);
 
@@ -89,7 +89,7 @@ class XhrTransport extends BaseTransport {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
-        String sessionID = req.getAllParams().get("param0");
+        String sessionID = req.params().get("param0");
         Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
 
         session.register(streaming? new XhrStreamingListener(config.getMaxBytesStreaming(), req, session) : new XhrPollingListener(req, session));
@@ -112,7 +112,7 @@ class XhrTransport extends BaseTransport {
         if (!session.handleMessages(msgs)) {
           sendInvalidJSON(req.response);
         } else {
-          req.response.putHeader("Content-Type", "text/plain; charset=UTF-8");
+          req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
           setJSESSIONID(config, req);
           setCORS(req);
           req.response.statusCode = 204;
@@ -135,7 +135,7 @@ class XhrTransport extends BaseTransport {
 
     public void sendFrame(String body) {
       if (!headersWritten) {
-        req.response.putHeader("Content-Type", "application/javascript; charset=UTF-8");
+        req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
         setCORS(req);
         req.response.setChunked(true);

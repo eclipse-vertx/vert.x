@@ -72,11 +72,11 @@ public class Handshake08 implements Handshake {
   }
 
   public void fillInRequest(HttpClientRequest req, String hostHeader) throws Exception {
-    req.putHeader("Sec-WebSocket-Version", "7");
-    req.putHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
-    req.putHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
-    req.putHeader(HttpHeaders.Names.HOST, hostHeader);
-    req.putHeader("Sec-WebSocket-Key", this.challenge.getNonceBase64());
+    req.headers().put("Sec-WebSocket-Version", "7");
+    req.headers().put(HttpHeaders.Names.CONNECTION, "Upgrade");
+    req.headers().put(HttpHeaders.Names.UPGRADE, "WebSocket");
+    req.headers().put(HttpHeaders.Names.HOST, hostHeader);
+    req.headers().put("Sec-WebSocket-Key", this.challenge.getNonceBase64());
   }
 
   public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
@@ -103,7 +103,7 @@ public class Handshake08 implements Handshake {
   }
 
   public void onComplete(HttpClientResponse response, final AsyncResultHandler<Void> doneHandler) throws Exception {
-    String challengeResponse = response.getHeader("Sec-WebSocket-Accept");
+    String challengeResponse = response.headers().get("Sec-WebSocket-Accept");
     AsyncResult<Void> res;
     if (challenge.verify(challengeResponse)) {
       res = new AsyncResult<>((Void)null);

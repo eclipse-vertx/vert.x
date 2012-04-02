@@ -31,43 +31,38 @@ if (!vertx.HttpServer) {
     }
 
     function wrappedRequestHandler(handler) {
-      return function(req) {
+      return function(j_req) {
 
         //We need to add some functions to the request and the response
 
         var reqHeaders = null;
         var reqParams = null;
 
-        var reqProto = {
+        var req = {
 
           headers: function() {
             if (!reqHeaders) {
-              reqHeaders = convertMap(req.getAllHeaders());
+              reqHeaders = convertMap(j_req.headers());
             }
             return reqHeaders;
           },
           params: function() {
             if (!reqParams) {
-              reqParams = convertMap(req.getAllParams());
+              reqParams = convertMap(j_req.params());
             }
             return reqParams;
           }
         };
 
         var respProto = {
-          putHeaders: function(hash) {
-            for (k in hash) {
-              req.response.putHeader(k, hash[k]);
-            }
-          },
-          putTrailers: function(hash) {
-            for (k in hash) {
-              req.response.putTrailer(k, hash[k]);
-            }
+          headers: {},
+          trailers: {},
+          end: function() {
+            // TODO convert headers and trailers
           }
         }
 
-        req.__proto__ = reqProto;
+        req.__proto__ = j_req;
         req.response.__proto__ = respProto;
 
         handler(req);
@@ -224,29 +219,31 @@ if (!vertx.HttpServer) {
 
       var that = this;
 
+      need to wrap request as well and override headers
+
       function wrapResponseHandler(handler) {
-        var wrapperHandler = function(resp) {
+        var wrapperHandler = function(j_resp) {
 
           var respHeaders = null;
           var respTrailers = null;
 
-          var resp_proto = {
+          var resp = {
 
             headers: function() {
               if (!respHeaders) {
-                respHeaders = convertMap(resp.getAllHeaders());
+                respHeaders = convertMap(j_resp.headers());
               }
               return respHeaders;
             },
             trailers: function() {
               if (!respTrailers) {
-                respTrailers = convertMap(resp.getAllTrailers());
+                respTrailers = convertMap(j_resp.trailers());
               }
               return respTrailers;
             }
           };
 
-          resp.__proto__ = resp_proto;
+          resp.__proto__ = j_resp;
 
           handler(resp);
         }

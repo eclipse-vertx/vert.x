@@ -36,7 +36,7 @@ public class CountServer implements Verticle {
     server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkContext();
-        req.response.putHeader("count", req.getHeader("count"));
+        req.response.headers().put("count", req.headers().get("count"));
         req.response.end();
       }
     }).listen(8080);

@@ -30,8 +30,8 @@ public class Server implements Verticle {
       public void handle(final HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
-        for (String key : req.getHeaderNames()) {
-          System.out.println(key + ":" + req.getHeader(key));
+        for (String key : req.headers().keySet()) {
+          System.out.println(key + ":" + req.headers().get(key));
         }
         req.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {

@@ -88,9 +88,7 @@ module Vertx
       def []=(key, val)
         key = SharedData.check_obj(key)
         val = SharedData.check_obj(val)
-        # We call the java class directly - otherwise RubyHash does a scan of the whole map!! :(
-        # This will be fixed in JRuby 1.6.5
-        @hash.put(key, val)
+        super(key, val)
       end
 
       alias store []=

@@ -53,43 +53,14 @@ public abstract class HttpClientResponse extends HttpReadStreamBase {
    */
   public final String statusMessage;
 
+  /**
+   * @return The HTTP headers
+   */
+  public abstract Map<String, String> headers();
 
   /**
-   * Returns the header value for the specified {@code key}, or null, if there is no such header in the response.
+   * @return The HTTP trailers
    */
-  public abstract String getHeader(String key);
+  public abstract Map<String, String> trailers();
 
-  /**
-   * Returns a set of all header names in the response.
-   */
-  public abstract Set<String> getHeaderNames();
-
-  /**
-   * Returns the trailer value for the specified {@code key}, or null, if there is no such header in the response.<p>
-   * Trailers will only be available in the response if the server has sent a HTTP chunked response where headers have
-   * been inserted by the server on the last chunk. In such a case they won't be available on the client until the last chunk has
-   * been received.
-   */
-  public abstract String getTrailer(String key);
-
-  /**
-   * Returns a map of all headers in the response, If the response contains multiple headers with the same key, the values
-   * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
-   * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
-   */
-  public abstract Map<String, String> getAllHeaders();
-
-  /**
-   * Returns a map of all trailers in the response, If the response contains multiple trailers with the same key, the values
-   * will be concatenated together into a single header with the same key value, with each value separated by a comma, as specified
-   * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.<p>
-   * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
-   */
-  public abstract Map<String, String> getAllTrailers();
-
-  /**
-   * Returns a set of all trailer names in the response.<p>
-   * If trailers have been sent by the server, they won't be available on the client side until the last chunk is received.
-   */
-  public abstract Set<String> getTrailerNames();
 }

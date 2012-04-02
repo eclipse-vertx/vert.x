@@ -46,7 +46,7 @@ public class UploadClient implements Verticle {
     String filename = "upload/upload.txt";
 
     // For a non-chunked upload you need to specify size of upload up-front
-    req.putHeader("Content-Length", Files.size(Paths.get(filename)));
+    req.headers().put("Content-Length", Files.size(Paths.get(filename)));
 
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);

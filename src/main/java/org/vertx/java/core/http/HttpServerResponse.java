@@ -77,41 +77,30 @@ public abstract class HttpServerResponse implements WriteStream {
   public abstract HttpServerResponse setChunked(boolean chunked);
 
   /**
-   * Inserts a header into the response. The {@link Object#toString()} method will be called on {@code value} to determine
-   * the String value to actually use for the header value.<p>
-   *
-   * @return A reference to this, so multiple method calls can be chained.
+   * @return The HTTP headers
    */
-  public abstract HttpServerResponse putHeader(String key, Object value);
+  public abstract Map<String, Object> headers();
 
   /**
-   * Inserts all the specified headers into the response.
-   * The {@link Object#toString()} method will be called on the header values {@code value} to determine
-   * the String value to actually use for the header value.<p>
-   *
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param value The header value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse putAllHeaders(Map<String, ? extends Object> m);
+  public abstract HttpServerResponse putHeader(String name, Object value);
 
   /**
-   * Inserts a trailer into the response. The {@link Object#toString()} method
-   * will be called on {@code value} to determine
-   * the String value to actually use for the trailer value.<p>
-   * Trailers are only sent if you are using a HTTP chunked response.<p>
-   *
-   * @return A reference to this, so multiple method calls can be chained.
+   * @return The HTTP trailers
    */
-  public abstract HttpServerResponse putTrailer(String key, Object value);
+  public abstract Map<String, Object> trailers();
 
   /**
-   * Inserts all the specified trailers into the response.
-   * The {@link Object#toString()} method will be called on {@code value} to determine
-   * the String value to actually use for the trailer value.<p>
-   * Trailers are only sent if you are using a HTTP chunked response.<p>
-   *
+   * Put an HTTP trailer - fluent API
+   * @param name The trailer name
+   * @param value The trailer value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse putAllTrailers(Map<String, ? extends Object> m);
+  public abstract HttpServerResponse putTrailer(String name, Object value);
 
   /**
    * Set a close handler for the response. This will be called if the underlying connection closes before the response

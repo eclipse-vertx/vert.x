@@ -314,22 +314,20 @@ module Vertx
       @j_del = j_del
     end
 
+    # Hash of headers for the request
+    def headers
+      if !@headers
+        @headers = @j_del.headers
+      end
+      @headers
+    end
+
     # Inserts a header into the request.
     # @param [String] key The header key
     # @param [Object] value The header value. to_s will be called on the value to determine the actual String value to insert.
     # @return [HttpClientRequest] self So multiple operations can be chained.
     def put_header(key, value)
       @j_del.putHeader(key, value.to_s)
-      self
-    end
-
-    # Inserts a Hash of headers into the request.
-    # @param [Hash] headers. Headers to insert. to_s will be called on each value to determine the actual String value to insert.
-    # @return [HttpClientRequest] self So multiple operations can be chained.
-    def put_headers(headers)
-      headers.each_pair do |k, v|
-        @j_del.putHeader(k, v.to_s)
-      end
       self
     end
 
@@ -444,40 +442,10 @@ module Vertx
     # as specified by {http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2}.
     # @return [Hash]. A Hash of headers.
     def headers
-      if @headers == nil
-        hdrs = @j_del.getAllHeaders
-        iter = hdrs.entrySet.iterator
-        @headers = {}
-        while iter.hasNext
-          entry = iter.next
-          @headers[entry.getKey] = entry.getValue
-        end
+      if !@headers
+        @headers = @j_del.headers
       end
       @headers
-    end
-
-    # Get all the header names from the response.
-    # @return [Set]. A Set of header names
-    def header_names
-      if @header_names == nil
-        names = @j_del.getHeaderNames
-        iter = names.iterator
-        @header_names = Set.new
-        while iter.hasNext
-          name = iter.next
-          @header_names.add(name)
-        end
-      end
-      @header_names
-    end
-
-    # Returns a trailer value, or nil if no such trailer exists.
-    # Trailers will only be available in the response if the server has sent a HTTP chunked response where headers have
-    # been inserted by the server on the last chunk. In such a case they won't be available on the client until the last chunk has
-    # been received.
-    # @param [String] key. The key of the trailer.
-    def trailer(key)
-      @j_del.getTrailer(key)
     end
 
     # Get all the trailers in the response.
@@ -489,34 +457,10 @@ module Vertx
     # been received.
     # @return [Hash]. A Hash of trailers.
     def trailers
-      if @trailers == nil
-        trlrs = @j_del.getAllTrailers
-        iter = trlrs.entrySet.iterator
-        @trailers = {}
-        while iter.hasNext
-          entry = iter.next
-          @trailers[entry.getKey] = entry.getValue
-        end
+      if !@trailers
+        @trailers = @j_del.trailers
       end
       @trailers
-    end
-
-    # Get all the trailer names from the response.
-    # Trailers will only be available in the response if the server has sent a HTTP chunked response where headers have
-    # been inserted by the server on the last chunk. In such a case they won't be available on the client until the last chunk has
-    # been received.
-    # @return [Set]. A Set of trailer names
-    def trailer_names
-      if @trailer_names == nil
-        names = @j_del.getTrailerNames
-        iter = names.iterator
-        @trailer_names = Set.new
-        while iter.hasNext
-          name = iter.next
-          @trailer_names.add(name)
-        end
-      end
-      @trailer_names
     end
 
     # Set a handler to receive the entire body in one go - do not use this for large bodies
@@ -564,14 +508,8 @@ module Vertx
 
     # @return [Hash] The request parameters
     def params
-      if (@params == nil)
-        prms = @j_del.getAllParams
-        iter = prms.entrySet.iterator
-        @params = {}
-        while iter.hasNext
-          entry = iter.next
-          @params[entry.getKey] = entry.getValue
-        end
+      if !@params
+        @params = @j_del.params
       end
       @params
     end
@@ -582,44 +520,12 @@ module Vertx
       @resp
     end
 
-    # Get a header value
-    # @param [String] key. The key of the header.
-    # @return [String] the header value.
-    def header(key)
-      @j_del.getHeader(key)
-    end
-
-    # Get all the headers in the request.
-    # If the response contains multiple headers with the same key, the values
-    # will be concatenated together into a single header with the same key value, with each value separated by a comma,
-    # as specified by {http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2}.
-    # @return [Hash]. A Hash of headers.
+    # The request headers
     def headers
-      if (@headers == nil)
-        hdrs = @j_del.getAllHeaders
-        iter = hdrs.entrySet.iterator
-        @headers = {}
-        while iter.hasNext
-          entry = iter.next
-          @headers[entry.getKey] = entry.getValue
-        end
+      if !@headers
+        @headers = @j_del.headers
       end
       @headers
-    end
-
-    # Get all the header names from the response.
-    # @return [Set]. A Set of header names
-    def header_names
-      if (@header_names == nil)
-        names = @j_del.getHeaderNames
-        iter = names.iterator
-        @header_names = Set.new
-        while iter.hasNext
-          name = iter.next
-          @header_names.add(name)
-        end
-      end
-      @header_names
     end
 
     # Set a handler to receive the entire body in one go - do not use this for large bodies
@@ -666,42 +572,38 @@ module Vertx
       @j_del.statusMessage = val
     end
 
+    # The response headers
+    def headers
+      if !@headers
+        @headers = @j_del.headers
+      end
+      @headers
+    end
+
     # Inserts a header into the response.
     # @param [String] key The header key
     # @param [Object] value The header value. to_s will be called on the value to determine the actual String value to insert.
-    # @return [HttpServerResponse] self So multiple operations can be chained.
+    # @return [HttpClientRequest] self So multiple operations can be chained.
     def put_header(key, value)
       @j_del.putHeader(key, value.to_s)
       self
     end
 
-    # Inserts a Hash of headers into the response.
-    # @param [Hash] headers. Headers to insert. to_s will be called on each value to determine the actual String value to insert.
-    # @return [HttpServerResponse] self So multiple operations can be chained.
-    def put_headers(headers)
-      headers.each_pair do |k, v|
-        @j_del.putHeader(k, v)
-      end
-      self
-    end
-
-    # Inserts a trailer into the response. Trailers are only sent if you are using a HTTP chunked response.
-    # @param [String] key The trailer key
-    # @param [Object] value The trailer value. to_s will be called on the value to determine the actual String value to insert.
-    # @return [HttpServerResponse] self So multiple operations can be chained.
+    # Inserts a trailer into the response.
+    # @param [String] key The header key
+    # @param [Object] value The header value. to_s will be called on the value to determine the actual String value to insert.
+    # @return [HttpClientRequest] self So multiple operations can be chained.
     def put_trailer(key, value)
       @j_del.putTrailer(key, value.to_s)
       self
     end
 
-    # Inserts a Hash of trailers into the response. Trailers are only sent if you are using a HTTP chunked response.
-    # @param [Hash] trailers. Trailers to insert. to_s will be called on each value to determine the actual String value to insert.
-    # @return [HttpServerResponse] self So multiple operations can be chained.
-    def put_trailers(trailers)
-      trailers.each_pair do |k, v|
-        @j_del.putTrailer(k, v)
+    # The response trailers
+    def trailers
+      if !@trailers
+        @trailers = @j_del.trailers
       end
-      self
+      @trailers
     end
 
     # Write a buffer to the response. The handler will be called when the buffer has actually been written to the wire.

@@ -34,6 +34,7 @@ import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -93,7 +94,8 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
   private boolean connecting;
   private boolean writeHead;
   private long written;
-  private long contentLength = 0;
+  //private long contentLength = 0;
+  private Map<String, Object> headers;
 
   public DefaultHttpClientRequest setChunked(boolean chunked) {
     check();
@@ -104,19 +106,16 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
     return this;
   }
 
-  public DefaultHttpClientRequest putHeader(String key, Object value) {
-    check();
-    request.setHeader(key, value);
-    checkContentLengthChunked(key, value);
-    return this;
+  public Map<String, Object> headers() {
+    if (headers == null) {
+      headers = new HashMap<>();
+    }
+    return headers;
   }
 
-  public DefaultHttpClientRequest putAllHeaders(Map<String, ? extends Object> m) {
+  public HttpClientRequest putHeader(String name, Object value) {
     check();
-    for (Map.Entry<String, ? extends Object> entry : m.entrySet()) {
-      request.setHeader(entry.getKey(), entry.getValue().toString());
-      checkContentLengthChunked(entry.getKey(), entry.getValue());
-    }
+    headers().put(name, value);
     return this;
   }
 
@@ -214,9 +213,8 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
   }
 
   public void end(Buffer chunk) {
-    if (!chunked && contentLength == 0) {
-      contentLength = chunk.length();
-      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
+    if (!chunked && !contentLengthSet()) {
+      headers().put(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     write(chunk);
     end();
@@ -271,14 +269,6 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
     }
   }
 
-  private void checkContentLengthChunked(String key, Object value) {
-    if (key.equals(HttpHeaders.Names.CONTENT_LENGTH)) {
-      contentLength = Integer.parseInt(value.toString());
-    } else if (key.equals(HttpHeaders.Names.TRANSFER_ENCODING) && value.equals(HttpHeaders.Values.CHUNKED)) {
-      chunked = true;
-    }
-  }
-
   private void connect() {
     if (!connecting) {
       //We defer actual connection until the first part of body is written or end is called
@@ -327,28 +317,41 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
     }
   }
 
+  private boolean contentLengthSet() {
+    if (headers != null) {
+      return headers.containsKey(HttpHeaders.Names.CONTENT_LENGTH);
+    } else {
+      return false;
+    }
+  }
+
   private void writeHead() {
     request.setChunked(chunked);
     if (!raw) {
       request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
-
       if (chunked) {
         request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      } else if (contentLength == 0) {
-        //request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
     }
+    writeHeaders();
     conn.write(request);
+  }
+
+  private void writeHeaders() {
+    if (headers != null) {
+      for (Map.Entry<String, Object> header: headers.entrySet()) {
+        request.setHeader(header.getKey(), header.getValue());
+      }
+    }
   }
 
   private DefaultHttpClientRequest write(ChannelBuffer buff, Handler<Void> doneHandler) {
 
     written += buff.readableBytes();
 
-    if (!raw && !chunked && written > contentLength) {
+    if (!raw && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding. "
-          + "Current written: " + written + " Current Content-Length: " + contentLength);
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
 
     if (conn == null) {

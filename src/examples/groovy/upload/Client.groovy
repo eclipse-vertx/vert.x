@@ -1,7 +1,3 @@
-import org.vertx.groovy.core.http.HttpClient
-import org.vertx.groovy.core.file.FileSystem
-import org.vertx.groovy.core.streams.Pump
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -17,6 +13,12 @@ import org.vertx.groovy.core.streams.Pump
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+package upload
+
+import org.vertx.groovy.core.http.HttpClient
+import org.vertx.groovy.core.file.FileSystem
+import org.vertx.groovy.core.streams.Pump
 
 def req = new HttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
 def filename = "upload/upload.txt"

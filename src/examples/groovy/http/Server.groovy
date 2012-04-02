@@ -1,5 +1,3 @@
-import org.vertx.groovy.core.http.HttpServer
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -15,6 +13,10 @@ import org.vertx.groovy.core.http.HttpServer
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+package http
+
+import org.vertx.groovy.core.http.HttpServer
 
 new HttpServer().requestHandler { req ->
   req.response.end "<html><body><h1>Hello from vert.x!</h1></body></html>"

@@ -43,8 +43,8 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
   private Handler<Exception> exceptionHandler;
   private final ServerConnection conn;
   private final HttpRequest request;
-  private Map<String, String> params;
   //Cache this for performance
+  private Map<String, String> params;
   private Map<String, String> headers;
 
   DefaultHttpServerRequest(ServerConnection conn,
@@ -56,22 +56,14 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
     this.request = request;
   }
 
-  public String getHeader(String key) {
-    return request.getHeader(key);
-  }
-
-  public Set<String> getHeaderNames() {
-    return request.getHeaderNames();
-  }
-
-  public Map<String, String> getAllHeaders() {
+  public Map<String, String> headers() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(request.getHeaders());
     }
     return headers;
   }
 
-  public Map<String, String> getAllParams() {
+  public Map<String, String> params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
       Map<String, List<String>> prms = queryStringDecoder.getParameters();
