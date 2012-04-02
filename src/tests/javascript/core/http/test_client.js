@@ -193,8 +193,6 @@ function httpMethod(ssl, method, chunked) {
     tu.azzert(req.path === path);
     tu.azzert(req.query === query);
 
-    stdout.println("header is " + req.headers()['header1'])
-
     tu.azzert(req.headers()['header1'] === 'vheader1');
     tu.azzert(req.headers()['header2'] === 'vheader2');
     tu.azzert(req.params()['param1'] === 'vparam1');
@@ -210,7 +208,7 @@ function httpMethod(ssl, method, chunked) {
     req.endHandler(function() {
       tu.checkContext();
       if (!chunked) {
-        req.response.headers().put('Content-Length', '' + body.length())
+        req.response.headers()['Content-Length'] =  '' + body.length();
       }
       req.response.writeBuffer(body);
       if (chunked) {
@@ -256,7 +254,7 @@ function httpMethod(ssl, method, chunked) {
 
   request.setChunked(chunked);
   request.putHeader('header1', 'vheader1');
-  request.headers['header2'] = 'vheader2';
+  request.headers()['header2'] = 'vheader2';
   if (!chunked) {
     request.putHeader('Content-Length', '' + sent_buff.length())
   }
