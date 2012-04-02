@@ -54,16 +54,91 @@ if (!vertx.HttpServer) {
           }
         };
 
-        var respProto = {
-          headers: {},
-          trailers: {},
-          end: function() {
-            // TODO convert headers and trailers
+        var j_resp = j_req.response;
+
+        var respHeaders = null;
+        var headersWritten = false;
+
+        function writeHeaders() {
+          if (respHeaders && !headersWritten) {
+            var j_hdrs = j_resp.headers();
+            for (var k in respHeaders) {
+              j_hdrs.put(k, respHeaders[k])
+            }
+            headersWritten = true;
           }
         }
 
+        var respTrailers = null;
+        var trailersWritten = false;
+
+        function writeTrailers() {
+          if (respTrailers && !trailersWritten) {
+            var j_trailers = j_resp.trailers();
+            for (var k in respTrailers) {
+              j_trailers.put(k, respTrailers[k])
+            }
+            trailersWritten = true;
+          }
+        }
+
+        var resp = {
+          headers: function() {
+            if (!respHeaders) {
+              respHeaders = {};
+            }
+            return respHeaders;
+          },
+          trailers: function() {
+            if (!respTrailers) {
+              respTrailers = {};
+            }
+            return respTrailers;
+          },
+          write: function(arg0, arg1, arg2) {
+            writeHeaders();
+            if (arg1) {
+              if (arg2) {
+                j_resp.write(arg0, arg1, arg2);
+              } else {
+                j_resp.write(arg0, arg1);
+              }
+            } else {
+              j_resp.write(arg0);
+            }
+            return wrapped;
+          },
+          writeBuffer: function(buffer) {
+            writeHeaders();
+            j_resp.writeBuffer(buffer);
+          },
+          continueHandler: function(handler) {
+            j_resp.continueHandler(handler);
+          },
+          sendHead: function() {
+            writeHeaders();
+            j_resp.sendHead();
+            return wrapped;
+          },
+          end: function(arg0, arg1) {
+            writeHeaders();
+            writeTrailers();
+            if (arg0) {
+              if (arg1) {
+                j_resp.end(arg0, arg1);
+              } else {
+                j_resp.end(arg0);
+              }
+            } else {
+              j_resp.end();
+            }
+          }
+        }
+
+        req.response = resp;
         req.__proto__ = j_req;
-        req.response.__proto__ = respProto;
+        resp.__proto__ = j_req.response;
+
 
         handler(req);
       }
@@ -219,8 +294,6 @@ if (!vertx.HttpServer) {
 
       var that = this;
 
-      need to wrap request as well and override headers
-
       function wrapResponseHandler(handler) {
         var wrapperHandler = function(j_resp) {
 
@@ -248,6 +321,71 @@ if (!vertx.HttpServer) {
           handler(resp);
         }
         return wrapperHandler;
+      }
+
+      function wrapRequest(j_req) {
+
+        var reqHeaders = null;
+
+        var headersWritten = false;
+
+        function writeHeaders() {
+          if (reqHeaders && !headersWritten) {
+            var j_hdrs = j_req.headers();
+            for (var k in reqHeaders) {
+              j_hdrs.put(k, reqHeaders[k])
+            }
+            headersWritten = true;
+          }
+        }
+
+        var wrapped = {
+          headers: function() {
+            if (!reqHeaders) {
+              reqHeaders = convertMap(j_req.headers());
+            }
+            return reqHeaders;
+          },
+          write: function(arg0, arg1, arg2) {
+            writeHeaders();
+            if (arg1) {
+              if (arg2) {
+                j_req.write(arg0, arg1, arg2);
+              } else {
+                j_req.write(arg0, arg1);
+              }
+            } else {
+              j_req.write(arg0);
+            }
+            return wrapped;
+          },
+          writeBuffer: function(buff) {
+            writeHeaders();
+            j_req.writeBuffer(buff);
+          },
+          continueHandler: function(handler) {
+            j_req.continueHandler(handler);
+          },
+          sendHead: function() {
+            writeHeaders();
+            j_req.sendHead();
+            return wrapped;
+          },
+          end: function(arg0, arg1) {
+            writeHeaders();
+            if (arg0) {
+              if (arg1) {
+                j_req.end(arg0, arg1);
+              } else {
+                j_req.end(arg0);
+              }
+            } else {
+              j_req.end();
+            }
+          }
+        };
+        wrapped.__proto__ = j_req;
+        return wrapped;
       }
 
       that.exceptionHandler = function(handler) {
@@ -314,47 +452,47 @@ if (!vertx.HttpServer) {
       }
 
       that.getNow = function(uri, handler) {
-        return j_client.getNow(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.getNow(uri, wrapResponseHandler(handler)));
       }
 
       that.options = function(uri, handler) {
-        return j_client.options(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.options(uri, wrapResponseHandler(handler)));
       }
 
       that.get = function(uri, handler) {
-        return j_client.get(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.get(uri, wrapResponseHandler(handler)));
       }
 
       that.head = function(uri, handler) {
-        return j_client.head(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.head(uri, wrapResponseHandler(handler)));
       }
 
       that.post = function(uri, handler) {
-        return j_client.post(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.post(uri, wrapResponseHandler(handler)));
       }
 
       that.put = function(uri, handler) {
-        return j_client.put(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.put(uri, wrapResponseHandler(handler)));
       }
 
       that.delete = function(uri, handler) {
-        return j_client.delete(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.delete(uri, wrapResponseHandler(handler)));
       }
 
       that.trace = function(uri, handler) {
-        return j_client.trace(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.trace(uri, wrapResponseHandler(handler)));
       }
 
       that.connect = function(uri, handler) {
-        return j_client.connect(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.connect(uri, wrapResponseHandler(handler)));
       }
 
       that.patch = function(uri, handler) {
-        return j_client.patch(uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.patch(uri, wrapResponseHandler(handler)));
       }
 
       that.request = function(method, uri, handler) {
-        return j_client.request(method, uri, wrapResponseHandler(handler));
+        return wrapRequest(j_client.request(method, uri, wrapResponseHandler(handler)));
       }
 
       that.close = function() {
