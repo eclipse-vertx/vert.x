@@ -17,6 +17,7 @@
 package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
+import org.vertx.java.core.impl.VertxInternal
 
 /**
  * An HTTP and WebSockets server
@@ -37,6 +38,10 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
 
   private reqHandler;
   private wsHandler;
+
+  public HttpServer(VertxInternal vertx) {
+    super(vertx);
+  }
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,

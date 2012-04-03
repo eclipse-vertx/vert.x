@@ -18,12 +18,17 @@ package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.WebSocketVersion
+import org.vertx.java.core.impl.VertxInternal
 
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HttpClient extends org.vertx.java.core.http.HttpClient {
+
+  public HttpClient(VertxInternal vertx) {
+    super(vertx);
+  }
 
   /**
    * Set an exception handler

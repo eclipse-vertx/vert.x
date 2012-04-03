@@ -28,25 +28,11 @@ import org.vertx.java.core.eventbus.EventBus as JEventBus
  */
 class EventBus {
 
-  /**
-   * To use a clustered event bus on specified hostname use this method
-   * @param hostname The hostname or ip address
-   */
-  static void setClustered(String hostname) {
-    JEventBus.setClustered(hostname)
-  }
-
-  /**
-   * To use a clustered event bus on specified port and hostname use this method
-   * @param port The port
-   * @param hostname The hostname or ip address
-   */
-  static void setClustered(int port, String hostname) {
-    JEventBus.setClustered(port, hostname)
-  }
-
-  static void setClustered(int port, String hostname, String clusterProviderClassName) {
-    JEventBus.setClustered(port, hostname, clusterProviderClassName)
+  
+  private final JEventBus jEventBus;
+  
+  public EventBus(JEventBus jEventBus) {
+    this.jEventBus = jEventBus;  
   }
 
   private Map handlerMap = new ConcurrentHashMap()
@@ -62,10 +48,10 @@ class EventBus {
   void send(String address, message, Closure replyHandler = null) {
     if (message != null) {
       message = convertMessage(message)
-      jEB().send(address, convertMessage(message), wrapHandler(replyHandler))
+      jEventBus.send(address, convertMessage(message), wrapHandler(replyHandler))
     } else {
       // Just choose an overloaded method...
-      jEB().send(address, (String)null, wrapHandler(replyHandler))
+      jEventBus.send(address, (String)null, wrapHandler(replyHandler))
     }
   }
 
@@ -80,7 +66,7 @@ class EventBus {
   String registerHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = wrapHandler(handler)
     handlerMap.put(handler, wrapped)
-    jEB().registerHandler(address, wrapped, resultHandler as AsyncResultHandler)
+    jEventBus.registerHandler(address, wrapped, resultHandler as AsyncResultHandler)
   }
 
   /**
@@ -93,7 +79,7 @@ class EventBus {
   String registerLocalHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = wrapHandler(handler)
     handlerMap.put(handler, wrapped)
-    jEB().registerLocalHandler(address, wrapped, resultHandler as AsyncResultHandler)
+    jEventBus.registerLocalHandler(address, wrapped, resultHandler as AsyncResultHandler)
   }
 
   /**
@@ -104,7 +90,7 @@ class EventBus {
    * @return The handler id which is the same as the address
    */
   String registerSimpleHandler(handler, Closure resultHandler = null) {
-    jEB().registerHandler(wrapHandler(handler), resultHandler as AsyncResultHandler)
+    jEventBus.registerHandler(wrapHandler(handler), resultHandler as AsyncResultHandler)
   }
 
   /**
@@ -117,7 +103,7 @@ class EventBus {
   void unregisterHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = handlerMap.remove(handler)
     if (wrapped != null) {
-      jEB().unregisterHandler(address, wrapped, resultHandler as AsyncResultHandler)
+      jEventBus.unregisterHandler(address, wrapped, resultHandler as AsyncResultHandler)
     }
   }
 
@@ -128,11 +114,7 @@ class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   void unregisterSimpleHandler(String id, Closure resultHandler = null) {
-    jEB().unregisterHandler(id, resultHandler as AsyncResultHandler)
-  }
-
-  private JEventBus jEB() {
-    JEventBus.instance
+    jEventBus.unregisterHandler(id, resultHandler as AsyncResultHandler)
   }
 
   protected static convertMessage(message) {

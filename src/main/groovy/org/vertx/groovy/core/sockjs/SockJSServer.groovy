@@ -21,6 +21,9 @@ import org.vertx.java.core.sockjs.AppConfig
 import org.vertx.java.core.Handler
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
+import org.vertx.java.core.impl.VertxInternal
+import org.vertx.java.core.sockjs.impl.DefaultSockJSServer
+import org.vertx.java.core.json.JsonObject
 
 /**
  *
@@ -57,21 +60,12 @@ import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
 class SockJSServer {
   private JSockJSServer jServer;
 
-  /**
-   * Create a new SockJSServer.
-   * @param httpServer - you must pass in an HttpServer instance
-   */
-  public SockJSServer(HttpServer httpServer) {
-    jServer = new JSockJSServer(httpServer)
+  public SockJSServer(VertxInternal vertx, HttpServer httpServer) {
+    jServer = new DefaultSockJSServer(vertx, httpServer)
   }
 
-  /**
-   * Install an application
-   * @param config The application configuration
-   * @param sockHandler A handler that will be called when new SockJS sessions are created
-   */
-  public void installApp(AppConfig config, Closure sockHandler) {
-    jServer.installApp(config, {
+  public void installApp(Map config, Closure sockHandler) {
+    jServer.installApp(new AppConfig(config), {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
       sockHandler(new SockJSSocket(jSock) {
         
@@ -116,12 +110,15 @@ class SockJSServer {
   }
 
   /**
-   * Install an application
-   * @param config The application configuration as a map. Used to initialise
-   * an instance of {@link AppConfig}.
-   * @param sockHandler A handler that will be called when new SockJS sessions are created
+   * Install an app which bridges the SockJS server to the event bus
+   * @param config The config for the app
+   * @param permitted A list of JSON objects which define permitted matches
    */
-  public void installApp(Map config, Closure sockHandler) {
-    installApp(new AppConfig(config), sockHandler)
+  public void bridge(Map config, List<Map<String, Object>> permitted = [[:]]) {
+    List<JsonObject> jList = new ArrayList<>();
+    for (Map<String, Object> map: permitted) {
+      jList.add(new JsonObject(map));
+    }
+    jServer.bridge(new AppConfig(config), jList);
   }
 }

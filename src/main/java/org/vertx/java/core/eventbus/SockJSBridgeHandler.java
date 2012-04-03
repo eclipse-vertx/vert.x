@@ -48,7 +48,7 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
   private final EventBus eb;
   private List<JsonObject> permitted = new ArrayList<>();
 
-  SockJSBridgeHandler(EventBus eventBus) {
+  public SockJSBridgeHandler(EventBus eventBus) {
     this.eb = eventBus;
   }
 

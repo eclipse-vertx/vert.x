@@ -31,6 +31,7 @@ import org.vertx.java.core.file.AsyncFile as JAsyncFile
  * @author <a href="http://tfox.org">Tim Fox</a>
   */
 class AsyncFile{
+
   private final JAsyncFile jFile
 
   AsyncFile(JAsyncFile jFile) {

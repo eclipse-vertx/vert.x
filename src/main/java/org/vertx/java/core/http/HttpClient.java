@@ -45,10 +45,7 @@ import java.util.Map;
 public class HttpClient {
 
   private final DefaultHttpClient client;
-  
-  /**
-   * Create an {@code HttpClient} instance
-   */
+
   public HttpClient(VertxInternal vertx) {
     client = new DefaultHttpClient(vertx);
   }

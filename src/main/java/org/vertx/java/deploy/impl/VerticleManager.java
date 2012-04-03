@@ -56,6 +56,7 @@ public class VerticleManager {
 
   public VerticleManager(VertxInternal vertx) {
     this.vertx = vertx;
+    VertxLocator.vertx = vertx;
   }
 
   public void block() {
@@ -134,7 +135,7 @@ public class VerticleManager {
           verticleFactory = new RhinoVerticleFactory(this);
           break;
         case GROOVY:
-          verticleFactory = new GroovyVerticleFactory(this);
+          verticleFactory = new GroovyVerticleFactory(vertx, this);
           break;
         default:
           throw new IllegalArgumentException("Unsupported type: " + type);
