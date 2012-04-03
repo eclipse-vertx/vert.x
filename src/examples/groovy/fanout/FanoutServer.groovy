@@ -21,7 +21,7 @@ conns = SharedData.instance.getSet('conns')
 
 eb = EventBus.instance
 
-server = new NetServer().connectHandler { socket ->
+server = vertx.createNetServer().connectHandler { socket ->
   conns << socket.writeHandlerID
   socket.dataHandler { data ->
     for (id in conns) { eb.send(id, data) }

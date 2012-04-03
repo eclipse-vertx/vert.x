@@ -34,7 +34,7 @@ public abstract class BusModBase extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(BusModBase.class);
 
-  protected final EventBus eb = EventBus.instance;
+  protected final EventBus eb = vertx.eventBus();
   protected JsonObject config;
   protected String address;
 
@@ -48,7 +48,7 @@ public abstract class BusModBase extends Verticle {
    * Start the busmod
    */
   public void start() {
-    config = Container.instance.getConfig();
+    config = container.getConfig();
     address = config.getString("address");
     if (address == null) {
       throw new IllegalArgumentException("address must be specified in config for busmod");

@@ -27,6 +27,22 @@ public abstract class Verticle {
 
   protected Vertx vertx;
 
+  protected Container container;
+
+  /**
+   * @return a reference to the Container
+   */
+  public Container getContainer() {
+    return container;
+  }
+
+  /**
+   * Inject the container
+   */
+  public void setContainer(Container container) {
+    this.container = container;
+  }
+
   /**
    * @return A reference to a Vertx
    */

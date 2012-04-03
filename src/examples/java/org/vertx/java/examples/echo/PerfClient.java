@@ -27,7 +27,7 @@ import org.vertx.java.deploy.Verticle;
 public class PerfClient extends Verticle {
 
   public void start() {
-    new NetClient().connect(1234, "localhost", new Handler<NetSocket>() {
+    vertx.createNetClient().connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         final int packetSize = 32 * 1024;

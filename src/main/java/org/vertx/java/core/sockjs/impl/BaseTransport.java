@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.impl.StringEscapeUtils;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -40,6 +41,7 @@ class BaseTransport {
 
   private static final Logger log = LoggerFactory.getLogger(BaseTransport.class);
 
+  protected final VertxInternal vertx;
   protected final Map<String, Session> sessions;
   protected AppConfig config;
 
@@ -47,7 +49,8 @@ class BaseTransport {
 
   private static final long RAND_OFFSET = 2l << 30;
 
-  public BaseTransport(Map<String, Session> sessions, AppConfig config) {
+  public BaseTransport(VertxInternal vertx, Map<String, Session> sessions, AppConfig config) {
+    this.vertx = vertx;
     this.sessions = sessions;
     this.config = config;
   }
@@ -56,7 +59,7 @@ class BaseTransport {
                                Handler<SockJSSocket> sockHandler) {
     Session session = sessions.get(sessionID);
     if (session == null) {
-      session = new Session(sessionID, timeout, heartbeatPeriod, sockHandler);
+      session = new Session(vertx, sessionID, timeout, heartbeatPeriod, sockHandler);
       final Session theSession = session;
       session.setTimeoutHandler(new SimpleHandler() {
         public void handle() {

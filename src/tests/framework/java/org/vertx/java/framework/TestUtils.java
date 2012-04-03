@@ -18,6 +18,7 @@ package org.vertx.java.framework;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -41,13 +42,15 @@ public class TestUtils {
 
   private static final Logger log = LoggerFactory.getLogger(TestUtils.class);
 
+  private final Vertx vertx;
   private final Thread th;
   private final Context context;
   private Map<String, Handler<Message<JsonObject>>> handlers = new HashMap<>();
 
-  public TestUtils() {
+  public TestUtils(Vertx vertx) {
+    this.vertx = vertx;
     this.th = Thread.currentThread();
-    this.context = VertxInternal.instance.getContext();
+    this.context = Context.getContext();
   }
 
   public void azzert(boolean result) {
@@ -112,7 +115,7 @@ public class TestUtils {
         }
       }
     };
-    EventBus.instance.registerHandler(TestBase.EVENTS_ADDRESS, h);
+    vertx.eventBus().registerHandler(TestBase.EVENTS_ADDRESS, h);
     handlers.put(testName, h);
   }
 
@@ -135,14 +138,14 @@ public class TestUtils {
 
   public void unregisterAll() {
     for (Handler<Message<JsonObject>> handler: handlers.values()) {
-      EventBus.instance.unregisterHandler(TestBase.EVENTS_ADDRESS, handler);
+      vertx.eventBus().unregisterHandler(TestBase.EVENTS_ADDRESS, handler);
     }
     handlers.clear();
   }
 
   private void sendMessage(JsonObject msg) {
     try {
-      EventBus.instance.send(TestBase.EVENTS_ADDRESS, msg);
+      vertx.eventBus().send(TestBase.EVENTS_ADDRESS, msg);
     } catch (Exception e) {
       log.error("Failed to send message", e);
     }
@@ -230,8 +233,7 @@ public class TestUtils {
       throw new IllegalStateException("Don't call checkContext if utils were created with a null context");
     }
     azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
-    azzert(context.equals(VertxInternal.instance.getContext()), "Expected:" + context + " Actual:" + VertxInternal.instance
-        .getContext());
+    azzert(context.equals(Context.getContext()), "Expected:" + context + " Actual:" + Context.getContext());
   }
 
 }

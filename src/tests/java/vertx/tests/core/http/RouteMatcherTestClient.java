@@ -306,11 +306,11 @@ public class RouteMatcherTestClient extends TestClientBase {
       });
     }
 
-    final HttpServer server = new HttpServer();
+    final HttpServer server = vertx.createHttpServer();
     server.requestHandler(matcher);
     server.listen(8080, "localhost");
 
-    final HttpClient client = new HttpClient().setPort(8080).setHost("localhost");
+    final HttpClient client = vertx.createHttpClient().setPort(8080).setHost("localhost");
 
     Handler<HttpClientResponse> respHandler = new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {

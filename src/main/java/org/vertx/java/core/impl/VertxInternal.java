@@ -29,25 +29,17 @@ import java.util.concurrent.ExecutorService;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VertxInternal extends Vertx {
+public abstract class VertxInternal extends Vertx {
 
-  static VertxInternal instance = (VertxInternal) Vertx.instance;
+  public abstract Executor getAcceptorPool();
 
-  NioWorkerPool getWorkerPool();
+  public abstract ExecutorService getBackgroundPool();
 
-  Executor getAcceptorPool();
+  public abstract Context startOnEventLoop(Runnable runnable);
 
-  Context getContext();
+  public abstract Context startInBackground(Runnable runnable);
 
-  void setContext(Context context);
+  public abstract Context getOrAssignContext();
 
-  ExecutorService getBackgroundPool();
-
-  Context startOnEventLoop(Runnable runnable);
-
-  Context startInBackground(Runnable runnable);
-
-  Context getOrAssignContext();
-
-  void reportException(Throwable t);
+  public abstract void reportException(Throwable t);
 }

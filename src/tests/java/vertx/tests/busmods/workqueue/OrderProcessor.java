@@ -30,9 +30,9 @@ import java.util.UUID;
  */
 public class OrderProcessor extends Verticle implements Handler<Message<JsonObject>> {
 
-  private TestUtils tu = new TestUtils();
+  private TestUtils tu = new TestUtils(vertx);
 
-  private EventBus eb = EventBus.instance;
+  private EventBus eb = vertx.eventBus();
 
   private String address = UUID.randomUUID().toString();
 

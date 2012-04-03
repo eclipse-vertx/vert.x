@@ -41,7 +41,7 @@ public class WebsocketsTestClient extends TestClientBase {
   @Override
   public void start() {
     super.start();
-    client = new HttpClient().setHost("localhost").setPort(8080);
+    client = vertx.createHttpClient().setHost("localhost").setPort(8080);
     tu.appReady();
   }
 
@@ -112,7 +112,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     final String path = "/some/path";
 
-    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+    server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkContext();
         tu.azzert(path.equals(ws.path));
@@ -167,7 +167,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     final Buffer buff = new Buffer("AAA");
 
-    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+    server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.azzert(path.equals(ws.path));
         ws.writeBinaryFrame(buff);
@@ -195,7 +195,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     final String path = "/some/path";
 
-    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+    server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
 
         tu.checkContext();

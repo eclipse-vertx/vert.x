@@ -20,7 +20,7 @@ import org.vertx.java.core.shareddata.SharedData
 import org.vertx.groovy.core.eventbus.EventBus
 import org.vertx.groovy.core.buffer.Buffer
 
-new NetServer().connectHandler { socket ->
+vertx.createNetServer().connectHandler { socket ->
   def parser = RecordParser.newDelimited("\n") { line ->
     line = line.toString().trim()
     switch (line) {

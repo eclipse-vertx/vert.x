@@ -30,7 +30,7 @@ import java.util.Set;
 public class PubSubServer extends Verticle {
 
   public void start() {
-    new NetServer().connectHandler(new Handler<NetSocket>() {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
           public void handle(Buffer frame) {
@@ -48,7 +48,7 @@ public class PubSubServer extends Verticle {
               Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
               for (String actorID : actorIDs) {
                 System.out.println("Sending to verticle");
-                EventBus.instance.send(actorID, new Buffer(parts[2]));
+                vertx.eventBus().send(actorID, new Buffer(parts[2]));
               }
             }
           }

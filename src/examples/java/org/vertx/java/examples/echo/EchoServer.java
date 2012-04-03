@@ -25,7 +25,7 @@ import org.vertx.java.deploy.Verticle;
 public class EchoServer extends Verticle {
 
   public void start() {
-    new NetServer().connectHandler(new Handler<NetSocket>() {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         new Pump(socket, socket).start();
       }

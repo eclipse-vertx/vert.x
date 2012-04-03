@@ -30,9 +30,11 @@ public abstract class BlockingAction<T>  {
 
   protected Context context;
 
+  private final VertxInternal vertx;
   private final AsyncResultHandler handler;
 
-  public BlockingAction(AsyncResultHandler handler) {
+  public BlockingAction(VertxInternal vertx, AsyncResultHandler handler) {
+    this.vertx = vertx;
     this.handler = handler;
   }
 
@@ -40,7 +42,7 @@ public abstract class BlockingAction<T>  {
    * Run the blocking action using a thread from the worker pool.
    */
   public void run() {
-    context = VertxInternal.instance.getOrAssignContext();
+    context = vertx.getOrAssignContext();
 
     Runnable runner = new Runnable() {
       public void run() {
@@ -61,12 +63,12 @@ public abstract class BlockingAction<T>  {
             });
           }
         } catch (Throwable t) {
-          VertxInternal.instance.reportException(t);
+          vertx.reportException(t);
         }
       }
     };
 
-    VertxInternal.instance.getBackgroundPool().execute(runner);
+    vertx.getBackgroundPool().execute(runner);
   }
 
   public abstract T action() throws Exception;

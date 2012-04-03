@@ -17,7 +17,7 @@
 import org.vertx.groovy.core.eventbus.SockJSBridge
 import org.vertx.groovy.core.http.HttpServer
 
-server = new HttpServer()
+server = vertx.createHttpServer()
 
 // Serve the static resources
 server.requestHandler { req ->

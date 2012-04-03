@@ -346,9 +346,10 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testExistsNoContext() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    FileSystem.instance.exists(TMP_DIR + "/foo", new AsyncResultHandler<Boolean>() {
+    final Vertx vertx = Vertx.newVertx();
+    vertx.fileSystem().exists(TMP_DIR + "/foo", new AsyncResultHandler<Boolean>() {
       public void handle(AsyncResult event) {
-        assert(Vertx.instance.isEventLoop());
+        assert(vertx.isEventLoop());
         latch.countDown();
       }
     });
@@ -358,9 +359,10 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpenNoContext() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    FileSystem.instance.open(TMP_DIR + "/foo", new AsyncResultHandler<AsyncFile>() {
+    final Vertx vertx = Vertx.newVertx();
+    vertx.fileSystem().open(TMP_DIR + "/foo", new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult event) {
-        assert (Vertx.instance.isEventLoop());
+        assert (vertx.isEventLoop());
         latch.countDown();
       }
     });

@@ -16,7 +16,7 @@ import org.vertx.groovy.core.http.HttpServer
 * limitations under the License.
 */
 
-new HttpServer().requestHandler { req ->
+vertx.createHttpServer().requestHandler { req ->
   req.response.end()
 }.listen(8080, 'localhost')
 

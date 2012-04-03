@@ -26,7 +26,7 @@ import org.vertx.java.deploy.Verticle;
 public class WebsocketsExample extends Verticle {
 
   public void start() {
-    new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+    vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         if (ws.path.equals("/myapp")) {
           ws.dataHandler(new Handler<Buffer>() {

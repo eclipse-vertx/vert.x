@@ -17,7 +17,7 @@
 import org.vertx.groovy.core.net.NetClient
 import org.vertx.groovy.core.buffer.Buffer
 
-new NetClient().connect(1234, "localhost") { socket->
+vertx.createNetClient().connect(1234, "localhost") { socket->
 
   socket.dataHandler { buffer ->
     println "Net client receiving: ${buffer.toString()}"

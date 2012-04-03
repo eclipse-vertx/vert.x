@@ -34,7 +34,7 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = EventBus.instance;
+  private EventBus eb = vertx.eventBus();
 
   private String persistorID;
 
@@ -45,7 +45,7 @@ public class TestClient extends TestClientBase {
     JsonObject config = new JsonObject();
     config.putString("address", "test.persistor");
     config.putString("db_name", "test_db");
-    persistorID = Container.instance.deployWorkerVerticle(MongoPersistor.class.getName(), config, 1, new SimpleHandler() {
+    persistorID = container.deployWorkerVerticle(MongoPersistor.class.getName(), config, 1, new SimpleHandler() {
       public void handle() {
         tu.appReady();
       }

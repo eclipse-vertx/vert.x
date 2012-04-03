@@ -31,12 +31,12 @@ import vertx.tests.core.http.TLSTestParams;
  */
 public class TLSServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private NetServer server;
 
   public void start() {
-    server = new NetServer();
+    server = vertx.createNetServer();
 
     TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 

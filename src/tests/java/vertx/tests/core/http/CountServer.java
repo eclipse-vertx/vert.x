@@ -28,12 +28,12 @@ import org.vertx.java.framework.TestUtils;
  */
 public class CountServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private HttpServer server;
 
   public void start() {
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkContext();
         req.response.headers().put("count", req.headers().get("count"));

@@ -16,6 +16,7 @@
 package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
+import org.vertx.java.core.impl.VertxInternal
 
 /**
  * Represents a TCP or SSL server
@@ -34,8 +35,8 @@ import org.vertx.java.core.Handler
  */
 class NetServer extends org.vertx.java.core.net.NetServer {
 
-  NetServer() {
-    super()
+  NetServer(VertxInternal vertx) {
+    super(vertx)
   }
 
   /**

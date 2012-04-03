@@ -20,7 +20,7 @@ import org.vertx.groovy.core.http.HttpServer
 
 client = new HttpClient(port: 8282)
 
-server = new HttpServer().requestHandler { req ->
+server = vertx.createHttpServer().requestHandler { req ->
   println "Proxying request: ${req.uri}"
 
   def c_req = client.request(req.method, req.uri) { c_res ->

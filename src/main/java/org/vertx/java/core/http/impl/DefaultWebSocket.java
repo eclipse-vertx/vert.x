@@ -23,6 +23,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ import java.util.UUID;
  */
 public class DefaultWebSocket extends ServerWebSocket {
 
+  private final VertxInternal vertx;
   private final AbstractConnection conn;
 
   private Handler<Buffer> dataHandler;
@@ -48,21 +50,23 @@ public class DefaultWebSocket extends ServerWebSocket {
   boolean rejected;
   private boolean connected;
 
-  protected DefaultWebSocket(String path, AbstractConnection conn, Runnable connectRunnable) {
+  protected DefaultWebSocket(VertxInternal vertx, String path, AbstractConnection conn, Runnable connectRunnable) {
     super(path, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+    this.vertx = vertx;
     this.conn = conn;
     binaryHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> msg) {
         writeBinaryFrame(msg.body);
       }
     };
-    EventBus.instance.registerLocalHandler(binaryHandlerID, binaryHandler);
+
+    vertx.eventBus().registerLocalHandler(binaryHandlerID, binaryHandler);
     textHandler = new Handler<Message<String>>() {
       public void handle(Message<String> msg) {
         writeTextFrame(msg.body);
       }
     };
-    EventBus.instance.registerLocalHandler(textHandlerID, textHandler);
+    vertx.eventBus().registerLocalHandler(textHandlerID, textHandler);
     this.connectRunnable = connectRunnable;
   }
 
@@ -148,8 +152,8 @@ public class DefaultWebSocket extends ServerWebSocket {
       }
     }
     conn.close();
-    EventBus.instance.unregisterHandler(binaryHandlerID, binaryHandler);
-    EventBus.instance.unregisterHandler(textHandlerID, textHandler);
+    vertx.eventBus().unregisterHandler(binaryHandlerID, binaryHandler);
+    vertx.eventBus().unregisterHandler(textHandlerID, textHandler);
     closed = true;
   }
 

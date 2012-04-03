@@ -19,6 +19,7 @@ package vertx.tests.core.blockingaction;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.impl.BlockingAction;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.framework.TestClientBase;
 
 /**
@@ -55,7 +56,7 @@ public class TestClient extends TestClientBase {
 
     for (int i = 0; i < numActions; i++) {
       // One that succeeeds
-      new BlockingAction<String>(new AsyncResultHandler<String>() {
+      new BlockingAction<String>((VertxInternal)vertx, new AsyncResultHandler<String>() {
         public void handle(AsyncResult<String> event) {
           tu.azzert(event.succeeded());
           tu.azzert("foo".equals(event.result));
@@ -68,7 +69,7 @@ public class TestClient extends TestClientBase {
       }.run();
 
       // One that throws an exception
-      new BlockingAction<String>(new AsyncResultHandler<String>() {
+      new BlockingAction<String>((VertxInternal)vertx, new AsyncResultHandler<String>() {
         public void handle(AsyncResult<String> event) {
           tu.azzert(!event.succeeded());
           tu.azzert("Wibble".equals(event.exception.getMessage()));

@@ -66,6 +66,7 @@ public class DefaultNetServer {
 
   private static final Map<ServerID, DefaultNetServer> servers = new HashMap<>();
 
+  private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
@@ -77,9 +78,10 @@ public class DefaultNetServer {
   private final VertxWorkerPool availableWorkers = new VertxWorkerPool();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
-  public DefaultNetServer() {
-    ctx = VertxInternal.instance.getOrAssignContext();
-    if (VertxInternal.instance.isWorker()) {
+  public DefaultNetServer(VertxInternal vertx) {
+    this.vertx = vertx;
+    ctx = vertx.getOrAssignContext();
+    if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
     ctx.addCloseHook(new Runnable() {
@@ -115,7 +117,7 @@ public class DefaultNetServer {
 
         ChannelFactory factory =
             new NioServerSocketChannelFactory(
-                VertxInternal.instance.getAcceptorPool(),
+                vertx.getAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
@@ -214,7 +216,7 @@ public class DefaultNetServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    VertxInternal.instance.setContext(closeContext);
+    Context.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
@@ -385,7 +387,7 @@ public class DefaultNetServer {
     private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       handler.context.execute(new Runnable() {
         public void run() {
-          DefaultNetSocket sock = new DefaultNetSocket(ch, handler.context);
+          DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
           socketMap.put(ch, sock);
           handler.handler.handle(sock);
         }

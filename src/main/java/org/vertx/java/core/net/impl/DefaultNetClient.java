@@ -55,6 +55,7 @@ public class DefaultNetClient {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
 
+  private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
@@ -64,9 +65,10 @@ public class DefaultNetClient {
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
 
-  public DefaultNetClient() {
-    ctx = VertxInternal.instance.getOrAssignContext();
-    if (VertxInternal.instance.isWorker()) {
+  public DefaultNetClient(VertxInternal vertx) {
+    this.vertx = vertx;
+    ctx = vertx.getOrAssignContext();
+    if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
     ctx.addCloseHook(new Runnable() {
@@ -244,8 +246,7 @@ public class DefaultNetClient {
       pool.addWorker(ectx.getWorker());
 
       channelFactory = new NioClientSocketChannelFactory(
-          VertxInternal.instance.getAcceptorPool(), 1,
-          pool);
+          vertx.getAcceptorPool(), 1, pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -295,10 +296,10 @@ public class DefaultNetClient {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             tcpHelper.runOnCorrectThread(ch, new Runnable() {
               public void run() {
-                VertxInternal.instance.setContext(ctx);
+                Context.setContext(ctx);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
                 //Set a timer to retry connection
-                Vertx.instance.setTimer(reconnectInterval, new Handler<Long>() {
+                vertx.setTimer(reconnectInterval, new Handler<Long>() {
                   public void handle(Long timerID) {
                     connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
                         - 1);
@@ -317,8 +318,8 @@ public class DefaultNetClient {
   private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        VertxInternal.instance.setContext(ctx);
-        DefaultNetSocket sock = new DefaultNetSocket(ch, ctx);
+        Context.setContext(ctx);
+        DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, ctx);
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
       }
@@ -329,7 +330,7 @@ public class DefaultNetClient {
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          VertxInternal.instance.setContext(ctx);
+          Context.setContext(ctx);
           exceptionHandler.handle((Exception) t);
         }
       });

@@ -29,11 +29,6 @@ import org.vertx.java.core.eventbus.EventBus as JEventBus
 class EventBus {
 
   /**
-   * The event bus instance.
-   */
-  static EventBus instance = new EventBus()
-
-  /**
    * To use a clustered event bus on specified hostname use this method
    * @param hostname The hostname or ip address
    */

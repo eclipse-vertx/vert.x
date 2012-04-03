@@ -17,6 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 
 /**
@@ -35,13 +36,14 @@ import org.vertx.java.core.net.impl.DefaultNetServer;
  */
 public class NetServer {
 
-  private final DefaultNetServer server = new DefaultNetServer();
+  private final DefaultNetServer server;
 
   /**
    * Create a new NetServer instance.
    */
-  public NetServer() {
+  public NetServer(VertxInternal vertx) {
     setReuseAddress(true);
+    server = new DefaultNetServer(vertx);
   }
 
   /**

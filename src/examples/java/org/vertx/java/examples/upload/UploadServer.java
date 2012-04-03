@@ -33,7 +33,7 @@ public class UploadServer extends Verticle {
 
   public void start() {
 
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
         // We first pause the request so we don't receive any data between now and when the file is opened
@@ -41,7 +41,7 @@ public class UploadServer extends Verticle {
 
         final String filename = "upload/file-" + UUID.randomUUID().toString() + ".upload";
 
-        FileSystem.instance.open(filename, new AsyncResultHandler<AsyncFile>() {
+        vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
           public void handle(AsyncResult<AsyncFile> ar) {
             final AsyncFile file = ar.result;
             final Pump pump = new Pump(req, file.getWriteStream());

@@ -19,6 +19,7 @@ package org.vertx.java.tests.core.net;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -373,7 +374,9 @@ public class JavaNetTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    final NetServer server = new NetServer();
+    Vertx vertx = Vertx.newVertx();
+
+    final NetServer server = vertx.createNetServer();
     server.connectHandler(new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
         Pump p = new Pump(socket, socket);
@@ -382,7 +385,7 @@ public class JavaNetTest extends TestBase {
     });
     server.listen(1234);
 
-    final NetClient client = new NetClient();
+    final NetClient client = vertx.createNetClient();
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
         socket.dataHandler(new Handler<Buffer>() {

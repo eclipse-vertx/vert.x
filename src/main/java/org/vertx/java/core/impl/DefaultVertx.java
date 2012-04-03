@@ -22,11 +22,22 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.impl.DefaultEventBus;
+import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.sockjs.SockJSServer;
+import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,9 +49,12 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultVertx implements VertxInternal {
+public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
+
+  private final FileSystem fileSystem = new FileSystem(this);
+  private final EventBus eventBus;
 
   private int backgroundPoolSize = 1;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
@@ -50,38 +64,54 @@ public class DefaultVertx implements VertxInternal {
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
 
-  private static final ThreadLocal<Context> contextTL = new ThreadLocal<>();
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
       TimeUnit.MILLISECONDS);
+  {
+    timer.start();
+  }
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
   public DefaultVertx() {
-    timer.start();
+    this.eventBus = new DefaultEventBus(this);
   }
 
-  public synchronized void setCoreThreadPoolSize(int size) {
-    if (corePool != null) {
-      throw new IllegalStateException("Cannot set core pool size after pool has been created");
-    }
-    corePoolSize = size;
+  public DefaultVertx(String hostname) {
+    this.eventBus = new DefaultEventBus(this, hostname);
   }
 
-  public synchronized int getCoreThreadPoolSize() {
-    return corePoolSize;
+  public DefaultVertx(int port, String hostname) {
+    this.eventBus = new DefaultEventBus(this, port, hostname);
   }
 
-  public synchronized void setBackgroundThreadPoolSize(int size) {
-    if (backgroundPool != null) {
-      throw new IllegalStateException("Cannot set worker size after pool has been created");
-    }
-    backgroundPoolSize = size;
+  public NetServer createNetServer() {
+    return new NetServer(this);
   }
 
-  public synchronized int getBackgroundThreadPoolSize() {
-    return backgroundPoolSize;
+  public NetClient createNetClient() {
+    return new NetClient(this);
+  }
+
+  public FileSystem fileSystem() {
+    return fileSystem;
+  }
+
+  public HttpServer createHttpServer() {
+    return new HttpServer(this);
+  }
+
+  public HttpClient createHttpClient() {
+    return new HttpClient(this);
+  }
+
+  public SockJSServer createSockJSServer(HttpServer httpServer) {
+    return new DefaultSockJSServer(this, httpServer);
+  }
+
+  public EventBus eventBus() {
+    return eventBus;
   }
 
   public Context startOnEventLoop(final Runnable runnable) {
@@ -105,7 +135,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean isEventLoop() {
-    Context context = getContext();
+    Context context = Context.getContext();
     if (context != null) {
       return context instanceof EventLoopContext;
     }
@@ -113,7 +143,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean isWorker() {
-    Context context = getContext();
+    Context context = Context.getContext();
     if (context != null) {
       return context instanceof WorkerContext;
     }
@@ -184,16 +214,9 @@ public class DefaultVertx implements VertxInternal {
     return result;
   }
 
-  public void setContext(Context context) {
-    contextTL.set(context);
-  }
-
-  public Context getContext() {
-    return contextTL.get();
-  }
 
   public Context getOrAssignContext() {
-    Context ctx = getContext();
+    Context ctx = Context.getContext();
     if (ctx == null) {
       // Assign a context
       ctx = createEventLoopContext();
@@ -202,7 +225,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    Context ctx = getContext();
+    Context ctx = Context.getContext();
     if (ctx != null) {
       ctx.reportException(t);
     } else {

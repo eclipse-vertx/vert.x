@@ -17,7 +17,9 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
@@ -54,29 +56,15 @@ import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SockJSServer {
-
-  private static final Logger log = LoggerFactory.getLogger(SockJSServer.class);
-
-  private final DefaultSockJSServer serverDefault;
-
-  /**
-   * Create a new SockJSServer.
-   * @param httpServer - you must pass in an HttpServer instance
-   */
-  public SockJSServer(HttpServer httpServer) {
-    serverDefault = new DefaultSockJSServer(httpServer);
-  }
+public abstract class SockJSServer {
 
   /**
    * Install an application
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sessions are created
    */
-  public void installApp(AppConfig config,
-                         final Handler<SockJSSocket> sockHandler) {
-    serverDefault.installApp(config, sockHandler);
-  }
+  public abstract void installApp(AppConfig config,
+                         final Handler<SockJSSocket> sockHandler);
 
 }
 

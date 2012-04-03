@@ -19,6 +19,7 @@ package org.vertx.java.core.sockjs.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -52,18 +53,19 @@ class Session extends SockJSSocket {
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
 
-  Session(long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
-    this(null, -1, heartbeatPeriod, sockHandler);
+  Session(VertxInternal vertx, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+    this(vertx, null, -1, heartbeatPeriod, sockHandler);
   }
 
-  Session(String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+  Session(VertxInternal vertx, String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+    super(vertx);
     this.id = id;
     this.timeout = timeout;
     this.sockHandler = sockHandler;
 
     // Start a heartbeat
 
-    heartbeatID = Vertx.instance.setPeriodic(heartbeatPeriod, new Handler<Long>() {
+    heartbeatID = vertx.setPeriodic(heartbeatPeriod, new Handler<Long>() {
       public void handle(Long id) {
         if (listener != null) {
           listener.sendFrame("h");
@@ -127,10 +129,10 @@ class Session extends SockJSSocket {
 
   public void shutdown() {
     if (heartbeatID != -1) {
-      Vertx.instance.cancelTimer(heartbeatID);
+      vertx.cancelTimer(heartbeatID);
     }
     if (timeoutTimerID != -1) {
-      Vertx.instance.cancelTimer(timeoutTimerID);
+      vertx.cancelTimer(timeoutTimerID);
     }
   }
 
@@ -154,9 +156,9 @@ class Session extends SockJSSocket {
     listener = null;
 
     if (timeout != -1) {
-      timeoutTimerID = Vertx.instance.setTimer(timeout, new Handler<Long>() {
+      timeoutTimerID = vertx.setTimer(timeout, new Handler<Long>() {
         public void handle(Long id) {
-          Vertx.instance.cancelTimer(heartbeatID);
+          vertx.cancelTimer(heartbeatID);
           if (listener == null) {
             timeoutHandler.handle(null);
           }
@@ -198,7 +200,7 @@ class Session extends SockJSSocket {
       this.listener = lst;
 
       if (timeoutTimerID != -1) {
-        Vertx.instance.cancelTimer(timeoutTimerID);
+        vertx.cancelTimer(timeoutTimerID);
         timeoutTimerID = -1;
       }
 

@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.SubsMap;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -67,15 +68,17 @@ public class HazelcastClusterManager implements ClusterManager {
     return instance;
   }
 
-  private HazelcastInstance hazelcast;
+  private final VertxInternal vertx;
+  private final HazelcastInstance hazelcast;
 
-  public HazelcastClusterManager() {
+  public HazelcastClusterManager(VertxInternal vertx) {
+    this.vertx = vertx;
     hazelcast = getHazelcast();
   }
 
   public SubsMap getSubsMap(String name) {
     com.hazelcast.core.MultiMap map = hazelcast.getMultiMap(name);
-    return new HazelcastSubsMap(map);
+    return new HazelcastSubsMap(vertx, map);
   }
 
   public void close() {

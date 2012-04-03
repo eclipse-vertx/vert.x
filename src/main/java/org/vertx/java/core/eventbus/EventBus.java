@@ -55,32 +55,6 @@ public abstract class EventBus {
   private static final Logger log = LoggerFactory.getLogger(EventBus.class);
 
   /**
-   * The event bus instance.
-   */
-  public static EventBus instance = new DefaultEventBus();
-
-  /**
-   * To use a clustered event bus on specified hostname use this method
-   * @param hostname The hostname or ip address
-   */
-  public static void setClustered(String hostname) {
-    instance = new DefaultEventBus(hostname);
-  }
-
-  /**
-   * To use a clustered event bus on specified port and hostname use this method
-   * @param port The port
-   * @param hostname The hostname or ip address
-   */
-  public static void setClustered(int port, String hostname) {
-    instance = new DefaultEventBus(port, hostname);
-  }
-
-  public static void setClustered(int port, String hostname, String clusterProviderClassName) {
-    instance = new DefaultEventBus(port, hostname, clusterProviderClassName);
-  }
-
-  /**
    * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message

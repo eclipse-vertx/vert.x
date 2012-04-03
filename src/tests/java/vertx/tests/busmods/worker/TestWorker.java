@@ -32,9 +32,9 @@ import org.vertx.java.framework.TestUtils;
  */
 public class TestWorker extends Verticle implements Handler<Message<JsonObject>> {
 
-  private TestUtils tu = new TestUtils();
+  private TestUtils tu = new TestUtils(vertx);
 
-  private EventBus eb = EventBus.instance;
+  private EventBus eb = vertx.eventBus();
 
   private String address = "testWorker";
 
@@ -59,28 +59,28 @@ public class TestWorker extends Verticle implements Handler<Message<JsonObject>>
       // Trying to create any network clients or servers should fail - workers can only use the event bus
 
       try {
-        new NetServer();
+        vertx.createNetServer();
         tu.azzert(false, "Should throw exception");
       } catch (IllegalStateException e) {
         // OK
       }
 
        try {
-        new NetClient();
+        vertx.createNetClient();
         tu.azzert(false, "Should throw exception");
       } catch (IllegalStateException e) {
         // OK
       }
 
        try {
-        new HttpServer();
+        vertx.createHttpServer();
         tu.azzert(false, "Should throw exception");
       } catch (IllegalStateException e) {
         // OK
       }
 
        try {
-        new HttpClient();
+        vertx.createHttpClient();
         tu.azzert(false, "Should throw exception");
       } catch (IllegalStateException e) {
         // OK

@@ -26,7 +26,7 @@ import org.vertx.java.deploy.Verticle;
 public class Client extends Verticle {
 
   public void start() {
-    HttpClientRequest req = new HttpClient().setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
+    HttpClientRequest req = vertx.createHttpClient().setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
         response.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {

@@ -17,6 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.DefaultNetClient;
 
 /**
@@ -40,12 +41,13 @@ import org.vertx.java.core.net.impl.DefaultNetClient;
  */
 public class NetClient {
 
-  private DefaultNetClient client = new DefaultNetClient();
+  private DefaultNetClient client;
 
   /**
    * Create a new {@code NetClient}
    */
-  public NetClient() {
+  public NetClient(VertxInternal vertx) {
+    client = new DefaultNetClient(vertx);
   }
 
   /**

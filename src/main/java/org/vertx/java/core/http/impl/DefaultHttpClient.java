@@ -63,6 +63,7 @@ public class DefaultHttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
+  private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
@@ -78,9 +79,10 @@ public class DefaultHttpClient {
   };
   private boolean keepAlive = true;
 
-  public DefaultHttpClient() {
-    ctx = VertxInternal.instance.getOrAssignContext();
-    if (VertxInternal.instance.isWorker()) {
+  public DefaultHttpClient(VertxInternal vertx) {
+    this.vertx = vertx;
+    ctx = vertx.getOrAssignContext();
+    if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
     ctx.addCloseHook(new Runnable() {
@@ -339,8 +341,7 @@ public class DefaultHttpClient {
       }
       pool.addWorker(ectx.getWorker());
       channelFactory = new NioClientSocketChannelFactory(
-          VertxInternal.instance.getAcceptorPool(), 1,
-          pool);
+          vertx.getAcceptorPool(), 1, pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -399,7 +400,7 @@ public class DefaultHttpClient {
   private void connected(final NioSocketChannel ch, final Handler<ClientConnection> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        final ClientConnection conn = new ClientConnection(DefaultHttpClient.this, ch,
+        final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
             host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx);
         conn.closedHandler(new SimpleHandler() {
           public void handle() {
@@ -407,7 +408,7 @@ public class DefaultHttpClient {
           }
         });
         connectionMap.put(ch, conn);
-        VertxInternal.instance.setContext(ctx);
+        Context.setContext(ctx);
         connectHandler.handle(conn);
       }
     });
@@ -417,7 +418,7 @@ public class DefaultHttpClient {
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          VertxInternal.instance.setContext(ctx);
+          Context.setContext(ctx);
           exceptionHandler.handle((Exception) t);
         }
       });

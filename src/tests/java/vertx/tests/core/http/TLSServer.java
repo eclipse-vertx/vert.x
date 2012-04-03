@@ -30,14 +30,14 @@ import org.vertx.java.framework.TestUtils;
  */
 public class TLSServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private HttpServer server;
 
   public void start() {
     TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
 
-    server = new HttpServer();
+    server = vertx.createHttpServer();
 
     server.setSSL(true);
 

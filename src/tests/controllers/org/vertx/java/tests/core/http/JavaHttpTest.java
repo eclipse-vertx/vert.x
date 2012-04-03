@@ -19,6 +19,7 @@ package org.vertx.java.tests.core.http;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
@@ -92,7 +93,9 @@ public class JavaHttpTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    final HttpServer server = new HttpServer();
+    final Vertx vertx = Vertx.newVertx();
+
+    final HttpServer server = vertx.createHttpServer();
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.end();
@@ -100,7 +103,7 @@ public class JavaHttpTest extends TestBase {
     });
     server.listen(8080);
 
-    final HttpClient client = new HttpClient().setPort(8080);
+    final HttpClient client = vertx.createHttpClient().setPort(8080);
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         server.close(new SimpleHandler() {

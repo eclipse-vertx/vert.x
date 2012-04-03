@@ -96,6 +96,7 @@ public class DefaultHttpServer {
 
   private static final Map<ServerID, DefaultHttpServer> servers = new HashMap<>();
 
+  private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context ctx;
   private Handler<HttpServerRequest> requestHandler;
@@ -111,9 +112,10 @@ public class DefaultHttpServer {
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  public DefaultHttpServer() {
-    ctx = VertxInternal.instance.getOrAssignContext();
-    if (VertxInternal.instance.isWorker()) {
+  public DefaultHttpServer(VertxInternal vertx) {
+    this.vertx = vertx;
+    ctx = vertx.getOrAssignContext();
+    if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
     ctx.addCloseHook(new Runnable() {
@@ -161,7 +163,7 @@ public class DefaultHttpServer {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
             new NioServerSocketChannelFactory(
-                VertxInternal.instance.getAcceptorPool(),
+                vertx.getAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions());
@@ -381,7 +383,7 @@ public class DefaultHttpServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    VertxInternal.instance.setContext(closeContext);
+    Context.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
@@ -476,7 +478,7 @@ public class DefaultHttpServer {
               throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
             }
 
-            final ServerConnection wsConn = new ServerConnection(ch, wsHandler.context);
+            final ServerConnection wsConn = new ServerConnection(vertx, ch, wsHandler.context);
             wsConn.wsHandler(wsHandler.handler);
             Runnable connectRunnable = new Runnable() {
               public void run() {
@@ -492,7 +494,7 @@ public class DefaultHttpServer {
                 }
               }
             };
-            DefaultWebSocket ws = new DefaultWebSocket(theURI.getPath(), wsConn, connectRunnable);
+            DefaultWebSocket ws = new DefaultWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
             wsConn.handleWebsocketConnect(ws);
             if (ws.rejected) {
               if (firstHandler == null) {
@@ -509,7 +511,7 @@ public class DefaultHttpServer {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
-              conn = new ServerConnection(ch, reqHandler.context);
+              conn = new ServerConnection(vertx, ch, reqHandler.context);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);

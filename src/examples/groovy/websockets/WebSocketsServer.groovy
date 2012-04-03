@@ -18,7 +18,7 @@ package websockets
 
 import org.vertx.groovy.core.http.HttpServer
 
-new HttpServer().websocketHandler { ws ->
+vertx.createHttpServer().websocketHandler { ws ->
   ws.dataHandler { data -> ws.writeTextFrame(data.toString()) }
 }.requestHandler { req ->
   if (req.uri == "/") req.response.sendFile "websockets/ws.html"

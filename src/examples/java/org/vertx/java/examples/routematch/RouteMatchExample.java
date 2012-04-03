@@ -41,6 +41,6 @@ public class RouteMatchExample extends Verticle {
       }
     });
 
-    new HttpServer().requestHandler(rm).listen(8080);
+    vertx.createHttpServer().requestHandler(rm).listen(8080);
   }
 }

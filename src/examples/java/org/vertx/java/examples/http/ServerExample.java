@@ -24,7 +24,7 @@ import org.vertx.java.deploy.Verticle;
 public class ServerExample extends Verticle {
 
   public void start() {
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         System.out.println("Got request: " + req.uri);
         System.out.println("Headers are: ");
