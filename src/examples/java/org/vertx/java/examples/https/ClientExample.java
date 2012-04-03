@@ -25,7 +25,7 @@ import org.vertx.java.deploy.Verticle;
 public class ClientExample extends Verticle {
 
   public void start() {
-    new HttpClient().setSSL(true).setTrustAll(true).setPort(4443).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
+    vertx.createHttpClient().setSSL(true).setTrustAll(true).setPort(4443).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
         response.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {

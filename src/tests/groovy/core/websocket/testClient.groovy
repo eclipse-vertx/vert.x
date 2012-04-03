@@ -26,7 +26,7 @@ import org.vertx.groovy.framework.TestUtils
 tu = new TestUtils()
 tu.checkContext()
 
-server = new HttpServer()
+server = vertx.createHttpServer()
 client = new HttpClient(port: 8080)
 
 def testEchoBinary() {

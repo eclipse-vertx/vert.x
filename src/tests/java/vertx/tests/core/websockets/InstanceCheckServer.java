@@ -31,7 +31,7 @@ import java.util.UUID;
  */
 public class InstanceCheckServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private HttpServer server;
 
@@ -39,7 +39,7 @@ public class InstanceCheckServer extends Verticle {
 
   public void start() {
 
-    server = new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+    server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkContext();
 

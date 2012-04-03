@@ -40,7 +40,7 @@ public class TestClient extends TestClientBase {
 
   public void testLogger() {
 
-    Logger logger = Container.instance.getLogger();
+    Logger logger = container.getLogger();
     tu.azzert(logger != null);
 
     //Not much we can do to test this

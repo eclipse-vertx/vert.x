@@ -30,9 +30,9 @@ public class ProxyServer extends Verticle {
 
   public void start()  {
 
-    final HttpClient client = new HttpClient().setHost("localhost").setPort(8282);
+    final HttpClient client = vertx.createHttpClient().setHost("localhost").setPort(8282);
 
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         System.out.println("Proxying request: " + req.uri);
         final HttpClientRequest cReq = client.request(req.method, req.uri, new Handler<HttpClientResponse>() {

@@ -181,7 +181,7 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
       // Set a timeout, if the user doesn't reply within 10 secs, close the cursor
       final long timerID = vertx.setTimer(10000, new Handler<Long>() {
         public void handle(Long timerID) {
-          Container.instance.getLogger().warn("Closing DB cursor on timeout");
+          container.getLogger().warn("Closing DB cursor on timeout");
           try {
             cursor.close();
           } catch (Exception ignore) {

@@ -45,8 +45,12 @@ public class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
   private static final Logger log = LoggerFactory.getLogger(SockJSBridgeHandler.class);
 
-  private final EventBus eb = EventBus.instance;
+  private final EventBus eb;
   private List<JsonObject> permitted = new ArrayList<>();
+
+  SockJSBridgeHandler(EventBus eventBus) {
+    this.eb = eventBus;
+  }
 
   public void addPermitted(JsonObject permitted) {
     this.permitted.add(permitted);

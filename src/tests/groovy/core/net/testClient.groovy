@@ -34,7 +34,7 @@ void testEchoSSL() {
 
 void echo(boolean ssl) {
 
-  server = new NetServer()
+  server = vertx.createNetServer()
 
   if (ssl) {
     server.SSL = true
@@ -54,7 +54,7 @@ void echo(boolean ssl) {
   }.listen(8080)
 
 
-  client = new NetClient()
+  client = vertx.createNetClient()
 
   if (ssl) {
     client.SSL = true

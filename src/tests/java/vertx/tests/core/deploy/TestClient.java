@@ -28,7 +28,7 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = EventBus.instance;
+  private EventBus eb = vertx.eventBus();
 
   @Override
   public void start() {
@@ -51,12 +51,12 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    Container.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
+    container.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
   }
 
   public void testUndeploy() {
 
-    final String id = Container.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
+    final String id = container.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
 
     vertx.setTimer(100, new Handler<Long>() {
       public void handle(Long tid) {
@@ -68,7 +68,7 @@ public class TestClient extends TestClientBase {
             }
           }
         });
-        Container.instance.undeployVerticle(id);
+        container.undeployVerticle(id);
       }
     });
 

@@ -32,6 +32,12 @@ public class RhinoVerticleFactory implements VerticleFactory {
     ContextFactory.initGlobal(new RhinoContextFactory());
   }
 
+  public RhinoVerticleFactory(VerticleManager mgr) {
+    this.mgr = mgr;
+  }
+
+  private final VerticleManager mgr;
+
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     Verticle app = new RhinoVerticle(main, cl);
     return app;
@@ -39,7 +45,7 @@ public class RhinoVerticleFactory implements VerticleFactory {
 
   public void reportException(Throwable t) {
 
-    Logger logger = VerticleManager.instance.getLogger();
+    Logger logger = mgr.getLogger();
 
     if (t instanceof RhinoException) {
       RhinoException je = (RhinoException)t;

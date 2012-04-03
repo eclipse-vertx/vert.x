@@ -32,6 +32,13 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JRubyVerticleFactory implements VerticleFactory {
+
+  private final VerticleManager mgr;
+
+  public JRubyVerticleFactory(VerticleManager mgr) {
+    this.mgr = mgr;
+  }
+
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     if (System.getProperty("jruby.home") == null) {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +
@@ -42,7 +49,7 @@ public class JRubyVerticleFactory implements VerticleFactory {
   }
 
   public void reportException(Throwable t) {
-    Logger logger = VerticleManager.instance.getLogger();
+    Logger logger = mgr.getLogger();
 
     RaiseException je = null;
     if (t instanceof EvalFailedException) {

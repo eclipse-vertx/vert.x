@@ -18,8 +18,10 @@ package org.vertx.java.deploy.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -60,6 +62,9 @@ public class VertxMgr {
   public static void main(String[] args) {
     new VertxMgr(args);
   }
+
+  private VertxInternal vertx;
+  private VerticleManager mgr;
 
   private VertxMgr(String[] sargs) {
     Args args = new Args(sargs);
@@ -111,7 +116,6 @@ public class VertxMgr {
   private void runApplication(String main, Args args) {
     if (startCluster(args)) {
       addShutdownHook();
-      VerticleManager mgr = VerticleManager.instance;
       DeployCommand dc = createDeployCommand(main, args, "run");
       if (dc != null) {
         JsonObject jsonConf;
@@ -134,8 +138,7 @@ public class VertxMgr {
   private void startServer(Args args) {
     if (startCluster(args)) {
       addShutdownHook();
-      VerticleManager mgr = VerticleManager.instance;
-      SocketDeployer sd = new SocketDeployer(mgr, args.getInt("-deploy-port"));
+      SocketDeployer sd = new SocketDeployer(vertx, mgr, args.getInt("-deploy-port"));
       sd.start();
       System.out.println("vert.x server started");
       mgr.block();
@@ -146,7 +149,7 @@ public class VertxMgr {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
-        VerticleManager.instance.undeployAll(new SimpleHandler() {
+        mgr.undeployAll(new SimpleHandler() {
           public void handle() {
             latch.countDown();
           }
@@ -258,9 +261,11 @@ public class VertxMgr {
           System.out.println("No cluster-host specified so using address " + clusterHost);
         }
       }
-      String clusterProviderClassName = args.map.get("-cluster-provider");
-      EventBus.setClustered(clusterPort, clusterHost, clusterProviderClassName);
+      vertx = new DefaultVertx(clusterPort, clusterHost);
+    } else {
+      vertx = new DefaultVertx();
     }
+    mgr = new VerticleManager(vertx);
     if (clustered) {
       System.out.println("Started");
     }
@@ -381,32 +386,29 @@ public class VertxMgr {
   private String sendCommand(final int port, final VertxCommand command) {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<String> result = new AtomicReference<>();
-    VertxInternal.instance.startOnEventLoop(new Runnable() {
-      public void run() {
-        final NetClient client = new NetClient();
-        client.connect(port, "localhost", new Handler<NetSocket>() {
-          public void handle(NetSocket socket) {
-            if (command.isBlock()) {
-              socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
-                public void handle(Buffer buff) {
-                  result.set(buff.toString());
-                  client.close();
-                  latch.countDown();
-                }
-              }));
-              command.write(socket, null);
-            } else {
-              command.write(socket, new SimpleHandler() {
-                public void handle() {
-                  client.close();
-                  latch.countDown();
-                }
-              });
+    final NetClient client = vertx.createNetClient();
+    client.connect(port, "localhost", new Handler<NetSocket>() {
+      public void handle(NetSocket socket) {
+        if (command.isBlock()) {
+          socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
+            public void handle(Buffer buff) {
+              result.set(buff.toString());
+              client.close();
+              latch.countDown();
             }
-          }
-        });
+          }));
+          command.write(socket, null);
+        } else {
+          command.write(socket, new SimpleHandler() {
+            public void handle() {
+              client.close();
+              latch.countDown();
+            }
+          });
+        }
       }
     });
+
     while (true) {
       try {
         if (!latch.await(10, TimeUnit.SECONDS)) {

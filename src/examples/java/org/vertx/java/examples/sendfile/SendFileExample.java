@@ -26,7 +26,7 @@ public class SendFileExample extends Verticle {
   private static final String webroot = "sendfile/";
 
   public void start() {
-    new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (req.path.equals("/")) {
           req.response.sendFile(webroot + "index.html");

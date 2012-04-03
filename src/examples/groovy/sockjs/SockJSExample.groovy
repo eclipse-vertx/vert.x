@@ -17,7 +17,7 @@
 import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.core.sockjs.SockJSServer
 
-server = new HttpServer()
+server = vertx.createHttpServer()
 
 // Serve the index page
 server.requestHandler { req ->

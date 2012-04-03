@@ -14,32 +14,27 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.core.stdio;
+package org.vertx.java.core.impl;
 
-import org.junit.Test;
-import org.vertx.java.framework.TestBase;
-import vertx.tests.core.stdio.TestClient;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaStdioTest extends TestBase {
+public class VertxThreadFactory implements ThreadFactory {
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    startApp(TestClient.class.getName());
+  private String prefix;
+  private AtomicInteger threadCount = new AtomicInteger(0);
+
+  VertxThreadFactory(String prefix) {
+    this.prefix = prefix;
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
+  public Thread newThread(Runnable runnable) {
+    Thread t = new Thread(runnable, prefix + threadCount.getAndIncrement());
+    // All vert.x threads are daemons
+    t.setDaemon(true);
+    return t;
   }
-
-  @Test
-  public void testIn() throws Exception {
-    startTest(getMethodName());
-  }
-
-
 }

@@ -35,7 +35,7 @@ public class UploadClient extends Verticle {
 
   public void start() throws Exception {
 
-    HttpClient client = new HttpClient().setPort(8080).setHost("localhost");
+    HttpClient client = vertx.createHttpClient().setPort(8080).setHost("localhost");
 
     final HttpClientRequest req = client.put("/some-url", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
@@ -51,7 +51,7 @@ public class UploadClient extends Verticle {
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);
 
-    FileSystem.instance.open(filename, new AsyncResultHandler<AsyncFile>() {
+    vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult<AsyncFile> ar) {
         final AsyncFile file = ar.result;
         Pump pump = new Pump(file.getReadStream(), req);

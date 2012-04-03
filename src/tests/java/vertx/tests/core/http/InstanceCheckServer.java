@@ -31,14 +31,14 @@ import java.util.UUID;
  */
 public class InstanceCheckServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private HttpServer server;
 
   private final String id = UUID.randomUUID().toString();
 
   public void start() {
-    server = new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
+    server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkContext();
 

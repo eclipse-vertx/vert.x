@@ -32,6 +32,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.security.MessageDigest;
@@ -49,16 +50,17 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultSockJSServer {
+public class DefaultSockJSServer extends SockJSServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultSockJSServer.class);
 
+  private final VertxInternal vertx;
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions = new HashMap<>();
 
-  public DefaultSockJSServer(final HttpServer httpServer) {
-
+  public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
+    this.vertx = vertx;
     // Any previous request and websocket handlers will become default handlers
     // if nothing else matches
     rm.noMatch(httpServer.requestHandler());
@@ -121,20 +123,20 @@ public class DefaultSockJSServer {
     }
 
     if (enabledTransports.contains(Transport.XHR)) {
-      new XhrTransport(rm, prefix, sessions, config, sockHandler);
+      new XhrTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.EVENT_SOURCE)) {
-      new EventSourceTransport(rm, prefix, sessions, config, sockHandler);
+      new EventSourceTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.HTML_FILE)) {
-      new HtmlFileTransport(rm, prefix, sessions, config, sockHandler);
+      new HtmlFileTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.JSON_P)) {
-      new JsonPTransport(rm, prefix, sessions, config, sockHandler);
+      new JsonPTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
     if (enabledTransports.contains(Transport.WEBSOCKETS)) {
-      new WebSocketTransport(wsMatcher, rm, prefix, sessions, config, sockHandler);
-      new RawWebSocketTransport(wsMatcher, rm, prefix, sockHandler);
+      new WebSocketTransport(vertx, wsMatcher, rm, prefix, sessions, config, sockHandler);
+      new RawWebSocketTransport(vertx, wsMatcher, rm, prefix, sockHandler);
     }
     // Catch all for any other requests on this app
 
@@ -172,7 +174,7 @@ public class DefaultSockJSServer {
       private void nextTimeout(final List<TimeoutInfo> timeouts, final Iterator<TimeoutInfo> iter, final HttpServerResponse response) {
         if (iter.hasNext()) {
           final TimeoutInfo timeout = iter.next();
-          Vertx.instance.setTimer(timeout.timeout, new Handler<Long>() {
+          vertx.setTimer(timeout.timeout, new Handler<Long>() {
             public void handle(Long id) {
               response.write(timeout.buff);
               nextTimeout(timeouts, iter, response);
@@ -269,17 +271,17 @@ public class DefaultSockJSServer {
       "</html>";
 
   // For debug only
-  public static void main(String[] args) throws Exception {
-    VertxInternal.instance.startOnEventLoop(new Runnable() {
-      public void run() {
-        HttpServer httpServer = new HttpServer();
-        DefaultSockJSServer sjsServer = new DefaultSockJSServer(httpServer);
-        sjsServer.installTestApplications();
-        httpServer.listen(8081);
-      }
-    });
-    Thread.sleep(Long.MAX_VALUE);
-  }
+//  public static void main(String[] args) throws Exception {
+//    VertxInternal.instance.startOnEventLoop(new Runnable() {
+//      public void run() {
+//        HttpServer httpServer = vertx.createHttpServer();
+//        DefaultSockJSServer sjsServer = new DefaultSockJSServer(httpServer);
+//        sjsServer.installTestApplications();
+//        httpServer.listen(8081);
+//      }
+//    });
+//    Thread.sleep(Long.MAX_VALUE);
+//  }
 
   /*
   These applications are required by the SockJS protocol and QUnit tests
@@ -313,14 +315,14 @@ public class DefaultSockJSServer {
         });
     installApp(new AppConfig().setPrefix("/ticker").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
-        final long timerID = Vertx.instance.setPeriodic(1000, new Handler<Long>() {
+        final long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
             sock.writeBuffer(new Buffer("tick!"));
           }
         });
         sock.endHandler(new SimpleHandler() {
           public void handle() {
-            Vertx.instance.cancelTimer(timerID);
+            vertx.cancelTimer(timerID);
           }
         });
       }
@@ -352,7 +354,7 @@ public class DefaultSockJSServer {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
-              EventBus.instance.send(actorID, buffer);
+              vertx.eventBus().send(actorID, buffer);
             }
           }
         });

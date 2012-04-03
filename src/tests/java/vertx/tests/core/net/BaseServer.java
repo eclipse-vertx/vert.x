@@ -29,7 +29,7 @@ import org.vertx.java.framework.TestUtils;
  */
 public abstract class BaseServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private NetServer server;
 
@@ -40,7 +40,7 @@ public abstract class BaseServer extends Verticle {
   }
 
   public void start() {
-    server = new NetServer();
+    server = vertx.createNetServer();
     server.connectHandler(getConnectHandler());
     Integer port = SharedData.instance.<String, Integer>getMap("params").get("listenport");
     int p = port == null ? 1234: port;

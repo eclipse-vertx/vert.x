@@ -45,7 +45,7 @@ public class TestClient extends TestClientBase {
   @Override
   public void start() {
     super.start();
-    client = new NetClient();
+    client = vertx.createNetClient();
     tu.appReady();
   }
 
@@ -195,7 +195,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testServerDefaults() {
-    NetServer server = new NetServer();
+    NetServer server = vertx.createNetServer();
     tu.azzert(!server.isSSL());
     tu.azzert(server.getKeyStorePassword() == null);
     tu.azzert(server.getKeyStorePath() == null);
@@ -213,7 +213,7 @@ public class TestClient extends TestClientBase {
 
   public void testServerAttributes() {
 
-    NetServer server = new NetServer();
+    NetServer server = vertx.createNetServer();
 
     tu.azzert(server.setSSL(false) == server);
     tu.azzert(!server.isSSL());
@@ -500,7 +500,7 @@ public class TestClient extends TestClientBase {
               });
 
               // Tell the server to resume
-              EventBus.instance.send("server_resume", "");
+              vertx.eventBus().send("server_resume", "");
             }
           }
         });
@@ -782,11 +782,11 @@ public class TestClient extends TestClientBase {
         sock.resume();
       }
     };
-    EventBus.instance.registerHandler("client_resume", resumeHandler);
+    vertx.eventBus().registerHandler("client_resume", resumeHandler);
     sock.closedHandler(new SimpleHandler() {
       public void handle() {
         tu.checkContext();
-        EventBus.instance.unregisterHandler("client_resume", resumeHandler);
+        vertx.eventBus().unregisterHandler("client_resume", resumeHandler);
       }
     });
   }

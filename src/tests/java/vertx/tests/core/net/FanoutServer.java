@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public class FanoutServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private NetServer server;
 
@@ -41,7 +41,7 @@ public class FanoutServer extends Verticle {
 
     final Set<String> connections = SharedData.instance.getSet("conns");
 
-    server = new NetServer();
+    server = vertx.createNetServer();
     server.connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         tu.checkContext();
@@ -50,7 +50,7 @@ public class FanoutServer extends Verticle {
           public void handle(Buffer buffer) {
             tu.checkContext();
             for (String actorID : connections) {
-              EventBus.instance.send(actorID, buffer);
+              vertx.eventBus().send(actorID, buffer);
             }
           }
         });

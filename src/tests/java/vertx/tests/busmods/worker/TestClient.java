@@ -28,7 +28,7 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = EventBus.instance;
+  private EventBus eb = vertx.eventBus();
 
   @Override
   public void start() {

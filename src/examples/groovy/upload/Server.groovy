@@ -20,7 +20,7 @@ import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.core.streams.Pump
 import org.vertx.groovy.core.file.FileSystem
 
-new HttpServer().requestHandler { req ->
+vertx.createHttpServer().requestHandler { req ->
   req.pause()
   def filename = "${UUID.randomUUID()}.uploaded"
   FileSystem.instance.open(filename) { ares ->

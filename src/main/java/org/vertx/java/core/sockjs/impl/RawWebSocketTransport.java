@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
@@ -37,7 +38,8 @@ class RawWebSocketTransport {
 
     private WebSocket ws;
 
-    RawWSSockJSSocket(WebSocket ws) {
+    RawWSSockJSSocket(Vertx vertx, WebSocket ws) {
+      super(vertx);
       this.ws = ws;
     }
 
@@ -84,7 +86,7 @@ class RawWebSocketTransport {
 
   }
 
-  RawWebSocketTransport(WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath,
+  RawWebSocketTransport(final Vertx vertx, WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath,
                         final Handler<SockJSSocket> sockHandler) {
 
     String wsRE = basePath + "/websocket";
@@ -92,7 +94,7 @@ class RawWebSocketTransport {
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
-        SockJSSocket sock = new RawWSSockJSSocket(match.ws);
+        SockJSSocket sock = new RawWSSockJSSocket(vertx, match.ws);
         sockHandler.handle(sock);
       }
     });

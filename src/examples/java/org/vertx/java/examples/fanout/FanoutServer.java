@@ -32,13 +32,13 @@ public class FanoutServer extends Verticle {
   public void start()  {
     final Set<String> connections = SharedData.instance.getSet("conns");
 
-    new NetServer().connectHandler(new Handler<NetSocket>() {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         connections.add(socket.writeHandlerID);
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
-              EventBus.instance.send(actorID, buffer);
+              vertx.eventBus().send(actorID, buffer);
             }
           }
         });

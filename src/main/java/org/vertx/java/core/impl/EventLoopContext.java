@@ -17,11 +17,15 @@
 package org.vertx.java.core.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
+import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EventLoopContext extends BaseContext {
+public class EventLoopContext extends Context {
 
   private final NioWorker worker;
 
@@ -36,4 +40,5 @@ public class EventLoopContext extends BaseContext {
   public NioWorker getWorker() {
     return worker;
   }
+
 }

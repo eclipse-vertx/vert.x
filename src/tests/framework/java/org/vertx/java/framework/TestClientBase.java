@@ -26,7 +26,7 @@ public abstract class TestClientBase extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(TestClientBase.class);
 
-  protected TestUtils tu = new TestUtils();
+  protected TestUtils tu = new TestUtils(vertx);
 
   private boolean stopped;
 

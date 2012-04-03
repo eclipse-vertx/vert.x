@@ -17,6 +17,6 @@ package http
 
 import org.vertx.groovy.core.http.HttpServer
 
-new HttpServer().requestHandler { req ->
+vertx.createHttpServer().requestHandler { req ->
   req.response.end "<html><body><h1>Hello from vert.x!</h1></body></html>"
 }.listen(8080, "localhost")

@@ -40,6 +40,6 @@ public class RateCounter extends Verticle implements Handler<Message<Integer>> {
   }
 
   public void start() {
-    EventBus.instance.registerHandler("rate-counter", this);
+    vertx.eventBus().registerHandler("rate-counter", this);
   }
 }

@@ -17,9 +17,11 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -40,21 +42,23 @@ import java.util.UUID;
  */
 public abstract class SockJSSocket implements ReadStream, WriteStream {
 
+  protected final Vertx vertx;
   public final String writeHandlerID;
   public final Handler<Message<Buffer>> writeHandler;
 
-  public SockJSSocket() {
+  protected SockJSSocket(Vertx vertx) {
+    this.vertx = vertx;
     this.writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> buff) {
         writeBuffer(buff.body);
       }
     };
     this.writeHandlerID = UUID.randomUUID().toString();
-    EventBus.instance.registerLocalHandler(writeHandlerID, writeHandler);
+    vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
 
   public void close() {
-    EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
+    vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
   }
 
 }

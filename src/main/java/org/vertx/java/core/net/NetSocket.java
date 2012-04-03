@@ -20,6 +20,7 @@ import org.jboss.netty.channel.Channel;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
@@ -47,8 +48,8 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    */
   public final String writeHandlerID;
 
-  protected NetSocket(Channel channel, String writeHandlerID, Context context) {
-    super(channel, context);
+  protected NetSocket(VertxInternal vertx, Channel channel, String writeHandlerID, Context context) {
+    super(vertx, channel, context);
     this.writeHandlerID = writeHandlerID;
   }
 

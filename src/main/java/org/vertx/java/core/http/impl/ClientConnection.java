@@ -34,6 +34,7 @@ import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.Handshake17;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -48,10 +49,10 @@ class ClientConnection extends AbstractConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  ClientConnection(DefaultHttpClient client, Channel channel, String hostHeader, boolean ssl,
+  ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,
                    Context context) {
-    super(channel, context);
+    super(vertx, channel, context);
     this.client = client;
     this.hostHeader = hostHeader;
     this.ssl = ssl;
@@ -107,7 +108,7 @@ class ClientConnection extends AbstractConnection {
                   if (fut.succeeded()) {
                     //We upgraded ok
                     p.replace("encoder", "wsencoder", shake.getEncoder(false));
-                    ws = new DefaultWebSocket(null, ClientConnection.this, null);
+                    ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null);
                     wsConnect.handle(ws);
                   } else {
                     client.handleException(fut.exception);

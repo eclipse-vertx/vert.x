@@ -18,6 +18,7 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -39,12 +40,13 @@ public class HttpServer {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
 
-  private final DefaultHttpServer server = new DefaultHttpServer();
+  private final DefaultHttpServer server;
   
   /**
    * Create an {@code HttpServer}
    */
-  public HttpServer() {   
+  public HttpServer(VertxInternal vertx) {
+    server = new DefaultHttpServer(vertx);
   }
 
   /**

@@ -18,6 +18,7 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -43,12 +44,13 @@ import java.util.Map;
  */
 public class HttpClient {
 
-  private final DefaultHttpClient client = new DefaultHttpClient();
+  private final DefaultHttpClient client;
   
   /**
    * Create an {@code HttpClient} instance
    */
-  public HttpClient() {
+  public HttpClient(VertxInternal vertx) {
+    client = new DefaultHttpClient(vertx);
   }
 
   /**

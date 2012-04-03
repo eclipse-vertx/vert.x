@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.eventbus;
 
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.AppConfig;
@@ -32,15 +33,9 @@ import java.util.List;
  */
 public class SockJSBridge {
 
-  /**
-   * Create a new SockJSBridge
-   * @param server an HTTP server instance
-   * @param sjsConfig config for the SockJS server
-   * @param permitted List of JSON objects representing message matches permitted
-   */
-  public SockJSBridge(HttpServer server, AppConfig sjsConfig, List<JsonObject> permitted) {
-    SockJSServer sjsServer = new SockJSServer(server);
-    SockJSBridgeHandler handler = new SockJSBridgeHandler();
+  public static void bridge(Vertx vertx, EventBus eventBus, HttpServer server, AppConfig sjsConfig, List<JsonObject> permitted) {
+    SockJSServer sjsServer = vertx.createSockJSServer(server);
+    SockJSBridgeHandler handler = new SockJSBridgeHandler(eventBus);
     for (JsonObject perm: permitted) {
       handler.addPermitted(perm);
     }

@@ -17,7 +17,7 @@ import java.util.List;
 public class BridgeServer extends Verticle {
 
   public void start() throws Exception {
-    HttpServer server = new HttpServer();
+    HttpServer server = vertx.createHttpServer();
 
     // Also serve the static resources. In real life this would probably be done by a CDN
     server.requestHandler(new Handler<HttpServerRequest>() {
@@ -29,7 +29,7 @@ public class BridgeServer extends Verticle {
 
     List<JsonObject> permitted = new ArrayList<>();
     permitted.add(new JsonObject()); // Let everything through
-    new SockJSBridge(server, new AppConfig().setPrefix("/eventbus"), permitted);
+    SockJSBridge.bridge(vertx, vertx.eventBus(), server, new AppConfig().setPrefix("/eventbus"), permitted);
 
     server.listen(8080);
   }

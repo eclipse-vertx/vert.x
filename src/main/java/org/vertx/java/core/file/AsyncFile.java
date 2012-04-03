@@ -56,6 +56,7 @@ public class AsyncFile {
 
   public static final int BUFFER_SIZE = 8192;
 
+  private final VertxInternal vertx;
   private final AsynchronousFileChannel ch;
   private final Context context;
   private boolean closed;
@@ -64,11 +65,12 @@ public class AsyncFile {
   private Runnable closedDeferred;
   private long writesOutstanding;
 
-  AsyncFile(final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+  AsyncFile(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
             final boolean flush, final Context context) throws Exception {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
+    this.vertx = vertx;
     Path file = Paths.get(path);
     HashSet<OpenOption> options = new HashSet<>();
     if (read) options.add(StandardOpenOption.READ);
@@ -77,9 +79,9 @@ public class AsyncFile {
     if (flush) options.add(StandardOpenOption.DSYNC);
     if (perms != null) {
       FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-      ch = AsynchronousFileChannel.open(file, options, VertxInternal.instance.getBackgroundPool(), attrs);
+      ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool(), attrs);
     } else {
-      ch = AsynchronousFileChannel.open(file, options, VertxInternal.instance.getBackgroundPool());
+      ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool());
     }
     this.context = context;
   }
@@ -330,7 +332,7 @@ public class AsyncFile {
   private void doFlush(AsyncResultHandler handler) {
     checkClosed();
     checkContext();
-    new BlockingAction<Void>(handler) {
+    new BlockingAction<Void>(vertx, handler) {
       public Void action() throws Exception {
         ch.force(false);
         return null;
@@ -422,7 +424,7 @@ public class AsyncFile {
             }
           });
         } else {
-          VertxInternal.instance.reportException(exc);
+          vertx.reportException(exc);
         }
       }
     });
@@ -440,9 +442,9 @@ public class AsyncFile {
   }
 
   private void checkContext() {
-    if (!VertxInternal.instance.getContext().equals(context)) {
+    if (!Context.getContext().equals(context)) {
       throw new IllegalStateException("AsyncFile must only be used in the context that created it, expected: "
-          + context + " actual " + VertxInternal.instance.getContext());
+          + context + " actual " + Context.getContext());
     }
   }
 

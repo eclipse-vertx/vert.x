@@ -31,7 +31,7 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = EventBus.instance;
+  private EventBus eb = vertx.eventBus();
 
   private String queueID;
 
@@ -40,7 +40,7 @@ public class TestClient extends TestClientBase {
     super.start();
     JsonObject config = new JsonObject();
     config.putString("address", "test.orderQueue");
-    queueID = Container.instance.deployWorkerVerticle(WorkQueue.class.getName(), config, 1, new SimpleHandler() {
+    queueID = container.deployWorkerVerticle(WorkQueue.class.getName(), config, 1, new SimpleHandler() {
       public void handle() {
         tu.appReady();
       }

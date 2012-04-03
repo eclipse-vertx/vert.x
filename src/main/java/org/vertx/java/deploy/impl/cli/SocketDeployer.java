@@ -17,6 +17,7 @@
 package org.vertx.java.deploy.impl.cli;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
@@ -36,62 +37,54 @@ public class SocketDeployer {
 
   public static final int DEFAULT_PORT = 25571;
 
-  private Context serverContext;
   private volatile NetServer server;
+  private final Vertx vertx;
   private final VerticleManager appManager;
   private final int port;
 
-  public SocketDeployer(VerticleManager appManager, int port) {
+  public SocketDeployer(Vertx vertx, VerticleManager appManager, int port) {
+    this.vertx = vertx;
     this.appManager = appManager;
     this.port = port == -1 ? DEFAULT_PORT: port;
   }
 
   public void start() {
-    VertxInternal.instance.startOnEventLoop(new Runnable() {
-      public void run() {
-        serverContext= VertxInternal.instance.getContext();
-        server = new NetServer().connectHandler(new Handler<NetSocket>() {
-          public void handle(final NetSocket socket) {
-            final RecordParser parser = RecordParser.newFixed(4, null);
-            Handler<Buffer> handler = new Handler<Buffer>() {
-              int size = -1;
+    server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(final NetSocket socket) {
+        final RecordParser parser = RecordParser.newFixed(4, null);
+        Handler<Buffer> handler = new Handler<Buffer>() {
+          int size = -1;
 
-              public void handle(Buffer buff) {
-                if (size == -1) {
-                  size = buff.getInt(0);
-                  parser.fixedSizeMode(size);
-                } else {
-                  try {
-                    VertxCommand cmd = VertxCommand.read(buff);
-                    String res = cmd.execute(appManager);
-                    socket.write("OK: " + res + "\n");
-                  } catch (Exception e) {
-                    log.error("Failed to execute command", e);
-                    socket.write("ERR: " + e.getMessage() + "\n");
-                  }
-                  parser.fixedSizeMode(4);
-                  size = -1;
-                }
+          public void handle(Buffer buff) {
+            if (size == -1) {
+              size = buff.getInt(0);
+              parser.fixedSizeMode(size);
+            } else {
+              try {
+                VertxCommand cmd = VertxCommand.read(buff);
+                String res = cmd.execute(appManager);
+                socket.write("OK: " + res + "\n");
+              } catch (Exception e) {
+                log.error("Failed to execute command", e);
+                socket.write("ERR: " + e.getMessage() + "\n");
               }
-            };
-            parser.setOutput(handler);
-            socket.dataHandler(parser);
+              parser.fixedSizeMode(4);
+              size = -1;
+            }
           }
-        }).listen(port, "localhost");
+        };
+        parser.setOutput(handler);
+        socket.dataHandler(parser);
       }
-    });
+    }).listen(port, "localhost");
   }
 
   public void stop(final Handler<Void> doneHandler) {
-    serverContext.execute(new Runnable() {
-      public void run() {
-        if (doneHandler != null) {
-          server.close(doneHandler);
-        } else {
-          server.close();
-        }
-        server = null;
-      }
-    });
+    if (doneHandler != null) {
+      server.close(doneHandler);
+    } else {
+      server.close();
+    }
+    server = null;
   }
 }

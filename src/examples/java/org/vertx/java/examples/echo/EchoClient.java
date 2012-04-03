@@ -25,7 +25,7 @@ import org.vertx.java.deploy.Verticle;
 public class EchoClient extends Verticle {
 
   public void start() {
-    new NetClient().connect(1234, "localhost", new Handler<NetSocket>() {
+    vertx.createNetClient().connect(1234, "localhost", new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
         socket.dataHandler(new Handler<Buffer>() {

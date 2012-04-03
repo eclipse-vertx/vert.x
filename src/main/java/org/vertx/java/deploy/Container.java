@@ -34,9 +34,10 @@ import java.net.URL;
  */
 public class Container {
 
-  public static final Container instance = new Container();
-
-  private Container() {
+  private final VerticleManager mgr;
+  
+  public Container(final VerticleManager vertx) {
+    this.mgr = vertx;    
   }
 
   /**
@@ -88,8 +89,8 @@ public class Container {
    * @return Unique deployment id
    */
   public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    URL[] currURLs = VerticleManager.instance.getDeploymentURLs();
-    return VerticleManager.instance.deploy(true, null, main, config, currURLs, instances, doneHandler);
+    URL[] currURLs = mgr.getDeploymentURLs();
+    return mgr.deploy(true, null, main, config, currURLs, instances, doneHandler);
   }
 
   /**
@@ -141,8 +142,8 @@ public class Container {
    * @return Unique deployment id
    */
   public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
-    URL[] currURLs = VerticleManager.instance.getDeploymentURLs();
-    return VerticleManager.instance.deploy(false, null, main, config, currURLs, instances, doneHandler);
+    URL[] currURLs = mgr.getDeploymentURLs();
+    return mgr.deploy(false, null, main, config, currURLs, instances, doneHandler);
   }
 
   /**
@@ -159,7 +160,7 @@ public class Container {
    * @param doneHandler The handler will be called when undeployment is complete
    */
   public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
-    VerticleManager.instance.undeploy(deploymentID, doneHandler);
+    mgr.undeploy(deploymentID, doneHandler);
   }
 
   /**
@@ -167,7 +168,7 @@ public class Container {
    * @return a JSON object representing the configuration
    */
   public JsonObject getConfig() {
-    return VerticleManager.instance.getConfig();
+    return mgr.getConfig();
   }
 
   /**
@@ -175,7 +176,7 @@ public class Container {
    * @return The logger
    */
   public Logger getLogger() {
-    return VerticleManager.instance.getLogger();
+    return mgr.getLogger();
   }
 
 }

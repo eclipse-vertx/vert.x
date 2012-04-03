@@ -18,6 +18,14 @@ package org.vertx.groovy.core
 
 import org.vertx.java.core.Handler
 
+import org.vertx.java.core.impl.DefaultVertx
+import org.vertx.groovy.core.net.NetServer
+import org.vertx.java.core.impl.VertxInternal
+import org.vertx.groovy.core.net.NetClient
+import org.vertx.groovy.core.http.HttpClient
+import org.vertx.groovy.core.http.HttpServer
+import org.vertx.groovy.core.sockjs.SockJSServer
+
 /**
  *
  * @author Peter Ledbrook
@@ -25,12 +33,45 @@ import org.vertx.java.core.Handler
  */
 class Vertx {
 
-  static Vertx instance = new Vertx()
+  private VertxInternal jVertex;
 
-  private org.vertx.java.core.Vertx jVertex = org.vertx.java.core.Vertx.instance
-
-  private Vertx() {
+  private Vertx(VertxInternal jVertex) {
+    this.jVertex = jVertex;
   }
+
+  public static Vertx newVertx(String hostname) {
+    return new Vertx(new DefaultVertx(hostname));
+  }
+
+  public static Vertx newVertx(int port, String hostname) {
+    return new Vertx(new DefaultVertx(port, hostname));
+  }
+
+  public NetServer createNetServer() {
+    return new NetServer(jVertex);
+  }
+
+  public NetClient createNetClient() {
+    return new NetClient(jVertex);
+  }
+
+  public HttpServer createHttpServer() {
+    return new HttpServer(jVertex);
+  }
+
+  public HttpClient createHttpClient() {
+    return new HttpClient(jVertex);
+  }
+
+  public SockJSServer createSockJSServer(HttpServer httpServer) {
+    return new SockJSServer(httpServer);
+  }
+
+  public org.vertx.groovy.core.file.FileSystem fileSystem() {
+    return new FileSystem(jVertex.fileSystem());
+  }
+
+  public abstract EventBus eventBus();
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with

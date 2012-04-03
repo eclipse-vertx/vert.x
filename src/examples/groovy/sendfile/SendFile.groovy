@@ -16,7 +16,7 @@
 
 import org.vertx.groovy.core.http.HttpServer
 
-new HttpServer().requestHandler { req ->
+vertx.createHttpServer().requestHandler { req ->
   def filename = "sendfile/" + (req.uri == "/" ? "index.html" : "." + req.uri)
   req.response.sendFile filename
 }.listen(8080)

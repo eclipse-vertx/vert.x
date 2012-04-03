@@ -28,6 +28,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
@@ -45,16 +46,14 @@ public class DefaultNetSocket extends NetSocket {
   private Handler<Void> drainHandler;
   private Handler<Message<Buffer>> writeHandler;
 
-  public DefaultNetSocket(Channel channel, Context context) {
-    super(channel, UUID.randomUUID().toString(), context);
-    if (EventBus.instance != null) {
-      writeHandler = new Handler<Message<Buffer>>() {
-        public void handle(Message<Buffer> msg) {
-          writeBuffer(msg.body);
-        }
-      };
-      EventBus.instance.registerLocalHandler(writeHandlerID, writeHandler);
-    }
+  public DefaultNetSocket(VertxInternal vertx, Channel channel, Context context) {
+    super(vertx, channel, UUID.randomUUID().toString(), context);
+    writeHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> msg) {
+        writeBuffer(msg.body);
+      }
+    };
+    vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
 
   public void writeBuffer(Buffer data) {
@@ -109,7 +108,7 @@ public class DefaultNetSocket extends NetSocket {
 
   public void drainHandler(Handler<Void> drainHandler) {
     this.drainHandler = drainHandler;
-    Vertx.instance.runOnLoop(new SimpleHandler() {
+    vertx.runOnLoop(new SimpleHandler() {
       public void handle() {
         callDrainHandler(); //If the channel is already drained, we want to call it immediately
       }
@@ -136,8 +135,8 @@ public class DefaultNetSocket extends NetSocket {
       }
     }
     super.handleClosed();
-    if (EventBus.instance != null) {
-      EventBus.instance.unregisterHandler(writeHandlerID, writeHandler);
+    if (vertx.eventBus() != null) {
+      vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
     }
   }
 

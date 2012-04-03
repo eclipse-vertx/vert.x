@@ -16,7 +16,21 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.impl.DefaultEventBus;
+import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.impl.DefaultNetServer;
+import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.core.sockjs.SockJSServer;
+
+import java.util.List;
 
 /**
  * A singleton instance of Vertx is available to all verticles.
@@ -26,45 +40,69 @@ import org.vertx.java.core.impl.DefaultVertx;
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Vertx {
+public abstract class Vertx {
 
-  static Vertx instance = new DefaultVertx();
+  public static Vertx newVertx() {
+    return new DefaultVertx();
+  }
+
+  public static Vertx newVertx(String hostname) {
+    return new DefaultVertx(hostname);
+  }
+
+  public static Vertx newVertx(int port, String hostname) {
+    return new DefaultVertx(port, hostname);
+  }
+
+  public abstract NetServer createNetServer();
+
+  public abstract NetClient createNetClient();
+
+  public abstract HttpServer createHttpServer();
+
+  public abstract HttpClient createHttpClient();
+
+  public abstract SockJSServer createSockJSServer(HttpServer httpServer);
+
+  public abstract FileSystem fileSystem();
+
+  public abstract EventBus eventBus();
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  long setTimer(long delay, Handler<Long> handler);
+  public abstract long setTimer(long delay, Handler<Long> handler);
 
   /**
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  long setPeriodic(long delay, Handler<Long> handler);
+  public abstract long setPeriodic(long delay, Handler<Long> handler);
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
    * {@code false} if the timer does not exist.
    */
-  boolean cancelTimer(long id);
+  public abstract boolean cancelTimer(long id);
 
   /**
    * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
    * been processed
    */
-  void runOnLoop(Handler<Void> handler);
+  public abstract void runOnLoop(Handler<Void> handler);
 
   /**
    * Is the current thread an event loop thread?
    * @return true if current thread is an event loop thread
    */
-  boolean isEventLoop();
+  public abstract boolean isEventLoop();
 
   /**
    * Is the current thread an worker thread?
    * @return true if current thread is an worker thread
    */
-  boolean isWorker();
+  public abstract boolean isWorker();
 }

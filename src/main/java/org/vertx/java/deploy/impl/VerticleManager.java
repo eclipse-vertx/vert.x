@@ -25,6 +25,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory;
 import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
@@ -47,14 +48,14 @@ public class VerticleManager {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
 
-  public static VerticleManager instance = new VerticleManager();
-
+  private final VertxInternal vertx;
   // deployment name --> deployment
   private final Map<String, Deployment> deployments = new HashMap();
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
 
-  private VerticleManager() {
+  public VerticleManager(VertxInternal vertx) {
+    this.vertx = vertx;
   }
 
   public void block() {
@@ -124,16 +125,16 @@ public class VerticleManager {
     final VerticleFactory verticleFactory;
       switch (type) {
         case JAVA:
-          verticleFactory = new JavaVerticleFactory();
+          verticleFactory = new JavaVerticleFactory(this);
           break;
         case RUBY:
-          verticleFactory = new JRubyVerticleFactory();
+          verticleFactory = new JRubyVerticleFactory(this);
           break;
         case JS:
-          verticleFactory = new RhinoVerticleFactory();
+          verticleFactory = new RhinoVerticleFactory(this);
           break;
         case GROOVY:
-          verticleFactory = new GroovyVerticleFactory();
+          verticleFactory = new GroovyVerticleFactory(this);
           break;
         default:
           throw new IllegalArgumentException("Unsupported type: " + type);
@@ -146,7 +147,7 @@ public class VerticleManager {
 
       // We need a context on which to execute the done Handler
       // We use the current calling context (if any) or assign a new one
-      Context doneContext = VertxInternal.instance.getOrAssignContext();
+      Context doneContext = vertx.getOrAssignContext();
 
       void started() {
         if (count.incrementAndGet() == instCount) {
@@ -189,13 +190,14 @@ public class VerticleManager {
           }
 
           //Inject vertx
-          verticle.setVertx(Vertx.instance);
+          verticle.setVertx(vertx);
+          verticle.setContainer(new Container(VerticleManager.this));
 
           try {
             addVerticle(deployment, verticle);
             verticle.start();
           } catch (Throwable t) {
-            VertxInternal.instance.reportException(t);
+            vertx.reportException(t);
             doUndeploy(deploymentName, doneHandler);
           }
           aggHandler.started();
@@ -203,9 +205,9 @@ public class VerticleManager {
       };
 
       if (worker) {
-        VertxInternal.instance.startInBackground(runner);
+        vertx.startInBackground(runner);
       } else {
-        VertxInternal.instance.startOnEventLoop(runner);
+        vertx.startOnEventLoop(runner);
       }
 
     }
@@ -251,7 +253,7 @@ public class VerticleManager {
   private synchronized void addVerticle(Deployment deployment, Verticle verticle) {
     String loggerName = deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
-    Context context = VertxInternal.instance.getContext();
+    Context context = Context.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger, deployment.config);
     deployment.verticles.add(holder);
@@ -259,7 +261,7 @@ public class VerticleManager {
   }
 
   private VerticleHolder getVerticleHolder() {
-    Context context = VertxInternal.instance.getContext();
+    Context context = Context.getContext();
     if (context != null) {
       VerticleHolder holder = (VerticleHolder)context.getDeploymentHandle();
       return holder;
@@ -295,7 +297,7 @@ public class VerticleManager {
             try {
               holder.verticle.stop();
             } catch (Throwable t) {
-              VertxInternal.instance.reportException(t);
+              vertx.reportException(t);
             }
             count.undeployed();
             LoggerFactory.removeLogger(holder.loggerName);
@@ -356,11 +358,11 @@ public class VerticleManager {
     }
   }
 
-  private static class UndeployCount {
+  private class UndeployCount {
     int count;
     int required;
     Handler<Void> doneHandler;
-    Context context = VertxInternal.instance.getOrAssignContext();
+    Context context = vertx.getOrAssignContext();
 
     synchronized void undeployed() {
       count++;

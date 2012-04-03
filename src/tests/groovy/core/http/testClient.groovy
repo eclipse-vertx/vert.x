@@ -24,8 +24,8 @@ import org.vertx.groovy.framework.TestUtils
 tu = new TestUtils()
 tu.checkContext()
 
-server = new HttpServer()
-client = new HttpClient().setPort(8080)
+server = vertx.createHttpServer()
+client = vertx.createHttpClient().setPort(8080)
 
 def testGET() {
   httpMethod(false, "GET", false)

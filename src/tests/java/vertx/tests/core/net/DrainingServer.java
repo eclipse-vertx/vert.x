@@ -63,7 +63,7 @@ public class DrainingServer extends BaseServer {
               });
 
               // Tell the client to resume
-              EventBus.instance.send("client_resume", "");
+              vertx.eventBus().send("client_resume", "");
             }
           }
         });

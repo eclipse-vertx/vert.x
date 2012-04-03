@@ -21,7 +21,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkerContext extends BaseContext {
+public class WorkerContext extends Context {
 
   private final Executor bgExec;
 

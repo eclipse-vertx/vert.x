@@ -24,15 +24,13 @@ import org.vertx.java.deploy.Verticle;
  */
 public class ChildVerticle extends Verticle {
 
-  private EventBus eb = EventBus.instance;
-
   @Override
   public void start() throws Exception {
-    eb.send("test-handler", "started");
+    vertx.eventBus().send("test-handler", "started");
   }
 
   @Override
   public void stop() throws Exception {
-    eb.send("test-handler", "stopped");
+    vertx.eventBus().send("test-handler", "stopped");
   }
 }

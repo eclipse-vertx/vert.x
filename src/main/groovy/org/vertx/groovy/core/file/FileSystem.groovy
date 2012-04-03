@@ -40,9 +40,10 @@ class FileSystem {
 
   static FileSystem instance = new FileSystem()
 
-  private JFileSystem jFS = JFileSystem.instance
+  private JFileSystem jFS;
 
-  private FileSystem() {
+  private FileSystem(JFileSystem jFS) {
+    this.jFS = jFS;
   }
 
   /**
