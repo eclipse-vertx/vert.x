@@ -26,7 +26,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class CountServer implements Verticle {
+public class CountServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

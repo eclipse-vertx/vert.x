@@ -31,7 +31,7 @@ import java.io.Writer;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JRubyVerticle implements Verticle {
+public class JRubyVerticle extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(JRubyVerticle.class);
 
@@ -53,6 +53,7 @@ public class JRubyVerticle implements Verticle {
     if (is == null) {
       throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
     }
+    // Inject vertx as a variable in the script
     container.runScriptlet(is, scriptName);
     try {
       is.close();

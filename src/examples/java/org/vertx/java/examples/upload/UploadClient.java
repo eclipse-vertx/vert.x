@@ -31,7 +31,7 @@ import org.vertx.java.deploy.Verticle;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class UploadClient implements Verticle {
+public class UploadClient extends Verticle {
 
   public void start() throws Exception {
 
@@ -78,9 +78,5 @@ public class UploadClient implements Verticle {
         e.printStackTrace();
       }
     });
-
-  }
-
-  public void stop() {
   }
 }

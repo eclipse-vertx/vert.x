@@ -22,7 +22,7 @@ import org.vertx.java.deploy.Verticle;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ChildVerticle implements Verticle {
+public class ChildVerticle extends Verticle {
 
   private EventBus eb = EventBus.instance;
 

@@ -27,7 +27,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BaseServer implements Verticle {
+public abstract class BaseServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

@@ -31,7 +31,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FanoutServer implements Verticle {
+public class FanoutServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

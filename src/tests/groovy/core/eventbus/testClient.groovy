@@ -95,7 +95,7 @@ def testUnregister() {
     eb.unregisterHandler(address, myHandler)
     handled = true;
     // Wait a little while to allow any other messages to arrive
-    Vertx.instance.setTimer(100, {
+    vertx.setTimer(100, {
       tu.testComplete();
     })
   })

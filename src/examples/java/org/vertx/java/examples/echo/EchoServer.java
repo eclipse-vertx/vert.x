@@ -22,7 +22,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.deploy.Verticle;
 
-public class EchoServer implements Verticle {
+public class EchoServer extends Verticle {
 
   public void start() {
     new NetServer().connectHandler(new Handler<NetSocket>() {
@@ -30,8 +30,5 @@ public class EchoServer implements Verticle {
         new Pump(socket, socket).start();
       }
     }).listen(1234);
-  }
-
-  public void stop() {
   }
 }

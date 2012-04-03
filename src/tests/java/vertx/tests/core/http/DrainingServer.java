@@ -29,7 +29,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DrainingServer implements Verticle {
+public class DrainingServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
   private HttpServer server;
@@ -46,12 +46,12 @@ public class DrainingServer implements Verticle {
 
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
         //Send data until the buffer is full
-        Vertx.instance.setPeriodic(0, new Handler<Long>() {
+        vertx.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
             tu.checkContext();
             req.response.write(buff);
             if (req.response.writeQueueFull()) {
-              Vertx.instance.cancelTimer(id);
+              vertx.cancelTimer(id);
               req.response.drainHandler(new SimpleHandler() {
                 public void handle() {
                   tu.checkContext();

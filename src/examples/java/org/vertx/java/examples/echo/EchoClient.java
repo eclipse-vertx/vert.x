@@ -22,7 +22,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
 
-public class EchoClient implements Verticle {
+public class EchoClient extends Verticle {
 
   public void start() {
     new NetClient().connect(1234, "localhost", new Handler<NetSocket>() {
@@ -42,8 +42,5 @@ public class EchoClient implements Verticle {
         }
       }
     });
-  }
-
-  public void stop() {
   }
 }

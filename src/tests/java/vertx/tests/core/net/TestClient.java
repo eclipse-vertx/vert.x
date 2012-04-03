@@ -486,11 +486,11 @@ public class TestClient extends TestClientBase {
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
-        Vertx.instance.setPeriodic(0, new Handler<Long>() {
+        vertx.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
             sock.write(buff);
             if (sock.writeQueueFull()) {
-              Vertx.instance.cancelTimer(id);
+              vertx.cancelTimer(id);
               sock.drainHandler(new SimpleHandler() {
                 public void handle() {
                   tu.checkContext();

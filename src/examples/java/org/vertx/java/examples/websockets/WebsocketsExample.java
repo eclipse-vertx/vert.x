@@ -23,7 +23,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.deploy.Verticle;
 
-public class WebsocketsExample implements Verticle {
+public class WebsocketsExample extends Verticle {
 
   public void start() {
     new HttpServer().websocketHandler(new Handler<ServerWebSocket>() {
@@ -43,8 +43,5 @@ public class WebsocketsExample implements Verticle {
         if (req.path.equals("/")) req.response.sendFile("websockets/ws.html"); // Serve the html
       }
     }).listen(8080);
-  }
-
-  public void stop() {
   }
 }

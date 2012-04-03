@@ -24,7 +24,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
 
-public class PerfClient implements Verticle {
+public class PerfClient extends Verticle {
 
   public void start() {
     new NetClient().connect(1234, "localhost", new Handler<NetSocket>() {
@@ -56,9 +56,6 @@ public class PerfClient implements Verticle {
     });
   }
 
-  public void stop() {
-  }
-
   private void sendData(final NetSocket socket, final Buffer buff) {
     socket.write(buff);
     SimpleHandler handler = new SimpleHandler() {
@@ -67,7 +64,7 @@ public class PerfClient implements Verticle {
       }
     };
     if (!socket.writeQueueFull()) {
-      Vertx.instance.runOnLoop(handler);
+      vertx.runOnLoop(handler);
     } else {
       socket.drainHandler(handler);
     }

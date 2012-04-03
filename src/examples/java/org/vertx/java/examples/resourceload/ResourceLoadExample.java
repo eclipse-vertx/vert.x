@@ -21,7 +21,7 @@ import org.vertx.java.deploy.Verticle;
 
 import java.net.URL;
 
-public class ResourceLoadExample implements Verticle {
+public class ResourceLoadExample extends Verticle {
 
   public void start() {
     URL urlBar = getClass().getClassLoader().getResource("bar.txt");
@@ -31,8 +31,5 @@ public class ResourceLoadExample implements Verticle {
 
     Quux quux = new Quux();
     System.out.println("wibble is " + quux.wibble());
-  }
-
-  public void stop() {
   }
 }

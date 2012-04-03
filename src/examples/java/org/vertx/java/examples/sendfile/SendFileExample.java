@@ -21,7 +21,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
 
-public class SendFileExample implements Verticle {
+public class SendFileExample extends Verticle {
 
   private static final String webroot = "sendfile/";
 
@@ -36,8 +36,5 @@ public class SendFileExample implements Verticle {
         }
       }
     }).listen(8080);
-  }
-
-  public void stop() {
   }
 }

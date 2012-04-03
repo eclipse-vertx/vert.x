@@ -37,7 +37,7 @@ import java.util.Queue;
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkQueue extends BusModBase implements Verticle {
+public class WorkQueue extends BusModBase {
 
   private static final Logger log = LoggerFactory.getLogger(WorkQueue.class);
 
@@ -135,7 +135,7 @@ public class WorkQueue extends BusModBase implements Verticle {
     if (!messages.isEmpty() && !processors.isEmpty()) {
       final JsonObject message = messages.poll();
       final String address = processors.poll();
-      final long timeoutID = Vertx.instance.setTimer(processTimeout, new Handler<Long>() {
+      final long timeoutID = vertx.setTimer(processTimeout, new Handler<Long>() {
         public void handle(Long id) {
           // Processor timed out - put message back on queue
           log.warn("Processor timed out, message will be put back on queue");
@@ -144,7 +144,7 @@ public class WorkQueue extends BusModBase implements Verticle {
       });
       eb.send(address, message, new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> reply) {
-          Vertx.instance.cancelTimer(timeoutID);
+          vertx.cancelTimer(timeoutID);
           processors.add(address);
           if (persistorAddress != null) {
             JsonObject msg = new JsonObject().putString("action", "delete").putString("collection", collection)

@@ -120,7 +120,7 @@ public class LocalClient extends EventBusAppBase {
         tu.azzert(msg.equals(received.body));
         handled = true;
         eb.unregisterHandler(idRef.get());
-        Vertx.instance.setTimer(100, new Handler<Long>() {
+        vertx.setTimer(100, new Handler<Long>() {
           public void handle(Long timerID) {
             tu.testComplete();
           }

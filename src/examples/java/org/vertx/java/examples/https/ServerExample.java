@@ -21,7 +21,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
 
-public class ServerExample implements Verticle {
+public class ServerExample extends Verticle {
 
   public void start() {
     new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
@@ -36,8 +36,5 @@ public class ServerExample implements Verticle {
         req.response.write("<html><body><h1>Hello from vert.x!</h1></body></html>", "UTF-8").end();
       }
     }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(4443);
-  }
-
-  public void stop() {
   }
 }

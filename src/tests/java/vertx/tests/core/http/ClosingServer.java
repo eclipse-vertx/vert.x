@@ -25,7 +25,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClosingServer implements Verticle {
+public class ClosingServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

@@ -23,7 +23,7 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.deploy.Verticle;
 
-public class Client implements Verticle {
+public class Client extends Verticle {
 
   public void start() {
     HttpClientRequest req = new HttpClient().setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
@@ -41,8 +41,5 @@ public class Client implements Verticle {
       req.write("client-data-chunk-" + i);
     }
     req.end();
-  }
-
-  public void stop() {
   }
 }

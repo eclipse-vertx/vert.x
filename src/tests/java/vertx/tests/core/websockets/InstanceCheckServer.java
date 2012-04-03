@@ -29,7 +29,7 @@ import java.util.UUID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class InstanceCheckServer implements Verticle {
+public class InstanceCheckServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

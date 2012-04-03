@@ -16,23 +16,42 @@
 
 package org.vertx.java.deploy;
 
+import org.vertx.java.core.Vertx;
+
 /**
  * A verticle is the unit of deployment in vert.x
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Verticle {
+public abstract class Verticle {
+
+  protected Vertx vertx;
+
+  /**
+   * @return A reference to a Vertx
+   */
+  public Vertx getVertx() {
+    return vertx;
+  }
+
+  /**
+   * Inject vertx
+   */
+  public void setVertx(Vertx vertx) {
+    this.vertx = vertx;
+  }
 
   /**
    * Vert.x calls thhe start method when the verticle is deployed
    * @throws Exception
    */
-  void start() throws Exception;
+  public abstract void start() throws Exception;
 
   /**
    * Vert.x calls the stop method when the verticle is undeployed.
    * Put any cleanup code for your verticle in here
    * @throws Exception
    */
-  void stop() throws Exception;
+  public void stop() throws Exception {
+  }
 }

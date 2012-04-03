@@ -26,7 +26,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
 
-public class ProxyServer implements Verticle {
+public class ProxyServer extends Verticle {
 
   public void start()  {
 
@@ -69,8 +69,5 @@ public class ProxyServer implements Verticle {
         });
       }
     }).listen(8080);
-  }
-
-  public void stop() {
   }
 }

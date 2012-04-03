@@ -36,7 +36,7 @@ import java.util.UUID;
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AuthManager extends BusModBase implements Verticle {
+public class AuthManager extends BusModBase {
 
   private static final Logger log = LoggerFactory.getLogger(AuthManager.class);
 
@@ -142,7 +142,7 @@ public class AuthManager extends BusModBase implements Verticle {
 
             // Found
             final String sessionID = UUID.randomUUID().toString();
-            long timerID = Vertx.instance.setTimer(sessionTimeout, new Handler<Long>() {
+            long timerID = vertx.setTimer(sessionTimeout, new Handler<Long>() {
               public void handle(Long timerID) {
                 sessions.remove(sessionID);
                 logins.remove(username);
@@ -179,7 +179,7 @@ public class AuthManager extends BusModBase implements Verticle {
     String username = sessions.remove(sessionID);
     if (username != null) {
       LoginInfo info = logins.remove(username);
-      Vertx.instance.cancelTimer(info.timerID);
+      vertx.cancelTimer(info.timerID);
       return true;
     } else {
       return false;

@@ -23,7 +23,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.deploy.Verticle;
 
-public class PerfClient implements Verticle, Handler<HttpClientResponse> {
+public class PerfClient extends Verticle implements Handler<HttpClientResponse> {
 
   private HttpClient client;
 
@@ -61,9 +61,6 @@ public class PerfClient implements Verticle, Handler<HttpClientResponse> {
   public void start() {
     client = new HttpClient().setPort(8080).setHost("localhost").setMaxPoolSize(MAX_CONNS);
     makeRequest();
-  }
-
-  public void stop() {
   }
 
   private void makeRequest() {

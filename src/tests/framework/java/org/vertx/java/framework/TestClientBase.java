@@ -22,7 +22,7 @@ import org.vertx.java.deploy.Verticle;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class TestClientBase implements Verticle {
+public abstract class TestClientBase extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(TestClientBase.class);
 

@@ -28,7 +28,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TLSServer implements Verticle {
+public class TLSServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

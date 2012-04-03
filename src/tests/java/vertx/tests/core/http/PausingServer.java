@@ -29,7 +29,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class PausingServer implements Verticle {
+public class PausingServer extends Verticle {
 
   protected TestUtils tu = new TestUtils();
 

@@ -23,13 +23,14 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
+import org.vertx.java.deploy.Verticle;
 
 /**
  * Base helper class for Java busmods
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BusModBase {
+public abstract class BusModBase extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(BusModBase.class);
 
@@ -38,7 +39,7 @@ public abstract class BusModBase {
   protected String address;
 
   protected BusModBase(boolean worker) {
-    if (worker && Vertx.instance.isEventLoop()) {
+    if (worker && vertx.isEventLoop()) {
       throw new IllegalStateException("Worker busmod can only be created inside a worker application (user -worker when deploying");
     }
   }
@@ -46,7 +47,7 @@ public abstract class BusModBase {
   /**
    * Start the busmod
    */
-  protected void start() {
+  public void start() {
     config = Container.instance.getConfig();
     address = config.getString("address");
     if (address == null) {

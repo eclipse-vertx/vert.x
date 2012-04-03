@@ -16,8 +16,11 @@
 
 package org.vertx.java.deploy.impl.groovy;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
+import groovy.lang.Script;
+import org.vertx.groovy.core.Vertx;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
@@ -57,7 +60,12 @@ public class GroovyVerticleFactory implements VerticleFactory {
       throw new IllegalStateException("Groovy script must have run() method [whether implicit or not]");
     }
 
-    final Object verticle = clazz.newInstance();
+    final Script verticle = (Script)clazz.newInstance();
+
+    // Inject vertx into the script binding
+    Binding binding = new Binding();
+    binding.setVariable("vertx", Vertx.getInstance());
+    verticle.setBinding(binding);
 
     return new Verticle() {
       public void start() {

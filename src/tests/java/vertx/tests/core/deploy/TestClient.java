@@ -58,7 +58,7 @@ public class TestClient extends TestClientBase {
 
     final String id = Container.instance.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
 
-    Vertx.instance.setTimer(100, new Handler<Long>() {
+    vertx.setTimer(100, new Handler<Long>() {
       public void handle(Long tid) {
         eb.registerHandler("test-handler", new Handler<Message<String>>() {
           public void handle(Message<String> message) {
