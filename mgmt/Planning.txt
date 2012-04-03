@@ -59,6 +59,7 @@ into dir. This will be available to all other verticles.
 25) AMQP busmod
 26) CommonJS/AMD support
 26) Consider using Errai JSON parser
+27) Look at Arquillian for vert.x tests
 
 
 

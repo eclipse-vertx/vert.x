@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BridgeServer implements Verticle {
+public class BridgeServer extends Verticle {
 
   public void start() throws Exception {
     HttpServer server = new HttpServer();
@@ -32,8 +32,5 @@ public class BridgeServer implements Verticle {
     new SockJSBridge(server, new AppConfig().setPrefix("/eventbus"), permitted);
 
     server.listen(8080);
-  }
-
-  public void stop() {
   }
 }

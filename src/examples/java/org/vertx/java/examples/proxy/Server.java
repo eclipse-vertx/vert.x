@@ -23,7 +23,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
 
-public class Server implements Verticle {
+public class Server extends Verticle {
 
   public void start() {
     new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
@@ -50,8 +50,5 @@ public class Server implements Verticle {
         });
       }
     }).listen(8282);
-  }
-
-  public void stop() {
   }
 }

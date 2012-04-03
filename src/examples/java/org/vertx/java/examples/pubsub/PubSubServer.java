@@ -27,7 +27,7 @@ import org.vertx.java.deploy.Verticle;
 
 import java.util.Set;
 
-public class PubSubServer implements Verticle {
+public class PubSubServer extends Verticle {
 
   public void start() {
     new NetServer().connectHandler(new Handler<NetSocket>() {
@@ -55,8 +55,5 @@ public class PubSubServer implements Verticle {
         }));
       }
     }).listen(1234);
-  }
-
-  public void stop() {
   }
 }

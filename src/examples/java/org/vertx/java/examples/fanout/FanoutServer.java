@@ -27,7 +27,7 @@ import org.vertx.java.deploy.Verticle;
 
 import java.util.Set;
 
-public class FanoutServer implements Verticle {
+public class FanoutServer extends Verticle {
 
   public void start()  {
     final Set<String> connections = SharedData.instance.getSet("conns");
@@ -49,8 +49,5 @@ public class FanoutServer implements Verticle {
         });
       }
     }).listen(1234);
-  }
-
-  public void stop() {
   }
 }

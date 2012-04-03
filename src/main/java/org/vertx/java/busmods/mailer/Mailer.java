@@ -42,7 +42,7 @@ import java.util.Properties;
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Mailer extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
+public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {
 
   private static final Logger log = LoggerFactory.getLogger(Mailer.class);
 

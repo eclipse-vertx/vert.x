@@ -22,7 +22,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.deploy.Verticle;
 
-public class ClientExample implements Verticle {
+public class ClientExample extends Verticle {
 
   public void start() {
     new HttpClient().setPort(8080).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
@@ -34,8 +34,5 @@ public class ClientExample implements Verticle {
         });
       }
     });
-  }
-
-  public void stop() {
   }
 }

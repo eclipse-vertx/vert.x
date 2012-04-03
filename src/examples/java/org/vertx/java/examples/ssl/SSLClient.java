@@ -22,7 +22,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
 
-public class SSLClient implements Verticle {
+public class SSLClient extends Verticle {
 
   public void start() {
     new NetClient().setSSL(true).setTrustAll(true).connect(1234, "localhost", new Handler<NetSocket>() {
@@ -40,8 +40,5 @@ public class SSLClient implements Verticle {
         }
       }
     });
-  }
-
-  public void stop() {
   }
 }

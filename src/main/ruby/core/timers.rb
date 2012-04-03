@@ -22,7 +22,7 @@ module Vertx
   # @return [FixNum] the unique id of the timer
   def Vertx.set_timer(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.vertx.java.core.Vertx.instance.setTimer(delay, hndlr)
+    org.vertx.java.deploy.impl.Locator.vertx().setTimer(delay, hndlr)
   end
 
   # Sets a periodic timer.
@@ -33,14 +33,14 @@ module Vertx
   # @return [FixNum] the unique id of the timer
   def Vertx.set_periodic(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.vertx.java.core.Vertx.instance.setPeriodic(delay, hndlr)
+    org.vertx.java.deploy.impl.Locator.vertx().setPeriodic(delay, hndlr)
   end
 
   # Cancels a timer.
   # @param [FixNum] id the id of the timer, as returned from {Vertx.set_timer} or {Vertx.set_periodic}
   # @return [Boolean] true if the timer was cancelled, false if it wasn't found.
   def Vertx.cancel_timer(id)
-    org.vertx.java.core.Vertx.instance.cancelTimer(id)
+    org.vertx.java.deploy.impl.Locator.vertx().cancelTimer(id)
   end
 
   # Put the handler on the event queue for this loop so it will be run asynchronously
@@ -49,7 +49,7 @@ module Vertx
   # @param [Block] hndlr a block representing the code that will be run ASAP
   def Vertx.run_on_loop(proc = nil, &hndlr)
     hndlr = proc if proc
-    org.vertx.java.core.Vertx.instance.runOnLoop(hndlr)
+    org.vertx.java.deploy.impl.Locator.vertx().runOnLoop(hndlr)
   end
 
 end

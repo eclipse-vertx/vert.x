@@ -32,7 +32,7 @@ import java.io.InputStreamReader;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class RhinoVerticle implements Verticle {
+public class RhinoVerticle extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(RhinoVerticle.class);
 

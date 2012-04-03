@@ -28,7 +28,7 @@ import java.util.UUID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class OrderProcessor implements Verticle, Handler<Message<JsonObject>> {
+public class OrderProcessor extends Verticle implements Handler<Message<JsonObject>> {
 
   private TestUtils tu = new TestUtils();
 

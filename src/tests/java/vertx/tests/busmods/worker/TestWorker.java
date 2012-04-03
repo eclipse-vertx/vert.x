@@ -30,7 +30,7 @@ import org.vertx.java.framework.TestUtils;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TestWorker implements Verticle, Handler<Message<JsonObject>> {
+public class TestWorker extends Verticle implements Handler<Message<JsonObject>> {
 
   private TestUtils tu = new TestUtils();
 

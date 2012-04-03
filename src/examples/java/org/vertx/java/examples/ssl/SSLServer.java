@@ -22,7 +22,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
 
-public class SSLServer implements Verticle {
+public class SSLServer extends Verticle {
 
   public void start() {
     new NetServer().connectHandler(new Handler<NetSocket>() {
@@ -34,8 +34,5 @@ public class SSLServer implements Verticle {
         });
       }
     }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(1234);
-  }
-
-  public void stop() {
   }
 }

@@ -44,7 +44,7 @@ import java.util.UUID;
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class MongoPersistor extends BusModBase implements Verticle, Handler<Message<JsonObject>> {
+public class MongoPersistor extends BusModBase implements Handler<Message<JsonObject>> {
 
   private static final Logger log = LoggerFactory.getLogger(MongoPersistor.class);
 
@@ -179,7 +179,7 @@ public class MongoPersistor extends BusModBase implements Verticle, Handler<Mess
       JsonObject reply = createBatchMessage("more-exist", results);
 
       // Set a timeout, if the user doesn't reply within 10 secs, close the cursor
-      final long timerID = Vertx.instance.setTimer(10000, new Handler<Long>() {
+      final long timerID = vertx.setTimer(10000, new Handler<Long>() {
         public void handle(Long timerID) {
           Container.instance.getLogger().warn("Closing DB cursor on timeout");
           try {
@@ -191,7 +191,7 @@ public class MongoPersistor extends BusModBase implements Verticle, Handler<Mess
 
       message.reply(reply, new Handler<Message<JsonObject>>() {
         public void handle(Message msg) {
-          Vertx.instance.cancelTimer(timerID);
+          vertx.cancelTimer(timerID);
           // Get the next batch
           sendBatch(msg, cursor, max);
         }

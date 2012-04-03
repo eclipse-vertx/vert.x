@@ -29,7 +29,7 @@ import org.vertx.java.deploy.Verticle;
 
 import java.util.UUID;
 
-public class UploadServer implements Verticle {
+public class UploadServer extends Verticle {
 
   public void start() {
 
@@ -67,8 +67,5 @@ public class UploadServer implements Verticle {
         });
       }
     }).listen(8080);
-  }
-
-  public void stop() {
   }
 }

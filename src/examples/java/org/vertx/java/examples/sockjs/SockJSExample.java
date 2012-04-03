@@ -25,7 +25,7 @@ import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 import org.vertx.java.deploy.Verticle;
 
-public class SockJSExample implements Verticle {
+public class SockJSExample extends Verticle {
 
   public void start() {
     HttpServer server = new HttpServer();
@@ -49,8 +49,5 @@ public class SockJSExample implements Verticle {
     });
 
     server.listen(8080);
-  }
-
-  public void stop() {
   }
 }

@@ -25,7 +25,7 @@ tu.checkContext()
 def testOneOff() {
   def count = 0
   def id
-  id = Vertx.instance.setTimer(1, { timerID ->
+  id = vertx.setTimer(1, { timerID ->
     tu.checkContext()
     tu.azzert(id == timerID)
     tu.azzert(count == 0)
@@ -39,12 +39,12 @@ def testPeriodic() {
   def delay = 100
   def count = 0
   def id
-  id = Vertx.instance.setPeriodic(delay, { timerID ->
+  id = vertx.setPeriodic(delay, { timerID ->
     tu.checkContext()
     tu.azzert(id == timerID)
     count++
     if (count == numFires) {
-      Vertx.instance.cancelTimer(timerID)
+      vertx.cancelTimer(timerID)
       setEndTimer()
     }
     if (count > numFires) {
@@ -54,7 +54,7 @@ def testPeriodic() {
 }
 
 def setEndTimer() {
-  Vertx.instance.setTimer(10, {
+  vertx.setTimer(10, {
     tu.testComplete()
   })
 }

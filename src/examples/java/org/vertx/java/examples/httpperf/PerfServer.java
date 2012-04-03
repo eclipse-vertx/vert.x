@@ -21,7 +21,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
 
-public class PerfServer implements Verticle {
+public class PerfServer extends Verticle {
 
   public void start() {
     new HttpServer().requestHandler(new Handler<HttpServerRequest>() {
@@ -33,8 +33,5 @@ public class PerfServer implements Verticle {
         //req.response.sendFile("httpperf/foo.html");
       }
     }).listen(8080, "localhost");
-  }
-
-  public void stop() {
   }
 }

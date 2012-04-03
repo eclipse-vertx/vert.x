@@ -22,7 +22,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.deploy.Verticle;
 
-public class RouteMatchExample implements Verticle {
+public class RouteMatchExample extends Verticle {
 
   public void start() {
 
@@ -42,8 +42,5 @@ public class RouteMatchExample implements Verticle {
     });
 
     new HttpServer().requestHandler(rm).listen(8080);
-  }
-
-  public void stop() {
   }
 }
