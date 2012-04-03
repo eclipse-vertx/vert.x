@@ -18,10 +18,10 @@ var vertx = vertx || {};
 
 if (!vertx.NetServer) {
   vertx.NetServer = function() {
-    return new org.vertx.java.core.net.NetServer();
+    return org.vertx.java.deploy.impl.VertxLocator.vertx.createNetServer();
   }
 
   vertx.NetClient = function() {
-    return new org.vertx.java.core.net.NetClient();
+    return org.vertx.java.deploy.impl.VertxLocator.vertx.createNetClient();
   }
 }

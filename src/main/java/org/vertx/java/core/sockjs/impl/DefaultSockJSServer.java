@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.SockJSBridgeHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
@@ -28,6 +29,7 @@ import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.SharedData;
@@ -147,6 +149,14 @@ public class DefaultSockJSServer extends SockJSServer {
       }
     });
 
+  }
+
+  public void bridge(AppConfig sjsConfig, List<JsonObject> permitted) {
+    SockJSBridgeHandler handler = new SockJSBridgeHandler(vertx.eventBus());
+    for (JsonObject perm: permitted) {
+      handler.addPermitted(perm);
+    }
+    installApp(sjsConfig, handler);
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {

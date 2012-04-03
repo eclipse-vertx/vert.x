@@ -25,6 +25,7 @@ import org.vertx.groovy.core.net.NetClient
 import org.vertx.groovy.core.http.HttpClient
 import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.core.sockjs.SockJSServer
+import org.vertx.groovy.core.eventbus.EventBus
 
 /**
  *
@@ -33,10 +34,18 @@ import org.vertx.groovy.core.sockjs.SockJSServer
  */
 class Vertx {
 
-  private VertxInternal jVertex;
+  private final VertxInternal jVertex;
+  private final EventBus eventBus;
+  private final org.vertx.groovy.core.file.FileSystem fileSystem;
 
-  private Vertx(VertxInternal jVertex) {
+  public Vertx(VertxInternal jVertex) {
     this.jVertex = jVertex;
+    this.eventBus = new EventBus(jVertex.eventBus());
+    this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem());
+  }
+
+  public static Vertx newVertx() {
+    return new Vertx(new DefaultVertx());
   }
 
   public static Vertx newVertx(String hostname) {
@@ -68,10 +77,12 @@ class Vertx {
   }
 
   public org.vertx.groovy.core.file.FileSystem fileSystem() {
-    return new FileSystem(jVertex.fileSystem());
+    return fileSystem;
   }
 
-  public abstract EventBus eventBus();
+  public EventBus eventBus() {
+    return eventBus;
+  }
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with
@@ -121,6 +132,10 @@ class Vertx {
    */
   boolean isWorker() {
     jVertex.isWorker()
+  }
+
+  org.vertx.java.core.Vertx toJavaVertx() {
+    return jVertex;
   }
 
 }

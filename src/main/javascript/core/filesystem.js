@@ -20,7 +20,7 @@ if (!vertx.FileSystem) {
   vertx.FileSystem = {};
 
   (function() {
-    var j_fs = org.vertx.java.core.file.FileSystem.instance;
+    var j_fs = org.vertx.java.deploy.impl.VertxLocator.vertx.fileSystem();
 
     function wrapHandler(handler) {
       return function(asyncResult) {

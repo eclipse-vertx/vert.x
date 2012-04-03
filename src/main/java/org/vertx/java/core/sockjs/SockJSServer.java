@@ -20,9 +20,12 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
+
+import java.util.List;
 
 /**
  *
@@ -65,6 +68,13 @@ public abstract class SockJSServer {
    */
   public abstract void installApp(AppConfig config,
                          final Handler<SockJSSocket> sockHandler);
+
+  /**
+   * Install an app which bridges the SockJS server to the event bus
+   * @param sjsConfig The config for the app
+   * @param permitted A list of JSON objects which define permitted matches
+   */
+  public abstract void bridge(AppConfig sjsConfig, List<JsonObject> permitted);
 
 }
 

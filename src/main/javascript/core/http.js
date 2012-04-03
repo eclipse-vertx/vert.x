@@ -146,7 +146,7 @@ if (!vertx.HttpServer) {
 
     vertx.HttpServer = function() {
 
-      var j_server = new org.vertx.java.core.http.HttpServer();
+      var j_server = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer();
 
       var that = this;
 
@@ -290,7 +290,7 @@ if (!vertx.HttpServer) {
     }
 
     vertx.HttpClient = function() {
-      var j_client = new org.vertx.java.core.http.HttpClient();
+      var j_client = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpClient();
 
       var that = this;
 

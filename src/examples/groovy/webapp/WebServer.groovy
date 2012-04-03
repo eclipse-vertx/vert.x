@@ -1,7 +1,3 @@
-import org.vertx.groovy.core.http.HttpServer
-import org.vertx.groovy.core.eventbus.SockJSBridge
-import org.vertx.java.core.sockjs.AppConfig
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -19,7 +15,7 @@ import org.vertx.java.core.sockjs.AppConfig
 */
 
 server =
-  new HttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
+  vertx.createHttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
 
 // Serve the static resources
 server.requestHandler { req ->
@@ -33,7 +29,7 @@ server.requestHandler { req ->
   }
 }
 
-new SockJSBridge(server, new AppConfig(prefix: '/eventbus'),
+vertx.createSockJSServer(server).bridge(prefix: '/eventbus',
   [
     // Allow calls to get static album data from the persistor
     [

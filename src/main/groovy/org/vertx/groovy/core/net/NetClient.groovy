@@ -16,6 +16,7 @@
 package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
+import org.vertx.java.core.impl.VertxInternal
 
 /**
  * NetClient is an asynchronous factory for TCP or SSL connections
@@ -38,6 +39,10 @@ import org.vertx.java.core.Handler
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class NetClient extends org.vertx.java.core.net.NetClient {
+
+  public NetClient(VertxInternal vertx) {
+    super(vertx);
+  }
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and host localhost

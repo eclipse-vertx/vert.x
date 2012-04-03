@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import org.vertx.groovy.core.eventbus.SockJSBridge
-import org.vertx.groovy.core.http.HttpServer
-
 server = vertx.createHttpServer()
 
 // Serve the static resources
@@ -25,7 +22,6 @@ server.requestHandler { req ->
   if (req.uri == '/vertxbus.js') req.response.sendFile('eventbusbridge/vertxbus.js')
 }
 
-// Create a SockJS bridge which lets everything through (be careful!)
-new SockJSBridge(server, prefix: '/eventbus', [[:]])
+vertx.createSockJSServer(server).bridge(prefix: '/eventbus', [[:]])
 
 server.listen(8080)
