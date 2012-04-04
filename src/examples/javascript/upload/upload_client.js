@@ -16,7 +16,7 @@
 
 load('vertx.js')
 
-var client = new vertx.HttpClient().setPort(8080);
+var client = vertx.createHttpClient().setPort(8080);
 
 var req = client.put("/someurl", function(resp) { stdout.println("Response " + resp.statusCode)});
 var filename = "upload/upload.txt"

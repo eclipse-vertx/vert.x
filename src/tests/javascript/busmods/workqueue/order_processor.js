@@ -19,7 +19,7 @@ load('test_utils.js');
 
 var tu = new TestUtils();
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 
 var id = vertx.generateUUID();
 

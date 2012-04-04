@@ -53,10 +53,6 @@ public class SharedData {
 
   private static final Logger log = LoggerFactory.getLogger(SharedData.class);
 
-  public static final SharedData instance = new SharedData();
-
-  private SharedData() {
-  }
 
   private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
   private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();

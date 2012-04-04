@@ -14,7 +14,6 @@
 * limitations under the License.
 */
 
-import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.core.sockjs.SockJSServer
 
 server = vertx.createHttpServer()

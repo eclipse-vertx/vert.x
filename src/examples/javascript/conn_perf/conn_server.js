@@ -19,7 +19,7 @@ load('vertx.js')
 // We set the buffer sizes small so we don't run out of RAM - each connection
 // will have its own buffer
 
-var server = new vertx.NetServer().setSendBufferSize(2048).setReceiveBufferSize(2048);
+var server = vertx.createNetServer().setSendBufferSize(2048).setReceiveBufferSize(2048);
 
 var count = 0;
 

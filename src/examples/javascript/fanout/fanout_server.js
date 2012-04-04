@@ -18,7 +18,7 @@ load('vertx.js')
 
 var conns = vertx.getSet('conns')
 
-var server = new vertx.NetServer().connectHandler(function(socket) {
+var server = vertx.createNetServer().connectHandler(function(socket) {
   conns.add(socket.writeHandlerID)
   socket.dataHandler(function(data) {
     var aconns = conns.toArray();

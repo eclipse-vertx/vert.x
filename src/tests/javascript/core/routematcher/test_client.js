@@ -20,12 +20,12 @@ load('vertx.js')
 var tu = new TestUtils();
 
 
-var server = new vertx.HttpServer();
+var server = vertx.createHttpServer();
 var rm = new vertx.RouteMatcher();
 server.requestHandler(rm);
 server.listen(8080);
 
-var client = new vertx.HttpClient().setPort(8080);
+var client = vertx.createHttpClient().setPort(8080);
 
 var params = { "name" : "foo", "version" : "v0.1"};
 var re_params = { "param0" : "foo", "param1" :"v0.1"};

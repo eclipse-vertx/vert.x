@@ -19,7 +19,7 @@ load('vertx.js')
 
 var tu = new TestUtils();
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 
 function testWorker() {
   eb.send('testWorker', {

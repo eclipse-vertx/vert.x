@@ -21,7 +21,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents  a server-side HTTP request.

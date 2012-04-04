@@ -17,10 +17,8 @@
 package vertx.tests.core.deploy;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.deploy.Container;
 import org.vertx.java.framework.TestClientBase;
 
 /**
@@ -28,12 +26,13 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = vertx.eventBus();
+  private EventBus eb;
 
   @Override
   public void start() {
     super.start();
     tu.appReady();
+    eb = vertx.eventBus();
   }
 
   @Override

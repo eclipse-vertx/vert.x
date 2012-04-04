@@ -21,7 +21,6 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestUtils;
 
 import java.util.Set;
@@ -121,7 +120,7 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testPointToPointInitialise() {
     final String address = UUID.randomUUID().toString();
-    SharedData.instance.getSet("addresses").add(address);
+    vertx.sharedData().getSet("addresses").add(address);
     eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;
           public void handle(Message<Buffer> msg) {
@@ -153,7 +152,7 @@ public class LocalPeer extends EventBusAppBase {
 
   public void testReplyInitialise() {
     final String address = UUID.randomUUID().toString();
-    Set<String> addresses = SharedData.instance.getSet("addresses");
+    Set<String> addresses = vertx.sharedData().getSet("addresses");
     addresses.add(address);
     eb.registerHandler(address, new Handler<Message<Buffer>>() {
           boolean handled = false;

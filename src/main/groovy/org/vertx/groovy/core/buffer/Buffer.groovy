@@ -16,9 +16,9 @@
 
 package org.vertx.groovy.core.buffer
 
-import java.nio.ByteBuffer
-
 import org.vertx.java.core.buffer.Buffer as JBuffer
+
+import java.nio.ByteBuffer
 
 /**
  * <p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as necessary to accomodate any bytes written to it.</p>

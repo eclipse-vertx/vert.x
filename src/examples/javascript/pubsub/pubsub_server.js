@@ -16,8 +16,8 @@
 
 load('vertx.js')
 
-new vertx.NetServer().connectHandler(function(socket) {
-  var parser = new vertx.DelimitedParser("\n", function(line) {
+vertx.createNetServer().connectHandler(function(socket) {
+  var parser = new vertx.createDelimitedParser("\n", function(line) {
     line = line.toString().replace(/\s+$/,""); // rtrim
     if (line.indexOf("subscribe,") == 0) {
       var topicName = line.split(",", 2)[1]

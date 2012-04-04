@@ -28,7 +28,7 @@ load('vertx.js')
 // So to really test how many connections vert.x can handle, you need to test the
 // server with multiple clients on different machines.
 
-var client = new vertx.NetClient().setSendBufferSize(2048).setReceiveBufferSize(2048);
+var client = vertx.createNetClient().setSendBufferSize(2048).setReceiveBufferSize(2048);
 
 var numConns = 50000;
 

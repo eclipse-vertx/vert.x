@@ -13,13 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import org.vertx.java.core.shareddata.SharedData
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.groovy.core.eventbus.EventBus
 
-conns = SharedData.instance.getSet('conns')
+conns = vertx.sharedData().getSet('conns')
 
-eb = EventBus.instance
+eb = vertx.eventBus()
 
 server = vertx.createNetServer().connectHandler { socket ->
   conns << socket.writeHandlerID

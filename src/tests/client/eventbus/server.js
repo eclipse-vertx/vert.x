@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var server = new vertx.HttpServer();
+var server = vertx.createHttpServer();
 
 server.requestHandler(function(req) {
   if (req.path == '/') {

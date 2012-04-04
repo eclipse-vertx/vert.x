@@ -16,16 +16,16 @@
 
 package org.vertx.groovy.core
 
-import org.vertx.java.core.Handler
-
-import org.vertx.java.core.impl.DefaultVertx
-import org.vertx.groovy.core.net.NetServer
-import org.vertx.java.core.impl.VertxInternal
-import org.vertx.groovy.core.net.NetClient
+import org.vertx.groovy.core.eventbus.EventBus
 import org.vertx.groovy.core.http.HttpClient
 import org.vertx.groovy.core.http.HttpServer
+import org.vertx.groovy.core.net.NetClient
+import org.vertx.groovy.core.net.NetServer
 import org.vertx.groovy.core.sockjs.SockJSServer
-import org.vertx.groovy.core.eventbus.EventBus
+import org.vertx.java.core.Handler
+import org.vertx.java.core.impl.DefaultVertx
+import org.vertx.java.core.impl.VertxInternal
+import org.vertx.java.core.shareddata.SharedData
 
 /**
  *
@@ -68,8 +68,8 @@ class Vertx {
     return new HttpServer(jVertex);
   }
 
-  public HttpClient createHttpClient() {
-    return new HttpClient(jVertex);
+  public HttpClient createHttpClient(Map props) {
+    return new HttpClient(jVertex, props);
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
@@ -78,6 +78,10 @@ class Vertx {
 
   public org.vertx.groovy.core.file.FileSystem fileSystem() {
     return fileSystem;
+  }
+
+  public SharedData sharedData() {
+    return jVertex.sharedData();
   }
 
   public EventBus eventBus() {

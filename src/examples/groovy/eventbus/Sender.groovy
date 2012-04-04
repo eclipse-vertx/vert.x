@@ -13,10 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import org.vertx.groovy.core.Vertx
-import org.vertx.groovy.core.eventbus.EventBus
 
-eb = EventBus.instance
+eb = vertx.eventBus()
 
 address = 'example.address'
 
@@ -24,7 +22,7 @@ def count = 0
 
 // Send a message every 2 seconds
 
-Vertx.instance.setPeriodic(2000) {
+vertx.setPeriodic(2000) {
   def msg = "some-message-${count++}"
   eb.send(address, msg)
   println "Sent message $msg"

@@ -14,8 +14,6 @@
 * limitations under the License.
 */
 
-import org.vertx.groovy.core.http.HttpServer
-
 vertx.createHttpServer().requestHandler { req ->
   def filename = "sendfile/" + (req.uri == "/" ? "index.html" : "." + req.uri)
   req.response.sendFile filename

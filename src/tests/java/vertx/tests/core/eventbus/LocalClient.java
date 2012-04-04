@@ -17,10 +17,8 @@
 package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestUtils;
 
 import java.util.Set;
@@ -62,7 +60,7 @@ public class LocalClient extends EventBusAppBase {
   public void testPointToPoint() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    Set<String> addresses = SharedData.instance.getSet("addresses");
+    Set<String> addresses = vertx.sharedData().getSet("addresses");
     for (String address: addresses) {
       eb.send(address, buff);
     }
@@ -72,7 +70,7 @@ public class LocalClient extends EventBusAppBase {
   public void testReply() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    Set<String> addresses = SharedData.instance.getSet("addresses");
+    Set<String> addresses = vertx.sharedData().getSet("addresses");
     for (final String address: addresses) {
       eb.send(address, buff, new Handler<Message<Buffer>>() {
         public void handle(Message<Buffer> reply) {

@@ -28,7 +28,7 @@ module Vertx
 
     # Create a new HttpServer
     def initialize
-      @j_del = org.vertx.java.core.http.HttpServer.new
+      @j_del = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer
     end
 
     # Set the HTTP request handler for the server.
@@ -95,7 +95,7 @@ module Vertx
 
     # Create a new HttpClient
     def initialize
-      @j_del = org.vertx.java.core.http.HttpClient.new
+      @j_del = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpClient
     end
 
     # Set the exception handler.

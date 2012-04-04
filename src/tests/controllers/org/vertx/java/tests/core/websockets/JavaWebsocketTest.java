@@ -19,7 +19,6 @@ package org.vertx.java.tests.core.websockets;
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestBase;
 import vertx.tests.core.websockets.InstanceCheckServer;
 import vertx.tests.core.websockets.WebsocketsTestClient;
@@ -156,16 +155,16 @@ public class JavaWebsocketTest extends TestBase {
         appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.instance.getSet("connections").clear();
-      SharedData.instance.getSet("servers").clear();
-      SharedData.instance.getSet("instances").clear();
-      SharedData.instance.getMap("params").put("numConnections", numConnections);
+      vertx.sharedData().getSet("connections").clear();
+      vertx.sharedData().getSet("servers").clear();
+      vertx.sharedData().getSet("instances").clear();
+      vertx.sharedData().getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 
-      assertEquals(numConnections, SharedData.instance.getSet("connections").size());
+      assertEquals(numConnections, vertx.sharedData().getSet("connections").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
+      assertEquals(initialServers, vertx.sharedData().getSet("instances").size());
 
       // Then stop some
 
@@ -174,10 +173,10 @@ public class JavaWebsocketTest extends TestBase {
       }
     }
 
-    SharedData.instance.getSet("connections").clear();
-    SharedData.instance.getSet("servers").clear();
-    SharedData.instance.getSet("instances").clear();
-    SharedData.instance.getMap("params").put("numConnections", numConnections);
+    vertx.sharedData().getSet("connections").clear();
+    vertx.sharedData().getSet("servers").clear();
+    vertx.sharedData().getSet("instances").clear();
+    vertx.sharedData().getMap("params").put("numConnections", numConnections);
 
     //Now start some more
 
@@ -191,9 +190,9 @@ public class JavaWebsocketTest extends TestBase {
 
     startTest(testName);
 
-    assertEquals(numConnections, SharedData.instance.getSet("connections").size());
+    assertEquals(numConnections, vertx.sharedData().getSet("connections").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, vertx.sharedData().getSet("instances").size());
   }
 
 }

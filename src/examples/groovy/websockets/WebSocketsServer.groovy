@@ -16,8 +16,6 @@
 
 package websockets
 
-import org.vertx.groovy.core.http.HttpServer
-
 vertx.createHttpServer().websocketHandler { ws ->
   ws.dataHandler { data -> ws.writeTextFrame(data.toString()) }
 }.requestHandler { req ->

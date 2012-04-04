@@ -1,5 +1,3 @@
-import org.vertx.groovy.core.eventbus.EventBus
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -16,7 +14,7 @@ import org.vertx.groovy.core.eventbus.EventBus
 * limitations under the License.
 */
 
-def eb = EventBus.instance
+def eb = vertx.eventBus()
 
 def pa = 'demo.persistor'
 

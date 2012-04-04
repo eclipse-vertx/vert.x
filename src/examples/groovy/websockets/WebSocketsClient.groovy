@@ -16,8 +16,6 @@
 
 package websockets
 
-import org.vertx.groovy.core.http.HttpClient
-
 def client = vertx.createHttpClient().setPort(8080)
 
 client.connectWebsocket('/some-uri') { websocket ->

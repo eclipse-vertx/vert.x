@@ -16,9 +16,9 @@
 
 package org.vertx.groovy.core.sockjs
 
+import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.groovy.core.streams.WriteStream
-import org.vertx.groovy.core.buffer.Buffer
 
 /**
  *

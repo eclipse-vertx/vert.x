@@ -18,7 +18,7 @@ load('test_utils.js')
 load('vertx.js')
 
 var tu = new TestUtils();
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 
 function testSessionTimeout() {
   deleteAll();

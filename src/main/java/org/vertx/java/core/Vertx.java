@@ -17,20 +17,14 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.impl.DefaultNetServer;
-import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
-
-import java.util.List;
 
 /**
  * A singleton instance of Vertx is available to all verticles.
@@ -67,6 +61,8 @@ public abstract class Vertx {
   public abstract FileSystem fileSystem();
 
   public abstract EventBus eventBus();
+
+  public abstract SharedData sharedData();
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with

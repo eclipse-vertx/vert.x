@@ -17,11 +17,11 @@
 var vertx = vertx || {};
 
 if (!vertx.NetServer) {
-  vertx.NetServer = function() {
+  vertx.createNetServer = function() {
     return org.vertx.java.deploy.impl.VertxLocator.vertx.createNetServer();
   }
 
-  vertx.NetClient = function() {
+  vertx.createNetClient = function() {
     return org.vertx.java.deploy.impl.VertxLocator.vertx.createNetClient();
   }
 }

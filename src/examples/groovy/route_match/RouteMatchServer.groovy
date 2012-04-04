@@ -15,7 +15,6 @@
 */
 
 import org.vertx.groovy.core.http.RouteMatcher
-import org.vertx.groovy.core.http.HttpServer
 
 // Inspired from Sinatra / Express
 def rm = new RouteMatcher()

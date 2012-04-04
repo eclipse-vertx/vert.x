@@ -25,28 +25,28 @@ var handler = function(msg, replier) {
   // Trying to create any network clients or servers should fail - workers can only use the event bus
 
   try {
-    new vertx.NetServer();
+    vertx.createNetServer();
     tu.azzert(false, "Should throw exception");
   } catch (err) {
     // OK
   }
 
    try {
-    new vertx.NetClient();
+    vertx.createNetClient();
     tu.azzert(false, "Should throw exception");
   } catch (err) {
     // OK
   }
 
    try {
-    new vertx.HttpServer();
+    vertx.createHttpServer();
     tu.azzert(false, "Should throw exception");
   } catch (err) {
     // OK
   }
 
    try {
-    new vertx.HttpClient();
+    vertx.createHttpClient();
     tu.azzert(false, "Should throw exception");
   } catch (err) {
     // OK
@@ -55,12 +55,12 @@ var handler = function(msg, replier) {
   replier({eek: 'blurt'});
 };
 
-vertx.EventBus.registerHandler('testWorker', handler);
+vertx.eventBus.registerHandler('testWorker', handler);
 
 tu.appReady();
 
 function vertxStop() {
-  vertx.EventBus.unregisterHandler('testWorker', handler);
+  vertx.eventBus.unregisterHandler('testWorker', handler);
   tu.checkContext();
   tu.appStopped();
 }

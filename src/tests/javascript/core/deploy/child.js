@@ -17,7 +17,7 @@
 load('test_utils.js')
 load('vertx.js')
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 
 eb.send("test-handler", "started");
 

@@ -23,10 +23,8 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileProps;
-import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.file.FileSystemProps;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
@@ -60,10 +58,10 @@ public class TestClient extends TestClientBase {
   @Override
   public void start() {
     super.start();
-    params = SharedData.instance.getMap("params");
+    params = vertx.sharedData().getMap("params");
     java.nio.file.FileSystem fs = FileSystems.getDefault();
     pathSep = fs.getSeparator();
-    params = SharedData.instance.getMap("params");
+    params = vertx.sharedData().getMap("params");
 
     testDir = new File(TEST_DIR);
     if (testDir.exists()) {

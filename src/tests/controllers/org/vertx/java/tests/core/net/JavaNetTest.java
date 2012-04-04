@@ -26,7 +26,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.framework.TestBase;
 import vertx.tests.core.http.TLSTestParams;
@@ -247,7 +246,7 @@ public class JavaNetTest extends TestBase {
     //Put the params in shared-data
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
         requireClientAuth, clientTrustAll, shouldPass);
-    SharedData.instance.getMap("TLSTest").put("params", params.serialize());
+    vertx.sharedData().getMap("TLSTest").put("params", params.serialize());
     startApp(TLSServer.class.getName());
     startTest(testName);
   }
@@ -313,9 +312,9 @@ public class JavaNetTest extends TestBase {
     // Start an echo server on a different port to make sure shared servers work ok when there are other servers
     // on different ports
 
-    SharedData.instance.getMap("params").put("listenport", 8181);
+    vertx.sharedData().getMap("params").put("listenport", 8181);
     startApp(EchoServer.class.getName(), true);
-    SharedData.instance.getMap("params").remove("listenport");
+    vertx.sharedData().getMap("params").remove("listenport");
 
     //We initially start then stop them to make sure the shared server cleanup code works ok
 
@@ -329,16 +328,16 @@ public class JavaNetTest extends TestBase {
         appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
 
-      SharedData.instance.getSet("connections").clear();
-      SharedData.instance.getSet("servers").clear();
-      SharedData.instance.getSet("instances").clear();
-      SharedData.instance.getMap("params").put("numConnections", numConnections);
+      vertx.sharedData().getSet("connections").clear();
+      vertx.sharedData().getSet("servers").clear();
+      vertx.sharedData().getSet("instances").clear();
+      vertx.sharedData().getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 
-      assertEquals(numConnections, SharedData.instance.getSet("connections").size());
+      assertEquals(numConnections, vertx.sharedData().getSet("connections").size());
       // And make sure connection requests are distributed amongst them
-      assertEquals(initialServers, SharedData.instance.getSet("instances").size());
+      assertEquals(initialServers, vertx.sharedData().getSet("instances").size());
 
       // Then stop some
 
@@ -347,10 +346,10 @@ public class JavaNetTest extends TestBase {
       }
     }
 
-    SharedData.instance.getSet("connections").clear();
-    SharedData.instance.getSet("servers").clear();
-    SharedData.instance.getSet("instances").clear();
-    SharedData.instance.getMap("params").put("numConnections", numConnections);
+    vertx.sharedData().getSet("connections").clear();
+    vertx.sharedData().getSet("servers").clear();
+    vertx.sharedData().getSet("instances").clear();
+    vertx.sharedData().getMap("params").put("numConnections", numConnections);
 
     //Now start some more
 
@@ -364,9 +363,9 @@ public class JavaNetTest extends TestBase {
 
     startTest(testName);
 
-    assertEquals(numConnections, SharedData.instance.getSet("connections").size());
+    assertEquals(numConnections, vertx.sharedData().getSet("connections").size());
     // And make sure connection requests are distributed amongst them
-    assertEquals(numInstances + initialServers - initialToStop, SharedData.instance.getSet("instances").size());
+    assertEquals(numInstances + initialServers - initialToStop, vertx.sharedData().getSet("instances").size());
   }
 
   @Test

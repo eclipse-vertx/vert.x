@@ -23,7 +23,7 @@ var client;
 
 function test1() {
 
-  client = new vertx.NetClient();
+  client = vertx.createNetClient();
 
   client.connect(1234, 'localhost', function(sock) {
 

@@ -16,14 +16,13 @@
 
 package core.filesystem
 
-import org.vertx.groovy.core.file.FileSystem
-import org.vertx.groovy.framework.TestUtils
 import org.vertx.groovy.core.streams.Pump
+import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 tu.checkContext()
 
-fs = FileSystem.instance
+fs = vertx.fileSystem()
 
 fileDir = "js-test-output"
 

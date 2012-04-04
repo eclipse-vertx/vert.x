@@ -18,7 +18,6 @@ package org.vertx.java.examples.ssl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
 

@@ -17,6 +17,7 @@
 
 package org.vertx.groovy.core.http;
 
+
 import org.vertx.java.core.http.ServerWebSocket as JServerWebSocket
 
 /**

@@ -16,7 +16,7 @@
 
 load('vertx.js')
 
-var server = new vertx.HttpServer().setSSL(true).
+var server = vertx.createHttpServer().setSSL(true).
                                     setKeyStorePath('server-keystore.jks').
                                     setKeyStorePassword('wibble');
 

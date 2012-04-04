@@ -21,7 +21,7 @@ var tu = new TestUtils();
 
 // Most testing occurs in the Java tests
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 var address = 'foo-address';
 
 var sent = {

@@ -17,13 +17,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 import java.util.List;
 

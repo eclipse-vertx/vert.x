@@ -20,14 +20,13 @@ package core.websocket
 
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.http.HttpClient
-import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 tu.checkContext()
 
 server = vertx.createHttpServer()
-client = new HttpClient(port: 8080)
+client = vertx.createHttpClient(port: 8080)
 
 def testEchoBinary() {
   echo(true)

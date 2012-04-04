@@ -19,7 +19,7 @@ load('test_utils.js')
 
 var tu = new TestUtils();
 
-var server = new vertx.NetServer();
+var server = vertx.createNetServer();
 
 var h = function(sock) {
   tu.checkContext();

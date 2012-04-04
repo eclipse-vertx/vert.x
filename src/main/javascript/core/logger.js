@@ -17,5 +17,5 @@
 var vertx = vertx || {};
 
 if (!vertx.logger) {
-  vertx.logger = org.vertx.java.deploy.Container.instance.getLogger();
+  vertx.logger = org.vertx.java.deploy.impl.VertxLocator.container.getLogger();
 }

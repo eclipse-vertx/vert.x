@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var client = new vertx.HttpClient().setPort(8080);
+var client = vertx.createHttpClient().setPort(8080);
 var request = client.put('/', function(resp) {
   stdout.println("Got response " + resp.statusCode);
   resp.bodyHandler(function(body) {

@@ -31,7 +31,7 @@ module Vertx
 
     # Create a new NetServer
     def initialize
-      @j_del = org.vertx.java.core.net.NetServer.new
+      @j_del = org.vertx.java.deploy.impl.VertxLocator.vertx.createNetServer
     end
 
     # Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.
@@ -82,7 +82,7 @@ module Vertx
 
     # Create a new NetClient
     def initialize
-      @j_del = org.vertx.java.core.net.NetClient.new
+      @j_del = org.vertx.java.deploy.impl.VertxLocator.vertx.createNetClient
     end
 
     # Should the client trust ALL server certificates?

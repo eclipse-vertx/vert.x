@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var client = new vertx.NetClient();
+var client = vertx.createNetClient();
 
 client.connect(1234, function(sock) {
   stdout.println("connected");

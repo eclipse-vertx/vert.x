@@ -18,9 +18,7 @@ package vertx.tests.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
@@ -29,7 +27,6 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
@@ -518,7 +515,6 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        System.out.println("req headers size: " + req.headers().size());
         tu.azzert(req.headers().size() == 1);
         tu.azzert(req.headers().get("Host").equals("localhost:8080"));
         tu.azzert(req.headers().get("Host").equals("localhost:8080"));
@@ -1747,7 +1743,6 @@ public class HttpTestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
-        System.out.println("In 100-continue handler");
         tu.checkContext();
         req.write(toSend);
         req.end();
@@ -1910,7 +1905,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void tls() {
-    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
+    TLSTestParams params = TLSTestParams.deserialize(vertx.sharedData().<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 
@@ -1992,7 +1987,7 @@ public class HttpTestClient extends TestClientBase {
     //Make sure connections aren't reused
     client.setKeepAlive(false);
     // Make a bunch of requests
-    final int numRequests = SharedData.instance.<String, Integer>getMap("params").get("numRequests");
+    final int numRequests = vertx.sharedData().<String, Integer>getMap("params").get("numRequests");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numRequests; i++) {
 

@@ -16,11 +16,12 @@
 
 package org.vertx.groovy.core.http
 
-import org.vertx.groovy.core.buffer.Buffer
-import org.vertx.java.core.Handler
-import org.vertx.groovy.core.streams.WriteStream
-import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.java.core.http.WebSocket as JWebSocket
+
+import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.groovy.core.streams.ReadStream
+import org.vertx.groovy.core.streams.WriteStream
+import org.vertx.java.core.Handler
 
 /**
  * Represents an HTML 5 Websocket

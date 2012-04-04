@@ -30,7 +30,7 @@ import java.util.UUID;
  */
 public class OrderProcessor extends Verticle implements Handler<Message<JsonObject>> {
 
-  private TestUtils tu = new TestUtils(vertx);
+  private TestUtils tu;
 
   private EventBus eb = vertx.eventBus();
 
@@ -38,6 +38,7 @@ public class OrderProcessor extends Verticle implements Handler<Message<JsonObje
 
   @Override
   public void start() throws Exception {
+    tu = new TestUtils(vertx);
     eb.registerHandler(address, this);
     JsonObject msg = new JsonObject().putString("processor", address);
     eb.send("test.orderQueue.register", msg);

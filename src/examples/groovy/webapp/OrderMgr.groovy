@@ -1,5 +1,3 @@
-import org.vertx.groovy.core.eventbus.EventBus
-import org.vertx.groovy.deploy.Container
 import groovy.json.JsonBuilder
 
 /*
@@ -18,8 +16,8 @@ import groovy.json.JsonBuilder
 * limitations under the License.
 */
 
-eb = EventBus.instance
-log = Container.instance.logger
+eb = vertx.eventBus()
+log = container.logger
 
 handler = { orderMsg ->
   def order = orderMsg.body
