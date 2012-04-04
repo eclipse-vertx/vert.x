@@ -38,7 +38,7 @@ vertx.createNetServer().connectHandler(function(socket) {
       var topic = vertx.getSet(sp[1])
       var tarr = topic.toArray();
       for (var i = 0; i < tarr.length; i++) {
-        vertx.EventBus.send(tarr[i], new vertx.Buffer(sp[2]));
+        vertx.eventBus.send(tarr[i], new vertx.Buffer(sp[2]));
       }
     }
   });

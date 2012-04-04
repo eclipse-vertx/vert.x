@@ -17,7 +17,7 @@ server.requestHandler(function(req) {
   }
 })
 
-new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
   [
     // Allow calls to get static album data from the persistor
     {

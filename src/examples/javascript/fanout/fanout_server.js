@@ -23,7 +23,7 @@ var server = vertx.createNetServer().connectHandler(function(socket) {
   socket.dataHandler(function(data) {
     var aconns = conns.toArray();
     for (var i = 0; i < aconns.length; i++) {
-      vertx.EventBus.send(aconns[i], data)
+      vertx.eventBus.send(aconns[i], data)
     }
   });
   socket.closedHandler(function() { conns.remove(socket.writeHandlerID) });

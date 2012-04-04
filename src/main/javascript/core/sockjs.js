@@ -16,7 +16,7 @@
 
 var vertx = vertx || {};
 
-if (!vertx.SockJSServer) {
+if (!vertx.createSockJSServer) {
 
   vertx.createSockJSServer = function(httpServer) {
 
@@ -24,24 +24,39 @@ if (!vertx.SockJSServer) {
       throw "Please construct a vertx.SockJSServer with an instance of vert.HttpServer"
     }
 
-    var jserver = org.vertx.java.deploy.impl.VertxLocator.vertx.createSockJSServer(httpServer._to_java_server());
+    var vertx = org.vertx.java.deploy.impl.VertxLocator.vertx;
+
+    function convertConfig(config) {
+      var jConfig = new org.vertx.java.core.sockjs.AppConfig();
+      var prefix = config['prefix'];
+      if (typeof prefix != 'undefined') jConfig.setPrefix(prefix);
+      var jsessionid = config['insert_JSESSIONID'];
+      if (typeof jsessionid != 'undefined') jConfig.setInsertJSESSIONID(jsessionid);
+      var session_timeout = config['session_timeout'];
+      if (typeof session_timeout != 'undefined') jConfig.setSessionTimeout(session_timeout);
+      var heartbeat_period = config['heartbeat_period'];
+      if (typeof heartbeat_period != 'undefined') jConfig.setHeartbeatPeriod(heartbeat_period);
+      var max_bytes_streaming = config['max_bytes_streaming'];
+      if (typeof max_bytes_streaming != 'undefined') jConfig.setMaxBytesStreaming(max_bytes_streaming);
+      var library_url = config['library_url'];
+      if (typeof library_url != 'undefined') jConfig.setLibraryURL(library_url);
+      return jConfig;
+    }
+
+    var jserver = vertx.createSockJSServer(httpServer._to_java_server());
     var server = {
       installApp: function(config, handler) {
-        var jConfig = new org.vertx.java.core.sockjs.AppConfig();
-        var prefix = config['prefix'];
-        if (typeof prefix != 'undefined') jConfig.setPrefix(prefix);
-        var jsessionid = config['insert_JSESSIONID'];
-        if (typeof jsessionid != 'undefined') jConfig.setInsertJSESSIONID(jsessionid);
-        var session_timeout = config['session_timeout'];
-        if (typeof session_timeout != 'undefined') jConfig.setSessionTimeout(session_timeout);
-        var heartbeat_period = config['heartbeat_period'];
-        if (typeof heartbeat_period != 'undefined') jConfig.setHeartbeatPeriod(heartbeat_period);
-        var max_bytes_streaming = config['max_bytes_streaming'];
-        if (typeof max_bytes_streaming != 'undefined') jConfig.setMaxBytesStreaming(max_bytes_streaming);
-        var library_url = config['library_url'];
-        if (typeof library_url != 'undefined') jConfig.setLibraryURL(library_url);
-
-        jserver.installApp(jConfig, handler);
+        jserver.installApp(convertConfig(config), handler);
+      },
+      bridge: function(config, permitted) {
+        var jList = new java.util.ArrayList();
+        for (var i = 0; i < permitted.length; i++) {
+          var match = permitted[i];
+          var json_str = JSON.stringify(match);
+          var jJson = new org.vertx.java.core.json.JsonObject(json_str);
+          jList.add(jJson);
+        }
+        jserver.bridge(convertConfig(config), jList);
       }
     }
     return server;

@@ -18,6 +18,36 @@ var vertx = vertx || {};
 
 if (!vertx.Pump) {
   vertx.Pump = function(rs, ws) {
-    return new org.vertx.java.core.streams.Pump(rs, ws);
+
+    var pumped = 0;
+
+    var drainHandler = function() {
+      rs.resume();
+    }
+
+    var dataHandler = function(buffer) {
+      ws.writeBuffer(buffer);
+      pumped += buffer.length();
+      if (ws.writeQueueFull()) {
+        rs.pause();
+        ws.drainHandler(drainHandler);
+      }
+    }
+
+    return {
+      start: function() {
+        rs.dataHandler(dataHandler);
+      },
+      stop: function() {
+        ws.drainHandler(null);
+        rs.dataHandler(null);
+      },
+      getBytesPumped: function() {
+        return pumped;
+      },
+      setWriteQueueMaxSize: function(maxSize) {
+        ws.setWriteQueueMaxSize(maxSize);
+      }
+    }
   }
 }
