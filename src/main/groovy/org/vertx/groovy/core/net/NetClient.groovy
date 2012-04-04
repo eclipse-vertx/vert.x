@@ -40,8 +40,13 @@ import org.vertx.java.core.impl.VertxInternal
  */
 class NetClient extends org.vertx.java.core.net.NetClient {
 
-  public NetClient(VertxInternal vertx) {
-    super(vertx);
+  public NetClient(VertxInternal vertx, Map props = null) {
+    super(vertx)
+    if (props != null) {
+      props.each { k, v ->
+        setProperty(k, v)
+      }
+    }
   }
 
   /**

@@ -35,8 +35,13 @@ import org.vertx.java.core.impl.VertxInternal
  */
 class NetServer extends org.vertx.java.core.net.NetServer {
 
-  NetServer(VertxInternal vertx) {
+  NetServer(VertxInternal vertx, Map props = null) {
     super(vertx)
+    if (props != null) {
+      props.each { k, v ->
+        setProperty(k, v)
+      }
+    }
   }
 
   /**

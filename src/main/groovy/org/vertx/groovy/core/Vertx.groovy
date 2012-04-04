@@ -56,19 +56,19 @@ class Vertx {
     return new Vertx(new DefaultVertx(port, hostname));
   }
 
-  public NetServer createNetServer() {
-    return new NetServer(jVertex);
+  public NetServer createNetServer(Map props = null) {
+    return new NetServer(jVertex, props);
   }
 
-  public NetClient createNetClient() {
-    return new NetClient(jVertex);
+  public NetClient createNetClient(Map props = null) {
+    return new NetClient(jVertex, props);
   }
 
-  public HttpServer createHttpServer() {
-    return new HttpServer(jVertex);
+  public HttpServer createHttpServer(Map props = null) {
+    return new HttpServer(jVertex, props);
   }
 
-  public HttpClient createHttpClient(Map props) {
+  public HttpClient createHttpClient(Map props = null) {
     return new HttpClient(jVertex, props);
   }
 
