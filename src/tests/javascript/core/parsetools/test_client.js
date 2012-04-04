@@ -31,7 +31,7 @@ function testDelimited() {
     }
   }
 
-  var rp = new vertx.DelimitedParser('\n', output);
+  var rp = new vertx.createDelimitedParser('\n', output);
 
   var input = "qwdqwdline1\nijijiline2\njline3\n";
 
@@ -55,7 +55,7 @@ function testFixed() {
     }
   }
 
-  var rp = new vertx.FixedParser(chunkSize, output);
+  var rp = new vertx.createFixedParser(chunkSize, output);
 
   var input = new vertx.Buffer(0);
   for (var i = 0; i < numChunks; i++) {

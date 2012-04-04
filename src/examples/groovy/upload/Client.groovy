@@ -17,17 +17,17 @@
 package upload
 
 import org.vertx.groovy.core.http.HttpClient
-import org.vertx.groovy.core.file.FileSystem
 import org.vertx.groovy.core.streams.Pump
 
-def req = new HttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
-def filename = "upload/upload.txt"
-FileSystem.instance.props(filename) { ares ->
+req = new HttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
+filename = "upload/upload.txt"
+fs = vertx.fileSystem()
+fs.props(filename) { ares ->
   def props = ares.result
   println "props is ${props}"
   def size = props.size
   req.headers["Content-Length"] = size
-  FileSystem.instance.open(filename) { ares2 ->
+  fs.open(filename) { ares2 ->
     def file = ares2.result
     def rs = file.readStream
     def pump = new Pump(rs, req)

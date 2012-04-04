@@ -117,6 +117,16 @@
 
   <target name="compile-platform" depends="compile-core" description="compile the source for the platform">
     <mkdir dir="${java-target}"/>
+
+    <!-- We have to compile in this roundabout order to avoid circular dependency issues between
+    Java and Groovy code -->
+    <groovyc srcdir="${groovy-src-root}" destdir="${java-target}">
+      <classpath>
+        <pathelement path="core-lib-classpath"/>
+        <pathelement location="${java-target}"/>
+      </classpath>
+      <include name="org/vertx/groovy/deploy/Container.groovy"/>
+    </groovyc>
     <javac srcdir="${java-src-root}" destdir="${java-target}" classpathref="core-lib-classpath" debug="on"
            includeantruntime="false" target="1.7" source="1.7">
       <include name="org/vertx/java/deploy/**/*.java"/>

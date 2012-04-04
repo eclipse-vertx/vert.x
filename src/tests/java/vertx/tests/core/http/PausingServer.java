@@ -19,7 +19,6 @@ package vertx.tests.core.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -31,11 +30,12 @@ import org.vertx.java.framework.TestUtils;
  */
 public class PausingServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils(vertx);
+  protected TestUtils tu;
 
   private HttpServer server;
 
   public void start() {
+    tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkContext();

@@ -19,11 +19,7 @@ package vertx.tests.busmods.worker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.framework.TestUtils;
 
@@ -32,7 +28,7 @@ import org.vertx.java.framework.TestUtils;
  */
 public class TestWorker extends Verticle implements Handler<Message<JsonObject>> {
 
-  private TestUtils tu = new TestUtils(vertx);
+  private TestUtils tu;
 
   private EventBus eb = vertx.eventBus();
 
@@ -40,6 +36,7 @@ public class TestWorker extends Verticle implements Handler<Message<JsonObject>>
 
   @Override
   public void start() throws Exception {
+    tu = new TestUtils(vertx);
     eb.registerHandler(address, this);
     tu.appReady();
   }

@@ -16,7 +16,6 @@
 package proxy
 
 import org.vertx.groovy.core.http.HttpClient
-import org.vertx.groovy.core.http.HttpServer
 
 client = new HttpClient(port: 8282)
 

@@ -16,12 +16,13 @@
 
 package org.vertx.groovy.core.eventbus
 
+import org.vertx.java.core.eventbus.EventBus as JEventBus
+
 import java.util.concurrent.ConcurrentHashMap
+import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
-import org.vertx.groovy.core.buffer.Buffer
-import org.vertx.java.core.eventbus.EventBus as JEventBus
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

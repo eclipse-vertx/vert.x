@@ -20,7 +20,6 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -35,6 +34,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -82,12 +82,12 @@ public class DefaultEventBus extends EventBus {
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
-  }
-
-  public void start() {
     try {
       final Class clusterProvider = Class.forName(CLUSTER_PROVIDER_CLASS_NAME);
-      ClusterManager mgr = (ClusterManager) clusterProvider.newInstance();
+      Class[] classTypes = new Class[] {VertxInternal.class};
+      Constructor constructor = clusterProvider.getDeclaredConstructor(classTypes);
+      constructor.newInstance(vertx);
+      ClusterManager mgr = (ClusterManager)constructor.newInstance(vertx);
       subs = mgr.getSubsMap("subs");
       this.server = setServer();
     } catch (Exception e) {

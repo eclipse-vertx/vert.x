@@ -19,10 +19,8 @@ package vertx.tests.core.net;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.framework.TestUtils;
 
@@ -33,13 +31,14 @@ import java.util.Set;
  */
 public class FanoutServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils(vertx);
+  protected TestUtils tu;
 
   private NetServer server;
 
   public void start() {
+    tu = new TestUtils(vertx);
 
-    final Set<String> connections = SharedData.instance.getSet("conns");
+    final Set<String> connections = vertx.sharedData().getSet("conns");
 
     server = vertx.createNetServer();
     server.connectHandler(new Handler<NetSocket>() {

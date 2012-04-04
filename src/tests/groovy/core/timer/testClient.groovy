@@ -16,10 +16,9 @@
 
 package core.timer
 
-import org.vertx.groovy.core.Vertx
 import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 tu.checkContext()
 
 def testOneOff() {

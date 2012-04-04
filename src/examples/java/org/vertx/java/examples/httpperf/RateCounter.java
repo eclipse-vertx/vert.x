@@ -17,7 +17,6 @@
 package org.vertx.java.examples.httpperf;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.deploy.Verticle;
 

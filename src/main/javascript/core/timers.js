@@ -19,18 +19,18 @@ var vertx = vertx || {};
 if (!vertx.setTimer) {
 
   vertx.setTimer = function(delay, handler) {
-    return org.vertx.java.deploy.impl.Locator.vertx().setTimer(delay, handler);
+    return org.vertx.java.deploy.impl.VertxLocator.vertx.setTimer(delay, handler);
   }
 
   vertx.setPeriodic = function(interval, handler) {
-    return org.vertx.java.deploy.impl.Locator.vertx().setPeriodic(interval, handler);
+    return org.vertx.java.deploy.impl.VertxLocator.vertx.setPeriodic(interval, handler);
   }
 
   vertx.cancelTimer = function(id) {
-    org.vertx.java.deploy.impl.Locator.vertx().cancelTimer(id);
+    org.vertx.java.deploy.impl.VertxLocator.vertx.cancelTimer(id);
   }
 
   vertx.runOnLoop = function(handler) {
-    org.vertx.java.deploy.impl.Locator.vertx().runOnLoop(handler);
+    org.vertx.java.deploy.impl.VertxLocator.vertx.runOnLoop(handler);
   }
 }

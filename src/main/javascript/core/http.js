@@ -144,13 +144,13 @@ if (!vertx.HttpServer) {
       }
     }
 
-    vertx.HttpServer = function() {
+    vertx.createHttpServer = function() {
 
       var j_server = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer();
 
-      var that = this;
+      var that = {};
 
-      this.requestHandler = function(handler) {
+      that.requestHandler = function(handler) {
 
         if (handler) {
 
@@ -166,14 +166,14 @@ if (!vertx.HttpServer) {
         return that;
       };
 
-      this.websocketHandler = function(handler) {
+      that.websocketHandler = function(handler) {
         if (handler) {
           j_server.websocketHandler(handler);
         }
         return that;
       };
 
-      this.close = function(handler) {
+      that.close = function(handler) {
         if (handler) {
           j_server.close(handler);
         } else {
@@ -181,7 +181,7 @@ if (!vertx.HttpServer) {
         }
       };
 
-      this.listen = function(port, host) {
+      that.listen = function(port, host) {
         if (host) {
           j_server.listen(port, host);
         } else {
@@ -287,12 +287,12 @@ if (!vertx.HttpServer) {
       that._to_java_server = function() {
         return j_server;
       }
+
+      return that;
     }
 
-    vertx.HttpClient = function() {
+    vertx.createHttpClient = function() {
       var j_client = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpClient();
-
-      var that = this;
 
       function wrapResponseHandler(handler) {
         var wrapperHandler = function(j_resp) {
@@ -387,6 +387,8 @@ if (!vertx.HttpServer) {
         wrapped.__proto__ = j_req;
         return wrapped;
       }
+
+      var that = {};
 
       that.exceptionHandler = function(handler) {
         j_client.exceptionHandler(handler);
@@ -557,6 +559,8 @@ if (!vertx.HttpServer) {
       that.isSSL = function() {
         return j_client.isSSL();
       }
+
+      return that;
 
     }
 

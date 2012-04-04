@@ -19,7 +19,7 @@ load('vertx.js')
 
 var tu = new TestUtils();
 
-var fs = vertx.FileSystem;
+var fs = vertx.fileSystem;
 
 var fileDir = "js-test-output"
 

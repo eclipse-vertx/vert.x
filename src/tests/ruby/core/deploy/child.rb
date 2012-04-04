@@ -23,6 +23,5 @@ require "test_utils"
 EventBus.send("test-handler", "started")
 
 def vertx_stop
-  puts "sending stop"
   EventBus.send("test-handler", "stopped")
 end

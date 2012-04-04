@@ -20,9 +20,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
@@ -49,9 +47,9 @@ public class TestBase extends TestCase {
 
   public static final String EVENTS_ADDRESS = "__test_events";
 
+  protected static VertxInternal vertx = new DefaultVertx();
+  private static VerticleManager verticleManager = new VerticleManager(vertx);
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
-  private VertxInternal vertx = new DefaultVertx();
-  private VerticleManager verticleManager = new VerticleManager(vertx);
   private TestUtils tu = new TestUtils(vertx);
   private volatile Handler<Message<JsonObject>> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
@@ -76,7 +74,6 @@ public class TestBase extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
-
     handler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         try {

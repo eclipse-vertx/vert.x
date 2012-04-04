@@ -17,11 +17,9 @@
 package core.net
 
 import org.vertx.groovy.core.buffer.Buffer
-import org.vertx.groovy.core.net.NetClient
-import org.vertx.groovy.core.net.NetServer
 import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 tu.checkContext()
 
 void testEcho() {

@@ -42,8 +42,8 @@ public class NetServer {
    * Create a new NetServer instance.
    */
   public NetServer(VertxInternal vertx) {
-    setReuseAddress(true);
     server = new DefaultNetServer(vertx);
+    setReuseAddress(true);
   }
 
   /**

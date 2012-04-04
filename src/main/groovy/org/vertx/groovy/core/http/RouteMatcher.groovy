@@ -17,8 +17,9 @@
 
 package org.vertx.groovy.core.http
 
-import org.vertx.java.core.Handler
 import org.vertx.java.core.http.RouteMatcher as JRouteMatcher
+
+import org.vertx.java.core.Handler
 
 /**
  *

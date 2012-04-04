@@ -18,9 +18,7 @@ package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.SockJSBridgeHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -32,7 +30,6 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
@@ -358,7 +355,7 @@ public class DefaultSockJSServer extends SockJSServer {
       }
     });
     installApp(new AppConfig().setPrefix("/broadcast").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
-      final Set<String> connections = SharedData.instance.getSet("conns");
+      final Set<String> connections = vertx.sharedData().getSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID);
         sock.dataHandler(new Handler<Buffer>() {

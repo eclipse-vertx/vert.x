@@ -24,7 +24,6 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
@@ -219,7 +218,7 @@ public class WebsocketsTestClient extends TestClientBase {
   }
 
   public void testSharedServersMultipleInstances1() {
-    final int numConnections = SharedData.instance.<String, Integer>getMap("params").get("numConnections");
+    final int numConnections = vertx.sharedData().<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connectWebsocket("someurl", new Handler<WebSocket>() {

@@ -17,7 +17,7 @@
 var vertx = vertx || {};
 
 if (!vertx.EventBus) {
-  vertx.EventBus = new (function() {
+  vertx.eventBus = new (function() {
     var that = this;
 
     var handlerMap = {};
@@ -153,29 +153,31 @@ if (!vertx.EventBus) {
 
   })();
 
-  vertx.SockJSBridgeHandler = function() {
-    var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
-    var handler = new org.vertx.java.core.Handler({
-      handle: function(sock) {
-        jHandler.handle(sock);
-      }
-    });
-    handler.addPermitted = function(permitted) {
-      for (var i = 0; i < permitted.length; i++) {
-        var match = permitted[i];
-        var json_str = JSON.stringify(match);
-        var jJson = new org.vertx.java.core.json.JsonObject(json_str);
-        jHandler.addPermitted(jJson);
-      }
-    }
-    return handler;
-  }
+//  vertx.SockJSBridgeHandler = function() {
+//    var jHandler = org.vertx.java.core.eventbus.SockJSBridgeHandler();
+//    var handler = new org.vertx.java.core.Handler({
+//      handle: function(sock) {
+//        jHandler.handle(sock);
+//      }
+//    });
+//    handler.addPermitted = function(permitted) {
+//      for (var i = 0; i < permitted.length; i++) {
+//        var match = permitted[i];
+//        var json_str = JSON.stringify(match);
+//        var jJson = new org.vertx.java.core.json.JsonObject(json_str);
+//        jHandler.addPermitted(jJson);
+//      }
+//    }
+//    return handler;
+//  }
+//
+//  vertx.SockJSBridge = function(httpServer, sockJSConfig, permitted) {
+//    var sockJSServer = new vertx.SockJSServer(httpServer);
+//    var handler = new vertx.SockJSBridgeHandler();
+//    handler.addPermitted(permitted);
+//    sockJSServer.installApp(sockJSConfig, handler);
+//  }
+//
 
-  vertx.SockJSBridge = function(httpServer, sockJSConfig, permitted) {
-    var sockJSServer = new vertx.SockJSServer(httpServer);
-    var handler = new vertx.SockJSBridgeHandler();
-    handler.addPermitted(permitted);
-    sockJSServer.installApp(sockJSConfig, handler);
-  }
 
 }

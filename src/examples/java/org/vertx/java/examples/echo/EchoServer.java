@@ -17,7 +17,6 @@
 package org.vertx.java.examples.echo;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.deploy.Verticle;

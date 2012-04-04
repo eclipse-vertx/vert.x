@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var server = new vertx.HttpServer()
+var server = vertx.createHttpServer()
 
 // Serve the static resources
 server.requestHandler(function(req) {

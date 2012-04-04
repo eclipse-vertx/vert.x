@@ -1,6 +1,6 @@
 class TestUtils
   def initialize
-    @j_tu = org.vertx.java.framework.TestUtils.new
+    @j_tu = org.vertx.java.framework.TestUtils.new( org.vertx.java.deploy.impl.VertxLocator.vertx)
   end
 
   def azzert(result, message = nil)
@@ -36,7 +36,9 @@ class TestUtils
     methods = object.private_methods
     methods.each do |meth|
       if meth.start_with? 'test_'
-        register(meth) { object.method(meth).call }
+        register(meth) {
+          object.method(meth).call
+        }
       end
     end
   end

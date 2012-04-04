@@ -15,8 +15,6 @@
 */
 package proxy
 
-import org.vertx.groovy.core.http.HttpServer
-
 vertx.createHttpServer().requestHandler { req ->
 
   println "Got request ${req.uri}"

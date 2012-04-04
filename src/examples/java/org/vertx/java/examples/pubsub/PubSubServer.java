@@ -18,11 +18,8 @@ package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.deploy.Verticle;
 
 import java.util.Set;
@@ -39,13 +36,13 @@ public class PubSubServer extends Verticle {
             String[] parts = line.split("\\,");
             if (line.startsWith("subscribe")) {
               System.out.println("Topic is " + parts[1]);
-              Set<String> set = SharedData.instance.getSet(parts[1]);
+              Set<String> set = vertx.sharedData().getSet(parts[1]);
               set.add(socket.writeHandlerID);
             } else if (line.startsWith("unsubscribe")) {
-              SharedData.instance.getSet(parts[1]).remove(socket.writeHandlerID);
+              vertx.sharedData().getSet(parts[1]).remove(socket.writeHandlerID);
             } else if (line.startsWith("publish")) {
               System.out.println("Publish to topic is " + parts[1]);
-              Set<String> actorIDs = SharedData.instance.getSet(parts[1]);
+              Set<String> actorIDs = vertx.sharedData().getSet(parts[1]);
               for (String actorID : actorIDs) {
                 System.out.println("Sending to verticle");
                 vertx.eventBus().send(actorID, new Buffer(parts[2]));

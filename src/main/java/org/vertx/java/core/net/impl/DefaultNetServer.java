@@ -179,7 +179,7 @@ public class DefaultNetServer {
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
-        done.handle(null);
+        executeCloseDone(ctx, done);
       }
       return;
     }

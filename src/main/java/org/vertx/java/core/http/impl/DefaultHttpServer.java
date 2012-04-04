@@ -48,7 +48,6 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
@@ -63,9 +62,9 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.HandlerHolder;
 import org.vertx.java.core.net.impl.HandlerManager;
-import org.vertx.java.core.net.impl.VertxWorkerPool;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
+import org.vertx.java.core.net.impl.VertxWorkerPool;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
@@ -231,7 +230,12 @@ public class DefaultHttpServer {
   }
 
   public void close(final Handler<Void> done) {
-    if (!listening) return;
+    if (!listening) {
+      if (done != null) {
+        executeCloseDone(ctx, done);
+      }
+      return;
+    }
     listening = false;
 
     synchronized (servers) {

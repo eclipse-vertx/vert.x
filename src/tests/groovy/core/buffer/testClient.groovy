@@ -16,11 +16,10 @@
 
 package core.buffer
 
-
-import org.vertx.groovy.framework.TestUtils
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 
 def testPutAtGetAtByte() {
   def buff = new Buffer()

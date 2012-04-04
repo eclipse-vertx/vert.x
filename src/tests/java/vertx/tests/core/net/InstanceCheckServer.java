@@ -18,7 +18,6 @@ package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shareddata.SharedData;
 
 import java.util.UUID;
 
@@ -40,8 +39,8 @@ public class InstanceCheckServer extends BaseServer {
 
         tu.checkContext();
         //We add the object id of the server to the set
-        SharedData.instance.getSet("instances").add(id);
-        SharedData.instance.getSet("connections").add(UUID.randomUUID().toString());
+        vertx.sharedData().getSet("instances").add(id);
+        vertx.sharedData().getSet("connections").add(UUID.randomUUID().toString());
 
         socket.close();
       }

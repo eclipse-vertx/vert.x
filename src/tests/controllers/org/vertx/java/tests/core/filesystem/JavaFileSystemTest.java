@@ -21,10 +21,8 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.file.AsyncFile;
-import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestBase;
 import vertx.tests.core.filesystem.TestClient;
 
@@ -46,7 +44,7 @@ public class JavaFileSystemTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    params = SharedData.instance.getMap("params");
+    params = vertx.sharedData().getMap("params");
     startApp(TestClient.class.getName());
   }
 

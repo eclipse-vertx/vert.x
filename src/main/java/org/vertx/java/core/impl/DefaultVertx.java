@@ -31,13 +31,12 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +54,7 @@ public class DefaultVertx extends VertxInternal {
 
   private final FileSystem fileSystem = new FileSystem(this);
   private final EventBus eventBus;
+  private final SharedData sharedData = new SharedData();
 
   private int backgroundPoolSize = 1;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
@@ -96,6 +96,10 @@ public class DefaultVertx extends VertxInternal {
 
   public FileSystem fileSystem() {
     return fileSystem;
+  }
+
+  public SharedData sharedData() {
+    return sharedData;
   }
 
   public HttpServer createHttpServer() {

@@ -1,5 +1,3 @@
-import org.vertx.groovy.deploy.Container
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *
@@ -42,8 +40,6 @@ def appConf = [
     */
   ]
 ]
-
-def container = Container.instance
 
 container.with {
 

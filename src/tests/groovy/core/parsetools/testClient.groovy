@@ -16,11 +16,11 @@
 
 package core.parsetools
 
-import org.vertx.groovy.framework.TestUtils
-import org.vertx.groovy.core.parsetools.RecordParser
 import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.groovy.core.parsetools.RecordParser
+import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 tu.checkContext()
 
 def testDelimited() {

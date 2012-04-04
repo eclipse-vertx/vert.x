@@ -19,8 +19,8 @@ load('vertx.js')
 
 var tu = new TestUtils();
 
-var server = new vertx.HttpServer();
-var client = new vertx.HttpClient();
+var server = vertx.createHttpServer();
+var client = vertx.createHttpClient();
 client.setPort(8080);
 
 function testEchoBinary() {

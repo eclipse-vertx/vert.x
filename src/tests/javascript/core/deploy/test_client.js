@@ -19,7 +19,7 @@ load('vertx.js')
 
 var tu = new TestUtils();
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 
 function testDeploy() {
   eb.registerHandler("test-handler", function MyHandler(message) {

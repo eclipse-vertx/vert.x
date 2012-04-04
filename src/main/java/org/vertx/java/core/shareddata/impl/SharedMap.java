@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.shareddata.impl;
 
-import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 

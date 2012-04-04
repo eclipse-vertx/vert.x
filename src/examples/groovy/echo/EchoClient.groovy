@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import org.vertx.groovy.core.net.NetClient
-import org.vertx.groovy.core.buffer.Buffer
-
 vertx.createNetClient().connect(1234, "localhost") { socket->
 
   socket.dataHandler { buffer ->

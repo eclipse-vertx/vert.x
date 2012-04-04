@@ -1,5 +1,3 @@
-import org.vertx.groovy.core.http.HttpServer
-
 /*
 * Copyright 2011-2012 the original author or authors.
 *

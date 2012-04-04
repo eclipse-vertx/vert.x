@@ -16,16 +16,14 @@
 
 package core.eventbus
 
-import org.vertx.groovy.core.Vertx
-import org.vertx.groovy.core.eventbus.EventBus
 import org.vertx.groovy.framework.TestUtils
 
-tu = new TestUtils()
+tu = new TestUtils(vertx)
 tu.checkContext()
 
 // Most testing occurs in the Java tests
 
-eb = EventBus.instance
+eb = vertx.eventBus()
 address = 'foo-address'
 
 sent = [

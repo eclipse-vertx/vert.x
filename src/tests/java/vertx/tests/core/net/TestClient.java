@@ -18,14 +18,11 @@ package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 import vertx.tests.core.http.TLSTestParams;
@@ -58,7 +55,6 @@ public class TestClient extends TestClientBase {
   // The tests
 
   public void testClientDefaults() {
-    System.out.println("In test clienr defaults");
     tu.azzert(!client.isSSL());
     tu.azzert(client.getKeyStorePassword() == null);
     tu.azzert(client.getKeyStorePath() == null);
@@ -614,7 +610,7 @@ public class TestClient extends TestClientBase {
   }
 
   void tls() {
-    TLSTestParams params = TLSTestParams.deserialize(SharedData.instance.<String, byte[]>getMap("TLSTest").get("params"));
+    TLSTestParams params = TLSTestParams.deserialize(vertx.sharedData().<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
 
@@ -679,7 +675,7 @@ public class TestClient extends TestClientBase {
 
   public void testSharedServersMultipleInstances1() {
     // Create a bunch of connections
-    final int numConnections = SharedData.instance.<String, Integer>getMap("params").get("numConnections");
+    final int numConnections = vertx.sharedData().<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", new Handler<NetSocket>() {

@@ -16,7 +16,7 @@
 
 load('vertx.js')
 
-var client = new vertx.NetClient().setSSL(true).setTrustAll(true);
+var client = vertx.createNetClient().setSSL(true).setTrustAll(true);
 
 client.connect(1234, function(sock) {
   stdout.println("connected");

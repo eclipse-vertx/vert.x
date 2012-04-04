@@ -15,9 +15,9 @@
  */
 load('vertx.js')
 
-var client = new vertx.HttpClient().setPort(8282);
+var client = vertx.createHttpClient().setPort(8282);
 
-new vertx.HttpServer().requestHandler(function(req) {
+vertx.createHttpServer().requestHandler(function(req) {
   stdout.println("Proxying request: " + req.uri);
 
   var c_req = client.request(req.method, req.uri, function(c_res) {

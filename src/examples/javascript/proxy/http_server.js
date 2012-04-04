@@ -1,6 +1,6 @@
 load('vertx.js')
 
-new vertx.HttpServer().requestHandler(function(req) {
+vertx.createHttpServer().requestHandler(function(req) {
   stdout.println("Got request " + req.uri);
 
   var hdrs = req.headers();

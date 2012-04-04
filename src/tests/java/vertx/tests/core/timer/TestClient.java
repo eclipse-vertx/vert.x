@@ -17,7 +17,6 @@
 package vertx.tests.core.timer;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.framework.TestClientBase;
 
 import java.util.concurrent.atomic.AtomicLong;

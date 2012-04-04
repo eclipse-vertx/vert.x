@@ -18,6 +18,7 @@ package org.vertx.java.tests.core.shareddata;
 
 import junit.framework.TestCase;
 import org.junit.Test;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestUtils;
@@ -31,23 +32,25 @@ import java.util.Set;
  */
 public class JavaSharedDataTest extends TestCase {
 
+  private SharedData sharedData = Vertx.newVertx().sharedData();
+  
   @Test
   public void testMap() throws Exception {
 
-    Map<String, String> map = SharedData.instance.getMap("foo");
-    Map<String, String> map2 = SharedData.instance.getMap("foo");
+    Map<String, String> map = sharedData.getMap("foo");
+    Map<String, String> map2 = sharedData.getMap("foo");
     assertTrue(map == map2);
-    Map<String, String> map3 = SharedData.instance.getMap("bar");
+    Map<String, String> map3 = sharedData.getMap("bar");
     assertFalse(map3 == map2);
-    assertTrue(SharedData.instance.removeMap("foo"));
-    Map<String, String> map4 = SharedData.instance.getMap("foo");
+    assertTrue(sharedData.removeMap("foo"));
+    Map<String, String> map4 = sharedData.getMap("foo");
     assertFalse(map4 == map3);
   }
 
   @Test
   public void testMapTypes() throws Exception {
 
-    Map map = SharedData.instance.getMap("foo");
+    Map map = sharedData.getMap("foo");
 
     String key = "key";
 
@@ -117,7 +120,7 @@ public class JavaSharedDataTest extends TestCase {
   @Test
   public void testSetTypes() throws Exception {
 
-    Set set = SharedData.instance.getSet("foo");
+    Set set = sharedData.getSet("foo");
 
     double d = new Random().nextDouble();
     set.add(d);
@@ -197,13 +200,13 @@ public class JavaSharedDataTest extends TestCase {
   @Test
   public void testSet() throws Exception {
 
-    Set<String> set = SharedData.instance.getSet("foo");
-    Set<String> set2 = SharedData.instance.getSet("foo");
+    Set<String> set = sharedData.getSet("foo");
+    Set<String> set2 = sharedData.getSet("foo");
     assert (set == set2);
-    Set<String> set3 = SharedData.instance.getSet("bar");
+    Set<String> set3 = sharedData.getSet("bar");
     assert (set3 != set2);
-    assert (SharedData.instance.removeSet("foo"));
-    Set<String> set4 = SharedData.instance.getSet("foo");
+    assert (sharedData.removeSet("foo"));
+    Set<String> set4 = sharedData.getSet("foo");
     assert (set4 != set3);
   }
 

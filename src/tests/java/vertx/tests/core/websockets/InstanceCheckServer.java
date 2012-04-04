@@ -20,7 +20,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.framework.TestUtils;
 
@@ -31,21 +30,21 @@ import java.util.UUID;
  */
 public class InstanceCheckServer extends Verticle {
 
-  protected TestUtils tu = new TestUtils(vertx);
+  protected TestUtils tu;
 
   private HttpServer server;
 
   private final String id = UUID.randomUUID().toString();
 
   public void start() {
-
+    tu = new TestUtils(vertx);
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkContext();
 
         //We add the object id of the server to the set
-        SharedData.instance.getSet("instances").add(id);
-        SharedData.instance.getSet("connections").add(UUID.randomUUID().toString());
+        vertx.sharedData().getSet("instances").add(id);
+        vertx.sharedData().getSet("connections").add(UUID.randomUUID().toString());
 
         ws.close();
       }
