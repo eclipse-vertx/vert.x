@@ -26,8 +26,13 @@ import org.vertx.java.core.impl.VertxInternal
  */
 class HttpClient extends org.vertx.java.core.http.HttpClient {
 
-  public HttpClient(VertxInternal vertx) {
+  public HttpClient(VertxInternal vertx, Map props = null) {
     super(vertx);
+    if (props != null) {
+      props.each { k, v ->
+        setProperty(k, v)
+      }
+    }
   }
 
   /**

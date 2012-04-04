@@ -39,8 +39,13 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
   private reqHandler;
   private wsHandler;
 
-  public HttpServer(VertxInternal vertx) {
+  public HttpServer(VertxInternal vertx, Map props = null) {
     super(vertx);
+    if (props != null) {
+      props.each { k, v ->
+        setProperty(k, v)
+      }
+    }
   }
 
   /**
