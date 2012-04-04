@@ -17,6 +17,8 @@
 // This is just a wrapper around the Java persistor
 
 var j_pers = new org.vertx.java.busmods.persistor.MongoPersistor();
+j_pers.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
+j_pers.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
 
 j_pers.start();
 

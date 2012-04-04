@@ -30,16 +30,15 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = vertx.eventBus();
-
-  private String queueID;
+  private EventBus eb;
 
   @Override
   public void start() {
     super.start();
+    eb = vertx.eventBus();
     JsonObject config = new JsonObject();
     config.putString("address", "test.orderQueue");
-    queueID = container.deployWorkerVerticle(WorkQueue.class.getName(), config, 1, new SimpleHandler() {
+    container.deployWorkerVerticle(WorkQueue.class.getName(), config, 1, new SimpleHandler() {
       public void handle() {
         tu.appReady();
       }

@@ -17,6 +17,8 @@
 // This is just a wrapper around the Java mailer
 
 var j_mailer = new org.vertx.java.busmods.mailer.Mailer();
+j_mailer.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
+j_mailer.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
 
 j_mailer.start();
 

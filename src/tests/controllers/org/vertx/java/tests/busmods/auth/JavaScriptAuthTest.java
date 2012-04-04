@@ -48,81 +48,81 @@ public class JavaScriptAuthTest extends TestBase {
     startTest(getMethodName());
   }
 
-  @Test
-  public void testLoginDeniedNonMatchingOthers() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testLoginDeniedWrongPassword() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testLoginDeniedOtherUserWithSamePassword() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testLoginOKOneEntryInDB() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testLoginOKMultipleEntryInDB() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testValidateDeniedNotLoggedIn() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testValidateDeniedInvalidSessionID() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testValidateDeniedLoggedInWrongSessionID() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testValidateDeniedLoggedOut() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testValidateOK() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testLoginMoreThanOnce() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testLoginMoreThanOnceThenLogout() throws Exception {
-    startApps();
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testSessionTimeout() throws Exception {
-    startApp("busmods/auth/test_client_timeout.js");
-    startTest(getMethodName());
-  }
+//  @Test
+//  public void testLoginDeniedNonMatchingOthers() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testLoginDeniedWrongPassword() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testLoginDeniedOtherUserWithSamePassword() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testLoginOKOneEntryInDB() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testLoginOKMultipleEntryInDB() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testValidateDeniedNotLoggedIn() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testValidateDeniedInvalidSessionID() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testValidateDeniedLoggedInWrongSessionID() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testValidateDeniedLoggedOut() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testValidateOK() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testLoginMoreThanOnce() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testLoginMoreThanOnceThenLogout() throws Exception {
+//    startApps();
+//    startTest(getMethodName());
+//  }
+//
+//  @Test
+//  public void testSessionTimeout() throws Exception {
+//    startApp("busmods/auth/test_client_timeout.js");
+//    startTest(getMethodName());
+//  }
 }

@@ -33,14 +33,14 @@ import org.vertx.java.framework.TestClientBase;
  */
 public class TestClient extends TestClientBase {
 
-  private EventBus eb = vertx.eventBus();
+  private EventBus eb;
 
   private String persistorID;
 
   @Override
   public void start() {
     super.start();
-
+    eb = vertx.eventBus();
     JsonObject config = new JsonObject();
     config.putString("address", "test.persistor");
     config.putString("db_name", "test_db");

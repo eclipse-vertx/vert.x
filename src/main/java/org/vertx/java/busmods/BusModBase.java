@@ -32,20 +32,23 @@ public abstract class BusModBase extends Verticle {
 
   private static final Logger log = LoggerFactory.getLogger(BusModBase.class);
 
-  protected final EventBus eb = vertx.eventBus();
+  protected EventBus eb;
   protected JsonObject config;
   protected String address;
+  protected boolean worker;
 
   protected BusModBase(boolean worker) {
-    if (worker && vertx.isEventLoop()) {
-      throw new IllegalStateException("Worker busmod can only be created inside a worker application (user -worker when deploying");
-    }
+    this.worker = worker;
   }
 
   /**
    * Start the busmod
    */
   public void start() {
+    if (worker && vertx.isEventLoop()) {
+      throw new IllegalStateException(this.getClass().getName() + " must be started as a worker verticle");
+    }
+    eb = vertx.eventBus();
     config = container.getConfig();
     address = config.getString("address");
     if (address == null) {

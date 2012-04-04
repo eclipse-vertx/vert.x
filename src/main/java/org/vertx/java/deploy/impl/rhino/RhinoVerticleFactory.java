@@ -45,6 +45,8 @@ public class RhinoVerticleFactory implements VerticleFactory {
 
   public void reportException(Throwable t) {
 
+    t.printStackTrace();
+
     Logger logger = mgr.getLogger();
 
     if (t instanceof RhinoException) {

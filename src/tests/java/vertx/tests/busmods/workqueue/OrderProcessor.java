@@ -32,12 +32,13 @@ public class OrderProcessor extends Verticle implements Handler<Message<JsonObje
 
   private TestUtils tu;
 
-  private EventBus eb = vertx.eventBus();
+  private EventBus eb;
 
   private String address = UUID.randomUUID().toString();
 
   @Override
   public void start() throws Exception {
+    eb = vertx.eventBus();
     tu = new TestUtils(vertx);
     eb.registerHandler(address, this);
     JsonObject msg = new JsonObject().putString("processor", address);
