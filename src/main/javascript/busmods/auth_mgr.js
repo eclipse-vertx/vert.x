@@ -17,6 +17,8 @@
 // This is just a wrapper around the Java auth manager
 
 var j_auth = new org.vertx.java.busmods.auth.AuthManager();
+j_auth.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
+j_auth.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
 
 j_auth.start();
 

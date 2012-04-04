@@ -17,6 +17,8 @@
 // This is just a wrapper around the Java work queue
 
 var j_q = new org.vertx.java.busmods.workqueue.WorkQueue();
+j_q.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
+j_q.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
 
 j_q.start();
 

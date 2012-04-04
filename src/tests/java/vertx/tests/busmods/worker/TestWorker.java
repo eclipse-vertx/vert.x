@@ -30,12 +30,13 @@ public class TestWorker extends Verticle implements Handler<Message<JsonObject>>
 
   private TestUtils tu;
 
-  private EventBus eb = vertx.eventBus();
+  private EventBus eb;
 
   private String address = "testWorker";
 
   @Override
   public void start() throws Exception {
+    eb = vertx.eventBus();
     tu = new TestUtils(vertx);
     eb.registerHandler(address, this);
     tu.appReady();
