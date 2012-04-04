@@ -9,6 +9,6 @@ server.requestHandler(function(req) {
 })
 
 // Create a SockJS bridge which lets everything through (be careful!)
-new vertx.SockJSBridge(server, {prefix: "/eventbus"}, [{}]);
+vertx.createSockJSServer(server).bridge({prefix: "/eventbus"}, [{}]);
 
 server.listen(8080);

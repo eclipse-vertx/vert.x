@@ -16,7 +16,7 @@
 
 var vertx = vertx || {};
 
-if (!vertx.NetServer) {
+if (!vertx.createNetServer) {
   vertx.createNetServer = function() {
     return org.vertx.java.deploy.impl.VertxLocator.vertx.createNetServer();
   }

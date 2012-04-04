@@ -7,7 +7,7 @@ server.requestHandler(function(req) {
   if (req.uri == "/") req.response.sendFile("sockjs/index.html")
 });
 
-var sjsServer = new vertx.SockJSServer(server)
+var sjsServer = new vertx.createSockJSServer(server)
 
 // The handler for the SockJS app - we just echo data back
 sjsServer.installApp({prefix: "/testapp"}, function(sock) {

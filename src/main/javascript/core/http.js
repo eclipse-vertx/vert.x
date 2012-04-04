@@ -16,7 +16,7 @@
 
 var vertx = vertx || {};
 
-if (!vertx.HttpServer) {
+if (!vertx.createHttpServer) {
 
   (function() {
 
@@ -89,6 +89,12 @@ if (!vertx.HttpServer) {
             }
             return respHeaders;
           },
+          putAllHeaders: function(other) {
+            var hdrs = resp.headers();
+            for (var k in other) {
+              hdrs[k] = other[k];
+            }
+          },
           trailers: function() {
             if (!respTrailers) {
               respTrailers = {};
@@ -106,7 +112,7 @@ if (!vertx.HttpServer) {
             } else {
               j_resp.write(arg0);
             }
-            return wrapped;
+            return resp;
           },
           writeBuffer: function(buffer) {
             writeHeaders();
@@ -118,7 +124,7 @@ if (!vertx.HttpServer) {
           sendHead: function() {
             writeHeaders();
             j_resp.sendHead();
-            return wrapped;
+            return resp;
           },
           end: function(arg0, arg1) {
             writeHeaders();
@@ -345,6 +351,12 @@ if (!vertx.HttpServer) {
               reqHeaders = convertMap(j_req.headers());
             }
             return reqHeaders;
+          },
+          putAllHeaders: function(other) {
+            var hdrs = wrapped.headers();
+            for (var k in other) {
+              hdrs[k] = other[k];
+            }
           },
           write: function(arg0, arg1, arg2) {
             writeHeaders();

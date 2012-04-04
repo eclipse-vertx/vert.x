@@ -20,11 +20,10 @@ var client = vertx.createHttpClient().setPort(8080);
 
 var req = client.put("/someurl", function(resp) { stdout.println("Response " + resp.statusCode)});
 var filename = "upload/upload.txt"
-vertx.FileSystem.props(filename, function(err, props) {
-  stdout.println("props is " + props)
+vertx.fileSystem.props(filename, function(err, props) {
   var size = props.size
   req.putHeader("Content-Length", '' + size)
-  vertx.FileSystem.open(filename, function(err, file) {
+  vertx.fileSystem.open(filename, function(err, file) {
     var rs = file.getReadStream()
     var pump = new vertx.Pump(rs, req)
     rs.endHandler(function() { req.end() });

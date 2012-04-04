@@ -1,6 +1,6 @@
 load('vertx.js');
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 var log = vertx.logger;
 
 var handler = function(order, replier) {

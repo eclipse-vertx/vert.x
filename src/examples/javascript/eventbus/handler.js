@@ -16,7 +16,7 @@
 
 load('vertx.js')
 
-var eb = vertx.EventBus;
+var eb = vertx.eventBus;
 
 var address = 'example.address'
 

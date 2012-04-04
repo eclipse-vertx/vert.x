@@ -340,7 +340,8 @@ public class DefaultHttpClientRequest extends HttpClientRequest {
   private void writeHeaders() {
     if (headers != null) {
       for (Map.Entry<String, Object> header: headers.entrySet()) {
-        request.setHeader(header.getKey(), header.getValue());
+        String key = header.getKey();
+        request.setHeader(key, header.getValue());
       }
     }
   }
