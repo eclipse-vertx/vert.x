@@ -17,6 +17,8 @@
 include Java
 
 @j_auth = org.vertx.java.busmods.auth.AuthManager.new
+@j_auth.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx)
+@j_auth.setContainer(org.vertx.java.deploy.impl.VertxLocator.container)
 
 @j_auth.start
 

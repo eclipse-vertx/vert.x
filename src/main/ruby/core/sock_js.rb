@@ -48,16 +48,11 @@ module Vertx
     # Create a new SockJSServer
     # @param http_server [HttpServer] You must pass in an instance of {HttpServer}
     def initialize(http_server)
-      @j_server = org.vertx.java.core.sockjs.SockJSServer.new(http_server._to_java_server)
+      @j_server = org.vertx.java.deploy.impl.VertxLocator.vertx.createSockJSServer(http_server._to_java_server)
     end
 
-    # Install an application
-    # @param config [Hash] Configuration for the application
-    # @param proc [Proc] Proc representing the handler
-    # @param hndlr [Block] Handler to call when a new {SockJSSocket is created}
-    def install_app(config, proc = nil, &hndlr)
-      hndlr = proc if proc
-
+    # @private
+    def convert_config(config)
       j_config = org.vertx.java.core.sockjs.AppConfig.new
 
       prefix = config["prefix"]
@@ -72,12 +67,31 @@ module Vertx
       j_config.setMaxBytesStreaming(max_bytes_streaming) if max_bytes_streaming
       library_url = config["library_url"]
       j_config.setLibraryURL(library_url) if library_url
-
       # TODO disabled transports
 
+      j_config
+    end
+
+    # Install an application
+    # @param config [Hash] Configuration for the application
+    # @param proc [Proc] Proc representing the handler
+    # @param hndlr [Block] Handler to call when a new {SockJSSocket is created}
+    def install_app(config, proc = nil, &hndlr)
+      hndlr = proc if proc
+      j_config = convert_config(config)
       @j_server.installApp(j_config) { |j_sock|
         hndlr.call(SockJSSocket.new(j_sock))
       }
+    end
+
+    def bridge(config, permitted)
+      j_list = java.util.ArrayList.new
+      permitted.each do |match|
+        json_str = JSON.generate(match)
+        j_json = org.vertx.java.core.json.JsonObject.new(json_str)
+        j_list.add(j_json)
+      end
+      @j_server.bridge(convert_config(config), j_list)
     end
 
   end

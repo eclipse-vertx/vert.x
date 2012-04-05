@@ -1,14 +1,14 @@
 require('vertx')
 require('json')
 
-eb = Vertx::EventBus
+@eb = Vertx::EventBus
 address = "demo.orderMgr"
 
-eb.register_handler(address) do |message|
+@eb.register_handler(address) do |message|
   order = message.body
   puts "Received order in order manager #{JSON.generate(order)}"
   sessionID = order['sessionID']
-  eb.send('demo.authMgr.validate', { 'sessionID' => sessionID }) do |reply|
+  @eb.send('demo.authMgr.validate', { 'sessionID' => sessionID }) do |reply|
     if reply.body['status'] == 'ok'
       username = reply.body['username']
       @eb.send('demo.persistor',
@@ -54,5 +54,5 @@ def send_email(email, items)
   
   puts "sending email: #{body}"
 
-  eb.send('demo.mailer', msg)
+  @eb.send('demo.mailer', msg)
 end

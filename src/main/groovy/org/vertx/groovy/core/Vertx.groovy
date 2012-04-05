@@ -73,7 +73,7 @@ class Vertx {
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new SockJSServer(httpServer);
+    return new SockJSServer(jVertex, httpServer);
   }
 
   public org.vertx.groovy.core.file.FileSystem fileSystem() {

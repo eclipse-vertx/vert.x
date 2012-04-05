@@ -15,9 +15,7 @@
 */
 package proxy
 
-import org.vertx.groovy.core.http.HttpClient
-
-def request = new HttpClient(port: 8080).put('/') { resp ->
+def request = vertx.createHttpClient(port: 8080).put('/') { resp ->
   println "Got response ${resp.statusCode}"
   resp.bodyHandler { body -> println "Got data ${body}" }
 }

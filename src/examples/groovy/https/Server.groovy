@@ -15,10 +15,8 @@
  */
 package https
 
-import org.vertx.groovy.core.http.HttpServer
-
 server =
-  new HttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
+  vertx.createHttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
 
 server.requestHandler { req ->
   req.response.end "<html><body><h1>Hello from vert.x!</h1></body></html>"

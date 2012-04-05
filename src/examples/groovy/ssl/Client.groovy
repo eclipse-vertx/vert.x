@@ -16,9 +16,7 @@
 
 package ssl
 
-import org.vertx.groovy.core.net.NetClient
-
-new NetClient(SSL: true, trustAll: true).connect(1234) { sock ->
+vertx.createNetClient(SSL: true, trustAll: true).connect(1234) { sock ->
 
   sock.dataHandler { buff ->  println "client receiving ${buff}" }
 
