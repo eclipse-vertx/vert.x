@@ -46,6 +46,7 @@ import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
 import javax.net.ssl.SSLContext;
@@ -59,7 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultNetServer {
+public class DefaultNetServer implements NetServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
@@ -89,15 +90,17 @@ public class DefaultNetServer {
     tcpHelper.setReuseAddress(true);
   }
 
-  public void connectHandler(Handler<NetSocket> connectHandler) {
+  public NetServer connectHandler(Handler<NetSocket> connectHandler) {
     this.connectHandler = connectHandler;
+    return this;
   }
 
-  public void listen(int port) {
+  public NetServer listen(int port) {
     listen(port, "0.0.0.0");
+    return this;
   }
 
-  public void listen(int port, String host) {
+  public NetServer listen(int port, String host) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -167,6 +170,7 @@ public class DefaultNetServer {
       }
       actualServer.handlerManager.addHandler(connectHandler, ctx);
     }
+    return this;
   }
 
   public void close() {
@@ -265,32 +269,39 @@ public class DefaultNetServer {
     return tcpHelper.getTrafficClass();
   }
 
-  public void setTCPNoDelay(Boolean tcpNoDelay) {
+  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
+    return this;
   }
 
-  public void setSendBufferSize(Integer size) {
+  public NetServer setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
+    return this;
   }
 
-  public void setReceiveBufferSize(Integer size) {
+  public NetServer setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
+    return this;
   }
 
-  public void setTCPKeepAlive(Boolean keepAlive) {
+  public NetServer setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
+    return this;
   }
 
-  public void setReuseAddress(Boolean reuse) {
+  public NetServer setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
+    return this;
   }
 
-  public void setSoLinger(Boolean linger) {
+  public NetServer setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
+    return this;
   }
 
-  public void setTrafficClass(Integer trafficClass) {
+  public NetServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
+    return this;
   }
 
   public boolean isSSL() {
@@ -321,28 +332,34 @@ public class DefaultNetServer {
     return tcpHelper.getSSLContext();
   }
 
-  public void setSSL(boolean ssl) {
+  public NetServer setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
+    return this;
   }
 
-  public void setKeyStorePath(String path) {
+  public NetServer setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
+    return this;
   }
 
-  public void setKeyStorePassword(String pwd) {
+  public NetServer setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
+    return this;
   }
 
-  public void setTrustStorePath(String path) {
+  public NetServer setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
+    return this;
   }
 
-  public void setTrustStorePassword(String pwd) {
+  public NetServer setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
+    return this;
   }
 
-  public void setClientAuthRequired(boolean required) {
+  public NetServer setClientAuthRequired(boolean required) {
     tcpHelper.setClientAuthRequired(required);
+    return this;
   }
 
   private class ServerHandler extends SimpleChannelHandler {

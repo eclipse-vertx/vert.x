@@ -17,8 +17,6 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.net.impl.DefaultNetServer;
 
 /**
  * Represents a TCP or SSL server
@@ -34,17 +32,7 @@ import org.vertx.java.core.net.impl.DefaultNetServer;
  * Instances cannot be used from worker verticles
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetServer {
-
-  private final DefaultNetServer server;
-
-  /**
-   * Create a new NetServer instance.
-   */
-  public NetServer(VertxInternal vertx) {
-    server = new DefaultNetServer(vertx);
-    setReuseAddress(true);
-  }
+public interface NetServer {
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
@@ -52,44 +40,31 @@ public class NetServer {
    * connect handler.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer connectHandler(Handler<NetSocket> connectHandler) {
-    server.connectHandler(connectHandler);
-    return this;
-  }
+  NetServer connectHandler(Handler<NetSocket> connectHandler);
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer listen(int port) {
-    server.listen(port);
-    return this;
-  }
+  NetServer listen(int port);
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer listen(int port, String host) {
-    server.listen(port, host);
-    return this;
-  }
+  NetServer listen(int port, String host);
 
   /**
    * Close the server. This will close any currently open connections.
    */
-  public synchronized void close() {
-    server.close();
-  }
+  void close();
 
   /**
    * Close the server. This will close any currently open connections. The event handler {@code done} will be called
    * when the close is complete.
    */
-  public synchronized void close(final Handler<Void> done) {
-    server.close(done);
-  }
+  void close(final Handler<Void> done);
 
   // TCP and SSL attributes
   
@@ -97,10 +72,7 @@ public class NetServer {
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized NetServer setSSL(boolean ssl) {
-    server.setSSL(ssl);
-    return this;
-  }
+  NetServer setSSL(boolean ssl);
 
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
@@ -108,20 +80,14 @@ public class NetServer {
    * The SSL key store is a standard Java Key Store, and, if on the server side will contain the server certificate.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized NetServer setKeyStorePath(String path) {
-    server.setKeyStorePath(path);
-    return this;
-  }
+  NetServer setKeyStorePath(String path);
 
   /**
    * Set the password for the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized NetServer setKeyStorePassword(String pwd) {
-    server.setKeyStorePassword(pwd);
-    return this;
-  }
+  NetServer setKeyStorePassword(String pwd);
 
   /**
    * Set the path to the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
@@ -130,20 +96,14 @@ public class NetServer {
    * any clients that the server trusts - this is only necessary if client authentication is enabled.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized NetServer setTrustStorePath(String path) {
-    server.setTrustStorePath(path);
-    return this;
-  }
+  NetServer setTrustStorePath(String path);
 
   /**
    * Set the password for the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized NetServer setTrustStorePassword(String pwd) {
-    server.setTrustStorePassword(pwd);
-    return this;
-  }
+  NetServer setTrustStorePassword(String pwd);
 
   /**
    * Set {@code required} to true if you want the server to request client authentication from any connecting clients. This
@@ -151,166 +111,118 @@ public class NetServer {
    * to the server trust store.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized NetServer setClientAuthRequired(boolean required) {
-    server.setClientAuthRequired(required);
-    return this;
-  }
+  NetServer setClientAuthRequired(boolean required);
 
   /**
    * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
    * will turned <b>off</b> for the TCP connections created by this instance.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setTCPNoDelay(boolean tcpNoDelay) {
-    server.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
+  NetServer setTCPNoDelay(boolean tcpNoDelay);
 
   /**
    * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setSendBufferSize(int size) {
-    server.setSendBufferSize(size);
-    return this;
-  }
+  NetServer setSendBufferSize(int size);
 
   /**
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setReceiveBufferSize(int size) {
-    server.setReceiveBufferSize(size);
-    return this;
-  }
+  NetServer setReceiveBufferSize(int size);
 
   /**
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setTCPKeepAlive(boolean keepAlive) {
-    server.setTCPKeepAlive(keepAlive);
-    return this;
-  }
+  NetServer setTCPKeepAlive(boolean keepAlive);
 
   /**
    * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setReuseAddress(boolean reuse) {
-    server.setReuseAddress(reuse);
-    return this;
-  }
+  NetServer setReuseAddress(boolean reuse);
 
   /**
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setSoLinger(boolean linger) {
-    server.setSoLinger(linger);
-    return this;
-  }
+  NetServer setSoLinger(boolean linger);
 
   /**
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized NetServer setTrafficClass(int trafficClass) {
-    server.setTrafficClass(trafficClass);
-    return this;
-  }
+  NetServer setTrafficClass(int trafficClass);
 
   /**
    * @return true if Nagle's algorithm is disabled.
    */
-  public synchronized Boolean isTCPNoDelay() {
-    return server.isTCPNoDelay();
-  }
+  Boolean isTCPNoDelay();
 
   /**
    * @return The TCP send buffer size
    */
-  public synchronized Integer getSendBufferSize() {
-    return server.getSendBufferSize();
-  }
+  Integer getSendBufferSize();
 
   /**
    * @return The TCP receive buffer size
    */
-  public synchronized Integer getReceiveBufferSize() {
-    return server.getReceiveBufferSize();
-  }
+  Integer getReceiveBufferSize();
 
   /**
    *
    * @return true if TCP keep alive is enabled
    */
-  public synchronized Boolean isTCPKeepAlive() {
-    return server.isTCPKeepAlive();
-  }
+  Boolean isTCPKeepAlive();
 
   /**
    *
    * @return The value of TCP reuse address
    */
-  public synchronized Boolean isReuseAddress() {
-    return server.isReuseAddress();
-  }
+  Boolean isReuseAddress();
 
   /**
    *
    * @return the value of TCP so linger
    */
-  public synchronized Boolean isSoLinger() {
-    return server.isSoLinger();
-  }
+  Boolean isSoLinger();
 
   /**
    *
    * @return the value of TCP traffic class
    */
-  public synchronized Integer getTrafficClass() {
-    return server.getTrafficClass();
-  }
+  Integer getTrafficClass();
 
   /**
    *
    * @return true if this server will make SSL connections
    */
-  public synchronized boolean isSSL() {
-    return server.isSSL();
-  }
+  boolean isSSL();
 
   /**
    *
    * @return The path to the key store
    */
-  public synchronized String getKeyStorePath() {
-    return server.getKeyStorePath();
-  }
+  String getKeyStorePath();
 
   /**
    *
    * @return The keystore password
    */
-  public synchronized String getKeyStorePassword() {
-    return server.getKeyStorePassword();
-  }
+  String getKeyStorePassword();
 
   /**
    *
    * @return The trust store path
    */
-  public synchronized String getTrustStorePath() {
-    return server.getTrustStorePath();
-  }
+  String getTrustStorePath();
 
   /**
    *
    * @return The trust store password
    */
-  public synchronized String getTrustStorePassword() {
-    return server.getTrustStorePassword();
-  }
+  String getTrustStorePassword();
 
 }

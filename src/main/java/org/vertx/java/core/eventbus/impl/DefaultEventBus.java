@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultEventBus extends EventBus {
+public class DefaultEventBus implements EventBus {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
 

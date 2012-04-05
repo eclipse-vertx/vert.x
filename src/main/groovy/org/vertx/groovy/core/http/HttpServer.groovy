@@ -17,7 +17,6 @@
 package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
-import org.vertx.java.core.impl.VertxInternal
 
 /**
  * An HTTP and WebSockets server
@@ -31,69 +30,62 @@ import org.vertx.java.core.impl.VertxInternal
  * are called.
  * <p>
  * Instances cannot be used from worker verticles
- * @author Peter Ledbrook
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * author Peter Ledbrook
+ * author <a href="http://tfox.org">Tim Fox</a>
  */
-class HttpServer extends org.vertx.java.core.http.HttpServer {
+abstract class HttpServer {
 
   private reqHandler;
   private wsHandler;
-
-  public HttpServer(VertxInternal vertx, Map props = null) {
-    super(vertx);
-    if (props != null) {
-      props.each { k, v ->
-        setProperty(k, v)
-      }
-    }
-  }
+  
+  protected org.vertx.java.core.http.HttpServer jServer;
 
   /**
-   * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
-   * instances of {@link HttpServerRequest} will be created and passed to this handler.
+   * Set the request handler for the server to {code requestHandler}. As HTTP requests are received by the server,
+   * instances of {link HttpServerRequest} will be created and passed to this handler.
    *
-   * @return a reference to this, so methods can be chained.
+   * return a reference to this, so methods can be chained.
    */
   HttpServer requestHandler(Closure hndlr) {
-    super.requestHandler(wrapRequestHandler(hndlr))
+    jServer.requestHandler(wrapRequestHandler(hndlr))
     this.reqHandler = hndlr
     this
   }
 
   /**
    * Get the request handler
-   * @return The request handler
+   * return The request handler
    */
   Closure getRequestHandler() {
     return reqHandler;
   }
 
   /**
-   * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
-   * new {@link WebSocket} instance will be created and passed to the handler.
+   * Set the websocket handler for the server to {code wsHandler}. If a websocket connect handshake is successful a
+   * new {link WebSocket} instance will be created and passed to the handler.
    *
-   * @return a reference to this, so methods can be chained.
+   * return a reference to this, so methods can be chained.
    */
   HttpServer websocketHandler(Closure hndlr) {
-    super.websocketHandler(wrapWebsocketHandler(hndlr))
+    jServer.websocketHandler(wrapWebsocketHandler(hndlr))
     this.wsHandler = hndlr
     this
   }
 
   /**
    * Get the websocket handler
-   * @return The websocket handler
+   * return The websocket handler
    */
   Closure getWebsocketHandler() {
     wsHandler;
   }
 
   /**
-   * Close the server. Any open HTTP connections will be closed. {@code hndlr} will be called when the close
+   * Close the server. Any open HTTP connections will be closed. {code hndlr} will be called when the close
    * is complete.
    */
   void close(Closure hndlr) {
-    super.close(hndlr as Handler)
+    jServer.close(hndlr as Handler)
   }
 
   private wrapRequestHandler(Closure hndlr) {
@@ -102,6 +94,136 @@ class HttpServer extends org.vertx.java.core.http.HttpServer {
 
   private wrapWebsocketHandler(Closure hndlr) {
     return {hndlr(new ServerWebSocket(it))} as Handler
+  }
+  
+  HttpServer listen(int port) {
+    jServer.listen(port)
+    this
+  }
+  
+  HttpServer listen(int port, String host) {
+    jServer.listen(port, host)
+    this
+  }
+
+  void close() {
+    jServer.close()
+  }
+
+  HttpServer setSSL(boolean ssl) {
+    jServer.setSSL(ssl)
+    this
+  }
+
+  HttpServer setKeyStorePath(String path) {
+    jServer.setKeyStorePath(path)
+    this
+  }
+
+  HttpServer setKeyStorePassword(String pwd) {
+    jServer.setKeyStorePassword(pwd)
+    this
+  }
+
+  HttpServer setTrustStorePath(String path) {
+    jServer.setTrustStorePath(path)
+    this
+  }
+
+  HttpServer setTrustStorePassword(String pwd) {
+    jServer.setTrustStorePassword(pwd)
+    this
+  }
+
+  HttpServer setClientAuthRequired(boolean required) {
+    jServer.setClientAuthRequired(required)
+    this
+  }
+
+  HttpServer setTCPNoDelay(boolean tcpNoDelay) {
+    jServer.setTCPNoDelay(tcpNoDelay)
+    this
+  }
+
+  HttpServer setSendBufferSize(int size) {
+    jServer.setSendBufferSize(size)
+    this
+  }
+
+  HttpServer setReceiveBufferSize(int size) {
+    jServer.setReceiveBufferSize(size)
+    this
+  }
+
+  HttpServer setTCPKeepAlive(boolean keepAlive) {
+    jServer.setTCPKeepAlive(keepAlive)
+  }
+
+  HttpServer setReuseAddress(boolean reuse) {
+    jServer.setReuseAddress(reuse)
+    this
+  }
+
+  HttpServer setSoLinger(boolean linger) {
+    jServer.setSoLinger(linger)
+    this
+  }
+
+  HttpServer setTrafficClass(int trafficClass) {
+    jServer.setTrafficClass(trafficClass)
+    this
+  }
+
+  Boolean isTCPNoDelay() {
+    jServer.isTCPNoDelay()
+  }
+
+  Integer getSendBufferSize() {
+    jServer.getSendBufferSize()
+  }
+
+  Integer getReceiveBufferSize() {
+    jServer.getReceiveBufferSize()
+  }
+
+  Boolean isTCPKeepAlive() {
+    return jServer.isTCPKeepAlive()
+  }
+
+  Boolean isReuseAddress() {
+    jServer.isReuseAddress()
+  }
+
+  Boolean isSoLinger() {
+    jServer.isSoLinger()
+  }
+
+  Integer getTrafficClass() {
+    jServer.getTrafficClass()
+  }
+
+  boolean isSSL() {
+    jServer.isSSL()
+  }
+
+  String getKeyStorePath() {
+    jServer.getKeyStorePath()
+  }
+
+  String getKeyStorePassword() {
+    jServer.getKeyStorePassword()
+  }
+
+  String getTrustStorePath() {
+     jServer.getTrustStorePath()
+  }
+
+  String getTrustStorePassword() {
+    jServer.getTrustStorePassword()
+  }
+
+  org.vertx.java.core.http.HttpServer toJavaServer() {
+    jServer
   }
 
 }

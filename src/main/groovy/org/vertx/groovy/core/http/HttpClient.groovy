@@ -18,28 +18,20 @@ package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.WebSocketVersion
-import org.vertx.java.core.impl.VertxInternal
 
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class HttpClient extends org.vertx.java.core.http.HttpClient {
-
-  public HttpClient(VertxInternal vertx, Map props = null) {
-    super(vertx);
-    if (props != null) {
-      props.each { k, v ->
-        setProperty(k, v)
-      }
-    }
-  }
+abstract class HttpClient {
+  
+  protected org.vertx.java.core.http.HttpClient jClient;
 
   /**
    * Set an exception handler
    */
   void exceptionHandler(Closure handler) {
-    super.exceptionHandler(handler as Handler)
+    jClient.exceptionHandler(handler as Handler)
   }
 
   /**
@@ -56,26 +48,26 @@ class HttpClient extends org.vertx.java.core.http.HttpClient {
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
   void connectWebsocket(String uri, WebSocketVersion version, Closure handler) {
-    super.connectWebsocket(uri, version, {handler(new WebSocket(it))} as Handler)
+    jClient.connectWebsocket(uri, version, {handler(new WebSocket(it))} as Handler)
   }
 
   /**
-   * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler) get()}
+   * This is a quick version of the {@link #get(String, Closure) get()}
    * method where you do not want to do anything with the request before sending.<p>
    * Normally with any of the HTTP methods you create the request then when you are ready to send it you call
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
   void getNow(String uri, Closure responseHandler) {
-    super.getNow(uri, wrapResponseHandler(responseHandler))
+    jClient.getNow(uri, wrapResponseHandler(responseHandler))
   }
 
   /**
-   * This method works in the same manner as {@link #getNow(String, org.vertx.java.core.Handler)},
+   * This method works in the same manner as {@link #getNow(String, Closure)},
    * except that it allows you specify a set of {@code headers} that will be sent with the request.
    */
   void getNow(String uri, Map<String, ? extends Object> headers, Closure responseHandler) {
-    super.getNow(uri, headers, wrapResponseHandler(responseHandler))
+    jClient.getNow(uri, headers, wrapResponseHandler(responseHandler))
   }
 
   /**
@@ -83,7 +75,7 @@ class HttpClient extends org.vertx.java.core.http.HttpClient {
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
   HttpClientRequest options(String uri, Closure responseHandler) {
-    new HttpClientRequest(super.options(uri, wrapResponseHandler(responseHandler)))
+    new HttpClientRequest(jClient.options(uri, wrapResponseHandler(responseHandler)))
   }
 
   /**
@@ -156,11 +148,150 @@ class HttpClient extends org.vertx.java.core.http.HttpClient {
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
   HttpClientRequest request(String method, String uri, Closure responseHandler) {
-    new HttpClientRequest(super.request(method, uri, wrapResponseHandler(responseHandler)))
+    new HttpClientRequest(jClient.request(method, uri, wrapResponseHandler(responseHandler)))
   }
 
+  HttpClient setMaxPoolSize(int maxConnections) {
+    jClient.setMaxPoolSize(maxConnections)
+  }
+
+  int getMaxPoolSize() {
+    jClient.getMaxPoolSize()
+  }
+
+  HttpClient setKeepAlive(boolean keepAlive) {
+    jClient.setKeepAlive(keepAlive)
+    this
+  }
+  
+  HttpClient setPort(int port) {
+    jClient.setPort(port)
+    this
+  }
+  
+  HttpClient setHost(String host) {
+    jClient.setHost(host)
+    this
+  }
+  
+  void close() {
+    jClient.close()
+  }
+
+  HttpClient setSSL(boolean ssl) {
+    jClient.setSSL(ssl)
+    this
+  }
+
+  HttpClient setKeyStorePath(String path) {
+    jClient.setKeyStorePath(path)
+    this
+  }
+
+  HttpClient setKeyStorePassword(String pwd) {
+    jClient.setKeyStorePassword(pwd)
+    this
+  }
+
+  HttpClient setTrustStorePath(String path) {
+    jClient.setTrustStorePath(path)
+    this
+  }
+
+  HttpClient setTrustStorePassword(String pwd) {
+    jClient.setTrustStorePassword(pwd)
+    this
+  }
+
+  HttpClient setClientAuthRequired(boolean required) {
+    jClient.setClientAuthRequired(required)
+    this
+  }
+
+  HttpClient setTCPNoDelay(boolean tcpNoDelay) {
+    jClient.setTCPNoDelay(tcpNoDelay)
+    this
+  }
+
+  HttpClient setSendBufferSize(int size) {
+    jClient.setSendBufferSize(size)
+    this
+  }
+
+  HttpClient setReceiveBufferSize(int size) {
+    jClient.setReceiveBufferSize(size)
+    this
+  }
+
+  HttpClient setTCPKeepAlive(boolean keepAlive) {
+    jClient.setTCPKeepAlive(keepAlive)
+  }
+
+  HttpClient setReuseAddress(boolean reuse) {
+    jClient.setReuseAddress(reuse)
+    this
+  }
+
+  HttpClient setSoLinger(boolean linger) {
+    jClient.setSoLinger(linger)
+    this
+  }
+
+  HttpClient setTrafficClass(int trafficClass) {
+    jClient.setTrafficClass(trafficClass)
+    this
+  }
+
+  Boolean isTCPNoDelay() {
+    jClient.isTCPNoDelay()
+  }
+
+  Integer getSendBufferSize() {
+    jClient.getSendBufferSize()
+  }
+
+  Integer getReceiveBufferSize() {
+    jClient.getReceiveBufferSize()
+  }
+
+  Boolean isTCPKeepAlive() {
+    return jClient.isTCPKeepAlive()
+  }
+
+  Boolean isReuseAddress() {
+    jClient.isReuseAddress()
+  }
+
+  Boolean isSoLinger() {
+    jClient.isSoLinger()
+  }
+
+  Integer getTrafficClass() {
+    jClient.getTrafficClass()
+  }
+
+  boolean isSSL() {
+    jClient.isSSL()
+  }
+
+  String getKeyStorePath() {
+    jClient.getKeyStorePath()
+  }
+
+  String getKeyStorePassword() {
+    jClient.getKeyStorePassword()
+  }
+
+  String getTrustStorePath() {
+     jClient.getTrustStorePath()
+  }
+
+  String getTrustStorePassword() {
+    jClient.getTrustStorePassword()
+  }
+  
   private Handler wrapResponseHandler(Closure handler) {
     return {handler(new HttpClientResponse(it))} as Handler
-  }
+  }  
 
 }

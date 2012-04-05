@@ -27,11 +27,13 @@ import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.impl.DefaultNetClient;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
@@ -93,11 +95,11 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public NetServer createNetServer() {
-    return new NetServer(this);
+    return new DefaultNetServer(this);
   }
 
   public NetClient createNetClient() {
-    return new NetClient(this);
+    return new DefaultNetClient(this);
   }
 
   public FileSystem fileSystem() {
@@ -109,11 +111,11 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public HttpServer createHttpServer() {
-    return new HttpServer(this);
+    return new DefaultHttpServer(this);
   }
 
   public HttpClient createHttpClient() {
-    return new HttpClient(this);
+    return new DefaultHttpClient(this);
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {

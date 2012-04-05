@@ -16,7 +16,6 @@
 package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
-import org.vertx.java.core.impl.VertxInternal
 
 /**
  * NetClient is an asynchronous factory for TCP or SSL connections
@@ -38,16 +37,9 @@ import org.vertx.java.core.impl.VertxInternal
  * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class NetClient extends org.vertx.java.core.net.NetClient {
-
-  public NetClient(VertxInternal vertx, Map props = null) {
-    super(vertx)
-    if (props != null) {
-      props.each { k, v ->
-        setProperty(k, v)
-      }
-    }
-  }
+abstract class NetClient {
+  
+  protected org.vertx.java.core.net.NetClient jClient;
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and host localhost
@@ -56,7 +48,7 @@ class NetClient extends org.vertx.java.core.net.NetClient {
    * @return a reference to this so multiple method calls can be chained together
    */
   NetClient connect(int port, hndlr) {
-    super.connect(port, wrapHandler(hndlr))
+    jClient.connect(port, wrapHandler(hndlr))
     this
   }
 
@@ -67,12 +59,146 @@ class NetClient extends org.vertx.java.core.net.NetClient {
    * @return a reference to this so multiple method calls can be chained together
    */
   NetClient connect(int port, String host, Closure hndlr) {
-    super.connect(port, host, wrapHandler(hndlr))
+    jClient.connect(port, host, wrapHandler(hndlr))
     this
   }
 
   private Handler wrapHandler(Closure hndlr) {
     return {hndlr(new NetSocket(it))} as Handler
+  }
+  
+  void close() {
+    jClient.close()  
+  }
+  
+  NetClient setReconnectAttempts(int attempts) {
+    jClient.setReconnectAttempts(attempts)
+    this  
+  }
+  
+  int getReconnectAttempts() {
+    return jClient.getReconnectAttempts()  
+  }
+  
+  NetClient setReconnectInterval(long interval) {
+    jClient.setReconnectInterval(interval)
+    this
+  }
+  
+  long getReconnectInterval() {
+    return jClient.getReconnectInterval() 
+  }
+  
+  NetClient setSSL(boolean ssl) {
+    jClient.setSSL(ssl)
+    this
+  }
+
+  NetClient setKeyStorePath(String path) {
+    jClient.setKeyStorePath(path)
+    this
+  }
+
+  NetClient setKeyStorePassword(String pwd) {
+    jClient.setKeyStorePassword(pwd)
+    this
+  }
+
+  NetClient setTrustStorePath(String path) {
+    jClient.setTrustStorePath(path)
+    this
+  }
+
+  NetClient setTrustStorePassword(String pwd) {
+    jClient.setTrustStorePassword(pwd)
+    this
+  }
+
+  NetClient setClientAuthRequired(boolean required) {
+    jClient.setClientAuthRequired(required)
+    this
+  }
+
+  NetClient setTCPNoDelay(boolean tcpNoDelay) {
+    jClient.setTCPNoDelay(tcpNoDelay)
+    this
+  }
+
+  NetClient setSendBufferSize(int size) {
+    jClient.setSendBufferSize(size)
+    this
+  }
+
+  NetClient setReceiveBufferSize(int size) {
+    jClient.setReceiveBufferSize(size)
+    this
+  }
+
+  NetClient setTCPKeepAlive(boolean keepAlive) {
+    jClient.setTCPKeepAlive(keepAlive)
+  }
+
+  NetClient setReuseAddress(boolean reuse) {
+    jClient.setReuseAddress(reuse)
+    this
+  }
+
+  NetClient setSoLinger(boolean linger) {
+    jClient.setSoLinger(linger)
+    this
+  }
+
+  NetClient setTrafficClass(int trafficClass) {
+    jClient.setTrafficClass(trafficClass)
+    this
+  }
+
+  Boolean isTCPNoDelay() {
+    jClient.isTCPNoDelay()
+  }
+
+  Integer getSendBufferSize() {
+    jClient.getSendBufferSize()
+  }
+
+  Integer getReceiveBufferSize() {
+    jClient.getReceiveBufferSize()
+  }
+
+  Boolean isTCPKeepAlive() {
+    return jClient.isTCPKeepAlive()
+  }
+
+  Boolean isReuseAddress() {
+    jClient.isReuseAddress()
+  }
+
+  Boolean isSoLinger() {
+    jClient.isSoLinger()
+  }
+
+  Integer getTrafficClass() {
+    jClient.getTrafficClass()
+  }
+
+  boolean isSSL() {
+    jClient.isSSL()
+  }
+
+  String getKeyStorePath() {
+    jClient.getKeyStorePath()
+  }
+
+  String getKeyStorePassword() {
+    jClient.getKeyStorePassword()
+  }
+
+  String getTrustStorePath() {
+     jClient.getTrustStorePath()
+  }
+
+  String getTrustStorePassword() {
+    jClient.getTrustStorePassword()
   }
 
 }

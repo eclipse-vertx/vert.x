@@ -19,12 +19,9 @@ package org.vertx.groovy.core.sockjs
 import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
 
 import org.vertx.groovy.core.buffer.Buffer
-import org.vertx.groovy.core.http.HttpServer
 import org.vertx.java.core.Handler
-import org.vertx.java.core.impl.VertxInternal
 import org.vertx.java.core.json.JsonObject
 import org.vertx.java.core.sockjs.AppConfig
-import org.vertx.java.core.sockjs.impl.DefaultSockJSServer
 
 /**
  *
@@ -58,12 +55,9 @@ import org.vertx.java.core.sockjs.impl.DefaultSockJSServer
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class SockJSServer {
-  private JSockJSServer jServer;
+abstract class SockJSServer {
 
-  public SockJSServer(VertxInternal vertx, HttpServer httpServer) {
-    jServer = new DefaultSockJSServer(vertx, httpServer)
-  }
+  protected JSockJSServer jServer
 
   public void installApp(Map config, Closure sockHandler) {
     jServer.installApp(new AppConfig(config), {

@@ -48,7 +48,7 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultSockJSServer extends SockJSServer {
+public class DefaultSockJSServer implements SockJSServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultSockJSServer.class);
 
