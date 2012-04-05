@@ -19,17 +19,14 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.Handler;
 
 /**
- * An HTTP and WebSockets server
- * <p>
- * This class is a thread safe and can safely be used by different threads.
- * <p>
+ * An HTTP and WebSockets server<p>
  * If an instance is instantiated from an event loop then the handlers
  * of the instance will always be called on that same event loop.
  * If an instance is instantiated from some other arbitrary Java thread then
- * and event loop will be assigned to the instance and used when any of its handlers
- * are called.
- * <p>
+ * an event loop will be assigned to the instance and used when any of its handlers
+ * are called.<p>
  * Instances cannot be used from worker verticles
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface HttpServer {
@@ -63,14 +60,14 @@ public interface HttpServer {
   Handler<ServerWebSocket> websocketHandler();
 
   /**
-   * Tell the server to start listening on all interfaces and port {@code port}
+   * Tell the server to start listening on all available interfaces and port {@code port}
    *
    * @return a reference to this, so methods can be chained.
    */
   HttpServer listen(int port);
 
   /**
-   * Tell the server to start listening on port {@code port} and host / ip address given by {@code host}.
+   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
    *
    * @return a reference to this, so methods can be chained.
    */
@@ -82,10 +79,10 @@ public interface HttpServer {
   void close();
 
   /**
-   * Close the server. Any open HTTP connections will be closed. {@code doneHandler} will be called when the close
+   * Close the server. Any open HTTP connections will be closed. The {@code doneHandler} will be called when the close
    * is complete.
    */
-  void close(final Handler<Void> done);
+  void close(final Handler<Void> doneHandler);
   
   /**
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
@@ -96,7 +93,7 @@ public interface HttpServer {
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
-   * The SSL key store is a standard Java Key Store, and, if on the tcpHelper side will contain the tcpHelper certificate.
+   * The SSL key store is a standard Java Key Store, and should contain the server certificate.
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpServer setKeyStorePath(String path);
@@ -164,13 +161,13 @@ public interface HttpServer {
   HttpServer setReuseAddress(boolean reuse);
 
   /**
-   * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
+   * Set the TCP soLinger setting for connections created by this instance to {@code linger}.
    * @return a reference to this so multiple method calls can be chained together
    */
   HttpServer setSoLinger(boolean linger);
 
   /**
-   * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
+   * Set the TCP trafficClass setting for connections created by this instance to {@code trafficClass}.
    * @return a reference to this so multiple method calls can be chained together
    */
   HttpServer setTrafficClass(int trafficClass);

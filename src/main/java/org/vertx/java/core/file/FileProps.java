@@ -20,8 +20,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 
 /**
- * Represents properties of a file on the file system
- * <p>
+ * Represents properties of a file on the file system<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileProps {

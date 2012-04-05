@@ -27,41 +27,80 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
 /**
- * A singleton instance of Vertx is available to all verticles.
- * <p>
- * It contains operations to set and cancel timers, and deploy and undeploy
- * verticles, amongst other things.
- * <p>
+ * The control centre of vert.x<p>
+ * You should normally only use a single instance of this class throughout your application. If you are running in the
+ * vert.x container an instance will be provided to you.<p>
+ * If you are using vert.x embedded, you can create an instance using one of the static {@code newVertx} methods.<p>
+ * This class acts as a factory for TCP/SSL and HTTP/HTTPS servers and clients, SockJS servers, and provides an
+ * instance of the event bus, file system and shared data classes, as well as methods for setting and cancelling
+ * timers.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class Vertx {
 
+  /**
+   * Create a non clustered Vertx instance
+   */
   public static Vertx newVertx() {
     return new DefaultVertx();
   }
 
+  /**
+   * Create a clustered Vertx instance listening for cluster connections on the default port 25500
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
   public static Vertx newVertx(String hostname) {
     return new DefaultVertx(hostname);
   }
 
+  /**
+   * Create a clustered Vertx instance
+   * @param port The port to listen for cluster connections
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
   public static Vertx newVertx(int port, String hostname) {
     return new DefaultVertx(port, hostname);
   }
 
+  /**
+   * Create a TCP/SSL server
+   */
   public abstract NetServer createNetServer();
 
+  /**
+   * Create a TCP/SSL client
+   */
   public abstract NetClient createNetClient();
 
+  /**
+   * Create an HTTP/HTTPS server
+   */
   public abstract HttpServer createHttpServer();
 
+  /**
+   * Create a HTTP/HTTPS client
+   */
   public abstract HttpClient createHttpClient();
 
+  /**
+   * Create a SockJS server that wraps an HTTP server
+   */
   public abstract SockJSServer createSockJSServer(HttpServer httpServer);
 
+  /**
+   * The File system object
+   */
   public abstract FileSystem fileSystem();
 
+  /**
+   * The event bus
+   */
   public abstract EventBus eventBus();
 
+  /**
+   * The shared data object
+   */
   public abstract SharedData sharedData();
 
   /**

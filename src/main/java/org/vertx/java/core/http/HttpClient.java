@@ -21,22 +21,14 @@ import org.vertx.java.core.Handler;
 import java.util.Map;
 
 /**
- * A pooling HTTP 1.1 client
- * <p>
- * Maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
- * as pipelines for HTTP requests.
- * <p>
- * It is used as a factory for {@link HttpClientRequest} instances which encapsulate the actual HTTP requests. It is also
- * used as a factory for HTML5 {@link WebSocket websockets}.
- * <p>
- * This class is a thread safe and can safely be used by different threads.
- * <p>
+ * An HTTP client that maintains a pool of connections to a specific host, at a specific port. The client supports
+ * pipelining of requests.<p>
+ * As well as HTTP requests, the client can act as a factory for {@code WebSocket websockets}.<p>
  * If an instance is instantiated from an event loop then the handlers
  * of the instance will always be called on that same event loop.
  * If an instance is instantiated from some other arbitrary Java thread then
  * and event loop will be assigned to the instance and used when any of its handlers
- * are called.
- * <p>
+ * are called.<p>
  * Instances cannot be used from worker verticles
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -64,39 +56,41 @@ public interface HttpClient {
    * where it can be used by another request. In this manner, many HTTP requests can be pipe-lined over an HTTP connection.
    * Keep alive connections will not be closed until the {@link #close() close()} method is invoked.<p>
    * If {@code keepAlive} is {@code false} then a new connection will be created for each request and it won't ever go in the pool,
-   * the connection will closed after the response has been received. Even with no keep alive, the tcpHelper will not allow more
-   * than {@link #getMaxPoolSize() getMaxPoolSize()} connections to be created at any one time. <p>
+   * the connection will closed after the response has been received. Even with no keep alive,
+   * the client will not allow more than {@link #getMaxPoolSize()} connections to be created at any one time. <p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpClient setKeepAlive(boolean keepAlive);
 
   /**
-   * Set the port that the tcpHelper will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
+   * Set the port that the client will attempt to connect to the server on to {@code port}. The default value is
+   * {@code 80}
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpClient setPort(int port);
 
   /**
-   * Set the host that the tcpHelper will attempt to connect to, to {@code host}. The default value is {@code localhost}<p>
+   * Set the host that the client will attempt to connect to the server on to {@code host}. The default value is
+   * {@code localhost}
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpClient setHost(String host);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
-   * The connect is done asynchronously and {@code wsConnect} is called back with the result
+   * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
   void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
-   * The connect is done asynchronously and {@code wsConnect} is called back with the result
+   * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
   void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect);
 
   /**
-   * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler) get()}
+   * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}
    * method where you do not want to do anything with the request before sending.<p>
    * Normally with any of the HTTP methods you create the request then when you are ready to send it you call
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
@@ -165,8 +159,8 @@ public interface HttpClient {
   HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * This method returns an {@link HttpClientRequest} instance which represents an HTTP request with the specified {@code uri}. The specific HTTP method
-   * (e.g. GET, POST, PUT etc) is specified using the parameter {@code method}<p>
+   * This method returns an {@link HttpClientRequest} instance which represents an HTTP request with the specified {@code uri}.
+   * The specific HTTP method (e.g. GET, POST, PUT etc) is specified using the parameter {@code method}<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
   HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler);
@@ -175,8 +169,6 @@ public interface HttpClient {
    * Close the HTTP tcpHelper. This will cause any pooled HTTP connections to be closed.
    */
   void close();
-
-  // SSL and TCP attributes
 
   /**
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
@@ -187,8 +179,8 @@ public interface HttpClient {
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
-   * The SSL key store is a standard Java Key Store, and will contain the tcpHelper certificate. Client certificates are only required if the server
-   * requests tcpHelper authentication.<p>
+   * The SSL key store is a standard Java Key Store, and will contain the client certificate. Client certificates are
+   * only required if the server requests client authentication.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpClient setKeyStorePath(String path);
@@ -203,8 +195,7 @@ public interface HttpClient {
   /**
    * Set the path to the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
-   * The trust store is a standard Java Key Store, and should contain the certificates of
-   * any servers that the client trusts.
+   * The trust store is a standard Java Key Store, and should contain the certificates of any servers that the client trusts.
    * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
@@ -219,7 +210,7 @@ public interface HttpClient {
 
   /**
    * If you want an SSL client to trust *all* server certificates rather than match them
-   * against those in its trust store. Set this to true.
+   * against those in its trust store, you can set this to true.<p>
    * Use this with caution as you may be exposed to "main in the middle" attacks
    * @param trustAll Set to true if you want to trust all server certificates
    */
@@ -257,13 +248,13 @@ public interface HttpClient {
   HttpClient setReuseAddress(boolean reuse);
 
   /**
-   * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
+   * Set the TCP soLinger setting for connections created by this instance to {@code linger}.
    * @return a reference to this so multiple method calls can be chained together
    */
   HttpClient setSoLinger(boolean linger);
 
   /**
-   * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
+   * Set the TCP trafficClass setting for connections created by this instance to {@code trafficClass}.
    * @return a reference to this so multiple method calls can be chained together
    */
   HttpClient setTrafficClass(int trafficClass);

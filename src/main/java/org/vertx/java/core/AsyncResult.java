@@ -17,8 +17,8 @@
 package org.vertx.java.core;
 
 /**
- * Represents a result that is returned asynchronously from an operation.
- * <p>
+ * Represents a result that is returned asynchronously from an operation.<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncResult<T> {

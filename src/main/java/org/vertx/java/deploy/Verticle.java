@@ -19,7 +19,7 @@ package org.vertx.java.deploy;
 import org.vertx.java.core.Vertx;
 
 /**
- * A verticle is the unit of deployment in vert.x
+ * A verticle is the unit of deployment in vert.x<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -58,7 +58,7 @@ public abstract class Verticle {
   }
 
   /**
-   * Vert.x calls thhe start method when the verticle is deployed
+   * Vert.x calls the start method when the verticle is deployed
    * @throws Exception
    */
   public abstract void start() throws Exception;

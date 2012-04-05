@@ -23,14 +23,15 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import java.util.Map;
 
 /**
- * Represents a client-side HTTP response.
- * An instance of this class is provided to the user via an {@link org.vertx.java.core.Handler}
+ * Represents a client-side HTTP response.<p>
+ * An instance of this class is provided to the user via a {@link org.vertx.java.core.Handler}
  * instance that was specified when one of the* HTTP method operations, or the
  * generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)}
- * method was called on an instance of {@link HttpClient}.*
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * method was called on an instance of {@link HttpClient}.<p>
+ * It implements {@link org.vertx.java.core.streams.ReadStream} so it can be used with
+ * {@link org.vertx.java.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class HttpClientResponse extends HttpReadStreamBase {
