@@ -16,7 +16,6 @@
 
 package ssl
 
-import org.vertx.groovy.core.net.NetServer
 import org.vertx.groovy.core.streams.Pump
 
 server = vertx.createNetServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')

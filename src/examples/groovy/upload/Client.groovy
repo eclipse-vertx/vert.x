@@ -16,7 +16,6 @@
 
 package upload
 
-import org.vertx.groovy.core.http.HttpClient
 import org.vertx.groovy.core.streams.Pump
 
 req = vertx.createHttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }

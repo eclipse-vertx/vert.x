@@ -15,8 +15,6 @@
  */
 package https
 
-import org.vertx.groovy.core.http.HttpClient
-
 vertx.createHttpClient(port: 4443, SSL: true, trustAll: true).getNow('/') { resp ->
   println "Got response ${resp.statusCode}"
   resp.bodyHandler { body ->  println "Got data ${body}" }

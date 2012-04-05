@@ -19,7 +19,6 @@
 package core.websocket
 
 import org.vertx.groovy.core.buffer.Buffer
-import org.vertx.groovy.core.http.HttpClient
 import org.vertx.groovy.framework.TestUtils
 
 tu = new TestUtils(vertx)
