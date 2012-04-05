@@ -93,8 +93,6 @@ public class DefaultHttpServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
-  private static final Map<ServerID, DefaultHttpServer> servers = new HashMap<>();
-
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context ctx;
@@ -154,10 +152,10 @@ public class DefaultHttpServer {
       throw new IllegalStateException("Listen already called");
     }
 
-    synchronized (servers) {
+    synchronized (vertx.sharedHttpServers()) {
       serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
       id = new ServerID(port, host);
-      DefaultHttpServer shared = servers.get(id);
+      DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
@@ -208,7 +206,7 @@ public class DefaultHttpServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        servers.put(id, this);
+        vertx.sharedHttpServers().put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
@@ -238,7 +236,7 @@ public class DefaultHttpServer {
     }
     listening = false;
 
-    synchronized (servers) {
+    synchronized (vertx.sharedHttpServers()) {
 
       if (actualServer != null) {
 
@@ -377,7 +375,7 @@ public class DefaultHttpServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      servers.remove(id);
+      vertx.sharedHttpServers().remove(id);
     }
 
     for (ServerConnection conn : connectionMap.values()) {

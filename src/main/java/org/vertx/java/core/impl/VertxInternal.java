@@ -17,7 +17,11 @@
 package org.vertx.java.core.impl;
 
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.net.impl.DefaultNetServer;
+import org.vertx.java.core.net.impl.ServerID;
 
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -41,4 +45,9 @@ public abstract class VertxInternal extends Vertx {
   public abstract Context getOrAssignContext();
 
   public abstract void reportException(Throwable t);
+
+  public abstract Map<ServerID, DefaultHttpServer> sharedHttpServers();
+
+  public abstract Map<ServerID, DefaultNetServer> sharedNetServers();
+
 }

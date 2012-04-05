@@ -64,8 +64,6 @@ public class DefaultNetServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
-  private static final Map<ServerID, DefaultNetServer> servers = new HashMap<>();
-
   private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
@@ -109,9 +107,9 @@ public class DefaultNetServer {
     }
     listening = true;
 
-    synchronized (servers) {
+    synchronized (vertx.sharedNetServers()) {
       id = new ServerID(port, host);
-      DefaultNetServer shared = servers.get(id);
+      DefaultNetServer shared = vertx.sharedNetServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
@@ -161,7 +159,7 @@ public class DefaultNetServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        servers.put(id, this);
+        vertx.sharedNetServers().put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
@@ -184,7 +182,7 @@ public class DefaultNetServer {
       return;
     }
     listening = false;
-    synchronized (servers) {
+    synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
         actualServer.handlerManager.removeHandler(connectHandler, ctx);
@@ -206,7 +204,7 @@ public class DefaultNetServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      servers.remove(id);
+      vertx.sharedNetServers().remove(id);
     }
 
     for (DefaultNetSocket sock : socketMap.values()) {

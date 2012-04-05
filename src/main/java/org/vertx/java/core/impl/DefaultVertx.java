@@ -27,14 +27,18 @@ import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.impl.DefaultNetServer;
+import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -63,6 +67,8 @@ public class DefaultVertx extends VertxInternal {
   private ExecutorService corePool;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
+  private final Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
+  private final Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
 
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
@@ -235,6 +241,14 @@ public class DefaultVertx extends VertxInternal {
     } else {
       log.error("Unhandled exception ", t);
     }
+  }
+
+  public Map<ServerID, DefaultHttpServer> sharedHttpServers() {
+    return sharedHttpServers;
+  }
+
+  public Map<ServerID, DefaultNetServer> sharedNetServers() {
+    return sharedNetServers;
   }
 
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
