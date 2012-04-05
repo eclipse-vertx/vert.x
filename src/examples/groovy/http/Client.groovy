@@ -16,9 +16,7 @@
 
 package http
 
-import org.vertx.groovy.core.http.HttpClient
-
-new HttpClient(port: 8080).getNow('/') { resp ->
+vertx.createHttpClient(port: 8080).getNow('/') { resp ->
   println "Got response ${resp.statusCode}"
   resp.bodyHandler { body ->  println "Got data ${body}" }
 }

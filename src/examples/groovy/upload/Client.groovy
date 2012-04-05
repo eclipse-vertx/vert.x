@@ -19,7 +19,7 @@ package upload
 import org.vertx.groovy.core.http.HttpClient
 import org.vertx.groovy.core.streams.Pump
 
-req = new HttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
+req = vertx.createHttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
 filename = "upload/upload.txt"
 fs = vertx.fileSystem()
 fs.props(filename) { ares ->

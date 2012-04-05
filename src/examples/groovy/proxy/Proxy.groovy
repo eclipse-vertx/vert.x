@@ -15,25 +15,24 @@
 */
 package proxy
 
-import org.vertx.groovy.core.http.HttpClient
-
-client = new HttpClient(port: 8282)
+client = vertx.createHttpClient(port: 8282)
 
 server = vertx.createHttpServer().requestHandler { req ->
   println "Proxying request: ${req.uri}"
 
   def c_req = client.request(req.method, req.uri) { c_res ->
     println "Proxying response: ${c_res.statusCode}"
+    req.response.chunked = true
     req.response.statusCode = c_res.statusCode
-    req.response.headers.putAll(c_res.headers.toMap())
+    req.response.headers << c_res.headers
     c_res.dataHandler { data ->
       println "Proxying response body: $data"
       req.response << data
     }
     c_res.endHandler { req.response.end() }
   }
-
-  c_req.headers.putAll(req.headers.toMap())
+  c_req.chunked = true
+  c_req.headers << req.headers
   req.dataHandler { data ->
     println "Proxying request body ${data}"
     c_req << data

@@ -174,52 +174,5 @@ module Vertx
 
   end
 
-  # A SockJSBridgeHandler plugs into a SockJS server and translates data received via SockJS into operations
-  # to send messages and register and unregister handlers on the vert.x event bus.
-  #
-  # When used in conjunction with the vert.x client side JavaScript event bus api (vertxbus.js) this effectively
-  # extends the reach of the vert.x event bus from vert.x server side applications to the browser as well. This
-  # enables a truly transparent single event bus where client side JavaScript applications can play on the same
-  # bus as server side application instances and services.
-  #
-  # @author {http://tfox.org Tim Fox}
-  class SockJSBridgeHandler < org.vertx.java.core.eventbus.SockJSBridgeHandler
-    def initialize
-      super
-    end
-
-    # Call this handler - pretend to be a Proc
-    def call(sock)
-      # This is inefficient since we convert to a Ruby SockJSSocket and back again to a Java one
-      handle(sock._to_java_socket)
-    end
-
-    def add_permitted(*permitted)
-      permitted.each do |match|
-        json_str = JSON.generate(match)
-        j_json = org.vertx.java.core.json.JsonObject.new(json_str)
-        addPermitted(j_json);
-      end
-    end
-
-  end
-
-  # A SockJSBridge bridges between SockJS and the event bus.
-  # Bridging allows the event bus to be extended to client side in-browser JavaScript.
-  class SockJSBridge
-
-    # Create a new SockJSBridge
-    # @param http_server [HttpServer] An HTTP server
-    # @param sjs_config [Hash] Config for SockJS server
-    # @param permitted [[Hash]] Array of JSON objects (Hashes) representing permitted matches
-    def initialize(http_server, sjs_config, permitted)
-      @sjs_server = SockJSServer.new(http_server)
-      handler = SockJSBridgeHandler.new
-      handler.add_permitted(*permitted)
-      @sjs_server.install_app(sjs_config, handler);
-    end
-
-  end
-
 end
 

@@ -17,6 +17,8 @@
 include Java
 
 @j_workqueue = org.vertx.java.busmods.workqueue.WorkQueue.new
+@j_workqueue.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx)
+@j_workqueue.setContainer(org.vertx.java.deploy.impl.VertxLocator.container)
 
 @j_workqueue.start
 

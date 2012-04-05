@@ -17,6 +17,8 @@
 include Java
 
 @j_mailer = org.vertx.java.busmods.mailer.Mailer.new
+@j_mailer.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx)
+@j_mailer.setContainer(org.vertx.java.deploy.impl.VertxLocator.container)
 
 @j_mailer.start
 

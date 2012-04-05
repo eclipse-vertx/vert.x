@@ -17,6 +17,8 @@
 include Java
 
 @j_persistor = org.vertx.java.busmods.persistor.MongoPersistor.new
+@j_persistor.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx)
+@j_persistor.setContainer(org.vertx.java.deploy.impl.VertxLocator.container)
 
 @j_persistor.start
 

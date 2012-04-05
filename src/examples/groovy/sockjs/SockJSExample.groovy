@@ -24,7 +24,7 @@ server.requestHandler { req ->
 }
 
 // The handler for the SockJS app - we just echo data back
-new SockJSServer(server).installApp(prefix: '/testapp') { sock ->
+vertx.createSockJSServer(server).installApp(prefix: '/testapp') { sock ->
   sock.dataHandler { buff ->
     sock << buff
   }

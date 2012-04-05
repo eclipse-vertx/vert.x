@@ -24,6 +24,6 @@ server.request_handler do |req|
 end
 
 # Create a bridge that lets everything through (be careful!)
-SockJSBridge.new(@server, {"prefix" => "/eventbus"}, [{}])
+SockJSServer.new(server).bridge({"prefix" => "/eventbus"}, [{}])
 
 server.listen(8080)
