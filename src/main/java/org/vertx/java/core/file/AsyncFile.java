@@ -40,16 +40,15 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 
 /**
- * Represents a file on the file-system which can be read from, or written to asynchronously.
- * <p>
+ * Represents a file on the file-system which can be read from, or written to asynchronously.<p>
  * Methods also exist to get a {@link org.vertx.java.core.streams.ReadStream} or a
  * {@link org.vertx.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
- * other streams, e.g. an {@link org.vertx.java.core.http.HttpClientRequest} instance, using the {@link org.vertx.java.core.streams.Pump} class
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * other streams, e.g. an {@link org.vertx.java.core.http.HttpClientRequest} instance,
+ * using the {@link org.vertx.java.core.streams.Pump} class<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
-  */
+ */
 public class AsyncFile {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
@@ -107,7 +106,7 @@ public class AsyncFile {
    * of the file, the file will be enlarged to encompass it.<p>
    * When multiple writes are invoked on the same file
    * there are no guarantees as to order in which those writes actually occur.<p>
-   * The handler will be called when the close is complete, or an error occurs.
+   * The handler will be called when the write is complete, or if an error occurs.
    */
   public void write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
     check();
@@ -117,12 +116,10 @@ public class AsyncFile {
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
-   * The read data will be written into the
-   * specified {@code Buffer buffer} at position {@code offset}.<p>
-   * {@code position + length} must lie within the confines of the file.<p>
-   * When multiple reads are invoked on the same file
-   * there are no guarantees as to order in which those reads actually occur.<p>
-   * The handler will be called when the close is complete, or an error occurs.
+   * The read data will be written into the specified {@code Buffer buffer} at position {@code offset}.<p>
+   * The index {@code position + length} must lie within the confines of the file.<p>
+   * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
+   * The handler will be called when the close is complete, or if an error occurs.
    */
   public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
     check();
@@ -321,8 +318,7 @@ public class AsyncFile {
   }
 
   /**
-   * Same as {@link #flush} but the handler will be called when the flush is complete
-   * or an error occurs
+   * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    * @param handler
    */
   public void flush(AsyncResultHandler handler) {

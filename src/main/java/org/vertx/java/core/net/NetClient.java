@@ -19,22 +19,17 @@ package org.vertx.java.core.net;
 import org.vertx.java.core.Handler;
 
 /**
- * NetClient is an asynchronous factory for TCP or SSL connections
- * <p>
- * Multiple connections to different servers can be made using the same instance.
- * <p>
+ * A TCP/SSL client.<p>
+ * Multiple connections to different servers can be made using the same instance.<p>
  * This client supports a configurable number of connection attempts and a configurable
- * delay between attempts.
- * <p>
- * This class is a thread safe and can safely be used by different threads.
- * <p>
+ * delay between attempts.<p>
  * If an instance is instantiated from an event loop then the handlers
  * of the instance will always be called on that same event loop.
  * If an instance is instantiated from some other arbitrary Java thread then
- * and event loop will be assigned to the instance and used when any of its handlers
- * are called.
- * <p>
+ * an event loop will be assigned to the instance and used when any of its handlers
+ * are called.<p>
  * Instances cannot be used from worker verticles
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface NetClient {
@@ -48,7 +43,7 @@ public interface NetClient {
   NetClient connect(int port, String host, final Handler<NetSocket> connectHandler);
 
   /**
-   * Attempt to open a connection to a server at the specific {@code port} and host localhost
+   * Attempt to open a connection to a server at the specific {@code port} and host {@code localhost}
    * The connect is done asynchronously and on success, a
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
@@ -87,8 +82,6 @@ public interface NetClient {
    */
   void exceptionHandler(Handler<Exception> handler);
 
-  // SSL and TCP attributes
-
   /**
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.
@@ -98,8 +91,8 @@ public interface NetClient {
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
-   * The SSL key store is a standard Java Key Store, and will contain the client certificate. Client certificates are only required if the server
-   * requests client authentication.<p>
+   * The SSL key store is a standard Java Key Store, and will contain the client certificate. Client certificates are
+   * only required if the server requests client authentication.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
   NetClient setKeyStorePath(String path);
@@ -114,8 +107,7 @@ public interface NetClient {
   /**
    * Set the path to the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
-   * The trust store is a standard Java Key Store, and should contain the certificates of
-   * any servers that the client trusts.
+   * The trust store is a standard Java Key Store, and should contain the certificates of any servers that the client trusts.
    * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
@@ -130,7 +122,7 @@ public interface NetClient {
 
   /**
    * If you want an SSL client to trust *all* server certificates rather than match them
-   * against those in its trust store. Set this to true.
+   * against those in its trust store, you can set this to true.<p>
    * Use this with caution as you may be exposed to "main in the middle" attacks
    * @param trustAll Set to true if you want to trust all server certificates
    */
@@ -153,7 +145,7 @@ public interface NetClient {
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetClient setReceiveBufferSize(int size);
+  NetClient setReceiveBufferSize(int size) ;
 
   /**
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
@@ -168,13 +160,13 @@ public interface NetClient {
   NetClient setReuseAddress(boolean reuse);
 
   /**
-   * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
+   * Set the TCP soLinger setting for connections created by this instance to {@code linger}.
    * @return a reference to this so multiple method calls can be chained together
    */
   NetClient setSoLinger(boolean linger);
 
   /**
-   * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
+   * Set the TCP trafficClass setting for connections created by this instance to {@code trafficClass}.
    * @return a reference to this so multiple method calls can be chained together
    */
   NetClient setTrafficClass(int trafficClass);
@@ -204,7 +196,7 @@ public interface NetClient {
    *
    * @return The value of TCP reuse address
    */
-  public Boolean isReuseAddress();
+  Boolean isReuseAddress();
 
   /**
    *

@@ -24,11 +24,10 @@ import org.vertx.java.deploy.impl.VerticleManager;
 import java.net.URL;
 
 /**
- * This class represents the container in which a verticle runs
- * <p>
+ * This class represents the container in which a verticle runs.<p>
  * It contains methods to programmatically deploy other verticles, undeploy
  * verticles, get the configuration for a verticle and get the logger for a
- * verticle
+ * verticle.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

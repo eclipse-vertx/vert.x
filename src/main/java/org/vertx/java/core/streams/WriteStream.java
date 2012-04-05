@@ -21,10 +21,10 @@ import org.vertx.java.core.buffer.Buffer;
 
 /**
  *
- * <p>Represents a stream of data that can be written to</p>
+ * Represents a stream of data that can be written to<p>
  *
- * <p>Any class that implements this interface can be used by a {@link Pump} to pump data from a {@code ReadStream}
- * to it.</p>
+ * Any class that implements this interface can be used by a {@link Pump} to pump data from a {@code ReadStream}
+ * to it.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -42,7 +42,6 @@ public interface WriteStream {
    * if there is more than {@code maxSize} bytes in the write queue. This is used as an indicator by classes such as
    * {@code Pump} to provide flow control.
    */
-
   void setWriteQueueMaxSize(int maxSize);
 
   /**

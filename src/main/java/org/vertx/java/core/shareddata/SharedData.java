@@ -26,13 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * <p>Sometimes it is desirable to share immutable data between different event loops, for example to implement a
- * cache of data.</p>
- * <p>This class allows instances of shareddata data structures to be looked up and used from different event loops.</p>
- * <p>The data structures themselves will only allow certain data types to be stored into them. This shields the
- * user
- * from worrying about any thread safety issues might occur if mutable objects were shareddata between event loops.</p>
- * <p>The following types can be stored in a shareddata data structure:</p>
+ * Sometimes it is desirable to share immutable data between different event loops, for example to implement a
+ * cache of data.<p>
+ * This class allows instances of shared data structures to be looked up and used from different event loops.<p>
+ * The data structures themselves will only allow certain data types to be stored into them. This shields you from
+ * worrying about any thread safety issues might occur if mutable objects were shared between event loops.<p>
+ * The following types can be stored in a shareddata data structure:<p>
  * <pre>
  *   {@link String}
  *   {@link Integer}
@@ -52,7 +51,6 @@ import java.util.concurrent.ConcurrentMap;
 public class SharedData {
 
   private static final Logger log = LoggerFactory.getLogger(SharedData.class);
-
 
   private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
   private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();

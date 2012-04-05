@@ -20,10 +20,10 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 
 /**
- * <p>Represents a stream of data that can be read from.</p>
+ * Represents a stream of data that can be read from.<p>
  *
- * <p>Any class that implements this interface can be used by a {@link Pump} to pump data from it
- * to a {@link WriteStream}.</p>
+ * Any class that implements this interface can be used by a {@link Pump} to pump data from it
+ * to a {@link WriteStream}.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -35,8 +35,7 @@ public interface ReadStream {
   void dataHandler(Handler<Buffer> handler);
 
   /**
-   * Pause the {@code ReadStream}. After calling this, the ReadStream will aim to send no more data to the {@code
-   * dataHandler}
+   * Pause the {@code ReadStream}. While the stream is paused, no data will be sent to the {@code dataHandler}
    */
   void pause();
 

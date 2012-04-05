@@ -23,33 +23,33 @@ import java.util.List;
 
 /**
  *
- * <p>This is an implementation of the server side part of <a href="https://github.com/sockjs">SockJS</a></p>
+ * This is an implementation of the server side part of <a href="https://github.com/sockjs">SockJS</a><p>
  *
  * <p>SockJS enables browsers to communicate with the server using a simple WebSocket-like api for sending
  * and receiving messages. Under the bonnet SockJS chooses to use one of several protocols depending on browser
- * capabilities and what apppears to be working across the network.</p>
+ * capabilities and what apppears to be working across the network.<p>
  *
- * <p>Available protocols include:</p>
+ * Available protocols include:<p>
  *
- * <p><ul>
+ * <ul>
  *   <li>WebSockets</li>
  *   <li>xhr-polling</li>
  *   <li>xhr-streaming</li>
  *   <li>json-polling</li>
  *   <li>event-source</li>
  *   <li>html-file</li>
- * </ul></p>
+ * </ul><p>
  *
- * <p>This means, it should <i>just work</i> irrespective of what browser is being used, and whether there are nasty
- * things like proxies and load balancers between the client and the server.</p>
+ * This means, it should <i>just work</i> irrespective of what browser is being used, and whether there are nasty
+ * things like proxies and load balancers between the client and the server.<p>
  *
- * <p>For more detailed information on SockJS, see their website.</p>
+ * For more detailed information on SockJS, see their website.<p>
  *
- * <p>On the server side, you interact using instances of {@link SockJSSocket} - this allows you to send data to the
- * client or receive data via the {@link SockJSSocket#dataHandler}.</p>
+ * On the server side, you interact using instances of {@link SockJSSocket} - this allows you to send data to the
+ * client or receive data via the {@link SockJSSocket#dataHandler}.<p>
  *
- * <p>You can register multiple applications with the same SockJSServer, each using different path prefixes, each
- * application will have its own handler, and configuration as described by {@link AppConfig}</p>
+ * You can register multiple applications with the same SockJSServer, each using different path prefixes, each
+ * application will have its own handler, and configuration as described by {@link AppConfig}<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -58,7 +58,7 @@ public interface SockJSServer {
   /**
    * Install an application
    * @param config The application configuration
-   * @param sockHandler A handler that will be called when new SockJS sessions are created
+   * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
   void installApp(AppConfig config, final Handler<SockJSSocket> sockHandler);
 

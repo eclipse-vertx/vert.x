@@ -26,22 +26,20 @@ import org.vertx.java.core.streams.WriteStream;
 import java.util.Map;
 
 /**
- * Represents a server-side HTTP response.
- * <p>
+ * Represents a server-side HTTP response.<p>
  * An instance of this class is created and associated to every instance of
  * {@link HttpServerRequest} that is created.<p>
  * It allows the developer to control the HTTP response that is sent back to the
- * client for the corresponding HTTP request. It contains methods that allow HTTP
- * headers and trailers to be set, and for a body to be written outto the response.
- * <p>
+ * client for a partcularHTTP request. It contains methods that allow HTTP
+ * headers and trailers to be set, and for a body to be written outto the response.<p>
  * It also allows files to be streamed by the kernel directly from disk to the
  * outgoing HTTP connection, bypassing user space altogether (where supported by
  * the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one
- * from the file and written to the outgoing socket.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * from the file and written to the outgoing socket.<p>
+ * It implements {@link WriteStream} so it can be used with
+ * {@link org.vertx.java.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class HttpServerResponse implements WriteStream {
@@ -64,12 +62,12 @@ public abstract class HttpServerResponse implements WriteStream {
 
   /**
    * If {@code chunked} is {@code true}, this response will use HTTP chunked encoding, and each call to write to the body
-   * will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
-   * {@code Transfer-Encoding} with a value of {@code Chunked} will be automatically inserted in the response.<p>
+   * will correspond to a new HTTP chunk sent on the wire.<p>
+   * If chunked encoding is used the HTTP header {@code Transfer-Encoding} with a value of {@code Chunked} will be
+   * automatically inserted in the response.<p>
    * If {@code chunked} is {@code false}, this response will not use HTTP chunked encoding, and therefore if any data is written the
    * body of the response, the total size of that data must be set in the {@code Content-Length} header <b>before</b> any
-   * data is written to the response body. If no data is written, then a {@code Content-Length} header with a value of {@code 0}
-   * will be automatically inserted when the response is sent.<p>
+   * data is written to the response body.<p>
    * An HTTP chunked response is typically used when you do not know the total size of the request body up front.
    *
    * @return A reference to this, so multiple method calls can be chained.
@@ -110,21 +108,21 @@ public abstract class HttpServerResponse implements WriteStream {
   public abstract void closeHandler(Handler<Void> handler);
 
   /**
-   * Write a {@link Buffer} to the response body.<p>
+   * Write a {@link Buffer} to the response body.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public abstract HttpServerResponse write(Buffer chunk);
 
   /**
-   * Write a {@link String} to the response body, encoded using the encoding {@code enc}.<p>
+   * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public abstract HttpServerResponse write(String chunk, String enc);
 
   /**
-   * Write a {@link String} to the response body, encoded in UTF-8.<p>
+   * Write a {@link String} to the response body, encoded in UTF-8.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
@@ -138,26 +136,28 @@ public abstract class HttpServerResponse implements WriteStream {
   public abstract HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler);
 
   /**
-   * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called
+   * after the buffer is actually written to the wire.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public abstract HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler);
 
   /**
-   * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer
+   * is actually written to the wire.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
   public abstract HttpServerResponse write(String chunk, Handler<Void> doneHandler);
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the default encoding
+   * Same as {@link #end(Buffer)} but writes a String with the default encoding before ending the response.
    */
   public abstract void end(String chunk);
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the specified encoding
+   * Same as {@link #end(Buffer)} but writes a String with the specified encoding before ending the response.
    */
   public abstract void end(String chunk, String enc);
 

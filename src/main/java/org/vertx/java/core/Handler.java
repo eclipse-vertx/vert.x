@@ -17,9 +17,9 @@
 package org.vertx.java.core;
 
 /**
- *  <p>A generic handler</p>
+ *  A generic event handler<p>
  *
- *  <p>This interface is used heavily throughout vert.x as a handler for all types of asynchronous occurrences.</p>
+ *  This interface is used heavily throughout vert.x as a handler for all types of asynchronous occurrences.<p>
  *
  *  @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -21,7 +21,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
- * Represents a message sent on the event bus.
+ * Represents a message on the event bus.
  * <p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

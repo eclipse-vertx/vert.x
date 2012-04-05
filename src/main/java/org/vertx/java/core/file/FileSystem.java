@@ -49,12 +49,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Contains a broad set of operations for manipulating files.
- * <p>
- * An asynchronous and a synchronous version of each operation is provided.
+ * Contains a broad set of operations for manipulating files.<p>
+ * An asynchronous and a synchronous version of each operation is provided.<p>
  * The asynchronous versions take an {@code AsynchronousResultHandler} which is
- * called when the operation completes or an error occurs.
- * The synchronous versions return the results, or throw exceptions directly.
+ * called when the operation completes or an error occurs.<p>
+ * The synchronous versions return the results, or throw exceptions directly.<p>
+ * It is highly recommended the asynchronous versions are used unless you are sure the operation
+ * will not block for a significant period of time<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystem {
@@ -67,8 +68,7 @@ public class FileSystem {
 
   /**
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
-   * The copy will fail if the destination if the destination already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * The copy will fail if the destination already exists.<p>
    */
   public void copy(String from, String to, AsyncResultHandler<Void> handler) {
     copyInternal(from, to, handler).run();
@@ -86,7 +86,6 @@ public class FileSystem {
    * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
    * will be copied recursively to the destination {@code to}.<p>
    * The copy will fail if the destination if the destination already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
    */
   public void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
     copyInternal(from, to, recursive, handler).run();
@@ -102,7 +101,6 @@ public class FileSystem {
   /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
    * The move will fail if the destination already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
    */
   public void move(String from, String to, AsyncResultHandler<Void> handler) {
     moveInternal(from, to, handler).run();
@@ -118,7 +116,6 @@ public class FileSystem {
   /**
    * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
    * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
-   * The handler will be called when the operation completes or an error occurs
    */
   public void truncate(String path, long len, AsyncResultHandler<Void> handler) {
     truncateInternal(path, len, handler).run();
@@ -135,7 +132,6 @@ public class FileSystem {
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
    * The permission String takes the form rwxr-x--- as
    * specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * The handler will be called when the operation completes or an error occurs
    */
   public void chmod(String path, String perms, AsyncResultHandler<Void> handler) {
     chmodInternal(path, perms, handler).run();
@@ -154,7 +150,6 @@ public class FileSystem {
    * specified in {<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>}.<p>
    * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
    * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
-   * The handler will be called when the operation completes or an error occurs
    */
   public void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
     chmodInternal(path, perms, dirPerms, handler).run();
@@ -170,7 +165,6 @@ public class FileSystem {
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.
    * If the file is a link, the link will be followed.
-   * The handler will be called when the operation completes or an error occurs
    */
   public void props(String path, AsyncResultHandler<FileProps> handler) {
     propsInternal(path, handler).run();
@@ -186,7 +180,6 @@ public class FileSystem {
   /**
    * Obtain properties for the link represented by {@code path}, asynchronously.
    * The link will not be followed.
-   * The handler will be called when the operation completes or an error occurs
    */
   public void lprops(String path, AsyncResultHandler<FileProps> handler) {
     lpropsInternal(path, handler).run();
@@ -200,8 +193,7 @@ public class FileSystem {
   }
 
   /**
-   * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.
    */
   public void link(String link, String existing, AsyncResultHandler<Void> handler) {
     linkInternal(link, existing, handler).run();
@@ -215,8 +207,7 @@ public class FileSystem {
   }
 
   /**
-   * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.
    */
   public void symlink(String link, String existing, AsyncResultHandler<Void> handler) {
     symlinkInternal(link, existing, handler).run();
@@ -230,8 +221,7 @@ public class FileSystem {
   }
 
   /**
-   * Unlinks the link on the file system represented by the path {@code link}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * Unlinks the link on the file system represented by the path {@code link}, asynchronously.
    */
   public void unlink(String link, AsyncResultHandler<Void> handler) {
     unlinkInternal(link, handler).run();
@@ -245,8 +235,7 @@ public class FileSystem {
   }
 
   /**
-   * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.
    */
   public void readSymlink(String link, AsyncResultHandler<String> handler) {
     readSymlinkInternal(link, handler).run();
@@ -260,8 +249,7 @@ public class FileSystem {
   }
 
   /**
-   * Deletes the file represented by the specified {@code path}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * Deletes the file represented by the specified {@code path}, asynchronously.
    */
   public void delete(String path, AsyncResultHandler<Void> handler) {
     deleteInternal(path, handler).run();
@@ -276,8 +264,8 @@ public class FileSystem {
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.<p>
-   * If the path represents a directory and recursive = true then the directory and its contents will be deleted recursively.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * If the path represents a directory and {@code recursive = true} then the directory and its contents will be
+   * deleted recursively.
    */
   public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
     deleteInternal(path, recursive, handler).run();
@@ -292,8 +280,7 @@ public class FileSystem {
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
-   * The operation will fail if the directory already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * The operation will fail if the directory already exists.
    */
   public void mkdir(String path, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, handler).run();
@@ -310,8 +297,7 @@ public class FileSystem {
    * Create the directory represented by {@code path}, asynchronously.<p>
    * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
    * will also be created.<p>
-   * The operation will fail if the directory already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * The operation will fail if the directory already exists.
    */
   public void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, createParents, handler).run();
@@ -330,8 +316,7 @@ public class FileSystem {
    * The new directory will be created with permissions as specified by {@code perms}.
    * The permission String takes the form rwxr-x--- as specified
    * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
-   * The operation will fail if the directory already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
+   * The operation will fail if the directory already exists.
    */
   public void mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, perms, handler).run();
@@ -352,7 +337,6 @@ public class FileSystem {
    * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
-   * The handler will be called when the operation completes or an error occurs
    */
   public void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, perms, createParents, handler).run();
@@ -366,8 +350,7 @@ public class FileSystem {
   }
 
   /**
-   * Read the contents of the directory specified by {@code path}, asynchronously
-   * The handler will be called when the operation completes or an error occurs.
+   * Read the contents of the directory specified by {@code path}, asynchronously.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
   public void readDir(String path, AsyncResultHandler<String[]> handler) {
@@ -382,9 +365,9 @@ public class FileSystem {
   }
 
   /**
-   * Read the contents of the directory specified by {@code path}, asynchronously<p>
-   * {@code filter} is a regular expression. If {@code filter} is specified then only the paths that match @{filter} will be returned.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Read the contents of the directory specified by {@code path}, asynchronously.<p>
+   * The paramater {@code filter} is a regular expression. If {@code filter} is specified then only the paths that
+   * match  @{filter}will be returned.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
   public void readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
@@ -400,8 +383,7 @@ public class FileSystem {
 
   /**
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
-   * Do not user this method to read very large files or you risk running out of available RAM.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Do not user this method to read very large files or you risk running out of available RAM.
    */
   public void readFile(String path, AsyncResultHandler<Buffer> handler) {
     readFileInternal(path, handler).run();
@@ -415,8 +397,8 @@ public class FileSystem {
   }
 
   /**
-   * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path},
+   * asynchronously.
    */
   public void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
     writeFileInternal(path, data, handler).run();
@@ -433,7 +415,6 @@ public class FileSystem {
    * Open the file represented by {@code path}, asynchronously.<p>
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
    * Write operations will not automatically flush to storage.
-   * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, handler).run();
@@ -451,7 +432,6 @@ public class FileSystem {
    * The file is opened for both reading and writing. If the file does not already exist it will be created with the
    * permissions as specified by {@code perms}.
    * Write operations will not automatically flush to storage.
-   * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, handler).run();
@@ -470,7 +450,6 @@ public class FileSystem {
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.
    * Write operations will not automatically flush to storage.
-   * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, createNew, handler).run();
@@ -491,7 +470,6 @@ public class FileSystem {
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.<p>
    * Write operations will not automatically flush to storage.
-   * The handler will be called when the operation completes or an error occurs.
    */
   public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, read, write, createNew, handler).run();
@@ -512,8 +490,7 @@ public class FileSystem {
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.<p>
    * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
-   * storage on each write.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * storage on each write.
    */
   public void open(String path, String perms, boolean read, boolean write, boolean createNew,
                    boolean flush, AsyncResultHandler<AsyncFile> handler) {
@@ -528,8 +505,7 @@ public class FileSystem {
   }
 
   /**
-   * Creates an empty file with the specified {@code path}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Creates an empty file with the specified {@code path}, asynchronously.
    */
   public void createFile(String path, AsyncResultHandler<Void> handler) {
     createFileInternal(path, handler).run();
@@ -543,8 +519,7 @@ public class FileSystem {
   }
 
   /**
-   * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.
    */
   public void createFile(String path, String perms, AsyncResultHandler<Void> handler) {
     createFileInternal(path, perms, handler).run();
@@ -558,8 +533,7 @@ public class FileSystem {
   }
 
   /**
-   * Determines whether the file as specified by the path {@code path} exists, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Determines whether the file as specified by the path {@code path} exists, asynchronously.
    */
   public void exists(String path, AsyncResultHandler<Boolean> handler) {
     existsInternal(path, handler).run();
@@ -573,8 +547,7 @@ public class FileSystem {
   }
 
   /**
-   * Returns properties of the file-system being used by the specified {@code path}, asynchronously.<p>
-   * The handler will be called when the operation completes or an error occurs.
+   * Returns properties of the file-system being used by the specified {@code path}, asynchronously.
    */
   public void fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
     fsPropsInternal(path, handler).run();

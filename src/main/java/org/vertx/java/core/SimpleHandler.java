@@ -17,7 +17,7 @@
 package org.vertx.java.core;
 
 /**
- * <p>This class can be used for simple handlers which don't receive any value.</p>
+ * This class can be used for simple handlers which don't receive any value.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -28,7 +28,7 @@ public abstract class SimpleHandler implements Handler<Void> {
   }
 
   /**
-   * This method will be called when the asynchronous action occurs. It should be overridden by the user.
+   * Handle the event. It should be overridden by the user.
    */
   protected abstract void handle();
 }
