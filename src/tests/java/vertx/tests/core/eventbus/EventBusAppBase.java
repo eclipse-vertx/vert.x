@@ -18,7 +18,6 @@ package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
-import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.tests.core.eventbus.Counter;
