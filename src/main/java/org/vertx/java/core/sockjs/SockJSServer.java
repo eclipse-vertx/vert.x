@@ -53,22 +53,21 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class SockJSServer {
+public interface SockJSServer {
 
   /**
    * Install an application
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sessions are created
    */
-  public abstract void installApp(AppConfig config,
-                         final Handler<SockJSSocket> sockHandler);
+  void installApp(AppConfig config, final Handler<SockJSSocket> sockHandler);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
    */
-  public abstract void bridge(AppConfig sjsConfig, List<JsonObject> permitted);
+  void bridge(AppConfig sjsConfig, List<JsonObject> permitted);
 
 }
 

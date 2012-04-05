@@ -41,6 +41,7 @@ import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
 import javax.net.ssl.SSLContext;
@@ -50,7 +51,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultNetClient {
+public class DefaultNetClient implements NetClient {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
 
@@ -77,12 +78,14 @@ public class DefaultNetClient {
     });
   }
 
-  public void connect(int port, String host, final Handler<NetSocket> connectHandler) {
+  public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
     connect(port, host, connectHandler, reconnectAttempts);
+    return this;
   }
 
-  public void connect(int port, Handler<NetSocket> connectCallback) {
+  public NetClient connect(int port, Handler<NetSocket> connectCallback) {
     connect(port, "localhost", connectCallback);
+    return this;
   }
 
   public void close() {
@@ -91,22 +94,24 @@ public class DefaultNetClient {
     }
   }
 
-  public void setReconnectAttempts(int attempts) {
+  public NetClient setReconnectAttempts(int attempts) {
     if (attempts < -1) {
       throw new IllegalArgumentException("reconnect attempts must be >= -1");
     }
     this.reconnectAttempts = attempts;
+    return this;
   }
 
   public int getReconnectAttempts() {
     return reconnectAttempts;
   }
 
-  public void setReconnectInterval(long interval) {
+  public NetClient setReconnectInterval(long interval) {
     if (interval < 1) {
       throw new IllegalArgumentException("reconnect interval nust be >= 1");
     }
     this.reconnectInterval = interval;
+    return this;
   }
 
   public long getReconnectInterval() {
@@ -145,32 +150,39 @@ public class DefaultNetClient {
     return tcpHelper.getTrafficClass();
   }
 
-  public void setTCPNoDelay(Boolean tcpNoDelay) {
+  public NetClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
+    return this;
   }
 
-  public void setSendBufferSize(Integer size) {
+  public NetClient setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
+    return this;
   }
 
-  public void setReceiveBufferSize(Integer size) {
+  public NetClient setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
+    return this;
   }
 
-  public void setTCPKeepAlive(Boolean keepAlive) {
+  public NetClient setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
+    return this;
   }
 
-  public void setReuseAddress(Boolean reuse) {
+  public NetClient setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
+    return this;
   }
 
-  public void setSoLinger(Boolean linger) {
+  public NetClient setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
+    return this;
   }
 
-  public void setTrafficClass(Integer trafficClass) {
+  public NetClient setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
+    return this;
   }
 
   public boolean isSSL() {
@@ -205,28 +217,34 @@ public class DefaultNetClient {
     return tcpHelper.isTrustAll();
   }
 
-  public void setSSL(boolean ssl) {
+  public NetClient setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
+    return this;
   }
 
-  public void setKeyStorePath(String path) {
+  public NetClient setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
+    return this;
   }
 
-  public void setKeyStorePassword(String pwd) {
+  public NetClient setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
+    return this;
   }
 
-  public void setTrustStorePath(String path) {
+  public NetClient setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
+    return this;
   }
 
-  public void setTrustStorePassword(String pwd) {
+  public NetClient setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
+    return this;
   }
 
-  public void setTrustAll(boolean trustAll) {
+  public NetClient setTrustAll(boolean trustAll) {
     tcpHelper.setTrustAll(trustAll);
+    return this;
   }
 
   private void connect(final int port, final String host, final Handler<NetSocket> connectHandler,

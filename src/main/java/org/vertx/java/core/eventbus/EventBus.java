@@ -20,8 +20,6 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * <p>This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
@@ -49,9 +47,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class EventBus {
-
-  private static final Logger log = LoggerFactory.getLogger(EventBus.class);
+public interface EventBus {
 
   /**
    * Send a JSON object as a message
@@ -59,14 +55,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler);
+  void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler);
 
   /**
    * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, JsonObject message);
+  void send(String address, JsonObject message);
 
   /**
    * Send a Buffer as a message
@@ -74,14 +70,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler);
+  void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler);
 
   /**
    * Send a Buffer as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Buffer message);
+  void send(String address, Buffer message);
 
   /**
    * Send a byte[] as a message
@@ -89,14 +85,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler);
+  void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler);
 
   /**
    * Send a byte[] as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, byte[] message);
+  void send(String address, byte[] message);
 
   /**
    * Send a String as a message
@@ -104,14 +100,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, String message, final Handler<Message<String>> replyHandler);
+  void send(String address, String message, final Handler<Message<String>> replyHandler);
 
   /**
    * Send a String as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, String message);
+  void send(String address, String message);
 
   /**
    * Send an Integer as a message
@@ -119,14 +115,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Integer message, final Handler<Message<Integer>> replyHandler);
+  void send(String address, Integer message, final Handler<Message<Integer>> replyHandler);
 
   /**
    * Send an Integer as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Integer message);
+  void send(String address, Integer message);
 
   /**
    * Send a Long as a message
@@ -134,14 +130,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Long message, final Handler<Message<Long>> replyHandler);
+  void send(String address, Long message, final Handler<Message<Long>> replyHandler);
 
   /**
    * Send a Long as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Long message);
+  void send(String address, Long message);
 
   /**
    * Send a Float as a message
@@ -149,14 +145,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Float message, final Handler<Message<Float>> replyHandler);
+  void send(String address, Float message, final Handler<Message<Float>> replyHandler);
 
   /**
    * Send a Float as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Float message);
+  void send(String address, Float message);
 
   /**
    * Send a Double as a message
@@ -164,14 +160,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Double message, final Handler<Message<Double>> replyHandler);
+  void send(String address, Double message, final Handler<Message<Double>> replyHandler);
 
   /**
    * Send a Double as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Double message);
+  void send(String address, Double message);
 
   /**
    * Send a Boolean as a message
@@ -179,14 +175,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) ;
+  void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) ;
 
   /**
    * Send a Boolean as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Boolean message);
+  void send(String address, Boolean message);
 
   /**
    * Send a Short as a message
@@ -194,14 +190,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Short message, final Handler<Message<Short>> replyHandler);
+  void send(String address, Short message, final Handler<Message<Short>> replyHandler);
 
   /**
    * Send a Short as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Short message);
+  void send(String address, Short message);
 
   /**
    * Send a Character as a message
@@ -209,14 +205,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Character message, final Handler<Message<Character>> replyHandler);
+  void send(String address, Character message, final Handler<Message<Character>> replyHandler);
 
   /**
    * Send a Character as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Character message);
+  void send(String address, Character message);
 
   /**
    * Send a Byte as a message
@@ -224,14 +220,14 @@ public abstract class EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  public abstract void send(String address, Byte message, final Handler<Message<Byte>> replyHandler);
+  void send(String address, Byte message, final Handler<Message<Byte>> replyHandler);
 
   /**
    * Send a Byte as a message
    * @param address The address to send it to
    * @param message The message
    */
-  public abstract void send(String address, Byte message);
+  void send(String address, Byte message);
 
   /**
    * Unregisters a handler given the address and the handler
@@ -240,7 +236,7 @@ public abstract class EventBus {
    * @param resultHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public abstract void unregisterHandler(String address, Handler<? extends Message> handler,
+  void unregisterHandler(String address, Handler<? extends Message> handler,
                                 AsyncResultHandler<Void> resultHandler);
 
   /**
@@ -248,13 +244,13 @@ public abstract class EventBus {
    * @param address The address the handler was registered aty
    * @param handler The handler
    */
-  public abstract void unregisterHandler(String address, Handler<? extends Message> handler);
+  void unregisterHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Unregister a handler given the unique handler id
    * @param id The handler id
    */
-  public abstract void unregisterHandler(String id);
+  void unregisterHandler(String id);
 
   /**
    * Unregister a handler given the unique handler id
@@ -262,14 +258,14 @@ public abstract class EventBus {
    * @param resultHandler Optional completion handler. If specified, then when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  public abstract void unregisterHandler(String id, AsyncResultHandler<Void> resultHandler);
+  void unregisterHandler(String id, AsyncResultHandler<Void> resultHandler);
 
   /**
    * Registers a handler against a uniquely generated address, the address is returned as the id
    * @param handler
    * @return The handler id which is the same as the address
    */
-  public abstract String registerHandler(Handler<? extends Message> handler);
+  String registerHandler(Handler<? extends Message> handler);
 
   /**
    * Registers a handler against a uniquely generated address, the address is returned as the id
@@ -278,7 +274,7 @@ public abstract class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
-  public abstract String registerHandler(Handler<? extends Message> handler,
+  String registerHandler(Handler<? extends Message> handler,
                                          AsyncResultHandler<Void> resultHandler);
 
   /**
@@ -289,7 +285,7 @@ public abstract class EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    * @return The handler id which is the same as the address
    */
-  public abstract String registerHandler(String address, Handler<? extends Message> handler,
+  String registerHandler(String address, Handler<? extends Message> handler,
                                AsyncResultHandler<Void> resultHandler);
 
   /**
@@ -298,7 +294,7 @@ public abstract class EventBus {
    * @param handler The handler
    * @return The handler id which is the same as the address
    */
-  public abstract String registerHandler(String address, Handler<? extends Message> handler);
+  String registerHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
@@ -307,13 +303,13 @@ public abstract class EventBus {
    * @param handler The handler
    * @return The handler id which is the same as the address
    */
-  public abstract String registerLocalHandler(String address, Handler<? extends Message> handler);
+  String registerLocalHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against a uniquely generated address, the address is returned as the id
    * @param handler
    * @return The handler id which is the same as the address
    */
-  public abstract String registerLocalHandler(Handler<? extends Message> handler);
+  String registerLocalHandler(Handler<? extends Message> handler);
 }
 

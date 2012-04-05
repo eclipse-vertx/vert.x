@@ -16,7 +16,6 @@
 package org.vertx.groovy.core.net
 
 import org.vertx.java.core.Handler
-import org.vertx.java.core.impl.VertxInternal
 
 /**
  * Represents a TCP or SSL server
@@ -33,16 +32,9 @@ import org.vertx.java.core.impl.VertxInternal
  * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class NetServer extends org.vertx.java.core.net.NetServer {
-
-  NetServer(VertxInternal vertx, Map props = null) {
-    super(vertx)
-    if (props != null) {
-      props.each { k, v ->
-        setProperty(k, v)
-      }
-    }
-  }
+abstract class NetServer {
+  
+  protected org.vertx.java.core.net.NetServer jServer;
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
@@ -51,7 +43,7 @@ class NetServer extends org.vertx.java.core.net.NetServer {
    * @return a reference to this so multiple method calls can be chained together
    */
   NetServer connectHandler(Closure hndlr) {
-    super.connectHandler(wrapHandler(hndlr))
+    jServer.connectHandler(wrapHandler(hndlr))
     this
   }
 
@@ -60,11 +52,138 @@ class NetServer extends org.vertx.java.core.net.NetServer {
    * when the close is complete.
    */
   void close(Closure hndlr) {
-    super.close(hndlr as Handler)
+    jServer.close(hndlr as Handler)
   }
 
   private Handler wrapHandler(Closure hndlr) {
     return {hndlr(new NetSocket(it))} as Handler
   }
+  
+  NetServer listen(int port) {
+    jServer.listen(port)
+    this
+  }
+  
+  NetServer listen(int port, String host) {
+    jServer.listen(port, host)
+    this
+  }
+  
+  void close() {
+    jServer.close()    
+  }
+  
+  NetServer setSSL(boolean ssl) {
+    jServer.setSSL(ssl)
+    this
+  }
+
+  NetServer setKeyStorePath(String path) {
+    jServer.setKeyStorePath(path)
+    this
+  }
+
+  NetServer setKeyStorePassword(String pwd) {
+    jServer.setKeyStorePassword(pwd)
+    this
+  }
+
+  NetServer setTrustStorePath(String path) {
+    jServer.setTrustStorePath(path)
+    this
+  }
+
+  NetServer setTrustStorePassword(String pwd) {
+    jServer.setTrustStorePassword(pwd)
+    this
+  }
+
+  NetServer setClientAuthRequired(boolean required) {
+    jServer.setClientAuthRequired(required)
+    this
+  }
+
+  NetServer setTCPNoDelay(boolean tcpNoDelay) {
+    jServer.setTCPNoDelay(tcpNoDelay)
+    this
+  }
+
+  NetServer setSendBufferSize(int size) {
+    jServer.setSendBufferSize(size)
+    this
+  }
+
+  NetServer setReceiveBufferSize(int size) {
+    jServer.setReceiveBufferSize(size)
+    this
+  }
+
+  NetServer setTCPKeepAlive(boolean keepAlive) {
+    jServer.setTCPKeepAlive(keepAlive)
+  }
+
+  NetServer setReuseAddress(boolean reuse) {
+    jServer.setReuseAddress(reuse)
+    this
+  }
+
+  NetServer setSoLinger(boolean linger) {
+    jServer.setSoLinger(linger)
+    this
+  }
+
+  NetServer setTrafficClass(int trafficClass) {
+    jServer.setTrafficClass(trafficClass)
+    this
+  }
+
+  Boolean isTCPNoDelay() {
+    jServer.isTCPNoDelay()
+  }
+
+  Integer getSendBufferSize() {
+    jServer.getSendBufferSize()
+  }
+
+  Integer getReceiveBufferSize() {
+    jServer.getReceiveBufferSize()
+  }
+
+  Boolean isTCPKeepAlive() {
+    return jServer.isTCPKeepAlive()
+  }
+
+  Boolean isReuseAddress() {
+    jServer.isReuseAddress()
+  }
+
+  Boolean isSoLinger() {
+    jServer.isSoLinger()
+  }
+
+  Integer getTrafficClass() {
+    jServer.getTrafficClass()
+  }
+
+  boolean isSSL() {
+    jServer.isSSL()
+  }
+
+  String getKeyStorePath() {
+    jServer.getKeyStorePath()
+  }
+
+  String getKeyStorePassword() {
+    jServer.getKeyStorePassword()
+  }
+
+  String getTrustStorePath() {
+     jServer.getTrustStorePath()
+  }
+
+  String getTrustStorePassword() {
+    jServer.getTrustStorePassword()
+  }
+  
 
 }

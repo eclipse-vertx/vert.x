@@ -18,8 +18,6 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.util.Map;
@@ -66,24 +64,19 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class HttpClientRequest implements WriteStream {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
-
-  protected HttpClientRequest() {
-  }
+public interface HttpClientRequest extends WriteStream {
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
    * @param chunked
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest setChunked(boolean chunked);
+  HttpClientRequest setChunked(boolean chunked);
 
   /**
    * @return The HTTP headers
    */
-  public abstract Map<String, Object> headers();
+  Map<String, Object> headers();
 
   /**
    * Put an HTTP header - fluent API
@@ -91,49 +84,49 @@ public abstract class HttpClientRequest implements WriteStream {
    * @param value The header value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest putHeader(String name, Object value);
+  HttpClientRequest putHeader(String name, Object value);
 
   /**
    * Write a {@link Buffer} to the request body.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest write(Buffer chunk);
+  HttpClientRequest write(Buffer chunk);
 
   /**
    * Write a {@link String} to the request body, encoded in UTF-8.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest write(String chunk);
+  HttpClientRequest write(String chunk);
 
   /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest write(String chunk, String enc);
+  HttpClientRequest write(String chunk, String enc);
 
   /**
    * Write a {@link Buffer} to the request body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest write(Buffer chunk, Handler<Void> doneHandler);
+  HttpClientRequest write(Buffer chunk, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the request body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest write(String chunk, Handler<Void> doneHandler);
+  HttpClientRequest write(String chunk, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler);
+  HttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
@@ -142,7 +135,7 @@ public abstract class HttpClientRequest implements WriteStream {
    * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
    * the {@link #sendHead()} method to force the request header to be written before the request has ended.
    */
-  public abstract void continueHandler(Handler<Void> handler);
+  void continueHandler(Handler<Void> handler);
 
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request. This is normally used
@@ -150,23 +143,23 @@ public abstract class HttpClientRequest implements WriteStream {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpClientRequest sendHead();
+  HttpClientRequest sendHead();
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the default encoding
    */
-  public abstract void end(String chunk);
+  void end(String chunk);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    */
-  public abstract void end(String chunk, String enc);
+  void end(String chunk, String enc);
 
   /**
    * Same as {@link #end()} but writes some data to the request body before ending. If the request is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
    */
-  public abstract void end(Buffer chunk);
+  void end(Buffer chunk);
 
   /**
    * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
@@ -174,6 +167,6 @@ public abstract class HttpClientRequest implements WriteStream {
    * Once the request has ended, it cannot be used any more, and if keep alive is true the underlying connection will
    * be returned to the {@link HttpClient} pool so it can be assigned to another request.
    */
-  public abstract void end();
+  void end();
 
 }

@@ -48,6 +48,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
@@ -88,7 +89,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServer {
+public class DefaultHttpServer implements HttpServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
@@ -121,7 +122,7 @@ public class DefaultHttpServer {
     });
   }
 
-  public DefaultHttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
+  public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     this.requestHandler = requestHandler;
     return this;
   }
@@ -130,7 +131,7 @@ public class DefaultHttpServer {
     return requestHandler;
   }
 
-  public DefaultHttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
+  public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     this.wsHandler = wsHandler;
     return this;
   }
@@ -139,11 +140,11 @@ public class DefaultHttpServer {
     return wsHandler;
   }
 
-  public DefaultHttpServer listen(int port) {
+  public HttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  public DefaultHttpServer listen(int port, String host) {
+  public HttpServer listen(int port, String host) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -261,65 +262,66 @@ public class DefaultHttpServer {
     }
   }
 
-  public DefaultHttpServer setSSL(boolean ssl) {
+  public HttpServer setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
-  public DefaultHttpServer setKeyStorePath(String path) {
+  public HttpServer setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
-  public DefaultHttpServer setKeyStorePassword(String pwd) {
+  public HttpServer setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
-  public DefaultHttpServer setTrustStorePath(String path) {
+  public HttpServer setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
-  public DefaultHttpServer setTrustStorePassword(String pwd) {
+  public HttpServer setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
-  public void setClientAuthRequired(boolean required) {
+  public HttpServer setClientAuthRequired(boolean required) {
     tcpHelper.setClientAuthRequired(required);
+    return this;
   }
 
-  public DefaultHttpServer setTCPNoDelay(boolean tcpNoDelay) {
+  public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
-  public DefaultHttpServer setSendBufferSize(int size) {
+  public HttpServer setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
-  public DefaultHttpServer setReceiveBufferSize(int size) {
+  public HttpServer setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
-  public DefaultHttpServer setTCPKeepAlive(boolean keepAlive) {
+  public HttpServer setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
-  public DefaultHttpServer setReuseAddress(boolean reuse) {
+  public HttpServer setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
-  public DefaultHttpServer setSoLinger(boolean linger) {
+  public HttpServer setSoLinger(boolean linger) {
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
-  public DefaultHttpServer setTrafficClass(int trafficClass) {
+  public HttpServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }

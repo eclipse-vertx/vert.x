@@ -19,9 +19,14 @@ package org.vertx.groovy.core
 import org.vertx.groovy.core.eventbus.EventBus
 import org.vertx.groovy.core.http.HttpClient
 import org.vertx.groovy.core.http.HttpServer
+import org.vertx.groovy.core.http.impl.DefaultHttpClient
+import org.vertx.groovy.core.http.impl.DefaultHttpServer
 import org.vertx.groovy.core.net.NetClient
 import org.vertx.groovy.core.net.NetServer
+import org.vertx.groovy.core.net.impl.DefaultNetClient
+import org.vertx.groovy.core.net.impl.DefaultNetServer
 import org.vertx.groovy.core.sockjs.SockJSServer
+import org.vertx.groovy.core.sockjs.impl.DefaultSockJSServer
 import org.vertx.java.core.Handler
 import org.vertx.java.core.impl.DefaultVertx
 import org.vertx.java.core.impl.VertxInternal
@@ -57,23 +62,23 @@ class Vertx {
   }
 
   public NetServer createNetServer(Map props = null) {
-    return new NetServer(jVertex, props);
+    return new DefaultNetServer(jVertex, props);
   }
 
   public NetClient createNetClient(Map props = null) {
-    return new NetClient(jVertex, props);
+    return new DefaultNetClient(jVertex, props);
   }
 
   public HttpServer createHttpServer(Map props = null) {
-    return new HttpServer(jVertex, props);
+    return new DefaultHttpServer(jVertex, props);
   }
 
   public HttpClient createHttpClient(Map props = null) {
-    return new HttpClient(jVertex, props);
+    return new DefaultHttpClient(jVertex, props);
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new SockJSServer(jVertex, httpServer);
+    return new DefaultSockJSServer(jVertex, httpServer);
   }
 
   public org.vertx.groovy.core.file.FileSystem fileSystem() {

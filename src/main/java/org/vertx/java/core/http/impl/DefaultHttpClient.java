@@ -39,6 +39,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.WebSocket;
@@ -59,7 +60,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultHttpClient {
+public class DefaultHttpClient implements HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 

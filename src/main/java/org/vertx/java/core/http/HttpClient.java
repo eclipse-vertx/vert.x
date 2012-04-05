@@ -17,8 +17,6 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.impl.DefaultHttpClient;
-import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -42,37 +40,24 @@ import java.util.Map;
  * Instances cannot be used from worker verticles
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClient {
-
-  private final DefaultHttpClient client;
-
-  public HttpClient(VertxInternal vertx) {
-    client = new DefaultHttpClient(vertx);
-  }
+public interface HttpClient {
 
   /**
    * Set an exception handler
    */
-  public synchronized void exceptionHandler(Handler<Exception> handler) {
-    client.exceptionHandler(handler);
-  }
+  void exceptionHandler(Handler<Exception> handler) ;
 
   /**
    * Set the maximum pool size<p>
    * The client will maintain up to {@code maxConnections} HTTP connections in an internal pool<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setMaxPoolSize(int maxConnections) {
-    client.setMaxPoolSize(maxConnections);
-    return this;
-  }
+  HttpClient setMaxPoolSize(int maxConnections);
 
   /**
    * Returns the maximum number of connections in the pool
    */
-  public synchronized int getMaxPoolSize() {
-    return client.getMaxPoolSize();
-  }
+  int getMaxPoolSize();
 
   /**
    * If {@code keepAlive} is {@code true} then, after the request has ended the connection will be returned to the pool
@@ -83,45 +68,32 @@ public class HttpClient {
    * than {@link #getMaxPoolSize() getMaxPoolSize()} connections to be created at any one time. <p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setKeepAlive(boolean keepAlive) {
-    client.setKeepAlive(keepAlive);
-    return this;
-  }
+  HttpClient setKeepAlive(boolean keepAlive);
 
   /**
    * Set the port that the tcpHelper will attempt to connect to on the server to {@code port}. The default value is {@code 80}<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setPort(int port) {
-    client.setPort(port);
-    return this;
-  }
+  HttpClient setPort(int port);
 
   /**
    * Set the host that the tcpHelper will attempt to connect to, to {@code host}. The default value is {@code localhost}<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setHost(String host) {
-    client.setHost(host);
-    return this;
-  }
+  HttpClient setHost(String host);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
-  public synchronized void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
-    connectWebsocket(uri, WebSocketVersion.HYBI_17, wsConnect);
-  }
+  void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
    * The connect is done asynchronously and {@code wsConnect} is called back with the result
    */
-  public synchronized void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
-    client.connectWebsocket(uri, wsVersion, wsConnect);
-  }
+  void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect);
 
   /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler) get()}
@@ -130,105 +102,79 @@ public class HttpClient {
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
-    client.getNow(uri, responseHandler);
-  }
+  void getNow(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method works in the same manner as {@link #getNow(String, org.vertx.java.core.Handler)},
    * except that it allows you specify a set of {@code headers} that will be sent with the request.
    */
-  public synchronized void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
-    client.getNow(uri, headers, responseHandler);
-  }
+  void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP OPTIONS request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest options(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.options(uri, responseHandler);
-  }
+  HttpClientRequest options(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP GET request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest get(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.get(uri, responseHandler);
-  }
+  HttpClientRequest get(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP HEAD request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest head(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.head(uri, responseHandler);
-  }
+  HttpClientRequest head(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP POST request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest post(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.post(uri, responseHandler);
-  }
+  HttpClientRequest post(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP PUT request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest put(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.put(uri, responseHandler);
-  }
+  HttpClientRequest put(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP DELETE request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest delete(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.delete(uri, responseHandler);
-  }
+  HttpClientRequest delete(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP TRACE request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest trace(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.trace(uri, responseHandler);
-  }
+  HttpClientRequest trace(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP CONNECT request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.connect(uri, responseHandler);
-  }
+  HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP PATCH request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.patch(uri, responseHandler);
-  }
+  HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP request with the specified {@code uri}. The specific HTTP method
    * (e.g. GET, POST, PUT etc) is specified using the parameter {@code method}<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  public synchronized HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    return client.request(method, uri, responseHandler);
-  }
+  HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Close the HTTP tcpHelper. This will cause any pooled HTTP connections to be closed.
    */
-  public synchronized void close() {
-    client.close();
-  }
+  void close();
 
   // SSL and TCP attributes
 
@@ -236,10 +182,7 @@ public class HttpClient {
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setSSL(boolean ssl) {
-    client.setSSL(ssl);
-    return this;
-  }
+  HttpClient setSSL(boolean ssl);
 
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
@@ -248,20 +191,14 @@ public class HttpClient {
    * requests tcpHelper authentication.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setKeyStorePath(String path) {
-    client.setKeyStorePath(path);
-    return this;
-  }
+  HttpClient setKeyStorePath(String path);
 
   /**
    * Set the password for the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setKeyStorePassword(String pwd) {
-    client.setKeyStorePassword(pwd);
-    return this;
-  }
+  HttpClient setKeyStorePassword(String pwd);
 
   /**
    * Set the path to the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
@@ -271,20 +208,14 @@ public class HttpClient {
    * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setTrustStorePath(String path) {
-    client.setTrustStorePath(path);
-    return this;
-  }
+  HttpClient setTrustStorePath(String path);
 
   /**
    * Set the password for the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
-  public synchronized HttpClient setTrustStorePassword(String pwd) {
-    client.setTrustStorePassword(pwd);
-    return this;
-  }
+  HttpClient setTrustStorePassword(String pwd);
 
   /**
    * If you want an SSL client to trust *all* server certificates rather than match them
@@ -292,174 +223,124 @@ public class HttpClient {
    * Use this with caution as you may be exposed to "main in the middle" attacks
    * @param trustAll Set to true if you want to trust all server certificates
    */
-  public synchronized HttpClient setTrustAll(boolean trustAll) {
-    client.setTrustAll(trustAll);
-    return this;
-  }
+  HttpClient setTrustAll(boolean trustAll);
 
   /**
    * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
    * will turned <b>off</b> for the TCP connections created by this instance.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setTCPNoDelay(boolean tcpNoDelay) {
-    client.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
+  HttpClient setTCPNoDelay(boolean tcpNoDelay);
 
   /**
    * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setSendBufferSize(int size) {
-    client.setSendBufferSize(size);
-    return this;
-  }
+  HttpClient setSendBufferSize(int size);
 
   /**
    * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setReceiveBufferSize(int size) {
-    client.setReceiveBufferSize(size);
-    return this;
-  }
+  HttpClient setReceiveBufferSize(int size) ;
 
   /**
    * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setTCPKeepAlive(boolean keepAlive) {
-    client.setTCPKeepAlive(keepAlive);
-    return this;
-  }
+  HttpClient setTCPKeepAlive(boolean keepAlive);
 
   /**
    * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setReuseAddress(boolean reuse) {
-    client.setReuseAddress(reuse);
-    return this;
-  }
+  HttpClient setReuseAddress(boolean reuse);
 
   /**
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setSoLinger(boolean linger) {
-    client.setSoLinger(linger);
-    return this;
-  }
+  HttpClient setSoLinger(boolean linger);
 
   /**
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
    * @return a reference to this so multiple method calls can be chained together
    */
-  public synchronized HttpClient setTrafficClass(int trafficClass) {
-    client.setTrafficClass(trafficClass);
-    return this;
-  }
+  HttpClient setTrafficClass(int trafficClass);
 
   /**
    * @return true if Nagle's algorithm is disabled.
    */
-  public synchronized Boolean isTCPNoDelay() {
-    return client.isTCPNoDelay();
-  }
+  Boolean isTCPNoDelay();
 
   /**
    * @return The TCP send buffer size
    */
-  public synchronized Integer getSendBufferSize() {
-    return client.getSendBufferSize();
-  }
+  Integer getSendBufferSize();
 
   /**
    * @return The TCP receive buffer size
    */
-  public synchronized Integer getReceiveBufferSize() {
-    return client.getReceiveBufferSize();
-  }
+  Integer getReceiveBufferSize();
 
   /**
    *
    * @return true if TCP keep alive is enabled
    */
-  public synchronized Boolean isTCPKeepAlive() {
-    return client.isTCPKeepAlive();
-  }
+  Boolean isTCPKeepAlive();
 
   /**
    *
    * @return The value of TCP reuse address
    */
-  public synchronized Boolean isReuseAddress() {
-    return client.isReuseAddress();
-  }
+  Boolean isReuseAddress();
 
   /**
    *
    * @return the value of TCP so linger
    */
-  public synchronized Boolean isSoLinger() {
-    return client.isSoLinger();
-  }
+  Boolean isSoLinger();
 
   /**
    *
    * @return the value of TCP traffic class
    */
-  public synchronized Integer getTrafficClass() {
-    return client.getTrafficClass();
-  }
+  Integer getTrafficClass();
 
   /**
    *
    * @return true if this client will make SSL connections
    */
-  public synchronized boolean isSSL() {
-    return client.isSSL();
-  }
+  boolean isSSL();
 
   /**
    *
    * @return true if this client will trust all server certificates.
    */
-  public synchronized boolean isTrustAll() {
-    return client.isTrustAll();
-  }
+  boolean isTrustAll();
 
   /**
    *
    * @return The path to the key store
    */
-  public synchronized String getKeyStorePath() {
-    return client.getKeyStorePath();
-  }
+  String getKeyStorePath();
 
   /**
    *
    * @return The keystore password
    */
-  public synchronized String getKeyStorePassword() {
-    return client.getKeyStorePassword();
-  }
+  String getKeyStorePassword();
 
   /**
    *
    * @return The trust store path
    */
-  public synchronized String getTrustStorePath() {
-    return client.getTrustStorePath();
-  }
+  String getTrustStorePath();
 
   /**
    *
    * @return The trust store password
    */
-  public synchronized String getTrustStorePassword() {
-    return client.getTrustStorePassword();
-  }
+  String getTrustStorePassword();
 
 }
