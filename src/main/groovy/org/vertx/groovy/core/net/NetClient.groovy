@@ -34,7 +34,7 @@ import org.vertx.java.core.Handler
  */
 abstract class NetClient {
   
-  protected org.vertx.java.core.net.NetClient jClient;
+  protected org.vertx.java.core.net.NetClient jClient
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and host {@code localhost}

@@ -25,7 +25,7 @@ import org.vertx.java.core.impl.VertxInternal
  */
 class DefaultSockJSServer extends SockJSServer {
 
-  public DefaultSockJSServer(VertxInternal vertx, HttpServer httpServer) {
+  DefaultSockJSServer(VertxInternal vertx, HttpServer httpServer) {
     jServer = new org.vertx.java.core.sockjs.impl.DefaultSockJSServer(vertx, httpServer.toJavaServer())
   }
 

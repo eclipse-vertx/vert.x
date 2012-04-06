@@ -24,7 +24,7 @@ import org.vertx.java.core.impl.VertxInternal
  */
 class DefaultNetClient extends NetClient {
 
-  public DefaultNetClient(VertxInternal vertx, Map props = null) {
+  DefaultNetClient(VertxInternal vertx, Map props = null) {
     jClient = new org.vertx.java.core.net.impl.DefaultNetClient(vertx)
     if (props != null) {
       props.each { k, v ->

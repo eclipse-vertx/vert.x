@@ -62,7 +62,7 @@ class RecordParser {
    * @param str
    * @return The byte[] form of the string
    */
-  public static byte[] latin1StringToBytes(String str) {
+  static byte[] latin1StringToBytes(String str) {
     return JRecordParser.latin1StringToBytes(str)
   }
 
@@ -71,7 +71,7 @@ class RecordParser {
    * by the String {@code} delim endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
    * {@code output} Will receive whole records which have been parsed.
    */
-  public static RecordParser newDelimited(String delim, Closure output) {
+  static RecordParser newDelimited(String delim, Closure output) {
     return new RecordParser(JRecordParser.newDelimited(delim, {output(new Buffer(it))} as Handler))
   }
 
@@ -80,7 +80,7 @@ class RecordParser {
    * by the {@code byte[]} delim.<p>
    * {@code output} Will receive whole records which have been parsed.
    */
-  public static RecordParser newDelimited(byte[] delim, Closure output) {
+  static RecordParser newDelimited(byte[] delim, Closure output) {
     return new RecordParser(JRecordParser.newDelimited(delim, {output(new Buffer(it))} as Handler))
   }
 
@@ -89,7 +89,7 @@ class RecordParser {
    * by the {@code size} parameter.<p>
    * {@code output} Will receive whole records which have been parsed.
    */
-  public static RecordParser newFixed(int size, Closure output) {
+  static RecordParser newFixed(int size, Closure output) {
     return new RecordParser(JRecordParser.newFixed(size, {output(new Buffer(it))} as Handler))
   }
 
@@ -98,7 +98,7 @@ class RecordParser {
    * by the String {@code delim} endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
    * This method can be called multiple times with different values of delim while data is being parsed.
    */
-  public void delimitedMode(String delim) {
+  void delimitedMode(String delim) {
     jParser.delimitedMode(delim)
   }
 
@@ -107,7 +107,7 @@ class RecordParser {
    * by the delimiter {@code delim}.<p>
    * This method can be called multiple times with different values of delim while data is being parsed.
    */
-  public void delimitedMode(byte[] delim) {
+  void delimitedMode(byte[] delim) {
     jParser.delimitedMode(delim)
   }
 
@@ -115,7 +115,7 @@ class RecordParser {
    * Flip the parser into fixed size mode, where the record size is specified by {@code size} in bytes.<p>
    * This method can be called multiple times with different values of size while data is being parsed.
    */
-  public void fixedSizeMode(int size) {
+  void fixedSizeMode(int size) {
     jParser.fixedSizeMode(size)
   }
 
@@ -123,15 +123,15 @@ class RecordParser {
    * Convert to a closure so it can be plugged into data handlers
    * @return a Closure
    */
-  public Closure toClosure() {
+  Closure toClosure() {
     return {jParser.handle(it.toJavaBuffer())}
   }
 
-  public void setOutput(Closure output) {
+  void setOutput(Closure output) {
     jParser.setOutput({output(new Buffer(it))} as Handler)
   }
 
-  public void handle(Buffer data) {
+  void handle(Buffer data) {
     jParser.handle(new Buffer(data))
   }
 }

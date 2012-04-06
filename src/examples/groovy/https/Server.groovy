@@ -15,7 +15,7 @@
  */
 package https
 
-server =
+def server =
   vertx.createHttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
 
 server.requestHandler { req ->

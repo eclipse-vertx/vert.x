@@ -15,9 +15,9 @@
 */
 package proxy
 
-client = vertx.createHttpClient(port: 8282)
+def client = vertx.createHttpClient(port: 8282)
 
-server = vertx.createHttpServer().requestHandler { req ->
+def server = vertx.createHttpServer().requestHandler { req ->
   println "Proxying request: ${req.uri}"
 
   def c_req = client.request(req.method, req.uri) { c_res ->

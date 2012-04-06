@@ -64,7 +64,7 @@ abstract class SockJSServer {
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
-  public void installApp(Map config, Closure sockHandler) {
+  void installApp(Map config, Closure sockHandler) {
     jServer.installApp(new AppConfig(config), {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
       sockHandler(new SockJSSocket(jSock) {
@@ -114,11 +114,11 @@ abstract class SockJSServer {
    * @param config The config for the app
    * @param permitted A list of JSON objects which define permitted matches
    */
-  public void bridge(Map config, List<Map<String, Object>> permitted = [[:]]) {
-    List<JsonObject> jList = new ArrayList<>();
+  void bridge(Map config, List<Map<String, Object>> permitted = [[:]]) {
+    List<JsonObject> jList = new ArrayList<>()
     for (Map<String, Object> map: permitted) {
-      jList.add(new JsonObject(map));
+      jList.add(new JsonObject(map))
     }
-    jServer.bridge(new AppConfig(config), jList);
+    jServer.bridge(new AppConfig(config), jList)
   }
 }

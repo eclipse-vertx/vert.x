@@ -14,9 +14,9 @@
 * limitations under the License.
 */
 
-conns = vertx.sharedData().getSet('conns')
+def conns = vertx.sharedData().getSet('conns')
 
-eb = vertx.eventBus()
+def eb = vertx.eventBus()
 
 server = vertx.createNetServer().connectHandler { socket ->
   conns << socket.writeHandlerID
