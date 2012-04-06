@@ -25,7 +25,7 @@ import org.vertx.java.core.impl.VertxInternal
 class DefaultHttpServer extends HttpServer {
 
   DefaultHttpServer(VertxInternal vertx, Map props = null) {
-    jServer = new org.vertx.java.core.http.impl.DefaultHttpServer(vertx);
+    jServer = new org.vertx.java.core.http.impl.DefaultHttpServer(vertx)
     if (props != null) {
       props.each { k, v ->
         setProperty(k, v)

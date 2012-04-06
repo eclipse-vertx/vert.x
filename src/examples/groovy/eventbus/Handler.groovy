@@ -14,10 +14,10 @@
 * limitations under the License.
 */
 
-eb = vertx.eventBus()
+def eb = vertx.eventBus()
 
-address = 'example.address'
+def address = 'example.address'
 
-handler = { message -> println "Received message ${message.body}" }
+def handler = { message -> println "Received message ${message.body}" }
 
 eb.registerHandler(address, handler)

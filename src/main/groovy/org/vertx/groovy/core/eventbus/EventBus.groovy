@@ -51,11 +51,10 @@ import org.vertx.java.core.json.JsonObject
  */
 class EventBus {
 
-  
-  private final JEventBus jEventBus;
+  private final JEventBus jEventBus
   
   public EventBus(JEventBus jEventBus) {
-    this.jEventBus = jEventBus;  
+    this.jEventBus = jEventBus
   }
 
   private Map handlerMap = new ConcurrentHashMap()
@@ -157,12 +156,7 @@ class EventBus {
       def wrapped = { replyHandler(new Message(it)) } as Handler
       return wrapped
     } else {
-      return null;
+      return null
     }
   }
-
-
-
-
 }
-

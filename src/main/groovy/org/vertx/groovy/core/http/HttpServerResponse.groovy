@@ -106,7 +106,7 @@ class HttpServerResponse implements WriteStream {
    * @param value The header value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public HttpServerResponse putHeader(String name, Object value) {
+  HttpServerResponse putHeader(String name, Object value) {
     getHeaders().put(name, value)
     this
   }

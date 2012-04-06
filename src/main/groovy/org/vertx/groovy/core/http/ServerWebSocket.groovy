@@ -15,7 +15,7 @@
  */
 
 
-package org.vertx.groovy.core.http;
+package org.vertx.groovy.core.http
 
 
 import org.vertx.java.core.http.ServerWebSocket as JServerWebSocket
@@ -26,13 +26,13 @@ import org.vertx.java.core.http.ServerWebSocket as JServerWebSocket
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerWebSocket extends WebSocket {
+class ServerWebSocket extends WebSocket {
 
-  private final JServerWebSocket jSWS;
+  private final JServerWebSocket jSWS
 
   protected ServerWebSocket(JServerWebSocket jSWS) {
-    super(jSWS);
-    this.jSWS = jSWS;
+    super(jSWS)
+    this.jSWS = jSWS
   }
 
   /**
