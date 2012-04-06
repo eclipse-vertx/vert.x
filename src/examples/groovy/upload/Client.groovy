@@ -16,11 +16,12 @@
 
 package upload
 
-import org.vertx.groovy.core.streams.Pump
+import static org.vertx.groovy.core.streams.Pump.createPump
 
-req = vertx.createHttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
-filename = "upload/upload.txt"
-fs = vertx.fileSystem()
+def req = vertx.createHttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
+def filename = "upload/upload.txt"
+def fs = vertx.fileSystem()
+
 fs.props(filename) { ares ->
   def props = ares.result
   println "props is ${props}"
@@ -29,7 +30,7 @@ fs.props(filename) { ares ->
   fs.open(filename) { ares2 ->
     def file = ares2.result
     def rs = file.readStream
-    def pump = Pump.createPump(rs, req)
+    def pump = createPump(rs, req)
     rs.endHandler { req.end() }
     pump.start()
   }

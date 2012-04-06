@@ -123,6 +123,6 @@ class Pump {
         ws.exceptionHandler({handler.handle(it)})
       }
 
-    });
+    })
   }
 }

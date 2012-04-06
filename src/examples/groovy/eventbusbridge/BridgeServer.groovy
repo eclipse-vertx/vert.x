@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-server = vertx.createHttpServer()
+def server = vertx.createHttpServer()
 
 // Serve the static resources
 server.requestHandler { req ->

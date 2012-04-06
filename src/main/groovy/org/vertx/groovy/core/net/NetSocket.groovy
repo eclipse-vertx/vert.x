@@ -37,10 +37,10 @@ import org.vertx.java.core.Handler
  */
 class NetSocket implements ReadStream, WriteStream {
 
-  private JNetSocket jSocket;
+  private JNetSocket jSocket
 
   protected NetSocket(JNetSocket jSocket) {
-    this.jSocket = jSocket;
+    this.jSocket = jSocket
   }
 
   /** {@inheritDoc} */

@@ -32,10 +32,10 @@ import org.vertx.java.core.Handler
  */
 abstract class HttpServer {
 
-  private reqHandler;
-  private wsHandler;
+  private reqHandler
+  private wsHandler
   
-  protected org.vertx.java.core.http.HttpServer jServer;
+  protected org.vertx.java.core.http.HttpServer jServer
 
   /**
    * Set the request handler for the server to {code requestHandler}. As HTTP requests are received by the server,
@@ -54,7 +54,7 @@ abstract class HttpServer {
    * return The request handler
    */
   Closure getRequestHandler() {
-    return reqHandler;
+    return reqHandler
   }
 
   /**
@@ -74,7 +74,7 @@ abstract class HttpServer {
    * return The websocket handler
    */
   Closure getWebsocketHandler() {
-    wsHandler;
+    wsHandler
   }
 
   /**

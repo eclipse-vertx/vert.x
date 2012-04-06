@@ -50,6 +50,6 @@ interface ReadStream  {
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
    */
-  void endHandler(Closure handler);
+  void endHandler(Closure handler)
 
 }
