@@ -17,8 +17,8 @@
 package org.vertx.groovy.core.eventbus
 
 import org.vertx.java.core.eventbus.Message as JMessage
-
 import org.vertx.java.core.json.JsonObject
+import groovy.transform.PackageScope
 
 /*
 * Represents a message delivered to a handler
@@ -33,7 +33,8 @@ class Message {
 
   private JMessage jMessage
 
-  private Message(JMessage jMessage) {
+  @PackageScope
+  Message(JMessage jMessage) {
     if (jMessage.body instanceof JsonObject) {
       this.body = jMessage.body.toMap()
     } else {

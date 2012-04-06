@@ -16,10 +16,10 @@
 
 package ssl
 
-import org.vertx.groovy.core.streams.Pump
+import static org.vertx.groovy.core.streams.Pump.createPump
 
-server = vertx.createNetServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
+def server = vertx.createNetServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
 
 server.connectHandler { sock ->
-  Pump.createPump(sock, sock).start()
+  createPump(sock, sock).start()
 }.listen(1234, "localhost")

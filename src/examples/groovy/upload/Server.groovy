@@ -16,14 +16,14 @@
 
 package upload
 
-import org.vertx.groovy.core.streams.Pump
+import static org.vertx.groovy.core.streams.Pump.createPump
 
 vertx.createHttpServer().requestHandler { req ->
   req.pause()
   def filename = "${UUID.randomUUID()}.uploaded"
   vertx.fileSystem().open(filename) { ares ->
     def file = ares.result
-    def pump = Pump.createPump(req, file.writeStream)
+    def pump = createPump(req, file.writeStream)
     req.endHandler {
       file.close {
         println "Uploaded ${pump.bytesPumped} bytes to $filename"

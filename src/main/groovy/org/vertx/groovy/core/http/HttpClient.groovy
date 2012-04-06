@@ -34,7 +34,7 @@ import org.vertx.java.core.http.WebSocketVersion
  */
 abstract class HttpClient {
   
-  protected org.vertx.java.core.http.HttpClient jClient;
+  protected org.vertx.java.core.http.HttpClient jClient
 
   /**
    * Set an exception handler

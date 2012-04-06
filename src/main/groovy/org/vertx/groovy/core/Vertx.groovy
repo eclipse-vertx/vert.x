@@ -45,29 +45,29 @@ import org.vertx.java.core.shareddata.SharedData
  */
 class Vertx {
 
-  private final VertxInternal jVertex;
-  private final EventBus eventBus;
-  private final org.vertx.groovy.core.file.FileSystem fileSystem;
+  private final VertxInternal jVertex
+  private final EventBus eventBus
+  private final org.vertx.groovy.core.file.FileSystem fileSystem
 
-  public Vertx(VertxInternal jVertex) {
-    this.jVertex = jVertex;
-    this.eventBus = new EventBus(jVertex.eventBus());
-    this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem());
+  Vertx(VertxInternal jVertex) {
+    this.jVertex = jVertex
+    this.eventBus = new EventBus(jVertex.eventBus())
+    this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem())
   }
 
   /**
    * Create a non clustered Vertx instance
    */
-  public static Vertx newVertx() {
-    return new Vertx(new DefaultVertx());
+  static Vertx newVertx() {
+    return new Vertx(new DefaultVertx())
   }
 
   /**
    * Create a clustered Vertx instance listening for cluster connections on the default port 25500
    * @param hostname The hostname or ip address to listen for cluster connections
    */
-  public static Vertx newVertx(String hostname) {
-    return new Vertx(new DefaultVertx(hostname));
+  static Vertx newVertx(String hostname) {
+    return new Vertx(new DefaultVertx(hostname))
   }
 
   /**
@@ -75,64 +75,64 @@ class Vertx {
    * @param port The port to listen for cluster connections
    * @param hostname The hostname or ip address to listen for cluster connections
    */
-  public static Vertx newVertx(int port, String hostname) {
-    return new Vertx(new DefaultVertx(port, hostname));
+  static Vertx newVertx(int port, String hostname) {
+    return new Vertx(new DefaultVertx(port, hostname))
   }
 
   /**
    * Create a TCP/SSL server
    */
-  public NetServer createNetServer(Map props = null) {
-    return new DefaultNetServer(jVertex, props);
+  NetServer createNetServer(Map props = null) {
+    return new DefaultNetServer(jVertex, props)
   }
 
   /**
    * Create a TCP/SSL client
    */
-  public NetClient createNetClient(Map props = null) {
-    return new DefaultNetClient(jVertex, props);
+  NetClient createNetClient(Map props = null) {
+    return new DefaultNetClient(jVertex, props)
   }
 
   /*
    * Create an HTTP/HTTPS server
    */
-  public HttpServer createHttpServer(Map props = null) {
-    return new DefaultHttpServer(jVertex, props);
+  HttpServer createHttpServer(Map props = null) {
+    return new DefaultHttpServer(jVertex, props)
   }
 
   /**
    * Create a HTTP/HTTPS client
    */
-  public HttpClient createHttpClient(Map props = null) {
-    return new DefaultHttpClient(jVertex, props);
+  HttpClient createHttpClient(Map props = null) {
+    return new DefaultHttpClient(jVertex, props)
   }
 
   /**
    * Create a SockJS server that wraps an HTTP server
    */
-  public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new DefaultSockJSServer(jVertex, httpServer);
+  SockJSServer createSockJSServer(HttpServer httpServer) {
+    return new DefaultSockJSServer(jVertex, httpServer)
   }
 
   /**
    * The File system object
    */
-  public org.vertx.groovy.core.file.FileSystem fileSystem() {
-    return fileSystem;
+  org.vertx.groovy.core.file.FileSystem fileSystem() {
+    return fileSystem
   }
 
   /**
    * The event bus
    */
-  public EventBus eventBus() {
-    return eventBus;
+  EventBus eventBus() {
+    return eventBus
   }
 
   /**
    * The shared data object
    */
-  public SharedData sharedData() {
-    return jVertex.sharedData();
+  SharedData sharedData() {
+    return jVertex.sharedData()
   }
 
   /**
@@ -186,7 +186,7 @@ class Vertx {
   }
 
   org.vertx.java.core.Vertx toJavaVertx() {
-    return jVertex;
+    return jVertex
   }
 
 }
