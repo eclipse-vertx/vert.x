@@ -19,6 +19,12 @@ package org.vertx.groovy.core.streams
 import org.vertx.groovy.core.buffer.Buffer
 
 /**
+ *
+ * Represents a stream of data that can be written to.<p>
+ *
+ * Any class that implements this interface can be used by a {@link Pump} to pump data from a {@code ReadStream}
+ * to it.<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 interface WriteStream {
@@ -44,7 +50,7 @@ interface WriteStream {
 
   /**
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
-   * queue has been reduced to maxSize / 2. See {@link org.vertx.java.core.streams.Pump} for an example of this being used.
+   * queue has been reduced to maxSize / 2. See {@link org.vertx.groovy.core.streams.Pump} for an example of this being used.
    */
   void drainHandler(Closure handler)
 

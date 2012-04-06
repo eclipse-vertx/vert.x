@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * Represents a client-side HTTP response.<p>
  * An instance of this class is provided to the user via a {@link org.vertx.java.core.Handler}
- * instance that was specified when one of the* HTTP method operations, or the
+ * instance that was specified when one of the HTTP method operations, or the
  * generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)}
  * method was called on an instance of {@link HttpClient}.<p>
  * It implements {@link org.vertx.java.core.streams.ReadStream} so it can be used with

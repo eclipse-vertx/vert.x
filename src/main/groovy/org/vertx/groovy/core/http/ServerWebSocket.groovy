@@ -21,10 +21,9 @@ package org.vertx.groovy.core.http;
 import org.vertx.java.core.http.ServerWebSocket as JServerWebSocket
 
 /**
- * Represents a WebSocket that is passed into a the websocketHandler of an {@link HttpServer}
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServerWebSocket extends WebSocket {

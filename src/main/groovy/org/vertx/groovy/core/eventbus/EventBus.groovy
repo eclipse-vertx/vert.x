@@ -25,6 +25,28 @@ import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
 
 /**
+ * A distributed lightweight event bus which can encompass multiple vert.x instances.
+ * The event bus implements a distributed publish / subscribe network.<p>
+ *
+ * Messages sent over the event bus can be all primitive types, {@code String}. {@code Buffer}, or {@code Map} representing a JSON object.<p>
+ *
+ * Messages can be sent to an address. An address is a simple {@code String} instance. Handlers are registered against
+ * an address. There can be multiple handlers registered against each address, and a particular handler can
+ * be registered against multiple addresses. The event bus will route a sent message to any handlers which are
+ * registered against that address.<p>
+ * Messages received in a handler are instances of {@link Message}<p>
+ * All messages sent over the bus are transient. On event of failure of all or part of the event bus messages
+ * may be lost. Applications should be coded to cope with lost messages, e.g. by resending them, and making application
+ * services idempotent.<p>
+ *
+ * The order of messages received by any specific handler from a specific sender should match the order of messages
+ * sent from that sender.<p>
+ *
+ * When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
+ * has been received. Reply messages can also be replied to, etc, ad infinitum<p>
+ *
+ * Different event bus instances can be clustered together over a network, to give a single logical event bus.<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class EventBus {
@@ -57,12 +79,13 @@ class EventBus {
   }
 
   /**
-   * Registers a handler against the specified address
+   * Registers a handler against the specified address. When a message arrives the handler
+   * will receive an instance of {@link Message}
    * @param address The address to register it at
    * @param handler The handler
    * @param resultHandler Optional completion handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
-   * @return The handler id which is the same as the address
+   * @return A unique handler id
    */
   String registerHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = wrapHandler(handler)
@@ -72,10 +95,11 @@ class EventBus {
 
   /**
    * Registers a local handler against the specified address. The handler info won't
-   * be propagated across the cluster
+   * be propagated across the cluster. When a message arrives the handler
+   * will receive an instance of {@link Message}
    * @param address The address to register it at
    * @param handler The handler
-   * @return The handler id which is the same as the address
+   * @return A unique handler id
    */
   String registerLocalHandler(String address, Closure handler, Closure resultHandler = null) {
     def wrapped = wrapHandler(handler)
@@ -84,11 +108,12 @@ class EventBus {
   }
 
   /**
-   * Registers a handler against a uniquely generated address, the address is returned as the id
+   * Registers a handler against a uniquely generated address, the address is returned as the id. When a message arrives the handler
+   * will receive an instance of {@link Message}
    * @param handler
    * @param resultHandler Optional result handler. If specified, then when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
-   * @return The handler id which is the same as the address
+   * @return A unique handler id which is the same as the address
    */
   String registerSimpleHandler(handler, Closure resultHandler = null) {
     jEventBus.registerHandler(wrapHandler(handler), resultHandler as AsyncResultHandler)

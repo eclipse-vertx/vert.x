@@ -30,7 +30,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
  * to <a href="http://www.sinatrarb.com/">Sinatra</a> or <a href="http://expressjs.com/">Express</a>.<p>
  * RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using

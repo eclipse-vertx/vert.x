@@ -31,7 +31,7 @@ import java.util.Map;
  * {@link HttpServerRequest} that is created.<p>
  * It allows the developer to control the HTTP response that is sent back to the
  * client for a partcularHTTP request. It contains methods that allow HTTP
- * headers and trailers to be set, and for a body to be written outto the response.<p>
+ * headers and trailers to be set, and for a body to be written out to the response.<p>
  * It also allows files to be streamed by the kernel directly from disk to the
  * outgoing HTTP connection, bypassing user space altogether (where supported by
  * the underlying operating system). This is a very efficient way of

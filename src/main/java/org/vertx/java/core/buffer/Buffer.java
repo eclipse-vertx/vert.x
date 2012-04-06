@@ -70,8 +70,7 @@ public class Buffer {
   }
 
   /**
-   * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code
-   * enc}
+   * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code enc}
    */
   public Buffer(String str, String enc) {
     this(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
@@ -115,8 +114,7 @@ public class Buffer {
 
   /**
    * Returns the {@code byte} at position {@code pos} in the Buffer.
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or
-   *                                   {@code pos + 1} is greater than the length of the Buffer.
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 1} is greater than the length of the Buffer.
    */
   public byte getByte(int pos) {
     return buffer.getByte(pos);
@@ -125,8 +123,7 @@ public class Buffer {
   /**
    * Returns the {@code int} at position {@code pos} in the Buffer.
    *
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or
-   *                                   {@code pos + 4} is greater than the length of the Buffer.
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
   public int getInt(int pos) {
     return buffer.getInt(pos);
@@ -135,8 +132,7 @@ public class Buffer {
   /**
    * Returns the {@code long} at position {@code pos} in the Buffer.
    *
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or
-   *                                   {@code pos + 8} is greater than the length of the Buffer.
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 8} is greater than the length of the Buffer.
    */
   public long getLong(int pos) {
     return buffer.getLong(pos);
@@ -145,8 +141,7 @@ public class Buffer {
   /**
    * Returns the {@code double} at position {@code pos} in the Buffer.
    *
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or
-   *                                   {@code pos + 8} is greater than the length of the Buffer.
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 8} is greater than the length of the Buffer.
    */
   public double getDouble(int pos) {
     return buffer.getDouble(pos);
@@ -155,8 +150,7 @@ public class Buffer {
   /**
    * Returns the {@code float} at position {@code pos} in the Buffer.
    *
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or
-   *                                   {@code pos + 4} is greater than the length of the Buffer.
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
   public float getFloat(int pos) {
     return buffer.getFloat(pos);
@@ -165,8 +159,7 @@ public class Buffer {
   /**
    * Returns the {@code short} at position {@code pos} in the Buffer.
    *
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or
-   *                                   {@code pos + 2} is greater than the length of the Buffer.
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 2} is greater than the length of the Buffer.
    */
   public short getShort(int pos) {
     return buffer.getShort(pos);

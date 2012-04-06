@@ -33,8 +33,14 @@ import org.vertx.java.core.impl.VertxInternal
 import org.vertx.java.core.shareddata.SharedData
 
 /**
+ * The control centre of vert.x<p>
+ * You should normally only use a single instance of this class throughout your application. If you are running in the
+ * vert.x container an instance will be provided to you.<p>
+ * If you are using vert.x embedded, you can create an instance using one of the static {@code newVertx} methods.<p>
+ * This class acts as a factory for TCP/SSL and HTTP/HTTPS servers and clients, SockJS servers, and provides an
+ * instance of the event bus, file system and shared data classes, as well as methods for setting and cancelling
+ * timers.
  *
- * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class Vertx {
@@ -49,48 +55,84 @@ class Vertx {
     this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem());
   }
 
+  /**
+   * Create a non clustered Vertx instance
+   */
   public static Vertx newVertx() {
     return new Vertx(new DefaultVertx());
   }
 
+  /**
+   * Create a clustered Vertx instance listening for cluster connections on the default port 25500
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
   public static Vertx newVertx(String hostname) {
     return new Vertx(new DefaultVertx(hostname));
   }
 
+  /**
+   * Create a clustered Vertx instance
+   * @param port The port to listen for cluster connections
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
   public static Vertx newVertx(int port, String hostname) {
     return new Vertx(new DefaultVertx(port, hostname));
   }
 
+  /**
+   * Create a TCP/SSL server
+   */
   public NetServer createNetServer(Map props = null) {
     return new DefaultNetServer(jVertex, props);
   }
 
+  /**
+   * Create a TCP/SSL client
+   */
   public NetClient createNetClient(Map props = null) {
     return new DefaultNetClient(jVertex, props);
   }
 
+  /*
+   * Create an HTTP/HTTPS server
+   */
   public HttpServer createHttpServer(Map props = null) {
     return new DefaultHttpServer(jVertex, props);
   }
 
+  /**
+   * Create a HTTP/HTTPS client
+   */
   public HttpClient createHttpClient(Map props = null) {
     return new DefaultHttpClient(jVertex, props);
   }
 
+  /**
+   * Create a SockJS server that wraps an HTTP server
+   */
   public SockJSServer createSockJSServer(HttpServer httpServer) {
     return new DefaultSockJSServer(jVertex, httpServer);
   }
 
+  /**
+   * The File system object
+   */
   public org.vertx.groovy.core.file.FileSystem fileSystem() {
     return fileSystem;
   }
 
-  public SharedData sharedData() {
-    return jVertex.sharedData();
-  }
-
+  /**
+   * The event bus
+   */
   public EventBus eventBus() {
     return eventBus;
+  }
+
+  /**
+   * The shared data object
+   */
+  public SharedData sharedData() {
+    return jVertex.sharedData();
   }
 
   /**

@@ -48,9 +48,7 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    */
   public final String writeHandlerID;
 
-  /**
-   * Write a {@link Buffer} to the connection.
-   */
+  /** {@inheritDoc} */
   public abstract void writeBuffer(Buffer data);
 
   /**
@@ -92,25 +90,6 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
   public abstract NetSocket write(String str, String enc, Handler<Void> doneHandler);
 
   /**
-   * Specify a data handler for the connection. As data is read from the connection the handler will be called.
-   */
-  public abstract void dataHandler(Handler<Buffer> dataHandler);
-
-  /**
-   * Specify an end handler for the connection. This will be called when the connection has ended, i.e. when it has been closed.
-   */
-  public abstract void endHandler(Handler<Void> endHandler);
-
-  /**
-   * This method sets a drain handler {@code drainHandler} on the connection. The drain handler will be called when write
-   * queue is no longer full and it is safe to write to it again.<p>
-   * The drain handler is actually called when the write queue size reaches <b>half</b> the write queue max size to prevent
-   * thrashing. This method is used as part of a flow control strategy, e.g. it is used by the
-   * {@link org.vertx.java.core.streams.Pump} class to pump data between different streams.
-   */
-  public abstract void drainHandler(Handler<Void> drainHandler);
-
-  /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    */
@@ -120,6 +99,16 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
     super(vertx, channel, context);
     this.writeHandlerID = writeHandlerID;
   }
+
+  /** {@inheritDoc} */
+  public abstract void dataHandler(Handler<Buffer> dataHandler);
+
+  /** {@inheritDoc} */
+  public abstract void endHandler(Handler<Void> endHandler);
+
+  /** {@inheritDoc} */
+  public abstract void drainHandler(Handler<Void> drainHandler);
+
 
 }
 

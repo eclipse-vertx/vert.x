@@ -25,23 +25,19 @@ import org.vertx.java.core.Handler
 /**
  * Represents a client-side HTTP request.<p>
  * Instances of this class are created by an {@link HttpClient} instance, via one of the methods corresponding to the
- * specific HTTP methods, or the generic {@link HttpClient#request} method
- * <p>
- * Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
- * if required. Once you are ready to send the request, the end() method must called.
- * <p>
- * Nothing is sent until the request has been internally assigned an HTTP connection. The {@link HttpClient} instance
- * will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
+ * specific HTTP methods, or the generic {@link HttpClient#request} method.<p>
+ * Once a request has been obtained, headers can be set on it, and data can be written to its body if required. Once
+ * you are ready to send the request, the {@code #end()} method should be called.<p>
+ * Nothing is actually sent until the request has been internally assigned an HTTP connection. The {@link HttpClient}
+ * instance will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
  * sent before a connection is assigned will be queued internally and actually sent when an HTTP connection becomes
- * available from the pool.
- * <p>
- * The headers of the request are actually sent either when the end() method is called, or, when the first
- * part of the body is written, whichever occurs first.
- * <p>
- * This class supports both chunked and non-chunked HTTP.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * available from the pool.<p>
+ * The headers of the request are actually sent either when the {@code #end()} method is called, or, when the first
+ * part of the body is written, whichever occurs first.<p>
+ * This class supports both chunked and non-chunked HTTP.<p>
+ * It implements {@link WriteStream} so it can be used with
+ * {@link org.vertx.java.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe<p>
  * An example of using this class is as follows:
  * <p>
  * <pre>
@@ -58,7 +54,7 @@ import org.vertx.java.core.Handler
  *
  * </pre>
  *
- *
+ * The headers are also accessible as a {@code Map} so you can use index notation to access them.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -71,24 +67,6 @@ class HttpClientRequest implements WriteStream {
   }
 
   /**
-   * @return The headers
-   */
-  public Map<String, Object> getHeaders() {
-    return jRequest.headers()
-  }
-
-  /**
-   * Put an HTTP header - fluent API
-   * @param name The header name
-   * @param value The header value
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  public HttpClientRequest putHeader(String name, Object value) {
-    getHeaders().put(name, value)
-    this
-  }
-
-  /**
    * If chunked is true then the request will be set into HTTP chunked mode
    * @param chunked
    * @return A reference to this, so multiple method calls can be chained.
@@ -98,13 +76,32 @@ class HttpClientRequest implements WriteStream {
     this
   }
 
+  /**
+   * @return The HTTP headers
+   */
+  Map<String, Object> getHeaders() {
+    return jRequest.headers()
+  }
+
+  /**
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param value The header value
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpClientRequest putHeader(String name, Object value) {
+    getHeaders().put(name, value)
+    this
+  }
+
+
   /** {@inheritDoc} */
   void writeBuffer(Buffer chunk) {
     jRequest.writeBuffer(chunk.toJavaBuffer())
   }
 
   /**
-   * Write a {@link Buffer} to the request body.<p>
+   * Write a {@link Buffer} to the request body.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
@@ -114,7 +111,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   /**
-   * Write a {@link String} to the request body, encoded in UTF-8.<p>
+   * Write a {@link String} to the request body, encoded in UTF-8.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
@@ -124,7 +121,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   /**
-   * Write a {@link String} to the request body, encoded using the encoding {@code enc}.<p>
+   * Write a {@link String} to the request body, encoded using the encoding {@code enc}.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
@@ -134,7 +131,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   /**
-   * Write a {@link Buffer} to the request body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * Write a {@link Buffer} to the request body. The {@code doneHandler} is called after the buffer is actually written to the wire.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
@@ -144,7 +141,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   /**
-   * Write a {@link String} to the request body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * Write a {@link String} to the request body, encoded in UTF-8. The {@code doneHandler} is called after the buffer is actually written to the wire.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
@@ -154,7 +151,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   /**
-   * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
+   * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called after the buffer is actually written to the wire.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */

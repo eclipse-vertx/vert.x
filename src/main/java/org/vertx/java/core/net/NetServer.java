@@ -66,8 +66,6 @@ public interface NetServer {
    */
   void close(final Handler<Void> done);
 
-  // TCP and SSL attributes
-  
   /**
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.

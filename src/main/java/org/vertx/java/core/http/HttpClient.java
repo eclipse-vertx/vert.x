@@ -30,6 +30,7 @@ import java.util.Map;
  * and event loop will be assigned to the instance and used when any of its handlers
  * are called.<p>
  * Instances cannot be used from worker verticles
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface HttpClient {
@@ -166,7 +167,7 @@ public interface HttpClient {
   HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
-   * Close the HTTP tcpHelper. This will cause any pooled HTTP connections to be closed.
+   * Close the HTTP client. This will cause any pooled HTTP connections to be closed.
    */
   void close();
 

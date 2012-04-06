@@ -25,12 +25,15 @@ import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
 
 /**
- * Represents a file on the file-system which can be read from, or written to asynchronously.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * Represents a file on the file-system which can be read from, or written to asynchronously.<p>
+ * Methods also exist to get a {@link org.vertx.groovy.core.streams.ReadStream} or a
+ * {@link org.vertx.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
+ * other streams, e.g. an {@link org.vertx.groovy.core.http.HttpClientRequest} instance,
+ * using the {@link org.vertx.groovy.core.streams.Pump} class<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
-  */
+ */
 class AsyncFile{
 
   private final JAsyncFile jFile
@@ -40,14 +43,14 @@ class AsyncFile{
   }
 
   /**
-   * Close the file. The actual close happens asychronously.
+   * Close the file. The actual close happens asynchronously.
    */
   void close() {
     jFile.close()
   }
 
   /**
-   * Close the file. The actual close happens asychronously.
+   * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    */
   void close(Closure handler) {
@@ -68,19 +71,17 @@ class AsyncFile{
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
-   * The read data will be written into the
-   * specified {@code Buffer buffer} at position {@code offset}.<p>
-   * {@code position + length} must lie within the confines of the file.<p>
-   * When multiple reads are invoked on the same file
-   * there are no guarantees as to order in which those reads actually occur.<p>
-   * The handler will be called when the close is complete, or an error occurs.
+   * The read data will be written into the specified {@code Buffer buffer} at position {@code offset}.<p>
+   * The index {@code position + length} must lie within the confines of the file.<p>
+   * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
+   * The handler will be called when the close is complete, or if an error occurs.
    */
   void read(Buffer buffer, int offset, int position, int length, Closure handler) {
     jFile.read(buffer, offset, position, length, handler as AsyncResultHandler)
   }
 
   /**
-   * Return a {@code WriteStream} instance operating on this {@code AsyncFile}.
+   * Return a {@link WriteStream} instance operating on this {@code AsyncFile}.
    */
   WriteStream getWriteStream() {
     def jWS = jFile.getWriteStream()
@@ -113,7 +114,7 @@ class AsyncFile{
   }
 
   /**
-   * Return a {@code ReadStream} instance operating on this {@code AsyncFile}.
+   * Return a {@link ReadStream} instance operating on this {@code AsyncFile}.
    */
   ReadStream getReadStream() {
     def jRS = jFile.getReadStream()
