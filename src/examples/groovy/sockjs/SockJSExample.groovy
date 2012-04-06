@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-server = vertx.createHttpServer()
+def server = vertx.createHttpServer()
 
 // Serve the index page
 server.requestHandler { req ->

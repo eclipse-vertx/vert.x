@@ -36,7 +36,7 @@ import org.vertx.java.core.Handler
  */
 class WebSocket implements ReadStream, WriteStream {
 
-  private final JWebSocket jWS;
+  private final JWebSocket jWS
 
   protected WebSocket(JWebSocket jWS) {
     this.jWS = jWS
@@ -105,7 +105,7 @@ class WebSocket implements ReadStream, WriteStream {
    * Close the websocket
    */
   void close() {
-    jWS.close();
+    jWS.close()
   }
 
   /** {@inheritDoc} */

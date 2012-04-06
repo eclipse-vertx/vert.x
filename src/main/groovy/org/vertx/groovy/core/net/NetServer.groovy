@@ -34,7 +34,7 @@ import org.vertx.java.core.Handler
  */
 abstract class NetServer {
   
-  protected org.vertx.java.core.net.NetServer jServer;
+  protected org.vertx.java.core.net.NetServer jServer
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
