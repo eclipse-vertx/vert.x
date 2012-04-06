@@ -33,7 +33,6 @@ class Message {
 
   private JMessage jMessage
 
-  @PackageScope
   Message(JMessage jMessage) {
     if (jMessage.body instanceof JsonObject) {
       this.body = jMessage.body.toMap()
