@@ -21,5 +21,5 @@ import org.vertx.groovy.core.streams.Pump
 server = vertx.createNetServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
 
 server.connectHandler { sock ->
-  new Pump(sock, sock).start()
+  Pump.createPump(sock, sock).start()
 }.listen(1234, "localhost")

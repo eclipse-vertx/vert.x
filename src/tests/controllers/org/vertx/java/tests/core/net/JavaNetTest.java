@@ -378,7 +378,7 @@ public class JavaNetTest extends TestBase {
     final NetServer server = vertx.createNetServer();
     server.connectHandler(new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-        Pump p = new Pump(socket, socket);
+        Pump p = Pump.createPump(socket, socket);
         p.start();
       }
     });

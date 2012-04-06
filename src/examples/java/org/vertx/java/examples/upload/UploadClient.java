@@ -53,7 +53,7 @@ public class UploadClient extends Verticle {
     vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult<AsyncFile> ar) {
         final AsyncFile file = ar.result;
-        Pump pump = new Pump(file.getReadStream(), req);
+        Pump pump = Pump.createPump(file.getReadStream(), req);
         pump.start();
 
         file.getReadStream().endHandler(new SimpleHandler() {

@@ -23,7 +23,7 @@ vertx.createHttpServer().requestHandler { req ->
   def filename = "${UUID.randomUUID()}.uploaded"
   vertx.fileSystem().open(filename) { ares ->
     def file = ares.result
-    def pump = new Pump(req, file.writeStream)
+    def pump = Pump.createPump(req, file.writeStream)
     req.endHandler {
       file.close {
         println "Uploaded ${pump.bytesPumped} bytes to $filename"

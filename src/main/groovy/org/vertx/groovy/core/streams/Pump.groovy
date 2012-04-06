@@ -46,61 +46,8 @@ class Pump {
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
    */
-  Pump(ReadStream rs, WriteStream ws) {
-    jPump = new JPump(new JReadStream() {
-      
-      void dataHandler(Handler<org.vertx.java.core.buffer.Buffer> handler) {
-        rs.dataHandler({handler.handle(it.toJavaBuffer())})
-      }
-
-      void pause() {
-        rs.pause()
-      }
-
-      void resume() {
-        rs.resume()
-      }
-
-      void exceptionHandler(Handler<Exception> handler) {
-        rs.exceptionHandler({handler.handle(it)})
-      }
-
-      void endHandler(Handler<Void> endHandler) {
-        rs.endHandler({endHandler.handle(null)})
-      }
-
-    },
-    new JWriteStream() {
-      
-      void writeBuffer(org.vertx.java.core.buffer.Buffer data) {
-        ws.writeBuffer(new Buffer(data))
-      }
-
-      void setWriteQueueMaxSize(int maxSize) {
-        ws.writeQueueMaxSize(maxSize)
-      }
-
-      boolean writeQueueFull() {
-        return ws.writeQueueFull()
-      }
-
-      void drainHandler(Handler<Void> handler) {
-        ws.drainHandler({handler.handle(null) })
-      }
-
-      void exceptionHandler(Handler<Exception> handler) {
-        ws.exceptionHandler({handler.handle(it)})
-      }
-
-    });
-  }
-
-  /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
-   */
-  Pump(ReadStream rs, WriteStream ws, int writeQueueMaxSize) {
-    this(rs, ws)
-    this.writeQueueMaxSize = writeQueueMaxSize
+  static Pump createPump(ReadStream rs, WriteStream ws) {
+    new Pump(rs, ws)
   }
 
   /**
@@ -129,5 +76,53 @@ class Pump {
    */
   int getBytesPumped() {
     return jPump.getBytesPumped()    
+  }
+    private Pump(ReadStream rs, WriteStream ws) {
+    jPump = new JPump(new JReadStream() {
+
+      void dataHandler(Handler<org.vertx.java.core.buffer.Buffer> handler) {
+        rs.dataHandler({handler.handle(it.toJavaBuffer())})
+      }
+
+      void pause() {
+        rs.pause()
+      }
+
+      void resume() {
+        rs.resume()
+      }
+
+      void exceptionHandler(Handler<Exception> handler) {
+        rs.exceptionHandler({handler.handle(it)})
+      }
+
+      void endHandler(Handler<Void> endHandler) {
+        rs.endHandler({endHandler.handle(null)})
+      }
+
+    },
+    new JWriteStream() {
+
+      void writeBuffer(org.vertx.java.core.buffer.Buffer data) {
+        ws.writeBuffer(new Buffer(data))
+      }
+
+      void setWriteQueueMaxSize(int maxSize) {
+        ws.writeQueueMaxSize(maxSize)
+      }
+
+      boolean writeQueueFull() {
+        return ws.writeQueueFull()
+      }
+
+      void drainHandler(Handler<Void> handler) {
+        ws.drainHandler({handler.handle(null) })
+      }
+
+      void exceptionHandler(Handler<Exception> handler) {
+        ws.exceptionHandler({handler.handle(it)})
+      }
+
+    });
   }
 }

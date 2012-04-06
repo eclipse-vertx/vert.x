@@ -29,7 +29,7 @@ fs.props(filename) { ares ->
   fs.open(filename) { ares2 ->
     def file = ares2.result
     def rs = file.readStream
-    def pump = new Pump(rs, req)
+    def pump = Pump.createPump(rs, req)
     rs.endHandler { req.end() }
     pump.start()
   }
