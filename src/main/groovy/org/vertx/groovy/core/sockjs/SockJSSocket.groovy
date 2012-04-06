@@ -22,14 +22,11 @@ import org.vertx.groovy.core.streams.WriteStream
 
 /**
  *
- * <p>You interact with SockJS clients through instances of SockJS socket.</p>
- *
- * <p>The API is very similar to {@link org.vertx.java.core.http.WebSocket}. It implements both
- * {@link ReadStream} and {@link WriteStream} so it can be used with {@link org.vertx.java.core.streams.Pump} to enable
- * flow control.</p>
- *
- * Instances of this class are not thread-safe
- * <p>
+ * You interact with SockJS clients through instances of SockJS socket.<p>
+ * The API is very similar to {@link org.vertx.groovy.core.http.WebSocket}.
+ * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
+ * {@link org.vertx.groovy.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -25,6 +25,8 @@ import java.net.URL;
 
 /**
  * This class represents the container in which a verticle runs.<p>
+ * An instance of this class will be created by the system and made available to
+ * a running Verticle.
  * It contains methods to programmatically deploy other verticles, undeploy
  * verticles, get the configuration for a verticle and get the logger for a
  * verticle.<p>

@@ -24,16 +24,14 @@ import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
 
 /**
- * Represents an HTML 5 Websocket
- * <p>
+ * Represents an HTML 5 Websocket<p>
  * Instances of this class are created and provided to the handler of an
- * {@link HttpClient} when a successful websocket connect attempt occurs.
- * <p>
- * On the server side, the subclass {@link ServerWebSocket} is used instead.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
- * @author Peter Ledbrook
+ * {@link HttpClient} when a successful websocket connect attempt occurs.<p>
+ * On the server side, the subclass {@link ServerWebSocket} is used instead.<p>
+ * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
+ * {@link org.vertx.groovy.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class WebSocket implements ReadStream, WriteStream {
@@ -42,6 +40,28 @@ class WebSocket implements ReadStream, WriteStream {
 
   protected WebSocket(JWebSocket jWS) {
     this.jWS = jWS
+  }
+
+  /**
+   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
+   * handler is given by {@code binaryHandlerID}.<p>
+   * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
+   * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
+   * allows you to write data to other websockets which are owned by different event loops.
+   */
+  String getBinaryHandlerID() {
+    jWS.binaryHandlerID
+  }
+
+  /**
+   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
+   * handler is given by {@code textHandlerID}.<p>
+   * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
+   * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
+   * allows you to write data to other websockets which are owned by different event loops.
+   */
+  String getTextHandlerID() {
+    jWS.textHandlerID
   }
 
   /**
@@ -56,6 +76,22 @@ class WebSocket implements ReadStream, WriteStream {
    */
   void writeTextFrame(String str) {
     jWS.writeTextFrame(str)
+  }
+
+  /**
+   * Same as {@link #writeBinaryFrame(Buffer)}
+   */
+  void leftShift(Buffer buff) {
+    writeBuffer(buff)
+    this
+  }
+
+  /**
+   * Same as {@link #writeTextFrame(String)}
+   */
+  void leftShift(String str) {
+    writeTextFrame(str)
+    this
   }
 
   /**
@@ -116,44 +152,5 @@ class WebSocket implements ReadStream, WriteStream {
   void drainHandler(Closure handler) {
     jWS.drainHandler(handler as Handler)
   }
-
-  /**
-   * Same as {@link #writeBinaryFrame(Buffer)}
-   */
-  void leftShift(Buffer buff) {
-    writeBuffer(buff)
-    this
-  }
-
-  /**
-   * Same as {@link #writeTextFrame(String)}
-   */
-  void leftShift(String str) {
-    writeTextFrame(str)
-    this
-  }
-
-  /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
-   * handler is given by {@code binaryHandlerID}.<p>
-   * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
-   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
-   */
-  String getBinaryHandlerID() {
-    jWS.binaryHandlerID
-  }
-
-  /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
-   * handler is given by {@code textHandlerID}.<p>
-   * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
-   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
-   */
-  String getTextHandlerID() {
-    jWS.textHandlerID
-  }
-
 
 }

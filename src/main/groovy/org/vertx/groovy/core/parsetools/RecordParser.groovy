@@ -22,6 +22,29 @@ import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
 
 /**
+ * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
+ * size records.<p>
+ * Instances of this class take as input {@link Buffer} instances containing raw bytes, and output records.<p>
+ * For example, if I had a simple ASCII text protocol delimited by '\n' and the input was the following:<p>
+ * <pre>
+ * buffer1:HELLO\nHOW ARE Y
+ * buffer2:OU?\nI AM
+ * buffer3: DOING OK
+ * buffer4:\n
+ * </pre>
+ * Then the output would be:<p>
+ * <pre>
+ * buffer1:HELLO
+ * buffer2:HOW ARE YOU?
+ * buffer3:I AM DOING OK
+ * </pre>
+ * Instances of this class can be changed between delimited mode and fixed size record mode on the fly as
+ * individual records are read, this allows you to parse protocols where, for example, the first 5 records might
+ * all be fixed size (of potentially different sizes), followed by some delimited records, followed by more fixed
+ * size records.<p>
+ * Instances of this class can't currently be used for protocols where the text is encoded with something other than
+ * a 1-1 byte-char mapping. TODO extend this class to cope with arbitrary character encodings<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class RecordParser {

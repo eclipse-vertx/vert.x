@@ -21,10 +21,15 @@ import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.java.core.Handler
 
 /**
- * Represents a client-side HTTP response.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * Represents a client-side HTTP response.<p>
+ * An instance of this class is provided to the user via a handler
+ * that was specified when one of the HTTP method operations, or the
+ * generic {@link HttpClient#request(String, String, Closure)}
+ * method was called on an instance of {@link HttpClient}.<p>
+ * It implements {@link org.vertx.groovy.core.streams.ReadStream} so it can be used with
+ * {@link org.vertx.groovy.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HttpClientResponse implements ReadStream {
@@ -33,20 +38,6 @@ class HttpClientResponse implements ReadStream {
 
   protected HttpClientResponse(org.vertx.java.core.http.HttpClientResponse jResponse) {
     this.jResponse = jResponse
-  }
-
-  /**
-   * @return The headers of the response
-   */
-  Map<String, String> getHeaders() {
-    return jResponse.headers()
-  }
-
-  /**
-   * @return The trailers of the response
-   */
-  Map<String, String> getTrailers() {
-    return jResponse.trailers()
   }
 
   /**
@@ -64,8 +55,22 @@ class HttpClientResponse implements ReadStream {
   }
 
   /**
+   * @return The headers of the response
+   */
+  Map<String, String> getHeaders() {
+    return jResponse.headers()
+  }
+
+  /**
+   * @return The trailers of the response
+   */
+  Map<String, String> getTrailers() {
+    return jResponse.trailers()
+  }
+
+  /**
    * Convenience method for receiving the entire request body in one piece. This saves the user having to manually
-   * set a data and end handler and append the chunks of the body until the whole body received.
+   * set a data and end handler and append the chunks of the body until the whole body received.<p>
    * Don't use this if your request body is large - you could potentially run out of RAM.
    *
    * @param bodyHandler This handler will be called after all the body has been received

@@ -86,14 +86,14 @@ public class AsyncFile {
   }
 
   /**
-   * Close the file. The actual close happens asychronously.
+   * Close the file. The actual close happens asynchronously.
    */
   public void close() {
     closeInternal(null);
   }
 
   /**
-   * Close the file. The actual close happens asychronously.
+   * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    */
   public void close(AsyncResultHandler handler) {
@@ -128,7 +128,7 @@ public class AsyncFile {
   }
 
   /**
-   * Return a {@code WriteStream} instance operating on this {@code AsyncFile}.
+   * Return a {@link WriteStream} instance operating on this {@code AsyncFile}.
    */
   public WriteStream getWriteStream() {
     check();

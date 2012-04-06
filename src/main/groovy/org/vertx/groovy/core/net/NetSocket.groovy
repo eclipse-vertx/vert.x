@@ -24,15 +24,14 @@ import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
 
 /**
- * Represents a socket-like interface to a TCP or SSL connection on either the
- * client or the server side.
- * <p>
- * Instances of this class is created on the client side by an {@link NetClient}
+ * Represents a socket-like interface to a TCP/SSL connection on either the
+ * client or the server side.<p>
+ * Instances of this class are created on the client side by an {@link NetClient}
  * when a connection to a server is made, or on the server side by a {@link NetServer}
- * when a server accepts a connection.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * when a server accepts a connection.<p>
+ * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
+ * {@link org.vertx.groovy.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe.<p>
  * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -103,6 +102,48 @@ class NetSocket implements ReadStream, WriteStream {
     this
   }
 
+
+  /**
+   * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system. This is a very efficient way to stream files.<p>
+   */
+  void sendFile(String filename) {
+    jSocket.sendFile(filename)
+  }
+
+  /**
+   * Close the socket
+   */
+  void close() {
+    jSocket.close()
+  }
+
+
+  /**
+   * Same as {@link #write(Buffer)}
+   */
+  NetSocket leftShift(Buffer buff) {
+    write(buff)
+  }
+
+  /**
+   * Same as {@link #write(String)}
+   */
+  NetSocket leftShift(String str) {
+    write(str)
+  }
+
+  /**
+   * @return When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
+   * handler is given by {@code writeHandlerID}.<p>
+   * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
+   * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
+   * allows you to write data to other connections which are owned by different event loops.
+   */
+  String getWriteHandlerID() {
+    jSocket.writeHandlerID
+  }
+
   /** {@inheritDoc} */
   void dataHandler(Closure dataHandler) {
     jSocket.dataHandler({
@@ -118,14 +159,6 @@ class NetSocket implements ReadStream, WriteStream {
   /** {@inheritDoc} */
   void drainHandler(Closure drainHandler) {
     jSocket.drainHandler(drainHandler as Handler)
-  }
-
-  /**
-   * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection, bypassing userspace altogether
-   * (where supported by the underlying operating system. This is a very efficient way to stream files.<p>
-   */
-  void sendFile(String filename) {
-    jSocket.sendFile(filename)
   }
 
   /** {@inheritDoc} */
@@ -148,13 +181,6 @@ class NetSocket implements ReadStream, WriteStream {
     jSocket.writeQueueFull()
   }
 
-  /**
-   * Close the socket
-   */
-  void close() {
-    jSocket.close()
-  }
-
   /** {@inheritDoc} */
   void exceptionHandler(Closure handler) {
     jSocket.exceptionHandler(handler as Handler)
@@ -165,30 +191,7 @@ class NetSocket implements ReadStream, WriteStream {
     jSocket.closedHandler(handler as Handler)
   }
 
-  /**
-   * Same as {@link #write(Buffer)}
-   */
-  NetSocket leftShift(Buffer buff) {
-    write(buff)
-  }
 
-  /**
-   * Same as {@link #write(String)}
-   */
-  NetSocket leftShift(String str) {
-    write(str)
-  }
-
-  /**
-   * @return When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
-   * handler is given by {@code writeHandlerID}.<p>
-   * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
-   * that buffer will be received by this instance in its own event loop and writing to the underlying connection. This
-   * allows you to write data to other connections which are owned by different event loops.
-   */
-  String getWriteHandlerID() {
-    jSocket.writeHandlerID
-  }
 
 
 }

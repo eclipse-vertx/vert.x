@@ -24,18 +24,18 @@ import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
 
 /**
- * <p>Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
- * prevent the write stream from getting overloaded.</p>
- * <p>Instances of this class read bytes from a {@link ReadStream} and write them to a {@link WriteStream}. If data
+ * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
+ * prevent the write stream from getting overloaded.<p>
+ * Instances of this class read bytes from a {@link ReadStream} and write them to a {@link WriteStream}. If data
  * can be read faster than it can be written this could result in the write queue of the {@link WriteStream} growing
- * without bound, eventually causing it to exhaust all available RAM.</p>
- * <p>To prevent this, after each write, instances of this class check whether the write queue of the {@link
- * WriteStream} is full, and if so, the {@link ReadStream} is paused, and a {@code drainHandler} is set on the {@link
- * WriteStream}. When the {@link WriteStream} has processed half of its backlog, the {@code drainHandler} will be
- * called, which results in the pump resuming the {@link ReadStream}.</p>
- * <p>This class can be used to pump from any {@link ReadStream} to any {@link WriteStream},
- * e.g. from an {@link org.vertx.java.core.http.HttpServerRequest} to an {@link org.vertx.java.core.file.AsyncFile},
- * or from {@link org.vertx.java.core.net.NetSocket} to a {@link org.vertx.java.core.http.WebSocket}.</p>
+ * without bound, eventually causing it to exhaust all available RAM.<p>
+ * To prevent this, after each write, instances of this class check whether the write queue of the {@link
+ * WriteStream} is full, and if so, the {@link ReadStream} is paused, and a {@code drainHandler} is set on the
+ * {@link WriteStream}. When the {@link WriteStream} has processed half of its backlog, the {@code drainHandler} will be
+ * called, which results in the pump resuming the {@link ReadStream}.<p>
+ * This class can be used to pump from any {@link ReadStream} to any {@link WriteStream},
+ * e.g. from an {@link org.vertx.groovy.core.http.HttpServerRequest} to an {@link org.vertx.groovy.core.file.AsyncFile},
+ * or from {@link org.vertx.groovy.core.net.NetSocket} to a {@link org.vertx.groovy.core.http.WebSocket}.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

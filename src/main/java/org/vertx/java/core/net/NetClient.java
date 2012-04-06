@@ -35,20 +35,20 @@ import org.vertx.java.core.Handler;
 public interface NetClient {
 
   /**
-   * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
-   * {@code host} can be a valid host name or IP addresss. The connect is done asynchronously and on success, a
-   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  NetClient connect(int port, String host, final Handler<NetSocket> connectHandler);
-
-  /**
    * Attempt to open a connection to a server at the specific {@code port} and host {@code localhost}
    * The connect is done asynchronously and on success, a
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
   NetClient connect(int port, Handler<NetSocket> connectCallback);
+
+  /**
+   * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
+   * {@code host} can be a valid host name or IP addresss. The connect is done asynchronously and on success, a
+   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  NetClient connect(int port, String host, final Handler<NetSocket> connectHandler);
 
   /**
    * Close the client. Any sockets which have not been closed manually will be closed here.

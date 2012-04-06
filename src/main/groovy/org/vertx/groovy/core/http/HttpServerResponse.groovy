@@ -21,22 +21,20 @@ import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
 
 /**
- * Represents a server-side HTTP response.
- * <p>
+ * Represents a server-side HTTP response.<p>
  * An instance of this class is created and associated to every instance of
  * {@link HttpServerRequest} that is created.<p>
  * It allows the developer to control the HTTP response that is sent back to the
- * client for the corresponding HTTP request. It contains methods that allow HTTP
- * headers and trailers to be set, and for a body to be written outto the response.
- * <p>
+ * client for a partcularHTTP request. It contains methods that allow HTTP
+ * headers and trailers to be set, and for a body to be written out to the response.<p>
  * It also allows files to be streamed by the kernel directly from disk to the
  * outgoing HTTP connection, bypassing user space altogether (where supported by
  * the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one
- * from the file and written to the outgoing socket.
- * <p>
- * Instances of this class are not thread-safe
- * <p>
+ * from the file and written to the outgoing socket.<p>
+ * It implements {@link WriteStream} so it can be used with
+ * {@link org.vertx.groovy.core.streams.Pump} to pump data with flow control.<p>
+ * Instances of this class are not thread-safe<p>
  * @author Peter Ledbrook
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -46,31 +44,6 @@ class HttpServerResponse implements WriteStream {
 
   protected HttpServerResponse(org.vertx.java.core.http.HttpServerResponse jResponse) {
     this.jResponse = jResponse
-  }
-
-  /**
-   * @return The headers of the response
-   */
-  Map<String, Object> getHeaders() {
-    return jResponse.headers()
-  }
-
-  /**
-   * Put an HTTP header - fluent API
-   * @param name The header name
-   * @param value The header value
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  public HttpServerResponse putHeader(String name, Object value) {
-    getHeaders().put(name, value)
-    this
-  }
-
-  /**
-   * @return The trailers of the response
-   */
-  Map<String, Object> getTrailers() {
-    return jResponse.trailers()
   }
 
   /**
@@ -110,8 +83,7 @@ class HttpServerResponse implements WriteStream {
    * {@code Transfer-Encoding} with a value of {@code Chunked} will be automatically inserted in the response.<p>
    * If {@code chunked} is {@code false}, this response will not use HTTP chunked encoding, and therefore if any data is written the
    * body of the response, the total size of that data must be set in the {@code Content-Length} header <b>before</b> any
-   * data is written to the response body. If no data is written, then a {@code Content-Length} header with a value of {@code 0}
-   * will be automatically inserted when the response is sent.<p>
+   * data is written to the response body.<p>
    * An HTTP chunked response is typically used when you do not know the total size of the request body up front.
    *
    * @return A reference to this, so multiple method calls can be chained.
@@ -121,34 +93,38 @@ class HttpServerResponse implements WriteStream {
     this
   }
 
-  /** {@inheritDoc} */
-  void setWriteQueueMaxSize(int size) {
-    jResponse.setWriteQueueMaxSize(size)
+  /**
+   * @return The headers of the response
+   */
+  Map<String, Object> getHeaders() {
+    return jResponse.headers()
   }
 
-  /** {@inheritDoc} */
-  boolean writeQueueFull() {
-    jResponse.writeQueueFull()
+  /**
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param value The header value
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  public HttpServerResponse putHeader(String name, Object value) {
+    getHeaders().put(name, value)
+    this
   }
 
-  /** {@inheritDoc} */
-  void drainHandler(Closure handler) {
-    jResponse.drainHandler(handler as Handler)
+  /**
+   * @return The trailers of the response
+   */
+  Map<String, Object> getTrailers() {
+    return jResponse.trailers()
   }
 
-  /** {@inheritDoc} */
-  void exceptionHandler(Closure handler) {
-    jResponse.exceptionHandler(handler as Handler)
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * Set a close handler for the response. This will be called if the underlying connection closes before the response
+   * is complete.
+   * @param handler
+   */
   void closeHandler(Closure handler) {
     jResponse.closeHandler(handler as Handler)
-  }
-
-  /** {@inheritDoc} */
-  void writeBuffer(Buffer chunk) {
-    jResponse.writeBuffer(chunk.toJavaBuffer())
   }
 
   /**
@@ -275,6 +251,32 @@ class HttpServerResponse implements WriteStream {
     jResponse.write(str)
     this
   }
+
+  /** {@inheritDoc} */
+  void setWriteQueueMaxSize(int size) {
+    jResponse.setWriteQueueMaxSize(size)
+  }
+
+  /** {@inheritDoc} */
+  boolean writeQueueFull() {
+    jResponse.writeQueueFull()
+  }
+
+  /** {@inheritDoc} */
+  void drainHandler(Closure handler) {
+    jResponse.drainHandler(handler as Handler)
+  }
+
+  /** {@inheritDoc} */
+  void exceptionHandler(Closure handler) {
+    jResponse.exceptionHandler(handler as Handler)
+  }
+
+  /** {@inheritDoc} */
+  void writeBuffer(Buffer chunk) {
+    jResponse.writeBuffer(chunk.toJavaBuffer())
+  }
+
 
 
 }
