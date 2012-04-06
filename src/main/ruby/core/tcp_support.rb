@@ -40,6 +40,7 @@ module Vertx
     # @return [] A reference to self so invocations can be chained
     def tcp_keep_alive=(val)
       @j_del.setTCPKeepAlive(val)
+      self
     end
 
     # Set the TCP reuse address setting.
@@ -47,6 +48,7 @@ module Vertx
     # @return [] A reference to self so invocations can be chained
     def reuse_address=(val)
       @j_del.setReuseAddress(val)
+      self
     end
 
     # Set the TCP so linger setting.
@@ -54,6 +56,7 @@ module Vertx
     # @return [] A reference to self so invocations can be chained
     def so_linger=(val)
       @j_del.setSoLinger(val)
+      self
     end
 
     # Set the TCP traffic class setting.
@@ -61,6 +64,7 @@ module Vertx
     # @return [] A reference to self so invocations can be chained
     def traffic_class=(val)
       @j_del.setTrafficClass(val)
+      self
     end
 
   end

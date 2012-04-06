@@ -26,7 +26,7 @@ public class EchoServer extends Verticle {
   public void start() {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        new Pump(socket, socket).start();
+        Pump.createPump(socket, socket).start();
       }
     }).listen(1234);
   }

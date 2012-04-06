@@ -51,27 +51,6 @@ module Vertx
       @j_server = org.vertx.java.deploy.impl.VertxLocator.vertx.createSockJSServer(http_server._to_java_server)
     end
 
-    # @private
-    def convert_config(config)
-      j_config = org.vertx.java.core.sockjs.AppConfig.new
-
-      prefix = config["prefix"]
-      j_config.setPrefix(prefix) if prefix
-      jsessionid = config["insert_JSESSIONID"]
-      j_config.setInsertJSESSIONID(jsessionid) if jsessionid
-      session_timeout = config["session_timeout"]
-      j_config.setSessionTimeout(session_timeout) if session_timeout
-      heartbeat_period = config["heartbeat_period"]
-      j_config.setHeartbeatPeriod(heartbeat_period) if heartbeat_period
-      max_bytes_streaming = config["max_bytes_streaming"]
-      j_config.setMaxBytesStreaming(max_bytes_streaming) if max_bytes_streaming
-      library_url = config["library_url"]
-      j_config.setLibraryURL(library_url) if library_url
-      # TODO disabled transports
-
-      j_config
-    end
-
     # Install an application
     # @param config [Hash] Configuration for the application
     # @param proc [Proc] Proc representing the handler
@@ -92,6 +71,27 @@ module Vertx
         j_list.add(j_json)
       end
       @j_server.bridge(convert_config(config), j_list)
+    end
+
+    # @private
+    def convert_config(config)
+      j_config = org.vertx.java.core.sockjs.AppConfig.new
+
+      prefix = config["prefix"]
+      j_config.setPrefix(prefix) if prefix
+      jsessionid = config["insert_JSESSIONID"]
+      j_config.setInsertJSESSIONID(jsessionid) if jsessionid
+      session_timeout = config["session_timeout"]
+      j_config.setSessionTimeout(session_timeout) if session_timeout
+      heartbeat_period = config["heartbeat_period"]
+      j_config.setHeartbeatPeriod(heartbeat_period) if heartbeat_period
+      max_bytes_streaming = config["max_bytes_streaming"]
+      j_config.setMaxBytesStreaming(max_bytes_streaming) if max_bytes_streaming
+      library_url = config["library_url"]
+      j_config.setLibraryURL(library_url) if library_url
+      # TODO disabled transports
+
+      j_config
     end
 
   end

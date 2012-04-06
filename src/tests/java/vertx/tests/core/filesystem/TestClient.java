@@ -1035,7 +1035,7 @@ public class TestClient extends TestClientBase {
               if (ar.exception == null) {
 
                 WriteStream ws = ar.result.getWriteStream();
-                Pump p = new Pump(rs, ws);
+                Pump p = Pump.createPump(rs, ws);
                 p.start();
                 rs.endHandler(new SimpleHandler() {
                   public void handle() {

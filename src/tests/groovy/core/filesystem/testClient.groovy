@@ -105,7 +105,7 @@ def testPumpFile() {
         tu.azzert(ares2.exception == null)
         def rs = ares1.result.getReadStream()
         def ws = ares2.result.getWriteStream()
-        def pump = new Pump(rs, ws)
+        def pump = Pump.createPump(rs, ws)
         pump.start()
         rs.endHandler {
           ares1.result.close {

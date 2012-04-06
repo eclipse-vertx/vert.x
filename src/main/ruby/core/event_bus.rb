@@ -20,7 +20,7 @@ module Vertx
   # This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
   # It is very useful for otherwise isolated vert.x application instances to communicate with each other.
   #
-  # Messages sent over the event bus are json objects represented as Ruby Hash instances.
+  # Messages sent over the event bus are JSON objects represented as Ruby Hash instances.
   #
   # The event bus implements a distributed publish / subscribe network.
   #
@@ -48,6 +48,8 @@ module Vertx
 
     @@handler_map = {}
 
+    @@j_eventbus = org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus()
+
     # Send a message on the event bus
     # @param message [Hash] The message to send
     # @param reply_handler [Block] replyHandler An optional reply handler.
@@ -57,9 +59,9 @@ module Vertx
       raise "A message must be specified" if message == nil
       message = convert_msg(message)
       if reply_handler != nil
-        org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().send(address, message, InternalHandler.new(reply_handler))
+        @@j_eventbus.send(address, message, InternalHandler.new(reply_handler))
       else
-        org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().send(address, message)
+        @@j_eventbus.send(address, message)
       end
     end
 
@@ -74,9 +76,9 @@ module Vertx
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(message_hndlr)
       if local_only
-        id = org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().registerLocalHandler(address, internal)
+        id = @@j_eventbus.registerLocalHandler(address, internal)
       else
-        id = org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().registerHandler(address, internal)
+        id = @@j_eventbus.registerHandler(address, internal)
       end
       @@handler_map[id] = internal
       id
@@ -91,9 +93,9 @@ module Vertx
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(message_hndlr)
       if local_only
-        id = org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().registerLocalHandler(internal)
+        id = @@j_eventbus.registerLocalHandler(internal)
       else
-        id = org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().registerHandler(internal)
+        id = @@j_eventbus.registerHandler(internal)
       end
       @@handler_map[id] = internal
       id
@@ -105,7 +107,7 @@ module Vertx
       raise "A handler_id must be specified" if !handler_id
       handler = @@handler_map.delete(handler_id)
       raise "Cannot find handler for id #{handler_id}" if !handler
-      org.vertx.java.deploy.impl.VertxLocator.vertx.eventBus().unregisterHandler(handler_id)
+      @@j_eventbus.unregisterHandler(handler_id)
     end
 
     # @private

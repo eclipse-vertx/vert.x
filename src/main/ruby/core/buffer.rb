@@ -22,8 +22,6 @@ module Vertx
   # Buffers are used in many places in vert.x, for example to read/write data to/from {NetSocket}, {AsyncFile},
   # {WebSocket}, {HttpClientRequest}, {HttpClientResponse}, {HttpServerRequest}, {HttpServerResponse} etc.
   #
-  # Buffer instances should always be created using the factory methods {Buffer.create} and {Buffer.create_from_str}.
-  #
   # There are two ways to write data to a Buffer: The first method involves methods that take the form set_XXX.
   # These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
   # has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
@@ -44,7 +42,8 @@ module Vertx
     end
 
     # Creates a new empty buffer. The {#length} of the buffer immediately after creation will be zero.
-    # @param initial_size_hint [FixNum] is a hint to the system for how much memory to initially allocate to the buffer to prevent excessive automatic re-allocations as data is written to it.
+    # @param initial_size_hint [FixNum] is a hint to the system for how much memory
+    # to initially allocate to the buffer to prevent excessive automatic re-allocations as data is written to it.
     def Buffer.create(initial_size_hint = 0)
       Buffer.new(org.vertx.java.core.buffer.Buffer.new(initial_size_hint))
     end

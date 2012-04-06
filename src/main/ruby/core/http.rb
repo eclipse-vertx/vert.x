@@ -18,8 +18,7 @@ require 'core/tcp_support'
 
 module Vertx
 
-  # An HTTP server.
-  # The server supports both HTTP requests and HTML5 websockets and passes these to the user via the appropriate handlers.
+  # An HTTP and websockets server
   #
   # @author {http://tfox.org Tim Fox}
   class HttpServer
@@ -386,8 +385,7 @@ module Vertx
     # 'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the request.
     # If chunked is false, this request will not use HTTP chunked encoding, and therefore if any data is written the
     # body of the request, the total size of that data must be set in the 'Content-Length' header before any
-    # data is written to the request body. If no data is written, then a 'Content-Length' header with a value of '0'
-    # will be automatically inserted when the request is sent.
+    # data is written to the request body.
     # @return [HttpClientRequest] self So multiple operations can be chained.
     def chunked=(val)
       @j_del.setChunked(val)
@@ -498,10 +496,12 @@ module Vertx
       @j_del.uri
     end
 
+    # @return [String] The path part of the uri. For example /somepath/somemorepath/somresource.foo
     def path
       @j_del.path
     end
 
+    # @return [String] The query part of the uri. For example someparam=32&someotherparam=x
     def query
       @j_del.query
     end
@@ -520,7 +520,7 @@ module Vertx
       @resp
     end
 
-    # The request headers
+    # @return [Hash] The request headers
     def headers
       if !@headers
         @headers = @j_del.headers
@@ -572,7 +572,7 @@ module Vertx
       @j_del.statusMessage = val
     end
 
-    # The response headers
+    # @return [Hash] The response headers
     def headers
       if !@headers
         @headers = @j_del.headers
@@ -639,9 +639,8 @@ module Vertx
     # will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
     # 'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the response.
     # If chunked is false, this response will not use HTTP chunked encoding, and therefore if any data is written the
-    # body of the response, the total size of that data must be set in the 'Content-Length' header <before< any
-    # data is written to the response body. If no data is written, then a 'Content-Length' header with a value of '0''
-    # will be automatically inserted when the response is sent.
+    # body of the response, the total size of that data must be set in the 'Content-Length' header before any
+    # data is written to the response body.
     # An HTTP chunked response is typically used when you do not know the total size of the request body up front.
     # @return [HttpServerResponse] self So multiple operations can be chained.
     def chunked=(val)
@@ -669,7 +668,7 @@ module Vertx
 
   end
 
-  # Encapsulation of an HTML 5 Websocket.
+  # Encapsulates an HTML 5 Websocket.
   #
   # Instances of this class are createde by an {HttpClient} instance when a client succeeds in a websocket handshake with a server.
   # Once an instance has been obtained it can be used to send or receive buffers of data from the connection,
@@ -774,19 +773,6 @@ module Vertx
   # It's particularly useful when writing REST-ful web applications.
   #
   # To use a simple pattern to extract parameters simply prefix the parameter name in the pattern with a ':' (colon).
-  #
-  # For example:
-  #
-  # @example
-  #   rm = RouteMatcher.new
-  #
-  #   handler1 = ...
-  #
-  #   rm.get("/animals/:animal_name/:colour", handler1);
-  #
-  #
-  # In the above example, if a GET request with a uri of '/animals/dog/black' was received at the server, handler1
-  # would be called with request parameter 'animal' set to 'dog', and 'colour' set to 'black'.
   #
   # Different handlers can be specified for each of the HTTP verbs, GET, POST, PUT, DELETE etc.
   #

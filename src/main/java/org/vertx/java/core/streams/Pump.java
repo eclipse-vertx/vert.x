@@ -42,29 +42,11 @@ public class Pump {
 
   private int pumped;
 
-  private final Handler<Void> drainHandler = new Handler<Void>() {
-    public void handle(Void v) {
-      readStream.resume();
-    }
-  };
-
-  private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
-    public void handle(Buffer buffer) {
-      writeStream.writeBuffer(buffer);
-      pumped += buffer.length();
-      if (writeStream.writeQueueFull()) {
-        readStream.pause();
-        writeStream.drainHandler(drainHandler);
-      }
-    }
-  };
-
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
    */
-  public Pump(ReadStream rs, WriteStream ws) {
-    this.readStream = rs;
-    this.writeStream = ws;
+  public static Pump createPump(ReadStream rs, WriteStream ws) {
+    return new Pump(rs, ws);
   }
 
   /**
@@ -104,5 +86,28 @@ public class Pump {
   public int getBytesPumped() {
     return pumped;
   }
+
+  private Pump(ReadStream rs, WriteStream ws) {
+    this.readStream = rs;
+    this.writeStream = ws;
+  }
+
+  private final Handler<Void> drainHandler = new Handler<Void>() {
+    public void handle(Void v) {
+      readStream.resume();
+    }
+  };
+
+  private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
+    public void handle(Buffer buffer) {
+      writeStream.writeBuffer(buffer);
+      pumped += buffer.length();
+      if (writeStream.writeQueueFull()) {
+        readStream.pause();
+        writeStream.drainHandler(drainHandler);
+      }
+    }
+  };
+
 
 }

@@ -42,7 +42,7 @@ public class UploadServer extends Verticle {
         vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
           public void handle(AsyncResult<AsyncFile> ar) {
             final AsyncFile file = ar.result;
-            final Pump pump = new Pump(req, file.getWriteStream());
+            final Pump pump = Pump.createPump(req, file.getWriteStream());
             final long start = System.currentTimeMillis();
             req.endHandler(new SimpleHandler() {
               public void handle() {

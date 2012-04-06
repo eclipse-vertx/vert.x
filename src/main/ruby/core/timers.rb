@@ -14,6 +14,8 @@
 
 module Vertx
 
+  @@j_vertx = org.vertx.java.deploy.impl.VertxLocator.vertx()
+
   # Sets a one-shot timer that will fire after a certain delay.
   # This method will accept either a Proc or a block.
   # @param [FixNum] delay the delay, in milliseconds
@@ -22,7 +24,7 @@ module Vertx
   # @return [FixNum] the unique id of the timer
   def Vertx.set_timer(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.vertx.java.deploy.impl.VertxLocator.vertx().setTimer(delay, hndlr)
+    @@j_vertx.setTimer(delay, hndlr)
   end
 
   # Sets a periodic timer.
@@ -33,14 +35,14 @@ module Vertx
   # @return [FixNum] the unique id of the timer
   def Vertx.set_periodic(delay, proc = nil, &hndlr)
     hndlr = proc if proc
-    org.vertx.java.deploy.impl.VertxLocator.vertx.setPeriodic(delay, hndlr)
+    @@j_vertx.setPeriodic(delay, hndlr)
   end
 
   # Cancels a timer.
   # @param [FixNum] id the id of the timer, as returned from {Vertx.set_timer} or {Vertx.set_periodic}
   # @return [Boolean] true if the timer was cancelled, false if it wasn't found.
   def Vertx.cancel_timer(id)
-    org.vertx.java.deploy.impl.VertxLocator.vertx.cancelTimer(id)
+    @@j_vertx.cancelTimer(id)
   end
 
   # Put the handler on the event queue for this loop so it will be run asynchronously
@@ -49,7 +51,7 @@ module Vertx
   # @param [Block] hndlr a block representing the code that will be run ASAP
   def Vertx.run_on_loop(proc = nil, &hndlr)
     hndlr = proc if proc
-    org.vertx.java.deploy.impl.VertxLocator.vertx.runOnLoop(hndlr)
+    @@j_vertx.runOnLoop(hndlr)
   end
 
 end

@@ -132,18 +132,23 @@ module Vertx
       @j_pump = org.vertx.java.core.streams.Pump.new(j_rs, j_ws)
     end
 
+    # Set the write queue max size
+    # @param [FixNum] The write queue max size
     def write_queue_max_size=(val)
       @j_pump.setWriteQueueMaxSize(val)
     end
 
+    # Start the Pump. The Pump can be started and stopped multiple times.
     def start
       @j_pump.start
     end
 
+    # Stop the Pump. The Pump can be started and stopped multiple times.
     def stop
       @j_pump.stop
     end
 
+    # @return [FixNum] Return the total number of bytes pumped by this pump.
     def bytes_pumped
       @j_pump.getBytesPumped
     end

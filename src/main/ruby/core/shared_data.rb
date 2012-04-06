@@ -33,36 +33,36 @@ module Vertx
   # @author {http://tfox.org Tim Fox}
   class SharedData
 
+    @@j_sd = org.vertx.java.deploy.impl.VertxLocator.vertx.sharedData()
+
     # Return a Hash with the specific name. All invocations of this method with the same value of name
     # are guaranteed to return the same Hash instance.
-    # The Hash instance returned is a lock free Hash which supports a very high degree of concurrency.
     # @param [String] key. Get the hash with the key.
     # @return [Hash] the hash.
     def SharedData.get_hash(key)
-      map = org.vertx.java.deploy.impl.VertxLocator.vertx.sharedData().getMap(key)
+      map = @@j_sd.getMap(key)
       SharedHash.new(map)
     end
 
     # Return a Set with the specific name. All invocations of this method with the same value of name
     # are guaranteed to return the same Set instance.
-    # The Set instance returned is a lock free Set which supports a very high degree of concurrency.
     # @param [String] key. Get the set with the key.
     # @return [SharedSet] the set.
     def SharedData.get_set(key)
-      set = org.vertx.java.deploy.impl.VertxLocator.vertx.sharedData().getSet(key)
+      set = @@j_sd.getSet(key)
       SharedSet.new(set)
     end
 
     # Remove the hash
     # @param [String] key. The key of the hash.
     def SharedData.remove_hash(key)
-      org.vertx.java.deploy.impl.VertxLocator.vertx.sharedData().removeMap(key)
+      @@j_sd.removeMap(key)
     end
 
     # Remove the set
     # @param [String] key. The key of the set.
     def SharedData.remove_set(key)
-      org.vertx.java.deploy.impl.VertxLocator.vertx.sharedData().removeSet(key)
+      @@j_sd.removeSet(key)
     end
 
     # Convert to corresponding Java objects
@@ -74,7 +74,6 @@ module Vertx
       end
       obj
     end
-
 
     # @private
     class SharedHash < DelegateClass(Hash)
@@ -129,11 +128,6 @@ module Vertx
         else
           false
         end
-      end
-
-      # @private
-      def _to_java_set
-        @j_set
       end
 
       # Add an object to the set
@@ -208,6 +202,11 @@ module Vertx
       # @return [FixNum] The number of elements in the set
       def size
         @j_set.size
+      end
+
+      # @private
+      def _to_java_set
+        @j_set
       end
 
     end
