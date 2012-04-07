@@ -38,7 +38,7 @@ public class FileSystemProps {
    */
   public final long usableSpace;
 
-  FileSystemProps(long totalSpace, long unallocatedSpace, long usableSpace) {
+  public FileSystemProps(long totalSpace, long unallocatedSpace, long usableSpace) {
     this.totalSpace = totalSpace;
     this.unallocatedSpace = unallocatedSpace;
     this.usableSpace = usableSpace;
