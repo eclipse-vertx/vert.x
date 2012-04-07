@@ -25,6 +25,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
@@ -58,7 +59,7 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private final FileSystem fileSystem = new FileSystem(this);
+  private final FileSystem fileSystem = new DefaultFileSystem(this);
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
