@@ -33,6 +33,7 @@
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
   <property name="core-lib" value="${lib-dir}/main"/>
+  <property name="rabbit-lib" value="${lib-dir}/rabbit"/>
   <property name="test-results" value="test-results"/>
   <property name="test-tmp" value="test-tmp"/>
 
@@ -59,6 +60,9 @@
 
   <path id="core-lib-classpath">
     <fileset dir="${core-lib}">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="${rabbit-lib}">
       <include name="*.jar"/>
     </fileset>
   </path>
@@ -175,7 +179,7 @@
 
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
-    <!-- <exclude name="**/busmods/**"/> -->
+    <exclude name="**/busmods/**"/>
   </fileset>
 
   <fileset id="test-one.fs" dir="${tests-target}">

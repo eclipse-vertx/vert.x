@@ -29,6 +29,9 @@ $DIRNAME/../../lib/main/mail.jar:\
 $DIRNAME/../../lib/main/mongo.jar:\
 $DIRNAME/../../lib/main/groovy-all-1.8.6.jar:\
 $DIRNAME/../../lib/main/jruby.jar:\
+$DIRNAME/../../lib/rabbit/rabbitmq-client.jar:\
+$DIRNAME/../../lib/rabbit/commons-cli-1.1.jar:\
+$DIRNAME/../../lib/rabbit/commons-io-1.2.jar:\
 $DIRNAME/../../src/main/ruby:\
 $DIRNAME/../../src/main/javascript
 
