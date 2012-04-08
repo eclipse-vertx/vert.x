@@ -20,6 +20,12 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
+ * Prototype for AMQP bridge
+ * Currently only does pub/sub and does not declare exchanges so only works with default exchanges
+ * Three operations:
+ * 1) Create a consumer on a topic given exchange name (use amqp.topic) and routing key (topic name)
+ * 2) Close a consumer
+ * 3) Send message
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
