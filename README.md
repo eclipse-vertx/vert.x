@@ -7,9 +7,11 @@ Vert.x is a framework which takes inspiration from event driven frameworks like 
 
 Some of the key highlights include:
 
-* Polyglot. Write your application components in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).
+* Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match
+several programming languages in a single application. (Scala and Clojure support is scheduled too).
 
-* No more worrying about concurrency. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. Race conditions and locks are a thing of the past.
+* No more worrying about concurrency. Vert.x allows you to write all your code as single threaded,
+freeing you from the hassle of multi-threaded programming, yet scales seamlessly over available cores.
 
 * Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.
 
@@ -17,6 +19,7 @@ Some of the key highlights include:
 
 * Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.
 
-*If you don't want the whole vert.x platform, vert.x can also be used embedded directly in your Java applications*
+*If you don't want the whole vert.x platform, vert.x can also be used embedded directly in your Java or
+Groovy applications*
 
 **Please see the [website](http://vertx.io/) for full documentation and information on vert.x**
