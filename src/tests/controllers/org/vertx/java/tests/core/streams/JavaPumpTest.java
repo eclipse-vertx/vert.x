@@ -34,7 +34,7 @@ public class JavaPumpTest extends TestCase {
   public void testPumpBasic() throws Exception {
     FakeReadStream rs = new FakeReadStream();
     FakeWriteStream ws = new FakeWriteStream();
-    Pump p = new Pump(rs, ws, 1001);
+    Pump p = Pump.createPump(rs, ws, 1001);
 
     for (int i = 0; i < 10; i++) { // Repeat a few times
       p.start();
@@ -62,7 +62,7 @@ public class JavaPumpTest extends TestCase {
   public void testPumpPauseResume() throws Exception {
     FakeReadStream rs = new FakeReadStream();
     FakeWriteStream ws = new FakeWriteStream();
-    Pump p = new Pump(rs, ws, 500);
+    Pump p = Pump.createPump(rs, ws, 500);
     p.start();
 
     for (int i = 0; i < 10; i++) {   // Repeat a few times

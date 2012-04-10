@@ -25,8 +25,14 @@ import org.vertx.java.core.Vertx;
  */
 public abstract class Verticle {
 
+  /**
+   * A reference to the vert.x runtime
+   */
   protected Vertx vertx;
 
+  /**
+   * A reference to the vert.x container
+   */
   protected Container container;
 
   /**
