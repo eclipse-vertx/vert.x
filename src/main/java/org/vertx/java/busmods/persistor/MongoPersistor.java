@@ -35,10 +35,9 @@ import java.net.UnknownHostException;
 import java.util.UUID;
 
 /**
- * MongoDB Persistor Bus Module
- * <p>
- * Please see the busmods manual for a full description
- * <p>
+ * MongoDB Persistor Bus Module<p>
+ * Please see the busmods manual for a full description<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class MongoPersistor extends BusModBase implements Handler<Message<JsonObject>> {
