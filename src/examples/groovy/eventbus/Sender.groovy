@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-def eb = vertx.eventBus()
+def eb = vertx.eventBus
 
 def address = 'example.address'
 

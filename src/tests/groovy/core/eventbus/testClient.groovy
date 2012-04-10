@@ -23,7 +23,7 @@ tu.checkContext()
 
 // Most testing occurs in the Java tests
 
-eb = vertx.eventBus()
+eb = vertx.eventBus
 address = 'foo-address'
 
 sent = [

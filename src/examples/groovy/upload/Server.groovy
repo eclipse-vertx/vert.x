@@ -21,7 +21,7 @@ import static org.vertx.groovy.core.streams.Pump.createPump
 vertx.createHttpServer().requestHandler { req ->
   req.pause()
   def filename = "${UUID.randomUUID()}.uploaded"
-  vertx.fileSystem().open(filename) { ares ->
+  vertx.fileSystem.open(filename) { ares ->
     def file = ares.result
     def pump = createPump(req, file.writeStream)
     req.endHandler {
