@@ -19,7 +19,7 @@ import groovy.json.JsonBuilder
 eb = vertx.eventBus()
 log = container.logger
 
-handler = { orderMsg ->
+def handler = { orderMsg ->
   def order = orderMsg.body
 
   log.info "Received order in order manager ${stringify(order)}"

@@ -50,7 +50,7 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
    * Create an empty buffer
    */
   Buffer() {
-    jBuffer = new JBuffer();
+    jBuffer = new JBuffer()
   }
 
   /**
@@ -61,28 +61,28 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
    * automatic re-allocations as data is written to it.
    */
   Buffer(int initialSizeHint) {
-    jBuffer = new JBuffer(initialSizeHint);
+    jBuffer = new JBuffer(initialSizeHint)
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code byte[]}
    */
   Buffer(byte[] bytes) {
-    jBuffer = new JBuffer(bytes);
+    jBuffer = new JBuffer(bytes)
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code enc}
    */
   Buffer(String str, String enc) {
-    jBuffer = new JBuffer(str, enc);
+    jBuffer = new JBuffer(str, enc)
   }
 
   /**
    * Create a new Buffer that contains the contents of {@code String str} encoded with UTF-8 encoding
    */
   Buffer(String str) {
-    jBuffer = new JBuffer(str);
+    jBuffer = new JBuffer(str)
   }
 
   /**
