@@ -306,7 +306,7 @@ As with registering, when you unregister a handler and you're in a cluster it ca
         }
     });
     
-*Make sure you unregister any handlers in the stop() method of your verticle, to avoid leaking handlers*    
+If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.   
 
 ### Sending messages
 

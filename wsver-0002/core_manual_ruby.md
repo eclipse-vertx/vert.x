@@ -40,7 +40,7 @@ This will import the module `Vertx`. The `Vertx` module contains the various cla
 
 ## Verticle clean-up
 
-The optional method `vertx_stop` is called when the verticle is undeployed. You should always provide such a method if your verticle needs to do any clean-up, such as shutting down servers or clients or unregistering handlers.
+Servers, clients and event bus handlers will be automatically closed when the verticles is stopped, however if you need to provide any custom clean-up code when the verticle is stopped you can provide a `vertx_stop` top-level method. Vert.x will then call this when the verticle is stopped. 
 
 ## Getting Configuration in a Verticle
 
@@ -252,7 +252,7 @@ As with registering, when you unregister a handler and you're in a cluster it ca
         puts 'Yippee! The handler unregister has been propagated across the cluster'
     end
 
-*Make sure you unregister any handlers in the vertx_stop method of your verticle, to avoid leaking handlers*
+If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.  
 
 ### Sending messages
 
@@ -267,7 +267,7 @@ That message will then be delivered to any handlers registered against the addre
 The message you send can be any of the following types:
 
 * number
-* string
+* String
 * boolean
 * JSON object
 * Vert.x Buffer
@@ -1336,15 +1336,16 @@ You can close the underlying TCP connection of the request by calling the `close
 
 #### Response headers
 
-Individual HTTP response headers can be written using the `put_header` function. For example:
+HTTP response headers can be added to the response by adding them to the Hash returned from the `headers` method:
 
-    request.response.put_header('Content-Length', '0')
+    request.response.headers['Some-header'] = 'foo'
+
+Also, individual HTTP response headers can be written using the `put_header` function, allowing a more fluent API. For example:
+
+    request.response.put_header('Some-Other-Header', 'wibble').
+                     put_header('Blah', 'Eek')
 
 Response headers must all be added before any parts of the response body are written.
-
-If you wish to add several headers in one operation, just call `put_headers` with a Hash of the headers:
-
-    request.response.put_headers({ 'Content-Length' => '0', 'Some-Other-Header' => 'abc'})
 
 #### Chunked HTTP Responses and Trailers
 
@@ -1358,13 +1359,14 @@ Default is non-chunked. When in chunked mode, each call to `response.write_buffe
 
 When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.
 
-To write an individual trailer use the `put_trailer` method:
+Like headers, HTTP response trailers can be added to the response by adding them to the Hash returned from the `trailers` method:
 
-    request.response.put_trailer('Some-Trailer', 'some value')
+    request.response.trailers['Some-header'] = 'foo'
 
-If you wish to add several trailers in one operation, just call `put_trailers` with a Hash of the trailers:
+Also, individual HTTP response trailers can be written using the `put_trailer` method, allowing a more fluent API. For example:
 
-    request.response.put_trailers({ 'Some-Trailer' => 'some value', 'Some-Other-Trailer' => 'wibble'})
+    request.response.put_trailer('Some-Other-Header', 'wibble').
+                     put_trailer('Blah', 'Eek')
 
 
 ### Serving files directly disk
@@ -1448,7 +1450,7 @@ The default value is `1`.
 
 ### Closing the client
 
-Once you have finished with an HTTP client, you should close it:
+Vert.x will automatically close any clients when the verticle is stopped, but if you want to close it explicitly you can:
 
     client.close
 
@@ -1542,7 +1544,7 @@ The method can also be called with a string or Buffer in the same way write is c
 
 #### Writing Request Headers
 
-To write headers to the request, use the `put_header` method.
+To write headers to the request, add them to the Hash returned from the `headers` method:
 
     client = Vertx::HttpClient.new
 
@@ -1550,10 +1552,10 @@ To write headers to the request, use the `put_header` method.
         puts "got response #{resp.status_code}" 
     end
 
-    request.put_header('Some-Header', 'Some-Value')
+    request.headers['Some-Header'] = 'Some-Value'
     request.end
-
-These can be chained together as per the common vert.x API pattern:
+    
+You can also use the `put_header` method to enable a more fluent API:    
 
     client = Vertx::HttpClient.new
 
@@ -1563,17 +1565,6 @@ These can be chained together as per the common vert.x API pattern:
         put_header('Some-Other-Header', 'Some-Other-Value').
         end
 
-If you want to put more than one header at the same time, you can instead use the `put_headers` method.
-
-    
-    client = Vertx::HttpClient.new
-
-    request = client.post('http://localhost:8080/some-path') do |resp|
-        puts "got response #{resp.status_code}" 
-    end.put_headers({'Some-Header' =>'Some-Value',
-                     'Some-Other-Header' => 'Some-Other-Value',
-                     'Yet-Another-Header' => 'Yet-Another-Value'}).end
-    
 #### HTTP chunked requests
 
 Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding) for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.
@@ -2037,15 +2028,17 @@ We also provide a client side JavaScript library called `vertxbus.js` which prov
 
 This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
 
-Creating a Sock JS bridge is simple. You just create an instance of `Vertx::SockJSBridge` as shown in the following example.
+Creating a Sock JS bridge is simple. You just call the `bridge` method on the SockJS server instance.
 
 You will also need to secure the bridge (see below).
 
 The following example creates and starts a SockJS bridge which will bridge any events sent to the path `eventbus` on to the server side event bus.
 
     server = Vertx::HttpServer.new;
+    
+    sockJSServer = Vertx::SockJSServer.new(httpServer)
 
-    Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'}, [] )
+    sockJSServer.bridge({'prefix' => '/eventbus'}, [] )
 
     server.listen(8080)
 
@@ -2113,8 +2106,10 @@ When a message arrives from the client, the bridge will look through the availab
 Here is an example:
 
     server = Vertx::HttpServer.new
+    
+    sockJSServer = Vertx::SockJSServer.new(server)
 
-    Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'},
+    sockJSServer.bridge({'prefix' => '/eventbus'},
       [
         # Let through any messages sent to 'demo.orderMgr'
         {
@@ -2143,7 +2138,7 @@ Here is an example:
 
 To let all messages through you can specify an array with a single empty JSON object which will match all messages.
 
-     Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'}, [{}])
+     sockJSServer.bridge({'prefix' => '/eventbus'}, [{}])
 
 **Be very careful!**
 
