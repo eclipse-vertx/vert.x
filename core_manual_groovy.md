@@ -228,13 +228,13 @@ To set a message handler on the address `test.address`, you specify the handler 
 
     def eb = vertx.eventBus
 
-    eb.registerHandler("test.address") { message -> println "I received a message $message.body" }
+    eb.registerHandler("test.address") { message -> println "I received a message ${message.body}" }
 
 The return value of `registerHandler` is a unique id for the handler that you can later use when unregistering, if you like.
 
 When you register a handler on an address and you're in a cluster it can take some time for the knowledge of that new handler to be propagated across the entire cluster. If you want to be notified when that has completed you can optionally specify another handler to the `registerHandler` method as the third argument. This handler will then be called once the information has reached all nodes of the cluster. E.g. :
 
-    def myHandler = { message -> println "I received a message $message.body" }
+    def myHandler = { message -> println "I received a message ${message.body}" }
 
     eb.registerHandler("test.address", myHandler) { println "The handler has been registered across the cluster" }
 
@@ -307,7 +307,7 @@ To do this you send a message, and specify a reply handler as the third argument
 The receiver:
 
     def myHandler = { message ->
-        println "I received a message $message.body"
+        println "I received a message ${message.body}"
 
         message.reply "This is a reply"  // Reply to it
     }
@@ -317,7 +317,7 @@ The receiver:
 The sender:
 
     eb.send("test.address", "This is a message") { message ->
-        println "I received a reply $message.body"
+        println "I received a reply ${message.body}"
     }
 
 It is legal also to send an empty reply or a null reply.
@@ -400,23 +400,27 @@ Note that buffers created this way *are empty*. It does not create a buffer fill
 
     def buff = new Buffer(100000)
 
-GOT HERE
-
 ## Writing to a Buffer
 
 There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to get an `IndexOutOfBoundsException` with a buffer.
 
 ### Appending to a Buffer
 
-To append to a buffer, you use the `appendXXX` methods. Append methods exist for appending other buffers, byte[], String and all primitive types.
+To append to a buffer, you use the `appendXXX` methods or the leftShift (<<) operator. Append methods exist for appending other buffers, byte[], String and all primitive types.
 
 The return value of the `appendXXX` methods is the buffer itself, so these can be chained:
 
-    Buffer buff = new Buffer();
+    def buff = new Buffer()
 
-    buff.appendInt(123).appendString("hello").appendChar('\n');
+    // You can use the appendXXX methods
 
-    socket.writeBuffer(buff);
+    buff.appendInt(123).appendString("hello").appendChar('\n')
+
+    // Or use the leftShift operator
+
+    buff << 123 << "hello" << '\n'
+
+    socket << buff
 
 ### Random access buffer writes
 
@@ -424,18 +428,32 @@ You can also write into the buffer at a specific index, by using the `setXXX` me
 
 The buffer will always expand as necessary to accomodate the data.
 
-    Buffer buff = new Buffer();
+    def buff = new Buffer()
 
-    buff.setInt(1000, 123);
-    buff.setBytes(0, "hello");
+    buff.setInt(1000, 123)
+    buff.setBytes(0, "hello")
+
+You can also use the subscript operator to set data in the buffer at a specific index, e.g.
+
+    def buff = new Buffer()
+
+    buff[1000] = 123
+    buff[0] = "hello"
 
 ## Reading from a Buffer
 
 Data is read from a buffer using the `getXXX` methods. Get methods exist for byte[], String and all primitive types. The first argument to these methods is an index in the buffer from where to get the data.
 
-    Buffer buff = ...;
-    for (int i = 0; i < buff.length(); i += 4) {
-        System.out.println("int value at " + i + " is " + buff.getInt(i));
+    def buff = ...
+    for (i in 0 ..< buff.length()) {
+        println "byte value at $i is ${buff.getByte(i)}"
+    }
+
+You can also use the subscript operator to get a byte
+
+    def buff = ...
+    for (i in 0 ..< buff.length()) {
+        println "byte value at $i is ${buff[i]}"
     }
 
 ## Other buffer methods:
@@ -445,36 +463,6 @@ Data is read from a buffer using the `getXXX` methods. Get methods exist for byt
 
 
 See the JavaDoc for more detailed method level documentation.
-
-# JSON
-
-Whereas JavaScript has first class support for JSON, and Ruby has Hash literals which make representing JSON easy within code, things aren't so easy in Java.
-
-For this reason, if you want to use JSON from within your Java verticles, we provide some simple JSON classes which represent a JSON object and a JSON array. These classes provide methods for setting and getting all types supported in JSON on an object or array.
-
-A JSON object is represented by instances of `org.vertx.java.core.json.JsonObject`. A JSON array is represented by instances of `org.vertx.java.core.json.JsonArray`.
-
-A usage example would be using a Java verticle to send or receive JSON messages from the event bus.
-
-    EventBus eb = vertx.eventBus();
-
-    JsonObject obj = new JsonObject().setString("foo", "wibble")
-                                     .setNumber("age", 1000);
-
-    eb.send("some-address", obj);
-
-
-    // ....
-    // And in a handler somewhere:
-
-    public void handle(Message<JsonObject> message) {
-        System.out.println("foo is " + message.body.getString("foo");
-        System.out.println("age is " + message.body.getNumber("age");
-    }
-
-Methods also existing for converting this objects to and from their JSON serialized forms.
-
-Please see the JavaDoc for the full Java Json API.
 
 # Delayed and Periodic Tasks
 
@@ -490,15 +478,11 @@ A one shot timer calls an event handler after a certain delay, expressed in mill
 
 To set a timer to fire once you use the `setTimer` method passing in the delay and a handler
 
-    vertx.setTimer(1000, new Handler<Long>() {
-        public void handle(Long timerID) {
-            log.info('And one second later this is printed');
-        }
-    });
+    vertx.setTimer(1000) { timerID -> println "And one second later this is displayed" }
 
-    log.info('First this is printed');
+    println "First this is printed"
 
-The handler is passed the unique id for the timer.
+The handler is passed the unique id for the timer which can be used to cancel the timer.
 
 ## Periodic Timers
 
@@ -516,27 +500,22 @@ You can also set a timer to fire periodically by using the `setPeriodic` method.
 
 To cancel a periodic timer, call the `cancelTimer` method specifying the timer id. For example:
 
-    long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
-        public void handle(Long timerID) {
-        }
-    });
+    long timerID = vertx.setPeriodic(1000) {}
 
     // And immediately cancel it
 
-    vertx.cancelTimer(timerID);
+    vertx.cancelTimer(timerID)
 
 Or you can cancel it from inside the event handler. The following example cancels the timer after it has fired 10 times.
 
-    long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
-        int count;
-        public void handle(Long timerID) {
-            log.info("In event handler " + count);
-            count++;
-            if (count == 10) {
-                vertx.cancelTimer(timerID);
-            }
+    def count = 0
+    long timerID = vertx.setPeriodic(1000) { timerID ->
+        println "In event handler $count"
+        count++
+        if (count == 10) {
+            vertx.cancelTimer(timerID)
         }
-    });
+    }
 
 # Writing TCP Servers and Clients
 
@@ -548,15 +527,15 @@ Creating TCP servers and clients is incredibly easy with vert.x.
 
 To create a TCP server you call the `createNetServer` method on your vertx instance.
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
 ### Start the Server Listening
 
 To tell that server to listen for connections we do:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.listen(1234, "myhost");
+    server.listen(1234, "myhost")
 
 The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If it is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
@@ -566,35 +545,23 @@ Just having a TCP server listening creates a working server that you can connect
 
 To be notified when a connection occurs we need to call the `connectHandler` method of the server, passing in a handler. The handler will be called when a connection is made:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(NetSocket sock) {
-            log.info("A client has connected!");
-        }
-    })
+    server.connectHandler { sock -> println "A client has connected!" }
 
-    server.listen(1234, "localhost");
+    server.listen(1234, "localhost")
 
 That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects.
 
 The return value of the `connectHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above as:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(NetSocket sock) {
-            log.info("A client has connected!");
-        }
-    }).listen(1234, "localhost");
+    server.connectHandler { sock -> println "A client has connected!" }.listen(1234, "localhost")
 
 or
 
-    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
-        public void handle(NetSocket sock) {
-            log.info("A client has connected!");
-        }
-    }).listen(1234, "localhost");
+    vertx.createNetServer().connectHandler { sock -> println "A client has connected!" }.listen(1234, "localhost")
 
 
 This is a common pattern throughout the vert.x API.
@@ -604,17 +571,13 @@ This is a common pattern throughout the vert.x API.
 
 To close a net server just call the `close` function.
 
-    server.close();
+    server.close()
 
 The close is actually asynchronous and might not complete until some time after the `close` method has returned. If you want to be notified when the actual close has completed then you can pass in a handler to the `close` method.
 
 This handler will then be called when the close has fully completed.
 
-    server.close(new SimpleHandler() {
-        public void handle() {
-            log.info('The server is now fully closed.');
-        }
-    });
+    server.close { println "The server is now fully closed." }
 
 If you want your net server to last the entire lifetime of your verticle, you don't need to call `close` explicitly, the Vert.x container will automatically close any servers that you created when the verticle is stopped.
 
@@ -622,19 +585,19 @@ If you want your net server to last the entire lifetime of your verticle, you do
 
 NetServer has a set of properties you can set which affect its behaviour. Firstly there are bunch of properties used to tweak the TCP parameters, in most cases you won't need to set these:
 
-* `setTCPNoDelay(tcpNoDelay)` If `tcpNoDelay` is true then [Nagle's Algorithm](http://en.wikipedia.org/wiki/Nagle's_algorithm) is disabled. If false then it is enabled.
+* `tcpNoDelay` If `tcpNoDelay` is true then [Nagle's Algorithm](http://en.wikipedia.org/wiki/Nagle's_algorithm) is disabled. If false then it is enabled.
 
-* `setSendBufferSize(size)` Sets the TCP send buffer size in bytes.
+* `sendBufferSize` Sets the TCP send buffer size in bytes.
 
-* `setReceiveBufferSize(size)` Sets the TCP receive buffer size in bytes.
+* `receiveBufferSize` Sets the TCP receive buffer size in bytes.
 
-* `setTCPKeepAlive(keepAlive)` if `keepAlive` is true then [TCP keep alive](http://en.wikipedia.org/wiki/Keepalive#TCP_keepalive) is enabled, if false it is disabled.
+* `TCPKeepAlive` if `keepAlive` is true then [TCP keep alive](http://en.wikipedia.org/wiki/Keepalive#TCP_keepalive) is enabled, if false it is disabled.
 
-* `setReuseAddress(reuse)` if `reuse` is true then addresses in TIME_WAIT state can be reused after they have been closed.
+* `reuseAddress` if `reuse` is true then addresses in TIME_WAIT state can be reused after they have been closed.
 
-* `setSoLinger(linger)`
+* `soLinger`
 
-* `setTrafficClass(trafficClass)`
+* `trafficClass`
 
 NetServer has a further set of properties which are used to configure SSL. We'll discuss those later on.
 
@@ -648,64 +611,60 @@ When a connection is made, the connect handler is called passing in an instance 
 
 #### Reading Data from the Socket
 
-To read data from the socket you need to set the `dataHandler` on the socket. This handler will be called with an instance of `org.vertx.java.core.buffer.Bufer` every time data is received on the socket. You could try the following code and telnet to it to send some data:
+To read data from the socket you need to set the `dataHandler` on the socket. This handler will be called with an
+instance of `org.vertx.groovy.core.buffer.Buffer` every time data is received on the socket. You could try the following code and telnet to it to send some data:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(NetSocket sock) {
-            sock.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    log.info("I received " + buffer.length() + " bytes of data");
-                }
-            });
+    server.connectHandler { sock ->
+        sock.dataHandler { buffer ->
+            println "I received ${buffer.length()} bytes of data"
         }
-    }).listen(1234, "localhost");
+    }.listen(1234, "localhost")
 
 #### Writing Data to a Socket
 
-To write data to a socket, you invoke the `write` function. This function can be invoked in a few ways:
+To write data to a socket, you invoke the `write` function or leftShift operator This function can be invoked in a few
+ways:
 
 With a single buffer:
 
-    Buffer myBuffer = new Buffer(...);
-    sock.write(myBuffer);
+    def myBuffer = new Buffer(...)
+    sock.write(myBuffer)
+
+    // Or
+
+    sock << myBuffer
 
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    sock.write("hello");
+    sock.write("hello")
+
+    // Or
+
+    sock << "hello"
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
     sock.write("hello", "UTF-162);
 
-The `write` function is asynchronous and always returns immediately after the write has been queued.
+The `write` function or leftShift is asynchronous and always returns immediately after the write has been queued.
 
 The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a handler as a final argument.
 
 This handler will then be invoked when the write has completed:
 
-    sock.write('hello', new SimpleHandler() {
-        public void handle() {
-            log.info('It has actually been written');
-        }
-    });
+    sock.write('hello') { println "It has actually been written" }
 
 Let's put it all together.
 
 Here's an example of a simple TCP echo server which simply writes back (echoes) everything that it receives on the socket:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
-            sock.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    sock.write(buffer);
-                }
-            });
-        }
-    }).listen(1234, "localhost");
+    server.connectHandler { sock ->
+        sock.dataHandler { buffer -> sock << buffer }
+    }.listen(1234, "localhost")
 
 ### Closing a socket
 
@@ -716,17 +675,10 @@ You can close a socket by invoking the `close` method. This will close the under
 If you want to be notified when a socket is closed, you can set the `closedHandler':
 
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
-            sock.closedHandler(new SimpleHandler() {
-                public void handle() {
-                    log.info("The socket is now closed");
-                }
-            });
-        }
-    }).listen(1234, "localhost");
+    server.connectHandler { sock -> sock.closedHandler { println "The socket is now closed" }
+    }.listen(1234, "localhost")
 
 
 The closed handler will be called irrespective of whether the close was initiated by the client or server.
@@ -735,22 +687,15 @@ The closed handler will be called irrespective of whether the close was initiate
 
 You can set an exception handler on the socket that will be called if an exception occurs:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
-            sock.exceptionHandler(new SimpleHandler() {
-                public void handle() {
-                    log.info("Oops, something went wrong");
-                }
-            });
-        }
-    }).listen(1234, "localhost");
+    server.connectHandler { sock -> sock.exceptionHandler { e -> println "Oops! $e" }
+    }.listen(1234, "localhost")
 
 
 ### Read and Write Streams
 
-NetSocket also implements `org.vertx.java.core.streams.ReadStream` and `org.vertx.java.core.streams.WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, websockets and asynchronous files.
+NetSocket also implements `org.vertx.groovy.core.streams.ReadStream` and `org.vertx.groovy.core.streams.WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, websockets and asynchronous files.
 
 This will be discussed in depth in the chapter on streams and pumps.
 
@@ -788,23 +733,19 @@ A NetClient is used to make TCP connections to servers.
 
 To create a TCP client you call the `createNetClient` method on your vertx instance.
 
-    NetClient client = vertx.createNetClient();
+    def client = vertx.createNetClient()
 
 ### Making a Connection
 
 To actually connect to a server you invoke the `connect` method:
 
-    NetClient client = vertx.createNetClient();
+    def client = vertx.createNetClient()
 
-    client.connect(1234, "localhost", new Handler<NetSocket>() {
-        public void handle(NetSocket socket) {
-            log.info("We have connected!");
-        }
-    });
+    client.connect(1234, "localhost") { socket -> println "We have connected!" }
 
 The connect method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
 
-The argument passed into the connect handler is an instance of `org.vertx.java.core.net.NetSocket`, exactly the same as what is passed into the server side connect handler. Once given the `NetSocket` you can read and write data from the socket in exactly the same way as you do on the server side.
+The argument passed into the connect handler is an instance of `org.vertx.groovy.core.net.NetSocket`, exactly the same as what is passed into the server side connect handler. Once given the `NetSocket` you can read and write data from the socket in exactly the same way as you do on the server side.
 
 You can also close it, set the closed handler, set the exception handler and use it as a `ReadStream` or `WriteStream` exactly the same as the server side `NetSocket`.
 
@@ -812,34 +753,28 @@ You can also close it, set the closed handler, set the exception handler and use
 
 You can set an exception handler on the `NetClient`. This will catch any exceptions that occur during connection.
 
-    NetClient client = vertx.createNetClient();
+    def client = vertx.createNetClient()
 
-    client.exceptionHandler(new Handler<NetSocket>() {
-        public void handle(Exception ex) {
-            log.error("Failed to connect", ex);
-        }
-    });
+    client.exceptionHandler { ex -> println "Failed to connect $ex" }
 
-    client.connect(4242, "host-that-doesnt-exist", new Handler<NetSocket>() {
-        public void handle(NetSocket socket) {
-            log.info("This won't get caled");
-        }
-    });
+    client.connect(4242, "host-that-doesnt-exist") { socket -> puts "This won't get called" }
 
 
 ### Configuring Reconnection
 
-A NetClient can be configured to automatically retry connecting or reconnecting to the server in the event that it cannot connect or has lost its connection. This is done by invoking the methods `setReconnectAttempts` and `setReconnectInterval`:
+A NetClient can be configured to automatically retry connecting or reconnecting to the server in the event that it cannot connect or has lost its connection. This is done by setting the properties `reconnectAttempts` and
+`reconnectInterval`:
 
-    NetClient client = vertx.createNetClient();
+    def client = vertx.createNetClient()
 
-    client.setReconnectAttempts(1000);
+    client.reconnectAttempts = 1000
 
-    client.setReconnectInterval(500);
+    client.reconnectInterval = 500
 
-`ReconnectAttempts` determines how many times the client will try to connect to the server before giving up. A value of `-1` represents an infinite number of times. The default value is `0`. I.e. no reconnection is attempted.
+`reconnectAttempts` determines how many times the client will try to connect to the server before giving up. A value of `-1` represents an infinite number of times. The default value is `0`. I.e. no reconnection is attempted.
 
-`ReconnectInterval` detemines how long, in milliseconds, the client will wait between reconnect attempts. The default value is `1000`.
+`reconnectInterval` detemines how long, in milliseconds, the client will wait between reconnect attempts. The default
+ value is `1000`.
 
 If an exception handler is set on the client, and reconnect attempts is not equal to `0`. Then the exception handler will not be called until the client gives up reconnecting.
 
@@ -851,6 +786,8 @@ Just like `NetServer`, `NetClient` also has a set of TCP properties you can set 
 `NetClient` also has a further set of properties which are used to configure SSL. We'll discuss those later on.
 
 ## SSL Servers
+
+GOT HERE
 
 Net servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
 
