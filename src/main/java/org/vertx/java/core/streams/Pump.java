@@ -50,12 +50,11 @@ public class Pump {
   }
 
   /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
-   * of the write stream to {@code maxWriteQueueSize}
+   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream} and
+   * {@code writeQueueMaxSize}
    */
-  public Pump(ReadStream rs, WriteStream ws, int maxWriteQueueSize) {
-    this(rs, ws);
-    this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
+  public static Pump createPump(ReadStream rs, WriteStream ws, int writeQueueMaxSize) {
+    return new Pump(rs, ws, writeQueueMaxSize);
   }
 
   /**
@@ -87,11 +86,6 @@ public class Pump {
     return pumped;
   }
 
-  private Pump(ReadStream rs, WriteStream ws) {
-    this.readStream = rs;
-    this.writeStream = ws;
-  }
-
   private final Handler<Void> drainHandler = new Handler<Void>() {
     public void handle(Void v) {
       readStream.resume();
@@ -108,6 +102,20 @@ public class Pump {
       }
     }
   };
+
+  /**
+   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
+   * of the write stream to {@code maxWriteQueueSize}
+   */
+  private Pump(ReadStream rs, WriteStream ws, int maxWriteQueueSize) {
+    this(rs, ws);
+    this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
+  }
+
+  private Pump(ReadStream rs, WriteStream ws) {
+    this.readStream = rs;
+    this.writeStream = ws;
+  }
 
 
 }

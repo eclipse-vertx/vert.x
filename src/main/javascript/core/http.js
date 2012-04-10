@@ -101,6 +101,12 @@ if (!vertx.createHttpServer) {
             }
             return respTrailers;
           },
+          putAllTrailers: function(other) {
+            var trlrs = resp.trailers();
+            for (var k in other) {
+              trlrs[k] = other[k];
+            }
+          },
           write: function(arg0, arg1, arg2) {
             writeHeaders();
             if (arg1) {
