@@ -60,6 +60,8 @@ into dir. This will be available to all other verticles.
 26) CommonJS/AMD support
 26) Consider using Errai JSON parser
 27) Look at Arquillian for vert.x tests
+28) busmods - need better way of installing them. adding all busmod dependencies to the main classpath is not good. We should probably install in them in their own dir with own
+lib directory under the vert.x install
 
 
 
