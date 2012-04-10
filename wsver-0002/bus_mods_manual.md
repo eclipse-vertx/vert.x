@@ -44,7 +44,7 @@ You can instantiate any out of the box busmo from the command line using `vertx 
 
     vertx run <bus_mode_name> -conf <config_file>
     
-Or programmatically
+Or programmatically (e.g. in JavaScript)
 
     vertx.deployWorkerVerticle(<bus_mode_name>, <config>);        
 
