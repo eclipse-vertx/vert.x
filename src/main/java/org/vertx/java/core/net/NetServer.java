@@ -19,17 +19,15 @@ package org.vertx.java.core.net;
 import org.vertx.java.core.Handler;
 
 /**
- * Represents a TCP or SSL server
- * <p>
- * This class is a thread safe and can safely be used by different threads.
- * <p>
+ * Represents a TCP or SSL server<p>
+ * This class is a thread safe and can safely be used by different threads.<p>
  * If an instance is instantiated from an event loop then the handlers
  * of the instance will always be called on that same event loop.
  * If an instance is instantiated from some other arbitrary Java thread then
  * and event loop will be assigned to the instance and used when any of its handlers
- * are called.
- * <p>
+ * are called.<p>
  * Instances cannot be used from worker verticles
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface NetServer {

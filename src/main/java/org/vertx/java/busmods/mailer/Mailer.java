@@ -35,10 +35,9 @@ import java.util.Date;
 import java.util.Properties;
 
 /**
- * Mailer Bus Module
- * <p>
- * Please see the busmods manual for a full description
- * <p>
+ * Mailer Bus Module<p>
+ * Please see the busmods manual for a full description<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {

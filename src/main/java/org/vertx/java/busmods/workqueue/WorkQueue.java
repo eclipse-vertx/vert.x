@@ -29,10 +29,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * Work Queue Bus Module
- * <p>
- * Please see the busmods manual for a full description
- * <p>
+ * Work Queue Bus Module<p>
+ * Please see the busmods manual for a full description<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class WorkQueue extends BusModBase {

@@ -28,10 +28,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Authentication Manager Bus Module
- * <p>
- * Please see the busmods manual for a full description
- * <p>
+ * Authentication Manager Bus Module<p>
+ * Please see the busmods manual for a full description<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AuthManager extends BusModBase {
