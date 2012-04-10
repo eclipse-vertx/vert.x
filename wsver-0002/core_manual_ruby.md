@@ -653,6 +653,8 @@ The close is actually asynchronous and might not complete until some time after 
 This block will then be called when the close has fully completed.
 
     server.close { puts 'The server is now fully closed.' }
+    
+In most cases you don't need to close a net server explicitly since vert.x will close them for you when the verticle stops.    
 
 
 ### NetServer Properties
