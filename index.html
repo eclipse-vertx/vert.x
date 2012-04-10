@@ -76,8 +76,7 @@
         <h3 class="title">Polyglot</h3>
         <br/>
         <p>Write your application components in <strong>JavaScript</strong>,
-          <strong>Ruby</strong> or <strong>Java</strong>. Or mix and match several programming languages in a single
-          application.</p>
+          <strong>Ruby</strong>, <strong>Groovy</strong> or <strong>Java</strong>. Or mix and match several programming languages in a single application.</p>
       </div>
     </div>
     <div class="span3">
@@ -201,11 +200,10 @@ vertx.createHttpServer().requestHandler(function(req) {
                 <p>Save the following in <code>server.rb</code></p>
                 <pre class="prettyprint">
 require "vertx"
-include Vertx
 
-HttpServer.new.request_handler do |req|
+Vertx::HttpServer.new.request_handler do |req|
   file = req.uri == "/" ? "index.html" : req.uri
-  req.response.send_file('webroot/' << file)
+  req.response.send_file "webroot/#{file}"
 end.listen(8080)
 
                 </pre>
@@ -216,6 +214,26 @@ end.listen(8080)
                 <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
                 <p>Just spin up more instances:</p>
                 <p><code>vertx run server.rb -instances 32</code></p>
+                <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
+            
+
+              </div>
+              <div class="tab-pane" id="ws_groovy">
+
+                <p>Save the following in <code>Server.groovy</code></p>
+                <pre class="prettyprint">
+vertx.createHttpServer().requestHandler { req ->
+  def file = req.uri == "/" ? "index.html" : req.uri
+  req.response.sendFile "webroot/$file"
+}.listen(8080, "localhost")
+                </pre>
+
+                <p>Run it with:</p>
+                <p><code>vertx run Server.groovy</code></p>
+
+                <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
+                <p>Just spin up more instances:</p>
+                <p><code>vertx run Server.groovy -instances 32</code></p>
                 <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
             
 

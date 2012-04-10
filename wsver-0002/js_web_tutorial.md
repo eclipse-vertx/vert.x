@@ -2,6 +2,8 @@ In this tutorial we're going to write a real web-application using vert.x.
 
 The application is a shop application called "vToons" which allows you to buy tracks online.
 
+The application consists of a client-side JavaScript MVVM application which communicates with a set of server-side components via the vert.x event bus.
+
 In this version of this tutorial we've written it all in JavaScript. If you'd prefer to use Ruby or Java please see the version for that language. You could also mix and match - writing your components in a variety of languages.
 
 ## Step 1. Install vert.x
@@ -20,7 +22,7 @@ Open a text editor and copy the following into it:
 
     load('vertx.js');
 
-    var server = new vertx.HttpServer();
+    var server = vertx.createHttpServer();
     
     server.requestHandler(function(req) {
       if (req.path === '/') {
@@ -33,10 +35,6 @@ Open a text editor and copy the following into it:
       }
     }).listen(8080, 'localhost');
     
-    function vertxStop() {
-      server.close();
-    }
-
 We're creating an instance of `HttpServer` and we're setting a request handler function on it. The request handler gets called every time an HTTP request arrives on the server.
 
 If the request is for the root, we just serve `index.html`. Otherwise we serve a file from the `web` directory corresponding to the path requested.
@@ -62,7 +60,7 @@ That's the web server done.
 
 Now we have a working web server, we need to serve the actual client side app.
 
-For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with.
+For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with (e.g. jQuery, backbone.js, ember.js or whatever).
 
 The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.
 
@@ -164,15 +162,15 @@ The SockJS bridge is a server side vert.x component which uses SockJS to connect
 
 SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.
 
-To create a SockJS bridge, we just create an instance of `vertx.SockJSBridge` as follows:
+To create a SockJS bridge, we just create a SockJS server and call the `bridge` function on it as follows:
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+    vertx.createSockJSServer(server).bridge({prefix : '/eventbus'}, []);
 
 Edit `web_server.js` so it looks like:
 
     load('vertx.js');
 
-    var server = new vertx.HttpServer();
+    var server = vertx.createHttpServer();
 
     server.requestHandler(function(req) {
       if (req.path === '/') {
@@ -186,15 +184,11 @@ Edit `web_server.js` so it looks like:
     });
 
     // Link up the client side to the server side event bus
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+    vertx.createSockJSServer(server).bridge({prefix : '/eventbus'}, [] );
 
     server.listen(8080, 'localhost');
-
-    function vertxStop() {
-      server.close();
-    }
-
-What we're doing here is creating an instance of a SockJS bridge and telling it that any requests it receives with the prefix `/eventbus` should be considered traffic for the event bus.
+    
+What we're doing here is creating an instance of a SockJS server and telling it that any requests it receives with the prefix `/eventbus` should be considered traffic for the event bus.
 
 The original request handler for the static data is still there, and that will still be invoked for any requests that don't have the prefix `/eventbus` on their path.
 
@@ -202,7 +196,7 @@ There's one other thing we have to do here.
 
 For security reasons, by default, the SockJS bridge will reject all event bus messages sent from the client side. After all, we don't want just anyone being able to delete everything in the database.
 
-To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the third parameter when creating the bridge.
+To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the second parameter when creating the bridge.
 
 Initially, we only want to allow through requests to the persistor to find albums. This will be used by the client side application to request the catalogue so it can display the list of available items to buy.
 
@@ -210,10 +204,10 @@ Edit the code in `web_server.js` so it looks like:
 
     load('vertx.js');
 
-    var server = new vertx.HttpServer();
+    var server = vertx.createHttpServer();
         
     // Link up the client side to the server side event bus
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+    vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
       [
         // Allow calls to get static album data from the persistor
         {
@@ -237,11 +231,8 @@ Edit the code in `web_server.js` so it looks like:
       }
     }).listen(8080, 'localhost');
     
-    function vertxStop() {
-      server.close();
-    }
     
-The third parameter to the SockJSBridge constructor is an array of matches.    
+The second parameter to the SockJSBridge constructor is an array of matches.    
     
 In our case, we're going to allow through any event bus messages from the client side to the address `demo.persistor` (which is where the persistor is listening), where the action field has the value `find`, and the `collection` field has the value `albums`.
 
@@ -279,7 +270,7 @@ Now there is some stuff to buy, you should be able to add stuff to your cart, an
 
 ## Step 7. Requesting data from the server
 
-As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a look at the code in the client side app that requests the catalogue data and populates the shop.
+As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a quick look at the code in the client side app that requests the catalogue data and populates the shop.
 
 The client side application JavaScript is contained in the file `web/js/client_app.js`. If you open this in your text editor you will see the following line, towards the top of the script:
 
@@ -390,7 +381,7 @@ Edit `web_server.js` and add the following match to the array of matches passed 
     
 So the line that constructs the SockJSBridge looks like:
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+    vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
       [
         // Allow calls to get static album data from the persistor
         {
@@ -448,16 +439,16 @@ A better solution is to write a simple order manager verticle which sits on the 
 As orders arrive we want to
 
 1. Validate the user is logged in
-2. If Ok, then persist the order in the database
-3. If Ok, then send an order confirmation
+2. If ok, then persist the order in the database
+3. If ok, then send an order confirmation
 4. Send back a confirmation to the client side.
 
 Copy the following into your editor and save it as `order_mgr.js` in your tutorial top-level directory.
 
     load('vertx.js');
 
-    var eb = vertx.EventBus;
-    var log = vertx.getLogger();
+    var eb = vertx.eventBus;
+    var log = vertx.logger;
 
     var handler = function(order, replier) {
       log.info('Received order in order manager ' + JSON.stringify(order));
@@ -483,9 +474,6 @@ Copy the following into your editor and save it as `order_mgr.js` in your tutori
     var address = "demo.orderMgr";
     eb.registerHandler(address, handler);
 
-    function vertxStop() {
-      eb.unregisterHandler(address, handler);
-    }
     
 The order manager verticle registers a handler on the address `demo.orderMgr`. When an order message arrives in the handler the first thing it does is print out the order to stdout, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
 
@@ -506,7 +494,7 @@ We'll also need to add another accepted match on the SockJSBridge config in `web
     
 So, it should look like:
 
-    new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+    vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
       [
         // Allow calls to get static album data from the persistor
         {
@@ -678,7 +666,7 @@ see the manual).
 
 Edit `web_server.js` again, and edit the line that creates the HTTP server so it reads:
 
-    var server = new vertx.HttpServer()
+    var server = vertx.createHttpServer()
         .setSSL(true)
         .setKeyStorePath('server-keystore.jks')
         .setKeyStorePassword('wibble');

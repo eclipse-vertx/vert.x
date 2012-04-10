@@ -36,9 +36,6 @@ Open a text editor and copy the following into it:
       end
     end.listen(8080, 'localhost')
 
-    def vertx_stop 
-      server.close
-    end
 
 We're creating an instance of `HttpServer` and we're setting a request handler function on it. The request handler gets called every time an HTTP request arrives on the server.
 
@@ -65,7 +62,7 @@ That's the web server done.
 
 Now we have a working web server, we need to serve the actual client side app.
 
-For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with.
+For this demo, we've written it using [knockout.js](http://knockoutjs.com/) and [Twitter bootstrap](http://twitter.github.com/bootstrap/), but in your apps you can use whatever client side toolset you feel most comfortable with (e.g. jQuery, backbone.js, ember.js or whatever).
 
 The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.
 
@@ -167,9 +164,9 @@ The SockJS bridge is a server side vert.x component which uses SockJS to connect
 
 SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.
 
-To create a SockJS bridge, we just create an instance of `Vertx::SockJSBridge` as follows:
+To create a SockJS bridge, we just create an instance of `Vertx::SockJSServer` and call the `bridge` metghod on it as follows:
 
-    Vertx::SockJSBridge.new(server, {'prefix' => '/eventbus'}, [] )
+    Vertx::SockJSServer.new(server).bridge({'prefix' => '/eventbus'}, [] )
 
 Edit `web_server.rb` so it looks like:
 
@@ -190,15 +187,12 @@ Edit `web_server.rb` so it looks like:
     end
 
     # Link up the client side to the server side event bus
-    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'}, [])
+    Vertx::SockJSServer.new(@server).bridge({'prefix' => '/eventbus'}, [])
 
     @server.listen(8080, 'localhost')
 
-    def vertx_stop 
-      server.close
-    end
 
-What we're doing here is creating an instance of a SockJS bridge and telling it that any requests it receives with the prefix `/eventbus` should be considered traffic for the event bus.
+What we're doing here is creating an instance of a SockJS server and telling it that any requests it receives with the prefix `/eventbus` should be considered traffic for the event bus.
 
 The original request handler for the static data is still there, and that will still be invoked for any requests that don't have the prefix `/eventbus` on their path.
 
@@ -206,7 +200,7 @@ There's one other thing we have to do here.
 
 For security reasons, by default, the SockJS bridge will reject all event bus messages sent from the client side. After all, we don't want just anyone being able to delete everything in the database.
 
-To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the third parameter when creating the bridge.
+To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the second parameter when creating the bridge.
 
 Initially, we only want to allow through requests to the persistor to find albums. This will be used by the client side application to request the catalogue so it can display the list of available items to buy.
 
@@ -218,7 +212,7 @@ Edit the code in `web_server.rb` so it looks like:
     @server = HttpServer.new
 
     # Link up the client side to the server side event bus
-    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
+    Vertx::SockJSServer.new(@server).bridge({'prefix' => '/eventbus'},
      [
         # Allow calls to get static album data from the persistor
         {
@@ -241,11 +235,8 @@ Edit the code in `web_server.rb` so it looks like:
       end
     end.listen(8080, 'localhost')
 
-    def vertx_stop 
-      server.close
-    end
     
-The third parameter to the SockJSBridge constructor is an array of matches.    
+The second parameter to the SockJSBridge constructor is an array of matches.    
     
 In our case, we're going to allow through any event bus messages from the client side to the address `demo.persistor` (which is where the persistor is listening), where the action field has the value `find`, and the `collection` field has the value `albums`.
 
@@ -392,7 +383,7 @@ Edit `web_server.rb` and add the following match to the array of matches passed 
     
 So the line that constructs the SockJSBridge looks like:
 
-    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
+    Vertx::SockJSServer.new(@server).bridge({'prefix' => '/eventbus'},
       [
         # Allow calls to get static album data from the persistor
         {
@@ -484,9 +475,6 @@ Copy the following into your editor and save it as `order_mgr.rb` in your tutori
       end
     end
 
-    def vertx_stop
-      eb.unregister_handler(id)
-    end
     
 The order manager verticle registers a handler on the address `demo.orderMgr`. When any message arrives on the event bus a `Message` object is passed to the handler.
 
@@ -509,7 +497,7 @@ We'll also need to add another accepted match on the SockJSBridge config in `web
     
 So, it should look like:
 
-    Vertx::SockJSBridge.new(@server, {'prefix' => '/eventbus'},
+    Vertx::SockJSServer.new(@server).bridge({'prefix' => '/eventbus'},
       [
         # Allow calls to get static album data from the persistor
         {
@@ -735,8 +723,6 @@ Please consult the busmods manual for more information on this.
 ## Final Thoughts
 
 This tutorial gives you just a taste of the kinds of things you can do with vert.x. 
-
-This tutorial gives you just a taste of the kinds of things you can do with vert.x.
 
 With just a couple of handfuls of code you have created a real, scalable web-app.
 
