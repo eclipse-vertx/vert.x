@@ -22,7 +22,7 @@ import org.vertx.groovy.framework.TestUtils
 tu = new TestUtils(vertx)
 tu.checkContext()
 
-fs = vertx.fileSystem()
+fs = vertx.fileSystem
 
 fileDir = "js-test-output"
 

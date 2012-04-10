@@ -24,26 +24,26 @@ vertx.createNetServer().connectHandler { socket ->
     case ~/subscribe\s*,.*/:
       def topicName = line.split(",", 2)[1]
       println "subscribing to ${topicName}"
-      def topic = vertx.sharedData().getSet(topicName)
+      def topic = vertx.sharedData.getSet(topicName)
       topic << socket.writeHandlerID
       break
 
     case ~/unsubscribe\s*,.*/:
       def topicName = line.split(",", 2)[1]
       println "unsubscribing from ${topicName}"
-      def topic = vertx.sharedData().getSet(topicName)
+      def topic = vertx.sharedData.getSet(topicName)
       topic.remove(socket.writeHandlerID)
       if (topic.isEmpty()) {
-        vertx.sharedData().removeSet(topicName)
+        vertx.sharedData.removeSet(topicName)
       }
       break
 
     case ~/publish\s*,.*,.*/:
       def sp = line.split(',', 3)
       println "publishing to ${sp[1]} with ${sp[2]}"
-      def topic = vertx.sharedData().getSet(sp[1])
+      def topic = vertx.sharedData.getSet(sp[1])
       for (id in topic) {
-        vertx.eventBus().send(id, new Buffer(sp[2]))
+        vertx.eventBus.send(id, new Buffer(sp[2]))
       }
       break
 

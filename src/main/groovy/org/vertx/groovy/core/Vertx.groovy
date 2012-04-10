@@ -52,7 +52,7 @@ class Vertx {
   Vertx(VertxInternal jVertex) {
     this.jVertex = jVertex
     this.eventBus = new EventBus(jVertex.eventBus())
-    this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem())
+    this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem)
   }
 
   /**
@@ -117,22 +117,22 @@ class Vertx {
   /**
    * The File system object
    */
-  org.vertx.groovy.core.file.FileSystem fileSystem() {
+  org.vertx.groovy.core.file.FileSystem getFileSystem() {
     return fileSystem
   }
 
   /**
    * The event bus
    */
-  EventBus eventBus() {
+  EventBus getEventBus() {
     return eventBus
   }
 
   /**
    * The shared data object
    */
-  SharedData sharedData() {
-    return jVertex.sharedData()
+  SharedData getSharedData() {
+    return jVertex.sharedData
   }
 
   /**

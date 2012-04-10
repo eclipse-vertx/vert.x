@@ -20,7 +20,7 @@ import static org.vertx.groovy.core.streams.Pump.createPump
 
 def req = vertx.createHttpClient(port: 8080).put("/someurl") { resp -> println "Response ${resp.statusCode}" }
 def filename = "upload/upload.txt"
-def fs = vertx.fileSystem()
+def fs = vertx.fileSystem
 
 fs.props(filename) { ares ->
   def props = ares.result

@@ -16,7 +16,7 @@ import groovy.json.JsonBuilder
 * limitations under the License.
 */
 
-eb = vertx.eventBus()
+eb = vertx.eventBus
 log = container.logger
 
 def handler = { orderMsg ->
