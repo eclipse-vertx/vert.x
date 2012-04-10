@@ -110,7 +110,7 @@ public class Container {
    * @return Unique deployment id
    */
   public String deployVerticle(String main, int instances) {
-    return deployVerticle(main, null, 1);
+    return deployVerticle(main, null, instances);
   }
 
   /**

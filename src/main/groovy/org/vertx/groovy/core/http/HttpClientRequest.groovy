@@ -60,7 +60,7 @@ import org.vertx.java.core.Handler
  */
 class HttpClientRequest implements WriteStream {
 
-  private final JHttpClientRequest jRequest;
+  private final JHttpClientRequest jRequest
 
   protected HttpClientRequest(JHttpClientRequest jRequest) {
     this.jRequest = jRequest

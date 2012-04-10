@@ -66,7 +66,7 @@ public class FileProps {
    */
   public final long size;
 
-  FileProps(BasicFileAttributes attrs) {
+  public FileProps(BasicFileAttributes attrs) {
     creationTime = new Date(attrs.creationTime().toMillis());
     lastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
     lastAccessTime = new Date(attrs.lastAccessTime().toMillis());

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-vertx.createNetClient().connect(1234, "localhost") { socket->
+vertx.createNetClient().connect(1234, "localhost") { socket ->
 
   socket.dataHandler { buffer ->
-    println "Net client receiving: ${buffer.toString()}"
+    println "Net client receiving: ${buffer}"
   }
 
   // Now send some data
