@@ -7,33 +7,17 @@ We previously discussed how a verticle is the unit of deployment in vert.x. Let'
 
 As an example we'll write a simple TCP echo server. The server just accepts connections and any data received by it is echoed back on the connection.
 
-Copy the following into a text editor and save it as `Server.java`
+Copy the following into a text editor and save it as `Server.groovy`
 
-    import org.vertx.java.core.Handler;
-    import org.vertx.java.core.net.NetSocket;
-    import org.vertx.java.core.streams.Pump;
-    import org.vertx.java.deploy.Verticle;
+    import static org.vertx.groovy.core.streams.Pump.createPump
 
-    public class Server extends Verticle {
-
-      public void start() {
-        vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
-          public void handle(final NetSocket socket) {
-            Pump.createPump(socket, socket).start();
-          }
-        }).listen(1234);
-      }
-    }
-
-Now, go to the directory where you saved the file and compile it with:
-
-    javac Server.java -cp $VERTX_HOME/lib/jars/vert.x.jar
-
-*Where VERTX_HOME is the directory where you installed vert.x*
+    vertx.createNetServer().connectHandler { socket ->
+      createPump(socket, socket).start()
+    }.listen(1234)
 
 Now run it:
 
-    vertx run Server
+    vertx run Server.groovy
 
 The server will now be running. Connect to it using telnet:
 
@@ -43,29 +27,27 @@ And notice how data you send (and hit enter) is echoed back to you.
 
 Congratulations! You've written your first verticle.
 
-Every Java verticle must extend the class `org.vertx.java.deploy.Verticle`. You must override the `start` method - this is called by Vert.x when the verticle is started.
-
 ## Verticle clean-up
 
-Servers, clients and event bus handlers will be automatically closed when the verticle is stopped. However, if you have any other clean-up logic that you want to execute when the verticle is stopped, you can implement a `stop` method which will be called when the verticle is undeployed.
+Servers, clients and event bus handlers will be automatically closed when the verticle is stopped. However, if you have any other clean-up logic that you want to execute when the verticle is stopped,
+you can implement a `vertxStop` top level method which will be called when the verticle is undeployed.
 
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available by calling the `getConfig` method on the `container` member variable of the verticle:
+If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available by calling the `getConfig` method on the `container` variable which is injected into the top level script. The config is a map which represents the JSON config.
 
-    JsonObject config = container.getConfig();
+    def config = container.getConfig()
 
-    System.out.println("Config is " + config);
 
-The config returned is an instance of `org.vertx.java.core.json.JsonObject`, which is a class which represents JSON objects (unsurprisingly!). You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
+You can use this config to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
 ## Logging from a Verticle
 
 Each verticle is given its own logger. To get a reference to it invoke the `getLogger` method on the container instance:
 
-    Logger logger = container.getLogger();
+    def logger = container.getLogger()
 
-    logger.info("I am logging something");
+    logger.info "I am logging something"
 
 The logger is an instance of the class `org.vertx.core.logging.Logger` and has the following methods;
 
@@ -90,19 +72,18 @@ You can deploy and undeploy verticles programmatically from inside another verti
 
 To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
 
-To deploy a single instance of a verticle :
+To deploy a single instance of a verticle:
 
-    String id = container.deployVerticle(main);
+    def id = container.deployVerticle(main)
 
 Where `main` is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.
 
 ## Passing configuration to a verticle programmatically
 
-JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `getConfig` method. For example:
+JSON configuration can be passed to a verticle that is deployed programmatically. For example:
 
-    JsonObject config = new JsonObject();
-    config.putString("foo", "wibble");
-    config.putBoolean("bar", false);
+    def config = [ "foo": "wibble", "bar": false]
+
     container.deployVerticle("foo.ChildVerticle", config);
 
 Then, in `ChildVerticle` you can access the config via `getConfig` as previously explained.
@@ -111,79 +92,62 @@ Then, in `ChildVerticle` you can access the config via `getConfig` as previously
 
 If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
 
-For example, you could create a verticle `AppStarter` as follows:
+For example, you could create a verticle `app.groovy` as follows:
 
     // Application config
 
-    JsonObject appConfig = Container.instance.getConfig();
-
-    JsonObject verticle1Config = appConfig.getObject("verticle1_conf");
-    JsonObject verticle2Config = appConfig.getObject("verticle2_conf");
-    JsonObject verticle3Config = appConfig.getObject("verticle3_conf");
-    JsonObject verticle4Config = appConfig.getObject("verticle4_conf");
-    JsonObject verticle5Config = appConfig.getObject("verticle5_conf");
+    def appConfig = [
+        "verticle1Config": [
+            // Config for verticle1
+        ],
+        "verticle2Config": [
+            // Config for verticle2
+        ],
+        "verticle3Config": [
+            // Config for verticle3
+        ],
+        "verticle4Config": [
+            // Config for verticle4
+        ],
+        "verticle5Config": [
+            // Config for verticle5
+        ]
+    ]
 
     // Start the verticles that make up the app
 
-    container.deployVerticle("verticle1.js", verticle1Config);
-    container.deployVerticle("verticle2.rb", verticle2Config);
-    container.deployVerticle("foo.Verticle3", verticle3Config);
-    container.deployWorkerVerticle("foo.Verticle4", verticle4Config);
-    container.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
-
-Then create a file 'config.json" with the actual JSON config in it (see main manual on configuring verticles):
-
-    {
-        "verticle1_conf": {
-            "foo": "wibble"
-        },
-        "verticle2_conf": {
-            "age": 1234,
-            "shoe_size": 12
-            "pi": 3.14159
-        },
-        "verticle3_conf": {
-            "strange": true
-        },
-        "verticle4_conf": {
-            "name": "george"
-        },
-        "verticle5_conf": {
-            "tel_no": "123123123"
-        }
-    }
+    container.deployVerticle("verticle1.js", appConfig["verticle1Config"]);
+    container.deployVerticle("verticle2.rb", appConfig["verticle2Config"]);
+    container.deployVerticle("foo.Verticle3", appConfig["verticle3Config"]);
+    container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4Config"]);
+    container.deployWorkerVerticle("verticle5.js", appConfig["verticle5Config"], 10);
 
 Then you can start your entire application by simply running:
 
-    vertx run app.js -conf config.json
+    vertx run app.groovy
 
 or
 
-    vertx deploy app.js -conf config.json
+    vertx deploy app.groovy
 
 See the chapter on running vert.x in the main manual for more information on this.
-
-Alternatively, even if you choose to write your main verticles in Java, you could maintain a single JavaScript verticle as an app starter - JavaScript has much better JSON support than Java, so you can maintain the whole JSON config nicely in the verticle itself. Take a look at the JavaScript core guide to see how to do that.
 
 ## Specifying number of instances
 
 By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances as follows:
 
-    container.deployVerticle("foo.ChildVerticle", 10);
+    container.deployVerticle("foo.ChildVerticle", 10)
 
 The above example would deploy 10 instances.
 
 ## Getting Notified when Deployment is complete
 
-The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a handler as the final argument to `deployVerticle`:
+The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` has returned. If you want to be notified when the verticle has completed being deployed,
+you can pass a Closure as the final argument to `deployVerticle`:
 
-    container.deployVerticle("foo.ChildVerticle", 10, new SimpleHandler() {
-        public void handle() {
-            System.out.println("The verticle has been deployed");
-        }
-    });
-
-The handler is an instance of `org.vertx.java.core.Handler<Void>`. `org.vertx.java.core.SimpleHandler` is a convenience class which implements this interface.
+    container.deployVerticle("foo.ChildVerticle", 10) {
+        println "The verticle has been deployed"
+    }
 
 ## Deploying Worker Verticles
 
@@ -193,9 +157,9 @@ The `deployVerticle` method deploys standard (non worker) verticles. If you want
 
 Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
 
-    String deploymentID = Container.instance.deployVerticle(main);
+    def deploymentID = container.deployVerticle(main)
 
-    container.undeployVerticle(deploymentID);
+    container.undeployVerticle(deploymentID)
 
 
 # The Event Bus
@@ -252,59 +216,39 @@ It's highly recommended you use JSON messages to communicate between verticles. 
 
 ## Event Bus API
 
-Let's jump into the API
+Let's jump into the API.
+
+To get a reference to the event bus use the `eventBus` property on the vertx instance that is injected into the
+verticle script.
 
 ### Registering and Unregistering Handlers
 
-To set a message handler on the address `test.address`, you do the following:
+To set a message handler on the address `test.address`, you specify the handler as a Closure to the `registerHandler`
+ method.
 
-    EventBus eb = vertx.eventBus();
+    def eb = vertx.eventBus
 
-    Handler<Message> myHandler = new Handler<Message>() {
-        public void handle(Message message) {
-            System.out.println("I received a message " + message.body);
-        }
-    };
-
-    eb.registerHandler("test.address", myHandler);
-
-It's as simple as that. The handler will then receive any messages sent to that address.
-
-The class `Message` is a generic type and specific Message types include `Message<Boolean>`, `Message<Buffer>`, `Message<byte[]>`, `Message<Byte>`, `Message<Character>`, `Message<Double>`, `Message<Float>`, `Message<Integer>`, `Message<JsonObject>`, `Message<Long>`, `Message<Short>` and `Message<String>`.
-
-If you know you'll always be receiving messages of a particular type you can use the specific type in your handler, e.g:
-
-    Handler<Message<String>> myHandler = new Handler<Message<String>() {
-        public void handle(Message<String> message) {
-            String body = message.body;
-        }
-    };
+    eb.registerHandler("test.address") { message -> println "I received a message $message.body" }
 
 The return value of `registerHandler` is a unique id for the handler that you can later use when unregistering, if you like.
 
 When you register a handler on an address and you're in a cluster it can take some time for the knowledge of that new handler to be propagated across the entire cluster. If you want to be notified when that has completed you can optionally specify another handler to the `registerHandler` method as the third argument. This handler will then be called once the information has reached all nodes of the cluster. E.g. :
 
-    eb.registerHandler("test.address", myHandler, new SimpleHandler() {
-        public void handle() {
-            System.out.println("The handler has been registered across the cluster");
-        }
-    });
+    def myHandler = { message -> println "I received a message $message.body" }
+
+    eb.registerHandler("test.address", myHandler) { println "The handler has been registered across the cluster" }
 
 To unregister a handler it's just as straightforward. You simply call `unregisterHandler` passing in the address and the handler:
 
-    eb.unregisterHandler("test.address", myHandler);
+    eb.unregisterHandler("test.address", myHandler)
 
 A single handler can be registered multiple times on the same, or different addresses so in order to identify it uniquely you have to specify both the address and the handler.
 
-Alternatively, can unregister a handler using a unique id that was returned from the call to `registerHandler`.
+Alternatively, you can unregister a handler using a unique id that was returned from the call to `registerHandler`.
 
-As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another function to the registerHandler as the third argument. E.g. :
+As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another handler to the registerHandler as the third argument. E.g. :
 
-    eb.unregisterHandler("test.address", myHandler, new SimpleHandler() {
-        public void handle() {
-            System.out.println("The handler has been unregistered across the cluster");
-        }
-    });
+    eb.unregisterHandler("test.address", myHandler) println "The handler has been unregistered across the cluster" }
 
 If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.
 
@@ -312,7 +256,7 @@ If you want your handler to live for the full lifetime of your verticle there is
 
 Sending a message is also trivially easy. Just send it specifying the address you want to send it to, for example:
 
-    eb.send("test.address", "hello world");
+    eb.send("test.address", "hello world")
 
 That message will then be delivered to any handlers registered against the address "test.address". If you are running vert.x in cluster mode then it will also be delivered to any handlers on that address irrespective of what vert.x instance they are in.
 
@@ -328,8 +272,8 @@ The message you send can be any of the following types (or their matching boxed 
 * long
 * short
 * java.lang.String
-* org.vertx.java.core.json.JsonObject
-* org.vertx.java.core.buffer.Buffer
+* java.util.Map - representing a JSON object
+* org.vertx.java.groovy.buffer.Buffer
 
 Vert.x buffers and JSON objects are copied before delivery if they are delivered in the same JVM, so different verticles can't access the exact same object instance.
 
@@ -337,22 +281,20 @@ Here are some more examples:
 
 Send some numbers:
 
-    eb.send("test.address", 1234);
-    eb.send("test.address", 3.14159);
+    eb.send("test.address", 1234)
+    eb.send("test.address", 3.14159)
 
 Send a boolean:
 
-    eb.send("test.address", true);
+    eb.send("test.address", true)
 
 Send a JSON object:
 
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "wibble");
-    eb.send("test.address", obj);
+    eb.send("test.address", ["foo": "wibble", "bar": "eek"])
 
 Null messages can also be sent:
 
-    eb.send("test.address", null);
+    eb.send("test.address", null)
 
 It's a good convention to have your verticles communicating using JSON.
 
@@ -364,27 +306,19 @@ To do this you send a message, and specify a reply handler as the third argument
 
 The receiver:
 
-    Handler<Message<String>> myHandler = new Handler<Message<String>>() {
-        public void handle(Message<String> message) {
-            System.out.println("I received a message " + message.body);
+    def myHandler = { message ->
+        println "I received a message $message.body"
 
-            // Do some stuff
+        message.reply "This is a reply"  // Reply to it
+    }
 
-            // Now reply to it
-
-            message.reply("This is a reply");
-        }
-    };
-
-    eb.registerHandler("test.address", myHandler);
+    eb.registerHandler("test.address", myHandler)
 
 The sender:
 
-    eb.send("test.address", "This is a message", new Handler<Message<String>>() {
-        public void handle(Message<String> message) {
-            System.out.println("I received a reply " + message.body);
-        }
-    });
+    eb.send("test.address", "This is a message") { message ->
+        println "I received a reply $message.body"
+    }
 
 It is legal also to send an empty reply or a null reply.
 
@@ -410,13 +344,13 @@ Currently data can only be shared between verticles in the *same vert.x instance
 
 To use a shared map to share data between verticles first we get a reference to the map, and then use it like any other instance of `java.util.concurrent.ConcurrentMap`
 
-    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap('demo.mymap');
+    def map = vertx.sharedData.getMap('demo.mymap')
 
-    map.put("some-key", 123);
+    map["some-key"] = 123
 
 And then, in a different verticle you can access it:
 
-    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap('demo.mymap');
+    def map = vertx.sharedData.getMap('demo.mymap')
 
     // etc
 
@@ -425,19 +359,19 @@ And then, in a different verticle you can access it:
 
 To use a shared set to share data between verticles first we get a reference to the set.
 
-    Set<String> set = vertx.sharedData().getSet('demo.myset');
+    def set = vertx.sharedData.getMap('demo.myset')
 
-    set.add("some-value");
+    set << "some-value"
 
 And then, in a different verticle:
 
-    Set<String> set = vertx.sharedData().getSet('demo.myset');
+    def set = vertx.sharedData.getMap('demo.myset')
 
     // etc
 
 # Buffers
 
-Most data in vert.x is shuffled around using instances of `org.vertx.java.core.buffer.Buffer`.
+Most data in vert.x is shuffled around using instances of `org.vertx.groovy.core.buffer.Buffer`.
 
 A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
 
@@ -445,26 +379,28 @@ A Buffer represents a sequence of zero or more bytes that can be written to or r
 
 Create a new empty buffer:
 
-    Buffer buff = new Buffer();
+    def buff = new Buffer()
 
 Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
 
-    Buffer buff = new Buffer("some-string");
+    def buff = new Buffer("some-string")
 
 Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
 
-    Buffer buff = new Buffer("some-string", "UTF-16");
+    def buff = new Buffer("some-string", "UTF-16")
 
 Create a buffer from a byte[]
 
-    byte[] bytes = new byte[] { ... };
-    new Buffer(bytes);
+    def bytes = ...
+    def buff = new Buffer(bytes)
 
 Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.
 
 Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
 
-    Buffer buff = new Buffer(100000);
+    def buff = new Buffer(100000)
+
+GOT HERE
 
 ## Writing to a Buffer
 
