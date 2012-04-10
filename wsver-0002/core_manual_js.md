@@ -55,9 +55,9 @@ The config returned is a JSON object. You can use this object to configure the v
 
 ## Logging from a Verticle
 
-Each verticle is given its own logger. To get a reference to it invoke the `vertx.getLogger` function:
+Each verticle is given its own logger. :
 
-    var logger = vertx.getLogger;
+    var logger = vertx.logger;
     
     logger.info("I am logging something");
     

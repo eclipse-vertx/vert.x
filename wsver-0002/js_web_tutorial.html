@@ -69,6 +69,7 @@
 <div>
 <p>In this tutorial we're going to write a real web-application using vert.x.</p>
 <p>The application is a shop application called "vToons" which allows you to buy tracks online.</p>
+<p>The application consists of a client-side JavaScript MVVM application which communicates with a set of server-side components via the vert.x event bus.</p>
 <p>In this version of this tutorial we've written it all in JavaScript. If you'd prefer to use Ruby or Java please see the version for that language. You could also mix and match - writing your components in a variety of languages.</p>
 <h2 id="step-1-install-vertx">Step 1. Install vert.x</h2><br/>
 <p>If you haven't yet installed vert.x, <a href="install.html">do that now</a>. </p>
@@ -79,7 +80,7 @@
 <p>Open a text editor and copy the following into it:</p>
 <pre class="prettyprint">load('vertx.js');
 
-var server = new vertx.HttpServer();
+var server = vertx.createHttpServer();
 
 server.requestHandler(function(req) {
   if (req.path === '/') {
@@ -91,10 +92,6 @@ server.requestHandler(function(req) {
     req.response.end();
   }
 }).listen(8080, 'localhost');
-
-function vertxStop() {
-  server.close();
-}
 </pre>
 <p>We're creating an instance of <code>HttpServer</code> and we're setting a request handler function on it. The request handler gets called every time an HTTP request arrives on the server.</p>
 <p>If the request is for the root, we just serve <code>index.html</code>. Otherwise we serve a file from the <code>web</code> directory corresponding to the path requested.</p>
@@ -113,7 +110,7 @@ tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;
 <p>That's the web server done.</p>
 <h2 id="step-3-serve-the-client-side-app">Step 3. Serve the client-side app</h2><br/>
 <p>Now we have a working web server, we need to serve the actual client side app.</p>
-<p>For this demo, we've written it using <a href="http://knockoutjs.com/">knockout.js</a> and <a href="http://twitter.github.com/bootstrap/">Twitter bootstrap</a>, but in your apps you can use whatever client side toolset you feel most comfortable with.</p>
+<p>For this demo, we've written it using <a href="http://knockoutjs.com/">knockout.js</a> and <a href="http://twitter.github.com/bootstrap/">Twitter bootstrap</a>, but in your apps you can use whatever client side toolset you feel most comfortable with (e.g. jQuery, backbone.js, ember.js or whatever).</p>
 <p>The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.</p>
 <p>Copy the client side application from the vert.x installation into our web directory as follows:</p>
 <pre class="prettyprint">tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/javascript/webapp/web/* web
@@ -186,13 +183,13 @@ vertx.deployVerticle('web_server.js');
 <p>SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.</p>
 <p>The SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.</p>
 <p>SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.</p>
-<p>To create a SockJS bridge, we just create an instance of <code>vertx.SockJSBridge</code> as follows:</p>
-<pre class="prettyprint">new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+<p>To create a SockJS bridge, we just create a SockJS server and call the <code>bridge</code> function on it as follows:</p>
+<pre class="prettyprint">vertx.createSockJSServer(server).bridge({prefix : '/eventbus'}, []);
 </pre>
 <p>Edit <code>web_server.js</code> so it looks like:</p>
 <pre class="prettyprint">load('vertx.js');
 
-var server = new vertx.HttpServer();
+var server = vertx.createHttpServer();
 
 server.requestHandler(function(req) {
   if (req.path === '/') {
@@ -206,27 +203,23 @@ server.requestHandler(function(req) {
 });
 
 // Link up the client side to the server side event bus
-new vertx.SockJSBridge(server, {prefix : '/eventbus'}, [] );
+vertx.createSockJSServer(server).bridge({prefix : '/eventbus'}, [] );
 
 server.listen(8080, 'localhost');
-
-function vertxStop() {
-  server.close();
-}
 </pre>
-<p>What we're doing here is creating an instance of a SockJS bridge and telling it that any requests it receives with the prefix <code>/eventbus</code> should be considered traffic for the event bus.</p>
+<p>What we're doing here is creating an instance of a SockJS server and telling it that any requests it receives with the prefix <code>/eventbus</code> should be considered traffic for the event bus.</p>
 <p>The original request handler for the static data is still there, and that will still be invoked for any requests that don't have the prefix <code>/eventbus</code> on their path.</p>
 <p>There's one other thing we have to do here.</p>
 <p>For security reasons, by default, the SockJS bridge will reject all event bus messages sent from the client side. After all, we don't want just anyone being able to delete everything in the database.</p>
-<p>To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the third parameter when creating the bridge.</p>
+<p>To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the second parameter when creating the bridge.</p>
 <p>Initially, we only want to allow through requests to the persistor to find albums. This will be used by the client side application to request the catalogue so it can display the list of available items to buy.</p>
 <p>Edit the code in <code>web_server.js</code> so it looks like:</p>
 <pre class="prettyprint">load('vertx.js');
 
-var server = new vertx.HttpServer();
+var server = vertx.createHttpServer();
 
 // Link up the client side to the server side event bus
-new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
   [
     // Allow calls to get static album data from the persistor
     {
@@ -249,12 +242,8 @@ server.requestHandler(function(req) {
     req.response.end;
   }
 }).listen(8080, 'localhost');
-
-function vertxStop() {
-  server.close();
-}
 </pre>
-<p>The third parameter to the SockJSBridge constructor is an array of matches.  <br/>
+<p>The second parameter to the SockJSBridge constructor is an array of matches.  <br/>
 </p>
 <p>In our case, we're going to allow through any event bus messages from the client side to the address <code>demo.persistor</code> (which is where the persistor is listening), where the action field has the value <code>find</code>, and the <code>collection</code> field has the value <code>albums</code>.</p>
 <p>Save the file.</p>
@@ -279,7 +268,7 @@ function vertxStop() {
 </p>
 <p>Now there is some stuff to buy, you should be able to add stuff to your cart, and view the contents of your cart by clicking on the cart tab.</p>
 <h2 id="step-7-requesting-data-from-the-server">Step 7. Requesting data from the server</h2><br/>
-<p>As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a look at the code in the client side app that requests the catalogue data and populates the shop.</p>
+<p>As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a quick look at the code in the client side app that requests the catalogue data and populates the shop.</p>
 <p>The client side application JavaScript is contained in the file <code>web/js/client_app.js</code>. If you open this in your text editor you will see the following line, towards the top of the script:</p>
 <pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
 </pre>
@@ -374,7 +363,7 @@ vertx.deployVerticle('web_server.js');
 }
 </pre>
 <p>So the line that constructs the SockJSBridge looks like:</p>
-<pre class="prettyprint">new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+<pre class="prettyprint">vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
   [
     // Allow calls to get static album data from the persistor
     {
@@ -418,15 +407,15 @@ vertx.deployVerticle('web_server.js');
 <p>As orders arrive we want to</p>
 <ol>
 <li>Validate the user is logged in</li>
-<li>If Ok, then persist the order in the database</li>
-<li>If Ok, then send an order confirmation</li>
+<li>If ok, then persist the order in the database</li>
+<li>If ok, then send an order confirmation</li>
 <li>Send back a confirmation to the client side.</li>
 </ol>
 <p>Copy the following into your editor and save it as <code>order_mgr.js</code> in your tutorial top-level directory.</p>
 <pre class="prettyprint">load('vertx.js');
 
-var eb = vertx.EventBus;
-var log = vertx.getLogger();
+var eb = vertx.eventBus;
+var log = vertx.logger;
 
 var handler = function(order, replier) {
   log.info('Received order in order manager ' + JSON.stringify(order));
@@ -451,10 +440,6 @@ var handler = function(order, replier) {
 
 var address = "demo.orderMgr";
 eb.registerHandler(address, handler);
-
-function vertxStop() {
-  eb.unregisterHandler(address, handler);
-}
 </pre>
 <p>The order manager verticle registers a handler on the address <code>demo.orderMgr</code>. When an order message arrives in the handler the first thing it does is print out the order to stdout, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).</p>
 <p>If the user was logged in ok, the order is persisted using the MongoDB persistor. If that returns ok, we send back a message to the client </p>
@@ -470,7 +455,7 @@ function vertxStop() {
 }
 </pre>
 <p>So, it should look like:</p>
-<pre class="prettyprint">new vertx.SockJSBridge(server, {prefix : '/eventbus'},
+<pre class="prettyprint">vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
   [
     // Allow calls to get static album data from the persistor
     {
@@ -617,7 +602,7 @@ vertx.deployVerticle('order_mgr.js');
 <p>Configuring vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please
 see the manual).</p>
 <p>Edit <code>web_server.js</code> again, and edit the line that creates the HTTP server so it reads:</p>
-<pre class="prettyprint">var server = new vertx.HttpServer()
+<pre class="prettyprint">var server = vertx.createHttpServer()
     .setSSL(true)
     .setKeyStorePath('server-keystore.jks')
     .setKeyStorePassword('wibble');

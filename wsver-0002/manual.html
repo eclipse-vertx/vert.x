@@ -110,11 +110,11 @@
 <h1 id="introduction">Introduction</h1><br/>
 <h2 id="what-is-vertx">What is vert.x?</h2><br/>
 <p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
-<p>Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby and Java too.</p>
+<p>Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java and Groovy as well as JavaScript.</p>
 <p>Some of the key highlights include:</p>
 <ul>
 <li>
-<p>Polyglot. Write your application components in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).</p>
+<p>Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application. (Scala and Clojure support is scheduled too).</p>
 </li>
 <li>
 <p>Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.</p>
@@ -132,7 +132,7 @@
 <h2 id="vertx-embedded">Vert.x Embedded</h2><br/>
 <p>If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality directly in your own pre-existing Spring Framework or other Java application, then you can do this too.</p>
 <p>Just use the jar <code>vertx-core.jar</code> which is available in the <code>lib/jars</code> directory in the distribution.</p>
-<p>You then have full access to the core vert.x API. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.</p>
+<p>You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.</p>
 <p>There is a caveat here. When running vert.x outside a verticle you don't have the isolation benefits that a verticle brings, so you will need to be more careful about sharing state between different event loops.</p>
 <h2 id="concepts-in-vertx">Concepts in vert.x</h2><br/>
 <p>In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.</p>
@@ -386,7 +386,6 @@ vertx undeploy my_app
 <p>To configure clustering use the file <code>conf/cluster.xml</code> in the distribution.</p>
 <p>If you want to receive more info on cluster setup etc, then edit <code>conf/logging.properties</code> to read <code>com.hazelcast.level=INFO</code></p>
 <p>In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the <code>interfaces-enabled</code> element.</p>
-<p>There's also a bug in vert.x 1.0.0.beta.1 which means you <strong>must</strong> specify <code>-cluster-host</code> when running clustered</p>
 <h1 id="internals">Internals</h1><br/>
 <p>Vert.x uses the following amazing open source projects:</p>
 <ul>
