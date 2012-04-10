@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: Vertx::ServerWebSocket
+  
+    &mdash; vert.x Ruby API
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  relpath = '..';
+  if (relpath != '') relpath += '/';
+</script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
+    <div id="header">
+      <div id="menu">
+  
+    <a href="../_index.html">Index (S)</a> &raquo; 
+    <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
+     &raquo; 
+    <span class="title">ServerWebSocket</span>
+  
+  
+  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a id="class_list_link" href="#">Class List</a>
+  
+    <a id="method_list_link" href="#">Method List</a>
+  
+    <a id="file_list_link" href="#">File List</a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+    
+    <iframe id="search_frame"></iframe>
+    
+    <div id="content"><h1>Class: Vertx::ServerWebSocket
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName"><span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span></li>
+          
+            <li class="next">Vertx::ServerWebSocket</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">src/main/ruby/core/http.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>
+Instances of this class are created when a WebSocket is accepted on the
+server. It extends <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span> and adds methods to reject the WebSocket and
+an attribute for the path.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#path-instance_method" title="#path (instance method)">- (Object) <strong>path</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+The path the websocket connect was attempted at.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#reject-instance_method" title="#reject (instance method)">- (Object) <strong>reject</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Reject the WebSocket This can be called in the websocket connect handler on
+the server side and will cause the WebSocket connection attempt to be
+rejected, returning a 404 to the client.
+</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="WebSocket.html#binary_handler_id-instance_method" title="Vertx::WebSocket#binary_handler_id (method)">#binary_handler_id</a></span>, <span class='object_link'><a href="WebSocket.html#close-instance_method" title="Vertx::WebSocket#close (method)">#close</a></span>, <span class='object_link'><a href="WebSocket.html#closed_handler-instance_method" title="Vertx::WebSocket#closed_handler (method)">#closed_handler</a></span>, <span class='object_link'><a href="WebSocket.html#text_handler_id-instance_method" title="Vertx::WebSocket#text_handler_id (method)">#text_handler_id</a></span>, <span class='object_link'><a href="WebSocket.html#write_binary_frame-instance_method" title="Vertx::WebSocket#write_binary_frame (method)">#write_binary_frame</a></span>, <span class='object_link'><a href="WebSocket.html#write_text_frame-instance_method" title="Vertx::WebSocket#write_text_frame (method)">#write_text_frame</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="WriteStream.html#drain_handler-instance_method" title="Vertx::WriteStream#drain_handler (method)">#drain_handler</a></span>, <span class='object_link'><a href="WriteStream.html#exception_handler-instance_method" title="Vertx::WriteStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="WriteStream.html#write_buffer-instance_method" title="Vertx::WriteStream#write_buffer (method)">#write_buffer</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_full%3F-instance_method" title="Vertx::WriteStream#write_queue_full? (method)">#write_queue_full?</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_max_size%3D-instance_method" title="Vertx::WriteStream#write_queue_max_size= (method)">#write_queue_max_size=</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="ReadStream.html#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">#data_handler</a></span>, <span class='object_link'><a href="ReadStream.html#end_handler-instance_method" title="Vertx::ReadStream#end_handler (method)">#end_handler</a></span>, <span class='object_link'><a href="ReadStream.html#exception_handler-instance_method" title="Vertx::ReadStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="ReadStream.html#pause-instance_method" title="Vertx::ReadStream#pause (method)">#pause</a></span>, <span class='object_link'><a href="ReadStream.html#resume-instance_method" title="Vertx::ReadStream#resume (method)">#resume</a></span></p>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+    
+    
+      <div class="method_details first">
+  <p class="signature first" id="path-instance_method">
+  
+    - (<tt>Object</tt>) <strong>path</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The path the websocket connect was attempted at.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+860
+861
+862</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 860</span>
+
+<span class='def def kw'>def</span> <span class='path identifier id'>path</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='path identifier id'>path</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="reject-instance_method">
+  
+    - (<tt>Object</tt>) <strong>reject</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Reject the WebSocket This can be called in the websocket connect handler on
+the server side and will cause the WebSocket connection attempt to be
+rejected, returning a 404 to the client.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+855
+856
+857</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 855</span>
+
+<span class='def def kw'>def</span> <span class='reject identifier id'>reject</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='reject identifier id'>reject</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+    
+    <div id="footer">
+  Generated on Fri Mar 16 15:39:40 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+</div>
+
+  </body>
+</html>
