@@ -37,7 +37,7 @@ Copy the following into a text editor and save it as `server.js`
 
     load('vertx.js');
 
-    new vertx.HttpServer().requestHandler(function(req) {
+    vertx.createHttpServer().requestHandler(function(req) {
       req.response.end("Hello World!");
     }).listen(8080, 'localhost');
 

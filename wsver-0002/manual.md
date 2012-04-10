@@ -6,11 +6,11 @@
       
 **Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
 
-Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby and Java too.
+Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java and Groovy as well as JavaScript.
       
 Some of the key highlights include:
 
-* Polyglot. Write your application components in JavaScript, Java or Ruby. It's up to you. Or mix and match several programming languages in a single application. (Groovy, Scala and Clojure support is scheduled too).
+* Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application. (Scala and Clojure support is scheduled too).
 
 * Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.
 
@@ -26,7 +26,7 @@ If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TC
 
 Just use the jar `vertx-core.jar` which is available in the `lib/jars` directory in the distribution.
 
-You then have full access to the core vert.x API. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
+You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
 
 There is a caveat here. When running vert.x outside a verticle you don't have the isolation benefits that a verticle brings, so you will need to be more careful about sharing state between different event loops.
 
@@ -364,8 +364,6 @@ To configure clustering use the file `conf/cluster.xml` in the distribution.
 If you want to receive more info on cluster setup etc, then edit `conf/logging.properties` to read `com.hazelcast.level=INFO`
 
 In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the `interfaces-enabled` element.
-
-There's also a bug in vert.x 1.0.0.beta.1 which means you **must** specify `-cluster-host` when running clustered
 
 # Internals
 

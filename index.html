@@ -180,7 +180,7 @@
                 <pre class="prettyprint">
 load('vertx.js')
 
-new vertx.HttpServer().requestHandler(function(req) {
+vertx.createHttpServer().requestHandler(function(req) {
     var file = req.path === '/' ? 'index.html' : req.path;
     req.response.sendFile('webroot/' + file);
 }).listen(8080)
@@ -229,15 +229,12 @@ import org.vertx.java.core.http.*;
 public class Server implements Verticle {
 
   public void start() {
-    new HttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
+    vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
       public void handle(HttpServerRequest req) {
         String file = req.path.equals("/") ? "index.html" : req.path;
         req.response.sendFile("webroot/" + file);
       }
     }).listen(8080);
-  }
-
-  public void stop() {
   }
 }
 
