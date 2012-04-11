@@ -526,6 +526,13 @@ class Buffer extends org.vertx.java.core.buffer.Buffer {
   }
 
   /**
+   * Synonym for {@link #length}
+   */
+  int getLength() {
+    jBuffer.length()
+  }
+
+  /**
    * Returns a copy of the entire Buffer.
    */
   Buffer copy() {
