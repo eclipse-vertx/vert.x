@@ -164,7 +164,7 @@ The SockJS bridge is a server side vert.x component which uses SockJS to connect
 
 SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.
 
-To create a SockJS bridge, we just create an instance of `Vertx::SockJSServer` and call the `bridge` metghod on it as follows:
+To create a SockJS bridge, we just create an instance of `Vertx::SockJSServer` and call the `bridge` method on it as follows:
 
     Vertx::SockJSServer.new(server).bridge({'prefix' => '/eventbus'}, [] )
 
@@ -194,7 +194,7 @@ Edit `web_server.rb` so it looks like:
 
 What we're doing here is creating an instance of a SockJS server and telling it that any requests it receives with the prefix `/eventbus` should be considered traffic for the event bus.
 
-The original request handler for the static data is still there, and that will still be invoked for any requests that don't have the prefix `/eventbus` on their path.
+The original request handler for the static resources is still there, and that will still be invoked for any requests that don't have the prefix `/eventbus` on their path.
 
 There's one other thing we have to do here.
 
@@ -210,6 +210,17 @@ Edit the code in `web_server.rb` so it looks like:
     include Vertx
 
     @server = HttpServer.new
+    
+    @server.request_handler do |req|
+      if req.path == '/'
+        req.response.send_file('web/index.html')
+      elsif !req.path.include?('..')
+        req.response.send_file('web' + req.path)
+      else
+        req.response.status_code = 404
+        req.response.end
+      end
+    end
 
     # Link up the client side to the server side event bus
     Vertx::SockJSServer.new(@server).bridge({'prefix' => '/eventbus'},
@@ -224,19 +235,10 @@ Edit the code in `web_server.rb` so it looks like:
         }
       ])
 
-    @server.request_handler do |req|
-      if req.path == '/'
-        req.response.send_file('web/index.html')
-      elsif !req.path.include?('..')
-        req.response.send_file('web' + req.path)
-      else
-        req.response.status_code = 404
-        req.response.end
-      end
-    end.listen(8080, 'localhost')
+    @server.listen(8080, 'localhost')
 
     
-The second parameter to the SockJSBridge constructor is an array of matches.    
+The second parameter to the bridge method is an array of matches which determine which messages we're going to let through.
     
 In our case, we're going to allow through any event bus messages from the client side to the address `demo.persistor` (which is where the persistor is listening), where the action field has the value `find`, and the `collection` field has the value `albums`.
 
@@ -374,7 +376,7 @@ So, app.rb should now look like this:
     
 We also need to tell the SockJS bridge to expect login messages coming onto the event bus.
 
-Edit `web_server.rb` and add the following match to the array of matches passed into the SockJSBridge constructor:
+Edit `web_server.rb` and add the following match to the array of matches passed into the `bridge` method:
 
     # Allow user to login
     {

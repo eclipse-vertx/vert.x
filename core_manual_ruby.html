@@ -1806,7 +1806,7 @@ server.listen(8080)
 <p>For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!</p>
 <p>To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.</p>
 <p>In other words the bridge acts like a kind of firewall which has a default <em>deny-all</em> policy.</p>
-<p>Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent <em>matches</em>, as the final argument in the constructor of <code>Vertx::SockJSBridge</code>.</p>
+<p>Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent <em>matches</em>, as the final argument to the <code>bridge</code> method.</p>
 <p>Each match has two fields:</p>
 <ol>
 <li><code>address</code>. This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.</li>

@@ -208,7 +208,7 @@ vertx.createSockJSServer(server).bridge({prefix : '/eventbus'}, [] );
 server.listen(8080, 'localhost');
 </pre>
 <p>What we're doing here is creating an instance of a SockJS server and telling it that any requests it receives with the prefix <code>/eventbus</code> should be considered traffic for the event bus.</p>
-<p>The original request handler for the static data is still there, and that will still be invoked for any requests that don't have the prefix <code>/eventbus</code> on their path.</p>
+<p>The original request handler for the static resources is still there, and that will still be invoked for any requests that don't have the prefix <code>/eventbus</code> on their path.</p>
 <p>There's one other thing we have to do here.</p>
 <p>For security reasons, by default, the SockJS bridge will reject all event bus messages sent from the client side. After all, we don't want just anyone being able to delete everything in the database.</p>
 <p>To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the second parameter when creating the bridge.</p>
@@ -217,6 +217,17 @@ server.listen(8080, 'localhost');
 <pre class="prettyprint">load('vertx.js');
 
 var server = vertx.createHttpServer();
+
+server.requestHandler(function(req) {
+  if (req.path === '/') {
+    req.response.sendFile('web/index.html');
+  } else if (req.path.indexOf('..') === -1) {
+    req.response.sendFile('web' + req.path);
+  } else {
+    req.response.statusCode = 404;
+    req.response.end;
+  }
+})
 
 // Link up the client side to the server side event bus
 vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
@@ -232,19 +243,9 @@ vertx.createSockJSServer(server).bridge({prefix : '/eventbus'},
   ]
 );
 
-server.requestHandler(function(req) {
-  if (req.path === '/') {
-    req.response.sendFile('web/index.html');
-  } else if (req.path.indexOf('..') === -1) {
-    req.response.sendFile('web' + req.path);
-  } else {
-    req.response.statusCode = 404;
-    req.response.end;
-  }
-}).listen(8080, 'localhost');
+server.listen(8080, 'localhost');
 </pre>
-<p>The second parameter to the SockJSBridge constructor is an array of matches.  <br/>
-</p>
+<p>The second parameter to the bridge method is an array of matches which determine which message we will let through. </p>
 <p>In our case, we're going to allow through any event bus messages from the client side to the address <code>demo.persistor</code> (which is where the persistor is listening), where the action field has the value <code>find</code>, and the <code>collection</code> field has the value <code>albums</code>.</p>
 <p>Save the file.</p>
 <h2 id="step-6-inserting-the-static-data">Step 6. Inserting the Static Data</h2><br/>
@@ -356,7 +357,7 @@ vertx.deployVerticle('busmods/auth_mgr.js', app_conf.auth_mgr_conf);
 vertx.deployVerticle('web_server.js');
 </pre>
 <p>We also need to tell the SockJS bridge to expect login messages coming onto the event bus.</p>
-<p>Edit <code>web_server.js</code> and add the following match to the array of matches passed into the SockJSBridge constructor:</p>
+<p>Edit <code>web_server.js</code> and add the following match to the array of matches passed into the <code>bridge</code> function:</p>
 <pre class="prettyprint">// Allow user to login
 {
   address : 'demo.authMgr.login'
