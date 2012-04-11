@@ -14,8 +14,9 @@
 * limitations under the License.
 */
 
-def server =
-  vertx.createHttpServer(SSL: true, keyStorePath: 'server-keystore.jks', keyStorePassword: 'wibble')
+def server = vertx.createHttpServer(SSL: true,
+                                    keyStorePath: 'server-keystore.jks',
+                                    keyStorePassword: 'wibble')
 
 // Serve the static resources
 server.requestHandler { req ->

@@ -21,12 +21,12 @@ def appConf = [
     'address': 'demo.persistor',
     'db_name': 'test_db'
   ],
-  auth_mgr_conf: [
+  'auth_mgr_conf': [
     'address': 'demo.authMgr',
     'user_collection': 'users',
     'persistor_address': 'demo.persistor'
   ],
-  mailer_conf: [
+  'mailer_conf': [
     'address': 'demo.mailer'
     /*
     Uncomment this to use a gmail account
