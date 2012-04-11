@@ -177,7 +177,7 @@ class NetSocket implements ReadStream, WriteStream {
   }
 
   /** {@inheritDoc} */
-  boolean writeQueueFull() {
+  boolean isWriteQueueFull() {
     jSocket.writeQueueFull()
   }
 

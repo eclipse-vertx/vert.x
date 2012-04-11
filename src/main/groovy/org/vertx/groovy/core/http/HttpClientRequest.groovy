@@ -166,7 +166,7 @@ class HttpClientRequest implements WriteStream {
   }
 
   /** {@inheritDoc} */
-  boolean writeQueueFull() {
+  boolean isWriteQueueFull() {
     jRequest.writeQueueFull()
   }
 

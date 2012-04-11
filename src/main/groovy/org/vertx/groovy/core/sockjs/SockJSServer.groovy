@@ -97,7 +97,7 @@ abstract class SockJSServer {
           jSock.setWriteQueueMaxSize(maxSize)
         }
         
-        boolean writeQueueFull() {
+        boolean isWriteQueueFull() {
           jSock.writeQueueFull()
         }
 

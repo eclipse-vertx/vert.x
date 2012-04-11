@@ -258,7 +258,7 @@ class HttpServerResponse implements WriteStream {
   }
 
   /** {@inheritDoc} */
-  boolean writeQueueFull() {
+  boolean isWriteQueueFull() {
     jResponse.writeQueueFull()
   }
 

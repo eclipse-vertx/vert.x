@@ -112,7 +112,7 @@ class Pump {
       }
 
       boolean writeQueueFull() {
-        return ws.writeQueueFull()
+        return ws.isWriteQueueFull()
       }
 
       void drainHandler(Handler<Void> handler) {
