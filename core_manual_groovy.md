@@ -34,18 +34,18 @@ you can implement a `vertxStop` top level method which will be called when the v
 
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available by calling the `getConfig` method on the `container` variable which is injected into the top level script. The config is a map which represents the JSON config.
+If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available in the `config` property of the `container` variable which is injected into the top level script. The config is a map which represents the JSON config.
 
-    def config = container.getConfig()
+    def config = container.config
 
 
 You can use this config to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
 ## Logging from a Verticle
 
-Each verticle is given its own logger. To get a reference to it invoke the `getLogger` method on the container instance:
+Each verticle is given its own logger. To get a reference to it use the `logger` property on the container instance:
 
-    def logger = container.getLogger()
+    def logger = container.logger
 
     logger.info "I am logging something"
 
@@ -86,7 +86,7 @@ JSON configuration can be passed to a verticle that is deployed programmatically
 
     container.deployVerticle("foo.ChildVerticle", config);
 
-Then, in `ChildVerticle` you can access the config via `getConfig` as previously explained.
+Then, in `ChildVerticle` you can access the config via the `config` property as previously explained.
 
 ## Using a Verticle to co-ordinate loading of an application
 
