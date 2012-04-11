@@ -427,7 +427,7 @@ It's as easy as that.
 
 ## Step 9. Processing Orders
 
-The next part to implement is submitting of orders.
+The next part to implement is processing of orders.
 
 One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.
 
@@ -438,37 +438,39 @@ A better solution is to write a simple order manager verticle which sits on the 
 As orders arrive we want to
 
 1. Validate the user is logged in
-2. If Ok, then persist the order in the database
-3. If Ok, then send an order confirmation
-4. Send back a confirmation to the client side.
+2. If ok, then persist the order in the database
+3. If ok, then send back a confirmation to the client side.
 
 Copy the following into your editor and save it as `order_mgr.rb` in your tutorial top-level directory.
 
     require('vertx')
     require('json')
 
-    eb = Vertx::EventBus
-    address = "demo.orderMgr"
+    @eb = Vertx::EventBus
 
-    id = eb.register_handler(address) do |message|
-      order = message.body
-      puts "Received order in order manager #{JSON.generate(order)}"
-      sessionID = order['sessionID']
-      eb.send('demo.authMgr.validate', { 'sessionID' => sessionID }) do |reply|
+    @eb.register_handler('demo.orderMgr') do |message|
+      validateUser(message)
+    end
+
+    def validateUser(message)
+      @eb.send('demo.authMgr.validate', { 'sessionID' => message.body['sessionID'] }) do |reply|
         if reply.body['status'] == 'ok'
-          username = reply.body['username']
-          eb.send('demo.persistor',
-                  {'action' => 'findone', 'collection' => 'users',
-                  'matcher'=> {'username' => username}}) do |reply|                                         
-              if reply.body['status'] == 'ok'
-                message.reply({'status' => 'ok'})
-              else
-                puts 'Failed to persist order'
-              end
-            end
+          message.body['username'] = reply.body['username']
+          saveOrder(message)
         else
-          # Invalid session id
-          puts 'invalid session id'
+          puts "Failed to validate user"
+        end
+      end
+    end
+
+    def saveOrder(message)
+      @eb.send('demo.persistor',
+          {'action' => 'save', 'collection' => 'orders', 'document' => message.body}) do |reply|
+        if reply.body['status'] === 'ok'
+          puts "order successfully processed!"
+          message.reply({'status' => 'ok'}) # Reply to the front end
+        else
+          puts "Failed to save order"
         end
       end
     end
@@ -476,14 +478,10 @@ Copy the following into your editor and save it as `order_mgr.rb` in your tutori
     
 The order manager verticle registers a handler on the address `demo.orderMgr`. When any message arrives on the event bus a `Message` object is passed to the handler.
 
-The actual order is in the `body` attribute of the message. When an order message arrives the first thing it does is print the order to stdout, then it sends a message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
+The actual order is in the `body` attribute of the message. When an order message arrives the first thing it does is sends a message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
 
-If the user was logged in ok, the order is then persisted using the MongoDB persistor. If that returns ok, we send back a message to the client 
+If the user was logged in ok, the order is then persisted using the MongoDB persistor. If that returns ok, we send back a message to the client.
 
-    if reply.status == 'ok'
-        order.reply({'status': 'ok'})
-    end
-    
 All messages have a `reply` function which can be invoked to send back a reply to the sender of the message. In other words, it's an implementation of the *request-response* pattern.
 
 We'll also need to add another accepted match on the SockJSBridge config in `web_server.rb` to tell it to let through orders:
@@ -566,81 +564,6 @@ Take a look in the console window of the application. You should see the order h
 ![Client Application](tutorial_4.png)
 
 ** Congratulations! You have just placed an order. **
-
-## Step 10. Sending emails
-
-We can easily send order confirmation emails from the order manager.
-
-First we need to start a Mailer busmod. This is an out of the box busmod that comes bundled with vert.x
-
-Add the following line to `app.rb`, just after where the `auth_mgr` is deployed.
-
-    Vertx.deploy_worker_verticle('busmods/mailer.rb', app_conf['mailer_conf'])
-            
-Add the following:
-
-    mailer_conf = {
-       'address' => 'demo.mailer'
-    };
-    
-By default, the mailer attempts to send mails to a local mail server (e.g. sendmail daemon) running on `localhost`, port `25`. If you don't have such a daemon, you can try it out with (for example), a gmail account by changing the mailer config as follows:
-
-    mailer_conf = {
-        'address' => 'demo.mailer',
-        'host' => 'smtp.googlemail.com',
-        'port' => 465,
-        'ssl' => true,
-        'auth' => true,
-        'username' => 'username',
-        'password' => 'password'    
-    };
-    
-(Obviously, changing the `username` and `password` values).  
-
-By default the email address of the `tim` user is `tim@localhost.com`. Update this in `static-data.rb` (and restart), and you should see the email being sent to the correct address.  
-
-Next, we can edit `order_mgr.rb` to actually send the email. We'll add the following function:
-
-    def send_email(email, items)
-
-      puts "sending to email #{email}"
-
-      body = "Thank you for your order\n\nYou bought:\n\n"
-      tot_price = 0.0
-      for i in 0..items.length - 1
-        quant = items[i]['quantity']
-        album = items[i]['album']
-        line_price = quant * album['price']
-        tot_price += line_price
-        body << "#{quant} of #{album['title']} at $#{album['price']} Line Total: $#{line_price}\n"
-      end
-      body << "\nTotal: $#{tot_price}"
-
-      msg = {
-        'from' => 'vToons@localhost',
-        'to' => email,
-        'subject' => 'Thank you for your order',
-        'body' => body
-      }
-      
-      puts "sending email: #{body}"
-
-      @eb.send('demo.mailer', msg)
-    end
-    
-This method simply formats an email based on the email address and the order items, and sends it off by sending a message on the event bus to the mailer.    
-    
-You'll also need to insert a call to this method, just after the order has been persisted ok, so it looks like this:
-
-    if reply.body['status'] == 'ok'
-        message.reply({'status' => 'ok'})
-
-        # Send an email            
-        send_email(reply.body['result']['email'], order['items'])
-    else
-        puts 'Failed to persist order'
-    end
-
    
 ## Step 11. Securing the Connection
 

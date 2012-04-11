@@ -427,7 +427,7 @@ It's as easy as that.
 
 ## Step 9. Processing Orders
 
-The next part to implement is submitting of orders.
+The next part to implement is order processing.
 
 One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.
 
@@ -439,8 +439,7 @@ As orders arrive we want to
 
 1. Validate the user is logged in
 2. If ok, then persist the order in the database
-3. If ok, then send an order confirmation
-4. Send back a confirmation to the client side.
+3. If ok, then send back a confirmation to the client side.
 
 Copy the following into your editor and save it as `order_mgr.js` in your tutorial top-level directory.
 
@@ -449,39 +448,37 @@ Copy the following into your editor and save it as `order_mgr.js` in your tutori
     var eb = vertx.eventBus;
     var log = vertx.logger;
 
-    var handler = function(order, replier) {
-      log.info('Received order in order manager ' + JSON.stringify(order));
-      var sessionID = order.sessionID;
-      eb.send('demo.authMgr.validate', { sessionID: sessionID }, function(reply) {
+    eb.registerHandler('demo.orderMgr', function(order, replier) {
+      validateUser(order, replier);
+    });
+
+    function validateUser(order, replier) {
+      eb.send('demo.authMgr.validate', { sessionID: order.sessionID }, function(reply) {
         if (reply.status === 'ok') {
-          var username = reply.username;
-          eb.send('demo.persistor', {action:'findone', collection:'users', matcher: {username: username}},
-            function(reply) {
-              if (reply.status === 'ok') {
-                replier({status: 'ok'});
-              } else {
-                log.warn('Failed to persist order');
-              }
-            });
+          order.username = reply.username;
+          saveOrder(order, replier);
         } else {
-          // Invalid session id
-          log.warn('invalid session id');
+          log.warn("Failed to validate user");
         }
       });
     }
 
-    var address = "demo.orderMgr";
-    eb.registerHandler(address, handler);
-
-    
-The order manager verticle registers a handler on the address `demo.orderMgr`. When an order message arrives in the handler the first thing it does is print out the order to stdout, then it sends another message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).
-
-If the user was logged in ok, the order is persisted using the MongoDB persistor. If that returns ok, we send back a message to the client 
-
-    if (reply.status === 'ok') {
-        replier({status: 'ok'});
+    function saveOrder(order, replier) {
+      eb.send('demo.persistor',
+          {action:'save', collection: 'orders', document: order}, function(reply) {
+        if (reply.status === 'ok') {
+          log.info("order successfully processed!");
+          replier({status: 'ok'}); // Reply to the front end
+        } else {
+          log.warn("Failed to save order");
+        }
+      });
     }
     
+The order manager verticle registers a handler on the address `demo.orderMgr`. When an order message arrives in the handler the first thing it does is to validate if the user is logged in, given their session id (which is passed in the order message).
+
+If the user was logged in ok, the order is persisted using the MongoDB persistor. If that returns ok, we reply 'ok' back to the front end.
+
 All message handlers when invoked receive a second argument. This is a replier function which can be invoked to send back a reply to the sender of the message. In other words, it's an implementation of the *request-response* pattern.
 
 We'll also need to add another accepted match on the SockJSBridge config in `web_server.js` to tell it to let through orders:
@@ -565,94 +562,6 @@ Take a look in the console window of the application. You should see the order h
 ![Client Application](tutorial_4.png)
 
 ** Congratulations! You have just placed an order. **
-
-## Step 10. Sending emails
-
-We can easily send order confirmation emails from the order manager.
-
-First we need to start a Mailer busmod. This is an out of the box busmod that comes bundled with vert.x
-
-Add the following line to `app.js`.
-
-    vertx.deployWorkerVerticle('busmods/mailer.js', mailerConf);
-    
-And augment the app config with
-
-    var mailerConf = {
-      address: 'demo.mailer'
-    }; 
-    
-So it reads:
-
-    var persistorConf =  {
-      address: 'demo.persistor',
-      db_name: 'test_db'
-    };
-    var authMgrConf = {
-      address: 'demo.authMgr',
-      user_collection: 'users',
-      persistor_address: 'demo.persistor'
-    };
-    var mailerConf = {
-      address: 'demo.mailer'
-    };         
-    
-By default, the mailer attempts to send mails to a local mail server (e.g. sendmail daemon) running on `localhost`, port `25`. If you don't have such a daemon, you can try it out with (for example), a gmail account by changing the mailer config as follows:
-
-    var mailerConf = {
-      address: 'demo.mailer',
-      host: 'smtp.googlemail.com',
-      port: 465,
-      ssl: true,
-      auth: true,
-      username: 'your_username',
-      password: 'your_password'
-    };
-    
-(Obviously, changing the `username` and `password` values).  
-
-By default the email address of the `tim` user is `tim@localhost.com`. Update this in `static-data.js` (and restart), and you should see the email being sent to the correct address.  
-
-Next, we can edit `order_mgr.js` to actually send the email. We'll add the following function:
-
-    function sendEmail(email, items) {
-
-      var body = 'Thank you for your order\n\nYou bought:\n\n';
-      var totPrice = 0.0;
-      for (var i = 0; i < items.length; i++) {
-        var quant = items[i].quantity;
-        var album = items[i].album;
-        var linePrice = quant * album.price;
-        totPrice += linePrice;
-        body = body.concat(quant, ' of ', album.title, ' at $' ,album.price.toFixed(2),
-                           ' Line Total: $', linePrice.toFixed(2), '\n');
-      }
-      body = body.concat('\n', 'Total: $', totPrice.toFixed(2));
-
-      var msg = {
-        from: 'vToons@localhost',
-        to: email,
-        subject: 'Thank you for your order',
-        body: body
-      };
-
-      eb.send('demo.mailer', msg);
-    }
-    
-This method simply formats an email based on the email address and the order items, and sends it off by sending a message on the event bus to the mailer.    
-    
-You'll also need to insert a call to this method, just after the order has been persisted ok, so it looks like this:
-
-    if (reply.status === 'ok') {
-        replier({status: 'ok'});
-
-        // Send an email            
-        sendEmail(reply.result.email, order.items);
-
-    } else {
-      log.warn('Failed to persist order');
-    }
-
    
 ## Step 11. Securing the Connection
 

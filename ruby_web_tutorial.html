@@ -146,16 +146,14 @@ tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;
 
 # Our application config
 
-app_conf = {
-  'persistor_conf' =&gt; {
-    'address' =&gt; 'demo.persistor',
-    'db_name' =&gt; 'test_db'
-  }
+persistor_conf = {
+  'address' =&gt; 'demo.persistor',
+  'db_name' =&gt; 'test_db'
 }
 
 # Deploy the busmods
 
-Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']);
+Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf);
 
 # Start the web server
 
@@ -248,7 +246,7 @@ Vertx::SockJSServer.new(@server).bridge({'prefix' =&gt; '/eventbus'},
 
 @server.listen(8080, 'localhost')
 </pre>
-<p>The second parameter to the bridge method is an array of matches which determine which messages we're going to let through.</p>
+<p>The second parameter to the <code>bridge</code> method is an array of matches which determine which messages we're going to let through.</p>
 <p>In our case, we're going to allow through any event bus messages from the client side to the address <code>demo.persistor</code> (which is where the persistor is listening), where the action field has the value <code>find</code>, and the <code>collection</code> field has the value <code>albums</code>.</p>
 <p>Save the file.</p>
 <h2 id="step-6-inserting-the-static-data">Step 6. Inserting the Static Data</h2><br/>
@@ -321,36 +319,35 @@ end
 <p>Open up app.rb again, and add the following line:</p>
 <pre class="prettyprint">Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
 </pre>
-<p>Also add the following to the <code>app_conf</code>:</p>
-<p>'auth_mgr_conf' =&gt; {
-    'address' =&gt; 'demo.authMgr',
-    'user_collection' =&gt; 'users',
-    'persistor_address' =&gt; 'demo.persistor'
-  }</p>
+<p>Also add the following to the app.rb:</p>
+<pre class="prettyprint">auth_mgr_conf = {
+  'address' =&gt; 'demo.authMgr',
+  'user_collection' =&gt; 'users',
+  'persistor_address' =&gt; 'demo.persistor'
+}
+</pre>
 <p>So, app.rb should now look like this:</p>
 <pre class="prettyprint">require('vertx')
 
 # Our application config
 
-app_conf = {
-  'persistor_conf' =&gt; {
-    'address' =&gt; 'demo.persistor',
-    'db_name' =&gt; 'test_db'
-  },
-  'auth_mgr_conf' =&gt; {
-    'address' =&gt; 'demo.authMgr',
-    'user_collection' =&gt; 'users',
-    'persistor_address' =&gt; 'demo.persistor'
-  }
+persistor_conf = {
+  'address' =&gt; 'demo.persistor',
+  'db_name' =&gt; 'test_db'
+}
+auth_mgr_conf = {
+  'address' =&gt; 'demo.authMgr',
+  'user_collection' =&gt; 'users',
+  'persistor_address' =&gt; 'demo.persistor'
 }
 
 # Deploy the busmods
 
-Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']) do
+Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf) do
     load('static_data.rb')
 end
 
-Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
+Vertx.deploy_verticle('busmods/auth_mgr.rb', auth_mgr_conf)
 
 # Start the web server
 
@@ -400,54 +397,52 @@ Vertx.deploy_verticle('web_server.rb')
 <p>When the reply comes back with status <code>ok</code>, it stores the session id which causes knockout to display the "Logged in as... " message.</p>
 <p>It's as easy as that.</p>
 <h2 id="step-9-processing-orders">Step 9. Processing Orders</h2><br/>
-<p>The next part to implement is submitting of orders.</p>
+<p>The next part to implement is processing of orders.</p>
 <p>One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.</p>
 <p>Problem is we don't want to just anyone inserting data into the database or sending emails from the client side (we don't want to become a spam relay!).</p>
 <p>A better solution is to write a simple order manager verticle which sits on the event bus on the server and handles the whole order processing for us.</p>
 <p>As orders arrive we want to</p>
 <ol>
 <li>Validate the user is logged in</li>
-<li>If Ok, then persist the order in the database</li>
-<li>If Ok, then send an order confirmation</li>
-<li>Send back a confirmation to the client side.</li>
+<li>If ok, then persist the order in the database</li>
+<li>If ok, then send back a confirmation to the client side.</li>
 </ol>
 <p>Copy the following into your editor and save it as <code>order_mgr.rb</code> in your tutorial top-level directory.</p>
 <pre class="prettyprint">require('vertx')
 require('json')
 
-eb = Vertx::EventBus
-address = "demo.orderMgr"
+@eb = Vertx::EventBus
 
-id = eb.register_handler(address) do |message|
-  order = message.body
-  puts "Received order in order manager #{JSON.generate(order)}"
-  sessionID = order['sessionID']
-  eb.send('demo.authMgr.validate', { 'sessionID' =&gt; sessionID }) do |reply|
+@eb.register_handler('demo.orderMgr') do |message|
+  validateUser(message)
+end
+
+def validateUser(message)
+  @eb.send('demo.authMgr.validate', { 'sessionID' =&gt; message.body['sessionID'] }) do |reply|
     if reply.body['status'] == 'ok'
-      username = reply.body['username']
-      eb.send('demo.persistor',
-              {'action' =&gt; 'findone', 'collection' =&gt; 'users',
-              'matcher'=&gt; {'username' =&gt; username}}) do |reply|                                         
-          if reply.body['status'] == 'ok'
-            message.reply({'status' =&gt; 'ok'})
-          else
-            puts 'Failed to persist order'
-          end
-        end
+      message.body['username'] = reply.body['username']
+      saveOrder(message)
     else
-      # Invalid session id
-      puts 'invalid session id'
+      puts "Failed to validate user"
+    end
+  end
+end
+
+def saveOrder(message)
+  @eb.send('demo.persistor',
+      {'action' =&gt; 'save', 'collection' =&gt; 'orders', 'document' =&gt; message.body}) do |reply|
+    if reply.body['status'] === 'ok'
+      puts "order successfully processed!"
+      message.reply({'status' =&gt; 'ok'}) # Reply to the front end
+    else
+      puts "Failed to save order"
     end
   end
 end
 </pre>
 <p>The order manager verticle registers a handler on the address <code>demo.orderMgr</code>. When any message arrives on the event bus a <code>Message</code> object is passed to the handler.</p>
-<p>The actual order is in the <code>body</code> attribute of the message. When an order message arrives the first thing it does is print the order to stdout, then it sends a message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).</p>
-<p>If the user was logged in ok, the order is then persisted using the MongoDB persistor. If that returns ok, we send back a message to the client </p>
-<pre class="prettyprint">if reply.status == 'ok'
-    order.reply({'status': 'ok'})
-end
-</pre>
+<p>The actual order is in the <code>body</code> attribute of the message. When an order message arrives the first thing it does is sends a message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).</p>
+<p>If the user was logged in ok, the order is then persisted using the MongoDB persistor. If that returns ok, we send back a message to the client.</p>
 <p>All messages have a <code>reply</code> function which can be invoked to send back a reply to the sender of the message. In other words, it's an implementation of the <em>request-response</em> pattern.</p>
 <p>We'll also need to add another accepted match on the SockJSBridge config in <code>web_server.rb</code> to tell it to let through orders:</p>
 <pre class="prettyprint"># Let through orders posted to the order manager
@@ -517,88 +512,6 @@ Vertx.deploy_verticle('order_mgr.rb')
 <p>Take a look in the console window of the application. You should see the order has been logged.</p>
 <p><img alt="Client Application" src="tutorial_4.png"/></p>
 <p><strong> Congratulations! You have just placed an order. </strong></p>
-<h2 id="step-10-sending-emails">Step 10. Sending emails</h2><br/>
-<p>We can easily send order confirmation emails from the order manager.</p>
-<p>First we need to start a Mailer busmod. This is an out of the box busmod that comes bundled with vert.x</p>
-<p>Add the following line to <code>app.rb</code>, just after where the <code>auth_mgr</code> is deployed.</p>
-<pre class="prettyprint">Vertx.deploy_worker_verticle('busmods/mailer.rb', app_conf['mailer_conf'])
-</pre>
-<p>And augment the app config with</p>
-<pre class="prettyprint">'mailer_conf' =&gt; {
-    'address' =&gt; 'demo.mailer'    
-}
-</pre>
-<p>So it reads:</p>
-<pre class="prettyprint">app_conf = {
-  'persistor_conf' =&gt; {
-    'address' =&gt; 'demo.persistor',
-    'db_name' =&gt; 'test_db'
-  },
-  'auth_mgr_conf' =&gt; {
-    'address' =&gt; 'demo.authMgr',
-    'user_collection' =&gt; 'users',
-    'persistor_address' =&gt; 'demo.persistor'
-  },
-  'mailer_conf' =&gt; {
-     'address' =&gt; 'demo.mailer'    
-  }
-}
-</pre>
-<p>By default, the mailer attempts to send mails to a local mail server (e.g. sendmail daemon) running on <code>localhost</code>, port <code>25</code>. If you don't have such a daemon, you can try it out with (for example), a gmail account by changing the mailer config as follows:</p>
-<pre class="prettyprint">'mailer_conf' =&gt; {
-    'address' =&gt; 'demo.mailer',
-    'host' =&gt; 'smtp.googlemail.com',
-    'port' =&gt; 465,
-    'ssl' =&gt; true,
-    'auth' =&gt; true,
-    'username' =&gt; 'username',
-    'password' =&gt; 'password'    
-}
-</pre>
-<p>(Obviously, changing the <code>username</code> and <code>password</code> values).<br/>
-</p>
-<p>By default the email address of the <code>tim</code> user is <code>tim@localhost.com</code>. Update this in <code>static-data.rb</code> (and restart), and you should see the email being sent to the correct address.<br/>
-</p>
-<p>Next, we can edit <code>order_mgr.rb</code> to actually send the email. We'll add the following function:</p>
-<pre class="prettyprint">def send_email(email, items)
-
-  puts "sending to email #{email}"
-
-  body = "Thank you for your order\n\nYou bought:\n\n"
-  tot_price = 0.0
-  for i in 0..items.length - 1
-    quant = items[i]['quantity']
-    album = items[i]['album']
-    line_price = quant * album['price']
-    tot_price += line_price
-    body &lt;&lt; "#{quant} of #{album['title']} at $#{album['price']} Line Total: $#{line_price}\n"
-  end
-  body &lt;&lt; "\nTotal: $#{tot_price}"
-
-  msg = {
-    'from' =&gt; 'vToons@localhost',
-    'to' =&gt; email,
-    'subject' =&gt; 'Thank you for your order',
-    'body' =&gt; body
-  }
-
-  puts "sending email: #{body}"
-
-  @eb.send('demo.mailer', msg)
-end
-</pre>
-<p>This method simply formats an email based on the email address and the order items, and sends it off by sending a message on the event bus to the mailer.  <br/>
-</p>
-<p>You'll also need to insert a call to this method, just after the order has been persisted ok, so it looks like this:</p>
-<pre class="prettyprint">if reply.body['status'] == 'ok'
-    message.reply({'status' =&gt; 'ok'})
-
-    # Send an email            
-    send_email(reply.body['result']['email'], order['items'])
-else
-    puts 'Failed to persist order'
-end
-</pre>
 <h2 id="step-11-securing-the-connection">Step 11. Securing the Connection</h2><br/>
 <p>So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea since we've been sending login credentials and orders.</p>
 <p>Configuring vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please
