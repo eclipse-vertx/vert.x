@@ -99,7 +99,7 @@ class AsyncFile{
         jWS.setWriteQueueMaxSize(maxSize)
       }
 
-      boolean writeQueueFull() {
+      boolean isWriteQueueFull() {
         return jWS.writeQueueFull()
       }
 

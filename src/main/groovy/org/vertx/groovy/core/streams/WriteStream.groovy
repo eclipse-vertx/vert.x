@@ -32,7 +32,7 @@ interface WriteStream {
   /**
    * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
    * asynchronously. To avoid running out of memory by putting too much on the write queue,
-   * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
+   * check the {@link #isWriteQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
   void writeBuffer(Buffer data)
 
@@ -46,7 +46,7 @@ interface WriteStream {
   /**
    * This will return {@code true} if there are more bytes in the write queue than the value set using {@link #setWriteQueueMaxSize}
    */
-  boolean writeQueueFull()
+  boolean isWriteQueueFull()
 
   /**
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write

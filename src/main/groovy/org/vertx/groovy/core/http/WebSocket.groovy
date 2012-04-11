@@ -144,7 +144,7 @@ class WebSocket implements ReadStream, WriteStream {
   }
 
   /** {@inheritDoc} */
-  boolean writeQueueFull() {
+  boolean isWriteQueueFull() {
     jWS.writeQueueFull()
   }
 
