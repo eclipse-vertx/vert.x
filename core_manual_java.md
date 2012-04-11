@@ -950,7 +950,7 @@ To configure a server to also require client certificates:
                    .setKeyStorePath("/path/to/your/keystore/server-keystore.jks")
                    .setKeyStorePassword("password")
                    .setTrustStorePath("/path/to/your/truststore/server-truststore.jks")
-                   .setTrustStorePassword("password2)
+                   .setTrustStorePassword("password")
                    .setClientAuthRequired(true);
     
 Making sure that `server-truststore.jks` contains the certificates of any clients who the server trusts.
@@ -981,7 +981,7 @@ To configure a client to only trust those certificates it has in its trust store
 
     NetClient client = vertx.createNetClient()
                    .setSSL(true)
-                   .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks2)
+                   .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks")
                    .setTrustStorePassword("password");
                    
 To configure a client to only trust those certificates it has in its trust store, and also to supply a client certificate:
@@ -989,10 +989,10 @@ To configure a client to only trust those certificates it has in its trust store
     NetClient client = vertx.createNetClient()
                    .setSSL(true)
                    .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks")
-                   .setTrustStorePassword("password2)
+                   .setTrustStorePassword("password")
                    .setClientAuthRequired(true)
                    .setKeyStorePath("/path/to/keystore/holding/client/cert/client-keystore.jks")
-                   .setKeyStorePassword("password2);
+                   .setKeyStorePassword("password");
                      
  
 # Flow Control - Streams and Pumps

@@ -787,13 +787,11 @@ Just like `NetServer`, `NetClient` also has a set of TCP properties you can set 
 
 ## SSL Servers
 
-GOT HERE
-
 Net servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
 
 When a `NetServer` is working as an SSL Server the API of the `NetServer` and `NetSocket` is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the `NetServer` before `listen` is called.
 
-To enabled ssl the function `setSSL(true)` must be called on the Net Server.
+To enabled ssl the property `SSL` to `true` on the Net Server.
 
 The server must also be configured with a *key store* and an optional *trust store*.
 
@@ -803,28 +801,26 @@ The keytool command allows you to create keystores, and import and export certif
 
 The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over ssl if the server does not have a certificate.
 
-The key store is configured on the server using the `setKeyStorePath` and `setKeyStorePassword` methods.
+The key store is configured on the server using the `keyStorePath` and `keyStorePassword` properties.
 
 The trust store is optional and contains the certificates of any clients it should trust. This is only used if client authentication is required.
 
 To configure a server to use server certificates only:
 
-    NetServer server = vertx.createNetServer()
-                   .setSSL(true)
-                   .setKeyStorePath("/path/to/your/keystore/server-keystore.jks")
-                   .setKeyStorePassword("password");
+    def server = vertx.createNetServer(SSL: true,
+                                       keyStorePath: "/path/to/your/keystore/server-keystore.jks",
+                                       keyStorePassword: "password")
 
 Making sure that `server-keystore.jks` contains the server certificate.
 
 To configure a server to also require client certificates:
 
-    NetServer server = vertx.createNetServer()
-                   .setSSL(true)
-                   .setKeyStorePath("/path/to/your/keystore/server-keystore.jks")
-                   .setKeyStorePassword("password")
-                   .setTrustStorePath("/path/to/your/truststore/server-truststore.jks")
-                   .setTrustStorePassword("password2)
-                   .setClientAuthRequired(true);
+    def server = vertx.createNetServer(SSL: true,
+                                       keyStorePath: "/path/to/your/keystore/server-keystore.jks",
+                                       keyStorePassword: "password"),
+                                       trustStorePath: "/path/to/your/truststore/server-truststore.jks",
+                                       trustStorePassword: "password",
+                                       clientAuthRequired: true)
 
 Making sure that `server-truststore.jks` contains the certificates of any clients who the server trusts.
 
@@ -834,38 +830,34 @@ If `clientAuthRequired` is set to `true` and the client cannot provide a certifi
 
 Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
 
-To enable SSL on a `NetClient` the function `setSSL(true)` is called.
+To enable SSL on a `NetClient` the property `SSL` should be set to `true`.
 
-If the `setTrustAll(true)` is invoked on the client, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is `false`.
+If the property `trustAll` is set to `true`, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is `false`.
 
-If `setTrustAll(true)` has not been invoked then a client trust store must be configured and should contain the certificates of the servers that the client trusts.
+If `trustAll` is set to `false` (default) then a client trust store must be configured and should contain the certificates of the servers that the client trusts.
 
-The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
+The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set with the property `trustStorePath`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
-If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it's just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`.
+If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it's just a regular Java key store. The client keystore location is set with the property `keyStorePath`.
 
 To configure a client to trust all server certificates (dangerous):
 
-    NetClient client = vertx.createNetClient()
-                   .setSSL(true)
-                   .setTrustAll(true);
+    def client = vertx.createNetClient(SSL: true, trustAll: true)
 
 To configure a client to only trust those certificates it has in its trust store:
 
-    NetClient client = vertx.createNetClient()
-                   .setSSL(true)
-                   .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks2)
-                   .setTrustStorePassword("password");
+    def client = vertx.createNetClient(SSL: true,
+                                       trustStorePath: "/path/to/your/client/truststore/client-truststore.jks"
+                                       trustStorePassword: "password")
 
 To configure a client to only trust those certificates it has in its trust store, and also to supply a client certificate:
 
-    NetClient client = vertx.createNetClient()
-                   .setSSL(true)
-                   .setTrustStorePath("/path/to/your/client/truststore/client-truststore.jks")
-                   .setTrustStorePassword("password2)
-                   .setClientAuthRequired(true)
-                   .setKeyStorePath("/path/to/keystore/holding/client/cert/client-keystore.jks")
-                   .setKeyStorePassword("password2);
+    def client = vertx.createNetClient(SSL: true,
+                                       trustStorePath: "/path/to/your/client/truststore/client-truststore.jks"
+                                       trustStorePassword: "password",
+                                       clientAuthRequired: true,
+                                       keyStorePath: "/path/to/keystore/holding/client/cert/client-keystore.jks",
+                                       keyStorePassword: "password")
 
 
 # Flow Control - Streams and Pumps
@@ -878,7 +870,7 @@ It's not hard to see that if you write to an object faster than it can actually 
 
 To solve this problem a simple flow control capability is provided by some objects in the vert.x API.
 
-Any flow control aware object that can be written to implements `org.vertx.java.core.streams.ReadStream`, and any flow control object that can be read from is said to implement `org.vertx.java.core.streams.WriteStream`.
+Any flow control aware object that can be written to implement `org.vertx.groovy.core.streams.ReadStream`, and any flow control object that can be read from implement `org.vertx.groovy.core.streams.WriteStream`.
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
@@ -886,97 +878,67 @@ A very simple example would be reading from a `NetSocket` on a server and writin
 
 A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
-
-            sock.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    // Write the data straight back
-                    sock.write(buffer);
-                }
-            });
-
+    server.connectHandler { sock ->
+        sock.dataHandler { buffer ->
+            // Write the data straight back
+            sock.write(buffer)
         }
-    }).listen(1234, "localhost");
+    }.listen(1234, "localhost")
 
 There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
 
 Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
-    NetServer server = vertx.createNetServer();
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
+    def server = vertx.createNetServer()
 
-            sock.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    if (!sock.writeQueueFull()) {
-                        sock.write(buffer);
-                    }
-                }
-            });
-
+    server.connectHandler { sock ->
+        sock.dataHandler { buffer ->
+            if (!sock.writeQueueFull) {
+                sock.write(buffer)
+            }
         }
-    }).listen(1234, "localhost");
+    }.listen(1234, "localhost")
 
 This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the `NetSocket` when the write queue is full. Let's do that:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
-
-            sock.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    if (!sock.writeQueueFull()) {
-                        sock.write(buffer);
-                    } else {
-                        sock.pause();
-                    }
-                }
-            });
-
+    server.connectHandler { sock ->
+        sock.dataHandler { buffer ->
+            if (!sock.writeQueueFull) {
+                sock.write(buffer)
+            } else {
+                sock.pause()
+            }
         }
-    }).listen(1234, "localhost");
+    }.listen(1234, "localhost")
 
 We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to *unpause* it when the write queue has processed its backlog:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(final NetSocket sock) {
-
-            sock.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    if (!sock.writeQueueFull()) {
-                        sock.write(buffer);
-                    } else {
-                        sock.pause();
-                        sock.drainHandler(new SimpleHandler() {
-                            public void handle() {
-                                sock.resume();
-                            }
-                        });
-                    }
-                }
-            });
-
+    server.connectHandler { sock ->
+        sock.dataHandler { buffer ->
+            if (!sock.writeQueueFull) {
+                sock.write(buffer)
+            } else {
+                sock.pause()
+                sock.drainHandler { sock.resume() }
+            }
         }
-    }).listen(1234, "localhost");
+    }.listen(1234, "localhost")
+
 
 And there we have it. The `drainHandler` event handler will get called when the write queue is ready to accept more data, this resumes the `NetSocket` which allows it to read more data.
 
 It's very common to want to do this when writing vert.x applications, so we provide a helper class called `Pump` which does all this hard work for you. You just feed it the `ReadStream` and the `WriteStream` and it tell it to start:
 
-    NetServer server = vertx.createNetServer();
+    def server = vertx.createNetServer();
 
-    server.connectHandler(new Handler<NetSocket>() {
-        public void handle(NetSocket sock) {
-            Pump.create(sock, sock).start();
-        }
-    }).listen(1234, "localhost");
+    server.connectHandler { sock -> Pump.create(sock, sock).start() }.listen(1234, "localhost")
 
 Which does exactly the same thing as the more verbose example.
 
@@ -1002,7 +964,7 @@ Functions:
 
 * `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
 * `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the method `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
-* `writeQueueFull()`: returns `true` if the write queue is considered full.
+* `isWriteQueueFull()`: returns `true` if the write queue is considered full.
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
 
@@ -1027,15 +989,15 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 
 To create an HTTP server you call the `createHttpServer` method on your vertx instance.
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
 ### Start the Server Listening
 
 To tell that server to listen for incoming requests you use the `listen` method:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.listen(8080, "myhost");
+    server.listen(8080, "myhost")
 
 The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
@@ -1044,37 +1006,28 @@ The first parameter to `listen` is the port. The second parameter is the hostnam
 
 To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` method of the server, passing in the handler:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            log.info("A request has arrived on the server!");
-        }
-    });
+    server.requestHandler{ request -> println "A request has arrived on the server!" }
 
-    server.listen(8080, "localhost");
+    server.listen(8080, "localhost")
 
-Every time a request arrives on the server the handler is called passing in an instance of `org.vertx.java.core.http.HttpServerRequest`.
+Every time a request arrives on the server the handler is called passing in an instance of `org.vertx.groovy.core.http
+.HttpServerRequest`.
 
 You can try it by running the verticle and pointing your browser at `http://localhost:8080`.
 
 Similarly to `NetServer`, the return value of the `requestHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            log.info("A request has arrived on the server!");
-        }
-    }).listen(8080, "localhost");
+    server.requestHandler{ request -> println "A request has arrived on the server!" }.listen(8080, "localhost")
 
 Or:
 
-    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            log.info("A request has arrived on the server!");
-        }
-    }).listen(8080, "localhost");
+    vertx.createHttpServer().requestHandler{ request ->
+        println "A request has arrived on the server!"
+    }.listen(8080, "localhost")
 
 
 ### Handling HTTP Requests
@@ -1117,27 +1070,28 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
 
 #### Request Headers
 
-A map of the request headers are available using the `headers()` method on the request object.
+A map of the request headers are available using the `headers` property on the request object.
 
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, String> header: request.headers().entrySet()) {
-                sb.append(header.getKey()).append(": ").append(header.getValue()).append("\n");
-            }
-            request.response.putHeader("Content-Type", "text/plain");
-            request.response.end(sb.toString());
+    server.requestHandler { request ->
+
+        def sb = new StringBuffer()
+        for (e in request.headers) {
+            sb << e.key << ": " << e.value << '\n'
         }
-    }).listen(8080, "localhost");
+        request.response.putHeader("Content-Type", "text/plain")
+        request.response.end(sb.toString())
+        }
+    }.listen(8080, "localhost")
 
 
 #### Request params
 
-Similarly to the headers, the map of request parameters are available using the `params()` method on the request object.
+Similarly to the headers, the map of request parameters are available using the `params` property on the request
+object.
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
@@ -1154,18 +1108,11 @@ Sometimes an HTTP request contains a request body that we want to read. As previ
 
 To receive the body, you set the `dataHandler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            request.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    log.info('I received ' + buffer.length() + ' bytes');
-                }
-            });
-
-        }
-    }).listen(8080, "localhost");
+    server.requestHandler{ request ->
+        request.dataHandler { buffer -> println "I received ${buffer.length(}) bytes" }
+    }.listen(8080, "localhost");
 
 The `dataHandler` may be called more than once depending on the size of the body.
 
@@ -1175,27 +1122,17 @@ The request object implements the `ReadStream` interface so you can pump the req
 
 In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
+    server.requestHandler{ request ->
 
-            final Buffer body = new Buffer(0);
+        def body = new Buffer(0)
 
-            request.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer buffer) {
-                    body.appendBuffer(buffer);
-                }
-            });
-            request.endHandler(new SimpleHandler() {
-                public void handle() {
-                  // The entire body has now been received
-                  log.info("The total body received was " + body.length() + " bytes");
-                }
-            });
+        request.dataHandler { buffer -> body << buffer }
 
-        }
-    }).listen(8080, "localhost");
+        request.endHandler { println "I received ${body.length(}) bytes" }
+
+    }.listen(8080, "localhost")
 
 
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the request.
@@ -1210,18 +1147,13 @@ The body handler is called only once when the *entire* request body has been rea
 
 Here's an example using `bodyHandler`:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            request.bodyHandler(new Handler<Buffer>() {
-                public void handle(Buffer body) {
-                  // The entire body has now been received
-                  log.info("The total body received was " + body.length() + " bytes");
-                }
-            });
-        }
-    }).listen(8080, "localhost");
+    server.requestHandler{ request ->
+
+        request.bodyHandler { body -> println "The total body received was ${body.length(}) bytes" }
+
+    }.listen(8080, "localhost")
 
 Simples, innit?
 
@@ -1231,19 +1163,19 @@ As previously mentioned, the HTTP request object contains a property `response`.
 
 ### Setting Status Code and Message
 
-To set the HTTP status code for the response use the `statusCode` property, e.g.
-
-    HttpServer server = vertx.createHttpServer();
-
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest request) {
-            request.response.statusCode = 739;
-            request.response.statusMessage = "Too many gerbils";
-            request.response.end();
-        }
-    }).listen(8080, "localhost");
+To set the HTTP status code for the response use the `statusCode` property.
 
 You can also use the `statusMessage` property to set the status message. If you do not set the status message a default message will be used.
+
+    def server = vertx.createHttpServer()
+
+    server.requestHandler{ request ->
+        request.response.with {
+            statusCode = 739
+            statusMessage = "Too many gerbils"
+            end()
+        }
+    }.listen(8080, "localhost")
 
 The default value for `statusCode` is `200`.
 
@@ -1251,9 +1183,11 @@ The default value for `statusCode` is `200`.
 
 To write data to an HTTP response, you invoke the `write` function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:
 
+GOT HERE
+
 With a single buffer:
 
-    Buffer myBuffer = ...
+    def myBuffer = ...
     request.response.write(myBuffer);
 
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
