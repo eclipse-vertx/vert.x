@@ -75,6 +75,12 @@ Which have the normal meanings you would expect.
 The log files by default go in a file called `vertx.log` in the system temp directory. On my Linux box this is `\tmp`.
 
 For more information on configuring logging, please see the main manual.
+
+## stdout and stderr in a Verticle
+
+The variables `stdout` and `stderr` are injected into all verticles. Unsurprisingly, you use these to print to stdout and stderr.
+
+    stdout.println("Hello from the verticle");
    
 # Deploying and Undeploying Verticles Programmatically
 
@@ -2133,7 +2139,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument to the `bridge` method.
 
 Each match has two fields:
 

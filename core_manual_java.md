@@ -115,7 +115,7 @@ For example, you could create a verticle `AppStarter` as follows:
 
     // Application config
     
-    JsonObject appConfig = Container.instance.getConfig();
+    JsonObject appConfig = container.getConfig();
     
     JsonObject verticle1Config = appConfig.getObject("verticle1_conf");
     JsonObject verticle2Config = appConfig.getObject("verticle2_conf");
@@ -193,7 +193,7 @@ The `deployVerticle` method deploys standard (non worker) verticles. If you want
 
 Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
 
-    String deploymentID = Container.instance.deployVerticle(main);  
+    String deploymentID = container.deployVerticle(main);  
     
     container.undeployVerticle(deploymentID);    
 
@@ -2221,7 +2221,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects that represent *matches*, as the final argument to the `bridge` method.
 
 Each match has two fields:
 
@@ -2367,7 +2367,7 @@ Retrieve properties of a file.
 
 Here's an example:
 
-    FileSystem.instance.props("foo.dat", "bar.dat", new AsyncResultHandler<FileProps>() {
+    vertx.fileSystem().props("foo.dat", "bar.dat", new AsyncResultHandler<FileProps>() {
         public void handle(AsyncResult<FileProps> ar) {
             if (ar.exception == null) {
                 log.info("File props are:");

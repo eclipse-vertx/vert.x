@@ -70,7 +70,7 @@ You can deploy and undeploy verticles programmatically from inside another verti
 
 ## Deploying a simple verticle
 
-To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+To deploy a verticle programmatically call the method `deployVerticle` on the `container` variable. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
 
 To deploy a single instance of a verticle:
 
@@ -155,7 +155,7 @@ The `deployVerticle` method deploys standard (non worker) verticles. If you want
 
 ## Undeploying a Verticle
 
-Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
+Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the method `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
 
     def deploymentID = container.deployVerticle(main)
 
@@ -445,14 +445,14 @@ You can also use the subscript operator to set data in the buffer at a specific 
 Data is read from a buffer using the `getXXX` methods. Get methods exist for byte[], String and all primitive types. The first argument to these methods is an index in the buffer from where to get the data.
 
     def buff = ...
-    for (i in 0 ..< buff.length()) {
+    for (i in 0 ..< buff.length) {
         println "byte value at $i is ${buff.getByte(i)}"
     }
 
 You can also use the subscript operator to get a byte
 
     def buff = ...
-    for (i in 0 ..< buff.length()) {
+    for (i in 0 ..< buff.length) {
         println "byte value at $i is ${buff[i]}"
     }
 
@@ -569,7 +569,7 @@ This is a common pattern throughout the vert.x API.
 
 ### Closing a Net Server
 
-To close a net server just call the `close` function.
+To close a net server just call the `close` method.
 
     server.close()
 
@@ -618,13 +618,13 @@ instance of `org.vertx.groovy.core.buffer.Buffer` every time data is received on
 
     server.connectHandler { sock ->
         sock.dataHandler { buffer ->
-            println "I received ${buffer.length()} bytes of data"
+            println "I received ${buffer.length} bytes of data"
         }
     }.listen(1234, "localhost")
 
 #### Writing Data to a Socket
 
-To write data to a socket, you invoke the `write` function or leftShift operator This function can be invoked in a few
+To write data to a socket, you invoke the `write` method or leftShift operator This method can be invoked in a few
 ways:
 
 With a single buffer:
@@ -648,7 +648,7 @@ A string and an encoding. In this case the string will encoded using the specifi
 
     sock.write("hello", "UTF-162);
 
-The `write` function or leftShift is asynchronous and always returns immediately after the write has been queued.
+The `write` method or leftShift is asynchronous and always returns immediately after the write has been queued.
 
 The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a handler as a final argument.
 
@@ -948,7 +948,7 @@ Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 `ReadStream` is implemented by `AsyncFile`, `HttpClientResponse`, `HttpServerRequest`, `WebSocket`, `NetSocket` and `SockJSSocket`.
 
-Functions:
+methods:
 
 * `dataHandler(handler)`: set a handler which will receive data from the `ReadStream`. As data arrives the handler will be passed a Buffer.
 * `pause()`: pause the handler. When paused no data will be received in the `dataHandler`.
@@ -960,7 +960,7 @@ Functions:
 
 `WriteStream` is implemented by `AsyncFile`, `HttpClientRequest`, `HttpServerResponse`, `WebSocket`, `NetSocket` and `SockJSSocket`
 
-Functions:
+methods:
 
 * `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
 * `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the method `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
@@ -1038,7 +1038,7 @@ When a request arrives, the request handler is called passing in an instance of 
 
 The handler is called when the headers of the request have been fully read. If the request contains a body, that body may arrive at the server some time after the request handler has been called.
 
-It contains functions to get the URI, path, request headers and request parameters. It also contains a `response` property which is a reference to an object that represents the server side HTTP response for the object.
+It contains methods to get the URI, path, request headers and request parameters. It also contains a `response` property which is a reference to an object that represents the server side HTTP response for the object.
 
 #### Request Method
 
@@ -1181,32 +1181,34 @@ The default value for `statusCode` is `200`.
 
 #### Writing HTTP responses
 
-To write data to an HTTP response, you invoke the `write` function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:
-
-GOT HERE
+To write data to an HTTP response, you invoke the `write` method or use the leftShift (<<) operator (They do the same thing). This method can be invoked multiple times before the response is ended. It can be invoked in a few ways:
 
 With a single buffer:
 
     def myBuffer = ...
-    request.response.write(myBuffer);
+    request.response.write(myBuffer)
+    
+    // Or
+    
+    request.response << myBuffer
 
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.response.write("hello");
+    request.response.write("hello")
+    
+    // Or
+    
+    request.response << "hello"
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
     request.response.write("hello", "UTF-16");
 
-The `write` function is asynchronous and always returns immediately after the write has been queued.
+The `write` method is asynchronous and always returns immediately after the write has been queued.
 
 The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a handler as a final argument. This handler will then be invoked when the write has completed:
 
-    request.response.write("hello", new SimpleHandler() {
-        public void handle() {
-            log.info("It has actually been written");
-        }
-    });
+    request.response.write("hello") { println "It has actually been written" }
 
 If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` method.
 
@@ -1216,34 +1218,34 @@ Consequently, if you are not using HTTP chunking then you must set the `Content-
 
 #### Ending HTTP responses
 
-Once you have finished with the HTTP response you must call the `end()` function on it.
+Once you have finished with the HTTP response you must call the `end()` method on it.
 
-This function can be invoked in several ways:
+This method can be invoked in several ways:
 
 With no arguments, the response is simply ended.
 
-    request.response.end();
+    request.response.end()
 
-The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments. For example:
+The method can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments. For example:
 
-    request.response.end("That's all folks");
+    request.response.end("That's all folks")
 
 #### Closing the underlying connection
 
 You can close the underlying TCP connection of the request by calling the `close` method.
 
-    request.response.close();
+    request.response.close()
 
 #### Response headers
 
-HTTP response headers can be added to the response by adding them to the map returned from the `headers()` method:
+HTTP response headers can be added to the response by adding them to the `headers` property:
 
-    request.response.headers().put("Cheese", "Stilton");
-    request.response.headers().put("Hat colour", "Mauve");
+    request.response.headers["Cheese"] = "Stilton"
+    request.response.headers["Hat colour"] = "Mauve"
 
 Individual HTTP response headers can also be written using the `putHeader` method. This allows a fluent API since calls to `putHeader` can be chained:
 
-    request.response.putHeader("Some-Header", "elephants").putHeader("Invisible-Friend", "Bertie");
+    request.response.putHeader("Dream", "Elephants").putHeader("Invisible-Friend", "Bertie")
 
 Response headers must all be added before any parts of the response body are written.
 
@@ -1253,20 +1255,20 @@ Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Ch
 
 You put the HTTP response into chunked mode as follows:
 
-    req.response.setChunked(true);
+    req.response.chunked = true
 
 Default is non-chunked. When in chunked mode, each call to `response.write(...)` will result in a new HTTP chunk being written out.
 
 When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.
 
-To add trailers to the response, add them to the map returned from the `trailers()` method:
+To add trailers to the response, add them to the `trailers` property:
 
-    request.response.trailers().put("Philosophy", "Solipsism");
-    request.response.trailers().put("Fav-Shakin-Stevens-Song", "Behind the Green Door");
+    request.response.trailers["Rick Astley"] = "Never Gonna Give You Up"
+    request.response.trailers["You"] = "RickRolled"
 
 Like headers, individual HTTP response trailers can also be written using the `putTrailer` method. This allows a fluent API since calls to `putTrailer` can be chained:
 
-    request.response.putTrailer("Cat-Food", "Whiskas").putTrailer("Eye-Wear", "Monocle");
+    request.response.putTrailer("Cat-Food", "Whiskas").putTrailer("Eye-Wear", "Monocle")
 
 
 ### Serving files directly disk
@@ -1275,25 +1277,16 @@ If you were writing a web server, one way to serve a file from disk would be to 
 
 Alternatively, vert.x provides a method which allows you to send serve a file from disk to an HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.
 
-To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
+To do this use the `sendfile` method on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
-    HttpServer server = vertx.createHttpServer();
-
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-          String file = "";
-          if (req.path.equals("/")) {
-            file = "index.html";
-          } else if (!req.path.contains("..")) {
-            file = req.path;
-          }
-          req.response.sendFile("web/" + file);
-        }
-    }).listen(8080, "localhost");
+    vertx.createHttpServer().requestHandler { req ->
+      def file = req.uri == "/" ? "index.html" : req.uri
+      req.response.sendFile "web/$file"
+    }.listen(8080, "localhost")
 
 *Note: If you use `sendfile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
-**If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
+**If you're going to write web servers using vert.x be careful that users cannot exploit the path (e.g. send a path with `/../` in it to access files outside the directory from which you want to serve them.**
 
 ### Pumping Responses
 
@@ -1301,19 +1294,13 @@ Since the HTTP Response implements `WriteStream` you can pump to it from any `Re
 
 Here's an example which echoes HttpRequest headers and body back in the HttpResponse. It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory at any one time:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(final HttpServerRequest req) {
-          req.response.headers().putAll(req.headers());
-          Pump.createPump(req, req.response).start();
-          req.endHandler(new SimpleHandler() {
-            public void handle() {
-                req.response.end();
-            }
-          });
-        }
-    }).listen(8080, "localhost");
+    server.requestHandler{ req ->
+        req.response.headers << req.headers
+        Pump.createPump(req, req.response).start()
+        req.endHandler { req.response.end() }
+    }.listen(8080, "localhost")
 
 
 ## Writing HTTP Clients
@@ -1322,19 +1309,11 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
 
 To create an HTTP client you call the `createHttpClient` method on your vertx instance:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-You set the port and hostname (or ip address) that the client will connect to using the `setHost` and `setPort` functions:
+You set the port and hostname (or ip address) that the client will connect to using the `host` and `port` properties:
 
-    HttpClient client = vertx.createHttpClient();
-    client.setPort(8181);
-    client.setHost("foo.com");
-
-This, of course, can be chained:
-
-    HttpClient client = vertx.createHttpClient()
-        .setPort(8181)
-        .setHost("foo.com");
+    HttpClient client = vertx.createHttpClient(port: 8181, host: "foo.com")
 
 A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
@@ -1346,19 +1325,13 @@ By default the `HTTPClient` pools HTTP connections. As you make requests a conne
 
 If you do not want connections to be pooled you can call `setKeepAlive` with `false`:
 
-    HttpClient client = vertx.createHttpClient()
-                   .setPort(8181)
-                   .setHost("foo.com").
-                   .setKeepAlive(false);
+    def client = vertx.createHttpClient(port: 8181, host: "foo.com", keepAlive: false)
 
 In this case a new connection will be created for each HTTP request and closed once the response has ended.
 
 You can set the maximum number of connections that the client will pool as follows:
 
-    HttpClient client = vertx.createHttpClient()
-                   .setPort(8181)
-                   .setHost("foo.com").
-                   .setMaxPoolSize(10);
+    def client = vertx.createHttpClient(port: 8181, host: "foo.com", maxPoolSize: 10)
 
 The default value is `1`.
 
@@ -1366,7 +1339,7 @@ The default value is `1`.
 
 Any HTTP clients created in a verticle are automatically closed for you when the verticle is stopped, however if you want to close it explicitly you can:
 
-    client.close();
+    client.close()
 
 ### Making Requests
 
@@ -1374,15 +1347,13 @@ To make a request using the client you invoke one the methods named after the HT
 
 For example, to make a `POST` request:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    HttpClientRequest request = client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            log.info("Got a response: " + resp.statusCode());
-        }
-    });
+    def request = client.post("http://localhost:8080/some-path/") { resp ->
+      println "Got a response: ${resp.statusCode}"        
+    }
 
-    request.end();
+    request.end()
 
 To make a PUT request use the `put` method, to make a GET request use the `get` method, etc.
 
@@ -1390,32 +1361,27 @@ Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `c
 
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
-The return value from the appropriate request method is an instance of `org.vertx.java.core.http.HTTPClientRequest`. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
+The return value from the appropriate request method is an instance of `org.vertx.groovy.core.http.HTTPClientRequest`. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
-Once you have finished with the request you must call the `end` function.
+Once you have finished with the request you must call the `end` method.
 
 If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    HttpClientRequest request = client.request("POST", "http://localhost:8080/some-path/",
-        new Handler<HttpClientResponse>() {
-            public void handle(HttpClientResponse resp) {
-                log.info("Got a response: " + resp.statusCode());
-            }
-        });
+    def request = client.request("POST", "http://localhost:8080/some-path/") { resp ->
+        println "Got a response: ${resp.statusCode}"
+    }
 
-    request.end();
+    request.end()
 
 There is also a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            log.info("Got a response: " + resp.statusCode());
-        }
-    });
+    client.getNow("http://localhost:8080/some-path/") { resp ->
+        println "Got a response: ${resp.statusCode}"
+    }
 
 With `getNow` there is no return value.
 
@@ -1423,32 +1389,36 @@ With `getNow` there is no return value.
 
 Writing to the client request body has a very similar API to writing to the server response body.
 
-To write data to an `HttpClientRequest` object, you invoke the `write` function. This function can be called multiple times before the request has ended. It can be invoked in a few ways:
+To write data to an `HttpClientRequest` object, you invoke the `write` method, or use the leftShift operator (they do the same thing). This method can be called multiple times before the request has ended. It can be invoked in a few ways:
 
 With a single buffer:
 
-    Buffer myBuffer = ...
-    request.write(myBuffer);
+    def myBuffer = ...
+    request.write(myBuffer)
+    
+    // Or
+    
+    request << myBuffer
 
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.write("hello");
+    request.write("hello")
+    
+    // Or
+    
+    request << "hello"
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
-    request.write("hello", "UTF-16");
+    request.write("hello", "UTF-16")
 
-The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
+The `write` method is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
 
-If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will be invoked when the write has completed:
+If you want to be informed when the actual write has completed you can pass in a closure as a final argument. This closure will be executed when the write has completed:
 
-    request.response.write("hello", new SimpleHandler() {
-        public void handle() {
-            log.info("It's actually been written");
-        }
-    });
+    request.response.write("hello") { println "It's actually been written" }
 
-If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` function.
+If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` method.
 
 The first call to `write` results in the request header being written to the request.
 
@@ -1457,42 +1427,38 @@ Consequently, if you are not using HTTP chunking then you must set the `Content-
 
 #### Ending HTTP requests
 
-Once you have finished with the HTTP request you must call the `end` function on it.
+Once you have finished with the HTTP request you must call the `end` method on it.
 
-This function can be invoked in several ways:
+This method can be invoked in several ways:
 
 With no arguments, the request is simply ended.
 
-    request.end();
+    request.end()
 
-The function can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
+The method can also be called with a string or Buffer in the same way `write` is called. In this case it's just the same as calling write with a string or Buffer followed by calling `end` with no arguments.
 
 #### Writing Request Headers
 
-To write headers to the request, add them to the map returned from the `headers()` method:
+To write headers to the request, add them to `headers` property:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    HttpClientRequest request = client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            log.info("Got a response: " + resp.statusCode());
-        }
-    });
+    def request = client.post("http://localhost:8080/some-path/") { resp ->
+        println "Got a response: ${resp.statusCode}"
+    }
 
-    request.headers().put("Some-Header", "Some-Value");
-    request.end();
+    request.headers["Some-Header"] = "Some-Value"
+    request.end()
 
 You can also adds them using the `putHeader` method. This enables a more fluent API since calls can be chained, for example:
 
-    request.putHeader("Some-Header", "Some-Value").putHeader("Some-Other", "Blah");
+    request.putHeader("Some-Header", "Some-Value").putHeader("Some-Other", "Blah")
 
 These can all be chained together as per the common vert.x API pattern:
 
-    client.post("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            log.info("Got a response: " + resp.statusCode());
-        }
-    }).putHeader("Some-Header", "Some-Value").end();
+    client.post("http://localhost:8080/some-path/") { resp ->
+        println "Got a response: ${resp.statusCode}"
+    }.putHeader("Some-Header", "Some-Value").end()
 
 #### HTTP chunked requests
 
@@ -1500,7 +1466,7 @@ Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Ch
 
 You put the HTTP request into chunked mode as follows:
 
-    request.setChunked(true);
+    request.chunked = true;
 
 Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out.
 
@@ -1512,14 +1478,12 @@ The response object implements `ReadStream`, so it can be pumped to a `WriteStre
 
 To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            log.info('server returned status code: ' + resp.statusCode);
-            log.info('server returned status message: ' + resp.statusMessage);
-        }
-    });
+    client.getNow("http://localhost:8080/some-path/") { resp ->
+        println "server returned status code: ${resp.statusCode}"
+        println "server returned status message: ${resp.statusMessage}"
+    }    
 
 
 #### Reading Data from the Response Body
@@ -1530,17 +1494,13 @@ Sometimes an HTTP response contains a request body that we want to read. Like an
 
 To receive the response body, you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            resp.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer data) {
-                    log.info('I received ' + buffer.length() + ' bytes');
-                }
-            });
+    client.getNow("http://localhost:8080/some-path/") { resp ->
+        resp.dataHandler { buffer ->
+            println "I received ${buffer.length} bytes"
         }
-    });
+    }
 
 
 The response object implements the `ReadStream` interface so you can pump the response body to a `WriteStream`. See the chapter on streams and pump for a detailed explanation.
@@ -1549,26 +1509,15 @@ The `dataHandler` can be called multiple times for a single HTTP response.
 
 As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-
-            final Buffer body = new Buffer(0);
-
-            resp.dataHandler(new Handler<Buffer>() {
-                public void handle(Buffer data) {
-                    body.appendBuffer(data);
-                }
-            });
-            resp.endHandler(new SimpleHandler() {
-                public void handle() {
-                   // The entire response body has been received
-                   log.info('The total body received was ' + body.length() + ' bytes');
-                }
-            });
+    client.getNow("http://localhost:8080/some-path/") { resp ->
+        def body = new Buffer()
+        resp.dataHandler { buffer ->
+            body << buffer
         }
-    });
+        resp.endHandler { println "The total body received was ${body.length} bytes" }
+    }
 
 Like any `ReadStream` the end handler is invoked when the end of stream is reached - in this case at the end of the response.
 
@@ -1582,18 +1531,13 @@ The body handler is called only once when the *entire* response body has been re
 
 Here's an example using `bodyHandler`:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    client.getNow("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            resp.bodyHandler(new Handler<Buffer>() {
-                public void handle(Buffer body) {
-                   // The entire response body has been received
-                   log.info("The total body received was " + body.length() + " bytes2);
-                }
-            });
+    client.getNow("http://localhost:8080/some-path/") { resp ->
+        resp.bodyHandler { body ->
+            println "The total body received was ${body.length} bytes"
         }
-    });
+    }
 
 ## Pumping Requests and Responses
 
@@ -1609,29 +1553,25 @@ The idea here is it allows the server to authorise and accept/reject the request
 
 Vert.x allows you to set a `continueHandler` on the client request object. This will be called if the server sends back a `Status: 100 (Continue)` response to signify it is ok to send the rest of the request.
 
-This is used in conjunction with the `sendHead` function to send the head of the request.
+This is used in conjunction with the `sendHead` method to send the head of the request.
 
 An example will illustrate this:
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    final HttpClientRequest request = client.put("http://localhost:8080/some-path/", new Handler<HttpClientResponse>() {
-        public void handle(HttpClientResponse resp) {
-            log.info("Got a response " + resp.statusCode);
-        }
-    });
+    def request = client.put("http://localhost:8080/some-path/") { resp ->
+        println "Got a response ${resp.statusCode}"
+    }
 
-    request.headers().put("Expect", "100-Continue");
+    request.headers["Expect"] = "100-Continue"
 
-    request.continueHandler(new SimpleHandler() {
-        public void handle() {
-            // OK to send rest of body
+    request.continueHandler {
+        // OK to send rest of body
+        request << "Some data"
+        request.end()
+    }
 
-            request.write("Some data").end();
-        }
-    });
-
-    request.sendHead();
+    request.sendHead()
 
 ## HTTPS Servers
 
@@ -1663,32 +1603,29 @@ This is particularly useful when developing REST-style web applications.
 
 To do this you simply create an instance of `org.vertx.java.core.http.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    RouteMatcher routeMatcher = new RouteMatcher();
+    def routeMatcher = new RouteMatcher()
 
-    server.requestHandler(routeMatcher).listen(8080, "localhost");
+    server.requestHandler(routeMatcher).listen(8080, "localhost")
 
 ## Specifying matches.
 
 You can then add different matches to the route matcher. For example, to send all GET requests with path `/animals/dogs` to one handler and all GET requests with path `/animals/cats` to another handler you would do:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    RouteMatcher routeMatcher = new RouteMatcher();
+    def routeMatcher = new RouteMatcher()
 
-    routeMatcher.get("/animals/dogs", new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-            req.response.end("You requested dogs");
-        }
-    });
-    routeMatcher.get("/animals/cats", new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-            req.response.end("You requested cats");
-        }
-    });
-
-    server.requestHandler(routeMatcher).listen(8080, "localhost");
+    routeMatcher.get("/animals/dogs") { req ->
+        req.response.end "You requested dogs"
+    }
+   
+    routeMatcher.get("/animals/cats") { req ->
+        req.response.end "You requested cats"
+    }
+   
+    server.requestHandler(routeMatcher).listen(8080, "localhost")
 
 Corresponding methods exist for each HTTP method - `get`, `post`, `put`, `delete`, `head`, `options`, `trace`, `connect` and `patch`.
 
@@ -1704,19 +1641,17 @@ A request is sent to at most one handler.
 
 If you want to extract parameters from the path, you can do this too, by using the `:` (colon) character to denote the name of a parameter. For example:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    RouteMatcher routeMatcher = new RouteMatcher();
+    def routeMatcher = new RouteMatcher()
 
-    routeMatcher.put("/:blogname/:post", new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-            String blogName = req.getAllParams().get("blogname");
-            String post = req.getAllParams().get("post");
-            req.response.end("blogname is " + blogName + ", post is " + post);
-        }
-    });
+    routeMatcher.put("/:blogname/:post") { req ->
+        String blogName = req.params["blogname"]
+        String post = req.params["post"]
+        req.response.end "blogname is ${blogName}, post is $post"
+    }
 
-    server.requestHandler(routeMatcher).listen(8080, "localhost");
+    server.requestHandler(routeMatcher).listen(8080, "localhost")
 
 Any params extracted by pattern matching are added to the map of request parameters.
 
@@ -1736,19 +1671,17 @@ There's also an `allWithRegEx` method which applies the match to any HTTP reques
 
 For example:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    RouteMatcher routeMatcher = new RouteMatcher();
+    def routeMatcher = new RouteMatcher()
 
-    routeMatcher.allWithRegEx("\\/([^\\/]+)\\/([^\\/]+)", new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-            String first = req.getAllParams().get("param0");
-            String second = req.getAllParams().get("param1");
-            req.response.end("first is " + first + " and second is " + second);
-        }
-    });
+    routeMatcher.allWithRegEx("\\/([^\\/]+)\\/([^\\/]+)") { req ->
+        def first = req.params["param0"]
+        def second = req.params["param1"]
+        req.response.end "first is $first and second is $second"
+    }
 
-    server.requestHandler(routeMatcher).listen(8080, "localhost");
+    server.requestHandler(routeMatcher).listen(8080, "localhost")
 
 Run the above and point your browser at `http://localhost:8080/animals/cats`.
 
@@ -1756,11 +1689,9 @@ Run the above and point your browser at `http://localhost:8080/animals/cats`.
 
 You can use the `noMatch` method to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.
 
-    routeMatcher.noMatch(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-            req.response.end("Nothing matched");'
-        }
-    });
+    routeMatcher.noMatch{ req ->
+        req.response.end "Nothing matched"
+    }
 
 # WebSockets
 
@@ -1770,73 +1701,65 @@ You can use the `noMatch` method to specify a handler that will be called if not
 
 To use WebSockets on the server you create an HTTP server as normal, but instead of setting a `requestHandler` you set a `websocketHandler` on the server.
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.websocketHandler(new Handler<ServerWebSocket>() {
-        public void handle(ServerWebSocket ws) {
-            // A WebSocket has connected!
-        }
-    }).listen(8080, "localhost");
+    server.websocketHandler{ ws ->
+        println "A websocket has connected!"
+    }.listen(8080, "localhost");
 
 
 ### Reading from and Writing to WebSockets
 
 The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways. I.e by setting a `dataHandler` and calling the `writeBuffer` method.
 
+You can also use the leftShift (<<) operator to write data to the websocket.
+
 See the chapter on `NetSocket` and streams and pumps for more information.
 
 For example, to echo all data received on a WebSocket:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.websocketHandler(new Handler<ServerWebSocket>() {
-        public void handle(ServerWebSocket ws) {
-            Pump pump = new Pump(ws, ws);
-            pump.start();
-        }
-    }).listen(8080, "localhost");
+    server.websocketHandler{ ws ->
+        Pump.createPump(ws, ws).start()
+    }.listen(8080, "localhost");
 
 The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
 
 Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling
 
-    websocket.writeBuffer(new Buffer("some-string"));
+    websocket.writeBuffer(new Buffer("some-string"))
 
 ### Rejecting WebSockets
 
 Sometimes you may only want to accept WebSockets which connect at a specific path.
 
-To check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
+To check the path, you can query the `path` property of the websocket. You can then call the `reject` method to reject the websocket.
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    server.websocketHandler(new Handler<ServerWebSocket>() {
-        public void handle(ServerWebSocket ws) {
-            if (ws.path.equals("/services/echo")) {
-                Pump pump = new Pump(ws, ws);
-                pump.start();
-            } else {
-                ws.reject();
-            }
-        }
-    }).listen(8080, "localhost");
+    server.websocketHandler{ ws ->
+        if (ws.path == "/services/echo") {
+            Pump.createPump(ws, ws).start()
+        } else {
+            ws.reject()
+        }        
+    }.listen(8080, "localhost")
 
 
 ## WebSockets on the HTTP client
 
-To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the URI that you wish to connect to at the server, and a handler.
+To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` method, passing in the URI that you wish to connect to at the server, and a handler.
 
 The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
 
 Here's an example of WebSocket connection;
 
-    HttpClient client = vertx.createHttpClient();
+    def client = vertx.createHttpClient()
 
-    client.connectWebsocket("http://localhost:8080/some-uri", new Handler<WebSocket>() {
-        public void handle(WebSocket ws) {
-            // Connected!
-        }
-    });
+    client.connectWebsocket("http://localhost:8080/some-uri") { ws ->
+        // Connected!
+    }
 
 Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object.
 
@@ -1891,9 +1814,9 @@ This enables vert.x to be used for modern, so-called *real-time* (this is the *m
 
 To create a SockJS server you simply create a HTTP server as normal and then call the `createSockJSServer` method of your vertx instance passing in the Http server:
 
-    HttpServer httpServer = vertx.createHttpServer();
+    def httpServer = vertx.createHttpServer()
 
-    SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
+    def sockJSServer = vertx.createSockJSServer(httpServer)
 
 Each SockJS server can host multiple *applications*.
 
@@ -1901,21 +1824,19 @@ Each application is defined by some configuration, and provides a handler which 
 
 For example, to create a SockJS echo application:
 
-    HttpServer httpServer = vertx.createHttpServer();
+    def httpServer = vertx.createHttpServer()
 
-    SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
+    def sockJSServer = vertx.createSockJSServer(httpServer)
 
-    AppConfig config = new AppConfig().setPrefix("/echo");
+    def config = ["prefix: "/echo"]
 
-    sockJSServer.installApp(config, new Handler<SockJSSocket>() {
-        public void handle(SockJSSocket sock) {
-            Pump.createPump(sock, sock).start();
-        }
-    });
+    sockJSServer.installApp(config) { sock ->
+        Pump.createPump(sock, sock).start()
+    }
 
-    httpServer.listen(8080);
+    httpServer.listen(8080)
 
-The configuration is an instance of `org.vertx.java.core.sockjs.AppConfig`, and has the following properties:
+The configuration is an instance of map, and can contain the following settings:
 
 * `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
 * `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
@@ -1972,13 +1893,13 @@ You will also need to secure the bridge (see below).
 
 The following example bridges the event bus to client side JavaScript:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    AppConfig config = new AppConfig().setPrefix("/eventbus");
+    def config = ["prefix": "/eventbus"]
 
-    vertx.createSockJSServer(server).bridge(config, new ArrayList<>());
+    vertx.createSockJSServer(server).bridge(config, [])
 
-    server.listen(8080);
+    server.listen(8080)
 
 The SockJS bridge currently only works with JSON event bus messages.
 
@@ -2028,7 +1949,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects that represent *matches*, as the final argument in the constructor of `vertx.SockJSBridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects (represented as maps) that represent *matches*, as the final argument in the call to `bridge`.
 
 Each match has two fields:
 
@@ -2043,41 +1964,35 @@ When a message arrives from the client, the bridge will look through the availab
 
 Here is an example:
 
-    HttpServer server = vertx.createHttpServer();
+    def server = vertx.createHttpServer()
 
-    AppConfig config = new AppConfig().setPrefix("/eventbus");
+    def config = ["prefix": "/eventbus"]
 
-    List<JsonObject> permitted = new ArrayList<>();
+    def permitted = []
 
     // Let through any messages sent to 'demo.orderMgr'
-    JsonObject permitted1 = new JsonObject().putString("address", "demo.orderMgr");
-    permitted.add(permitted1);
+    permitted << ["address": "demo.orderMgr"]
 
     // Allow calls to the address 'demo.persistor' as long as the messages
     // have an action field with value 'find' and a collection field with value
     // 'albums'
-    JsonObject permitted2 = new JsonObject().putString("address", "demo.persistor")
-        .putObject("match", new JsonObject().putString("action", "find")
-                                            .putString("collection", "albums"));
-    permitted.add(permitted2);
+    permitted << ["address": "demo.persistor",
+                  "match": [ "action": "find",
+                             "collection": "albums"]]
 
     // Allow through any message with a field `wibble` with value `foo`.
-    JsonObject permitted3 = new JsonObject().putObject("match", new JsonObject().putString("wibble", "foo"));
-    permitted.add(permitted3);
+    permitted << ["match", ["wibble": "foo"]]
 
-    vertx.createSockJSBridge(server).bridge(config, permitted);
+    vertx.createSockJSBridge(server).bridge(config, permitted)
 
-    server.listen(8080);
+    server.listen(8080)
 
 
-To let all messages through you can specify an array with a single empty JSON object which will match all messages.
+To let all messages through you can specify a list with a single empty map which will match all messages.
 
     ...
 
-    List<JsonObject> permitted = new ArrayList<>();
-    permitted.add(new JsonObject());
-
-    vertx.createSockJSBridge(server).bridge(config, permitted);
+    vertx.createSockJSBridge(server).bridge(config, [[:]);
 
     ...
 
@@ -2085,7 +2000,7 @@ To let all messages through you can specify an array with a single empty JSON ob
 
 # File System
 
-Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
+Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler method as the last argument. This method will be called when the operation is complete, or an error has occurred.
 
 The argument passed into the handler is an instance of `org.vertx.java.core.AsyncResult`. Instances of this class have two fields: `exception` - If the operation has failed this will be set; `result` - If the operation has succeeded this will contain the result.
 
@@ -2093,13 +2008,13 @@ The argument passed into the handler is an instance of `org.vertx.java.core.Asyn
 
 For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
 
-The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with `Sync` appended.
+The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous method is the same as the name as the asynchronous form with `Sync` appended.
 
 ## copy
 
 Copies a file.
 
-This function can be called in two different ways:
+This method can be called in two different ways:
 
 * `copy(source, destination, handler)`
 
@@ -2107,15 +2022,13 @@ Non recursive file copy. `source` is the source file name. `destination` is the 
 
 Here's an example:
 
-    vertx.fileSystem().copy("foo.dat", "bar.dat", new AsyncResultHandler<Void>() {
-        public void handle(AsyncResult ar) {
-            if (ar.exception == null) {
-                log.info("Copy was successful");
-            } else {
-                log.error("Failed to copy", ar.exception);
-            }
+    vertx.fileSystem.copy("foo.dat", "bar.dat") { ar ->
+        if (ar.succeeded() {
+            log.info("Copy was successful")
+        } else {
+            log.error("Failed to copy", ar.exception)
         }
-    });
+    }
 
 * `copy(source, destination, recursive, handler)`
 
@@ -2141,7 +2054,7 @@ Truncates a file.
 
 Changes permissions on a file or directory.
 
-This function can be called in two different ways:
+This method can be called in two different ways:
 
 * `chmod(file, perms, handler)`.
 
@@ -2174,17 +2087,14 @@ Retrieve properties of a file.
 
 Here's an example:
 
-    FileSystem.instance.props("foo.dat", "bar.dat", new AsyncResultHandler<FileProps>() {
-        public void handle(AsyncResult<FileProps> ar) {
-            if (ar.exception == null) {
-                log.info("File props are:");
-                log.info("Last accessed: " + ar.result.lastAccessTime);
-                // etc
-            } else {
-                log.error("Failed to get props", ar.exception);
-            }
+    vertx.fileSystem("foo.dat", "bar.dat") { ar ->
+        if (ar.succeeeded()) {        
+            println "Props are: Last accessed: ${ar.result.lastAccessTime}"
+            // etc
+        } else {
+            log.error("Failed to get props", ar.exception)
         }
-    });
+    }
 
 ## lprops
 
@@ -2224,21 +2134,19 @@ Reads a symbolic link. I.e returns the path representing the file that the symbo
 
 `link` is the name of the link to read. An usage example would be:
 
-    vertx.fileSystem().readSymLink("somelink", new AsyncResultHandler<String>() {
-        public void handle(AsyncResult<String> ar) {
-            if (ar.exception == null) {
-                log.info("Link points at  " + ar.result);
-            } else {
-                log.error("Failed to read", ar.exception);
-            }
+    vertx.fileSystem.readSymLink("somelink") { ar ->
+        if (ar.succeeded()) {
+            println "Link points at ${ar.result}"
+        } else {
+            log.error("Failed to read", ar.exception)
         }
-    });
+    }
 
 ## delete
 
 Deletes a file or recursively deletes a directory.
 
-This function can be called in two ways:
+This method can be called in two ways:
 
 * `delete(file, handler)`
 
@@ -2252,7 +2160,7 @@ If `recursive` is `true`, it deletes a directory with name `file`, recursively. 
 
 Creates a directory.
 
-This function can be called in three ways:
+This method can be called in three ways:
 
 * `mkdir(dirname, handler)`
 
@@ -2262,15 +2170,13 @@ Makes a new empty directory with name `dirname`, and default permissions `
 
 If `createParents` is `true`, this creates a new directory and creates any of its parents too. Here's an example
 
-    vertx.fileSystem().mkdir("a/b/c", true, new AsyncResultHandler<Void>() {
-        public void handle(AsyncResult ar) {
-            if (ar.exception == null) {
-                log.info("Directory created ok");
-            } else {
-                log.error("Failed to mkdir", ar.exception);
-            }
+    vertx.fileSystem.mkdir("a/b/c", true) { ar->
+        if (ar.succeeded()) {
+            println "Directory created ok"
+        } else {
+            log.error("Failed to mkdir", ar.exception)
         }
-    });
+    }
 
 * `mkdir(dirname, createParents, perms, handler)`
 
@@ -2280,7 +2186,7 @@ Like `mkdir(dirname, createParents, handler)`, but also allows permissions for t
 
 Reads a directory. I.e. lists the contents of the directory.
 
-This function can be called in two ways:
+This method can be called in two ways:
 
 * `readDir(dirName)`
 
@@ -2290,18 +2196,16 @@ Lists the contents of a directory
 
 List only the contents of a directory which match the filter. Here's an example which only lists files with an extension `txt` in a directory.
 
-    vertx.fileSystem().readDir("mydirectory", ".*\\.txt", new AsyncResultHandler<String[]>() {
-        public void handle(AsyncResult<String[]> ar) {
-            if (ar.exception == null) {
-                log.info("Directory contains these .txt files");
-                for (int i = 0; i < ar.result.length; i++) {
-                  log.info(ar.result[i]);
-                }
-            } else {
-                log.error("Failed to read", ar.exception);
+    vertx.fileSystem.readDir("mydirectory", ".*\\.txt") { ar ->
+        if (ar.succeeded()) {
+            println "Directory contains these .txt files"
+            for (file in ar.result) {
+                println file
             }
+        } else {
+            log.error("Failed to read", ar.exception)
         }
-    });
+    }
 
 The filter is a regular expression.
 
@@ -2315,15 +2219,13 @@ The body of the file will be returned as an instance of `org.vertx.java.core.buf
 
 Here is an example:
 
-    vertx.fileSystem().readFile("myfile.dat", new AsyncResultHandler<Buffer>() {
-        public void handle(AsyncResult<Buffer> ar) {
-            if (ar.exception == null) {
-                log.info("File contains: " + ar.result.length() + " bytes");
-            } else {
-                log.error("Failed to read", ar.exception);
-            }
+    vertx.fileSystem.readFile("myfile.dat") { ar ->
+        if (ar.succeeded()) {
+            println "File contains: ${ar.result.length} bytes"
+        } else {
+            log.error("Failed to read", ar.exception)
         }
-    });
+    }
 
 ## writeFile
 
@@ -2345,15 +2247,13 @@ Checks if a file exists.
 
 The result is returned in the handler.
 
-    vertx.fileSystem().exists("some-file.txt", new AsyncResultHandler<Boolean>() {
-        public void handle(AsyncResult<Boolean> ar) {
-            if (ar.exception == null) {
-                log.info("File " + (ar.result ? "exists" : "does not exist"));
-            } else {
-                log.error("Failed to check existence", ar.exception);
-            }
+    vertx.fileSystem.exists("some-file.txt") { ar ->
+        if (ar.succeeded()) {
+            println "File exists? ${ar.result}"
+        } else {
+            log.error("Failed to check existence", ar.exception)
         }
-    });
+    }
 
 ## fsProps
 
@@ -2369,22 +2269,20 @@ The result is returned in the handler. The result object is an instance of `org.
 
 Here is an example:
 
-    vertx.fileSystem().fsProps("mydir", new AsyncResultHandler<FileSystemProps>() {
-        public void handle(AsyncResult<FileSystemProps> ar) {
-            if (ar.exception == null) {
-                log.info("total space: " + ar.result.totalSpace);
-                // etc
-            } else {
-                log.error("Failed to check existence", ar.exception);
-            }
+    vertx.fileSystem.fsProps("mydir") { ar ->
+        if (ar.succeded() {
+            println "total space: ${ar.result.totalSpace}"
+            // etc
+        } else {
+            log.error("Failed to check existence", ar.exception)
         }
-    });
+    }
 
 ## open
 
 Opens an asynchronous file for reading \ writing.
 
-This function can be called in four different ways:
+This method can be called in four different ways:
 
 * `open(file, handler)`
 
@@ -2409,22 +2307,20 @@ Opens a file. `file` is the file name. If `read` is `true` it is opened for read
 
 When the file is opened, an instance of `org.vertx.java.core.file.AsyncFile` is passed into the result handler:
 
-    vertx.fileSystem().open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
-        public void handle(AsyncResult<AsyncFile> ar) {
-            if (ar.exception == null) {
-                log.info("File opened ok!");
-                // etc
-            } else {
-                log.error("Failed to open file", ar.exception);
-            }
+    vertx.fileSystem.open("some-file.dat") { ar ->
+        if (ar.succeeded()) {
+            println "File opened ok!"
+            // etc
+        } else {
+            log.error("Failed to open file", ar.exception)
         }
-    });
+    }
 
 ## AsyncFile
 
-Instances of `org.vertx.java.core.file.AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
+Instances of `org.vertx.groovy.core.file.AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
 
-AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.
+AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` methods, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.
 
 They also allow you to read and write directly to them.
 
@@ -2440,29 +2336,25 @@ The second parameter `position` is an integer position in the file where to writ
 
 Here is an example of random access writes:
 
-    vertx.fileSystem().open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
-        public void handle(AsyncResult<AsyncFile> ar) {
-            if (ar.exception == null) {
-                AsyncFile asyncFile = ar.result;
-                // File open, write a buffer 5 times into a file
-                Buffer buff = new Buffer("foo");
-                for (int i = 0; i < 5; i++) {
-                    asyncFile.write(buff, buff.length() * i, new AsyncResultHandler<Void>() {
-                        public void handle(AsyncResult ar) {
-                            if (ar.exception == null) {
-                                log.info("Written ok!");
-                                // etc
-                            } else {
-                                log.error("Failed to write", ar.exception);
-                            }
-                        }
-                    });
+    vertx.fileSystem.open("some-file.dat") { ar ->
+        if (ar.succeeded()) {
+            def asyncFile = ar.result
+            // File open, write a buffer 5 times into a file
+            def buff = new Buffer("foo")
+            5.times {
+                asyncFile.write(buff, buff.length * it) { ar2 ->
+                    if (ar2.succeded()) {
+                        println "Written ok!"
+                        // etc
+                    } else {
+                        log.error("Failed to write", ar2.exception)
+                    }
                 }
-            } else {
-                log.error("Failed to open file", ar.exception);
             }
+        } else {
+            log.error("Failed to open file", ar.exception)
         }
-    });
+    }
 
 ### Random access reads
 
@@ -2480,28 +2372,24 @@ To use an AsyncFile for random access reads you use the read method.
 
 Here's an example of random access reads:
 
-    vertx.fileSystem().open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
-        public void handle(AsyncResult<AsyncFile> ar) {
-            if (ar.exception == null) {
-                AsyncFile asyncFile = ar.result;
-                Buffer buff = new Buffer(1000);
-                for (int i = 0; i < 10; i++) {
-                    asyncFile.read(buff, i * 100, i * 100, 100, new AsyncResultHandler<Buffer>() {
-                        public void handle(AsyncResult<Buffer> ar) {
-                            if (ar.exception == null) {
-                                log.info("Read ok!");
-                                // etc
-                            } else {
-                                log.error("Failed to write", ar.exception);
-                            }
-                        }
-                    });
+    vertx.fileSystem.open("some-file.dat") { ar ->
+        if (ar.succeeded()) {
+            def asyncFile = ar.result
+            def buff = new Buffer(1000)
+            10.times {
+                asyncFile.read(buff, it * 100, it * 100, 100) { ar2 ->
+                    if (ar2.succeeded()) {
+                        println "Read ok!"
+                        // etc
+                    } else {
+                        log.error("Failed to write", ar2.exception)
+                    }
                 }
-            } else {
-                log.error("Failed to open file", ar.exception);
             }
+        } else {
+            log.error("Failed to open file", ar.exception);
         }
-    });
+    }
 
 
 ### Flushing data to underlying storage.
@@ -2512,39 +2400,33 @@ This method can also be called with an handler which will be called when the flu
 
 ### Using AsyncFile as `ReadStream` and `WriteStream`
 
-Use the functions `getReadStream` and `getWriteStream` to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.
+Use the methods `getReadStream` and `getWriteStream` to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.
 
 Here's an example of pumping data from a file on a client to a HTTP request:
 
-    final HttpClient client = vertx.createHttpClient.setHost("foo.com");
+    def client = vertx.createHttpClient(host: "foo.com")
 
-    vertx.fileSystem().open("some-file.dat", new AsyncResultHandler<AsyncFile>() {
-        public void handle(AsyncResult<AsyncFile> ar) {
-            if (ar.exception == null) {
-                final HttpClientRequest request = client.put("/uploads", new Handler<HttpClientResponse>() {
-                    public void handle(HttpClientResponse resp) {
-                        log.info("Received response: " + resp.statusCode);
-                    }
-                });
-                AsyncFile asyncFile = ar.result;
-                ReadStream rs = asyncFile.getReadStream();
-                request.setChunked(true);
-                Pump.createPump(rs, request).start();
-                rs.endHandler(new SimpleHandler() {
-                    public void handle() {
-                        // File sent, end HTTP requuest
-                        request.end();
-                    }
-                });
-            } else {
-                log.error("Failed to open file", ar.exception);
+    vertx.fileSystem.open("some-file.dat") { ar ->
+        if (ar.succeeded) {
+            def request = client.put("/uploads") { resp ->
+                println "Received response: ${resp.statusCode}"
             }
+            def asyncFile = ar.result
+            def rs = asyncFile.getReadStream()
+            request.chunked = true
+            Pump.createPump(rs, request).start()
+            rs.endHandler{
+                // File sent, end HTTP requuest
+                request.end();
+            }
+        } else {
+            log.error("Failed to open file", ar.exception)
         }
-    });
+    }
 
 ### Closing an AsyncFile
 
-To close an AsyncFile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument.
+To close an AsyncFile call the `close` method. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler method as an argument.
 
 # Performance Tuning
 
