@@ -113,16 +113,15 @@ Open a text editor and copy in the following:
 
     // Our application config
 
-    var app_conf = {
-      persistor_conf: {
+    var persistorConf = {
         address: 'demo.persistor',
         db_name: 'test_db'
-      }
-    }
+    };
+    
 
     // Deploy the busmods
 
-    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf);
+    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConf);
 
     // Start the web server
 
@@ -234,7 +233,7 @@ Edit the code in `web_server.js` so it looks like:
     server.listen(8080, 'localhost');
     
     
-The second parameter to the bridge method is an array of matches which determine which message we will let through. 
+The second parameter to the `bridge()` method is an array of matches which determine which message we will let through. 
     
 In our case, we're going to allow through any event bus messages from the client side to the address `demo.persistor` (which is where the persistor is listening), where the action field has the value `find`, and the `collection` field has the value `albums`.
 
@@ -334,11 +333,11 @@ Open up app.js again, and add the following line:
 
 Also add the following to the `app_conf`:
 
-    auth_mgr_conf: {
+    var authMgrConf = {
         address: 'demo.authMgr',
         user_collection: 'users',
         persistor_address: 'demo.persistor'
-      }
+    };
       
 So, app.js should now look like this:
 
@@ -348,25 +347,23 @@ So, app.js should now look like this:
 
     // Our application config
 
-    var app_conf = {  
-      persistor_conf: {
-        address: 'demo.persistor',
-        db_name: 'test_db'
-      },
-      auth_mgr_conf: {
-        address: 'demo.authMgr',
-        user_collection: 'users',
-        persistor_address: 'demo.persistor'
-      }
-    }
+    var persistorConf =  {
+      address: 'demo.persistor',
+      db_name: 'test_db'
+    };
+    var authMgrConf = {
+      address: 'demo.authMgr',
+      user_collection: 'users',
+      persistor_address: 'demo.persistor'
+    };
 
     // Deploy the busmods
 
-    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', app_conf.persistor_conf, 1, function() {
+    vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConf, 1, function() {
       load('static_data.js');
     });
 
-    vertx.deployVerticle('busmods/auth_mgr.js', app_conf.auth_mgr_conf);
+    vertx.deployVerticle('busmods/auth_mgr.js', authMgrConf);
 
     // Start the web server
 
@@ -577,42 +574,40 @@ First we need to start a Mailer busmod. This is an out of the box busmod that co
 
 Add the following line to `app.js`.
 
-    vertx.deployWorkerVerticle('busmods/mailer.js', app_conf.mailer_conf);
+    vertx.deployWorkerVerticle('busmods/mailer.js', mailerConf);
     
 And augment the app config with
 
-    mailer_conf: {
-        address: 'demo.mailer'    
-    }
+    var mailerConf = {
+      address: 'demo.mailer'
+    }; 
     
 So it reads:
 
-    var app_conf = {  
-      persistor_conf: {
-        address: 'demo.persistor',
-        db_name: 'test_db'
-      },
-      auth_mgr_conf: {
-        address: 'demo.authMgr',
-        user_collection: 'users',
-        persistor_address: 'demo.persistor'
-      },
-      mailer_conf: {
-        address: 'demo.mailer'    
-      }  
-    }         
+    var persistorConf =  {
+      address: 'demo.persistor',
+      db_name: 'test_db'
+    };
+    var authMgrConf = {
+      address: 'demo.authMgr',
+      user_collection: 'users',
+      persistor_address: 'demo.persistor'
+    };
+    var mailerConf = {
+      address: 'demo.mailer'
+    };         
     
 By default, the mailer attempts to send mails to a local mail server (e.g. sendmail daemon) running on `localhost`, port `25`. If you don't have such a daemon, you can try it out with (for example), a gmail account by changing the mailer config as follows:
 
-    mailer_conf: {
-        address: 'demo.mailer',
-        host: 'smtp.googlemail.com',
-        port: 465,
-        ssl: true,
-        auth: true,
-        username: 'username',
-        password: 'password'    
-    }
+    var mailerConf = {
+      address: 'demo.mailer',
+      host: 'smtp.googlemail.com',
+      port: 465,
+      ssl: true,
+      auth: true,
+      username: 'your_username',
+      password: 'your_password'
+    };
     
 (Obviously, changing the `username` and `password` values).  
 

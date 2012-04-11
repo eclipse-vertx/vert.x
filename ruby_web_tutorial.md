@@ -115,16 +115,14 @@ Open a text editor and copy in the following:
 
     # Our application config
 
-    app_conf = {
-      'persistor_conf' => {
-        'address' => 'demo.persistor',
-        'db_name' => 'test_db'
-      }
+    persistor_conf = {
+      'address' => 'demo.persistor',
+      'db_name' => 'test_db'
     }
 
     # Deploy the busmods
 
-    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']);
+    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf);
 
     # Start the web server
 
@@ -238,7 +236,7 @@ Edit the code in `web_server.rb` so it looks like:
     @server.listen(8080, 'localhost')
 
     
-The second parameter to the bridge method is an array of matches which determine which messages we're going to let through.
+The second parameter to the `bridge` method is an array of matches which determine which messages we're going to let through.
     
 In our case, we're going to allow through any event bus messages from the client side to the address `demo.persistor` (which is where the persistor is listening), where the action field has the value `find`, and the `collection` field has the value `albums`.
 
@@ -336,13 +334,13 @@ Open up app.rb again, and add the following line:
 
     Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
 
-Also add the following to the `app_conf`:
+Also add the following to the app.rb:
 
-  'auth_mgr_conf' => {
-    'address' => 'demo.authMgr',
-    'user_collection' => 'users',
-    'persistor_address' => 'demo.persistor'
-  }
+    auth_mgr_conf = {
+      'address' => 'demo.authMgr',
+      'user_collection' => 'users',
+      'persistor_address' => 'demo.persistor'
+    }
       
 So, app.rb should now look like this:
 
@@ -350,25 +348,23 @@ So, app.rb should now look like this:
 
     # Our application config
 
-    app_conf = {
-      'persistor_conf' => {
-        'address' => 'demo.persistor',
-        'db_name' => 'test_db'
-      },
-      'auth_mgr_conf' => {
-        'address' => 'demo.authMgr',
-        'user_collection' => 'users',
-        'persistor_address' => 'demo.persistor'
-      }
+    persistor_conf = {
+      'address' => 'demo.persistor',
+      'db_name' => 'test_db'
+    }
+    auth_mgr_conf = {
+      'address' => 'demo.authMgr',
+      'user_collection' => 'users',
+      'persistor_address' => 'demo.persistor'
     }
 
     # Deploy the busmods
 
-    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']) do
+    Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf) do
         load('static_data.rb')
     end
 
-    Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
+    Vertx.deploy_verticle('busmods/auth_mgr.rb', auth_mgr_conf)
 
     # Start the web server
 
@@ -580,34 +576,16 @@ First we need to start a Mailer busmod. This is an out of the box busmod that co
 Add the following line to `app.rb`, just after where the `auth_mgr` is deployed.
 
     Vertx.deploy_worker_verticle('busmods/mailer.rb', app_conf['mailer_conf'])
-    
-        
-And augment the app config with
+            
+Add the following:
 
-    'mailer_conf' => {
-        'address' => 'demo.mailer'    
-    }
-    
-So it reads:
-
-    app_conf = {
-      'persistor_conf' => {
-        'address' => 'demo.persistor',
-        'db_name' => 'test_db'
-      },
-      'auth_mgr_conf' => {
-        'address' => 'demo.authMgr',
-        'user_collection' => 'users',
-        'persistor_address' => 'demo.persistor'
-      },
-      'mailer_conf' => {
-         'address' => 'demo.mailer'    
-      }
-    }      
+    mailer_conf = {
+       'address' => 'demo.mailer'
+    };
     
 By default, the mailer attempts to send mails to a local mail server (e.g. sendmail daemon) running on `localhost`, port `25`. If you don't have such a daemon, you can try it out with (for example), a gmail account by changing the mailer config as follows:
 
-    'mailer_conf' => {
+    mailer_conf = {
         'address' => 'demo.mailer',
         'host' => 'smtp.googlemail.com',
         'port' => 465,
@@ -615,7 +593,7 @@ By default, the mailer attempts to send mails to a local mail server (e.g. sendm
         'auth' => true,
         'username' => 'username',
         'password' => 'password'    
-    }
+    };
     
 (Obviously, changing the `username` and `password` values).  
 
