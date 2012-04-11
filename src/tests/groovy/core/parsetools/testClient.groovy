@@ -53,7 +53,7 @@ def testFixed() {
   def chunkSize = 100
 
   def output = { chunk ->
-    tu.azzert(chunk.length() == chunkSize)
+    tu.azzert(chunk.length == chunkSize)
     if (++chunkCount == numChunks) {
       tu.testComplete()
     }

@@ -76,7 +76,7 @@ void echo(boolean ssl) {
 
       received << buffer
 
-      if (received.length() == sends * size) {
+      if (received.length == sends * size) {
         tu.azzert(TestUtils.buffersEqual(sent, received))
 
         server.close {

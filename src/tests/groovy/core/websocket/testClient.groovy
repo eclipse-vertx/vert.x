@@ -64,7 +64,7 @@ def echo(binary) {
     ws.dataHandler { buff ->
       tu.checkContext()
       received << buff
-      if (received.length() == buff.length()) {
+      if (received.length == buff.length) {
         tu.azzert(TestUtils.buffersEqual(buff, received))
         tu.testComplete()
       }
