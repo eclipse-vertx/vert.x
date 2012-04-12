@@ -36,10 +36,14 @@ public class VertxWorkerPool implements WorkerPool<NioWorker> {
   private List<WorkerHolder> workers = new ArrayList<>();
 
   public synchronized NioWorker nextWorker() {
-    NioWorker worker = workers.get(pos).worker;
-    pos++;
-    checkPos();
-    return worker;
+    if (workers.isEmpty()) {
+      return null;
+    } else {
+      NioWorker worker = workers.get(pos).worker;
+      pos++;
+      checkPos();
+      return worker;
+    }
   }
 
   public synchronized void addWorker(NioWorker worker) {

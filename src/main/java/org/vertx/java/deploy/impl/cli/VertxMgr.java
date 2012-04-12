@@ -61,7 +61,7 @@ public class VertxMgr {
     new VertxMgr(args);
   }
 
-  private VertxInternal vertx;
+  private VertxInternal vertx = new DefaultVertx();
   private VerticleManager mgr;
 
   private VertxMgr(String[] sargs) {
@@ -260,8 +260,6 @@ public class VertxMgr {
         }
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
-    } else {
-      vertx = new DefaultVertx();
     }
     mgr = new VerticleManager(vertx);
     if (clustered) {
