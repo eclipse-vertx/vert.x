@@ -741,7 +741,7 @@ A string. In this case the string will encoded using UTF-8 and the result writte
     
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
 
-    sock.write("hello", "UTF-162);
+    sock.write("hello", "UTF-16");
     
 The `write` function is asynchronous and always returns immediately after the write has been queued.
 
