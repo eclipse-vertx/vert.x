@@ -95,7 +95,7 @@ On the left hand bar there's a form which allows you to login.
 
 ### Step 4. Get the Persistor up and running
 
-Vert.x ships with an out of the box bus module (busmod) called `MongoPersistor`. This is a busmod is component which communicates with other components on the vert.x event bus by exchanging JSON messages.
+Vert.x ships with an out of the box bus module (busmod) called `MongoPersistor`. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.
 
 The `MongoPersistor` busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the busmods manual).
 
