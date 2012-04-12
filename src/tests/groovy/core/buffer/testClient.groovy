@@ -31,7 +31,7 @@ def testPutAtGetAtByte() {
 
 def testPutAtInt() {
   def buff = new Buffer()
-  def i = 1233;
+  def i = 1233
   buff[10] = i
   tu.azzert(buff.getInt(10) == i)
   tu.testComplete()
@@ -39,7 +39,7 @@ def testPutAtInt() {
 
 def testPutAtLong() {
   def buff = new Buffer()
-  def l = 1233l;
+  def l = 1233l
   buff[10] = l
   tu.azzert(buff.getLong(10) == l)
   tu.testComplete()
@@ -47,7 +47,7 @@ def testPutAtLong() {
 
 def testPutAtShort() {
   def buff = new Buffer()
-  def s = (short)123;
+  def s = (short)123
   buff[10] = s
   tu.azzert(buff.getShort(10) == s)
   tu.testComplete()

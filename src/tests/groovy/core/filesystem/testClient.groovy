@@ -58,7 +58,7 @@ def testMove() {
           tu.azzert(ares3.exception == null)
           tu.azzert(!ares.result)
           tu.testComplete()
-        });
+        })
       })
     })
   })
@@ -114,7 +114,7 @@ def testPumpFile() {
                 tu.azzert(ares3.exception == null)
                 tu.azzert(tu.buffersEqual(content, ares3.result))
                 tu.testComplete()
-              });
+              })
             }
           }
         }
@@ -136,7 +136,7 @@ def setup(doneHandler) {
         doneHandler()
       })
     }
-  });
+  })
 }
 
 def teardown(doneHandler) {
@@ -145,7 +145,7 @@ def teardown(doneHandler) {
   })
 }
 
-tu.registerTests(this);
+tu.registerTests(this)
 
 setup({ tu.appReady() })
 

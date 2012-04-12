@@ -11,8 +11,8 @@ class CounterHolder {
 }
 
 void testIsolation() {
-  tu.azzert(CounterHolder.counter.incrementAndGet() == 1);
-  tu.testComplete();
+  tu.azzert(CounterHolder.counter.incrementAndGet() == 1)
+  tu.testComplete()
 }
 
 tu.registerTests(this)
