@@ -300,13 +300,13 @@ vertx.createNetServer().connectHandler { socket -&gt;
 <p>Servers, clients and event bus handlers will be automatically closed when the verticle is stopped. However, if you have any other clean-up logic that you want to execute when the verticle is stopped,
 you can implement a <code>vertxStop</code> top level method which will be called when the verticle is undeployed.</p>
 <h2 id="getting-configuration-in-a-verticle">Getting Configuration in a Verticle</h2><br/>
-<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available by calling the <code>getConfig</code> method on the <code>container</code> variable which is injected into the top level script. The config is a map which represents the JSON config.</p>
-<pre class="prettyprint">def config = container.getConfig()
+<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available in the <code>config</code> property of the <code>container</code> variable which is injected into the top level script. The config is a map which represents the JSON config.</p>
+<pre class="prettyprint">def config = container.config
 </pre>
 <p>You can use this config to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.</p>
 <h2 id="logging-from-a-verticle">Logging from a Verticle</h2><br/>
-<p>Each verticle is given its own logger. To get a reference to it invoke the <code>getLogger</code> method on the container instance:</p>
-<pre class="prettyprint">def logger = container.getLogger()
+<p>Each verticle is given its own logger. To get a reference to it use the <code>logger</code> property on the container instance:</p>
+<pre class="prettyprint">def logger = container.logger
 
 logger.info "I am logging something"
 </pre>
@@ -336,7 +336,7 @@ logger.info "I am logging something"
 
 container.deployVerticle("foo.ChildVerticle", config);
 </pre>
-<p>Then, in <code>ChildVerticle</code> you can access the config via <code>getConfig</code> as previously explained.</p>
+<p>Then, in <code>ChildVerticle</code> you can access the config via the <code>config</code> property as previously explained.</p>
 <h2 id="using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</h2><br/>
 <p>If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.</p>
 <p>For example, you could create a verticle <code>app.groovy</code> as follows:</p>
