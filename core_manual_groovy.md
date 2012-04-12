@@ -97,19 +97,19 @@ For example, you could create a verticle `app.groovy` as follows:
     // Application config
 
     def appConfig = [
-        "verticle1Config": [
+        verticle1Config: [
             // Config for verticle1
         ],
-        "verticle2Config": [
+        verticle2Config: [
             // Config for verticle2
         ],
-        "verticle3Config": [
+        verticle3Config: [
             // Config for verticle3
         ],
-        "verticle4Config": [
+        verticle4Config: [
             // Config for verticle4
         ],
-        "verticle5Config": [
+        verticle5Config: [
             // Config for verticle5
         ]
     ]
@@ -646,7 +646,7 @@ A string. In this case the string will encoded using UTF-8 and the result writte
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
-    sock.write("hello", "UTF-162)
+    sock.write("hello", "UTF-162")
 
 The `write` method or leftShift is asynchronous and always returns immediately after the write has been queued.
 
