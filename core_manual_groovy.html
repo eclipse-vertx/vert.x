@@ -329,7 +329,7 @@ logger.info "I am logging something"
 <p>To deploy a single instance of a verticle:</p>
 <pre class="prettyprint">def id = container.deployVerticle(main)
 </pre>
-<p>Where <code>main</code> is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
+<p>Where <code>main</code> is a String that represents the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby, Groovy or JavaScript verticle (e.g. my_script.rb or MyScript.js or MyScript.groovy) or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
 <p>JSON configuration can be passed to a verticle that is deployed programmatically. For example:</p>
 <pre class="prettyprint">def config = [ foo: "wibble", bar: false]
