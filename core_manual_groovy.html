@@ -343,19 +343,19 @@ container.deployVerticle("foo.ChildVerticle", config)
 <pre class="prettyprint">// Application config
 
 def appConfig = [
-    "verticle1Config": [
+    verticle1Config: [
         // Config for verticle1
     ],
-    "verticle2Config": [
+    verticle2Config: [
         // Config for verticle2
     ],
-    "verticle3Config": [
+    verticle3Config: [
         // Config for verticle3
     ],
-    "verticle4Config": [
+    verticle4Config: [
         // Config for verticle4
     ],
-    "verticle5Config": [
+    verticle5Config: [
         // Config for verticle5
     ]
 ]
@@ -744,7 +744,7 @@ sock &lt;&lt; myBuffer
 sock &lt;&lt; "hello"
 </pre>
 <p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.</p>
-<pre class="prettyprint">sock.write("hello", "UTF-162)
+<pre class="prettyprint">sock.write("hello", "UTF-16")
 </pre>
 <p>The <code>write</code> method or leftShift is asynchronous and always returns immediately after the write has been queued.</p>
 <p>The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a handler as a final argument.</p>

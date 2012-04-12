@@ -845,7 +845,7 @@ sock.write(myBuffer);
 </pre>
 <p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.   <br/>
 </p>
-<pre class="prettyprint">sock.write("hello", "UTF-162);
+<pre class="prettyprint">sock.write("hello", "UTF-16");
 </pre>
 <p>The <code>write</code> function is asynchronous and always returns immediately after the write has been queued.</p>
 <p>The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a handler as a final argument.</p>
