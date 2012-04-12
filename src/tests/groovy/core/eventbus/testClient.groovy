@@ -68,7 +68,7 @@ def testSimple() {
 
 def testEmptyMessage() {
 
-  def handled = false;
+  def handled = false
   eb.registerHandler(address, myHandler = { msg ->
     tu.checkContext()
     tu.azzert(!handled)
@@ -77,13 +77,13 @@ def testEmptyMessage() {
     tu.testComplete()
   })
 
-  eb.send(address, emptySent);
+  eb.send(address, emptySent)
 }
 
 
 def testUnregister() {
 
-  def handled = false;
+  def handled = false
   eb.registerHandler(address, myHandler = { msg ->
     tu.checkContext()
     tu.azzert(!handled)
@@ -91,21 +91,21 @@ def testUnregister() {
     eb.unregisterHandler(address, myHandler)
     // Unregister again - should do nothing
     eb.unregisterHandler(address, myHandler)
-    handled = true;
+    handled = true
     // Wait a little while to allow any other messages to arrive
     vertx.setTimer(100, {
-      tu.testComplete();
+      tu.testComplete()
     })
   })
 
   2.times {
-    eb.send(address, sent);
+    eb.send(address, sent)
   }
 }
 
 def testWithReply() {
 
-  def handled = false;
+  def handled = false
   eb.registerHandler(address, myHandler = { msg ->
     tu.checkContext()
     tu.azzert(!handled)
@@ -136,15 +136,15 @@ def testReplyOfReplyOfReply() {
   eb.send(address, "message", { reply->
     tu.azzert("reply" == reply.body)
     reply.reply("reply-of-reply", { replyReply ->
-      tu.azzert("reply-of-reply-of-reply" == replyReply.body);
-      tu.testComplete();
+      tu.azzert("reply-of-reply-of-reply" == replyReply.body)
+      tu.testComplete()
     })
   })
 }
 
 def testEmptyReply() {
 
-  def handled = false;
+  def handled = false
   eb.registerHandler(address, myHandler = { msg ->
     tu.checkContext()
     tu.azzert(!handled)
@@ -162,31 +162,31 @@ def testEmptyReply() {
 }
 
 def testEchoString() {
-  echo("foo");
+  echo("foo")
 }
 
 def testEchoNumber1() {
-  echo(1234);
+  echo(1234)
 }
 
 def testEchoNumber2() {
-  echo(1.2345);
+  echo(1.2345)
 }
 
 def testEchoBooleanTrue() {
-  echo(true);
+  echo(true)
 }
 
 def testEchoBooleanFalse() {
-  echo(false);
+  echo(false)
 }
 
 def testEchoJson() {
-  echo(sent);
+  echo(sent)
 }
 
 def testEchoNull() {
-  echo(null);
+  echo(null)
 }
 
 

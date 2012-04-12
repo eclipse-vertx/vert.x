@@ -185,7 +185,7 @@ def httpMethod(ssl, method, chunked)  {
 
   path = "/someurl/blah.html"
   query = "param1=vparam1&param2=vparam2"
-  uri = "http://localhost:8080" + path + "?" + query;
+  uri = "http://localhost:8080" + path + "?" + query
 
   server.requestHandler { req ->
     tu.checkContext()
