@@ -909,9 +909,9 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 <p>If you create a simple TCP server and deploy a single instance of it then all the handlers for that server are always executed on the same event loop (thread).</p>
 <p>This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! That's not very good, right?</p>
 <p>To remedy this you can simply deploy more instances of the verticle in the server, e.g.</p>
-<pre class="prettyprint">vertx deploy foo.MyServer -instances 20
+<pre class="prettyprint">vertx run foo.MyServer -instances 20
 </pre>
-<p>The above would deploy 20 instances of foo.MyServer to a locally running vert.x instance.</p>
+<p>The above would run 20 instances of foo.MyServer to a locally running vert.x instance.</p>
 <p>Once you do this you will find the echo server works functionally identically to before, but, <em>as if by magic</em>, all your cores on your server can be utilised and more work can be handled.</p>
 <p>At this point you might be asking yourself <em>'Hold on, how can you have more than one server listening on the same host and port? Surely you will get port conflicts as soon as you try and deploy more than one instance?'</em></p>
 <p><em>Vert.x does a little magic here</em>.</p>

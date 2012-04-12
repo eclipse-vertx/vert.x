@@ -795,9 +795,9 @@ This means that if you are running on a server with a lot of cores, and you only
 
 To remedy this you can simply deploy more instances of the verticle in the server, e.g.
 
-    vertx deploy echo_server.js -instances 20
+    vertx run echo_server.js -instances 20
     
-The above would deploy 20 instances of echo_server.js to a locally running vert.x instance.
+The above would run 20 instances of echo_server.js to a locally running vert.x instance.
 
 Once you do this you will find the echo server works functionally identically to before, but, *as if by magic*, all your cores on your server can be utilised and more work can be handled.
 

@@ -332,9 +332,9 @@ logger.info "I am logging something"
 <p>Where <code>main</code> is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
 <p>JSON configuration can be passed to a verticle that is deployed programmatically. For example:</p>
-<pre class="prettyprint">def config = [ "foo": "wibble", "bar": false]
+<pre class="prettyprint">def config = [ foo: "wibble", bar: false]
 
-container.deployVerticle("foo.ChildVerticle", config);
+container.deployVerticle("foo.ChildVerticle", config)
 </pre>
 <p>Then, in <code>ChildVerticle</code> you can access the config via the <code>config</code> property as previously explained.</p>
 <h2 id="using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</h2><br/>
@@ -362,11 +362,11 @@ def appConfig = [
 
 // Start the verticles that make up the app
 
-container.deployVerticle("verticle1.js", appConfig["verticle1Config"]);
-container.deployVerticle("verticle2.rb", appConfig["verticle2Config"]);
-container.deployVerticle("foo.Verticle3", appConfig["verticle3Config"]);
-container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4Config"]);
-container.deployWorkerVerticle("verticle5.js", appConfig["verticle5Config"], 10);
+container.deployVerticle("verticle1.js", appConfig["verticle1Config"])
+container.deployVerticle("verticle2.rb", appConfig["verticle2Config"])
+container.deployVerticle("foo.Verticle3", appConfig["verticle3Config"])
+container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4Config"])
+container.deployWorkerVerticle("verticle5.js", appConfig["verticle5Config"], 10)
 </pre>
 <p>Then you can start your entire application by simply running:</p>
 <pre class="prettyprint">vertx run app.groovy
@@ -619,11 +619,11 @@ println "First this is printed"
 <p>You can also set a timer to fire periodically by using the <code>setPeriodic</code> method. There will be an initial delay equal to the period. The return value of <code>setPeriodic</code> is a unique timer id (long). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:</p>
 <pre class="prettyprint">long timerID = vertx.setPeriodic(1000, new Handler&lt;Long&gt;() {
     public void handle(Long timerID) {
-        log.info('And every second this is printed');
+        log.info('And every second this is printed')
     }
-});
+})
 
-log.info('First this is printed');
+log.info('First this is printed')
 </pre>
 <h2 id="cancelling-timers">Cancelling timers</h2><br/>
 <p>To cancel a periodic timer, call the <code>cancelTimer</code> method specifying the timer id. For example:</p>
@@ -744,7 +744,7 @@ sock &lt;&lt; myBuffer
 sock &lt;&lt; "hello"
 </pre>
 <p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.</p>
-<pre class="prettyprint">sock.write("hello", "UTF-162);
+<pre class="prettyprint">sock.write("hello", "UTF-162)
 </pre>
 <p>The <code>write</code> method or leftShift is asynchronous and always returns immediately after the write has been queued.</p>
 <p>The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a handler as a final argument.</p>
@@ -784,9 +784,9 @@ server.connectHandler { sock -&gt; sock.exceptionHandler { e -&gt; println "Oops
 <p>If you create a simple TCP server and deploy a single instance of it then all the handlers for that server are always executed on the same event loop (thread).</p>
 <p>This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! That's not very good, right?</p>
 <p>To remedy this you can simply deploy more instances of the verticle in the server, e.g.</p>
-<pre class="prettyprint">vertx deploy foo.MyServer -instances 20
+<pre class="prettyprint">vertx run MyScript.groovy -instances 20
 </pre>
-<p>The above would deploy 20 instances of foo.MyServer to a locally running vert.x instance.</p>
+<p>The above would start 20 instances of MyScript.groovy to a locally running vert.x instance.</p>
 <p>Once you do this you will find the echo server works functionally identically to before, but, <em>as if by magic</em>, all your cores on your server can be utilised and more work can be handled.</p>
 <p>At this point you might be asking yourself <em>'Hold on, how can you have more than one server listening on the same host and port? Surely you will get port conflicts as soon as you try and deploy more than one instance?'</em></p>
 <p><em>Vert.x does a little magic here</em>.</p>
@@ -940,7 +940,7 @@ server.connectHandler { sock -&gt;
 </pre>
 <p>And there we have it. The <code>drainHandler</code> event handler will get called when the write queue is ready to accept more data, this resumes the <code>NetSocket</code> which allows it to read more data.</p>
 <p>It's very common to want to do this when writing vert.x applications, so we provide a helper class called <code>Pump</code> which does all this hard work for you. You just feed it the <code>ReadStream</code> and the <code>WriteStream</code> and it tell it to start:</p>
-<pre class="prettyprint">def server = vertx.createNetServer();
+<pre class="prettyprint">def server = vertx.createNetServer()
 
 server.connectHandler { sock -&gt; Pump.create(sock, sock).start() }.listen(1234, "localhost")
 </pre>
@@ -1065,7 +1065,7 @@ param2: 'xyz
 
 server.requestHandler{ request -&gt;
     request.dataHandler { buffer -&gt; println "I received ${buffer.length(}) bytes" }
-}.listen(8080, "localhost");
+}.listen(8080, "localhost")
 </pre>
 <p>The <code>dataHandler</code> may be called more than once depending on the size of the body.</p>
 <p>You'll notice this is very similar to how data from <code>NetSocket</code> is read.</p>
@@ -1132,7 +1132,7 @@ request.response &lt;&lt; myBuffer
 request.response &lt;&lt; "hello"
 </pre>
 <p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.</p>
-<pre class="prettyprint">request.response.write("hello", "UTF-16");
+<pre class="prettyprint">request.response.write("hello", "UTF-16")
 </pre>
 <p>The <code>write</code> method is asynchronous and always returns immediately after the write has been queued.</p>
 <p>The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a handler as a final argument. This handler will then be invoked when the write has completed:</p>
@@ -1313,7 +1313,7 @@ request.end()
 <h4 id="http-chunked-requests">HTTP chunked requests</h4><br/>
 <p>Vert.x supports <a href="http://en.wikipedia.org/wiki/Chunked_transfer_encoding">HTTP Chunked Transfer Encoding</a> for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.</p>
 <p>You put the HTTP request into chunked mode as follows:</p>
-<pre class="prettyprint">request.chunked = true;
+<pre class="prettyprint">request.chunked = true
 </pre>
 <p>Default is non-chunked. When in chunked mode, each call to <code>request.write(...)</code> will result in a new HTTP chunk being written out.</p>
 <h3 id="http-client-responses">HTTP Client Responses</h3><br/>
@@ -1484,7 +1484,7 @@ server.requestHandler(routeMatcher).listen(8080, "localhost")
 
 server.websocketHandler{ ws -&gt;
     println "A websocket has connected!"
-}.listen(8080, "localhost");
+}.listen(8080, "localhost")
 </pre>
 <h3 id="reading-from-and-writing-to-websockets">Reading from and Writing to WebSockets</h3><br/>
 <p>The <code>websocket</code> instance passed into the handler implements both <code>ReadStream</code> and <code>WriteStream</code>, so you can read and write data to it in the normal ways. I.e by setting a <code>dataHandler</code> and calling the <code>writeBuffer</code> method.</p>
@@ -1495,7 +1495,7 @@ server.websocketHandler{ ws -&gt;
 
 server.websocketHandler{ ws -&gt;
     Pump.createPump(ws, ws).start()
-}.listen(8080, "localhost");
+}.listen(8080, "localhost")
 </pre>
 <p>The <code>websocket</code> instance also has method <code>writeBinaryFrame</code> for writing binary data. This has the same effect as calling <code>writeBuffer</code>.</p>
 <p>Another method <code>writeTextFrame</code> also exists for writing text data. This is equivalent to calling</p>
@@ -1703,7 +1703,7 @@ server.listen(8080)
 <p>To let all messages through you can specify a list with a single empty map which will match all messages.</p>
 <pre class="prettyprint">...
 
-vertx.createSockJSBridge(server).bridge(config, [[:]);
+vertx.createSockJSBridge(server).bridge(config, [[:])
 
 ...
 </pre>
@@ -2000,7 +2000,7 @@ r--r--r--
             }
         }
     } else {
-        log.error("Failed to open file", ar.exception);
+        log.error("Failed to open file", ar.exception)
     }
 }
 </pre>
@@ -2023,7 +2023,7 @@ vertx.fileSystem.open("some-file.dat") { ar -&gt;
         Pump.createPump(rs, request).start()
         rs.endHandler{
             // File sent, end HTTP requuest
-            request.end();
+            request.end()
         }
     } else {
         log.error("Failed to open file", ar.exception)

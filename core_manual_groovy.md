@@ -82,9 +82,9 @@ Where `main` is the name of the "main" of the Verticle (i.e. the name of the scr
 
 JSON configuration can be passed to a verticle that is deployed programmatically. For example:
 
-    def config = [ "foo": "wibble", "bar": false]
+    def config = [ foo: "wibble", bar: false]
 
-    container.deployVerticle("foo.ChildVerticle", config);
+    container.deployVerticle("foo.ChildVerticle", config)
 
 Then, in `ChildVerticle` you can access the config via the `config` property as previously explained.
 
@@ -116,11 +116,11 @@ For example, you could create a verticle `app.groovy` as follows:
 
     // Start the verticles that make up the app
 
-    container.deployVerticle("verticle1.js", appConfig["verticle1Config"]);
-    container.deployVerticle("verticle2.rb", appConfig["verticle2Config"]);
-    container.deployVerticle("foo.Verticle3", appConfig["verticle3Config"]);
-    container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4Config"]);
-    container.deployWorkerVerticle("verticle5.js", appConfig["verticle5Config"], 10);
+    container.deployVerticle("verticle1.js", appConfig["verticle1Config"])
+    container.deployVerticle("verticle2.rb", appConfig["verticle2Config"])
+    container.deployVerticle("foo.Verticle3", appConfig["verticle3Config"])
+    container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4Config"])
+    container.deployWorkerVerticle("verticle5.js", appConfig["verticle5Config"], 10)
 
 Then you can start your entire application by simply running:
 
@@ -490,11 +490,11 @@ You can also set a timer to fire periodically by using the `setPeriodic` method.
 
     long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
         public void handle(Long timerID) {
-            log.info('And every second this is printed');
+            log.info('And every second this is printed')
         }
-    });
+    })
 
-    log.info('First this is printed');
+    log.info('First this is printed')
 
 ## Cancelling timers
 
@@ -646,7 +646,7 @@ A string. In this case the string will encoded using UTF-8 and the result writte
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
-    sock.write("hello", "UTF-162);
+    sock.write("hello", "UTF-162)
 
 The `write` method or leftShift is asynchronous and always returns immediately after the write has been queued.
 
@@ -709,9 +709,9 @@ This means that if you are running on a server with a lot of cores, and you only
 
 To remedy this you can simply deploy more instances of the verticle in the server, e.g.
 
-    vertx deploy foo.MyServer -instances 20
+    vertx run MyScript.groovy -instances 20
 
-The above would deploy 20 instances of foo.MyServer to a locally running vert.x instance.
+The above would start 20 instances of MyScript.groovy to a locally running vert.x instance.
 
 Once you do this you will find the echo server works functionally identically to before, but, *as if by magic*, all your cores on your server can be utilised and more work can be handled.
 
@@ -936,7 +936,7 @@ And there we have it. The `drainHandler` event handler will get called when the 
 
 It's very common to want to do this when writing vert.x applications, so we provide a helper class called `Pump` which does all this hard work for you. You just feed it the `ReadStream` and the `WriteStream` and it tell it to start:
 
-    def server = vertx.createNetServer();
+    def server = vertx.createNetServer()
 
     server.connectHandler { sock -> Pump.create(sock, sock).start() }.listen(1234, "localhost")
 
@@ -1112,7 +1112,7 @@ To receive the body, you set the `dataHandler` on the request object. This will 
 
     server.requestHandler{ request ->
         request.dataHandler { buffer -> println "I received ${buffer.length(}) bytes" }
-    }.listen(8080, "localhost");
+    }.listen(8080, "localhost")
 
 The `dataHandler` may be called more than once depending on the size of the body.
 
@@ -1202,7 +1202,7 @@ A string. In this case the string will encoded using UTF-8 and the result writte
 
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.
 
-    request.response.write("hello", "UTF-16");
+    request.response.write("hello", "UTF-16")
 
 The `write` method is asynchronous and always returns immediately after the write has been queued.
 
@@ -1466,7 +1466,7 @@ Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Ch
 
 You put the HTTP request into chunked mode as follows:
 
-    request.chunked = true;
+    request.chunked = true
 
 Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out.
 
@@ -1705,7 +1705,7 @@ To use WebSockets on the server you create an HTTP server as normal, but instead
 
     server.websocketHandler{ ws ->
         println "A websocket has connected!"
-    }.listen(8080, "localhost");
+    }.listen(8080, "localhost")
 
 
 ### Reading from and Writing to WebSockets
@@ -1722,7 +1722,7 @@ For example, to echo all data received on a WebSocket:
 
     server.websocketHandler{ ws ->
         Pump.createPump(ws, ws).start()
-    }.listen(8080, "localhost");
+    }.listen(8080, "localhost")
 
 The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
 
@@ -1992,7 +1992,7 @@ To let all messages through you can specify a list with a single empty map which
 
     ...
 
-    vertx.createSockJSBridge(server).bridge(config, [[:]);
+    vertx.createSockJSBridge(server).bridge(config, [[:])
 
     ...
 
@@ -2387,7 +2387,7 @@ Here's an example of random access reads:
                 }
             }
         } else {
-            log.error("Failed to open file", ar.exception);
+            log.error("Failed to open file", ar.exception)
         }
     }
 
@@ -2417,7 +2417,7 @@ Here's an example of pumping data from a file on a client to a HTTP request:
             Pump.createPump(rs, request).start()
             rs.endHandler{
                 // File sent, end HTTP requuest
-                request.end();
+                request.end()
             }
         } else {
             log.error("Failed to open file", ar.exception)
