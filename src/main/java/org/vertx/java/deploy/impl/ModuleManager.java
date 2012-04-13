@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -38,22 +37,33 @@ public class ModuleManager {
 
   private static final Logger log = LoggerFactory.getLogger(ModuleManager.class);
 
-  private final String modRoot;
+  private final File modRoot;
   private final VerticleManager verticleManager;
 
-  public ModuleManager(String modRoot, VerticleManager verticleManager) {
-    this.modRoot = modRoot;
+  public ModuleManager(VerticleManager verticleManager) {
+    String modDir = System.getProperty("vertx.mods");
+    if (modDir != null) {
+      modRoot = new File(modDir);
+    } else {
+      String installDir = System.getProperty("vertx.install");
+      if (installDir == null) {
+        throw new IllegalStateException("vertx.install system property must be specified");
+      }
+      modRoot = new File(installDir, "mods");
+    }
     this.verticleManager = verticleManager;
   }
 
   public boolean exists(String name) {
     File file = new File(modRoot, name);
-    return file.exists();
+    boolean exists = file.exists();
+    return exists;
   }
 
   // TODO cache the module info
-  public void deploy(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
+  public String deploy(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
     File modDir = new File(modRoot, modName);
+
     String conf;
     try {
       conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
@@ -91,6 +101,6 @@ public class ModuleManager {
       throw new IllegalStateException("Module " + modName + " mod.json must contain a \"worker\" field");
     }
 
-    verticleManager.deploy(worker, deployName, main, config, urls.toArray(new URL[urls.size()]), instances, doneHandler);
+    return verticleManager.deploy(worker, deployName, main, config, urls.toArray(new URL[urls.size()]), instances, doneHandler);
   }
 }

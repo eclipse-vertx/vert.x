@@ -94,6 +94,8 @@ public class VerticleManager {
     return holder == null ? null : holder.logger;
   }
 
+  private final ModuleManager mm = new ModuleManager(this);
+
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
                                     int instances,
@@ -101,6 +103,10 @@ public class VerticleManager {
   {
     if (deployments.containsKey(name)) {
       throw new IllegalStateException("There is already a deployment with name: " + name);
+    }
+
+    if (mm.exists(main)) {
+      return mm.deploy(name, main, config, instances, doneHandler);
     }
 
     if (urls == null) {
