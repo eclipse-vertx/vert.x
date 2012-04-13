@@ -212,6 +212,17 @@ Edit the code in `web_server.js` so it looks like:
 
     var server = new vertx.HttpServer();
         
+    server.requestHandler(function(req) {
+      if (req.path === '/') {
+        req.response.sendFile('web/index.html');
+      } else if (req.path.indexOf('..') === -1) {
+        req.response.sendFile('web' + req.path);
+      } else {
+        req.response.statusCode = 404;
+        req.response.end;
+      }
+    });
+    
     // Link up the client side to the server side event bus
     new vertx.SockJSBridge(server, {prefix : '/eventbus'},
       [
@@ -226,16 +237,7 @@ Edit the code in `web_server.js` so it looks like:
       ]
     );
     
-    server.requestHandler(function(req) {
-      if (req.path === '/') {
-        req.response.sendFile('web/index.html');
-      } else if (req.path.indexOf('..') === -1) {
-        req.response.sendFile('web' + req.path);
-      } else {
-        req.response.statusCode = 404;
-        req.response.end;
-      }
-    }).listen(8080, 'localhost');
+    server.listen(8080, 'localhost');
     
     function vertxStop() {
       server.close();
