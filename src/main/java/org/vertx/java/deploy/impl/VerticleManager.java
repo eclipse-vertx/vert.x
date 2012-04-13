@@ -31,7 +31,11 @@ import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
 import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
 import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -99,13 +103,14 @@ public class VerticleManager {
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
                                     int instances,
+                                    final File modDir,
                                     final Handler<Void> doneHandler)
   {
     if (deployments.containsKey(name)) {
       throw new IllegalStateException("There is already a deployment with name: " + name);
     }
 
-    if (mm.exists(main)) {
+    if (modDir == null && mm.exists(main)) {
       return mm.deploy(name, main, config, instances, doneHandler);
     }
 
@@ -202,6 +207,9 @@ public class VerticleManager {
 
           try {
             addVerticle(deployment, verticle);
+            if (modDir != null) {
+              setPathAdjustment(modDir);
+            }
             verticle.start();
           } catch (Throwable t) {
             vertx.reportException(t);
@@ -220,6 +228,18 @@ public class VerticleManager {
     }
 
     return deploymentName;
+  }
+
+  // We calculate a path adjustment that can be used by the fileSystem object
+  // so that the *effective* working directory can be the module directory
+  // this allows modules to read and write the file system as if they were
+  // in the module dir, even though the actual working directory will be
+  // wherever vertx run or vertx start was called from
+  private void setPathAdjustment(File modDir) {
+    Path cwd = Paths.get(".").toAbsolutePath().getParent();
+    Path pmodDir = Paths.get(modDir.getAbsolutePath());
+    Path relative = cwd.relativize(pmodDir);
+    Context.getContext().setPathAdjustment(relative);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {

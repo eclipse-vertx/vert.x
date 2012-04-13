@@ -127,7 +127,7 @@ public class VertxMgr {
         } else {
           jsonConf = null;
         }
-        mgr.deploy(dc.worker, dc.name, dc.main, jsonConf, dc.urls, dc.instances, null);
+        mgr.deploy(dc.worker, dc.name, dc.main, jsonConf, dc.urls, dc.instances, null, null);
         mgr.block();
       }
     }
