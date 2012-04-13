@@ -42,14 +42,14 @@ public class ModuleManager {
 
   public ModuleManager(VerticleManager verticleManager) {
     String modDir = System.getProperty("vertx.mods");
-    if (modDir != null) {
-      modRoot = new File(modDir);
-    } else {
+    if (modDir == null || modDir.trim().equals("")) {
       String installDir = System.getProperty("vertx.install");
       if (installDir == null) {
-        throw new IllegalStateException("vertx.install system property must be specified");
+        throw new IllegalStateException("vertx.install system property must be specified if vert.mods not specified");
       }
       modRoot = new File(installDir, "mods");
+    } else {
+      modRoot = new File(modDir);
     }
     this.verticleManager = verticleManager;
   }
@@ -98,9 +98,9 @@ public class ModuleManager {
     }
     Boolean worker = json.getBoolean("worker");
     if (worker == null) {
-      throw new IllegalStateException("Module " + modName + " mod.json must contain a \"worker\" field");
+      worker = Boolean.FALSE;
     }
 
-    return verticleManager.deploy(worker, deployName, main, config, urls.toArray(new URL[urls.size()]), instances, doneHandler);
+    return verticleManager.deploy(worker, deployName, main, config, urls.toArray(new URL[urls.size()]), instances, modDir, doneHandler);
   }
 }

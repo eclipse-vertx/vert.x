@@ -16,9 +16,11 @@
 
 package org.vertx.java.core.impl;
 
+import org.vertx.java.core.file.impl.ModuleDir;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +34,7 @@ public abstract class Context {
   private static final ThreadLocal<Context> contextTL = new ThreadLocal<>();
 
   private DeploymentHandle deploymentContext;
+  private Path pathAdjustment;
 
   private List<Runnable> closeHooks;
 
@@ -50,6 +53,15 @@ public abstract class Context {
   public DeploymentHandle getDeploymentHandle() {
     return deploymentContext;
   }
+
+  public Path getPathAdjustment() {
+    return pathAdjustment;
+  }
+
+  public void setPathAdjustment(Path pathAdjustment) {
+    this.pathAdjustment = pathAdjustment;
+  }
+
 
   public void reportException(Throwable t) {
     if (deploymentContext != null) {

@@ -25,6 +25,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -114,7 +115,7 @@ public class DefaultNetSocket extends NetSocket {
   }
 
   public void sendFile(String filename) {
-    File f = new File(filename);
+    File f = new File(PathAdjuster.adjust(filename));
     super.sendFile(f);
   }
 

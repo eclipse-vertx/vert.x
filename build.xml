@@ -368,13 +368,9 @@
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
 
-    <copy todir="${dist-build}/mods">
+    <copy todir="${dist-build}/mods" includeEmptyDirs="false">
       <fileset dir="${mods-src-root}">
-        <include name="**/*.jar"/>
-        <include name="**/mod.json"/>
-        <include name="**/*.js"/>
-        <include name="**/*.rb"/>
-        <include name="**/*.groovy"/>
+        <include name="**/*"/>
       </fileset>
     </copy>
 

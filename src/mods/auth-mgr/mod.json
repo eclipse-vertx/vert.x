@@ -1,4 +1,3 @@
 {
-  "main": "org.vertx.mods.AuthManager",
-  "worker": false
+  "main": "org.vertx.mods.AuthManager"
 }

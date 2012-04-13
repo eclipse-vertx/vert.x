@@ -30,6 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -239,7 +240,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       throw new IllegalStateException("Head already written");
     }
     checkWritten();
-    File file = new File(filename);
+    File file = new File(PathAdjuster.adjust(filename));
     if (!file.exists()) {
       sendNotFound();
     } else {
