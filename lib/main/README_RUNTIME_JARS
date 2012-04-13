@@ -21,11 +21,3 @@ groovy.jar
 If you have JavaScript verticles:
 
 js.jar
-
-If you are using the mailer busmod
-
-mailer.jar
-
-If you are using the MongoPersistor busmod
-
-mongo.jar

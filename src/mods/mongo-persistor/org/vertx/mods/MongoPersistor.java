@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.busmods.persistor;
+package org.vertx.mods;
 
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -28,8 +28,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.util.UUID;
@@ -41,8 +39,6 @@ import java.util.UUID;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class MongoPersistor extends BusModBase implements Handler<Message<JsonObject>> {
-
-  private static final Logger log = LoggerFactory.getLogger(MongoPersistor.class);
 
   private String host;
   private int port;
@@ -67,12 +63,11 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
       db = mongo.getDB(dbName);
       eb.registerHandler(address, this);
     } catch (UnknownHostException e) {
-      log.error("Failed to connect to mongo server", e);
+      logger.error("Failed to connect to mongo server", e);
     }
   }
 
   public void stop() {
-    eb.unregisterHandler(address, this);
     mongo.close();
   }
 
