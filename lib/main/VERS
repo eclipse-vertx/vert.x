@@ -1,0 +1,2 @@
+netty: 3.4.0.final
+js.jar - currently built from rhino master since require some fixes not in release yet
