@@ -83,11 +83,12 @@ public class DefaultEventBus implements EventBus {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
     try {
-      final Class clusterProvider = Class.forName(CLUSTER_PROVIDER_CLASS_NAME);
-      Class[] classTypes = new Class[] {VertxInternal.class};
-      Constructor constructor = clusterProvider.getDeclaredConstructor(classTypes);
-      constructor.newInstance(vertx);
-      ClusterManager mgr = (ClusterManager)constructor.newInstance(vertx);
+      final Class<?> raw = Class.forName(CLUSTER_PROVIDER_CLASS_NAME);
+
+      Class<? extends ClusterManager> clusterProvider = raw.asSubclass(ClusterManager.class);
+      Constructor<? extends ClusterManager> constructor = clusterProvider.getDeclaredConstructor(VertxInternal.class);
+      ClusterManager mgr = constructor.newInstance(vertx);
+
       subs = mgr.getSubsMap("subs");
       this.server = setServer();
     } catch (Exception e) {
