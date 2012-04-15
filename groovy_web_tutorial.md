@@ -102,7 +102,7 @@ We're going to use a persistor in our application for a few different things:
 * Storing usernames and passwords of users
 * Storing orders
 
-You could start a persistor on the command line by calling `vertx run busmods/mongo_persistor.rb` but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.
+You could start a persistor on the command line by calling `vertx run org.vertx.java.busmods.persistor.MongoPersistor` but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.
 
 It can also contain the JSON configuration for our application. All verticles can be configured using JSON.
 
@@ -120,7 +120,7 @@ Open a text editor and copy in the following:
 
       // Deploy the busmods
 
-      deployWorkerVerticle('busmods/mongo_persistor.js', persistorConf)
+      deployWorkerVerticle('org.vertx.java.busmods.persistor.MongoPersistor', persistorConf)
 
       // Start the web server
 
@@ -246,13 +246,13 @@ Copy `StaticData.groovy` into your directory as follows:
 
 We want to insert the static data only after the persistor verticle has completed starting up so we edit `App.groovy` as follows:
 
-    deployWorkerVerticle('busmods/mongo_persistor.js', appConf['persistor_conf'], 1, {
+    deployWorkerVerticle('org.vertx.java.busmods.persistor.MongoPersistor', appConf['persistor_conf'], 1, {
         deployVerticle('StaticData.groovy')
     })
     
 The block that we're specifying in the call to `deployWorkerVerticle` will be invoked when the persistor is fully started. In that block we just load the static data script.
 
-Save the edited `app.rb` and restart it.
+Save the edited `App.groovy` and restart it.
 
     vertx run App.groovy
     
@@ -312,7 +312,7 @@ Once we get the albums we give them to knockout.js to render on the view.
 
 In order to actually send an order, you need to be logged in so we know who has placed the order.
 
-Vert.x ships with an out of the box busmod called `auth_mgr.js`. This is a very simple authentication manager which sits on the event bus and provides a couple of services:
+Vert.x ships with an out of the box busmod called `AuthManager`. This is a very simple authentication manager which sits on the event bus and provides a couple of services:
 
 * Login. This receives a username and password, validates it in the database, and if it is ok, a session is created and the session id sent back in the reply message.
 
@@ -324,7 +324,7 @@ We're going to add an authentication manager component to our application so the
 
 Open up `App.groovy` again, and add the following line immediately after the deployment of the mongo persistor:
 
-    deployVerticle('busmods/auth_mgr.js', appConf['auth_mgr_conf'])
+    deployVerticle('org.vertx.java.busmods.auth.AuthManager', appConf['auth_mgr_conf'])
 
 Also add the following:
 
@@ -353,10 +353,10 @@ So, App.groovy should now look like this:
 
       // Deploy the busmods
 
-      deployWorkerVerticle('busmods/mongo_persistor.js', persistorConf, 1, {
+      deployWorkerVerticle('org.vertx.java.busmods.persistor.MongoPersistor', persistorConf, 1, {
         deployVerticle('StaticData.groovy')
       })
-      deployVerticle('busmods/auth_mgr.js', authMgrConf)
+      deployVerticle('org.vertx.java.busmods.auth.AuthManager', authMgrConf)
       
       // Start the web server
 
