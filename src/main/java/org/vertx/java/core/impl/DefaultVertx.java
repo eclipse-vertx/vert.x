@@ -63,7 +63,7 @@ public class DefaultVertx extends VertxInternal {
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private int backgroundPoolSize = 1;
+  private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
   private ExecutorService backgroundPool;
   private OrderedExecutorFactory orderedFact;
@@ -283,8 +283,9 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public Context createEventLoopContext() {
+    getBackgroundPool();
     NioWorker worker = getWorkerPool().nextWorker();
-    return new EventLoopContext(worker);
+    return new EventLoopContext(orderedFact.getExecutor(), worker);
   }
 
   private boolean cancelTimeout(long id) {
