@@ -343,8 +343,6 @@ So, app.js should now look like this:
 
     load('vertx.js');
 
-    var log = vertx.logger;
-
     // Our application config
 
     var persistorConf =  {
