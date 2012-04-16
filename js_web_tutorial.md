@@ -343,7 +343,7 @@ So, app.js should now look like this:
 
     load('vertx.js');
 
-    var log = vertx.getLogger();
+    var log = vertx.logger;
 
     // Our application config
 
