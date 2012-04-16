@@ -246,7 +246,6 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.http.*;
 
 public class Server implements Verticle {
-
   public void start() {
     vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
       public void handle(HttpServerRequest req) {
