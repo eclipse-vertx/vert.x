@@ -22,7 +22,7 @@ Some of the key highlights include:
 
 ## Vert.x Embedded
 
-If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality directly in your own pre-existing Spring Framework or other Java application, then you can do this too.
+If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.
 
 Just use the jar `vertx-core.jar` which is available in the `lib/jars` directory in the distribution.
 
