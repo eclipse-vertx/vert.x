@@ -30,4 +30,4 @@ rm.getWithRegEx('.*') { req ->
   req.response.sendFile "route_match/index.html"
 }
 
-vertx.createHttpServer().requestHandler(rm).listen(8080)
+vertx.createHttpServer().requestHandler(rm.asClosure()).listen(8080)

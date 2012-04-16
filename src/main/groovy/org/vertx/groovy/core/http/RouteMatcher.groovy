@@ -38,7 +38,7 @@ import org.vertx.java.core.Handler
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class RouteMatcher extends JRouteMatcher {
+class RouteMatcher {
 
   private final JRouteMatcher jRM = new JRouteMatcher()
 
@@ -48,7 +48,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void get(String pattern, Closure handler) {
-    super.get(pattern, wrapHandler(handler))
+    jRM.get(pattern, wrapHandler(handler))
   }
 
   /**
@@ -57,7 +57,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void put(String pattern, Closure handler) {
-    super.put(pattern, wrapHandler(handler))
+    jRM.put(pattern, wrapHandler(handler))
   }
 
   /**
@@ -66,7 +66,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void post(String pattern, Closure handler) {
-    super.post(pattern, wrapHandler(handler))
+    jRM.post(pattern, wrapHandler(handler))
   }
 
   /**
@@ -75,7 +75,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void delete(String pattern, Closure handler) {
-    super.delete(pattern, wrapHandler(handler))
+    jRM.delete(pattern, wrapHandler(handler))
   }
 
   /**
@@ -84,7 +84,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void options(String pattern, Closure handler) {
-    super.options(pattern, wrapHandler(handler))
+    jRM.options(pattern, wrapHandler(handler))
   }
 
   /**
@@ -93,7 +93,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void head(String pattern, Closure handler) {
-    super.head(pattern, wrapHandler(handler))
+    jRM.head(pattern, wrapHandler(handler))
   }
 
   /**
@@ -102,7 +102,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void trace(String pattern, Closure handler) {
-    super.trace(pattern, wrapHandler(handler))
+    jRM.trace(pattern, wrapHandler(handler))
   }
 
   /**
@@ -111,7 +111,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void connect(String pattern, Closure handler) {
-    super.connect(pattern, wrapHandler(handler))
+    jRM.connect(pattern, wrapHandler(handler))
   }
 
   /**
@@ -120,7 +120,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void patch(String pattern, Closure handler) {
-    super.patch(pattern, wrapHandler(handler))
+    jRM.patch(pattern, wrapHandler(handler))
   }
 
   /**
@@ -129,7 +129,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void all(String pattern, Closure handler) {
-    super.all(pattern, wrapHandler(handler))
+    jRM.all(pattern, wrapHandler(handler))
   }
 
   /**
@@ -138,7 +138,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void getWithRegEx(String regex, Closure handler) {
-    super.getWithRegEx(regex, wrapHandler(handler))
+    jRM.getWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -147,7 +147,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void putWithRegEx(String regex, Closure handler) {
-    super.putWithRegEx(regex, wrapHandler(handler))
+    jRM.putWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -156,7 +156,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void postWithRegEx(String regex, Closure handler) {
-    super.postWithRegEx(regex, wrapHandler(handler))
+    jRM.postWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -165,7 +165,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void deleteWithRegEx(String regex, Closure handler) {
-    super.deleteWithRegEx(regex, wrapHandler(handler))
+    jRM.deleteWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -174,7 +174,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void optionsWithRegEx(String regex, Closure handler) {
-    super.optionsWithRegEx(regex, wrapHandler(handler))
+    jRM.optionsWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -183,7 +183,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void headWithRegEx(String regex, Closure handler) {
-    super.headWithRegEx(regex, wrapHandler(handler))
+    jRM.headWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -192,7 +192,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void traceWithRegEx(String regex, Closure handler) {
-    super.traceWithRegEx(regex, wrapHandler(handler))
+    jRM.traceWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -201,7 +201,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void connectWithRegEx(String regex, Closure handler) {
-    super.connectWithRegEx(regex, wrapHandler(handler))
+    jRM.connectWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -210,7 +210,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void patchWithRegEx(String regex, Closure handler) {
-    super.patchWithRegEx(regex, wrapHandler(handler))
+    jRM.patchWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -219,7 +219,7 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler The handler to call
    */
   void allWithRegEx(String regex, Closure handler) {
-    super.allWithRegEx(regex, wrapHandler(handler))
+    jRM.allWithRegEx(regex, wrapHandler(handler))
   }
 
   /**
@@ -228,14 +228,16 @@ class RouteMatcher extends JRouteMatcher {
    * @param handler
    */
   void noMatch(Closure handler) {
-    super.noMatch(handler)    
+    jRM.noMatch(handler)    
   }
 
   /**
    * @return Convert to a Closure so can be passed to (e.g.) HttpServer requestHandler
    */
   Closure asClosure() {
-    return { jRM.handle(it.toJavaRequest())}
+    return {
+      jRM.handle(it.toJavaRequest())
+    }
   }
 
   private Handler wrapHandler(Closure handler) {

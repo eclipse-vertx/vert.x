@@ -137,7 +137,7 @@ class HttpServerRequest implements ReadStream {
     jRequest.endHandler(handler as Handler)
   }
 
-  void toJavaRequest() {
+  org.vertx.java.core.http.HttpServerRequest toJavaRequest() {
     jRequest
   }
 

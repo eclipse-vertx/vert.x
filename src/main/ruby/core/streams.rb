@@ -129,7 +129,7 @@ module Vertx
       raise "write_stream is not a WriteStream" if !write_stream.is_a? WriteStream
       j_rs = read_stream._to_read_stream
       j_ws = write_stream._to_write_stream
-      @j_pump = org.vertx.java.core.streams.Pump.new(j_rs, j_ws)
+      @j_pump = org.vertx.java.core.streams.Pump.createPump(j_rs, j_ws)
     end
 
     # Set the write queue max size
