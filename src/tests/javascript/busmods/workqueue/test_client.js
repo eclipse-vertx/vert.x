@@ -43,7 +43,7 @@ function testWorkQueue() {
 
 tu.registerTests(this);
 var queueConfig = {address: 'test.orderQueue'}
-var queueID = vertx.deployWorkerVerticle('busmods/work_queue.js', queueConfig, 1, function() {
+vertx.deployWorkerVerticle('work-queue', queueConfig, 1, function() {
   tu.appReady();
 });
 

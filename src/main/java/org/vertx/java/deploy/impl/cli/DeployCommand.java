@@ -52,7 +52,7 @@ public class DeployCommand extends VertxCommand {
     } else {
       jsonConf = null;
     }
-    String appName = appMgr.deploy(worker, name, main, jsonConf, urls, instances, null);
+    String appName = appMgr.deploy(worker, name, main, jsonConf, urls, instances, null, null);
     return "Deployment: " + appName;
   }
 }

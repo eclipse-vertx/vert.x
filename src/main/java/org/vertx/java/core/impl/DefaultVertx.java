@@ -67,7 +67,6 @@ public class DefaultVertx extends VertxInternal {
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
   private ExecutorService backgroundPool;
   private OrderedExecutorFactory orderedFact;
-  private ExecutorService corePool;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
   private final Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
@@ -139,14 +138,6 @@ public class DefaultVertx extends VertxInternal {
     return context;
   }
 
-  private void runOnContext(final Context context, final Runnable runnable) {
-    context.execute(new Runnable() {
-      public void run() {
-        runnable.run();
-      }
-    });
-  }
-
   public boolean isEventLoop() {
     Context context = Context.getContext();
     if (context != null) {
@@ -203,7 +194,7 @@ public class DefaultVertx extends VertxInternal {
       synchronized (this) {
         result = workerPool;
         if (result == null) {
-          corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
+          ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
           workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
         }
       }
@@ -252,6 +243,14 @@ public class DefaultVertx extends VertxInternal {
 
   public Map<ServerID, DefaultNetServer> sharedNetServers() {
     return sharedNetServers;
+  }
+
+  private void runOnContext(final Context context, final Runnable runnable) {
+    context.execute(new Runnable() {
+      public void run() {
+        runnable.run();
+      }
+    });
   }
 
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {

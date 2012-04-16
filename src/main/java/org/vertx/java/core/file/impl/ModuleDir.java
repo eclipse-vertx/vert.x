@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-// This is just a wrapper around the Java auth manager
+package org.vertx.java.core.file.impl;
 
-var j_auth = new org.vertx.java.busmods.auth.AuthManager();
-j_auth.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
-j_auth.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
-
-j_auth.start();
-
-function vertxStop() {
-  j_auth.stop();
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public interface ModuleDir {
+  String get();
 }
-

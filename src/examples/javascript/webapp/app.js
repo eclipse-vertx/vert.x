@@ -33,11 +33,11 @@ var mailerConf = {
 
 // Deploy the busmods
 
-vertx.deployWorkerVerticle('busmods/mongo_persistor.js', persistorConf, 1, function() {
+vertx.deployVerticle('mongo-persistor', persistorConf, 1, function() {
   load('static_data.js');
 });
-vertx.deployVerticle('busmods/auth_mgr.js', authMgrConf);
-vertx.deployWorkerVerticle('busmods/mailer.js', mailerConf);
+vertx.deployVerticle('auth-mgr', authMgrConf);
+vertx.deployVerticle('mailer', mailerConf);
 
 
 // Start the order manager

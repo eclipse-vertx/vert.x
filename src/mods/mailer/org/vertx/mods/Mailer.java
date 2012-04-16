@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.busmods.mailer;
+package org.vertx.mods;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
@@ -22,7 +22,6 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -42,8 +41,6 @@ import java.util.Properties;
  */
 public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {
 
-  private static final Logger log = LoggerFactory.getLogger(Mailer.class);
-
   private Session session;
   private Transport transport;
 
@@ -53,6 +50,7 @@ public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {
   private boolean auth;
   private String username;
   private String password;
+  private Logger logger;
 
   public Mailer() {
     super(true); // The Mailer must always be run as a worker
@@ -62,7 +60,6 @@ public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {
   @Override
   public void start() {
     super.start();
-
     ssl = super.getOptionalBooleanConfig("ssl", false);
     host = super.getOptionalStringConfig("host", "localhost");
     port = super.getOptionalIntConfig("port", 25);
@@ -96,18 +93,16 @@ public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {
       transport = session.getTransport();
       transport.connect();
     } catch (MessagingException e) {
-      log.error("Failed to setup mail transport", e);
+      logger.error("Failed to setup mail transport", e);
     }
   }
 
   @Override
   public void stop() {
-    eb.unregisterHandler(address, this);
-
     try {
       transport.close();
     } catch (MessagingException e) {
-      log.error("Failed to stop mail transport", e);
+      logger.error("Failed to stop mail transport", e);
     }
   }
 

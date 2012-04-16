@@ -31,6 +31,8 @@
   <property name="java-src-root" value="src/main/java"/>
   <property name="groovy-src-root" value="src/main/groovy"/>
   <property name="java-target" value="${target}/java/classes"/>
+  <property name="mods-src-root" value="src/mods"/>
+  <property name="mods-target" value="${target}/mods"/>
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
   <property name="core-lib" value="${lib-dir}/main"/>
@@ -142,7 +144,37 @@
       <include name="org/vertx/groovy/busmods/**/*.groovy"/>
     </groovyc>
   </target>
-  
+
+  <target name="compile-java-mods">
+    <antcall target="compile-java-mod">
+      <param name="mod-name" value="auth-mgr"/>
+    </antcall>
+    <antcall target="compile-java-mod">
+      <param name="mod-name" value="mailer"/>
+    </antcall>
+    <antcall target="compile-java-mod">
+      <param name="mod-name" value="mongo-persistor"/>
+    </antcall>
+    <antcall target="compile-java-mod">
+      <param name="mod-name" value="work-queue"/>
+    </antcall>
+  </target>
+
+  <target name="compile-java-mod" depends="compile-platform" description="compile the out of the box java mods">
+    <mkdir dir="${mods-target}/${mod-name}"/>
+    <javac srcdir="${mods-src-root}/${mod-name}" destdir="${mods-target}/${mod-name}" debug="on"
+           includeantruntime="false" target="1.7" source="1.7">
+      <classpath>
+        <pathelement path="core-lib-classpath"/>
+        <pathelement path="${java-target}"/>
+        <fileset dir="${mods-src-root}/${mod-name}/lib">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>
+      <include name="org/vertx/mods/**/*.java"/>
+    </javac>
+  </target>
+
   <target name="jar-core" depends="compile-core" description="generate the core jar">
     <jar jarfile="${target}/${core-jar-file}" basedir="${java-target}" includes="**/core/**/*.class"/>
   </target>
@@ -196,7 +228,7 @@
     <include name="**/${test.name}.class"/>
   </fileset>
 
-  <target name="tests">
+  <target name="tests" depends="dist">
     <antcall target="internal-tests">
       <param name="tests-fs" value="main-tests.fs"/>
     </antcall>
@@ -209,12 +241,15 @@
     </antcall>
   </target>
 
-  <target name="internal-tests" depends="compile-test-framework,compile-tests">
+  <!-- We depend on dist since the busmod tests need the distro to be built to
+  access the mods -->
+  <target name="internal-tests" depends="compile-test-framework,compile-tests,dist">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes" timeout="120000" showoutput="true">
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
+      <sysproperty key="vertx.mods" value="${dist-build}/mods"/>
       <classpath refid="test-classpath"/>
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
@@ -252,7 +287,8 @@
     <exec executable="yardoc"/>
   </target>
 
-  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-test-framework">
+
+  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-test-framework,compile-java-mods">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
@@ -271,8 +307,8 @@
     <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/>
     <copy file="${core-lib}/groovy-all-1.8.6.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
     <copy file="${core-lib}/jruby.jar" tofile="${dist-build}/lib/jars/jruby.jar"/>
-    <copy file="${core-lib}/mail.jar" tofile="${dist-build}/lib/jars/mail.jar"/>
-    <copy file="${core-lib}/mongo.jar" tofile="${dist-build}/lib/jars/mongo.jar"/>
+    <copy file="src/mods/mailer/lib/mail.jar" tofile="${dist-build}/lib/jars/mail.jar"/>
+    <copy file="src/mods/mongo-persistor/lib/mongo.jar" tofile="${dist-build}/lib/jars/mongo.jar"/>
     <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
     <copy file="src/client/vertxbus.js" todir="${dist-build}/client/"/>
@@ -295,6 +331,9 @@
       </fileset>
     </copy>
 
+    <!--
+
+    <mkdir dir="${target}/${javadoc-dir}"/>
     <copy todir="${dist-build}/${javadoc-dir}">
         <fileset dir="${target}/${javadoc-dir}"/>
     </copy>
@@ -303,6 +342,13 @@
     <copy todir="${dist-build}/${rubydoc-dir}">
         <fileset dir="${target}/${rubydoc-dir}"/>
     </copy>
+
+    <mkdir dir="${target}/${groovydoc-dir}"/>
+    <copy todir="${dist-build}/${groovydoc-dir}">
+        <fileset dir="${target}/${groovydoc-dir}"/>
+    </copy>
+
+    -->
 
     <!-- We need to use exec since the ant copy task does not preserve file permissions -->
     <mkdir dir="${dist-build}/bin"/>
@@ -336,6 +382,18 @@
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
+
+    <copy todir="${dist-build}/mods" includeEmptyDirs="false">
+      <fileset dir="${mods-src-root}">
+        <include name="**/*"/>
+      </fileset>
+    </copy>
+
+    <copy todir="${dist-build}/mods">
+      <fileset dir="${mods-target}">
+        <include name="**/*.class"/>
+      </fileset>
+    </copy>
 
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>
