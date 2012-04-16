@@ -1411,7 +1411,7 @@ request.sendHead()
 
 def routeMatcher = new RouteMatcher()
 
-server.requestHandler(routeMatcher).listen(8080, "localhost")
+server.requestHandler(routeMatcher.asClosure()).listen(8080, "localhost")
 </pre>
 <h2 id="specifying-matches">Specifying matches.</h2><br/>
 <p>You can then add different matches to the route matcher. For example, to send all GET requests with path <code>/animals/dogs</code> to one handler and all GET requests with path <code>/animals/cats</code> to another handler you would do:</p>
@@ -1427,7 +1427,7 @@ routeMatcher.get("/animals/cats") { req -&gt;
     req.response.end "You requested cats"
 }
 
-server.requestHandler(routeMatcher).listen(8080, "localhost")
+server.requestHandler(routeMatcher.asClosure()).listen(8080, "localhost")
 </pre>
 <p>Corresponding methods exist for each HTTP method - <code>get</code>, <code>post</code>, <code>put</code>, <code>delete</code>, <code>head</code>, <code>options</code>, <code>trace</code>, <code>connect</code> and <code>patch</code>.</p>
 <p>There's also an <code>all</code> method which applies the match to any HTTP request method.</p>

@@ -1607,7 +1607,7 @@ To do this you simply create an instance of `org.vertx.java.core.http.RouteMatch
 
     def routeMatcher = new RouteMatcher()
 
-    server.requestHandler(routeMatcher).listen(8080, "localhost")
+    server.requestHandler(routeMatcher.asClosure()).listen(8080, "localhost")
 
 ## Specifying matches.
 
@@ -1625,7 +1625,7 @@ You can then add different matches to the route matcher. For example, to send al
         req.response.end "You requested cats"
     }
    
-    server.requestHandler(routeMatcher).listen(8080, "localhost")
+    server.requestHandler(routeMatcher.asClosure()).listen(8080, "localhost")
 
 Corresponding methods exist for each HTTP method - `get`, `post`, `put`, `delete`, `head`, `options`, `trace`, `connect` and `patch`.
 
