@@ -46,7 +46,6 @@ function vertxStop() {
     processor: id
   });
   eb.unregisterHandler(id, handler);
-  tu.checkContext();
   if (!dontsendAppLifeCycle) {
     tu.appStopped();
   }

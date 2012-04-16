@@ -46,29 +46,25 @@ public abstract class BlockingAction<T>  {
 
     Runnable runner = new Runnable() {
       public void run() {
+        AsyncResult<T> res;
         try {
-          AsyncResult<T> res;
-          try {
-            final T result = action();
-            res = new AsyncResult<>(result);
-          } catch (final Exception e) {
-            res = new AsyncResult<>(e);
-          }
-          if (handler != null) {
-            final AsyncResult<T> theRes = res;
-            context.execute(new Runnable() {
-              public void run() {
-                handler.handle(theRes);
-              }
-            });
-          }
-        } catch (Throwable t) {
-          vertx.reportException(t);
+          final T result = action();
+          res = new AsyncResult<>(result);
+        } catch (final Exception e) {
+          res = new AsyncResult<>(e);
+        }
+        if (handler != null) {
+          final AsyncResult<T> theRes = res;
+          context.execute(new Runnable() {
+            public void run() {
+              handler.handle(theRes);
+            }
+          });
         }
       }
     };
 
-    vertx.getBackgroundPool().execute(runner);
+    context.executeOnWorker(runner);
   }
 
   public abstract T action() throws Exception;

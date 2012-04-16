@@ -21,6 +21,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -34,6 +35,12 @@ public abstract class Context {
   private DeploymentHandle deploymentContext;
 
   private List<Runnable> closeHooks;
+
+  protected Context(Executor bgExec) {
+    this.bgExec = bgExec;
+  }
+
+  private final Executor bgExec;
 
   public static void setContext(Context context) {
     contextTL.set(context);
@@ -79,6 +86,14 @@ public abstract class Context {
   }
 
   public abstract void execute(Runnable handler);
+
+  public void executeOnWorker(final Runnable task) {
+    bgExec.execute(new Runnable() {
+      public void run() {
+        wrapTask(task).run();
+      }
+    });
+  }
 
   protected Runnable wrapTask(final Runnable task) {
     return new Runnable() {
