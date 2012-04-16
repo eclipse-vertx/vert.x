@@ -185,7 +185,6 @@ vertx.createHttpServer().requestHandler(function(req) {
     var file = req.path === '/' ? 'index.html' : req.path;
     req.response.sendFile('webroot/' + file);
 }).listen(8080)
-
                 </pre>
                 <p>Run it with:</p>
                 <p><code>vertx run server.js</code></p>
@@ -204,10 +203,9 @@ vertx.createHttpServer().requestHandler(function(req) {
 require "vertx"
 
 Vertx::HttpServer.new.request_handler do |req|
-  file = req.uri == "/" ? "index.html" : req.uri
-  req.response.send_file "webroot/#{file}"
+    file = req.uri == "/" ? "index.html" : req.uri
+    req.response.send_file "webroot/#{file}"
 end.listen(8080)
-
                 </pre>
 
                 <p>Run it with:</p>
@@ -225,8 +223,8 @@ end.listen(8080)
                 <p>Save the following in <code>Server.groovy</code></p>
                 <pre class="prettyprint">
 vertx.createHttpServer().requestHandler { req ->
-  def file = req.uri == "/" ? "index.html" : req.uri
-  req.response.sendFile "webroot/$file"
+    def file = req.uri == "/" ? "index.html" : req.uri
+    req.response.sendFile "webroot/$file"
 }.listen(8080, "localhost")
                 </pre>
 
@@ -247,16 +245,15 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.http.*;
 
 public class Server implements Verticle {
-  public void start() {
-    vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
-      public void handle(HttpServerRequest req) {
-        String file = req.path.equals("/") ? "index.html" : req.path;
-        req.response.sendFile("webroot/" + file);
-      }
-    }).listen(8080);
-  }
+    public void start() {
+        vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
+            public void handle(HttpServerRequest req) {
+                String file = req.path.equals("/") ? "index.html" : req.path;
+                req.response.sendFile("webroot/" + file);
+            }
+        }).listen(8080);
+    }
 }
-
                 </pre>
 
                 <p>Compile it:</p>
