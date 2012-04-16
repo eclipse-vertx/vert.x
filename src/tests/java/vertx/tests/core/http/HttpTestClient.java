@@ -1419,7 +1419,6 @@ public class HttpTestClient extends TestClientBase {
     getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkContext();
-        tu.testComplete();
       }
     }).end();
   }
