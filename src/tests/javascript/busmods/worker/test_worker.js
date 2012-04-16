@@ -61,6 +61,5 @@ tu.appReady();
 
 function vertxStop() {
   vertx.eventBus.unregisterHandler('testWorker', handler);
-  tu.checkContext();
   tu.appStopped();
 }
