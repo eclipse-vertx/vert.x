@@ -14,14 +14,29 @@
  * limitations under the License.
  */
 
-// This is just a wrapper around the Java mailer
+package org.vertx.java.core.file.impl;
 
-var j_mailer = new org.vertx.java.busmods.mailer.Mailer();
-j_mailer.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
-j_mailer.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
+import org.vertx.java.core.impl.Context;
 
-j_mailer.start();
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-function vertxStop() {
-  j_mailer.stop();
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class PathAdjuster {
+
+  public static Path adjust(Path path) {
+    Path adjustment = Context.getContext().getPathAdjustment();
+    if (adjustment == null) {
+      return path;
+    } else {
+      return adjustment.resolve(path);
+    }
+  }
+
+  public static String adjust(String path) {
+    Path adjustment = adjust(Paths.get(path));
+    return adjustment.toString();
+  }
 }

@@ -17,6 +17,8 @@
 package org.vertx.java.core.net.impl;
 
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
+import org.vertx.java.core.file.impl.PathAdjuster;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -298,7 +300,8 @@ public class TCPSSLHelper {
     return fact.getKeyManagers();
   }
 
-  private KeyStore loadStore(final String ksPath, final String ksPassword) throws Exception {
+  private KeyStore loadStore(String path, final String ksPassword) throws Exception {
+    final String ksPath = PathAdjuster.adjust(path);
     KeyStore ks = KeyStore.getInstance("JKS");
     InputStream in = null;
     try {

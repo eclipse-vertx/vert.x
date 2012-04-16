@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-// This is just a wrapper around the Java persistor
+load('vertx.js')
 
-var j_pers = new org.vertx.java.busmods.persistor.MongoPersistor();
-j_pers.setVertx(org.vertx.java.deploy.impl.VertxLocator.vertx);
-j_pers.setContainer(org.vertx.java.deploy.impl.VertxLocator.container);
-
-j_pers.start();
-
-function vertxStop() {
-  j_pers.stop();
-}
+vertx.createHttpServer().requestHandler(function(req) {
+  var filename = "webroot/" + (req.uri == "/" ? "index.html" : "." + req.uri);
+  req.response.sendFile(filename)
+}).listen(8080)

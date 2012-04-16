@@ -21,6 +21,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.impl.VerticleManager;
 
+import java.io.File;
 import java.net.URL;
 
 /**
@@ -91,7 +92,8 @@ public class Container {
    */
   public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
-    return mgr.deploy(true, null, main, config, currURLs, instances, doneHandler);
+    File modDir = mgr.getDeploymentModDir();
+    return mgr.deploy(true, null, main, config, currURLs, instances, modDir, doneHandler);
   }
 
   /**
@@ -144,7 +146,8 @@ public class Container {
    */
   public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
-    return mgr.deploy(false, null, main, config, currURLs, instances, doneHandler);
+    File modDir = mgr.getDeploymentModDir();
+    return mgr.deploy(false, null, main, config, currURLs, instances, modDir, doneHandler);
   }
 
   /**

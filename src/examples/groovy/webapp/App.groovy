@@ -43,11 +43,11 @@ container.with {
 
   // Deploy the busmods
 
-  deployWorkerVerticle('busmods/mongo_persistor.js', persistorConf, 1, {
+  deployVerticle('mongo-persistor', persistorConf, 1, {
     deployVerticle('StaticData.groovy')
   })
-  deployVerticle('busmods/auth_mgr.js', authMgrConf)
-  deployWorkerVerticle('busmods/mailer.js', mailerConf)
+  deployVerticle('auth-mgr', authMgrConf)
+  deployWorkerVerticle('mailer', mailerConf)
 
   // Start the order manager
 

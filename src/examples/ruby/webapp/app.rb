@@ -18,13 +18,13 @@ mailer_conf = {
 
 # Deploy the busmods
 
-Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf) do
+Vertx.deploy_verticle('mongo-persistor', persistor_conf) do
     load('static_data.rb')
 end
 
-Vertx.deploy_verticle('busmods/auth_mgr.rb', auth_mgr_conf)
+Vertx.deploy_verticle('auth-mgr', auth_mgr_conf)
 
-Vertx.deploy_worker_verticle('busmods/mailer.rb', mailer_conf)
+Vertx.deploy_worker_verticle('mailer', mailer_conf)
 
 # Start the order manager
 

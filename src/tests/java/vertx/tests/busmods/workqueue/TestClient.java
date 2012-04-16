@@ -16,7 +16,6 @@
 
 package vertx.tests.busmods.workqueue;
 
-import org.vertx.java.busmods.workqueue.WorkQueue;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.EventBus;
@@ -38,7 +37,7 @@ public class TestClient extends TestClientBase {
     eb = vertx.eventBus();
     JsonObject config = new JsonObject();
     config.putString("address", "test.orderQueue");
-    container.deployWorkerVerticle(WorkQueue.class.getName(), config, 1, new SimpleHandler() {
+    container.deployVerticle("work-queue", config, 1, new SimpleHandler() {
       public void handle() {
         tu.appReady();
       }

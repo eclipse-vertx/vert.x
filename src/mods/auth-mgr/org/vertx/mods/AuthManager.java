@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.vertx.java.busmods.auth;
+package org.vertx.mods;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +32,6 @@ import java.util.UUID;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AuthManager extends BusModBase {
-
-  private static final Logger log = LoggerFactory.getLogger(AuthManager.class);
 
   private Handler<Message<JsonObject>> loginHandler;
   private Handler<Message<JsonObject>> logoutHandler;
@@ -101,15 +97,6 @@ public class AuthManager extends BusModBase {
     eb.registerHandler(address + ".validate", validateHandler);
   }
 
-  /**
-  Stop the busmod
-   */
-  public void stop() {
-    eb.unregisterHandler(address + ".login", loginHandler);
-    eb.unregisterHandler(address + ".logout", logoutHandler);
-    eb.unregisterHandler(address + ".validate", validateHandler);
-  }
-
   private void doLogin(final Message<JsonObject> message) {
 
     final String username = getMandatoryString("username", message);
@@ -154,7 +141,7 @@ public class AuthManager extends BusModBase {
             sendStatus("denied", message);
           }
         } else {
-          log.error("Failed to execute login query: " + reply.body.getString("message"));
+          logger.error("Failed to execute login query: " + reply.body.getString("message"));
           sendError(message, "Failed to excecute login");
         }
       }

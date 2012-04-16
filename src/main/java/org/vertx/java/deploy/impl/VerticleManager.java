@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -31,11 +32,18 @@ import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
 import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
 import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,6 +58,7 @@ public class VerticleManager {
   private final VertxInternal vertx;
   // deployment name --> deployment
   private final Map<String, Deployment> deployments = new HashMap();
+  private final File modRoot;
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
 
@@ -57,6 +66,16 @@ public class VerticleManager {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
+    String modDir = System.getProperty("vertx.mods");
+    if (modDir == null || modDir.trim().equals("")) {
+      String installDir = System.getProperty("vertx.install");
+      if (installDir == null) {
+        installDir = ".";
+      }
+      modRoot = new File(installDir, "mods");
+    } else {
+      modRoot = new File(modDir);
+    }
   }
 
   public void block() {
@@ -89,6 +108,11 @@ public class VerticleManager {
     return holder == null ? null : holder.deployment.urls;
   }
 
+  public File getDeploymentModDir() {
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.deployment.modDir;
+  }
+
   public Logger getLogger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
@@ -96,16 +120,78 @@ public class VerticleManager {
 
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
-                                    int instances,
+                                    int instances, File modDir,
                                     final Handler<Void> doneHandler)
   {
     if (deployments.containsKey(name)) {
       throw new IllegalStateException("There is already a deployment with name: " + name);
     }
 
-    if (urls == null) {
-      throw new IllegalStateException("urls cannot be null");
+    // We first check if there is a module with the name, if so we deploy that
+
+    String deployID = deployMod(name, main, config, instances, doneHandler);
+    if (deployID == null) {
+      if (urls == null) {
+        throw new IllegalStateException("urls cannot be null");
+      }
+      return doDeploy(worker, name, main, config, urls, instances, modDir, doneHandler);
+    } else {
+      return deployID;
     }
+  }
+
+  public synchronized void undeployAll(final Handler<Void> doneHandler) {
+    final UndeployCount count = new UndeployCount();
+    if (!deployments.isEmpty()) {
+      // We do it this way since undeploy is itself recursive - we don't want
+      // to attempt to undeploy the same verticle twice if it's a child of
+      // another
+      while (!deployments.isEmpty()) {
+        String name = deployments.keySet().iterator().next();
+        count.incRequired();
+        undeploy(name, new SimpleHandler() {
+          public void handle() {
+            count.undeployed();
+          }
+        });
+      }
+    }
+    count.setHandler(doneHandler);
+  }
+
+  public synchronized void undeploy(String name, final Handler<Void> doneHandler) {
+    if (deployments.get(name) == null) {
+      throw new IllegalArgumentException("There is no deployment with name " + name);
+    }
+    doUndeploy(name, doneHandler);
+  }
+
+  public synchronized Map<String, Integer> listInstances() {
+    Map<String, Integer> map = new HashMap<>();
+    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+      map.put(entry.getKey(), entry.getValue().verticles.size());
+    }
+    return map;
+  }
+
+  // We calculate a path adjustment that can be used by the fileSystem object
+  // so that the *effective* working directory can be the module directory
+  // this allows modules to read and write the file system as if they were
+  // in the module dir, even though the actual working directory will be
+  // wherever vertx run or vertx start was called from
+  private void setPathAdjustment(File modDir) {
+    Path cwd = Paths.get(".").toAbsolutePath().getParent();
+    Path pmodDir = Paths.get(modDir.getAbsolutePath());
+    Path relative = cwd.relativize(pmodDir);
+    Context.getContext().setPathAdjustment(relative);
+  }
+
+  private String doDeploy(boolean worker, String name, final String main,
+                          final JsonObject config, final URL[] urls,
+                          int instances,
+                          final File modDir,
+                          final Handler<Void> doneHandler)
+  {
 
     //Infer the main type
 
@@ -166,7 +252,8 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? new JsonObject() : config.copy(), urls, parentDeploymentName);
+    final Deployment deployment = new Deployment(deploymentName, verticleFactory,
+        config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
@@ -196,6 +283,9 @@ public class VerticleManager {
 
           try {
             addVerticle(deployment, verticle);
+            if (modDir != null) {
+              setPathAdjustment(modDir);
+            }
             verticle.start();
           } catch (Throwable t) {
             vertx.reportException(t);
@@ -216,38 +306,54 @@ public class VerticleManager {
     return deploymentName;
   }
 
-  public synchronized void undeployAll(final Handler<Void> doneHandler) {
-    final UndeployCount count = new UndeployCount();
-    if (!deployments.isEmpty()) {
-      // We do it this way since undeploy is itself recursive - we don't want
-      // to attempt to undeploy the same verticle twice if it's a child of
-      // another
-      while (!deployments.isEmpty()) {
-        String name = deployments.keySet().iterator().next();
-        count.incRequired();
-        undeploy(name, new SimpleHandler() {
-          public void handle() {
-            count.undeployed();
-          }
-        });
+  // TODO execute this as a blocking action so as not to block the caller
+  // TODO cache mod info?
+  private String deployMod(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
+    File modDir = new File(modRoot, modName);
+    if (modDir.exists()) {
+
+      String conf;
+      try {
+        conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
+      } catch (FileNotFoundException e) {
+        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
       }
-    }
-    count.setHandler(doneHandler);
-  }
+      JsonObject json;
+      try {
+        json = new JsonObject(conf);
+      } catch (DecodeException e) {
+        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+      }
 
-  public synchronized void undeploy(String name, final Handler<Void> doneHandler) {
-    if (deployments.get(name) == null) {
-      throw new IllegalArgumentException("There is no deployment with name " + name);
-    }
-    doUndeploy(name, doneHandler);
-  }
+      List<URL> urls = new ArrayList<>();
+      try {
+        urls.add(modDir.toURI().toURL());
+        File libDir = new File(modDir, "lib");
+        if (libDir.exists()) {
+          File[] jars = libDir.listFiles();
+          for (File jar: jars) {
+            urls.add(jar.toURI().toURL());
+          }
+        }
+      } catch (MalformedURLException e) {
+        //Won't happen
+        log.error("malformed url", e);
+      }
 
-  public synchronized Map<String, Integer> listInstances() {
-    Map<String, Integer> map = new HashMap<>();
-    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
-      map.put(entry.getKey(), entry.getValue().verticles.size());
+      String main = json.getString("main");
+      if (main == null) {
+        throw new IllegalStateException("Module " + modName + " mod.json must contain a \"main\" field");
+      }
+      Boolean worker = json.getBoolean("worker");
+      if (worker == null) {
+        worker = Boolean.FALSE;
+      }
+      return doDeploy(worker, deployName, main, config,
+                      urls.toArray(new URL[urls.size()]), instances, modDir, doneHandler);
     }
-    return map;
+    else {
+      return null;
+    }
   }
 
   // Must be synchronized since called directly from different thread
@@ -346,15 +452,18 @@ public class VerticleManager {
     final VerticleFactory factory;
     final JsonObject config;
     final URL[] urls;
+    final File modDir;
     final List<VerticleHolder> verticles = new ArrayList<>();
     final List<String> childDeployments = new ArrayList<>();
     final String parentDeploymentName;
 
-    private Deployment(String name, VerticleFactory factory, JsonObject config, URL[] urls, String parentDeploymentName) {
+    private Deployment(String name, VerticleFactory factory, JsonObject config,
+                       URL[] urls, File modDir, String parentDeploymentName) {
       this.name = name;
       this.factory = factory;
       this.config = config;
       this.urls = urls;
+      this.modDir = modDir;
       this.parentDeploymentName = parentDeploymentName;
     }
   }

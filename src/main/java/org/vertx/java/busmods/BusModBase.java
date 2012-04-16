@@ -20,7 +20,6 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
 
 /**
@@ -30,12 +29,11 @@ import org.vertx.java.deploy.Verticle;
  */
 public abstract class BusModBase extends Verticle {
 
-  private static final Logger log = LoggerFactory.getLogger(BusModBase.class);
-
   protected EventBus eb;
   protected JsonObject config;
   protected String address;
   protected boolean worker;
+  protected Logger logger;
 
   protected BusModBase(boolean worker) {
     this.worker = worker;
@@ -54,6 +52,7 @@ public abstract class BusModBase extends Verticle {
     if (address == null) {
       throw new IllegalArgumentException("address must be specified in config for busmod");
     }
+    logger = container.getLogger();
   }
 
   protected void sendOK(Message<JsonObject> message) {
@@ -81,7 +80,7 @@ public abstract class BusModBase extends Verticle {
   }
 
   protected void sendError(Message<JsonObject> message, String error, Exception e) {
-    log.error(error, e);
+    logger.error(error, e);
     JsonObject json = new JsonObject().putString("status", "error").putString("message", error);
     message.reply(json);
   }

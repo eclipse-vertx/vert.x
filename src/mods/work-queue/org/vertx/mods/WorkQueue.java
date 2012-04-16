@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package org.vertx.java.busmods.workqueue;
+package org.vertx.mods;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -36,14 +34,9 @@ import java.util.Queue;
  */
 public class WorkQueue extends BusModBase {
 
-  private static final Logger log = LoggerFactory.getLogger(WorkQueue.class);
-
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
   private final Queue<JsonObject> messages = new LinkedList<>();
-  private Handler<Message<JsonObject>> registerHandler;
-  private Handler<Message<JsonObject>> unregisterHandler;
-  private Handler<Message<JsonObject>> sendHandler;
 
   private long processTimeout;
   private String persistorAddress;
@@ -67,33 +60,24 @@ public class WorkQueue extends BusModBase {
       loadMessages();
     }
 
-    registerHandler = new Handler<Message<JsonObject>>() {
+    Handler<Message<JsonObject>> registerHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         doRegister(message);
       }
     };
     eb.registerHandler(address + ".register", registerHandler);
-    unregisterHandler = new Handler<Message<JsonObject>>() {
+    Handler<Message<JsonObject>> unregisterHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         doUnregister(message);
       }
     };
     eb.registerHandler(address + ".unregister", unregisterHandler);
-    sendHandler = new Handler<Message<JsonObject>>() {
+    Handler<Message<JsonObject>> sendHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         doSend(message);
       }
     };
     eb.registerHandler(address, sendHandler);
-  }
-
-  /**
-   * Stop the busmod
-   */
-  public void stop() {
-    eb.unregisterHandler(address + ".register", registerHandler);
-    eb.unregisterHandler(address + ".unregister", unregisterHandler);
-    eb.unregisterHandler(address, sendHandler);
   }
 
   // Load all the message into memory
@@ -135,7 +119,7 @@ public class WorkQueue extends BusModBase {
       final long timeoutID = vertx.setTimer(processTimeout, new Handler<Long>() {
         public void handle(Long id) {
           // Processor timed out - put message back on queue
-          log.warn("Processor timed out, message will be put back on queue");
+          logger.warn("Processor timed out, message will be put back on queue");
           messages.add(message);
         }
       });
@@ -149,7 +133,7 @@ public class WorkQueue extends BusModBase {
             eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
               public void handle(Message<JsonObject> reply) {
                 if (!reply.body.getString("status").equals("ok"))                 {
-                  log.error("Failed to delete document from queue: " + reply.body.getString("message"));
+                  logger.error("Failed to delete document from queue: " + reply.body.getString("message"));
                 }
                 checkWork();
               }
