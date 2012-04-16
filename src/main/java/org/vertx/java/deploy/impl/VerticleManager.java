@@ -70,7 +70,7 @@ public class VerticleManager {
     if (modDir == null || modDir.trim().equals("")) {
       String installDir = System.getProperty("vertx.install");
       if (installDir == null) {
-        throw new IllegalStateException("vertx.install system property must be specified if vert.mods not specified");
+        installDir = ".";
       }
       modRoot = new File(installDir, "mods");
     } else {
@@ -108,6 +108,11 @@ public class VerticleManager {
     return holder == null ? null : holder.deployment.urls;
   }
 
+  public File getDeploymentModDir() {
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.deployment.modDir;
+  }
+
   public Logger getLogger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
@@ -115,7 +120,7 @@ public class VerticleManager {
 
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
-                                    int instances,
+                                    int instances, File modDir,
                                     final Handler<Void> doneHandler)
   {
     if (deployments.containsKey(name)) {
@@ -129,7 +134,7 @@ public class VerticleManager {
       if (urls == null) {
         throw new IllegalStateException("urls cannot be null");
       }
-      return doDeploy(worker, name, main, config, urls, instances, null, doneHandler);
+      return doDeploy(worker, name, main, config, urls, instances, modDir, doneHandler);
     } else {
       return deployID;
     }
@@ -247,7 +252,8 @@ public class VerticleManager {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, verticleFactory, config == null ? new JsonObject() : config.copy(), urls, parentDeploymentName);
+    final Deployment deployment = new Deployment(deploymentName, verticleFactory,
+        config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
@@ -301,6 +307,7 @@ public class VerticleManager {
   }
 
   // TODO execute this as a blocking action so as not to block the caller
+  // TODO cache mod info?
   private String deployMod(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
     File modDir = new File(modRoot, modName);
     if (modDir.exists()) {
@@ -445,15 +452,18 @@ public class VerticleManager {
     final VerticleFactory factory;
     final JsonObject config;
     final URL[] urls;
+    final File modDir;
     final List<VerticleHolder> verticles = new ArrayList<>();
     final List<String> childDeployments = new ArrayList<>();
     final String parentDeploymentName;
 
-    private Deployment(String name, VerticleFactory factory, JsonObject config, URL[] urls, String parentDeploymentName) {
+    private Deployment(String name, VerticleFactory factory, JsonObject config,
+                       URL[] urls, File modDir, String parentDeploymentName) {
       this.name = name;
       this.factory = factory;
       this.config = config;
       this.urls = urls;
+      this.modDir = modDir;
       this.parentDeploymentName = parentDeploymentName;
     }
   }

@@ -62,7 +62,6 @@ public abstract class Context {
     this.pathAdjustment = pathAdjustment;
   }
 
-
   public void reportException(Throwable t) {
     if (deploymentContext != null) {
       deploymentContext.reportException(t);
