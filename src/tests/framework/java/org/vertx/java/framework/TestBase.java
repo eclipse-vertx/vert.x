@@ -196,10 +196,9 @@ public class TestBase extends TestCase {
       }
     };
 
-    String deploymentName = verticleManager.deploy(worker, null, main, config, new URL[] {url}, instances, null, doneHandler);
+    String deploymentName = verticleManager.deploy(worker, null, main, config, new URL[] {url}, instances, doneHandler);
 
     startedApps.add(deploymentName);
-
 
     if (!doneLatch.await(10, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");

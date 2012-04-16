@@ -91,7 +91,7 @@ public class Container {
    */
   public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
-    return mgr.deploy(true, null, main, config, currURLs, instances, null, doneHandler);
+    return mgr.deploy(true, null, main, config, currURLs, instances, doneHandler);
   }
 
   /**
@@ -144,7 +144,7 @@ public class Container {
    */
   public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
-    return mgr.deploy(false, null, main, config, currURLs, instances, null, doneHandler);
+    return mgr.deploy(false, null, main, config, currURLs, instances, doneHandler);
   }
 
   /**
