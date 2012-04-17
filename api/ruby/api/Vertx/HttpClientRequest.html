@@ -39,7 +39,7 @@
     <span class="title">HttpClientRequest</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -270,6 +270,30 @@ Ends the request.
         <li class="public ">
   <span class="summary_signature">
     
+      <a href="#headers-instance_method" title="#headers (instance method)">- (Object) <strong>headers</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Hash of headers for the request.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
       <a href="#put_header-instance_method" title="#put_header (instance method)">- (HttpClientRequest) <strong>put_header</strong>(key, value) </a>
     
 
@@ -285,30 +309,6 @@ Ends the request.
   
     <span class="summary_desc"><div class='inline'><p>
 Inserts a header into the request.
-</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#put_headers-instance_method" title="#put_headers (instance method)">- (HttpClientRequest) <strong>put_headers</strong>(headers) </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>
-Inserts a Hash of headers into the request.
 </p>
 </div></span>
   
@@ -472,9 +472,7 @@ used the HTTP header &#8216;Transfer-Encoding&#8217; with a value of
 chunked is false, this request will not use HTTP chunked encoding, and
 therefore if any data is written the body of the request, the total size of
 that data must be set in the &#8216;Content-Length&#8217; header before any
-data is written to the request body. If no data is written, then a
-&#8216;Content-Length&#8217; header with a value of &#8216;0&#8217; will be
-automatically inserted when the request is sent.
+data is written to the request body.
 </p>
 
 
@@ -529,13 +527,13 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-394
-395
-396
-397</pre>
+390
+391
+392
+393</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 394</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 390</span>
 
 <span class='def def kw'>def</span> <span class='chunked= identifier id'>chunked=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setChunked identifier id'>setChunked</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -615,13 +613,13 @@ The handler
       <pre class="lines">
 
 
-406
-407
-408
-409</pre>
+402
+403
+404
+405</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 406</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 402</span>
 
 <span class='def def kw'>def</span> <span class='continue_handler identifier id'>continue_handler</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
@@ -662,12 +660,58 @@ to another request.
       <pre class="lines">
 
 
-367</pre>
+364</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 367</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 364</span>
 
 <span class='def def kw'>def</span> <span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="headers-instance_method">
+  
+    - (<tt>Object</tt>) <strong>headers</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Hash of headers for the request
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+317
+318
+319
+320
+321
+322</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 317</span>
+
+<span class='def def kw'>def</span> <span class='headers identifier id'>headers</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@headers ivar id'>@headers</span>
+    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='headers identifier id'>headers</span>
+  <span class='end end kw'>end</span>
+  <span class='@headers ivar id'>@headers</span>
+<span class='end end kw'>end</span>
 </pre>
     </td>
   </tr>
@@ -756,103 +800,16 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-321
-322
-323
-324</pre>
+328
+329
+330
+331</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 321</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 328</span>
 
 <span class='def def kw'>def</span> <span class='put_header identifier id'>put_header</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='comma token'>,</span> <span class='value identifier id'>value</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='putHeader identifier id'>putHeader</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='comma token'>,</span> <span class='value identifier id'>value</span><span class='dot token'>.</span><span class='to_s identifier id'>to_s</span><span class='rparen token'>)</span>
-  <span class='self self kw'>self</span>
-<span class='end end kw'>end</span>
-</pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <p class="signature " id="put_headers-instance_method">
-  
-    - (<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>) <strong>put_headers</strong>(headers) 
-  
-
-  
-</p><div class="docstring">
-  <div class="discussion">
-    <p>
-Inserts a Hash of headers into the request.
-</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <h3>Parameters:</h3>
-<ul class="param">
-  
-    <li>
-      
-        <span class='name'>headers.</span>
-      
-      
-        <span class='type'>(<tt>Hash</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-Headers to insert. to_s will be called on each value to determine the
-actual String value to insert.
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-<h3>Returns:</h3>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-329
-330
-331
-332
-333
-334</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 329</span>
-
-<span class='def def kw'>def</span> <span class='put_headers identifier id'>put_headers</span><span class='lparen token'>(</span><span class='headers identifier id'>headers</span><span class='rparen token'>)</span>
-  <span class='headers identifier id'>headers</span><span class='dot token'>.</span><span class='each_pair identifier id'>each_pair</span> <span class='do do kw'>do</span> <span class='bitor op'>|</span><span class='k identifier id'>k</span><span class='comma token'>,</span> <span class='v identifier id'>v</span><span class='bitor op'>|</span>
-    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='putHeader identifier id'>putHeader</span><span class='lparen token'>(</span><span class='k identifier id'>k</span><span class='comma token'>,</span> <span class='v identifier id'>v</span><span class='dot token'>.</span><span class='to_s identifier id'>to_s</span><span class='rparen token'>)</span>
-  <span class='end end kw'>end</span>
   <span class='self self kw'>self</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -906,13 +863,13 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-358
-359
-360
-361</pre>
+355
+356
+357
+358</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 358</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 355</span>
 
 <span class='def def kw'>def</span> <span class='send_head identifier id'>send_head</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='sendHead identifier id'>sendHead</span>
@@ -1006,13 +963,13 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-340
-341
-342
-343</pre>
+337
+338
+339
+340</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 340</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 337</span>
 
 <span class='def def kw'>def</span> <span class='write_buffer identifier id'>write_buffer</span><span class='lparen token'>(</span><span class='chunk identifier id'>chunk</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='writeBuffer identifier id'>writeBuffer</span><span class='lparen token'>(</span><span class='chunk identifier id'>chunk</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -1071,12 +1028,12 @@ The Buffer to write
       <pre class="lines">
 
 
-381
-382
-383</pre>
+378
+379
+380</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 381</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 378</span>
 
 <span class='def def kw'>def</span> <span class='write_buffer_and_end identifier id'>write_buffer_and_end</span><span class='lparen token'>(</span><span class='chunk identifier id'>chunk</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='end identifier id'>end</span><span class='lparen token'>(</span><span class='chunk identifier id'>chunk</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -1186,13 +1143,13 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-350
-351
-352
-353</pre>
+347
+348
+349
+350</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 350</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 347</span>
 
 <span class='def def kw'>def</span> <span class='write_str identifier id'>write_str</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='write identifier id'>write</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -1268,12 +1225,12 @@ The encoding
       <pre class="lines">
 
 
-374
-375
-376</pre>
+371
+372
+373</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 374</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 371</span>
 
 <span class='def def kw'>def</span> <span class='write_str_and_end identifier id'>write_str_and_end</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='end identifier id'>end</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -1289,7 +1246,7 @@ The encoding
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:39 2012 by 
+  Generated on Tue Apr 17 13:34:14 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

@@ -39,7 +39,7 @@
     <span class="title">SharedData</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -138,6 +138,19 @@ The following types can be stored in a shareddata data structure:
 </ul>
 
 </div>
+  <h2>Constant Summary</h2>
+  
+    <dl class="constants">
+      
+        <dt id="j_sd-classvariable" class="">@@j_sd =
+          
+        </dt>
+        <dd><pre class="code"><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='sharedData identifier id'>sharedData</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+</pre></dd>
+      
+    </dl>
+  
+
 
 
 
@@ -317,9 +330,7 @@ Remove the set.
   <div class="discussion">
     <p>
 Return a Hash with the specific name. All invocations of this method with
-the same value of name are guaranteed to return the same Hash instance. The
-Hash instance returned is a lock free Hash which supports a very high
-degree of concurrency.
+the same value of name are guaranteed to return the same Hash instance.
 </p>
 
 
@@ -373,16 +384,16 @@ the hash.
       <pre class="lines">
 
 
-41
 42
 43
-44</pre>
+44
+45</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 41</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 42</span>
 
 <span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='get_hash identifier id'>get_hash</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-  <span class='map identifier id'>map</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='shareddata identifier id'>shareddata</span><span class='dot token'>.</span><span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='getMap identifier id'>getMap</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='map identifier id'>map</span> <span class='assign token'>=</span> <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='getMap identifier id'>getMap</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='SharedHash constant id'>SharedHash</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='map identifier id'>map</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -402,9 +413,7 @@ the hash.
   <div class="discussion">
     <p>
 Return a Set with the specific name. All invocations of this method with
-the same value of name are guaranteed to return the same Set instance. The
-Set instance returned is a lock free Set which supports a very high degree
-of concurrency.
+the same value of name are guaranteed to return the same Set instance.
 </p>
 
 
@@ -467,7 +476,7 @@ the set.
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 51</span>
 
 <span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='get_set identifier id'>get_set</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-  <span class='set identifier id'>set</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='shareddata identifier id'>shareddata</span><span class='dot token'>.</span><span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='getSet identifier id'>getSet</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='set identifier id'>set</span> <span class='assign token'>=</span> <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='getSet identifier id'>getSet</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='SharedSet constant id'>SharedSet</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='set identifier id'>set</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -529,7 +538,7 @@ The key of the hash.
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 58</span>
 
 <span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='remove_hash identifier id'>remove_hash</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='shareddata identifier id'>shareddata</span><span class='dot token'>.</span><span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='removeMap identifier id'>removeMap</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='removeMap identifier id'>removeMap</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -590,7 +599,7 @@ The key of the set.
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 64</span>
 
 <span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='remove_set identifier id'>remove_set</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='shareddata identifier id'>shareddata</span><span class='dot token'>.</span><span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='removeSet identifier id'>removeSet</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='removeSet identifier id'>removeSet</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -617,16 +626,16 @@ The key of the set.
       <pre class="lines">
 
 
+102
+103
+104
 105
 106
 107
-108
-109
-110
-111</pre>
+108</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 105</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 102</span>
 
 <span class='def def kw'>def</span> <span class='eq op'>==</span><span class='lparen token'>(</span><span class='other identifier id'>other</span><span class='rparen token'>)</span>
   <span class='if if kw'>if</span> <span class='other identifier id'>other</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span><span class='lparen token'>(</span><span class='SharedHash constant id'>SharedHash</span><span class='rparen token'>)</span>
@@ -654,12 +663,12 @@ The key of the set.
       <pre class="lines">
 
 
-113
-114
-115</pre>
+110
+111
+112</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 113</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 110</span>
 
 <span class='def def kw'>def</span> <span class='_to_java_map identifier id'>_to_java_map</span>
   <span class='@hash ivar id'>@hash</span>
@@ -675,7 +684,7 @@ The key of the set.
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:41 2012 by 
+  Generated on Tue Apr 17 13:34:15 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

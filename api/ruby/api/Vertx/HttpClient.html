@@ -39,7 +39,7 @@
     <span class="title">HttpClient</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -725,15 +725,15 @@ Create a new HttpClient
       <pre class="lines">
 
 
+96
 97
-98
-99</pre>
+98</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 97</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 96</span>
 
 <span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span>
-  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='http identifier id'>http</span><span class='dot token'>.</span><span class='HttpClient constant id'>HttpClient</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='createHttpClient identifier id'>createHttpClient</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -772,12 +772,12 @@ Close the client. Any unclosed connections will be closed.
       <pre class="lines">
 
 
+259
 260
-261
-262</pre>
+261</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 260</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 259</span>
 
 <span class='def def kw'>def</span> <span class='close identifier id'>close</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='close identifier id'>close</span>
@@ -852,12 +852,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+237
 238
-239
-240</pre>
+239</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 238</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 237</span>
 
 <span class='def def kw'>def</span> <span class='connect identifier id'>connect</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='connect identifier id'>connect</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -932,12 +932,12 @@ The handler to be called with the <span class='object_link'><a href="WebSocket.h
       <pre class="lines">
 
 
+161
 162
-163
-164</pre>
+163</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 162</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 161</span>
 
 <span class='def def kw'>def</span> <span class='connect_web_socket identifier id'>connect_web_socket</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='connectWebsocket identifier id'>connectWebsocket</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_ws identifier id'>j_ws</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='WebSocket constant id'>WebSocket</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_ws identifier id'>j_ws</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
@@ -1012,12 +1012,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+221
 222
-223
-224</pre>
+223</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 222</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 221</span>
 
 <span class='def def kw'>def</span> <span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1092,14 +1092,14 @@ A block to be used as the handler
       <pre class="lines">
 
 
+103
 104
 105
 106
-107
-108</pre>
+107</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 104</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 103</span>
 
 <span class='def def kw'>def</span> <span class='exception_handler identifier id'>exception_handler</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
@@ -1176,12 +1176,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+189
 190
-191
-192</pre>
+191</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 190</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 189</span>
 
 <span class='def def kw'>def</span> <span class='get identifier id'>get</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='get identifier id'>get</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1276,12 +1276,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+173
 174
-175
-176</pre>
+175</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 174</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 173</span>
 
 <span class='def def kw'>def</span> <span class='get_now identifier id'>get_now</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='headers identifier id'>headers</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getNow identifier id'>getNow</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='headers identifier id'>headers</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1356,12 +1356,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+197
 198
-199
-200</pre>
+199</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 198</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 197</span>
 
 <span class='def def kw'>def</span> <span class='head identifier id'>head</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='head identifier id'>head</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1418,13 +1418,13 @@ The host name or ip address to connect to.
       <pre class="lines">
 
 
+152
 153
 154
-155
-156</pre>
+155</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 153</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 152</span>
 
 <span class='def def kw'>def</span> <span class='host= identifier id'>host=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setHost identifier id'>setHost</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1488,13 +1488,13 @@ The value to use for keep_alive
       <pre class="lines">
 
 
+129
 130
 131
-132
-133</pre>
+132</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 130</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 129</span>
 
 <span class='def def kw'>def</span> <span class='keep_alive= identifier id'>keep_alive=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setTCPKeepAlive identifier id'>setTCPKeepAlive</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1549,12 +1549,12 @@ The maxium number of connections this client will pool.
       <pre class="lines">
 
 
+118
 119
-120
-121</pre>
+120</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 119</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 118</span>
 
 <span class='def def kw'>def</span> <span class='max_pool_size identifier id'>max_pool_size</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getMaxPoolSize identifier id'>getMaxPoolSize</span>
@@ -1611,13 +1611,13 @@ The maximum number of connections (default to 1).
       <pre class="lines">
 
 
+112
 113
 114
-115
-116</pre>
+115</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 113</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 112</span>
 
 <span class='def def kw'>def</span> <span class='max_pool_size= identifier id'>max_pool_size=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setMaxPoolSize identifier id'>setMaxPoolSize</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1693,12 +1693,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+181
 182
-183
-184</pre>
+183</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 182</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 181</span>
 
 <span class='def def kw'>def</span> <span class='options identifier id'>options</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='options identifier id'>options</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1773,12 +1773,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+245
 246
-247
-248</pre>
+247</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 246</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 245</span>
 
 <span class='def def kw'>def</span> <span class='patch identifier id'>patch</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='patch identifier id'>patch</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1835,13 +1835,13 @@ The port value.
       <pre class="lines">
 
 
+145
 146
 147
-148
-149</pre>
+148</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 146</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 145</span>
 
 <span class='def def kw'>def</span> <span class='port= identifier id'>port=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setPort identifier id'>setPort</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1917,12 +1917,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+205
 206
-207
-208</pre>
+207</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 206</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 205</span>
 
 <span class='def def kw'>def</span> <span class='post identifier id'>post</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='post identifier id'>post</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1997,12 +1997,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+213
 214
-215
-216</pre>
+215</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 214</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 213</span>
 
 <span class='def def kw'>def</span> <span class='put identifier id'>put</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='put identifier id'>put</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2095,12 +2095,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+254
 255
-256
-257</pre>
+256</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 255</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 254</span>
 
 <span class='def def kw'>def</span> <span class='request identifier id'>request</span><span class='lparen token'>(</span><span class='method identifier id'>method</span><span class='comma token'>,</span> <span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='request identifier id'>request</span><span class='lparen token'>(</span><span class='method identifier id'>method</span><span class='comma token'>,</span> <span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2175,12 +2175,12 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
       <pre class="lines">
 
 
+229
 230
-231
-232</pre>
+231</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 230</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 229</span>
 
 <span class='def def kw'>def</span> <span class='trace identifier id'>trace</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='trace identifier id'>trace</span><span class='lparen token'>(</span><span class='uri identifier id'>uri</span><span class='comma token'>,</span> <span class='resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2239,13 +2239,13 @@ and will not attempt to authenticate them
       <pre class="lines">
 
 
+138
 139
 140
-141
-142</pre>
+141</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 139</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 138</span>
 
 <span class='def def kw'>def</span> <span class='trust_all= identifier id'>trust_all=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setTrustAll identifier id'>setTrustAll</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -2262,7 +2262,7 @@ and will not attempt to authenticate them
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:39 2012 by 
+  Generated on Tue Apr 17 13:34:14 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

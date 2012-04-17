@@ -39,7 +39,7 @@
     <span class="title">TCPSupport</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -425,15 +425,17 @@ If true, then TCP reuse address will be enabled.
       <pre class="lines">
 
 
-48
 49
-50</pre>
+50
+51
+52</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 48</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 49</span>
 
 <span class='def def kw'>def</span> <span class='reuse_address= identifier id'>reuse_address=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setReuseAddress identifier id'>setReuseAddress</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -591,15 +593,17 @@ If true, then TCP so linger will be enabled.
       <pre class="lines">
 
 
-55
-56
-57</pre>
+57
+58
+59
+60</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 55</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 57</span>
 
 <span class='def def kw'>def</span> <span class='so_linger= identifier id'>so_linger=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setSoLinger identifier id'>setSoLinger</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -675,13 +679,15 @@ If true, then TCP keep alive will be enabled.
 
 41
 42
-43</pre>
+43
+44</pre>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 41</span>
 
 <span class='def def kw'>def</span> <span class='tcp_keep_alive= identifier id'>tcp_keep_alive=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setTCPKeepAlive identifier id'>setTCPKeepAlive</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -755,15 +761,17 @@ The TCP traffic class setting.
       <pre class="lines">
 
 
-62
-63
-64</pre>
+65
+66
+67
+68</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 62</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 65</span>
 
 <span class='def def kw'>def</span> <span class='traffic_class= identifier id'>traffic_class=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setTrafficClass identifier id'>setTrafficClass</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -776,7 +784,7 @@ The TCP traffic class setting.
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:41 2012 by 
+  Generated on Tue Apr 17 13:34:15 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

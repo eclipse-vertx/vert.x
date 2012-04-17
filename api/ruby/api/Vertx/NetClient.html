@@ -39,7 +39,7 @@
     <span class="title">NetClient</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -312,7 +312,7 @@ Create a new NetClient
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/net.rb', line 84</span>
 
 <span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span>
-  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='net identifier id'>net</span><span class='dot token'>.</span><span class='NetClient constant id'>NetClient</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='createNetClient identifier id'>createNetClient</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -595,7 +595,7 @@ A reference to self so invocations can be chained
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:38 2012 by 
+  Generated on Tue Apr 17 13:34:13 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

@@ -39,7 +39,7 @@
     <span class="title">EventBus</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -100,7 +100,7 @@ encompass multiple vert.x instances. It is very useful for otherwise
 isolated vert.x application instances to communicate with each other.
 </p>
 <p>
-Messages sent over the event bus are json objects represented as Ruby Hash
+Messages sent over the event bus are JSON objects represented as Ruby Hash
 instances.
 </p>
 <p>
@@ -165,6 +165,12 @@ reply method which can be used to reply to it.
           
         </dt>
         <dd><pre class="code"><span class='lbrace token'>{</span><span class='rbrace token'>}</span>
+</pre></dd>
+      
+        <dt id="j_eventbus-classvariable" class="">@@j_eventbus =
+          
+        </dt>
+        <dd><pre class="code"><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='eventBus identifier id'>eventBus</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
 </pre></dd>
       
     </dl>
@@ -390,8 +396,6 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
       <pre class="lines">
 
 
-72
-73
 74
 75
 76
@@ -401,19 +405,21 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
 80
 81
 82
-83</pre>
+83
+84
+85</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 72</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 74</span>
 
 <span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='register_handler identifier id'>register_handler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;An address must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='address identifier id'>address</span>
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='message_hndlr identifier id'>message_hndlr</span>
   <span class='internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='if if kw'>if</span> <span class='local_only identifier id'>local_only</span>
-    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='else else kw'>else</span>
-    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='end end kw'>end</span>
   <span class='@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='internal identifier id'>internal</span>
   <span class='id identifier id'>id</span>
@@ -509,8 +515,6 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
       <pre class="lines">
 
 
-90
-91
 92
 93
 94
@@ -519,18 +523,20 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
 97
 98
 99
-100</pre>
+100
+101
+102</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 90</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 92</span>
 
 <span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='register_simple_handler identifier id'>register_simple_handler</span><span class='lparen token'>(</span><span class='local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='message_hndlr identifier id'>message_hndlr</span>
   <span class='internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='if if kw'>if</span> <span class='local_only identifier id'>local_only</span>
-    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='else else kw'>else</span>
-    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='end end kw'>end</span>
   <span class='@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='internal identifier id'>internal</span>
   <span class='id identifier id'>id</span>
@@ -604,8 +610,6 @@ replyHandler An optional reply handler.
       <pre class="lines">
 
 
-55
-56
 57
 58
 59
@@ -613,19 +617,21 @@ replyHandler An optional reply handler.
 61
 62
 63
-64</pre>
+64
+65
+66</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 55</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 57</span>
 
 <span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span>
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;An address must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='address identifier id'>address</span>
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A message must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='message identifier id'>message</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
   <span class='message identifier id'>message</span> <span class='assign token'>=</span> <span class='convert_msg identifier id'>convert_msg</span><span class='lparen token'>(</span><span class='message identifier id'>message</span><span class='rparen token'>)</span>
   <span class='if if kw'>if</span> <span class='reply_handler identifier id'>reply_handler</span> <span class='neq op'>!=</span> <span class='nil nil kw'>nil</span>
-    <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='comma token'>,</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+    <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='comma token'>,</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
   <span class='else else kw'>else</span>
-    <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='rparen token'>)</span>
+    <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='rparen token'>)</span>
   <span class='end end kw'>end</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -680,21 +686,21 @@ The id of the handler to unregister. Returned from
       <pre class="lines">
 
 
-104
-105
 106
 107
 108
-109</pre>
+109
+110
+111</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 104</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 106</span>
 
 <span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='unregister_handler identifier id'>unregister_handler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A handler_id must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='handler_id identifier id'>handler_id</span>
   <span class='handler identifier id'>handler</span> <span class='assign token'>=</span> <span class='@@handler_map ivar id'>@@handler_map</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
   <span class='raise identifier id'>raise</span> <span class='dstring node'>&quot;Cannot find handler for id #{handler_id}&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='handler identifier id'>handler</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='eventbus identifier id'>eventbus</span><span class='dot token'>.</span><span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+  <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -707,7 +713,7 @@ The id of the handler to unregister. Returned from
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:40 2012 by 
+  Generated on Tue Apr 17 13:34:15 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

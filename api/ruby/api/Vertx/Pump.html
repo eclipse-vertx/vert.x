@@ -39,7 +39,7 @@
     <span class="title">Pump</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -153,7 +153,7 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#bytes_pumped-instance_method" title="#bytes_pumped (instance method)">- (Object) <strong>bytes_pumped</strong> </a>
+      <a href="#bytes_pumped-instance_method" title="#bytes_pumped (instance method)">- (FixNum) <strong>bytes_pumped</strong> </a>
     
 
     
@@ -166,7 +166,10 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
   
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'><p>
+Return the total number of bytes pumped by this pump.
+</p>
+</div></span>
   
 </li>
 
@@ -213,7 +216,10 @@ A new instance of Pump.
   
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'><p>
+Start the Pump.
+</p>
+</div></span>
   
 </li>
 
@@ -234,7 +240,10 @@ A new instance of Pump.
   
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'><p>
+Stop the Pump.
+</p>
+</div></span>
   
 </li>
 
@@ -255,7 +264,10 @@ A new instance of Pump.
   
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'><p>
+Set the write queue max size.
+</p>
+</div></span>
   
 </li>
 
@@ -306,7 +318,7 @@ A new instance of Pump
   <span class='raise identifier id'>raise</span> <span class='string val'>&quot;write_stream is not a WriteStream&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='write_stream identifier id'>write_stream</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='WriteStream constant id'>WriteStream</span>
   <span class='j_rs identifier id'>j_rs</span> <span class='assign token'>=</span> <span class='read_stream identifier id'>read_stream</span><span class='dot token'>.</span><span class='_to_read_stream identifier id'>_to_read_stream</span>
   <span class='j_ws identifier id'>j_ws</span> <span class='assign token'>=</span> <span class='write_stream identifier id'>write_stream</span><span class='dot token'>.</span><span class='_to_write_stream identifier id'>_to_write_stream</span>
-  <span class='@j_pump ivar id'>@j_pump</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='streams identifier id'>streams</span><span class='dot token'>.</span><span class='Pump constant id'>Pump</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_rs identifier id'>j_rs</span><span class='comma token'>,</span> <span class='j_ws identifier id'>j_ws</span><span class='rparen token'>)</span>
+  <span class='@j_pump ivar id'>@j_pump</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='streams identifier id'>streams</span><span class='dot token'>.</span><span class='Pump constant id'>Pump</span><span class='dot token'>.</span><span class='createPump identifier id'>createPump</span><span class='lparen token'>(</span><span class='j_rs identifier id'>j_rs</span><span class='comma token'>,</span> <span class='j_ws identifier id'>j_ws</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -324,22 +336,52 @@ A new instance of Pump
       <div class="method_details first">
   <p class="signature first" id="bytes_pumped-instance_method">
   
-    - (<tt>Object</tt>) <strong>bytes_pumped</strong> 
+    - (<tt>FixNum</tt>) <strong>bytes_pumped</strong> 
   
 
   
-</p><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Return the total number of bytes pumped by this pump.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+Return the total number of bytes pumped by this pump.
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-147
-148
-149</pre>
+152
+153
+154</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 147</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 152</span>
 
 <span class='def def kw'>def</span> <span class='bytes_pumped identifier id'>bytes_pumped</span>
   <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='getBytesPumped identifier id'>getBytesPumped</span>
@@ -357,18 +399,29 @@ A new instance of Pump
   
 
   
-</p><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Start the Pump. The Pump can be started and stopped multiple times.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-139
-140
-141</pre>
+142
+143
+144</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 139</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 142</span>
 
 <span class='def def kw'>def</span> <span class='start identifier id'>start</span>
   <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='start identifier id'>start</span>
@@ -386,18 +439,29 @@ A new instance of Pump
   
 
   
-</p><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Stop the Pump. The Pump can be started and stopped multiple times.
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-143
-144
-145</pre>
+147
+148
+149</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 143</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 147</span>
 
 <span class='def def kw'>def</span> <span class='stop identifier id'>stop</span>
   <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='stop identifier id'>stop</span>
@@ -415,18 +479,50 @@ A new instance of Pump
   
 
   
-</p><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Set the write queue max size
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Parameters:</h3>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>The</span>
+      
+      
+        <span class='type'>(<tt>FixNum</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+write queue max size
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-135
-136
-137</pre>
+137
+138
+139</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 135</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 137</span>
 
 <span class='def def kw'>def</span> <span class='write_queue_max_size= identifier id'>write_queue_max_size=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='setWriteQueueMaxSize identifier id'>setWriteQueueMaxSize</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -442,7 +538,7 @@ A new instance of Pump
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:40 2012 by 
+  Generated on Tue Apr 17 13:34:15 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

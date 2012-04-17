@@ -39,7 +39,7 @@
     <span class="title">FileSystem</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -128,6 +128,19 @@ synchronous versions return the results, or throw exceptions directly.
 </ul>
 
 </div>
+  <h2>Constant Summary</h2>
+  
+    <dl class="constants">
+      
+        <dt id="j_fs-classvariable" class="">@@j_fs =
+          
+        </dt>
+        <dd><pre class="code"><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='fileSystem identifier id'>fileSystem</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+</pre></dd>
+      
+    </dl>
+  
+
 
 
 
@@ -1244,15 +1257,15 @@ regular files.
       <pre class="lines">
 
 
-261
-262
-263</pre>
+263
+264
+265</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 261</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 263</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='chmod identifier id'>chmod</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='dir_perms identifier id'>dir_perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='chmod identifier id'>chmod</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='dir_perms identifier id'>dir_perms</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='chmod identifier id'>chmod</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='dir_perms identifier id'>dir_perms</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1284,15 +1297,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.chmod
       <pre class="lines">
 
 
-266
-267
-268</pre>
+268
+269
+270</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 266</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 268</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='chmod_sync identifier id'>chmod_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='dir_perms identifier id'>dir_perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='chmodSync identifier id'>chmodSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='dir_perms identifier id'>dir_perms</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='chmodSync identifier id'>chmodSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='dir_perms identifier id'>dir_perms</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1380,15 +1393,15 @@ a block representing the handler which is called on completion.
       <pre class="lines">
 
 
-208
-209
-210</pre>
+210
+211
+212</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 208</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 210</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1461,15 +1474,15 @@ Path of file to copy to
       <pre class="lines">
 
 
-222
-223
-224</pre>
+224
+225
+226</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 222</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 224</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='copy_recursive identifier id'>copy_recursive</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1501,15 +1514,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy_recursive
       <pre class="lines">
 
 
-227
-228
-229</pre>
+229
+230
+231</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 227</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 229</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='copy_recursive_sync identifier id'>copy_recursive_sync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='copySync identifier id'>copySync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='copySync identifier id'>copySync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1541,15 +1554,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy
       <pre class="lines">
 
 
-213
-214
-215</pre>
+215
+216
+217</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 213</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 215</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='copy_sync identifier id'>copy_sync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='copySync identifier id'>copySync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='copySync identifier id'>copySync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1621,15 +1634,15 @@ The file will be created with these permissions.
       <pre class="lines">
 
 
-437
-438
-439</pre>
+439
+440
+441</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 437</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 439</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='create_file identifier id'>create_file</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='createFile identifier id'>createFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='createFile identifier id'>createFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1661,15 +1674,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.create_file
       <pre class="lines">
 
 
-442
-443
-444</pre>
+444
+445
+446</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 442</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 444</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='create_file_sync identifier id'>create_file_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='createFileSync identifier id'>createFileSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='createFileSync identifier id'>createFileSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1723,15 +1736,15 @@ Path of the file to delete.
       <pre class="lines">
 
 
-331
-332
-333</pre>
+333
+334
+335</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 331</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 333</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1786,15 +1799,15 @@ Path of the file to delete.
       <pre class="lines">
 
 
-344
-345
-346</pre>
+346
+347
+348</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 344</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 346</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='delete_recursive identifier id'>delete_recursive</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1826,15 +1839,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete_recursive
       <pre class="lines">
 
 
-349
-350
-351</pre>
+351
+352
+353</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 349</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 351</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='delete_recursive_sync identifier id'>delete_recursive_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='deleteSync identifier id'>deleteSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='deleteSync identifier id'>deleteSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1866,15 +1879,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete
       <pre class="lines">
 
 
-336
-337
-338</pre>
+338
+339
+340</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 336</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 338</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='delete_sync identifier id'>delete_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='deleteSync identifier id'>deleteSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='deleteSync identifier id'>deleteSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1940,15 +1953,15 @@ Path of the file to check.
       <pre class="lines">
 
 
-448
-449
-450</pre>
+450
+451
+452</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 448</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 450</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='exists? fid id'>exists?</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='exists identifier id'>exists</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='exists identifier id'>exists</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -1993,15 +2006,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.exists?
       <pre class="lines">
 
 
-453
-454
-455</pre>
+455
+456
+457</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 453</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 455</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='exists_sync? fid id'>exists_sync?</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='existsSync identifier id'>existsSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='existsSync identifier id'>existsSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2054,15 +2067,15 @@ Path in the file system.
       <pre class="lines">
 
 
-459
-460
-461</pre>
+461
+462
+463</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 459</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 461</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='fs_props identifier id'>fs_props</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='fsProps identifier id'>fsProps</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_props identifier id'>j_props</span><span class='bitor op'>|</span> <span class='FSProps constant id'>FSProps</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_props identifier id'>j_props</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='fsProps identifier id'>fsProps</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_props identifier id'>j_props</span><span class='bitor op'>|</span> <span class='FSProps constant id'>FSProps</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_props identifier id'>j_props</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2094,16 +2107,16 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.fs_props
       <pre class="lines">
 
 
-464
-465
 466
-467</pre>
+467
+468
+469</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 464</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 466</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='fs_props_sync identifier id'>fs_props_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
-  <span class='j_fsprops identifier id'>j_fsprops</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='fsPropsSync identifier id'>fsPropsSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='j_fsprops identifier id'>j_fsprops</span> <span class='assign token'>=</span> <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='fsPropsSync identifier id'>fsPropsSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='FSProps constant id'>FSProps</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_fsprops identifier id'>j_fsprops</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -2174,15 +2187,15 @@ Path of where the link points to.
       <pre class="lines">
 
 
-285
-286
-287</pre>
+287
+288
+289</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 285</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 287</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='link identifier id'>link</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-   <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='link identifier id'>link</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+   <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='link identifier id'>link</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2214,15 +2227,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.link
       <pre class="lines">
 
 
-290
-291
-292</pre>
+292
+293
+294</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 290</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 292</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='link_sync identifier id'>link_sync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='linkSync identifier id'>linkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='linkSync identifier id'>linkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2294,15 +2307,15 @@ A permission string of the form rwxr-x&#8212; to give directory.
       <pre class="lines">
 
 
-358
-359
-360</pre>
+360
+361
+362</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 358</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 360</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2334,15 +2347,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir
       <pre class="lines">
 
 
-363
-364
-365</pre>
+365
+366
+367</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 363</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 365</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='mkdir_sync identifier id'>mkdir_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='mkdirSync identifier id'>mkdirSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='mkdirSync identifier id'>mkdirSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2415,15 +2428,15 @@ directory(ies).
       <pre class="lines">
 
 
-371
-372
-373</pre>
+373
+374
+375</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 371</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 373</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='mkdir_with_parents identifier id'>mkdir_with_parents</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2455,15 +2468,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir_with_parent
       <pre class="lines">
 
 
-376
-377
-378</pre>
+378
+379
+380</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 376</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 378</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='mkdir_with_parents_sync identifier id'>mkdir_with_parents_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='mkdirSync identifier id'>mkdirSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='mkdirSync identifier id'>mkdirSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='true true kw'>true</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2534,15 +2547,15 @@ Path of file to move to
       <pre class="lines">
 
 
-234
-235
-236</pre>
+236
+237
+238</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 234</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 236</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='move identifier id'>move</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='move identifier id'>move</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='move identifier id'>move</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2574,15 +2587,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.move
       <pre class="lines">
 
 
-239
-240
-241</pre>
+241
+242
+243</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 239</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 241</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='move_sync identifier id'>move_sync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='moveSync identifier id'>moveSync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='moveSync identifier id'>moveSync</span><span class='lparen token'>(</span><span class='from identifier id'>from</span><span class='comma token'>,</span> <span class='to identifier id'>to</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2732,15 +2745,15 @@ storage immediately?
       <pre class="lines">
 
 
-424
-425
-426</pre>
+426
+427
+428</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 424</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 426</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='open identifier id'>open</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='read identifier id'>read</span> <span class='assign token'>=</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='write identifier id'>write</span> <span class='assign token'>=</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='create_new identifier id'>create_new</span> <span class='assign token'>=</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='flush identifier id'>flush</span> <span class='assign token'>=</span> <span class='false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='open identifier id'>open</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='read identifier id'>read</span><span class='comma token'>,</span> <span class='write identifier id'>write</span><span class='comma token'>,</span> <span class='create_new identifier id'>create_new</span><span class='comma token'>,</span> <span class='flush identifier id'>flush</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_file identifier id'>j_file</span><span class='bitor op'>|</span> <span class='AsyncFile constant id'>AsyncFile</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_file identifier id'>j_file</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='open identifier id'>open</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='read identifier id'>read</span><span class='comma token'>,</span> <span class='write identifier id'>write</span><span class='comma token'>,</span> <span class='create_new identifier id'>create_new</span><span class='comma token'>,</span> <span class='flush identifier id'>flush</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_file identifier id'>j_file</span><span class='bitor op'>|</span> <span class='AsyncFile constant id'>AsyncFile</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_file identifier id'>j_file</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2772,16 +2785,16 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.open
       <pre class="lines">
 
 
-429
-430
 431
-432</pre>
+432
+433
+434</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 429</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 431</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='open_sync identifier id'>open_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='read identifier id'>read</span> <span class='assign token'>=</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='write identifier id'>write</span> <span class='assign token'>=</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='create_new identifier id'>create_new</span> <span class='assign token'>=</span> <span class='true true kw'>true</span><span class='comma token'>,</span> <span class='flush identifier id'>flush</span> <span class='assign token'>=</span> <span class='false false kw'>false</span><span class='rparen token'>)</span>
-  <span class='j_af identifier id'>j_af</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='open identifier id'>open</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='read identifier id'>read</span><span class='comma token'>,</span> <span class='write identifier id'>write</span><span class='comma token'>,</span> <span class='create_new identifier id'>create_new</span><span class='comma token'>,</span> <span class='flush identifier id'>flush</span><span class='rparen token'>)</span>
+  <span class='j_af identifier id'>j_af</span> <span class='assign token'>=</span> <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='open identifier id'>open</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='perms identifier id'>perms</span><span class='comma token'>,</span> <span class='read identifier id'>read</span><span class='comma token'>,</span> <span class='write identifier id'>write</span><span class='comma token'>,</span> <span class='create_new identifier id'>create_new</span><span class='comma token'>,</span> <span class='flush identifier id'>flush</span><span class='rparen token'>)</span>
   <span class='AsyncFile constant id'>AsyncFile</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_af identifier id'>j_af</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -2835,15 +2848,15 @@ Path to file
       <pre class="lines">
 
 
-272
-273
-274</pre>
+274
+275
+276</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 272</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 274</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='props identifier id'>props</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='props identifier id'>props</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_props identifier id'>j_props</span><span class='bitor op'>|</span> <span class='FileProps constant id'>FileProps</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_props identifier id'>j_props</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='props identifier id'>props</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_props identifier id'>j_props</span><span class='bitor op'>|</span> <span class='FileProps constant id'>FileProps</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_props identifier id'>j_props</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -2875,16 +2888,16 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.props
       <pre class="lines">
 
 
-277
-278
 279
-280</pre>
+280
+281
+282</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 277</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 279</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='props_sync identifier id'>props_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
-  <span class='j_props identifier id'>j_props</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='propsSync identifier id'>propsSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='j_props identifier id'>j_props</span> <span class='assign token'>=</span> <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='propsSync identifier id'>propsSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='FileProps constant id'>FileProps</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_props identifier id'>j_props</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
@@ -2960,15 +2973,15 @@ filter is not nil
       <pre class="lines">
 
 
-385
-386
-387</pre>
+387
+388
+389</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 385</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 387</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='read_dir identifier id'>read_dir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='filter identifier id'>filter</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='readDir identifier id'>readDir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='filter identifier id'>filter</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='readDir identifier id'>readDir</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='filter identifier id'>filter</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3000,15 +3013,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_dir
       <pre class="lines">
 
 
-390
-391
-392</pre>
+392
+393
+394</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 390</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 392</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='read_dir_sync identifier id'>read_dir_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='filter identifier id'>filter</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='readDirSync identifier id'>readDirSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='filter identifier id'>filter</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='readDirSync identifier id'>readDirSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='filter identifier id'>filter</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3061,15 +3074,15 @@ Path of the file to read.
       <pre class="lines">
 
 
-396
-397
-398</pre>
+398
+399
+400</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 396</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 398</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='read_file_as_buffer identifier id'>read_file_as_buffer</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='readFile identifier id'>readFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='readFile identifier id'>readFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3101,15 +3114,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_file_as_buff
       <pre class="lines">
 
 
-401
-402
-403</pre>
+403
+404
+405</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 401</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 403</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='read_file_as_buffer_sync identifier id'>read_file_as_buffer_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='readFileSync identifier id'>readFileSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='readFileSync identifier id'>readFileSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3163,15 +3176,15 @@ Path of the link to read.
       <pre class="lines">
 
 
-319
-320
-321</pre>
+321
+322
+323</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 319</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 321</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='read_sym_link identifier id'>read_sym_link</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='readSymLink identifier id'>readSymLink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='readSymLink identifier id'>readSymLink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3203,15 +3216,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_sym_link
       <pre class="lines">
 
 
-324
-325
-326</pre>
+326
+327
+328</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 324</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 326</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='read_sym_link_sync identifier id'>read_sym_link_sync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='readSymLinkSync identifier id'>readSymLinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='readSymLinkSync identifier id'>readSymLinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3281,15 +3294,15 @@ Path of where the link points to.
       <pre class="lines">
 
 
-297
-298
-299</pre>
+299
+300
+301</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 297</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 299</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='sym_link identifier id'>sym_link</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-   <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='symLink identifier id'>symLink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+   <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='symLink identifier id'>symLink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3321,15 +3334,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.sym_link
       <pre class="lines">
 
 
-302
-303
-304</pre>
+304
+305
+306</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 302</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 304</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='sym_link_sync identifier id'>sym_link_sync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='symLinkSync identifier id'>symLinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='symLinkSync identifier id'>symLinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='existing identifier id'>existing</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3400,15 +3413,15 @@ then will do nothing.
       <pre class="lines">
 
 
-246
-247
-248</pre>
+248
+249
+250</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 246</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 248</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='truncate identifier id'>truncate</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='len identifier id'>len</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='truncate identifier id'>truncate</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='len identifier id'>len</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='truncate identifier id'>truncate</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='len identifier id'>len</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3440,15 +3453,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.truncate
       <pre class="lines">
 
 
-251
-252
-253</pre>
+253
+254
+255</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 251</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 253</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='truncate_sync identifier id'>truncate_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='len identifier id'>len</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='truncateSync identifier id'>truncateSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='len identifier id'>len</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='truncateSync identifier id'>truncateSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='len identifier id'>len</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3501,15 +3514,15 @@ Path of the link to unlink.
       <pre class="lines">
 
 
-308
-309
-310</pre>
+310
+311
+312</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 308</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 310</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='unlink identifier id'>unlink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='unlink identifier id'>unlink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='unlink identifier id'>unlink</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3541,15 +3554,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.unlink
       <pre class="lines">
 
 
-313
-314
-315</pre>
+315
+316
+317</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 313</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 315</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='unlinkSync identifier id'>unlinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='unlinkSync identifier id'>unlinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='unlinkSync identifier id'>unlinkSync</span><span class='lparen token'>(</span><span class='link identifier id'>link</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3619,15 +3632,15 @@ The Buffer to write
       <pre class="lines">
 
 
-408
-409
-410</pre>
+410
+411
+412</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 408</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 410</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='write_buffer_to_file identifier id'>write_buffer_to_file</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='writeFile identifier id'>writeFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='writeFile identifier id'>writeFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3659,15 +3672,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.write_buffer_to_f
       <pre class="lines">
 
 
-413
-414
-415</pre>
+415
+416
+417</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 413</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 415</span>
 
 <span class='def def kw'>def</span> <span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='write_buffer_to_file_sync identifier id'>write_buffer_to_file_sync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='buffer identifier id'>buffer</span><span class='rparen token'>)</span>
-  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='file identifier id'>file</span><span class='dot token'>.</span><span class='FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='instance identifier id'>instance</span><span class='dot token'>.</span><span class='writeFileSync identifier id'>writeFileSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='buffer identifier id'>buffer</span><span class='rparen token'>)</span>
+  <span class='@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='writeFileSync identifier id'>writeFileSync</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='comma token'>,</span> <span class='buffer identifier id'>buffer</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -3680,7 +3693,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.write_buffer_to_f
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:41 2012 by 
+  Generated on Tue Apr 17 13:34:16 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>
