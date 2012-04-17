@@ -87,7 +87,15 @@ To deploy a verticle programmatically call the function `Vertx.deploy_verticle`.
 
 To deploy a single instance of a verticle :
 
-    Vertx.deployVerticle('my_verticle.rb')
+    Vertx.deploy_verticle('my_verticle.rb')
+    
+## Deploying a module programmatically
+
+You can also use `deploy_verticle` to deploy an installed module, for example:
+
+    Vertx.deploy_verticle('mailer', config)
+    
+Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.      
 
 ## Passing configuration to a verticle programmatically
 

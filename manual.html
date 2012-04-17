@@ -216,21 +216,23 @@
 <p><em>BusMod</em> is short for <em>Bus Module</em>. It's basically a service that you communicate with by exchanging JSON messages over the event bus. Since all communication is over the event bus, and not by direct calls like with vert.x core, it means it can be written once in any language, and any verticle in any other language can immediately use it without an API adaptor having to be written for each language.</p>
 <p>Whilst vert.x core is fairly static, we envisage that a wide range of busmods will be available in vert.x for performing common operations. Vert.x already ships with several busmods out-of-the-box, including a persistor, a mailer and work queues, and we hope to ship with many more over time.</p>
 <p>We also encourage the community to create and contribute their own busmods for others to use.</p>
-<p>For more information on busmods please see the busmod manual.</p>
+<p>For more information on busmods please see the modules manual.</p>
 <h1 id="running-vertx">Running vert.x</h1><br/>
 <p>There are various ways vert.x verticles can be run, let's describe them.</p>
 <h2 id="running-a-verticle-in-its-own-vertx-instance">Running a verticle in its own vert.x instance</h2><br/>
 <p>The <code>vertx</code> command is used to interact with vert.x from the command line. It's used to run vert.x verticles as well as start and stop vert.x standalone servers and deploy and undeploy verticles to standalone servers (we'll get to the standalone server stuff a bit later on).</p>
 <p>If you just type <code>vertx</code> at a command line you can see the different options the command takes.</p>
 <p>The command <code>vertx run</code> is used to start a vert.x verticle in <em>its own instance</em> of a vert.x server. This is the simplest way to run a verticle.</p>
-<p>At minimum <code>vertx run</code> takes a single parameter - the name of the main to run. If it's a JavaScript or Ruby verticle then it's just the name of the script, e.g. <code>server.js</code> or <code>server.rb</code>. (it doesn't have to be called server, you can name it anything as long as it has the right extension). If it's Java the main is the fully qualified class name of the main classs.</p>
+<p>At minimum <code>vertx run</code> takes a single parameter - the name of the main or module to run.</p>
+<p>If you're running a local verticle then if it's a JavaScript or Ruby verticle then it's just the name of the script, e.g. <code>server.js</code> or <code>server.rb</code>. (it doesn't have to be called server, you can name it anything as long as it has the right extension). If it's Java the main is the fully qualified class name of the main classs.</p>
+<p>If you're running an installed module (see the modules manual for more information on modules), then <code>vertx run</code> takes the name of the module to run.</p>
 <p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
 <ul>
 <li>
 <p><code>-config &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
 </li>
 <li>
-<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be <code>-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar</code>
     Always use the path to reference any resources that your verticle requires. Please, <strong>do not</strong> put them on the system classpath as this can cause isolation issues between deployed verticles.</p>
 </li>
@@ -253,15 +255,11 @@
 </ul>
 <p>Here are some examples of <code>vertx run</code>:</p>
 <p>Run a JavaScript verticle server.js with default settings</p>
-<pre class="prettyprint lang-html">
-vertx run server.js
+<pre class="prettyprint">vertx run server.js
 </pre>
-
 <p>Run 10 instances of a Java verticle specifying classpath</p>
-<pre class="prettyprint lang-html">
-vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+<pre class="prettyprint">vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
 </pre>
-
 <p>Run 20 instances of a ruby worker verticle  <br/>
 </p>
 <pre class="prettyprint">vertx run order_worker.rb -instances 20 -worker
@@ -281,6 +279,12 @@ vertx run handler1.js -cluster -cluster-port 25501
 </pre>
 <p>The config will be available inside the verticle via the core API.  <br/>
 </p>
+<p>Run an installed module called <code>my-mod</code></p>
+<pre class="prettyprint">vertx run my-mod
+</pre>
+<p>Run an installed module called <code>other-mod</code> specifying number of instances and some config</p>
+<pre class="prettyprint">vertx run other-mod -instances 10 -config other-mod.conf
+</pre>
 <h2 id="running-a-verticle-in-a-standalone-vertx-server">Running a verticle in a standalone vert.x server</h2><br/>
 <p>Often you may have several verticles that make up your application - you could just start up each one in its own vert.x instance by using a separate <code>vertx run</code> for each verticle and have them communicate using the distributed event bus, but it might be a bit wasteful to have each one running in its own JVM instance.</p>
 <p>In such cases it often makes sense to start up a standalone vert.x instance and deploy multiple verticles to that instance.</p>

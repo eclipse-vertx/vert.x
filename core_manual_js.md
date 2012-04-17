@@ -92,7 +92,15 @@ To deploy a verticle programmatically call the function `vertx.deployVerticle`. 
 
 To deploy a single instance of a verticle :
 
-    vertx.deployVerticle('my_verticle.js');    
+    vertx.deployVerticle('my_verticle.js');  
+    
+## Deploying a module programmatically
+
+You can also use `deployVerticle` to deploy an installed module, for example:
+
+    container.deployVerticle('mailer', config)
+    
+Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.        
     
 ## Passing configuration to a verticle programmatically   
   

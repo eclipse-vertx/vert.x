@@ -69,7 +69,20 @@
 <div>
 <div class="toc">
 <ul>
-<li><a href="#bus-modules">Bus Modules</a><ul>
+<li><a href="#modules">Modules</a><ul>
+<li><a href="#what-is-a-module-mod">What is a Module (mod) ?</a><ul>
+<li><a href="#modules-location">Modules location</a></li>
+<li><a href="#module-directory-structure">Module directory structure</a><ul>
+<li><a href="#module-descriptor">Module descriptor</a></li>
+<li><a href="#module-path">Module path</a></li>
+</ul>
+</li>
+<li><a href="#running-a-module-from-the-command-line">Running a module from the command line</a></li>
+<li><a href="#running-a-module-programmatically">Running a module programmatically</a></li>
+<li><a href="#module-working-directory">Module working directory</a></li>
+<li><a href="#creating-and-installing-your-own-module">Creating and installing your own module</a></li>
+</ul>
+</li>
 <li><a href="#what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</a><ul>
 <li><a href="#configuration">Configuration</a></li>
 <li><a href="#addresses">Addresses</a></li>
@@ -131,9 +144,69 @@
 </li>
 </ul>
 </div>
-<h1 id="bus-modules">Bus Modules</h1><br/>
+<h1 id="modules">Modules</h1><br/>
+<h2 id="what-is-a-module-mod">What is a Module (mod) ?</h2><br/>
+<p>Vert.x allows you to package up your applications or re-usable functionality into modules which can then be referenced by other applications or modules.</p>
+<p>For example, vert.x ships with several out of the box modules including a mailer, a MongoDB persistor and an authentication manager. You can also easily create your own modules.</p>
+<h3 id="modules-location">Modules location</h3><br/>
+<p>Modules, by default, live in the <code>mods</code> directory in the vert.x installation directory. If you want to put your modules elsewhere you can override this location by specifying an environment variable <code>VERTX_MODS</code> set to the absolute path of your modules directory before starting vert.x.</p>
+<p>Each module lives in its own child directory from the <code>mods</code> (or <code>VERTX_MODS</code>) directory. The name of the directory is the name of the module. Modules must not share a directory.</p>
+<p>If you have more than one version of the same module, you should suffix the name and with a hash sign <code>#</code> followed by the version number. For example, here we have two versions of the widget module:</p>
+<pre class="prettyprint">mods/some-module
+mods/widget#v1.0
+mods/widget#v1.1
+</pre>
+<h3 id="module-directory-structure">Module directory structure</h3><br/>
+<h4 id="module-descriptor">Module descriptor</h4><br/>
+<p>Inside the module directory you must provide a file called <code>mod.json</code> which contains some JSON which describes the module, for example:</p>
+<pre class="prettyprint">{
+    "main": "mailer.js"
+}
+</pre>
+<p>At minimum <code>mod.json</code> must contain a field <code>main</code> which specifies the main verticle to start the module. Main would be something like <code>myscript.groovy</code>, <code>app.rb</code>, <code>foo.js</code> or <code>org.acme.MyApp</code>. (See the chapter on "running vert.x" in the main manual for a description of what a main is.)</p>
+<p>If your main verticle is a worker verticle you must also specify the <code>worker</code> field with value <code>true</code>, otherwise it will be assumed it is not a worker.</p>
+<h4 id="module-path">Module path</h4><br/>
+<p>Any scripts or classes you place in the module directory will be available to the module (placed on the module path). If you have any jar dependencies you can also place these in a directory called <code>lib</code> and these will be added to the module path.</p>
+<p>Here's an example JS module:</p>
+<pre class="prettyprint">my-mod/mod.json
+my-mod/app.js
+my-mod/other-script.js
+my-mod/foo.json
+</pre>
+<p>In the above <code>app.js</code> is the main for the module. <code>other-script.js</code> and <code>foo.json</code> are scripts/resources used by the module.</p>
+<pre class="prettyprint">java-mod/mod.json
+java-mod/org/acme/MyMain.class
+java-mod/lib/other-jar.jar
+</pre>
+<p>The above is an example Java mod where <code>org/acme/MyMain.class</code> is the main, and <code>other-jar.jar</code> is a jar dependency of the module.</p>
+<p>You can of course mix and match multiple languages in a single module.</p>
+<h3 id="running-a-module-from-the-command-line">Running a module from the command line</h3><br/>
+<p>Modules are run like any other verticle - i.e. using the <code>vertx run</code> or <code>vertx deploy</code> commands. Please see the main manual for a full description of this.</p>
+<p>E.g.</p>
+<pre class="prettyprint">vertx run my-mod
+</pre>
+<p>Will run a module called <code>my-mod</code>  <br/>
+</p>
+<h3 id="running-a-module-programmatically">Running a module programmatically</h3><br/>
+<p>You run a module programmatically in the same way as you run any verticle programmatically. Please see the core manual for the appropriate language for a full description on how to do this.</p>
+<h3 id="module-working-directory">Module working directory</h3><br/>
+<p>When you run a module using <code>vertx run</code> or <code>vertx deploy</code> your actual process working directory is wherever you were when you executed the command.</p>
+<p>However the module will be located in the <code>mods</code> (or <code>VERTX_MODS</code>) directory. Consequently if your module contains static files - e.g. your module might be a web application that serves static files from the file system, then if your module expects the working directory to be set to module directory it won't find them!</p>
+<p>For example, let's say you have a simple webapp that has an HTTP server that serves an index.html which is packaged as a module:</p>
+<pre class="prettyprint">mods/my-web-app/server.js
+mods/my-web-app/web-root/index.html
+</pre>
+<p>And server.js serves the file with:</p>
+<pre class="prettyprint">req.response.sendFile('web-root/index.html');
+</pre>
+<p>In the above case the web server expects the working directory to be the module directory.</p>
+<p>To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :)  <br/>
+</p>
+<h3 id="creating-and-installing-your-own-module">Creating and installing your own module</h3><br/>
+<p>Creating your own module is simple, simply create your vert.x application as normal, then put it all in a directory whose name is the module name, and provide a <code>mod.json</code> file as described above.</p>
+<p>Then copy the entire directory to the <code>mods</code> directory (or <code>VERTX_MODS</code> if you are overriding the location).</p>
 <h2 id="what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</h2><br/>
-<p>A <em>busmod</em> is a verticle that communicates on the event bus with over verticles by sending JSON messages.</p>
+<p>A <em>busmod</em> is a specific type of module that communicates on the event bus with over verticles by sending JSON messages.</p>
 <p>Since it communicates only with JSON messages then the busmod is instantly usable by other verticles irrespective of which language they are written in, since all the supported languages allow sending and receiving JSON messages from the event bus. </p>
 <p>JSON is the <em>lingua franca</em> of vert.x</p>
 <p>You don't have to write your application modules as busmods but it's highly recommended you do since it will make them easily and consistently usable from other verticles.</p>

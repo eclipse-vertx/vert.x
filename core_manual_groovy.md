@@ -78,6 +78,14 @@ To deploy a single instance of a verticle:
 
 Where `main` is a String that represents the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby, Groovy or JavaScript verticle (e.g. my_script.rb or MyScript.js or MyScript.groovy) or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.
 
+## Deploying a module programmatically
+
+You can also use `deployVerticle` to deploy an installed module, for example:
+
+    container.deployVerticle("mailer", config)
+    
+Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.    
+
 ## Passing configuration to a verticle programmatically
 
 JSON configuration can be passed to a verticle that is deployed programmatically. For example:
