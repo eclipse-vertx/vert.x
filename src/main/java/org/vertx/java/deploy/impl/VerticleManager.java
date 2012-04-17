@@ -34,7 +34,6 @@ import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -58,7 +57,10 @@ public class VerticleManager {
   private final VertxInternal vertx;
   // deployment name --> deployment
   private final Map<String, Deployment> deployments = new HashMap();
-  private final File modRoot;
+  // The out of the box busmods dirs
+  private final File systemModRoot;
+  // The user mods dir
+  private final File userModRoot;
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
 
@@ -66,15 +68,19 @@ public class VerticleManager {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
+    String installDir = System.getProperty("vertx.install");
+    if (installDir == null) {
+      installDir = ".";
+    }
+    systemModRoot = new File(installDir, "mods");
     String modDir = System.getProperty("vertx.mods");
-    if (modDir == null || modDir.trim().equals("")) {
-      String installDir = System.getProperty("vertx.install");
-      if (installDir == null) {
-        installDir = ".";
+    if (modDir != null && !modDir.trim().equals("")) {
+      userModRoot = new File(modDir);
+      if (!userModRoot.exists()) {
+        throw new IllegalStateException("Module directory " + userModRoot + " does not exist");
       }
-      modRoot = new File(installDir, "mods");
     } else {
-      modRoot = new File(modDir);
+      userModRoot = null;
     }
   }
 
@@ -306,12 +312,20 @@ public class VerticleManager {
     return deploymentName;
   }
 
+  private String deployMod(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
+    // First we look in the system mod dir then in the user mod dir (if any)
+    String res = doDeployMod(systemModRoot, deployName, modName, config, instances, doneHandler);
+    if (res == null && userModRoot != null) {
+      res = doDeployMod(userModRoot, deployName, modName, config, instances, doneHandler);
+    }
+    return res;
+  }
+
   // TODO execute this as a blocking action so as not to block the caller
   // TODO cache mod info?
-  private String deployMod(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
-    File modDir = new File(modRoot, modName);
+  private String doDeployMod(File dir, String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
+    File modDir = new File(dir, modName);
     if (modDir.exists()) {
-
       String conf;
       try {
         conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
