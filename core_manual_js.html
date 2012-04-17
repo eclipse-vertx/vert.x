@@ -79,6 +79,7 @@
 </li>
 <li><a href="#deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</a><ul>
 <li><a href="#deploying-a-simple-verticle">Deploying a simple verticle</a></li>
+<li><a href="#deploying-a-module-programmatically">Deploying a module programmatically</a></li>
 <li><a href="#passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</a></li>
 <li><a href="#using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</a></li>
 <li><a href="#specifying-number-of-instances">Specifying number of instances</a></li>
@@ -347,6 +348,12 @@ logger.info("I am logging something");
 <p>To deploy a single instance of a verticle :</p>
 <pre class="prettyprint">vertx.deployVerticle('my_verticle.js');
 </pre>
+<h2 id="deploying-a-module-programmatically">Deploying a module programmatically</h2><br/>
+<p>You can also use <code>deployVerticle</code> to deploy an installed module, for example:</p>
+<pre class="prettyprint">container.deployVerticle('mailer', config)
+</pre>
+<p>Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.      <br/>
+</p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
 <p>JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the <code>vertx.getConfig</code> function. For example:</p>
 <pre class="prettyprint">var config = { name: 'foo', age: 234 };

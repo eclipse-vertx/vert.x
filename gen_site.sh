@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ./gen_section.sh manual.md manual_templ.html manual.html
-./gen_section.sh bus_mods_manual.md bus_mods_manual_templ.html bus_mods_manual.html
+./gen_section.sh mods_manual.md mods_manual_templ.html mods_manual.html
 ./gen_section.sh core_manual_js.md core_manual_js_templ.html core_manual_js.html
 ./gen_section.sh core_manual_ruby.md core_manual_ruby_templ.html core_manual_ruby.html
 ./gen_section.sh core_manual_java.md core_manual_java_templ.html core_manual_java.html

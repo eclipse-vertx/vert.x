@@ -39,7 +39,7 @@
     <span class="title">HttpClientResponse</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -201,30 +201,6 @@ Get a header value.
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#header_names-instance_method" title="#header_names (instance method)">- (Set) <strong>header_names</strong> </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>
-Get all the header names from the response.
-</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
       <a href="#headers-instance_method" title="#headers (instance method)">- (Hash) <strong>headers</strong> </a>
     
 
@@ -264,54 +240,6 @@ Get all the headers in the response.
   
     <span class="summary_desc"><div class='inline'><p>
 The HTTP status code of the response.
-</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#trailer-instance_method" title="#trailer (instance method)">- (Object) <strong>trailer</strong>(key) </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>
-Returns a trailer value, or nil if no such trailer exists.
-</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#trailer_names-instance_method" title="#trailer_names (instance method)">- (Set) <strong>trailer_names</strong> </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>
-Get all the trailer names from the response.
 </p>
 </div></span>
   
@@ -386,12 +314,12 @@ large bodies
       <pre class="lines">
 
 
-523
-524
-525</pre>
+465
+466
+467</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 523</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 465</span>
 
 <span class='def def kw'>def</span> <span class='body_handler identifier id'>body_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='bodyHandler identifier id'>bodyHandler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
@@ -466,92 +394,15 @@ the header value.
       <pre class="lines">
 
 
-437
-438
-439</pre>
+433
+434
+435</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 437</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 433</span>
 
 <span class='def def kw'>def</span> <span class='header identifier id'>header</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getHeader identifier id'>getHeader</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-<span class='end end kw'>end</span>
-</pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <p class="signature " id="header_names-instance_method">
-  
-    - (<tt>Set</tt>) <strong>header_names</strong> 
-  
-
-  
-</p><div class="docstring">
-  <div class="discussion">
-    <p>
-Get all the header names from the response.
-</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <h3>Returns:</h3>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Set</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-. A Set of header names
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-461
-462
-463
-464
-465
-466
-467
-468
-469
-470
-471
-472</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 461</span>
-
-<span class='def def kw'>def</span> <span class='header_names identifier id'>header_names</span>
-  <span class='if if kw'>if</span> <span class='@header_names ivar id'>@header_names</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
-    <span class='names identifier id'>names</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getHeaderNames identifier id'>getHeaderNames</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='names identifier id'>names</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@header_names ivar id'>@header_names</span> <span class='assign token'>=</span> <span class='Set constant id'>Set</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='name identifier id'>name</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@header_names ivar id'>@header_names</span><span class='dot token'>.</span><span class='add identifier id'>add</span><span class='lparen token'>(</span><span class='name identifier id'>name</span><span class='rparen token'>)</span>
-    <span class='end end kw'>end</span>
-  <span class='end end kw'>end</span>
-  <span class='@header_names ivar id'>@header_names</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -606,31 +457,19 @@ comma, as specified by
       <pre class="lines">
 
 
+442
+443
+444
+445
 446
-447
-448
-449
-450
-451
-452
-453
-454
-455
-456
-457</pre>
+447</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 446</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 442</span>
 
 <span class='def def kw'>def</span> <span class='headers identifier id'>headers</span>
-  <span class='if if kw'>if</span> <span class='@headers ivar id'>@headers</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
-    <span class='hdrs identifier id'>hdrs</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getAllHeaders identifier id'>getAllHeaders</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='hdrs identifier id'>hdrs</span><span class='dot token'>.</span><span class='entrySet identifier id'>entrySet</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='lbrace token'>{</span><span class='rbrace token'>}</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='entry identifier id'>entry</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@headers ivar id'>@headers</span><span class='lbrack token'>[</span><span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getKey identifier id'>getKey</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getValue identifier id'>getValue</span>
-    <span class='end end kw'>end</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@headers ivar id'>@headers</span>
+    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='headers identifier id'>headers</span>
   <span class='end end kw'>end</span>
   <span class='@headers ivar id'>@headers</span>
 <span class='end end kw'>end</span>
@@ -683,161 +522,15 @@ the HTTP status code of the response.
       <pre class="lines">
 
 
-430
-431
-432</pre>
+426
+427
+428</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 430</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 426</span>
 
 <span class='def def kw'>def</span> <span class='status_code identifier id'>status_code</span>
   <span class='@status_code ivar id'>@status_code</span>
-<span class='end end kw'>end</span>
-</pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <p class="signature " id="trailer-instance_method">
-  
-    - (<tt>Object</tt>) <strong>trailer</strong>(key) 
-  
-
-  
-</p><div class="docstring">
-  <div class="discussion">
-    <p>
-Returns a trailer value, or nil if no such trailer exists. Trailers will
-only be available in the response if the server has sent a HTTP chunked
-response where headers have been inserted by the server on the last chunk.
-In such a case they won&#8217;t be available on the client until the last
-chunk has been received.
-</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <h3>Parameters:</h3>
-<ul class="param">
-  
-    <li>
-      
-        <span class='name'>key.</span>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-The key of the trailer.
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-479
-480
-481</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 479</span>
-
-<span class='def def kw'>def</span> <span class='trailer identifier id'>trailer</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getTrailer identifier id'>getTrailer</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-<span class='end end kw'>end</span>
-</pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <p class="signature " id="trailer_names-instance_method">
-  
-    - (<tt>Set</tt>) <strong>trailer_names</strong> 
-  
-
-  
-</p><div class="docstring">
-  <div class="discussion">
-    <p>
-Get all the trailer names from the response. Trailers will only be
-available in the response if the server has sent a HTTP chunked response
-where headers have been inserted by the server on the last chunk. In such a
-case they won&#8217;t be available on the client until the last chunk has
-been received.
-</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <h3>Returns:</h3>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Set</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-. A Set of trailer names
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-509
-510
-511
-512
-513
-514
-515
-516
-517
-518
-519
-520</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 509</span>
-
-<span class='def def kw'>def</span> <span class='trailer_names identifier id'>trailer_names</span>
-  <span class='if if kw'>if</span> <span class='@trailer_names ivar id'>@trailer_names</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
-    <span class='names identifier id'>names</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getTrailerNames identifier id'>getTrailerNames</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='names identifier id'>names</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@trailer_names ivar id'>@trailer_names</span> <span class='assign token'>=</span> <span class='Set constant id'>Set</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='name identifier id'>name</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@trailer_names ivar id'>@trailer_names</span><span class='dot token'>.</span><span class='add identifier id'>add</span><span class='lparen token'>(</span><span class='name identifier id'>name</span><span class='rparen token'>)</span>
-    <span class='end end kw'>end</span>
-  <span class='end end kw'>end</span>
-  <span class='@trailer_names ivar id'>@trailer_names</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -896,31 +589,19 @@ last chunk has been received.
       <pre class="lines">
 
 
-491
-492
-493
-494
-495
-496
-497
-498
-499
-500
-501
-502</pre>
+457
+458
+459
+460
+461
+462</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 491</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 457</span>
 
 <span class='def def kw'>def</span> <span class='trailers identifier id'>trailers</span>
-  <span class='if if kw'>if</span> <span class='@trailers ivar id'>@trailers</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
-    <span class='trlrs identifier id'>trlrs</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getAllTrailers identifier id'>getAllTrailers</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='trlrs identifier id'>trlrs</span><span class='dot token'>.</span><span class='entrySet identifier id'>entrySet</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@trailers ivar id'>@trailers</span> <span class='assign token'>=</span> <span class='lbrace token'>{</span><span class='rbrace token'>}</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='entry identifier id'>entry</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@trailers ivar id'>@trailers</span><span class='lbrack token'>[</span><span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getKey identifier id'>getKey</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getValue identifier id'>getValue</span>
-    <span class='end end kw'>end</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@trailers ivar id'>@trailers</span>
+    <span class='@trailers ivar id'>@trailers</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='trailers identifier id'>trailers</span>
   <span class='end end kw'>end</span>
   <span class='@trailers ivar id'>@trailers</span>
 <span class='end end kw'>end</span>
@@ -935,7 +616,7 @@ last chunk has been received.
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:39 2012 by 
+  Generated on Tue Apr 17 13:34:14 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

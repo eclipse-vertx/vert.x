@@ -1,10 +1,108 @@
 [TOC]
 
-# Bus Modules
+# Modules
+
+## What is a Module (mod) ?
+
+Vert.x allows you to package up your applications or re-usable functionality into modules which can then be referenced by other applications or modules.
+
+For example, vert.x ships with several out of the box modules including a mailer, a MongoDB persistor and an authentication manager. You can also easily create your own modules.
+
+### Modules location
+
+Modules, by default, live in the `mods` directory in the vert.x installation directory. Vert.x comes with several modules pre-installed and they reside here.
+
+Vert.x always first searches for modules in the `mods` directory of the installation followed by the directory given by the environment variable `VERTX_MODS`, if specified.
+
+You can put your own modules in the `mods` directory if you like, but it is highly recommended you put them in some other directory (e.g. `~/vertx-mods`) so that you don't overwrite them when you upgrade vert.x.
+
+If you do decide to put them somewhere else, make sure `VERTX_MODS` points to that directory.
+
+Each module lives in its own child directory of the module directory. The name of the directory is the name of the module. Modules must not share a directory.
+
+If you have more than one version of the same module, you should suffix the name and with a hash sign `#` followed by the version number. For example, here we have two versions of the widget module:
+
+    mods/some-module
+    mods/widget#v1.0
+    mods/widget#v1.1
+
+### Module directory structure
+
+#### Module descriptor
+
+Inside the module directory you must provide a file called `mod.json` which contains some JSON which describes the module, for example:
+
+    {
+        "main": "mailer.js"
+    }
+    
+At minimum `mod.json` must contain a field `main` which specifies the main verticle to start the module. Main would be something like `myscript.groovy`, `app.rb`, `foo.js` or `org.acme.MyApp`. (See the chapter on "running vert.x" in the main manual for a description of what a main is.)
+
+If your main verticle is a worker verticle you must also specify the `worker` field with value `true`, otherwise it will be assumed it is not a worker.
+
+#### Module path
+
+Any scripts or classes you place in the module directory will be available to the module (placed on the module path). If you have any jar dependencies you can also place these in a directory called `lib` and these will be added to the module path.
+
+Here's an example JS module:
+
+    my-mod/mod.json
+    my-mod/app.js
+    my-mod/other-script.js
+    my-mod/foo.json
+    
+In the above `app.js` is the main for the module. `other-script.js` and `foo.json` are scripts/resources used by the module.
+
+    java-mod/mod.json
+    java-mod/org/acme/MyMain.class
+    java-mod/lib/other-jar.jar
+    
+The above is an example Java mod where `org/acme/MyMain.class` is the main, and `other-jar.jar` is a jar dependency of the module.
+
+You can of course mix and match multiple languages in a single module.
+
+### Running a module from the command line
+
+Modules are run like any other verticle - i.e. using the `vertx run` or `vertx deploy` commands. Please see the main manual for a full description of this.
+
+E.g.
+
+    vertx run my-mod
+    
+Will run a module called `my-mod`    
+
+### Running a module programmatically
+
+You run a module programmatically in the same way as you run any verticle programmatically. Please see the core manual for the appropriate language for a full description on how to do this.
+
+### Module working directory
+
+When you run a module using `vertx run` or `vertx deploy` your actual process working directory is wherever you were when you executed the command.
+
+However the module will be located in the `mods` (or `VERTX_MODS`) directory. Consequently if your module contains static files - e.g. your module might be a web application that serves static files from the file system, then if your module expects the working directory to be set to module directory it won't find them!
+
+For example, let's say you have a simple webapp that has an HTTP server that serves an index.html which is packaged as a module:
+
+    mods/my-web-app/server.js
+    mods/my-web-app/web-root/index.html
+
+And server.js serves the file with:
+
+    req.response.sendFile('web-root/index.html');
+    
+In the above case the web server expects the working directory to be the module directory.
+
+To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :)    
+
+### Creating and installing your own module
+
+Creating your own module is simple, simply create your vert.x application as normal, then put it all in a directory whose name is the module name, and provide a `mod.json` file as described above.
+
+Then copy the entire directory to the module root directory (i.e. the `mods` directory in the install or your own module root given by `VERTX_MODS`)
 
 ## What is a Bus Module (busmod) ?
 
-A *busmod* is a verticle that communicates on the event bus with over verticles by sending JSON messages.
+A *busmod* is a specific type of module that communicates on the event bus with over verticles by sending JSON messages.
 
 Since it communicates only with JSON messages then the busmod is instantly usable by other verticles irrespective of which language they are written in, since all the supported languages allow sending and receiving JSON messages from the event bus. 
 
@@ -40,13 +138,21 @@ The vert.x distribution contains several out-of-the-box budmods that you can use
 
 #### Instantiating out-of-the-box busmods
 
-You can instantiate any out of the box busmo from the command line using `vertx run` or `vertx deploy` like any other verticle, e.g.
+You can instantiate any out of the box busmo from the command line using `vertx run` or `vertx deploy` like any other verticle, i.e.
 
     vertx run <bus_mode_name> -conf <config_file>
     
+For example:
+
+    vertx run mongo-persistor -conf my_conf.json    
+    
 Or programmatically (e.g. in JavaScript)
 
-    vertx.deployWorkerVerticle(<bus_mode_name>, <config>);        
+    vertx.deployVerticle(<bus_mode_name>, <config>);        
+    
+For example:
+
+    vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
 
 ### MongoDB Persistor
 
@@ -60,13 +166,11 @@ This busmod requires a MongoDB server to be available on the network.
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.persistor.MongoPersistor`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/mongo_persistor.js`
+The module name is `mongo-persistor`.
 
 #### Configuration
 
-The MongoDB busmod requires the following configuration:
+The mongo-persistor busmod requires the following configuration:
 
     {
         "address": <address>,
@@ -363,11 +467,7 @@ This busmod requires a mail server to be available.
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.mailer.Mailer`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/mailer.js`.
-
-Mailer is a worker busmod and must be started as a worker verticle.
+The module name is `mailer`.
 
 #### Configuration
 
@@ -474,10 +574,7 @@ This busmod requires a MongoDB persistor busmod to be running to allow searching
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.auth.AuthManager`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/auth_mgr.js`
-
+The module name is `auth-mgr`.
 
 #### Configuration
 
@@ -613,10 +710,7 @@ If this queue is persistent, the busmod requires a MongoDB persistor busmod to b
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.workqueue.WorkQueue`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/work_queue.js`
-
+The module name is `work-queue`.
 
 #### Configuration
 

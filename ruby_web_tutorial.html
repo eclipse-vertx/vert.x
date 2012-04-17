@@ -131,15 +131,15 @@ tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;
 <p>On the left hand bar there's a form which allows you to login.  <br/>
 </p>
 <h3 id="step-4-get-the-persistor-up-and-running">Step 4. Get the Persistor up and running</h3><br/>
-<p>Vert.x ships with an out of the box bus module (busmod) called <code>MongoPersistor</code>. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.</p>
-<p>The <code>MongoPersistor</code> busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the busmods manual).</p>
+<p>Vert.x ships with an out of the box bus module (busmod) called <code>mongo-persistor</code>. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.</p>
+<p>The <code>mongo-persistor</code> busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the modules manual).</p>
 <p>We're going to use a persistor in our application for a few different things:</p>
 <ul>
 <li>Storing the catalogue of track data.</li>
 <li>Storing usernames and passwords of users</li>
 <li>Storing orders</li>
 </ul>
-<p>You could start a persistor on the command line by calling <code>vertx run busmods/mongo_persistor.rb</code> but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.</p>
+<p>You could start a persistor on the command line by calling <code>vertx run mongo-persistor</code> but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.</p>
 <p>It can also contain the JSON configuration for our application. All verticles can be configured using JSON.</p>
 <p>Open a text editor and copy in the following:</p>
 <pre class="prettyprint">require('vertx')
@@ -153,7 +153,7 @@ persistor_conf = {
 
 # Deploy the busmods
 
-Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf);
+Vertx.deploy_worker_verticle('mongo-persistor', persistor_conf);
 
 # Start the web server
 
@@ -256,7 +256,7 @@ Vertx::SockJSServer.new(@server).bridge({'prefix' =&gt; '/eventbus'},
 <pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/ruby/webapp/static_data.rb .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>app.rb</code> as follows:</p>
-<pre class="prettyprint">Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', app_conf['persistor_conf']) do
+<pre class="prettyprint">Vertx.deploy_worker_verticle('mongo-persistor, persistor_conf) do
     load('static_data.rb')
 end
 </pre>
@@ -305,7 +305,7 @@ end
 <p>Once we get the albums we give them to knockout.js to render on the view.</p>
 <h2 id="step-8-handling-login">Step 8. Handling Login</h2><br/>
 <p>In order to actually send an order, you need to be logged in so we know who has placed the order.</p>
-<p>Vert.x ships with an out of the box busmod called <code>auth_mgr.js</code>. This is a very simple authentication manager which sits on the event bus and provides a couple of services:</p>
+<p>Vert.x ships with an out of the box busmod called <code>auth-mgr</code>. This is a very simple authentication manager which sits on the event bus and provides a couple of services:</p>
 <ul>
 <li>
 <p>Login. This receives a username and password, validates it in the database, and if it is ok, a session is created and the session id sent back in the reply message.</p>
@@ -317,7 +317,7 @@ end
 <p>For detailed information on this component please consult the busmods manual.</p>
 <p>We're going to add an authentication manager component to our application so the user can login.</p>
 <p>Open up app.rb again, and add the following line:</p>
-<pre class="prettyprint">Vertx.deploy_verticle('busmods/auth_mgr.rb', app_conf['auth_mgr_conf'])
+<pre class="prettyprint">Vertx.deploy_verticle('auth-mgr', auth_mgr_conf)
 </pre>
 <p>Also add the following to the app.rb:</p>
 <pre class="prettyprint">auth_mgr_conf = {
@@ -343,11 +343,11 @@ auth_mgr_conf = {
 
 # Deploy the busmods
 
-Vertx.deploy_worker_verticle('busmods/mongo_persistor.rb', persistor_conf) do
+Vertx.deploy_worker_verticle('mongo-persistor', persistor_conf) do
     load('static_data.rb')
 end
 
-Vertx.deploy_verticle('busmods/auth_mgr.rb', auth_mgr_conf)
+Vertx.deploy_verticle('auth-mgr', auth_mgr_conf)
 
 # Start the web server
 
@@ -550,9 +550,30 @@ Vertx.deploy_verticle('web_server.rb', nil, 32)
 <p>You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.</p>
 <p>Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called <code>WorkQueue</code> which allows you to easily create queues of work can be shared out amongst many processors.</p>
 <p>Please consult the busmods manual for more information on this.</p>
+<h3 id="packaging-as-a-module">Packaging as a module</h3><br/>
+<p>Vert.x applications and other functionality can be installed as modules. This makes them easier to manage and allow them to be easily referenced from other applications. For detailed information on modules, please see the modules manual.</p>
+<p>Let's package our web application as a module.</p>
+<p>By default modules live in the <code>mods</code> directory from the vert.x installation directory, but you can also set an environment variable <code>VERTX_MODS</code> to a directory of your choice where modules will be located. In this tutorial we'll just put the module in the <code>mods</code> directory for the sake of simplicity.</p>
+<p>To install the app as a module we'll just copy the tutorial directory into the <code>mods</code> dir</p>
+<pre class="prettyprint">cd ..
+cp -r tutorial $VERTX_INSTALL/mods/webapp
+</pre>
+<p>Now create a file called <code>mod.json</code> which contains the following:</p>
+<pre class="prettyprint">{
+    "main": "app.rb"
+}
+</pre>
+<p>And save it in the directory $VERTX_INSTALL/mods/webapp</p>
+<p>That's it. The module is installed!</p>
+<p>To run the module (first make sure the web app isn't already running, if so CTRL-C).
+Then go to another console... you can be in any directory and type:</p>
+<pre class="prettyprint">vertx run webapp
+</pre>
+<p>The web application will now be running. Go to <code>https://localhost:8080</code> to see.      <br/>
+</p>
 <h2 id="final-thoughts">Final Thoughts</h2><br/>
 <p>This tutorial gives you just a taste of the kinds of things you can do with vert.x. </p>
-<p>With just a couple of handfuls of code you have created a real, scalable web-app.</p>
+<p>With a small amount of code you've created a real, scalable web-app.</p>
 <p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
       </div>
     </div>

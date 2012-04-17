@@ -166,7 +166,7 @@ Whilst vert.x core is fairly static, we envisage that a wide range of busmods wi
 
 We also encourage the community to create and contribute their own busmods for others to use.
 
-For more information on busmods please see the busmod manual.
+For more information on busmods please see the modules manual.
 
 # Running vert.x
 
@@ -180,13 +180,17 @@ If you just type `vertx` at a command line you can see the different options the
 
 The command `vertx run` is used to start a vert.x verticle in *its own instance* of a vert.x server. This is the simplest way to run a verticle.
 
-At minimum `vertx run` takes a single parameter - the name of the main to run. If it's a JavaScript or Ruby verticle then it's just the name of the script, e.g. `server.js` or `server.rb`. (it doesn't have to be called server, you can name it anything as long as it has the right extension). If it's Java the main is the fully qualified class name of the main classs.
+At minimum `vertx run` takes a single parameter - the name of the main or module to run.
+
+If you're running a local verticle then if it's a JavaScript or Ruby verticle then it's just the name of the script, e.g. `server.js` or `server.rb`. (it doesn't have to be called server, you can name it anything as long as it has the right extension). If it's Java the main is the fully qualified class name of the main classs.
+
+If you're running an installed module (see the modules manual for more information on modules), then `vertx run` takes the name of the module to run.
 
 The `vertx run` command can take a few optional parameters, they are:
 
 * `-config <config_file>` Provide some configuration to the verticle. `config_file` is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.
 
-* `-cp <path>` The path on which to search for the main and any other resources used by the verticle. This defaults to `.` (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by `:` (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+* `-cp <path>` The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to `.` (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by `:` (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be `-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar`
     Always use the path to reference any resources that your verticle requires. Please, **do not** put them on the system classpath as this can cause isolation issues between deployed verticles.
     
@@ -204,15 +208,11 @@ Here are some examples of `vertx run`:
 
 Run a JavaScript verticle server.js with default settings
 
-<pre class="prettyprint lang-html">
-vertx run server.js
-</pre>
+    vertx run server.js
     
 Run 10 instances of a Java verticle specifying classpath
 
-<pre class="prettyprint lang-html">
-vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
-</pre>
+    vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
     
 Run 20 instances of a ruby worker verticle    
     
@@ -235,6 +235,14 @@ Where `my_vert.conf` might contain something like:
     }    
     
 The config will be available inside the verticle via the core API.    
+
+Run an installed module called `my-mod`
+
+    vertx run my-mod
+    
+Run an installed module called `other-mod` specifying number of instances and some config
+
+    vertx run other-mod -instances 10 -config other-mod.conf    
     
 ## Running a verticle in a standalone vert.x server
 

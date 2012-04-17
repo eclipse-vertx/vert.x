@@ -39,7 +39,7 @@
     <span class="title">Buffer</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -103,10 +103,6 @@ written to it.
 Buffers are used in many places in vert.x, for example to read/write data
 to/from <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span>, <span class='object_link'><a href="AsyncFile.html" title="Vertx::AsyncFile (class)">AsyncFile</a></span>, <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>, <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span>,
 <span class='object_link'><a href="HttpClientResponse.html" title="Vertx::HttpClientResponse (class)">HttpClientResponse</a></span>, <span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span>, <span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span> etc.
-</p>
-<p>
-Buffer instances should always be created using the factory methods
-<span class='object_link'><a href="#create-class_method" title="Vertx::Buffer.create (method)">create</a></span> and <span class='object_link'><a href="#create_from_str-class_method" title="Vertx::Buffer.create_from_str (method)">create_from_str</a></span>.
 </p>
 <p>
 There are two ways to write data to a Buffer: The first method involves
@@ -625,7 +621,8 @@ Return a String representation of the buffer.
   <div class="discussion">
     <p>
 Creates a new empty buffer. The <span class='object_link'><a href="#length-instance_method" title="Vertx::Buffer#length (method)">#length</a></span> of the buffer immediately after
-creation will be zero.
+creation will be zero. to initially allocate to the buffer to prevent
+excessive automatic re-allocations as data is written to it.
 </p>
 
 
@@ -648,9 +645,7 @@ creation will be zero.
       
         &mdash;
         <div class='inline'><p>
-is a hint to the system for how much memory to initially allocate to the
-buffer to prevent excessive automatic re-allocations as data is written to
-it.
+is a hint to the system for how much memory
 </p>
 </div>
       
@@ -664,12 +659,12 @@ it.
       <pre class="lines">
 
 
+47
 48
-49
-50</pre>
+49</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 48</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 47</span>
 
 <span class='def def kw'>def</span> <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='create identifier id'>create</span><span class='lparen token'>(</span><span class='initial_size_hint identifier id'>initial_size_hint</span> <span class='assign token'>=</span> <span class='integer val'>0</span><span class='rparen token'>)</span>
   <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='initial_size_hint identifier id'>initial_size_hint</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -744,12 +739,12 @@ Encoding to use. Defaults to &quot;UTF-8&quot;
       <pre class="lines">
 
 
+54
 55
-56
-57</pre>
+56</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 55</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 54</span>
 
 <span class='def def kw'>def</span> <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='create_from_str identifier id'>create_from_str</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='rparen token'>)</span>
   <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -831,13 +826,13 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+127
 128
 129
-130
-131</pre>
+130</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 128</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 127</span>
 
 <span class='def def kw'>def</span> <span class='append_buffer identifier id'>append_buffer</span><span class='lparen token'>(</span><span class='buff identifier id'>buff</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='appendBuffer identifier id'>appendBuffer</span><span class='lparen token'>(</span><span class='buff identifier id'>buff</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -932,6 +927,7 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+136
 137
 138
 139
@@ -945,11 +941,10 @@ a reference to self so multiple operations can be appended together.
 147
 148
 149
-150
-151</pre>
+150</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 137</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 136</span>
 
 <span class='def def kw'>def</span> <span class='append_fixnum identifier id'>append_fixnum</span><span class='lparen token'>(</span><span class='num identifier id'>num</span><span class='comma token'>,</span> <span class='bytes identifier id'>bytes</span><span class='rparen token'>)</span>
   <span class='case case kw'>case</span> <span class='bytes identifier id'>bytes</span>
@@ -1055,6 +1050,7 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+156
 157
 158
 159
@@ -1063,11 +1059,10 @@ a reference to self so multiple operations can be appended together.
 162
 163
 164
-165
-166</pre>
+165</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 157</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 156</span>
 
 <span class='def def kw'>def</span> <span class='append_float identifier id'>append_float</span><span class='lparen token'>(</span><span class='num identifier id'>num</span><span class='comma token'>,</span> <span class='bytes identifier id'>bytes</span><span class='rparen token'>)</span>
   <span class='case case kw'>case</span> <span class='bytes identifier id'>bytes</span>
@@ -1169,13 +1164,13 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+171
 172
 173
-174
-175</pre>
+174</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 172</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 171</span>
 
 <span class='def def kw'>def</span> <span class='append_str identifier id'>append_str</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='appendString identifier id'>appendString</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -1230,12 +1225,12 @@ the copy
       <pre class="lines">
 
 
+240
 241
-242
-243</pre>
+242</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 241</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 240</span>
 
 <span class='def def kw'>def</span> <span class='copy identifier id'>copy</span>
   <span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='copy identifier id'>copy</span><span class='lparen token'>(</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1331,13 +1326,13 @@ the copy
       <pre class="lines">
 
 
+119
 120
 121
-122
-123</pre>
+122</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 120</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 119</span>
 
 <span class='def def kw'>def</span> <span class='get_buffer identifier id'>get_buffer</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='end_pos identifier id'>end_pos</span><span class='rparen token'>)</span>
   <span class='j_buff identifier id'>j_buff</span> <span class='assign token'>=</span> <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='getBuffer identifier id'>getBuffer</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='end_pos identifier id'>end_pos</span><span class='rparen token'>)</span>
@@ -1413,12 +1408,12 @@ the byte
       <pre class="lines">
 
 
+68
 69
-70
-71</pre>
+70</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 69</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 68</span>
 
 <span class='def def kw'>def</span> <span class='get_byte identifier id'>get_byte</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='getByte identifier id'>getByte</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='rparen token'>)</span>
@@ -1512,6 +1507,7 @@ the FixNum
       <pre class="lines">
 
 
+76
 77
 78
 79
@@ -1524,11 +1520,10 @@ the FixNum
 86
 87
 88
-89
-90</pre>
+89</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 77</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 76</span>
 
 <span class='def def kw'>def</span> <span class='get_fixnum identifier id'>get_fixnum</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='bytes identifier id'>bytes</span><span class='rparen token'>)</span>
   <span class='case case kw'>case</span> <span class='bytes identifier id'>bytes</span>
@@ -1633,6 +1628,7 @@ the Float
       <pre class="lines">
 
 
+95
 96
 97
 98
@@ -1641,11 +1637,10 @@ the Float
 101
 102
 103
-104
-105</pre>
+104</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 96</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 95</span>
 
 <span class='def def kw'>def</span> <span class='get_float identifier id'>get_float</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='bytes identifier id'>bytes</span><span class='rparen token'>)</span>
   <span class='case case kw'>case</span> <span class='bytes identifier id'>bytes</span>
@@ -1763,12 +1758,12 @@ the String
       <pre class="lines">
 
 
+111
 112
-113
-114</pre>
+113</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 112</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 111</span>
 
 <span class='def def kw'>def</span> <span class='get_string identifier id'>get_string</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='end_pos identifier id'>end_pos</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>'UTF-8'</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='getString identifier id'>getString</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='end_pos identifier id'>end_pos</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -1822,12 +1817,12 @@ the length of this buffer, in bytes.
       <pre class="lines">
 
 
+234
 235
-236
-237</pre>
+236</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 235</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 234</span>
 
 <span class='def def kw'>def</span> <span class='length identifier id'>length</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='length identifier id'>length</span>
@@ -1924,13 +1919,13 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+218
 219
 220
-221
-222</pre>
+221</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 219</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 218</span>
 
 <span class='def def kw'>def</span> <span class='set_buffer identifier id'>set_buffer</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='buff identifier id'>buff</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='setBytes identifier id'>setBytes</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='buff identifier id'>buff</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -2048,6 +2043,7 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+181
 182
 183
 184
@@ -2061,11 +2057,10 @@ a reference to self so multiple operations can be appended together.
 192
 193
 194
-195
-196</pre>
+195</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 182</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 181</span>
 
 <span class='def def kw'>def</span> <span class='set_fixnum identifier id'>set_fixnum</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='num identifier id'>num</span><span class='comma token'>,</span> <span class='bytes identifier id'>bytes</span><span class='rparen token'>)</span>
   <span class='case case kw'>case</span> <span class='bytes identifier id'>bytes</span>
@@ -2194,6 +2189,7 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+202
 203
 204
 205
@@ -2203,11 +2199,10 @@ a reference to self so multiple operations can be appended together.
 209
 210
 211
-212
-213</pre>
+212</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 203</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 202</span>
 
 <span class='def def kw'>def</span> <span class='set_float identifier id'>set_float</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='num identifier id'>num</span><span class='comma token'>,</span> <span class='bytes identifier id'>bytes</span><span class='rparen token'>)</span>
   <span class='case case kw'>case</span> <span class='bytes identifier id'>bytes</span>
@@ -2328,13 +2323,13 @@ a reference to self so multiple operations can be appended together.
       <pre class="lines">
 
 
+228
 229
 230
-231
-232</pre>
+231</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 229</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 228</span>
 
 <span class='def def kw'>def</span> <span class='set_string identifier id'>set_string</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>'UTF-8'</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='setString identifier id'>setString</span><span class='lparen token'>(</span><span class='pos identifier id'>pos</span><span class='comma token'>,</span> <span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -2412,12 +2407,12 @@ a String representation of the buffer.
       <pre class="lines">
 
 
+61
 62
-63
-64</pre>
+63</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 62</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/buffer.rb', line 61</span>
 
 <span class='def def kw'>def</span> <span class='to_s identifier id'>to_s</span><span class='lparen token'>(</span><span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='rparen token'>)</span>
   <span class='@buffer ivar id'>@buffer</span><span class='dot token'>.</span><span class='toString identifier id'>toString</span><span class='lparen token'>(</span><span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -2433,7 +2428,7 @@ a String representation of the buffer.
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:40 2012 by 
+  Generated on Tue Apr 17 13:34:15 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

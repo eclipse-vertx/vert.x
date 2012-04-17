@@ -1,8 +1,4 @@
 org.vertx.java.busmods
-org.vertx.java.busmods.auth
-org.vertx.java.busmods.mailer
-org.vertx.java.busmods.persistor
-org.vertx.java.busmods.workqueue
 org.vertx.java.core
 org.vertx.java.core.buffer
 org.vertx.java.core.eventbus
@@ -14,6 +10,5 @@ org.vertx.java.core.net
 org.vertx.java.core.parsetools
 org.vertx.java.core.shareddata
 org.vertx.java.core.sockjs
-org.vertx.java.core.stdio
 org.vertx.java.core.streams
 org.vertx.java.deploy

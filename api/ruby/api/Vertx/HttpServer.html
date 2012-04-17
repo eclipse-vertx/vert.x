@@ -39,7 +39,7 @@
     <span class="title">HttpServer</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -99,8 +99,7 @@
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
     <p>
-An HTTP server. The server supports both HTTP requests and HTML5 websockets
-and passes these to the user via the appropriate handlers.
+An HTTP and websockets server
 </p>
 
 
@@ -349,15 +348,15 @@ Create a new HttpServer
       <pre class="lines">
 
 
+29
 30
-31
-32</pre>
+31</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 30</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 29</span>
 
 <span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span>
-  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='http identifier id'>http</span><span class='dot token'>.</span><span class='HttpServer constant id'>HttpServer</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='createHttpServer identifier id'>createHttpServer</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -421,13 +420,13 @@ connecting clients, if they
       <pre class="lines">
 
 
+68
 69
 70
-71
-72</pre>
+71</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 69</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 68</span>
 
 <span class='def def kw'>def</span> <span class='client_auth_required= identifier id'>client_auth_required=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setClientAuthRequired identifier id'>setClientAuthRequired</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
@@ -463,12 +462,12 @@ Close the server. The handler will be called when the close is complete.
       <pre class="lines">
 
 
+74
 75
-76
-77</pre>
+76</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 75</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 74</span>
 
 <span class='def def kw'>def</span> <span class='close identifier id'>close</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='close identifier id'>close</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
@@ -541,13 +540,13 @@ The host name or ip address to listen on.
       <pre class="lines">
 
 
+59
 60
 61
-62
-63</pre>
+62</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 60</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 59</span>
 
 <span class='def def kw'>def</span> <span class='listen identifier id'>listen</span><span class='lparen token'>(</span><span class='port identifier id'>port</span><span class='comma token'>,</span> <span class='host identifier id'>host</span> <span class='assign token'>=</span> <span class='string val'>&quot;0.0.0.0&quot;</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='listen identifier id'>listen</span><span class='lparen token'>(</span><span class='port identifier id'>port</span><span class='comma token'>,</span> <span class='host identifier id'>host</span><span class='rparen token'>)</span>
@@ -625,14 +624,14 @@ A block to be used as the handler
       <pre class="lines">
 
 
+37
 38
 39
 40
-41
-42</pre>
+41</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 38</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 37</span>
 
 <span class='def def kw'>def</span> <span class='request_handler identifier id'>request_handler</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
@@ -711,17 +710,17 @@ A block to be used as the handler
       <pre class="lines">
 
 
+47
 48
 49
 50
 51
 52
 53
-54
-55</pre>
+54</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 48</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 47</span>
 
 <span class='def def kw'>def</span> <span class='websocket_handler identifier id'>websocket_handler</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
@@ -742,7 +741,7 @@ A block to be used as the handler
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:38 2012 by 
+  Generated on Tue Apr 17 13:34:13 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

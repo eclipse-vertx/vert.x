@@ -77,6 +77,7 @@
 </li>
 <li><a href="#deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</a><ul>
 <li><a href="#deploying-a-simple-verticle">Deploying a simple verticle</a></li>
+<li><a href="#deploying-a-module-programmatically">Deploying a module programmatically</a></li>
 <li><a href="#passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</a></li>
 <li><a href="#using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</a></li>
 <li><a href="#specifying-number-of-instances">Specifying number of instances</a></li>
@@ -330,6 +331,12 @@ logger.info "I am logging something"
 <pre class="prettyprint">def id = container.deployVerticle(main)
 </pre>
 <p>Where <code>main</code> is a String that represents the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby, Groovy or JavaScript verticle (e.g. my_script.rb or MyScript.js or MyScript.groovy) or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
+<h2 id="deploying-a-module-programmatically">Deploying a module programmatically</h2><br/>
+<p>You can also use <code>deployVerticle</code> to deploy an installed module, for example:</p>
+<pre class="prettyprint">container.deployVerticle("mailer", config)
+</pre>
+<p>Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.  <br/>
+</p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
 <p>JSON configuration can be passed to a verticle that is deployed programmatically. For example:</p>
 <pre class="prettyprint">def config = [ foo: "wibble", bar: false]

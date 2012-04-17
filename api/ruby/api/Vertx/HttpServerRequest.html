@@ -39,7 +39,7 @@
     <span class="title">HttpServerRequest</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -202,54 +202,6 @@ large bodies.
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#header-instance_method" title="#header (instance method)">- (String) <strong>header</strong>(key) </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>
-Get a header value.
-</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#header_names-instance_method" title="#header_names (instance method)">- (Set) <strong>header_names</strong> </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>
-Get all the header names from the response.
-</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
       <a href="#headers-instance_method" title="#headers (instance method)">- (Hash) <strong>headers</strong> </a>
     
 
@@ -264,7 +216,7 @@ Get all the header names from the response.
 
   
     <span class="summary_desc"><div class='inline'><p>
-Get all the headers in the request.
+The request headers.
 </p>
 </div></span>
   
@@ -323,7 +275,7 @@ The request parameters.
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#path-instance_method" title="#path (instance method)">- (Object) <strong>path</strong> </a>
+      <a href="#path-instance_method" title="#path (instance method)">- (String) <strong>path</strong> </a>
     
 
     
@@ -336,7 +288,10 @@ The request parameters.
   
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'><p>
+The path part of the uri.
+</p>
+</div></span>
   
 </li>
 
@@ -344,7 +299,7 @@ The request parameters.
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#query-instance_method" title="#query (instance method)">- (Object) <strong>query</strong> </a>
+      <a href="#query-instance_method" title="#query (instance method)">- (String) <strong>query</strong> </a>
     
 
     
@@ -357,7 +312,10 @@ The request parameters.
   
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'><p>
+The query part of the uri.
+</p>
+</div></span>
   
 </li>
 
@@ -442,12 +400,12 @@ The uri of the request.
       <pre class="lines">
 
 
-630
-631
-632</pre>
+536
+537
+538</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 630</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 536</span>
 
 <span class='def def kw'>def</span> <span class='_to_java_request identifier id'>_to_java_request</span>
   <span class='@j_del ivar id'>@j_del</span>
@@ -483,172 +441,15 @@ large bodies
       <pre class="lines">
 
 
-626
-627
-628</pre>
+532
+533
+534</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 626</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 532</span>
 
 <span class='def def kw'>def</span> <span class='body_handler identifier id'>body_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='bodyHandler identifier id'>bodyHandler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
-<span class='end end kw'>end</span>
-</pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <p class="signature " id="header-instance_method">
-  
-    - (<tt>String</tt>) <strong>header</strong>(key) 
-  
-
-  
-</p><div class="docstring">
-  <div class="discussion">
-    <p>
-Get a header value
-</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <h3>Parameters:</h3>
-<ul class="param">
-  
-    <li>
-      
-        <span class='name'>key.</span>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-The key of the header.
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-<h3>Returns:</h3>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-the header value.
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-588
-589
-590</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 588</span>
-
-<span class='def def kw'>def</span> <span class='header identifier id'>header</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getHeader identifier id'>getHeader</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
-<span class='end end kw'>end</span>
-</pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <p class="signature " id="header_names-instance_method">
-  
-    - (<tt>Set</tt>) <strong>header_names</strong> 
-  
-
-  
-</p><div class="docstring">
-  <div class="discussion">
-    <p>
-Get all the header names from the response.
-</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <h3>Returns:</h3>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Set</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>
-. A Set of header names
-</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-612
-613
-614
-615
-616
-617
-618
-619
-620
-621
-622
-623</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 612</span>
-
-<span class='def def kw'>def</span> <span class='header_names identifier id'>header_names</span>
-  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='@header_names ivar id'>@header_names</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-    <span class='names identifier id'>names</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getHeaderNames identifier id'>getHeaderNames</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='names identifier id'>names</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@header_names ivar id'>@header_names</span> <span class='assign token'>=</span> <span class='Set constant id'>Set</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='name identifier id'>name</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@header_names ivar id'>@header_names</span><span class='dot token'>.</span><span class='add identifier id'>add</span><span class='lparen token'>(</span><span class='name identifier id'>name</span><span class='rparen token'>)</span>
-    <span class='end end kw'>end</span>
-  <span class='end end kw'>end</span>
-  <span class='@header_names ivar id'>@header_names</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -666,11 +467,7 @@ Get all the header names from the response.
 </p><div class="docstring">
   <div class="discussion">
     <p>
-Get all the headers in the request. If the response contains multiple
-headers with the same key, the values will be concatenated together into a
-single header with the same key value, with each value separated by a
-comma, as specified by
-<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2" target="_parent" title="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2</a>.
+The request headers
 </p>
 
 
@@ -689,7 +486,7 @@ comma, as specified by
       
         &mdash;
         <div class='inline'><p>
-. A Hash of headers.
+The request headers
 </p>
 </div>
       
@@ -703,31 +500,19 @@ comma, as specified by
       <pre class="lines">
 
 
-597
-598
-599
-600
-601
-602
-603
-604
-605
-606
-607
-608</pre>
+524
+525
+526
+527
+528
+529</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 597</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 524</span>
 
 <span class='def def kw'>def</span> <span class='headers identifier id'>headers</span>
-  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='@headers ivar id'>@headers</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-    <span class='hdrs identifier id'>hdrs</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getAllHeaders identifier id'>getAllHeaders</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='hdrs identifier id'>hdrs</span><span class='dot token'>.</span><span class='entrySet identifier id'>entrySet</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='lbrace token'>{</span><span class='rbrace token'>}</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='entry identifier id'>entry</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@headers ivar id'>@headers</span><span class='lbrack token'>[</span><span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getKey identifier id'>getKey</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getValue identifier id'>getValue</span>
-    <span class='end end kw'>end</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@headers ivar id'>@headers</span>
+    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='headers identifier id'>headers</span>
   <span class='end end kw'>end</span>
   <span class='@headers ivar id'>@headers</span>
 <span class='end end kw'>end</span>
@@ -782,12 +567,12 @@ TRACE
       <pre class="lines">
 
 
-548
-549
-550</pre>
+490
+491
+492</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 548</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 490</span>
 
 <span class='def def kw'>def</span> <span class='method identifier id'>method</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='method identifier id'>method</span>
@@ -841,31 +626,19 @@ The request parameters
       <pre class="lines">
 
 
-566
-567
-568
-569
-570
-571
-572
-573
-574
-575
-576
-577</pre>
+510
+511
+512
+513
+514
+515</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 566</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 510</span>
 
 <span class='def def kw'>def</span> <span class='params identifier id'>params</span>
-  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='@params ivar id'>@params</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
-    <span class='prms identifier id'>prms</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getAllParams identifier id'>getAllParams</span>
-    <span class='iter identifier id'>iter</span> <span class='assign token'>=</span> <span class='prms identifier id'>prms</span><span class='dot token'>.</span><span class='entrySet identifier id'>entrySet</span><span class='dot token'>.</span><span class='iterator identifier id'>iterator</span>
-    <span class='@params ivar id'>@params</span> <span class='assign token'>=</span> <span class='lbrace token'>{</span><span class='rbrace token'>}</span>
-    <span class='while while kw'>while</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='hasNext identifier id'>hasNext</span>
-      <span class='entry identifier id'>entry</span> <span class='assign token'>=</span> <span class='iter identifier id'>iter</span><span class='dot token'>.</span><span class='next identifier id'>next</span>
-      <span class='@params ivar id'>@params</span><span class='lbrack token'>[</span><span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getKey identifier id'>getKey</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='entry identifier id'>entry</span><span class='dot token'>.</span><span class='getValue identifier id'>getValue</span>
-    <span class='end end kw'>end</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@params ivar id'>@params</span>
+    <span class='@params ivar id'>@params</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='params identifier id'>params</span>
   <span class='end end kw'>end</span>
   <span class='@params ivar id'>@params</span>
 <span class='end end kw'>end</span>
@@ -878,22 +651,54 @@ The request parameters
       <div class="method_details ">
   <p class="signature " id="path-instance_method">
   
-    - (<tt>Object</tt>) <strong>path</strong> 
+    - (<tt>String</tt>) <strong>path</strong> 
   
 
   
-</p><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The path part of the uri. For example
+/somepath/somemorepath/somresource.foo
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The path part of the uri. For example
+/somepath/somemorepath/somresource.foo
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-557
-558
-559</pre>
+500
+501
+502</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 557</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 500</span>
 
 <span class='def def kw'>def</span> <span class='path identifier id'>path</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='path identifier id'>path</span>
@@ -907,22 +712,52 @@ The request parameters
       <div class="method_details ">
   <p class="signature " id="query-instance_method">
   
-    - (<tt>Object</tt>) <strong>query</strong> 
+    - (<tt>String</tt>) <strong>query</strong> 
   
 
   
-</p><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+The query part of the uri. For example someparam=32&amp;someotherparam=x
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+The query part of the uri. For example someparam=32&amp;someotherparam=x
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-561
-562
-563</pre>
+505
+506
+507</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 561</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 505</span>
 
 <span class='def def kw'>def</span> <span class='query identifier id'>query</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='query identifier id'>query</span>
@@ -977,12 +812,12 @@ instance attached to it. This is used
       <pre class="lines">
 
 
-581
-582
-583</pre>
+519
+520
+521</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 581</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 519</span>
 
 <span class='def def kw'>def</span> <span class='response identifier id'>response</span>
   <span class='@resp ivar id'>@resp</span>
@@ -1038,12 +873,12 @@ The uri of the request. For example
       <pre class="lines">
 
 
-553
-554
-555</pre>
+495
+496
+497</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 553</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 495</span>
 
 <span class='def def kw'>def</span> <span class='uri identifier id'>uri</span>
   <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='uri identifier id'>uri</span>
@@ -1059,7 +894,7 @@ The uri of the request. For example
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:39 2012 by 
+  Generated on Tue Apr 17 13:34:14 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>

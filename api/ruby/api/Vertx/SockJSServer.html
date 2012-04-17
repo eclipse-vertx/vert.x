@@ -39,7 +39,7 @@
     <span class="title">SockJSServer</span>
   
   
-  <div class="noframes"><span class="title">(</span><a href="" target="_top">no frames</a><span class="title">)</span></div>
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
@@ -167,6 +167,27 @@ and configuration is described in a Hash.
         <li class="public ">
   <span class="summary_signature">
     
+      <a href="#bridge-instance_method" title="#bridge (instance method)">- (Object) <strong>bridge</strong>(config, permitted) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
       <a href="#initialize-instance_method" title="#initialize (instance method)">- (SockJSServer) <strong>initialize</strong>(http_server) </a>
     
 
@@ -273,7 +294,7 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 50</span>
 
 <span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='rparen token'>)</span>
-  <span class='@j_server ivar id'>@j_server</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='sockjs identifier id'>sockjs</span><span class='dot token'>.</span><span class='SockJSServer constant id'>SockJSServer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='dot token'>.</span><span class='_to_java_server identifier id'>_to_java_server</span><span class='rparen token'>)</span>
+  <span class='@j_server ivar id'>@j_server</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='createSockJSServer identifier id'>createSockJSServer</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='dot token'>.</span><span class='_to_java_server identifier id'>_to_java_server</span><span class='rparen token'>)</span>
 <span class='end end kw'>end</span>
 </pre>
     </td>
@@ -289,7 +310,48 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
     
     
       <div class="method_details first">
-  <p class="signature first" id="install_app-instance_method">
+  <p class="signature first" id="bridge-instance_method">
+  
+    - (<tt>Object</tt>) <strong>bridge</strong>(config, permitted) 
+  
+
+  
+</p><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+66
+67
+68
+69
+70
+71
+72
+73
+74</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 66</span>
+
+<span class='def def kw'>def</span> <span class='bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='comma token'>,</span> <span class='permitted identifier id'>permitted</span><span class='rparen token'>)</span>
+  <span class='j_list identifier id'>j_list</span> <span class='assign token'>=</span> <span class='java identifier id'>java</span><span class='dot token'>.</span><span class='util identifier id'>util</span><span class='dot token'>.</span><span class='ArrayList constant id'>ArrayList</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+  <span class='permitted identifier id'>permitted</span><span class='dot token'>.</span><span class='each identifier id'>each</span> <span class='do do kw'>do</span> <span class='bitor op'>|</span><span class='match identifier id'>match</span><span class='bitor op'>|</span>
+    <span class='json_str identifier id'>json_str</span> <span class='assign token'>=</span> <span class='JSON constant id'>JSON</span><span class='dot token'>.</span><span class='generate identifier id'>generate</span><span class='lparen token'>(</span><span class='match identifier id'>match</span><span class='rparen token'>)</span>
+    <span class='j_json identifier id'>j_json</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='json identifier id'>json</span><span class='dot token'>.</span><span class='JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='json_str identifier id'>json_str</span><span class='rparen token'>)</span>
+    <span class='j_list identifier id'>j_list</span><span class='dot token'>.</span><span class='add identifier id'>add</span><span class='lparen token'>(</span><span class='j_json identifier id'>j_json</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+  <span class='@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='convert_config identifier id'>convert_config</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='rparen token'>)</span><span class='comma token'>,</span> <span class='j_list identifier id'>j_list</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="install_app-instance_method">
   
     - (<tt>Object</tt>) <strong>install_app</strong>(config, proc = nil, &amp;hndlr) 
   
@@ -375,48 +437,14 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
 61
 62
 63
-64
-65
-66
-67
-68
-69
-70
-71
-72
-73
-74
-75
-76
-77
-78
-79
-80
-81</pre>
+64</pre>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 58</span>
 
 <span class='def def kw'>def</span> <span class='install_app identifier id'>install_app</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
-
-  <span class='j_config identifier id'>j_config</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='sockjs identifier id'>sockjs</span><span class='dot token'>.</span><span class='AppConfig constant id'>AppConfig</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
-
-  <span class='prefix identifier id'>prefix</span> <span class='assign token'>=</span> <span class='config identifier id'>config</span><span class='lbrack token'>[</span><span class='string val'>&quot;prefix&quot;</span><span class='rbrack token'>]</span>
-  <span class='j_config identifier id'>j_config</span><span class='dot token'>.</span><span class='setPrefix identifier id'>setPrefix</span><span class='lparen token'>(</span><span class='prefix identifier id'>prefix</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='prefix identifier id'>prefix</span>
-  <span class='jsessionid identifier id'>jsessionid</span> <span class='assign token'>=</span> <span class='config identifier id'>config</span><span class='lbrack token'>[</span><span class='string val'>&quot;insert_JSESSIONID&quot;</span><span class='rbrack token'>]</span>
-  <span class='j_config identifier id'>j_config</span><span class='dot token'>.</span><span class='setInsertJSESSIONID identifier id'>setInsertJSESSIONID</span><span class='lparen token'>(</span><span class='jsessionid identifier id'>jsessionid</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='jsessionid identifier id'>jsessionid</span>
-  <span class='session_timeout identifier id'>session_timeout</span> <span class='assign token'>=</span> <span class='config identifier id'>config</span><span class='lbrack token'>[</span><span class='string val'>&quot;session_timeout&quot;</span><span class='rbrack token'>]</span>
-  <span class='j_config identifier id'>j_config</span><span class='dot token'>.</span><span class='setSessionTimeout identifier id'>setSessionTimeout</span><span class='lparen token'>(</span><span class='session_timeout identifier id'>session_timeout</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='session_timeout identifier id'>session_timeout</span>
-  <span class='heartbeat_period identifier id'>heartbeat_period</span> <span class='assign token'>=</span> <span class='config identifier id'>config</span><span class='lbrack token'>[</span><span class='string val'>&quot;heartbeat_period&quot;</span><span class='rbrack token'>]</span>
-  <span class='j_config identifier id'>j_config</span><span class='dot token'>.</span><span class='setHeartbeatPeriod identifier id'>setHeartbeatPeriod</span><span class='lparen token'>(</span><span class='heartbeat_period identifier id'>heartbeat_period</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='heartbeat_period identifier id'>heartbeat_period</span>
-  <span class='max_bytes_streaming identifier id'>max_bytes_streaming</span> <span class='assign token'>=</span> <span class='config identifier id'>config</span><span class='lbrack token'>[</span><span class='string val'>&quot;max_bytes_streaming&quot;</span><span class='rbrack token'>]</span>
-  <span class='j_config identifier id'>j_config</span><span class='dot token'>.</span><span class='setMaxBytesStreaming identifier id'>setMaxBytesStreaming</span><span class='lparen token'>(</span><span class='max_bytes_streaming identifier id'>max_bytes_streaming</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='max_bytes_streaming identifier id'>max_bytes_streaming</span>
-  <span class='library_url identifier id'>library_url</span> <span class='assign token'>=</span> <span class='config identifier id'>config</span><span class='lbrack token'>[</span><span class='string val'>&quot;library_url&quot;</span><span class='rbrack token'>]</span>
-  <span class='j_config identifier id'>j_config</span><span class='dot token'>.</span><span class='setLibraryURL identifier id'>setLibraryURL</span><span class='lparen token'>(</span><span class='library_url identifier id'>library_url</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='library_url identifier id'>library_url</span>
-
-  <span class='comment val'># TODO disabled transports</span>
-
+  <span class='j_config identifier id'>j_config</span> <span class='assign token'>=</span> <span class='convert_config identifier id'>convert_config</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='rparen token'>)</span>
   <span class='@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='installApp identifier id'>installApp</span><span class='lparen token'>(</span><span class='j_config identifier id'>j_config</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_sock identifier id'>j_sock</span><span class='bitor op'>|</span>
     <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='SockJSSocket constant id'>SockJSSocket</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_sock identifier id'>j_sock</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
   <span class='rbrace token'>}</span>
@@ -432,7 +460,7 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
 </div>
     
     <div id="footer">
-  Generated on Fri Mar 16 15:39:40 2012 by 
+  Generated on Tue Apr 17 13:34:15 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.2 (ruby-1.8.7).
 </div>
