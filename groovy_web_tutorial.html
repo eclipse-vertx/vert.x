@@ -128,15 +128,15 @@ tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;
 <p>On the left hand bar there's a form which allows you to login.  <br/>
 </p>
 <h3 id="step-4-get-the-persistor-up-and-running">Step 4. Get the Persistor up and running</h3><br/>
-<p>Vert.x ships with an out of the box bus module (busmod) called <code>MongoPersistor</code>. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.</p>
-<p>The <code>MongoPersistor</code> busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the busmods manual).</p>
+<p>Vert.x ships with an out of the box bus module (busmod) called <code>mongo-persistor</code>. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.</p>
+<p>The <code>mongo-persistor</code> busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the modules manual).</p>
 <p>We're going to use a persistor in our application for a few different things:</p>
 <ul>
 <li>Storing the catalogue of track data.</li>
 <li>Storing usernames and passwords of users</li>
 <li>Storing orders</li>
 </ul>
-<p>You could start a persistor on the command line by calling <code>vertx run org.vertx.java.busmods.persistor.MongoPersistor</code> but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.</p>
+<p>You could start a persistor on the command line by calling <code>vertx run mongo-persistor</code> but we're going to need to start several components to form our application, so it makes sense to create a controlling verticle (A verticle is just the name we give to any vert.x component) that starts up all the other components for us.</p>
 <p>It can also contain the JSON configuration for our application. All verticles can be configured using JSON.</p>
 <p>Open a text editor and copy in the following:</p>
 <pre class="prettyprint">// Our application config
@@ -150,7 +150,7 @@ container.with {
 
   // Deploy the busmods
 
-  deployWorkerVerticle('org.vertx.java.busmods.persistor.MongoPersistor', persistorConf)
+  deployWorkerVerticle('mongo-persistor', persistorConf)
 
   // Start the web server
 
@@ -246,7 +246,7 @@ server.listen(8080, 'localhost')
 <pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/groovy/webapp/StaticData.groovy .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>App.groovy</code> as follows:</p>
-<pre class="prettyprint">deployWorkerVerticle('org.vertx.java.busmods.persistor.MongoPersistor', appConf['persistor_conf'], 1, {
+<pre class="prettyprint">deployWorkerVerticle('mongo-persistor', persistorConf, 1, {
     deployVerticle('StaticData.groovy')
 })
 </pre>
@@ -289,13 +289,13 @@ server.listen(8080, 'localhost')
 <p>The <code>onopen</code> is called when, unsurprisingly, the event bus connection is fully setup and open.<br/>
 </p>
 <p>At that point we are calling the <code>send</code> function on the event bus to a send a JSON message to the address <code>demo.persistor</code>. This is the address of the MongoDB persistor busmod that we configured earlier.</p>
-<p>The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor busmod expects you can consult the busmods manual).</p>
+<p>The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor busmod expects you can consult the modules manual).</p>
 <p>The final argument that we pass to to <code>send</code> is a reply handler. This is a function that gets called when the persistor has processed the operation and sent the reply back here. The first argument to the reply handler is the reply itself.</p>
 <p>In this case, the reply contains a JSON message with a field <code>results</code> which contains a JSON array containing the albums.</p>
 <p>Once we get the albums we give them to knockout.js to render on the view.</p>
 <h2 id="step-8-handling-login">Step 8. Handling Login</h2><br/>
 <p>In order to actually send an order, you need to be logged in so we know who has placed the order.</p>
-<p>Vert.x ships with an out of the box busmod called <code>AuthManager</code>. This is a very simple authentication manager which sits on the event bus and provides a couple of services:</p>
+<p>Vert.x ships with an out of the box busmod called <code>auth-mgr</code>. This is a very simple authentication manager which sits on the event bus and provides a couple of services:</p>
 <ul>
 <li>
 <p>Login. This receives a username and password, validates it in the database, and if it is ok, a session is created and the session id sent back in the reply message.</p>
@@ -304,10 +304,10 @@ server.listen(8080, 'localhost')
 <p>Validate. This validates a session id, returning whether it is valid or not.</p>
 </li>
 </ul>
-<p>For detailed information on this component please consult the busmods manual.</p>
+<p>For detailed information on this component please consult the modules manual.</p>
 <p>We're going to add an authentication manager component to our application so the user can login.</p>
 <p>Open up <code>App.groovy</code> again, and add the following line immediately after the deployment of the mongo persistor:</p>
-<pre class="prettyprint">deployVerticle('org.vertx.java.busmods.auth.AuthManager', appConf['auth_mgr_conf'])
+<pre class="prettyprint">deployVerticle('auth-mgr', authMgrConf)
 </pre>
 <p>Also add the following:</p>
 <p>def authMgrConf = [
@@ -332,10 +332,10 @@ container.with {
 
   // Deploy the busmods
 
-  deployWorkerVerticle('org.vertx.java.busmods.persistor.MongoPersistor', persistorConf, 1, {
+  deployWorkerVerticle('mongo-persistor', persistorConf, 1, {
     deployVerticle('StaticData.groovy')
   })
-  deployVerticle('org.vertx.java.busmods.auth.AuthManager', authMgrConf)
+  deployVerticle('auth-mgr', authMgrConf)
 
   // Start the web server
 
@@ -536,10 +536,31 @@ deployVerticle('WebServer.groovy', null, 32)
 <p>In our trivial example it probably won't make much difference, but if you have some fairly intensive processing that needs to be done on the orders, it might make sense to maintain a farm of order processors, and as orders come into the order manager, to farm them out to one of the available processors.</p>
 <p>You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.</p>
 <p>Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called <code>WorkQueue</code> which allows you to easily create queues of work can be shared out amongst many processors.</p>
-<p>Please consult the busmods manual for more information on this.</p>
+<p>Please consult the modules manual for more information on this.</p>
+<h3 id="packaging-as-a-module">Packaging as a module</h3><br/>
+<p>Vert.x applications and other functionality can be installed as modules. This makes them easier to manage and allow them to be easily referenced from other applications. For detailed information on modules, please see the modules manual.</p>
+<p>Let's package our web application as a module.</p>
+<p>By default modules live in the <code>mods</code> directory from the vert.x installation directory, but you can also set an environment variable <code>VERTX_MODS</code> to a directory of your choice where modules will be located. In this tutorial we'll just put the module in the <code>mods</code> directory for the sake of simplicity.</p>
+<p>To install the app as a module we'll just copy the tutorial directory into the <code>mods</code> dir</p>
+<pre class="prettyprint">cd ..
+cp -r tutorial $VERTX_INSTALL/mods/webapp
+</pre>
+<p>Now create a file called <code>mod.json</code> which contains the following:</p>
+<pre class="prettyprint">{
+    "main": "App.groovy"
+}
+</pre>
+<p>And save it in the directory $VERTX_INSTALL/mods/webapp</p>
+<p>That's it. The module is installed!</p>
+<p>To run the module (first make sure the web app isn't already running, if so CTRL-C).
+Then go to another console... you can be in any directory and type:</p>
+<pre class="prettyprint">vertx run webapp
+</pre>
+<p>The web application will now be running. Go to <code>https://localhost:8080</code> to see.      <br/>
+</p>
 <h2 id="final-thoughts">Final Thoughts</h2><br/>
 <p>This tutorial gives you just a taste of the kinds of things you can do with vert.x. </p>
-<p>With just a couple of handfuls of code you have created a real, scalable web-app.</p>
+<p>With a small amount of code you've created a real, scalable web-app.</p>
 <p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
       </div>
     </div>

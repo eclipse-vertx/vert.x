@@ -10,9 +10,15 @@ For example, vert.x ships with several out of the box modules including a mailer
 
 ### Modules location
 
-Modules, by default, live in the `mods` directory in the vert.x installation directory. If you want to put your modules elsewhere you can override this location by specifying an environment variable `VERTX_MODS` set to the absolute path of your modules directory before starting vert.x.
+Modules, by default, live in the `mods` directory in the vert.x installation directory. Vert.x comes with several modules pre-installed and they reside here.
 
-Each module lives in its own child directory from the `mods` (or `VERTX_MODS`) directory. The name of the directory is the name of the module. Modules must not share a directory.
+Vert.x always first searches for modules in the `mods` directory of the installation followed by the directory given by the environment variable `VERTX_MODS`, if specified.
+
+You can put your own modules in the `mods` directory if you like, but it is highly recommended you put them in some other directory (e.g. `~/vertx-mods`) so that you don't overwrite them when you upgrade vert.x.
+
+If you do decide to put them somewhere else, make sure `VERTX_MODS` points to that directory.
+
+Each module lives in its own child directory of the module directory. The name of the directory is the name of the module. Modules must not share a directory.
 
 If you have more than one version of the same module, you should suffix the name and with a hash sign `#` followed by the version number. For example, here we have two versions of the widget module:
 
@@ -92,7 +98,7 @@ To solve this we internally adjust all paths such that, if you use the vert.x AP
 
 Creating your own module is simple, simply create your vert.x application as normal, then put it all in a directory whose name is the module name, and provide a `mod.json` file as described above.
 
-Then copy the entire directory to the `mods` directory (or `VERTX_MODS` if you are overriding the location).
+Then copy the entire directory to the module root directory (i.e. the `mods` directory in the install or your own module root given by `VERTX_MODS`)
 
 ## What is a Bus Module (busmod) ?
 
@@ -132,13 +138,21 @@ The vert.x distribution contains several out-of-the-box budmods that you can use
 
 #### Instantiating out-of-the-box busmods
 
-You can instantiate any out of the box busmo from the command line using `vertx run` or `vertx deploy` like any other verticle, e.g.
+You can instantiate any out of the box busmo from the command line using `vertx run` or `vertx deploy` like any other verticle, i.e.
 
     vertx run <bus_mode_name> -conf <config_file>
     
+For example:
+
+    vertx run mongo-persistor -conf my_conf.json    
+    
 Or programmatically (e.g. in JavaScript)
 
-    vertx.deployWorkerVerticle(<bus_mode_name>, <config>);        
+    vertx.deployVerticle(<bus_mode_name>, <config>);        
+    
+For example:
+
+    vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
 
 ### MongoDB Persistor
 
@@ -152,13 +166,11 @@ This busmod requires a MongoDB server to be available on the network.
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.persistor.MongoPersistor`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/mongo_persistor.js`
+The module name is `mongo-persistor`.
 
 #### Configuration
 
-The MongoDB busmod requires the following configuration:
+The mongo-persistor busmod requires the following configuration:
 
     {
         "address": <address>,
@@ -455,11 +467,7 @@ This busmod requires a mail server to be available.
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.mailer.Mailer`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/mailer.js`.
-
-Mailer is a worker busmod and must be started as a worker verticle.
+The module name is `mailer`.
 
 #### Configuration
 
@@ -566,10 +574,7 @@ This busmod requires a MongoDB persistor busmod to be running to allow searching
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.auth.AuthManager`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/auth_mgr.js`
-
+The module name is `auth-mgr`.
 
 #### Configuration
 
@@ -705,10 +710,7 @@ If this queue is persistent, the busmod requires a MongoDB persistor busmod to b
 
 #### Name
 
-The bus mod is written in Java, and the name is `org.vertx.java.busmods.workqueue.WorkQueue`.
-            
-There's also a JavaScript wrapper for it with the name `busmods/work_queue.js`
-
+The module name is `work-queue`.
 
 #### Configuration
 

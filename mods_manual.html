@@ -8,7 +8,7 @@
   <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
   <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
   <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
-  <title>Vert.x BusMods Manual</title>
+  <title>Vert.x Modules Manual</title>
   <script>
     var _gaq = _gaq || [];
     _gaq.push(['_setAccount', 'UA-30144458-1']);
@@ -58,7 +58,7 @@
   <div class="row">
     <div class="span12">
       <div class="well">
-        <h1 style="font-size: 35px;">BusMods Manual</h1>
+        <h1 style="font-size: 35px;">Modules Manual</h1>
       </div>
     </div>
   </div>
@@ -149,8 +149,11 @@
 <p>Vert.x allows you to package up your applications or re-usable functionality into modules which can then be referenced by other applications or modules.</p>
 <p>For example, vert.x ships with several out of the box modules including a mailer, a MongoDB persistor and an authentication manager. You can also easily create your own modules.</p>
 <h3 id="modules-location">Modules location</h3><br/>
-<p>Modules, by default, live in the <code>mods</code> directory in the vert.x installation directory. If you want to put your modules elsewhere you can override this location by specifying an environment variable <code>VERTX_MODS</code> set to the absolute path of your modules directory before starting vert.x.</p>
-<p>Each module lives in its own child directory from the <code>mods</code> (or <code>VERTX_MODS</code>) directory. The name of the directory is the name of the module. Modules must not share a directory.</p>
+<p>Modules, by default, live in the <code>mods</code> directory in the vert.x installation directory. Vert.x comes with several modules pre-installed and they reside here.</p>
+<p>Vert.x always first searches for modules in the <code>mods</code> directory of the installation followed by the directory given by the environment variable <code>VERTX_MODS</code>, if specified.</p>
+<p>You can put your own modules in the <code>mods</code> directory if you like, but it is highly recommended you put them in some other directory (e.g. <code>~/vertx-mods</code>) so that you don't overwrite them when you upgrade vert.x.</p>
+<p>If you do decide to put them somewhere else, make sure <code>VERTX_MODS</code> points to that directory.</p>
+<p>Each module lives in its own child directory of the module directory. The name of the directory is the name of the module. Modules must not share a directory.</p>
 <p>If you have more than one version of the same module, you should suffix the name and with a hash sign <code>#</code> followed by the version number. For example, here we have two versions of the widget module:</p>
 <pre class="prettyprint">mods/some-module
 mods/widget#v1.0
@@ -204,7 +207,7 @@ mods/my-web-app/web-root/index.html
 </p>
 <h3 id="creating-and-installing-your-own-module">Creating and installing your own module</h3><br/>
 <p>Creating your own module is simple, simply create your vert.x application as normal, then put it all in a directory whose name is the module name, and provide a <code>mod.json</code> file as described above.</p>
-<p>Then copy the entire directory to the <code>mods</code> directory (or <code>VERTX_MODS</code> if you are overriding the location).</p>
+<p>Then copy the entire directory to the module root directory (i.e. the <code>mods</code> directory in the install or your own module root given by <code>VERTX_MODS</code>)</p>
 <h2 id="what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</h2><br/>
 <p>A <em>busmod</em> is a specific type of module that communicates on the event bus with over verticles by sending JSON messages.</p>
 <p>Since it communicates only with JSON messages then the busmod is instantly usable by other verticles irrespective of which language they are written in, since all the supported languages allow sending and receiving JSON messages from the event bus. </p>
@@ -227,11 +230,17 @@ mods/my-web-app/web-root/index.html
 <h2 id="out-of-the-box-busmods">Out of the box busmods</h2><br/>
 <p>The vert.x distribution contains several out-of-the-box budmods that you can use in your applications. These busmods are designed to handle common things that you might want to do in applications.</p>
 <h4 id="instantiating-out-of-the-box-busmods">Instantiating out-of-the-box busmods</h4><br/>
-<p>You can instantiate any out of the box busmo from the command line using <code>vertx run</code> or <code>vertx deploy</code> like any other verticle, e.g.</p>
+<p>You can instantiate any out of the box busmo from the command line using <code>vertx run</code> or <code>vertx deploy</code> like any other verticle, i.e.</p>
 <pre class="prettyprint">vertx run &lt;bus_mode_name&gt; -conf &lt;config_file&gt;
 </pre>
+<p>For example:</p>
+<pre class="prettyprint">vertx run mongo-persistor -conf my_conf.json
+</pre>
 <p>Or programmatically (e.g. in JavaScript)</p>
-<pre class="prettyprint">vertx.deployWorkerVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
+<pre class="prettyprint">vertx.deployVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
+</pre>
+<p>For example:</p>
+<pre class="prettyprint">vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});
 </pre>
 <h3 id="mongodb-persistor">MongoDB Persistor</h3><br/>
 <p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.</p>
@@ -239,10 +248,9 @@ mods/my-web-app/web-root/index.html
 <h4 id="dependencies">Dependencies</h4><br/>
 <p>This busmod requires a MongoDB server to be available on the network.</p>
 <h4 id="name">Name</h4><br/>
-<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.persistor.MongoPersistor</code>.</p>
-<p>There's also a JavaScript wrapper for it with the name <code>busmods/mongo_persistor.js</code></p>
+<p>The module name is <code>mongo-persistor</code>.</p>
 <h4 id="configuration_1">Configuration</h4><br/>
-<p>The MongoDB busmod requires the following configuration:</p>
+<p>The mongo-persistor busmod requires the following configuration:</p>
 <pre class="prettyprint">{
     "address": &lt;address&gt;,
     "host": &lt;host&gt;,
@@ -482,9 +490,7 @@ eb.send('foo.myPersistor', {
 <h4 id="dependencies_1">Dependencies</h4><br/>
 <p>This busmod requires a mail server to be available.</p>
 <h4 id="name_1">Name</h4><br/>
-<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.mailer.Mailer</code>.</p>
-<p>There's also a JavaScript wrapper for it with the name <code>busmods/mailer.js</code>.</p>
-<p>Mailer is a worker busmod and must be started as a worker verticle.</p>
+<p>The module name is <code>mailer</code>.</p>
 <h4 id="configuration_2">Configuration</h4><br/>
 <p>The mailer busmod requires the following configuration:</p>
 <pre class="prettyprint">{
@@ -573,8 +579,7 @@ eb.send('foo.myPersistor', {
 <h4 id="dependencies_2">Dependencies</h4><br/>
 <p>This busmod requires a MongoDB persistor busmod to be running to allow searching for usernames and passwords.</p>
 <h4 id="name_2">Name</h4><br/>
-<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.auth.AuthManager</code>.</p>
-<p>There's also a JavaScript wrapper for it with the name <code>busmods/auth_mgr.js</code></p>
+<p>The module name is <code>auth-mgr</code>.</p>
 <h4 id="configuration_3">Configuration</h4><br/>
 <p>This busmod requires the following configuration:</p>
 <pre class="prettyprint">{
@@ -673,8 +678,7 @@ eb.send('foo.myPersistor', {
 <h4 id="dependencies_3">Dependencies</h4><br/>
 <p>If this queue is persistent, the busmod requires a MongoDB persistor busmod to be running for persisting the queue data. [WIP]</p>
 <h4 id="name_3">Name</h4><br/>
-<p>The bus mod is written in Java, and the name is <code>org.vertx.java.busmods.workqueue.WorkQueue</code>.</p>
-<p>There's also a JavaScript wrapper for it with the name <code>busmods/work_queue.js</code></p>
+<p>The module name is <code>work-queue</code>.</p>
 <h4 id="configuration_4">Configuration</h4><br/>
 <p>This busmod requires the following configuration:</p>
 <pre class="prettyprint">{
