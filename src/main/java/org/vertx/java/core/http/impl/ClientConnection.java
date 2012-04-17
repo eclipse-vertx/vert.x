@@ -201,6 +201,7 @@ class ClientConnection extends AbstractConnection {
   }
 
   void handleResponseEnd(HttpChunkTrailer trailer) {
+    setContext();
     try {
       currentResponse.handleEnd(trailer);
     } catch (Throwable t) {
@@ -213,6 +214,7 @@ class ClientConnection extends AbstractConnection {
 
   void handleWsFrame(WebSocketFrame frame) {
     if (ws != null) {
+      setContext();
       ws.handleFrame(frame);
     }
   }
