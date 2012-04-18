@@ -301,14 +301,12 @@
     <copy file="conf/cluster.xml" todir="${dist-build}/conf"/>
 
     <copy file="${core-lib}/netty.jar" tofile="${dist-build}/lib/jars/netty.jar"/>
-    <copy file="${core-lib}/jackson-core-asl-1.9.4.jar" tofile="${dist-build}/lib/jars/jackson-core.jar"/>
-    <copy file="${core-lib}/jackson-mapper-asl-1.9.4.jar" tofile="${dist-build}/lib/jars/jackson-mapper.jar"/>
-    <copy file="${core-lib}/hazelcast-1.9.4.4.jar" tofile="${dist-build}/lib/jars/hazelcast.jar"/>
+    <copy file="${core-lib}/jackson-core-asl.jar" tofile="${dist-build}/lib/jars/jackson-core.jar"/>
+    <copy file="${core-lib}/jackson-mapper-asl.jar" tofile="${dist-build}/lib/jars/jackson-mapper.jar"/>
+    <copy file="${core-lib}/hazelcast.jar" tofile="${dist-build}/lib/jars/hazelcast.jar"/>
     <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/>
-    <copy file="${core-lib}/groovy-all-1.8.6.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
+    <copy file="${core-lib}/groovy-all.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
     <copy file="${core-lib}/jruby.jar" tofile="${dist-build}/lib/jars/jruby.jar"/>
-    <copy file="src/mods/mailer/lib/mail.jar" tofile="${dist-build}/lib/jars/mail.jar"/>
-    <copy file="src/mods/mongo-persistor/lib/mongo.jar" tofile="${dist-build}/lib/jars/mongo.jar"/>
     <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
     <copy file="src/client/vertxbus.js" todir="${dist-build}/client/"/>
@@ -331,8 +329,6 @@
       </fileset>
     </copy>
 
-    <!--
-
     <mkdir dir="${target}/${javadoc-dir}"/>
     <copy todir="${dist-build}/${javadoc-dir}">
         <fileset dir="${target}/${javadoc-dir}"/>
@@ -347,8 +343,6 @@
     <copy todir="${dist-build}/${groovydoc-dir}">
         <fileset dir="${target}/${groovydoc-dir}"/>
     </copy>
-
-    -->
 
     <!-- We need to use exec since the ant copy task does not preserve file permissions -->
     <mkdir dir="${dist-build}/bin"/>
