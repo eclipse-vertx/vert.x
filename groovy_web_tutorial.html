@@ -89,7 +89,7 @@ server.requestHandler { req -&gt;
     req.response.setStatusCode(404)
     req.response.end()
   }
-}
+}.listen(8080, 'localhost')
 </pre>
 <p>We're creating an instance of <code>HttpServer</code> and we're setting a request handler function on it. The request handler gets called every time an HTTP request arrives on the server.</p>
 <p>If the request is for the root, we just serve <code>index.html</code>. Otherwise we serve a file from the <code>web</code> directory corresponding to the path requested.</p>

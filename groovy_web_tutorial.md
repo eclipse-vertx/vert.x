@@ -31,7 +31,7 @@ Open a text editor and copy the following into it:
         req.response.setStatusCode(404)
         req.response.end()
       }
-    }
+    }.listen(8080, 'localhost')
 
 
 We're creating an instance of `HttpServer` and we're setting a request handler function on it. The request handler gets called every time an HTTP request arrives on the server.
