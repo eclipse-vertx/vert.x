@@ -59,14 +59,7 @@ class BaseTransport {
                                Handler<SockJSSocket> sockHandler) {
     Session session = sessions.get(sessionID);
     if (session == null) {
-      session = new Session(vertx, sessionID, timeout, heartbeatPeriod, sockHandler);
-      final Session theSession = session;
-      session.setTimeoutHandler(new SimpleHandler() {
-        public void handle() {
-          theSession.shutdown();
-          sessions.remove(sessionID);
-        }
-      });
+      session = new Session(vertx, sessions, sessionID, timeout, heartbeatPeriod, sockHandler);
       sessions.put(sessionID, session);
     }
     return session;
@@ -89,14 +82,12 @@ class BaseTransport {
 
   protected static abstract class BaseListener implements TransportListener {
 
-    protected void addCloseHandler(HttpServerResponse resp, final Session session,
-                                   final Map<String, Session> sessions) {
+    protected void addCloseHandler(HttpServerResponse resp, final Session session) {
       resp.closeHandler(new SimpleHandler() {
         public void handle() {
           // Connection has been closed fron the client or network error so
           // we remove the session
           session.shutdown();
-          sessions.remove(session.getID());
           close();
         }
       });

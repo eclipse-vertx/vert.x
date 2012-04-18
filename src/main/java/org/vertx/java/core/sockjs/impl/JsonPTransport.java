@@ -135,7 +135,7 @@ class JsonPTransport extends BaseTransport {
       this.req = req;
       this.session = session;
       this.callback = callback;
-      addCloseHandler(req.response, session, sessions);
+      addCloseHandler(req.response, session);
     }
 
 

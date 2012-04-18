@@ -64,7 +64,7 @@ class EventSourceTransport extends BaseTransport {
       this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
       this.session = session;
-      addCloseHandler(req.response, session, sessions);
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {

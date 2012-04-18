@@ -102,7 +102,7 @@ class HtmlFileTransport extends BaseTransport {
       this.req = req;
       this.callback = callback;
       this.session = session;
-      addCloseHandler(req.response, session, sessions);
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {
