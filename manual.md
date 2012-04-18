@@ -26,9 +26,31 @@ If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TC
 
 Just use the jar `vertx-core.jar` which is available in the `lib/jars` directory in the distribution.
 
+The documentation (JavaDoc and GroovyDoc) for the api is [here](http://vertx.io/docs.html).
+
 You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
 
-There is a caveat here. When running vert.x outside a verticle you don't have the isolation benefits that a verticle brings, so you will need to be more careful about sharing state between different event loops.
+Here's an example of a simple embedded web server in Java:
+
+    Vertx vertx = Vertx.newVertx();
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+            String file = req.path.equals("/") ? "index.html" : req.path;
+            req.response.sendFile("webroot/" + file);
+        }
+    }).listen(8080);
+    
+And here's the same server in Groovy:
+
+    def vertx = Vertx.newVertx()
+    vertx.createHttpServer().requestHandler { req ->
+        def file = req.uri == "/" ? "index.html" : req.uri
+        req.response.sendFile "webroot/$file"
+    }.listen(8080)   
+    
+It's as simple as that!     
+
+*There is a caveat here. When running vert.x outside a verticle you don't have the isolation benefits that a verticle brings, so you will need to be more careful about sharing state between different event loops.*
 
 ## Concepts in vert.x
 

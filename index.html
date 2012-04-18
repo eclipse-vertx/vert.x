@@ -225,7 +225,7 @@ end.listen(8080)
 vertx.createHttpServer().requestHandler { req ->
     def file = req.uri == "/" ? "index.html" : req.uri
     req.response.sendFile "webroot/$file"
-}.listen(8080, "localhost")
+}.listen(8080)
                 </pre>
 
                 <p>Run it with:</p>
