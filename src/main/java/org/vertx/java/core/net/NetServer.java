@@ -73,7 +73,7 @@ public interface NetServer {
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
-   * The SSL key store is a standard Java Key Store, and, if on the server side will contain the server certificate.
+   * The SSL key store is a standard Java Key Store which should contain the server certificate.
    * @return A reference to this, so multiple invocations can be chained together.
    */
   NetServer setKeyStorePath(String path);
