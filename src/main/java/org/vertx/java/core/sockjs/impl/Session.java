@@ -25,6 +25,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -34,6 +35,7 @@ class Session extends SockJSSocket {
 
   private static final Logger log = LoggerFactory.getLogger(Session.class);
 
+  private final Map<String, Session> sessions;
   private final Queue<String> pendingWrites = new LinkedList<>();
   private final Queue<String> pendingReads = new LinkedList<>();
   private TransportListener listener;
@@ -43,7 +45,6 @@ class Session extends SockJSSocket {
   private final String id;
   private final long timeout;
   private final Handler<SockJSSocket> sockHandler;
-  private Handler<Void> timeoutHandler;
   private long heartbeatID = -1;
   private long timeoutTimerID = -1;
   private boolean paused;
@@ -52,12 +53,13 @@ class Session extends SockJSSocket {
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
 
-  Session(VertxInternal vertx, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
-    this(vertx, null, -1, heartbeatPeriod, sockHandler);
+  Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+    this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler);
   }
 
-  Session(VertxInternal vertx, String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+  Session(VertxInternal vertx, Map<String, Session> sessions, String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
     super(vertx);
+    this.sessions = sessions;
     this.id = id;
     this.timeout = timeout;
     this.sockHandler = sockHandler;
@@ -133,6 +135,10 @@ class Session extends SockJSSocket {
     if (timeoutTimerID != -1) {
       vertx.cancelTimer(timeoutTimerID);
     }
+    sessions.remove(id);
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
   }
 
   public void close() {
@@ -147,10 +153,6 @@ class Session extends SockJSSocket {
     return closed;
   }
 
-  void setTimeoutHandler(Handler<Void> timeoutHandler) {
-    this.timeoutHandler = timeoutHandler;
-  }
-
   void resetListener() {
     listener = null;
 
@@ -159,10 +161,7 @@ class Session extends SockJSSocket {
         public void handle(Long id) {
           vertx.cancelTimer(heartbeatID);
           if (listener == null) {
-            timeoutHandler.handle(null);
-          }
-          if (endHandler != null) {
-            endHandler.handle(null);
+            shutdown();
           }
           if (listener != null) {
             listener.close();

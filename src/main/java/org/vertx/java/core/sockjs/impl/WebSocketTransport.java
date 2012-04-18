@@ -38,7 +38,8 @@ class WebSocketTransport extends BaseTransport {
 
   private static final Logger log = LoggerFactory.getLogger(WebSocketTransport.class);
 
-  WebSocketTransport(final VertxInternal vertx, WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath, Map<String, Session> sessions,
+  WebSocketTransport(final VertxInternal vertx, WebSocketMatcher wsMatcher,
+                     RouteMatcher rm, String basePath, final Map<String, Session> sessions,
                      final AppConfig config,
             final Handler<SockJSSocket> sockHandler) {
     super(vertx, sessions, config);
@@ -47,7 +48,7 @@ class WebSocketTransport extends BaseTransport {
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
-        final Session session = new Session(vertx, config.getHeartbeatPeriod(), sockHandler);
+        final Session session = new Session(vertx, sessions, config.getHeartbeatPeriod(), sockHandler);
         session.register(new WebSocketListener(match.ws, session));
       }
     });
@@ -96,6 +97,7 @@ class WebSocketTransport extends BaseTransport {
       ws.closedHandler(new SimpleHandler() {
         public void handle() {
           closed = true;
+          session.shutdown();
         }
       });
     }

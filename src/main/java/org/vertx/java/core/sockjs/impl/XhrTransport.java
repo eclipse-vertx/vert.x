@@ -152,7 +152,7 @@ class XhrTransport extends BaseTransport {
 
     XhrPollingListener(HttpServerRequest req, final Session session) {
       super(req, session);
-      addCloseHandler(req.response, session, sessions);
+      addCloseHandler(req.response, session);
     }
 
     boolean closed;
@@ -186,7 +186,7 @@ class XhrTransport extends BaseTransport {
     XhrStreamingListener(int maxBytesStreaming, HttpServerRequest req, final Session session) {
       super(req, session);
       this.maxBytesStreaming = maxBytesStreaming;
-      addCloseHandler(req.response, session, sessions);
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {
