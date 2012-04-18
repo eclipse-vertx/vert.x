@@ -11,7 +11,7 @@ Some of the key highlights include:
 several programming languages in a single application. (Scala and Clojure support is scheduled too).
 
 * No more worrying about concurrency. Vert.x allows you to write all your code as single threaded,
-freeing you from the hassle of multi-threaded programming, yet scales seamlessly over available cores.
+freeing you from the hassle of multi-threaded programming, yet unlike other asynchronous framework it scales seamlessly over available cores without you having to fork.
 
 * Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.
 
