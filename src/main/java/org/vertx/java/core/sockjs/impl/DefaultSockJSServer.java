@@ -18,6 +18,7 @@ package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -225,10 +226,9 @@ public class DefaultSockJSServer implements SockJSServer {
   private Handler<HttpServerRequest> createIFrameHandler(final String iframeHTML) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-
         try {
           String etag = getMD5String(iframeHTML);
-          if (etag.equals(req.headers().get("if-none-match"))) {
+          if (etag.equals(req.headers().get("If-None-Match"))) {
             req.response.statusCode = 304;
             req.response.end();
           } else {
@@ -277,17 +277,14 @@ public class DefaultSockJSServer implements SockJSServer {
       "</html>";
 
   // For debug only
-//  public static void main(String[] args) throws Exception {
-//    VertxInternal.instance.startOnEventLoop(new Runnable() {
-//      public void run() {
-//        HttpServer httpServer = vertx.createHttpServer();
-//        DefaultSockJSServer sjsServer = new DefaultSockJSServer(httpServer);
-//        sjsServer.installTestApplications();
-//        httpServer.listen(8081);
-//      }
-//    });
-//    Thread.sleep(Long.MAX_VALUE);
-//  }
+  public static void main(String[] args) throws Exception {
+    Vertx vertx = Vertx.newVertx();
+    HttpServer httpServer = vertx.createHttpServer();
+    DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
+    sjsServer.installTestApplications();
+    httpServer.listen(8081);
+    Thread.sleep(Long.MAX_VALUE);
+  }
 
   /*
   These applications are required by the SockJS protocol and QUnit tests
