@@ -145,10 +145,6 @@ class Session extends SockJSSocket {
     closed = true;
   }
 
-  public String getID() {
-    return id;
-  }
-
   boolean isClosed() {
     return closed;
   }
