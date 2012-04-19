@@ -19,7 +19,7 @@ freeing you from the hassle of multi-threaded programming, yet unlike other asyn
 
 * Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.
 
-*If you don't want the whole vert.x platform, vert.x can also be used embedded directly in your Java or
+*If you don't want the whole vert.x platform, vert.x can also be used as a lightweight library in your Java or
 Groovy applications*
 
 **Please see the [website](http://vertx.io/) for full documentation and information on vert.x**
