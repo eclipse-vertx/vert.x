@@ -241,12 +241,13 @@ vertx.createHttpServer().requestHandler { req ->
               <div class="tab-pane" id="ws_java">
                 <p>Save the following in <code>Server.java</code></p>
                 <pre class="prettyprint">
-import org.vertx.java.core.*;
-import org.vertx.java.core.http.*;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.deploy.Verticle;
 
-public class Server implements Verticle {
+public class Server extends Verticle {
     public void start() {
-        vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
+        vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
             public void handle(HttpServerRequest req) {
                 String file = req.path.equals("/") ? "index.html" : req.path;
                 req.response.sendFile("webroot/" + file);
@@ -257,7 +258,7 @@ public class Server implements Verticle {
                 </pre>
 
                 <p>Compile it:</p>
-                <p><code>javac Server.java -cp $VERTX_HOME/lib/jars/vert.x.jar</code></p>
+                <p><code>javac Server.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar</code></p>
 
                 <p>Run it with:</p>
                 <p><code>vertx run Server</code></p>
