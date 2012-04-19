@@ -24,9 +24,6 @@ import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.deploy.Verticle;
 
-/**
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
 public class WebServer extends Verticle implements Handler<HttpServerRequest> {
 
   public void start() throws Exception {

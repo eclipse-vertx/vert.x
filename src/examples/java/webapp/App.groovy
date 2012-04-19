@@ -27,19 +27,6 @@ def authMgrConf = [
   user_collection: 'users',
   persistor_address: 'demo.persistor'
 ]
-def mailerConf = [
-  address: 'demo.mailer'
-  /*
-  Uncomment this to use a gmail account
-  ,
-  host: 'smtp.googlemail.com',
-  port: 465,
-  ssl: true,
-  auth: true,
-  username: 'your_username',
-  password: 'your_password'
-  */
-]
 
 def permitted =
 [
@@ -69,7 +56,6 @@ container.with {
     deployVerticle('StaticData.groovy')
   })
   deployVerticle('auth-mgr', authMgrConf)
-  deployWorkerVerticle('mailer', mailerConf)
 
   // Start the order manager
 

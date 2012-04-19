@@ -23,9 +23,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 
-/**
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
 public class OrderMgr extends Verticle {
 
   private EventBus eb;
