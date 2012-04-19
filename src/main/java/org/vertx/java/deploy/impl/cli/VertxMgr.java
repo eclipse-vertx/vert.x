@@ -77,7 +77,7 @@ public class VertxMgr {
       VertxCommand cmd = null;
 
       if (sargs[0].equalsIgnoreCase("version")) {
-        System.out.println("vert.x 1.0.beta8");
+        System.out.println("vert.x 1.0.beta9");
       } else if (sargs[0].equalsIgnoreCase("start")) {
         startServer(args);
       } else if (sargs[0].equalsIgnoreCase("run")) {
