@@ -6,6 +6,8 @@ The application consists of a client-side JavaScript MVVM application which comm
 
 In this version of this tutorial we've written it all in Ruby. If you'd prefer to use JavaScript or Java please see the version for that language. You could also mix and match - writing your components in a variety of languages.
 
+If you'd rather just look at the code than work through the tutorial, the complete working example is present in the `webapp` directory of the examples in the distribution. Read the README there for instructions on how to run it.
+
 ## Step 1. Install vert.x
 
 If you haven't yet installed vert.x, [do that now](install.html). 
@@ -122,7 +124,7 @@ Open a text editor and copy in the following:
 
     # Deploy the busmods
 
-    Vertx.deploy_worker_verticle('mongo-persistor', persistor_conf);
+    Vertx.deploy_verticle('mongo-persistor', persistor_conf);
 
     # Start the web server
 
@@ -130,7 +132,7 @@ Open a text editor and copy in the following:
 
 Save it as `app.rb`.
 
-The calls to `Vertx.deploy_verticle` and `Vertx.deploy_worker_verticle` are a programmatic way of starting other verticles from inside the code of a verticle.
+The calls to `Vertx.deploy_verticle` are a programmatic way of starting other verticles from inside the code of a verticle.
 
 As you can see, the persistor needs some configuration and that is passed in when we deploy the persistor verticle. The configuration is expressed in JSON.
 
@@ -254,11 +256,11 @@ Copy `static_data.rb` into your directory as follows:
 
 We want to insert the static data only after the persistor verticle has completed starting up so we edit `app.rb` as follows:
 
-    Vertx.deploy_worker_verticle('mongo-persistor, persistor_conf) do
+    Vertx.deploy_verticle('mongo-persistor, persistor_conf) do
         load('static_data.rb')
     end
     
-The block that we're specifying in the call to `deploy_worker_verticle` will be invoked when the persistor is fully started. In that block we just load the static data script.
+The block that we're specifying in the call to `deploy_verticle` will be invoked when the persistor is fully started. In that block we just load the static data script.
 
 Save the edited `app.rb` and restart it.
 
@@ -360,7 +362,7 @@ So, app.rb should now look like this:
 
     # Deploy the busmods
 
-    Vertx.deploy_worker_verticle('mongo-persistor', persistor_conf) do
+    Vertx.deploy_verticle('mongo-persistor', persistor_conf) do
         load('static_data.rb')
     end
 
@@ -619,7 +621,7 @@ In our trivial example it probably won't make much difference, but if you have s
 
 You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.
 
-Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called `WorkQueue` which allows you to easily create queues of work can be shared out amongst many processors.
+Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called `work-queue` which allows you to easily create queues of work can be shared out amongst many processors.
 
 Please consult the busmods manual for more information on this.
 

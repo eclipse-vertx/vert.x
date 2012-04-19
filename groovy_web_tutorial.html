@@ -71,6 +71,7 @@
 <p>The application is a shop application called "vToons" which allows you to buy tracks online.</p>
 <p>The application consists of a client-side JavaScript MVVM application which communicates with a set of server-side components via the vert.x event bus.</p>
 <p>In this version of this tutorial we've written it all in Groovy. If you'd prefer to use Ruby, JavaScript or Java please see the version for that language. You could also mix and match - writing your components in a variety of languages.</p>
+<p>If you'd rather just look at the code than work through the tutorial, the complete working example is present in the <code>webapp</code> directory of the examples in the distribution. Read the README there for instructions on how to run it.</p>
 <h2 id="step-1-install-vertx">Step 1. Install vert.x</h2><br/>
 <p>If you haven't yet installed vert.x, <a href="install.html">do that now</a>. </p>
 <p>The rest of the tutorial will assume you have installed vert.x in directory <code>VERTX_HOME</code>.</p>
@@ -150,7 +151,7 @@ container.with {
 
   // Deploy the busmods
 
-  deployWorkerVerticle('mongo-persistor', persistorConf)
+  deployVerticle('mongo-persistor', persistorConf)
 
   // Start the web server
 
@@ -158,7 +159,7 @@ container.with {
 }
 </pre>
 <p>Save it as <code>App.groovy</code>.</p>
-<p>The calls to <code>deployVerticle</code> and <code>deployWorkerVerticle</code> are a programmatic way of starting other verticles from inside the code of a verticle.</p>
+<p>The calls to <code>deployVerticle</code> are a programmatic way of starting other verticles from inside the code of a verticle.</p>
 <p>As you can see, the persistor needs some configuration and that is passed in when we deploy the persistor verticle. The configuration is a a JSON object (expressed as a Map)</p>
 <p>The persistor needs two pieces of information:</p>
 <ul>
@@ -246,11 +247,11 @@ server.listen(8080, 'localhost')
 <pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/groovy/webapp/StaticData.groovy .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>App.groovy</code> as follows:</p>
-<pre class="prettyprint">deployWorkerVerticle('mongo-persistor', persistorConf, 1, {
+<pre class="prettyprint">deployVerticle('mongo-persistor', persistorConf, 1, {
     deployVerticle('StaticData.groovy')
 })
 </pre>
-<p>The block that we're specifying in the call to <code>deployWorkerVerticle</code> will be invoked when the persistor is fully started. In that block we just load the static data script.</p>
+<p>The block that we're specifying in the call to <code>deployVerticle</code> will be invoked when the persistor is fully started. In that block we just load the static data script.</p>
 <p>Save the edited <code>App.groovy</code> and restart it.</p>
 <pre class="prettyprint">vertx run App.groovy
 </pre>
@@ -332,7 +333,7 @@ container.with {
 
   // Deploy the busmods
 
-  deployWorkerVerticle('mongo-persistor', persistorConf, 1, {
+  deployVerticle('mongo-persistor', persistorConf, 1, {
     deployVerticle('StaticData.groovy')
   })
   deployVerticle('auth-mgr', authMgrConf)
@@ -535,7 +536,7 @@ deployVerticle('WebServer.groovy', null, 32)
 <h3 id="scaling-the-processing">Scaling the processing.</h3><br/>
 <p>In our trivial example it probably won't make much difference, but if you have some fairly intensive processing that needs to be done on the orders, it might make sense to maintain a farm of order processors, and as orders come into the order manager, to farm them out to one of the available processors.</p>
 <p>You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.</p>
-<p>Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called <code>WorkQueue</code> which allows you to easily create queues of work can be shared out amongst many processors.</p>
+<p>Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called <code>work-queue</code> which allows you to easily create queues of work can be shared out amongst many processors.</p>
 <p>Please consult the modules manual for more information on this.</p>
 <h3 id="packaging-as-a-module">Packaging as a module</h3><br/>
 <p>Vert.x applications and other functionality can be installed as modules. This makes them easier to manage and allow them to be easily referenced from other applications. For detailed information on modules, please see the modules manual.</p>
