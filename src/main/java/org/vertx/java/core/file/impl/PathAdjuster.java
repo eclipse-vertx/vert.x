@@ -27,12 +27,14 @@ import java.nio.file.Paths;
 public class PathAdjuster {
 
   public static Path adjust(Path path) {
-    Path adjustment = Context.getContext().getPathAdjustment();
-    if (adjustment == null) {
-      return path;
-    } else {
-      return adjustment.resolve(path);
+    Context context = Context.getContext();
+    if (context != null) {
+      Path adjustment = context.getPathAdjustment();
+      if (adjustment != null) {
+        return adjustment.resolve(path);
+      }
     }
+    return path;
   }
 
   public static String adjust(String path) {
