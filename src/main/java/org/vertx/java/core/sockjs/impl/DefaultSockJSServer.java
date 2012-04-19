@@ -27,6 +27,7 @@ import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -145,7 +146,17 @@ public class DefaultSockJSServer implements SockJSServer {
         req.response.end();
       }
     });
+  }
 
+  public void bridge(AppConfig sjsConfig, JsonArray permitted) {
+    List<JsonObject> l = new ArrayList<>();
+    for (Object elem: permitted) {
+      if (!(elem instanceof JsonObject)) {
+        throw new IllegalArgumentException("Permitted must only contain JsonObject");
+      }
+      l.add((JsonObject)elem);
+    }
+    bridge(sjsConfig, l);
   }
 
   public void bridge(AppConfig sjsConfig, List<JsonObject> permitted) {

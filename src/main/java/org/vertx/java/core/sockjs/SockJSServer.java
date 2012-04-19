@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 import java.util.List;
@@ -68,6 +69,13 @@ public interface SockJSServer {
    * @param permitted A list of JSON objects which define permitted matches
    */
   void bridge(AppConfig sjsConfig, List<JsonObject> permitted);
+
+  /**
+   * Install an app which bridges the SockJS server to the event bus
+   * @param sjsConfig The config for the app
+   * @param permitted A JSON array of JSON objects which define permitted matches
+   */
+  void bridge(AppConfig sjsConfig, JsonArray permitted);
 
 }
 
