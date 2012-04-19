@@ -11,10 +11,6 @@ auth_mgr_conf = {
   'user_collection' => 'users',
   'persistor_address' => 'demo.persistor'
 }
-mailer_conf = {
-   'address' => 'demo.mailer'
-}
-
 
 # Deploy the busmods
 
@@ -23,8 +19,6 @@ Vertx.deploy_verticle('mongo-persistor', persistor_conf) do
 end
 
 Vertx.deploy_verticle('auth-mgr', auth_mgr_conf)
-
-Vertx.deploy_worker_verticle('mailer', mailer_conf)
 
 # Start the order manager
 
