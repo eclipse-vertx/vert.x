@@ -167,7 +167,7 @@
       <classpath>
         <pathelement path="core-lib-classpath"/>
         <pathelement path="${java-target}"/>
-        <fileset dir="${mods-src-root}/${mod-name}/lib">
+        <fileset dir="${mods-src-root}/${mod-name}/lib" erroronmissingdir="false">
           <include name="*.jar"/>
         </fileset>
       </classpath>
@@ -185,7 +185,7 @@
       <exclude name="**/core/"/>
     </jar>
   </target>
-	
+
   <target name="jar-test-framework" depends="compile-test-framework" description="generate the test framework jar">
     <jar jarfile="${target}/${test-framework-jar-file}" basedir="${tests-target}" includes="**/framework/**/*.class"/>
   </target>
@@ -207,7 +207,7 @@
       <src path="${test-framework-src-java}"/>
     </javac>
   </target>
-  
+
   <target name="compile-tests" depends="compile-test-framework,jar-core,jar-platform">
     <mkdir dir="${tests-target}"/>
 
