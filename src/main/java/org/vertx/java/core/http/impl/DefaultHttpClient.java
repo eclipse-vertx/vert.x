@@ -342,8 +342,9 @@ public class DefaultHttpClient implements HttpClient {
       }
       pool.addWorker(ectx.getWorker());
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), 1, pool);
+          vertx.getAcceptorPool(), 4, pool);
       bootstrap = new ClientBootstrap(channelFactory);
+      bootstrap.setOption("connectTimeoutMillis", 60 * 1000);
 
       tcpHelper.checkSSL();
 

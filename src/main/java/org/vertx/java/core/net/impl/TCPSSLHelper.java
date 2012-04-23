@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
+import org.jboss.netty.channel.FixedReceiveBufferSizePredictor;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.Context;
@@ -95,10 +96,15 @@ public class TCPSSLHelper {
       options.put("child.tcpNoDelay", tcpNoDelay);
     }
     if (tcpSendBufferSize != null) {
+      System.out.println("Setting send buffer to " + tcpSendBufferSize);
       options.put("child.sendBufferSize", tcpSendBufferSize);
     }
     if (tcpReceiveBufferSize != null) {
+      System.out.println("Setting receive buffer to " + tcpReceiveBufferSize);
       options.put("child.receiveBufferSize", tcpReceiveBufferSize);
+      //We need to add this otherwise Netty will ignore our setting and use
+      //an adaptive buffer which may grow way beyond what we have specified
+      options.put("child.receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(tcpReceiveBufferSize));
     }
     if (reuseAddress != null) {
       options.put("reuseAddress", reuseAddress);

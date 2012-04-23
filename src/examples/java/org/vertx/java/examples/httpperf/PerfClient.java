@@ -39,7 +39,7 @@ public class PerfClient extends Verticle implements Handler<HttpClientResponse> 
 
   private int requestCredits = CREDITS_BATCH;
 
-  private EventBus eb = vertx.eventBus();
+  private EventBus eb;
 
   public void handle(HttpClientResponse response) {
     if (response.statusCode != 200) {
@@ -59,6 +59,7 @@ public class PerfClient extends Verticle implements Handler<HttpClientResponse> 
   }
 
   public void start() {
+    eb = vertx.eventBus();
     client = vertx.createHttpClient().setPort(8080).setHost("localhost").setMaxPoolSize(MAX_CONNS);
     makeRequest();
   }

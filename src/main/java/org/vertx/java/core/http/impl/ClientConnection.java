@@ -160,9 +160,13 @@ class ClientConnection extends AbstractConnection {
 
   void handleInterestedOpsChanged() {
     try {
-      if (currentRequest != null && channel.isWritable()) {
-        setContext();
-        currentRequest.handleDrained();
+      if (channel.isWritable()) {
+        if (currentRequest != null) {
+          setContext();
+          currentRequest.handleDrained();
+        } else if (ws != null) {
+          ws.writable();
+        }
       }
     } catch (Throwable t) {
       handleHandlerException(t);

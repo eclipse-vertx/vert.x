@@ -606,6 +606,7 @@ public class DefaultEventBus implements EventBus {
       });
       client.exceptionHandler(new Handler<Exception>() {
         public void handle(Exception e) {
+          log.error("Got an exception on the event bus connection", e);
           cleanupConnection(address, serverID, ConnectionHolder.this);
         }
       });
