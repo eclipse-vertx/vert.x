@@ -22,6 +22,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
@@ -52,6 +53,7 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
   WebSocketFrameDecoder08(int maxFrameSize) {
     this.maxFrameSize = maxFrameSize;
   }
+
 
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, VoidEnum state) throws Exception {
@@ -95,6 +97,8 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
     ChannelBuffer data = ChannelBuffers.wrappedBuffer(body);
 
     FrameType frameType = decodeFrameType(opcode);
+
+    System.out.println("buffer size is " + this.internalBuffer().capacity());
 
     return new DefaultWebSocketFrame(frameType, data);
   }

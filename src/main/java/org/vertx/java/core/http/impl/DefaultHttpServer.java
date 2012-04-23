@@ -164,6 +164,7 @@ public class DefaultHttpServer implements HttpServer {
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions());
+        bootstrap.setOption("backlog", 100000);
 
         tcpHelper.checkSSL();
 
