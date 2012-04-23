@@ -40,7 +40,7 @@ public class WebsocketsTestClient extends TestClientBase {
   @Override
   public void start() {
     super.start();
-    client = vertx.createHttpClient().setHost("localhost").setPort(8080);
+    client = vertx.createHttpClient().setHost("localhost").setPort(8080).setReceiveBufferSize(1024);
     tu.appReady();
   }
 

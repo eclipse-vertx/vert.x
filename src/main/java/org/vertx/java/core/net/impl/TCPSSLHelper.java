@@ -90,30 +90,28 @@ public class TCPSSLHelper {
     nch.getWorker().executeInIoThread(runnable, false);
   }
 
-  public Map<String, Object> generateConnectionOptions() {
+  public Map<String, Object> generateConnectionOptions(boolean server) {
     Map<String, Object> options = new HashMap<>();
+    String prefix = (server ? "child." : "");
     if (tcpNoDelay != null) {
-      options.put("child.tcpNoDelay", tcpNoDelay);
+      options.put(prefix +"tcpNoDelay", tcpNoDelay);
     }
     if (tcpSendBufferSize != null) {
-      System.out.println("Setting send buffer to " + tcpSendBufferSize);
-      options.put("child.sendBufferSize", tcpSendBufferSize);
+      options.put(prefix + "sendBufferSize", tcpSendBufferSize);
     }
     if (tcpReceiveBufferSize != null) {
-      System.out.println("Setting receive buffer to " + tcpReceiveBufferSize);
-      options.put("child.receiveBufferSize", tcpReceiveBufferSize);
-      //We need to add this otherwise Netty will ignore our setting and use
-      //an adaptive buffer which may grow way beyond what we have specified
-      options.put("child.receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(tcpReceiveBufferSize));
+      System.out.println("Setting receive buffer size to " + tcpReceiveBufferSize);
+      options.put(prefix + "receiveBufferSize", tcpReceiveBufferSize);
+      options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
     }
-    if (reuseAddress != null) {
+    if (server && reuseAddress != null) {
       options.put("reuseAddress", reuseAddress);
     }
     if (soLinger != null) {
-      options.put("child.soLinger", soLinger);
+      options.put(prefix + "soLinger", soLinger);
     }
     if (trafficClass != null) {
-      options.put("child.trafficClass", trafficClass);
+      options.put(prefix + "trafficClass", trafficClass);
     }
     return options;
   }

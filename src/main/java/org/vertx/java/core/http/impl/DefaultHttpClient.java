@@ -363,7 +363,7 @@ public class DefaultHttpClient implements HttpClient {
         }
       });
     }
-    bootstrap.setOptions(tcpHelper.generateConnectionOptions());
+    bootstrap.setOptions(tcpHelper.generateConnectionOptions(false));
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
