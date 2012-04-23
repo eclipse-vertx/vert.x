@@ -98,7 +98,7 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
 
     FrameType frameType = decodeFrameType(opcode);
 
-    System.out.println("buffer size is " + this.internalBuffer().capacity());
+    //System.out.println("buffer size is " + this.internalBuffer().capacity());
 
     return new DefaultWebSocketFrame(frameType, data);
   }

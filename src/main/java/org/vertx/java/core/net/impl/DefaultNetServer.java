@@ -151,7 +151,7 @@ public class DefaultNetServer implements NetServer {
           }
         });
 
-        bootstrap.setOptions(tcpHelper.generateConnectionOptions());
+        bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
 
         try {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
