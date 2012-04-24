@@ -36,6 +36,8 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.impl.ClusterManager;
+import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -154,6 +156,10 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.getConnectTimeout();
   }
 
+  public Integer getBossThreads() {
+    return tcpHelper.getClientBossThreads();
+  }
+
   public NetClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -191,6 +197,11 @@ public class DefaultNetClient implements NetClient {
 
   public NetClient setConnectTimeout(long timeout) {
     tcpHelper.setConnectTimeout(timeout);
+    return this;
+  }
+
+  public NetClient setBossThreads(int threads) {
+    tcpHelper.setClientBossThreads(threads);
     return this;
   }
 
@@ -271,8 +282,10 @@ public class DefaultNetClient implements NetClient {
       }
       pool.addWorker(ectx.getWorker());
 
+      Integer bossThreads = tcpHelper.getClientBossThreads();
+      int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), 1, pool);
+          vertx.getAcceptorPool(), threads, pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -412,6 +425,7 @@ public class DefaultNetClient implements NetClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
+      log.error("Exception on netclient", t);
       if (sock != null && t instanceof Exception) {
         tcpHelper.runOnCorrectThread(ch, new Runnable() {
           public void run() {

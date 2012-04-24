@@ -24,25 +24,27 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.deploy.Verticle;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 public class PerfClient extends Verticle {
 
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 1;
+  private static final int CONNS = 5000;
 
   private int statsCount;
 
   private EventBus eb;
 
-  private static final int STR_LENGTH = 16 * 1024;
+  private static final int STR_LENGTH = 4 * 1024;
 
   private static final int STATS_BATCH = 1024 * 1024;
 
-  private static final int BUFF_SIZE = 64 * 1024;
+  private static final int BUFF_SIZE = 8 * 1024;
 
   private String message;
 
@@ -61,16 +63,25 @@ public class PerfClient extends Verticle {
 
   Queue<WebSocket> websockets = new LinkedList<>();
 
+  Set<WebSocket> wss = new HashSet<>();
+
+
   private void connect(final int count) {
     client.connectWebsocket("/someuri", new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
         connectCount++;
-        System.out.println("ws connected: " + connectCount);
 
         ws.setWriteQueueMaxSize(BUFF_SIZE);
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
+            if (!wss.contains(ws)) {
+              wss.add(ws);
+              if (wss.size() == CONNS) {
+                System.out.println("Received data on all conns");
+              }
+            }
             int len = data.length();
+            //System.out.println("Got data " + len);
             statsCount += len;
             if (statsCount > STATS_BATCH) {
               eb.send("rate-counter", statsCount);
@@ -113,24 +124,26 @@ public class PerfClient extends Verticle {
     client = vertx.createHttpClient().setPort(8080).setHost("localhost").setMaxPoolSize(CONNS);
     client.setReceiveBufferSize(BUFF_SIZE);
     client.setSendBufferSize(BUFF_SIZE);
+    client.setConnectTimeout(60000);
+    client.setBossThreads(4);
     connect(0);
   }
 
   private void writeWebSocket(final WebSocket ws) {
     if (!ws.writeQueueFull()) {
       ws.writeTextFrame(message);
-      //ws.writeBinaryFrame(buff);
+      //ws.writeBinaryFrame(new Buffer(message));
       //System.out.println("wrote buffer");
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
-          //writeWebSocket(ws);
+          writeWebSocket(ws);
         }
       });
     } else {
       // Flow control
       ws.drainHandler(new SimpleHandler() {
         public void handle() {
-          //writeWebSocket(ws);
+          writeWebSocket(ws);
         }
       });
     }

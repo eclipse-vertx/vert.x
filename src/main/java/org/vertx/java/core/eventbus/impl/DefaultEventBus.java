@@ -23,6 +23,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
@@ -52,11 +53,9 @@ public class DefaultEventBus implements EventBus {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
 
-  private static final String CLUSTER_PROVIDER_CLASS_NAME =
-      "org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager";
   private static final Buffer PONG = new Buffer(new byte[] { (byte)1 });
-  private static final long PING_INTERVAL = 5000;
-  private static final long PING_REPLY_INTERVAL = 5000;
+  private static final long PING_INTERVAL = 20000;
+  private static final long PING_REPLY_INTERVAL = 20000;
   public static final int DEFAULT_CLUSTER_PORT = 2550;
   private final VertxInternal vertx;
   private final ServerID serverID;
@@ -82,19 +81,9 @@ public class DefaultEventBus implements EventBus {
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
-    try {
-      final Class<?> raw = Class.forName(CLUSTER_PROVIDER_CLASS_NAME);
-
-      Class<? extends ClusterManager> clusterProvider = raw.asSubclass(ClusterManager.class);
-      Constructor<? extends ClusterManager> constructor = clusterProvider.getDeclaredConstructor(VertxInternal.class);
-      ClusterManager mgr = constructor.newInstance(vertx);
-
-      subs = mgr.getSubsMap("subs");
-      this.server = setServer();
-    } catch (Exception e) {
-      log.error("Failed to create cluster manager", e);
-      throw new IllegalArgumentException(e);
-    }
+    ClusterManager mgr = new HazelcastClusterManager(vertx);
+    subs = mgr.getSubsMap("subs");
+    this.server = setServer();
   }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
@@ -439,6 +428,9 @@ public class DefaultEventBus implements EventBus {
     ConnectionHolder holder = connections.get(serverID);
     if (holder == null) {
       NetClient client = vertx.createNetClient();
+      // When process is creating a lot of connections this can take some time
+      // so increase the timeout
+      client.setConnectTimeout(60 * 1000);
       holder = new ConnectionHolder(client);
       ConnectionHolder prevHolder = connections.putIfAbsent(serverID, holder);
       if (prevHolder != null) {
@@ -459,7 +451,7 @@ public class DefaultEventBus implements EventBus {
         holder.timeoutID = vertx.setTimer(PING_REPLY_INTERVAL, new Handler<Long>() {
           public void handle(Long timerID) {
             // Didn't get pong in time - consider connection dead
-            log.debug("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
+            log.info("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
             cleanupConnection(address, serverID, holder);
           }
         });
