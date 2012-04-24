@@ -164,7 +164,6 @@ public class DefaultHttpServer implements HttpServer {
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
-        bootstrap.setOption("backlog", 100000);
 
         tcpHelper.checkSSL();
 
@@ -327,6 +326,11 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
+  public HttpServer setAcceptBacklog(int backlog) {
+    tcpHelper.setAcceptBacklog(backlog);
+    return this;
+  }
+
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -353,6 +357,10 @@ public class DefaultHttpServer implements HttpServer {
 
   public Integer getTrafficClass() {
     return tcpHelper.getTrafficClass();
+  }
+
+  public Integer getAcceptBacklog() {
+    return tcpHelper.getAcceptBacklog();
   }
 
   public boolean isSSL() {

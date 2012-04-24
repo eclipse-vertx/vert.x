@@ -32,7 +32,7 @@ public class PerfClient extends Verticle {
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 100;
+  private static final int CONNS = 1000;
 
   private int statsCount;
 

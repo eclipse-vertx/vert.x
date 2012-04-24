@@ -172,6 +172,12 @@ public interface NetClient {
   NetClient setTrafficClass(int trafficClass);
 
   /**
+   * Set the connect timeout in milliseconds.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  NetClient setConnectTimeout(long timeout);
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay();
@@ -209,6 +215,12 @@ public interface NetClient {
    * @return the value of TCP traffic class
    */
   Integer getTrafficClass();
+
+  /**
+   *
+   * @return The connect timeout in milliseconds
+   */
+  Long getConnectTimeout();
 
   /**
    *

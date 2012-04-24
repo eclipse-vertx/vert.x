@@ -87,7 +87,6 @@ public abstract class ConnectionBase {
    */
   public boolean writeQueueFull() {
     return !channel.isWritable();
-    //return channel.
   }
 
   /**

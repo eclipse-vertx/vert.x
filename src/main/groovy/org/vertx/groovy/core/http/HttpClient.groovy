@@ -345,6 +345,15 @@ abstract class HttpClient {
   }
 
   /**
+   * Set the connect timeout in milliseconds
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpClient setConnectTimeout(long timeout) {
+    jClient.setConnectTimeout(timeout)
+    this
+  }
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay() {
@@ -395,6 +404,14 @@ abstract class HttpClient {
    */
   Integer getTrafficClass() {
     jClient.getTrafficClass()
+  }
+
+  /**
+   *
+   * @return The connect timeout
+   */
+  Long getConnectTimeout() {
+    jClient.getConnectTimeout()
   }
 
   /**
