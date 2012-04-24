@@ -26,7 +26,7 @@ import org.vertx.java.deploy.Verticle;
  */
 public class PerfServer extends Verticle {
 
-  private static final int BUFF_SIZE = 2 * 1024;
+  private static final int BUFF_SIZE = 16 * 1024;
 
   int count = 0;
 

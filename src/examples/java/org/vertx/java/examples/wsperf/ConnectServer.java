@@ -18,7 +18,6 @@ package org.vertx.java.examples.wsperf;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.streams.Pump;
 import org.vertx.java.deploy.Verticle;
 
 /**
