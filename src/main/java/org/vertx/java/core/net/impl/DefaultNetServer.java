@@ -460,6 +460,9 @@ public class DefaultNetServer implements NetServer {
       final NetSocket sock = socketMap.remove(ch);
       ch.close();
       final Throwable t = e.getCause();
+
+      log.error("Exception on netserver", t);
+
       if (sock != null && t instanceof Exception) {
         sock.getContext().execute(new Runnable() {
           public void run() {

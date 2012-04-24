@@ -354,6 +354,15 @@ abstract class HttpClient {
   }
 
   /**
+   * Set the number of boss threads to use. Boss threads are used to make connections.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpClient setBossThreads(long threads) {
+    jClient.setBossThreads(threads)
+    this
+  }
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay() {
@@ -412,6 +421,14 @@ abstract class HttpClient {
    */
   Long getConnectTimeout() {
     jClient.getConnectTimeout()
+  }
+
+  /**
+   *
+   * @return The number of boss threads
+   */
+  Integer getBossThreads() {
+    jClient.getBossThreads();
   }
 
   /**

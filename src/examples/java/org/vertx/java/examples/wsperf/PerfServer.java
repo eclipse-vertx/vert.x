@@ -21,20 +21,23 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.deploy.Verticle;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class PerfServer extends Verticle {
 
-  private static final int BUFF_SIZE = 64 * 1024;
+  private static final int BUFF_SIZE = 8 * 1024;
 
-  int count = 0;
+  //int count = 0;
 
   public void start() throws Exception {
-    vertx.createHttpServer().setReceiveBufferSize(BUFF_SIZE).setSendBufferSize(BUFF_SIZE).
+    vertx.createHttpServer().setReceiveBufferSize(BUFF_SIZE).setSendBufferSize(BUFF_SIZE).setAcceptBacklog(32000).
         websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(ServerWebSocket ws) {
-        System.out.println("connected " + ++count);
+        //System.out.println("connected " + ++count);
         Pump.createPump(ws, ws, BUFF_SIZE).start();
       }
     }).listen(8080, "localhost");

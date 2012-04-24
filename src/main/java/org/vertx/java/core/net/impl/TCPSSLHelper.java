@@ -66,6 +66,8 @@ public class TCPSSLHelper {
   private Integer acceptBackLog;
   private Long connectTimeout;
 
+  private Integer clientBossThreads;
+
   private SSLContext sslContext;
 
   public TCPSSLHelper() {
@@ -155,6 +157,10 @@ public class TCPSSLHelper {
     return trafficClass;
   }
 
+  public Integer getClientBossThreads() {
+    return clientBossThreads;
+  }
+
   public void setTCPNoDelay(Boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
   }
@@ -188,6 +194,15 @@ public class TCPSSLHelper {
   public void setTrafficClass(Integer trafficClass) {
     this.trafficClass = trafficClass;
   }
+
+
+  public void setClientBossThreads(Integer clientBossThreads) {
+    if (clientBossThreads < 1) {
+      throw new IllegalArgumentException("clientBossThreads must be >= 1");
+    }
+    this.clientBossThreads = clientBossThreads;
+  }
+
 
   public boolean isSSL() {
     return ssl;
