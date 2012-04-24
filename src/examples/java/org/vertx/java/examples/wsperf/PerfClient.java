@@ -32,17 +32,17 @@ public class PerfClient extends Verticle {
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 10;
+  private static final int CONNS = 1;
 
   private int statsCount;
 
   private EventBus eb;
 
-  private static final int STR_LENGTH = 512;
+  private static final int STR_LENGTH = 16 * 1024;
 
   private static final int STATS_BATCH = 1024 * 1024;
 
-  private static final int BUFF_SIZE = 16 * 1024;
+  private static final int BUFF_SIZE = 64 * 1024;
 
   private String message;
 
@@ -123,14 +123,14 @@ public class PerfClient extends Verticle {
       //System.out.println("wrote buffer");
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
-          writeWebSocket(ws);
+          //writeWebSocket(ws);
         }
       });
     } else {
       // Flow control
       ws.drainHandler(new SimpleHandler() {
         public void handle() {
-          writeWebSocket(ws);
+          //writeWebSocket(ws);
         }
       });
     }
