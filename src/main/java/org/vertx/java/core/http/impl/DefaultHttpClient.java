@@ -51,7 +51,6 @@ import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxWorkerPool;
 
@@ -123,7 +122,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
-    connectWebsocket(uri, WebSocketVersion.HYBI_17, wsConnect);
+    connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
   }
 
   public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {

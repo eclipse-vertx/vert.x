@@ -84,11 +84,11 @@ public class WebsocketsTestClient extends TestClientBase {
   }
 
   public void testWSBinaryHybi17() throws Exception {
-    testWS(true, WebSocketVersion.HYBI_17);
+    testWS(true, WebSocketVersion.RFC6455);
   }
 
   public void testWSStringHybi17() throws Exception {
-    testWS(false, WebSocketVersion.HYBI_17);
+    testWS(false, WebSocketVersion.RFC6455);
   }
 
   public void testWriteFromConnectHybi00() throws Exception {
@@ -100,7 +100,7 @@ public class WebsocketsTestClient extends TestClientBase {
   }
 
   public void testWriteFromConnectHybi17() throws Exception {
-    testWriteFromConnectHandler(WebSocketVersion.HYBI_17);
+    testWriteFromConnectHandler(WebSocketVersion.RFC6455);
   }
 
   // TODO close and exception tests

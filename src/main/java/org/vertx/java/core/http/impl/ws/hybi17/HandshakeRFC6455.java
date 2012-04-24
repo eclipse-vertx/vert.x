@@ -35,28 +35,28 @@ import org.vertx.java.core.http.impl.ws.hybi08.WebSocketChallenge08;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Handler for ietf-17.
+ * Handler for RFC6455.
  *
  * @author Michael Dobozy
  * @author Bob McWhirter
  */
-public class Handshake17 extends Handshake08 {
+public class HandshakeRFC6455 extends Handshake08 {
 
   public static boolean matches(HttpRequest request) {
     String sVers = request.getHeader("Sec-WebSocket-Version");
     if (sVers != null) {
       Integer ver = Integer.parseInt(sVers);
-      return request.containsHeader("Sec-WebSocket-Key") && ver >= 13;
+      return request.containsHeader("Sec-WebSocket-Key") && ver == 13;
     } else {
       return false;
     }
   }
 
-  public Handshake17() throws NoSuchAlgorithmException {
+  public HandshakeRFC6455() throws NoSuchAlgorithmException {
   }
 
   public void fillInRequest(HttpClientRequest req, String hostHeader) throws Exception {
-    req.headers().put("Sec-WebSocket-Version", "17");
+    req.headers().put("Sec-WebSocket-Version", "13");
     req.headers().put(HttpHeaders.Names.CONNECTION, "Upgrade");
     req.headers().put(HttpHeaders.Names.UPGRADE, "WebSocket");
     req.headers().put(HttpHeaders.Names.HOST, hostHeader);
@@ -64,7 +64,8 @@ public class Handshake17 extends Handshake08 {
   }
 
   public HttpResponse generateResponse(HttpRequest request) throws Exception {
-    HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
+    HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101,
+        "Switching Protocols"));
     response.addHeader(Names.UPGRADE, "WebSocket");
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     String origin = request.getHeader(Names.ORIGIN);

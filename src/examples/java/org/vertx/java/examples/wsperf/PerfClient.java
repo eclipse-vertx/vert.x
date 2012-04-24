@@ -34,17 +34,17 @@ public class PerfClient extends Verticle {
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 5000;
+  private static final int CONNS = 100;
 
   private int statsCount;
 
   private EventBus eb;
 
-  private static final int STR_LENGTH = 4 * 1024;
+  private static final int STR_LENGTH = 1 * 1024;
 
   private static final int STATS_BATCH = 1024 * 1024;
 
-  private static final int BUFF_SIZE = 8 * 1024;
+  private static final int BUFF_SIZE = 32 * 1024;
 
   private String message;
 
@@ -67,7 +67,7 @@ public class PerfClient extends Verticle {
 
 
   private void connect(final int count) {
-    client.connectWebsocket("/someuri", new Handler<WebSocket>() {
+    client.connectWebsocket("/echo/websocket", new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
         connectCount++;
 
