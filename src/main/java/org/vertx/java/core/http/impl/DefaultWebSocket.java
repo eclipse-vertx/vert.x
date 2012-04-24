@@ -131,7 +131,7 @@ public class DefaultWebSocket extends ServerWebSocket {
   }
 
   public void writeBuffer(Buffer data) {
-    writeTextFrame(data.toString());
+    writeBinaryFrame(data);
   }
 
   public void drainHandler(Handler<Void> handler) {
