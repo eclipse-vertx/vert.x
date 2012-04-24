@@ -21,21 +21,18 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.deploy.Verticle;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 
 public class PerfClient extends Verticle {
 
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 25000;
+  private static final int CONNS = 100;
 
   private int statsCount;
 
@@ -45,7 +42,7 @@ public class PerfClient extends Verticle {
 
   private static final int STATS_BATCH = 1024 * 1024;
 
-  private static final int BUFF_SIZE = 2 * 1024;
+  private static final int BUFF_SIZE = 16 * 1024;
 
   private String message;
 
@@ -59,8 +56,6 @@ public class PerfClient extends Verticle {
     message = sb.toString();
     buff = new Buffer(message);
   }
-
-  long start;
 
   int connectCount;
 
@@ -76,28 +71,16 @@ public class PerfClient extends Verticle {
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             int len = data.length();
-            //System.out.println("received buffer: " + totalCount);
             statsCount += len;
-            //System.out.println("received: " + statsCount + " len " + len);
-//              if (statsCount == 0) {
-//                //start = System.currentTimeMillis();
-//              } else
             if (statsCount > STATS_BATCH) {
-              //System.out.println("sent: " + statsCount);
               eb.send("rate-counter", statsCount);
-//                long end = System.currentTimeMillis();
-//                double rate = 1000 * (double)statsCount / (end - start);
-//                System.out.println("count/sec: " + rate);
               statsCount = 0;
-              //start = end;
             }
           }
         });
 
-        //writeWebSocket(ws);
         websockets.add(ws);
         if (connectCount == CONNS) {
-          System.out.println("All connected, now starting them");
           startWebSocket();
         }
       }
@@ -114,7 +97,6 @@ public class PerfClient extends Verticle {
   private void startWebSocket() {
     WebSocket ws = websockets.poll();
     writeWebSocket(ws);
-    System.out.println("Started websocket");
     if (!websockets.isEmpty()) {
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
@@ -145,11 +127,9 @@ public class PerfClient extends Verticle {
         }
       });
     } else {
-      //System.out.println("full!");
       // Flow control
       ws.drainHandler(new SimpleHandler() {
         public void handle() {
-          //System.out.println("drained");
           writeWebSocket(ws);
         }
       });
