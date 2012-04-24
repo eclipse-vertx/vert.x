@@ -92,16 +92,11 @@ public class Pump {
     }
   };
 
-  int count;
-
   private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
     public void handle(Buffer buffer) {
       writeStream.writeBuffer(buffer);
       pumped += buffer.length();
-      count += buffer.length();
       if (writeStream.writeQueueFull()) {
-        //System.out.println("write queue full: count " + count);
-        count = 0;
         readStream.pause();
         writeStream.drainHandler(drainHandler);
       }

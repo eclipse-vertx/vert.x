@@ -63,6 +63,8 @@ public class TCPSSLHelper {
   private Boolean reuseAddress;
   private Boolean soLinger;
   private Integer trafficClass;
+  private Integer acceptBackLog;
+  private Long connectTimeout;
 
   private SSLContext sslContext;
 
@@ -99,18 +101,28 @@ public class TCPSSLHelper {
       options.put(prefix + "sendBufferSize", tcpSendBufferSize);
     }
     if (tcpReceiveBufferSize != null) {
-      System.out.println("Setting receive buffer size to " + tcpReceiveBufferSize);
       options.put(prefix + "receiveBufferSize", tcpReceiveBufferSize);
+      // We need to set a FixedReceiveBufferSizePredictor, since otherwise
+      // Netty will ignore our setting and use an adaptive buffer which can
+      // get very large
       options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
-    }
-    if (server && reuseAddress != null) {
-      options.put("reuseAddress", reuseAddress);
     }
     if (soLinger != null) {
       options.put(prefix + "soLinger", soLinger);
     }
     if (trafficClass != null) {
       options.put(prefix + "trafficClass", trafficClass);
+    }
+    if (server) {
+      if (reuseAddress != null) {
+        options.put("reuseAddress", reuseAddress);
+      }
+      if (acceptBackLog != null) {
+        options.put("backlog", acceptBackLog);
+      }
+    }
+    if (!server && connectTimeout != null) {
+      options.put("connectTimeoutMillis", connectTimeout);
     }
     return options;
   }
@@ -215,13 +227,11 @@ public class TCPSSLHelper {
 
   public void setKeyStorePath(String path) {
     this.keyStorePath = path;
-
   }
 
   public void setKeyStorePassword(String pwd) {
     this.keyStorePassword = pwd;
   }
-
 
   public void setTrustStorePath(String path) {
     this.trustStorePath = path;
@@ -237,6 +247,28 @@ public class TCPSSLHelper {
 
   public void setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
+  }
+
+  public Integer getAcceptBacklog() {
+    return acceptBackLog;
+  }
+
+  public Long getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  public void setConnectTimeout(Long connectTimeout) {
+    if (connectTimeout < 0) {
+      throw new IllegalArgumentException("connectTimeout must be >= 0");
+    }
+    this.connectTimeout = connectTimeout;
+  }
+
+  public void setAcceptBacklog(Integer acceptBackLog) {
+    if (acceptBackLog < 0) {
+      throw new IllegalArgumentException("acceptBackLog must be >= 0");
+    }
+    this.acceptBackLog = acceptBackLog;
   }
 
   /*

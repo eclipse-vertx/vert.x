@@ -261,6 +261,11 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
+  public DefaultHttpClient setConnectTimeout(long timeout) {
+    tcpHelper.setConnectTimeout(timeout);
+    return this;
+  }
+
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -287,6 +292,10 @@ public class DefaultHttpClient implements HttpClient {
 
   public Integer getTrafficClass() {
     return tcpHelper.getTrafficClass();
+  }
+
+  public Long getConnectTimeout() {
+    return tcpHelper.getConnectTimeout();
   }
 
   public boolean isSSL() {
@@ -342,9 +351,8 @@ public class DefaultHttpClient implements HttpClient {
       }
       pool.addWorker(ectx.getWorker());
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), 4, pool);
+          vertx.getAcceptorPool(), 1, pool);
       bootstrap = new ClientBootstrap(channelFactory);
-      bootstrap.setOption("connectTimeoutMillis", 60 * 1000);
 
       tcpHelper.checkSSL();
 

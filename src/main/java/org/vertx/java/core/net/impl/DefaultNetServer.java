@@ -269,6 +269,10 @@ public class DefaultNetServer implements NetServer {
     return tcpHelper.getTrafficClass();
   }
 
+  public Integer getAcceptBacklog() {
+    return tcpHelper.getAcceptBacklog();
+  }
+
   public NetServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -301,6 +305,11 @@ public class DefaultNetServer implements NetServer {
 
   public NetServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
+    return this;
+  }
+
+  public NetServer setAcceptBacklog(int backlog) {
+    tcpHelper.setAcceptBacklog(backlog);
     return this;
   }
 

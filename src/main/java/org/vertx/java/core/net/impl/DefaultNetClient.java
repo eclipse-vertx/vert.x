@@ -150,6 +150,10 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.getTrafficClass();
   }
 
+  public Long getConnectTimeout() {
+    return tcpHelper.getConnectTimeout();
+  }
+
   public NetClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -182,6 +186,11 @@ public class DefaultNetClient implements NetClient {
 
   public NetClient setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
+    return this;
+  }
+
+  public NetClient setConnectTimeout(long timeout) {
+    tcpHelper.setConnectTimeout(timeout);
     return this;
   }
 

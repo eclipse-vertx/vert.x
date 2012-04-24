@@ -173,6 +173,12 @@ public interface HttpServer {
   HttpServer setTrafficClass(int trafficClass);
 
   /**
+   * Set the accept backlog
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpServer setAcceptBacklog(int backlog);
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay();
@@ -210,6 +216,12 @@ public interface HttpServer {
    * @return the value of TCP traffic class
    */
   Integer getTrafficClass();
+
+  /**
+   *
+   * @return the accept backlog
+   */
+  Integer getAcceptBacklog();
 
   /**
    *
