@@ -24,5 +24,5 @@ package org.vertx.java.core.http;
 public enum WebSocketVersion {
   HYBI_00,
   HYBI_08,
-  HYBI_17
+  RFC6455
 }

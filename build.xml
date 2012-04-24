@@ -167,7 +167,7 @@
       <classpath>
         <pathelement path="core-lib-classpath"/>
         <pathelement path="${java-target}"/>
-        <fileset dir="${mods-src-root}/${mod-name}/lib">
+        <fileset dir="${mods-src-root}/${mod-name}/lib" erroronmissingdir="false">
           <include name="*.jar"/>
         </fileset>
       </classpath>

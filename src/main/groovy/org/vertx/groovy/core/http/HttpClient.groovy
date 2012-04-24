@@ -98,7 +98,7 @@ abstract class HttpClient {
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
   void connectWebsocket(String uri, Closure handler) {
-    connectWebsocket(uri, WebSocketVersion.HYBI_17, handler)
+    connectWebsocket(uri, WebSocketVersion.RFC6455, handler)
   }
 
   /**

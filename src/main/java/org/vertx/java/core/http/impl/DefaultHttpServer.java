@@ -56,7 +56,7 @@ import org.vertx.java.core.http.impl.ws.Handshake;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
-import org.vertx.java.core.http.impl.ws.hybi17.Handshake17;
+import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -463,8 +463,8 @@ public class DefaultHttpServer implements HttpServer {
           }
 
           final Handshake shake;
-          if (Handshake17.matches(request)) {
-            shake = new Handshake17();
+          if (HandshakeRFC6455.matches(request)) {
+            shake = new HandshakeRFC6455();
           } else if (Handshake08.matches(request)) {
             shake = new Handshake08();
           } else if (Handshake00.matches(request)) {
