@@ -34,7 +34,7 @@ public class PerfClient extends Verticle {
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 100;
+  private static final int CONNS = 1;
 
   private int statsCount;
 
@@ -48,15 +48,12 @@ public class PerfClient extends Verticle {
 
   private String message;
 
-  private Buffer buff;
-
   public PerfClient() {
     StringBuilder sb = new StringBuilder(STR_LENGTH);
     for (int i = 0; i < STR_LENGTH; i++) {
       sb.append('X');
     }
     message = sb.toString();
-    buff = new Buffer(message);
   }
 
   int connectCount;
@@ -80,7 +77,6 @@ public class PerfClient extends Verticle {
               }
             }
             int len = data.length();
-            //System.out.println("Got data " + len);
             statsCount += len;
             if (statsCount > STATS_BATCH) {
               eb.send("rate-counter", statsCount);
@@ -130,8 +126,8 @@ public class PerfClient extends Verticle {
 
   private void writeWebSocket(final WebSocket ws) {
     if (!ws.writeQueueFull()) {
-      ws.writeTextFrame(message);
-      //ws.writeBinaryFrame(new Buffer(message));
+      //ws.writeTextFrame(message);
+      ws.writeBinaryFrame(new Buffer(message));
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
           writeWebSocket(ws);
