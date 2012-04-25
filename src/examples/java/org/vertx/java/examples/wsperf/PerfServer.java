@@ -21,9 +21,6 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.deploy.Verticle;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
