@@ -3,7 +3,7 @@
 
 **Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
 
-Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby and Java too.
+Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in JavaScript, Ruby, Groovy and Java.
 
 Some of the key highlights include:
 
