@@ -34,13 +34,13 @@ public class PerfClient extends Verticle {
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 100;
+  private static final int CONNS = 1;
 
   private int statsCount;
 
   private EventBus eb;
 
-  private static final int STR_LENGTH = 1 * 1024;
+  private static final int STR_LENGTH = 8 * 1024;
 
   private static final int STATS_BATCH = 1024 * 1024;
 
@@ -74,6 +74,10 @@ public class PerfClient extends Verticle {
         ws.setWriteQueueMaxSize(BUFF_SIZE);
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
+//            if (!data.toString().equals(message)) {
+//              throw new IllegalStateException("Invalid message");
+//            }
+//            System.out.println("Valid message");
             if (!wss.contains(ws)) {
               wss.add(ws);
               if (wss.size() == CONNS) {
