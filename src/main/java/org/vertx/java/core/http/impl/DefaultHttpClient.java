@@ -122,7 +122,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
-    connectWebsocket(uri, WebSocketVersion.HYBI_17, wsConnect);
+    connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
   }
 
   public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
@@ -261,6 +261,16 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
+  public DefaultHttpClient setConnectTimeout(long timeout) {
+    tcpHelper.setConnectTimeout(timeout);
+    return this;
+  }
+
+  public DefaultHttpClient setBossThreads(int threads) {
+    tcpHelper.setClientBossThreads(threads);
+    return this;
+  }
+
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -287,6 +297,14 @@ public class DefaultHttpClient implements HttpClient {
 
   public Integer getTrafficClass() {
     return tcpHelper.getTrafficClass();
+  }
+
+  public Long getConnectTimeout() {
+    return tcpHelper.getConnectTimeout();
+  }
+
+  public Integer getBossThreads() {
+    return tcpHelper.getClientBossThreads();
   }
 
   public boolean isSSL() {
@@ -341,8 +359,10 @@ public class DefaultHttpClient implements HttpClient {
         ectx = null;
       }
       pool.addWorker(ectx.getWorker());
+      Integer bossThreads = tcpHelper.getClientBossThreads();
+      int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), 1, pool);
+          vertx.getAcceptorPool(), threads, pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -362,7 +382,7 @@ public class DefaultHttpClient implements HttpClient {
         }
       });
     }
-    bootstrap.setOptions(tcpHelper.generateConnectionOptions());
+    bootstrap.setOptions(tcpHelper.generateConnectionOptions(false));
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {

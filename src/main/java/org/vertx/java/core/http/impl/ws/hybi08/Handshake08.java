@@ -65,14 +65,14 @@ public class Handshake08 implements Handshake {
     String sVers = request.getHeader("Sec-WebSocket-Version");
     if (sVers != null) {
       Integer ver = Integer.parseInt(sVers);
-      return request.containsHeader("Sec-WebSocket-Key") && ver >= 7;
+      return request.containsHeader("Sec-WebSocket-Key") && ver == 8;
     } else {
       return false;
     }
   }
 
   public void fillInRequest(HttpClientRequest req, String hostHeader) throws Exception {
-    req.headers().put("Sec-WebSocket-Version", "7");
+    req.headers().put("Sec-WebSocket-Version", "8");
     req.headers().put(HttpHeaders.Names.CONNECTION, "Upgrade");
     req.headers().put(HttpHeaders.Names.UPGRADE, "WebSocket");
     req.headers().put(HttpHeaders.Names.HOST, hostHeader);
@@ -81,7 +81,7 @@ public class Handshake08 implements Handshake {
 
   public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
-        new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-07"));
+        new HttpResponseStatus(101, "Switching Protocols"));
     response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
 
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");

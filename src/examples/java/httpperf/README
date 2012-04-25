@@ -18,7 +18,7 @@ How to run stuff:
 
 Run the rate counter in a console (give it a unique cluster port)
 
-vertx run org.vertx.java.examples.httpperf.RateCounter -cp classes -cluster -cluster-port 25501
+vertx run org.vertx.java.examples.perf.RateCounter -cp classes -cluster -cluster-port 25501
 
 Run the server in another console (give it 8 instances to utilise the cores on the server)
 
@@ -28,7 +28,7 @@ Run the client in another console:
 
 vertx run run org.vertx.java.examples.httpperf.PerfClient -cp classes -instances 8 -cluster -cluster-port 25502
 
-Of course, you can run client and server on different machines. You'll probably need a gigabit ethernet network to avoid getting IO bound.
+Of course, you can run client and server on different machines. You'll probably need a fast network to avoid getting IO bound.
 
 To compare it with the equivalent node.js server, instead of running the vert.x server run the node.js server as follows:
 

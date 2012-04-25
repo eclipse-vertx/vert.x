@@ -240,6 +240,15 @@ abstract class HttpServer {
   }
 
   /**
+   * Set the accept backlog
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpServer setAcceptBacklog(int backlog) {
+    jServer.setAcceptBacklog(backlog)
+    this
+  }
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay() {
@@ -290,6 +299,14 @@ abstract class HttpServer {
    */
   Integer getTrafficClass() {
     jServer.getTrafficClass()
+  }
+
+  /**
+   *
+   * @return The accept backlog
+   */
+  Integer getAcceptBacklog() {
+    jServer.getAcceptBacklog()
   }
 
   /**

@@ -32,7 +32,7 @@ import org.vertx.java.core.http.impl.ws.Handshake;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
-import org.vertx.java.core.http.impl.ws.hybi17.Handshake17;
+import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -85,8 +85,8 @@ class ClientConnection extends AbstractConnection {
         shake = new Handshake00();
       } else if (wsVersion == WebSocketVersion.HYBI_08) {
         shake = new Handshake08();
-      } else if (wsVersion == WebSocketVersion.HYBI_17) {
-        shake = new Handshake17();
+      } else if (wsVersion == WebSocketVersion.RFC6455) {
+        shake = new HandshakeRFC6455();
       } else {
         throw new IllegalArgumentException("Invalid version");
       }
@@ -160,9 +160,13 @@ class ClientConnection extends AbstractConnection {
 
   void handleInterestedOpsChanged() {
     try {
-      if (currentRequest != null && channel.isWritable()) {
-        setContext();
-        currentRequest.handleDrained();
+      if (channel.isWritable()) {
+        if (currentRequest != null) {
+          setContext();
+          currentRequest.handleDrained();
+        } else if (ws != null) {
+          ws.writable();
+        }
       }
     } catch (Throwable t) {
       handleHandlerException(t);
