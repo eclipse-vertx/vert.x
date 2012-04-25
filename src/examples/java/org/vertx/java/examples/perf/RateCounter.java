@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.examples.httpperf;
+package org.vertx.java.examples.perf;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
@@ -22,23 +22,27 @@ import org.vertx.java.deploy.Verticle;
 
 public class RateCounter extends Verticle implements Handler<Message<Integer>> {
 
-  private long start;
+  private long last;
 
   private long count = 0;
 
   public void handle(Message<Integer> msg) {
-    if (start == 0) {
-      start = System.currentTimeMillis();
-    }
+    //System.out.println("got " + msg.body);
     count += msg.body;
-    if (count % 100000 == 0) {
-      long now = System.currentTimeMillis();
-      double rate = 1000 * (double)count / (now - start);
-      System.out.println("Reqs/sec: " + rate);
-    }
   }
 
   public void start() {
     vertx.eventBus().registerHandler("rate-counter", this);
+    vertx.setPeriodic(3000, new Handler<Long>() {
+      public void handle(Long id) {
+        long now = System.currentTimeMillis();
+        if (last != 0) {
+          double rate = 1000 * (double)count / (now - last);
+          count = 0;
+          System.out.println("count/sec: " + rate);
+        }
+        last = now;
+      }
+    });
   }
 }

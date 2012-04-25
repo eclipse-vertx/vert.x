@@ -98,7 +98,7 @@ abstract class HttpClient {
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
   void connectWebsocket(String uri, Closure handler) {
-    connectWebsocket(uri, WebSocketVersion.HYBI_17, handler)
+    connectWebsocket(uri, WebSocketVersion.RFC6455, handler)
   }
 
   /**
@@ -345,6 +345,24 @@ abstract class HttpClient {
   }
 
   /**
+   * Set the connect timeout in milliseconds
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpClient setConnectTimeout(long timeout) {
+    jClient.setConnectTimeout(timeout)
+    this
+  }
+
+  /**
+   * Set the number of boss threads to use. Boss threads are used to make connections.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpClient setBossThreads(long threads) {
+    jClient.setBossThreads(threads)
+    this
+  }
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay() {
@@ -395,6 +413,22 @@ abstract class HttpClient {
    */
   Integer getTrafficClass() {
     jClient.getTrafficClass()
+  }
+
+  /**
+   *
+   * @return The connect timeout
+   */
+  Long getConnectTimeout() {
+    jClient.getConnectTimeout()
+  }
+
+  /**
+   *
+   * @return The number of boss threads
+   */
+  Integer getBossThreads() {
+    jClient.getBossThreads();
   }
 
   /**

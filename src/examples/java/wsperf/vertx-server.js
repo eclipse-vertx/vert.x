@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.http;
+load('vertx.js')
 
-/**
- * Represents the version of the WebSockets specification
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
-public enum WebSocketVersion {
-  HYBI_00,
-  HYBI_08,
-  RFC6455
-}
+var connCount = 0
+vertx.createHttpServer().websocketHandler(function(ws) {
+  console.log("Connection count: " + ++connCount);
+  new vertx.Pump(ws, ws).start();
+}).listen(8080, 'localhost');
+

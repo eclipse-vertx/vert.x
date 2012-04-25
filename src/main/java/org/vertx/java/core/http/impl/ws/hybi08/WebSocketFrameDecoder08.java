@@ -53,6 +53,7 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
     this.maxFrameSize = maxFrameSize;
   }
 
+
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, VoidEnum state) throws Exception {
 

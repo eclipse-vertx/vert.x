@@ -224,6 +224,24 @@ abstract class NetClient {
   }
 
   /**
+   * Set the connect timeout in milliseconds
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  NetClient setConnectTimeout(long timeout) {
+    jClient.setConnectTimeout(timeout)
+    this
+  }
+
+  /**
+   * Set the number of boss threads to use. Boss threads are used to make connections.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  NetClient setBossThreads(long threads) {
+    jClient.setBossThreads(threads)
+    this
+  }
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay() {
@@ -274,6 +292,22 @@ abstract class NetClient {
    */
   Integer getTrafficClass() {
     jClient.getTrafficClass()
+  }
+
+  /**
+   *
+   * @return The connect timeout
+   */
+  Long getConnectTimeout() {
+    jClient.getConnectTimeout()
+  }
+
+  /**
+   *
+   * @return The number of boss threads
+   */
+  Integer getBossThreads() {
+    jClient.getBossThreads();
   }
 
   /**

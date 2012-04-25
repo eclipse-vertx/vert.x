@@ -16,9 +16,9 @@
 
 package org.vertx.java.core.net.impl;
 
+import org.jboss.netty.channel.FixedReceiveBufferSizePredictor;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -63,6 +63,10 @@ public class TCPSSLHelper {
   private Boolean reuseAddress;
   private Boolean soLinger;
   private Integer trafficClass;
+  private Integer acceptBackLog;
+  private Long connectTimeout;
+
+  private Integer clientBossThreads;
 
   private SSLContext sslContext;
 
@@ -89,25 +93,38 @@ public class TCPSSLHelper {
     nch.getWorker().executeInIoThread(runnable, false);
   }
 
-  public Map<String, Object> generateConnectionOptions() {
+  public Map<String, Object> generateConnectionOptions(boolean server) {
     Map<String, Object> options = new HashMap<>();
+    String prefix = (server ? "child." : "");
     if (tcpNoDelay != null) {
-      options.put("child.tcpNoDelay", tcpNoDelay);
+      options.put(prefix +"tcpNoDelay", tcpNoDelay);
     }
     if (tcpSendBufferSize != null) {
-      options.put("child.sendBufferSize", tcpSendBufferSize);
+      options.put(prefix + "sendBufferSize", tcpSendBufferSize);
     }
     if (tcpReceiveBufferSize != null) {
-      options.put("child.receiveBufferSize", tcpReceiveBufferSize);
-    }
-    if (reuseAddress != null) {
-      options.put("reuseAddress", reuseAddress);
+      options.put(prefix + "receiveBufferSize", tcpReceiveBufferSize);
+      // We need to set a FixedReceiveBufferSizePredictor, since otherwise
+      // Netty will ignore our setting and use an adaptive buffer which can
+      // get very large
+      options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
     }
     if (soLinger != null) {
-      options.put("child.soLinger", soLinger);
+      options.put(prefix + "soLinger", soLinger);
     }
     if (trafficClass != null) {
-      options.put("child.trafficClass", trafficClass);
+      options.put(prefix + "trafficClass", trafficClass);
+    }
+    if (server) {
+      if (reuseAddress != null) {
+        options.put("reuseAddress", reuseAddress);
+      }
+      if (acceptBackLog != null) {
+        options.put("backlog", acceptBackLog);
+      }
+    }
+    if (!server && connectTimeout != null) {
+      options.put("connectTimeoutMillis", connectTimeout);
     }
     return options;
   }
@@ -138,6 +155,10 @@ public class TCPSSLHelper {
 
   public Integer getTrafficClass() {
     return trafficClass;
+  }
+
+  public Integer getClientBossThreads() {
+    return clientBossThreads;
   }
 
   public void setTCPNoDelay(Boolean tcpNoDelay) {
@@ -173,6 +194,15 @@ public class TCPSSLHelper {
   public void setTrafficClass(Integer trafficClass) {
     this.trafficClass = trafficClass;
   }
+
+
+  public void setClientBossThreads(Integer clientBossThreads) {
+    if (clientBossThreads < 1) {
+      throw new IllegalArgumentException("clientBossThreads must be >= 1");
+    }
+    this.clientBossThreads = clientBossThreads;
+  }
+
 
   public boolean isSSL() {
     return ssl;
@@ -212,13 +242,11 @@ public class TCPSSLHelper {
 
   public void setKeyStorePath(String path) {
     this.keyStorePath = path;
-
   }
 
   public void setKeyStorePassword(String pwd) {
     this.keyStorePassword = pwd;
   }
-
 
   public void setTrustStorePath(String path) {
     this.trustStorePath = path;
@@ -234,6 +262,28 @@ public class TCPSSLHelper {
 
   public void setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
+  }
+
+  public Integer getAcceptBacklog() {
+    return acceptBackLog;
+  }
+
+  public Long getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  public void setConnectTimeout(Long connectTimeout) {
+    if (connectTimeout < 0) {
+      throw new IllegalArgumentException("connectTimeout must be >= 0");
+    }
+    this.connectTimeout = connectTimeout;
+  }
+
+  public void setAcceptBacklog(Integer acceptBackLog) {
+    if (acceptBackLog < 0) {
+      throw new IllegalArgumentException("acceptBackLog must be >= 0");
+    }
+    this.acceptBackLog = acceptBackLog;
   }
 
   /*

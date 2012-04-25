@@ -196,7 +196,9 @@ public class DefaultWebSocket extends ServerWebSocket {
 
   void writable() {
     if (drainHandler != null) {
-      drainHandler.handle(null);
+      Handler<Void> dh = drainHandler;
+      drainHandler = null;
+      dh.handle(null);
     }
   }
 

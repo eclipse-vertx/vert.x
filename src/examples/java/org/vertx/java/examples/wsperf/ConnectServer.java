@@ -14,15 +14,27 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.http;
+package org.vertx.java.examples.wsperf;
+
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.deploy.Verticle;
 
 /**
- * Represents the version of the WebSockets specification
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public enum WebSocketVersion {
-  HYBI_00,
-  HYBI_08,
-  RFC6455
+public class ConnectServer extends Verticle {
+
+  private static final int BUFF_SIZE = 32 * 1024;
+
+  int count = 0;
+
+  public void start() throws Exception {
+    vertx.createHttpServer().setReceiveBufferSize(BUFF_SIZE).setSendBufferSize(BUFF_SIZE).
+        websocketHandler(new Handler<ServerWebSocket>() {
+      public void handle(ServerWebSocket ws) {
+        System.out.println("connected " + ++count);
+      }
+    }).listen(8080, "localhost");
+  }
 }

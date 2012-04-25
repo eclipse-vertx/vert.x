@@ -151,7 +151,7 @@ public class DefaultNetServer implements NetServer {
           }
         });
 
-        bootstrap.setOptions(tcpHelper.generateConnectionOptions());
+        bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
 
         try {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
@@ -269,6 +269,10 @@ public class DefaultNetServer implements NetServer {
     return tcpHelper.getTrafficClass();
   }
 
+  public Integer getAcceptBacklog() {
+    return tcpHelper.getAcceptBacklog();
+  }
+
   public NetServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -301,6 +305,11 @@ public class DefaultNetServer implements NetServer {
 
   public NetServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
+    return this;
+  }
+
+  public NetServer setAcceptBacklog(int backlog) {
+    tcpHelper.setAcceptBacklog(backlog);
     return this;
   }
 
@@ -451,6 +460,9 @@ public class DefaultNetServer implements NetServer {
       final NetSocket sock = socketMap.remove(ch);
       ch.close();
       final Throwable t = e.getCause();
+
+      log.error("Exception on netserver", t);
+
       if (sock != null && t instanceof Exception) {
         sock.getContext().execute(new Runnable() {
           public void run() {

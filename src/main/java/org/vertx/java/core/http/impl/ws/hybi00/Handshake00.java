@@ -89,7 +89,8 @@ public class Handshake00 implements Handshake {
 
   public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
 
-    HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101, "Web Socket Protocol Handshake - IETF-00"));
+    HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101,
+        "WebSocket Protocol Handshake"));
     response.addHeader(HttpHeaders.Names.CONNECTION, "Upgrade");
     response.addHeader(HttpHeaders.Names.UPGRADE, "WebSocket");
     String origin = request.getHeader(Names.ORIGIN);

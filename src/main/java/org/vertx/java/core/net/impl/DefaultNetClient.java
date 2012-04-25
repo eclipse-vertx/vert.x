@@ -150,6 +150,14 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.getTrafficClass();
   }
 
+  public Long getConnectTimeout() {
+    return tcpHelper.getConnectTimeout();
+  }
+
+  public Integer getBossThreads() {
+    return tcpHelper.getClientBossThreads();
+  }
+
   public NetClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -182,6 +190,16 @@ public class DefaultNetClient implements NetClient {
 
   public NetClient setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
+    return this;
+  }
+
+  public NetClient setConnectTimeout(long timeout) {
+    tcpHelper.setConnectTimeout(timeout);
+    return this;
+  }
+
+  public NetClient setBossThreads(int threads) {
+    tcpHelper.setClientBossThreads(threads);
     return this;
   }
 
@@ -262,8 +280,10 @@ public class DefaultNetClient implements NetClient {
       }
       pool.addWorker(ectx.getWorker());
 
+      Integer bossThreads = tcpHelper.getClientBossThreads();
+      int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), 1, pool);
+          vertx.getAcceptorPool(), threads, pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
@@ -282,7 +302,7 @@ public class DefaultNetClient implements NetClient {
         }
       });
     }
-    bootstrap.setOptions(tcpHelper.generateConnectionOptions());
+    bootstrap.setOptions(tcpHelper.generateConnectionOptions(false));
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
@@ -403,6 +423,7 @@ public class DefaultNetClient implements NetClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
+      log.error("Exception on netclient", t);
       if (sock != null && t instanceof Exception) {
         tcpHelper.runOnCorrectThread(ch, new Runnable() {
           public void run() {

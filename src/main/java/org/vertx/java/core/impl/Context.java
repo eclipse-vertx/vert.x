@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.file.impl.ModuleDir;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
