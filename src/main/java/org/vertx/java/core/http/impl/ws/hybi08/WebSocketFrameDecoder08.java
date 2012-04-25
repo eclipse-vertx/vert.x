@@ -68,7 +68,7 @@ public class WebSocketFrameDecoder08 extends ReplayingDecoder<VoidEnum> {
     long length = (lengthMask & 0x7F);
 
     if (length == 126) {
-      length = buffer.readShort();
+      length = buffer.readUnsignedShort();
     } else if (length == 127) {
       length = buffer.readLong();
     }
