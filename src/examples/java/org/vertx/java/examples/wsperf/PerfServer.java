@@ -29,9 +29,7 @@ import java.util.Set;
  */
 public class PerfServer extends Verticle {
 
-  private static final int BUFF_SIZE = 8 * 1024;
-
-  //int count = 0;
+  private static final int BUFF_SIZE = 32 * 1024;
 
   public void start() throws Exception {
     vertx.createHttpServer().setReceiveBufferSize(BUFF_SIZE).setSendBufferSize(BUFF_SIZE).setAcceptBacklog(32000).

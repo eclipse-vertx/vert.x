@@ -34,7 +34,7 @@ public class PerfClient extends Verticle {
   private HttpClient client;
 
   // Number of connections to create
-  private static final int CONNS = 1;
+  private static final int CONNS = 100;
 
   private int statsCount;
 
@@ -65,7 +65,6 @@ public class PerfClient extends Verticle {
 
   Set<WebSocket> wss = new HashSet<>();
 
-
   private void connect(final int count) {
     client.connectWebsocket("/echo/websocket", new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
@@ -74,10 +73,6 @@ public class PerfClient extends Verticle {
         ws.setWriteQueueMaxSize(BUFF_SIZE);
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-//            if (!data.toString().equals(message)) {
-//              throw new IllegalStateException("Invalid message");
-//            }
-//            System.out.println("Valid message");
             if (!wss.contains(ws)) {
               wss.add(ws);
               if (wss.size() == CONNS) {
@@ -137,7 +132,6 @@ public class PerfClient extends Verticle {
     if (!ws.writeQueueFull()) {
       ws.writeTextFrame(message);
       //ws.writeBinaryFrame(new Buffer(message));
-      //System.out.println("wrote buffer");
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
           writeWebSocket(ws);
