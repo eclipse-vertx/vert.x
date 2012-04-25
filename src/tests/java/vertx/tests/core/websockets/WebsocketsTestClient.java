@@ -111,7 +111,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     final String path = "/some/path";
 
-    server = vertx.createHttpServer().setReceiveBufferSize(64 * 1024).websocketHandler(new Handler<ServerWebSocket>() {
+    server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkContext();
         tu.azzert(path.equals(ws.path));
@@ -127,8 +127,8 @@ public class WebsocketsTestClient extends TestClientBase {
 
     }).listen(8080, "localhost");
 
-    final int bsize = 32 * 1024;
-    final int sends = 1;
+    final int bsize = 100;
+    final int sends = 10;
 
     client.connectWebsocket(path, version, new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
@@ -151,7 +151,7 @@ public class WebsocketsTestClient extends TestClientBase {
             ws.writeBinaryFrame(buff);
             sent.appendBuffer(buff);
           } else {
-            String str = TestUtils.randomAlphaString(100);
+            String str = TestUtils.randomAlphaString(bsize);
             ws.writeTextFrame(str);
             sent.appendBuffer(new Buffer(str, "UTF-8"));
           }
