@@ -65,7 +65,7 @@ public class Handshake08 implements Handshake {
     String sVers = request.getHeader("Sec-WebSocket-Version");
     if (sVers != null) {
       Integer ver = Integer.parseInt(sVers);
-      return request.containsHeader("Sec-WebSocket-Key") && ver == 8;
+      return request.containsHeader("Sec-WebSocket-Key") && ver >= 7;
     } else {
       return false;
     }

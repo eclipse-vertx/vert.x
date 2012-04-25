@@ -142,6 +142,9 @@ class Session extends SockJSSocket {
   }
 
   public void close() {
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
     closed = true;
   }
 
