@@ -36,6 +36,7 @@ import java.nio.charset.Charset;
  * other instances of Buffer.<p>
  * Data can be read from a buffer by invoking methods which take the form {@code getXXX}. These methods take a parameter
  * representing the position in the Buffer from where to read data.<p>
+ * Once a buffer has been written to a socket or other write stream, the same buffer instance can't be written again to another WriteStream.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
