@@ -24,9 +24,9 @@ import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ class WebSocketTransport extends BaseTransport {
 
   WebSocketTransport(final VertxInternal vertx, WebSocketMatcher wsMatcher,
                      RouteMatcher rm, String basePath, final Map<String, Session> sessions,
-                     final AppConfig config,
+                     final JsonObject config,
             final Handler<SockJSSocket> sockHandler) {
     super(vertx, sessions, config);
     String wsRE = basePath + COMMON_PATH_ELEMENT_RE + "websocket";
@@ -48,7 +48,7 @@ class WebSocketTransport extends BaseTransport {
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
-        final Session session = new Session(vertx, sessions, config.getHeartbeatPeriod(), sockHandler);
+        final Session session = new Session(vertx, sessions, (Long)config.getNumber("heartbeat_period"), sockHandler);
         session.register(new WebSocketListener(match.ws, session));
       }
     });

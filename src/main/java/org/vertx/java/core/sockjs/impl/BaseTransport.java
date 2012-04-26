@@ -26,7 +26,6 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.text.SimpleDateFormat;
@@ -43,13 +42,13 @@ class BaseTransport {
 
   protected final VertxInternal vertx;
   protected final Map<String, Session> sessions;
-  protected AppConfig config;
+  protected JsonObject config;
 
   protected static final String COMMON_PATH_ELEMENT_RE = "\\/[^\\/\\.]+\\/([^\\/\\.]+)\\/";
 
   private static final long RAND_OFFSET = 2l << 30;
 
-  public BaseTransport(VertxInternal vertx, Map<String, Session> sessions, AppConfig config) {
+  public BaseTransport(VertxInternal vertx, Map<String, Session> sessions, JsonObject config) {
     this.vertx = vertx;
     this.sessions = sessions;
     this.config = config;
@@ -94,9 +93,9 @@ class BaseTransport {
     }
   }
 
-  static void setJSESSIONID(AppConfig config, HttpServerRequest req) {
+  static void setJSESSIONID(JsonObject config, HttpServerRequest req) {
     String cookies = req.headers().get("Cookie");
-    if (config.isInsertJSESSIONID()) {
+    if (config.getBoolean("insert_JSESSIONID")) {
       //Preserve existing JSESSIONID, if any
       if (cookies != null) {
         String[] parts;
@@ -129,14 +128,15 @@ class BaseTransport {
     req.response.headers().put("Access-Control-Allow-Headers", "Content-Type");
   }
 
-  static Handler<HttpServerRequest> createInfoHandler(final AppConfig config) {
+  static Handler<HttpServerRequest> createInfoHandler(final JsonObject config) {
     return new Handler<HttpServerRequest>() {
+      boolean websocket = !config.getArray("disabled_transports").contains(Transport.WEBSOCKET.toString());
       public void handle(HttpServerRequest req) {
         req.response.headers().put("Content-Type", "application/json; charset=UTF-8");
         req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         JsonObject json = new JsonObject();
-        json.putBoolean("websocket", !config.getDisabledTransports().contains(Transport.WEBSOCKETS));
-        json.putBoolean("cookie_needed", config.isInsertJSESSIONID());
+        json.putBoolean("websocket", websocket);
+        json.putBoolean("cookie_needed", config.getBoolean("insert_JSESSIONID"));
         json.putArray("origins", new JsonArray().add("*:*"));
         // Java ints are signed, so we need to use a long and add the offset so
         // the result is not negative
@@ -147,7 +147,7 @@ class BaseTransport {
     };
   }
 
-  static Handler<HttpServerRequest> createCORSOptionsHandler(final AppConfig config, final String methods) {
+  static Handler<HttpServerRequest> createCORSOptionsHandler(final JsonObject config, final String methods) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.headers().put("Cache-Control", "public,max-age=31536000");

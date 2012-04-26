@@ -21,9 +21,9 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.io.UnsupportedEncodingException;
@@ -37,7 +37,7 @@ class JsonPTransport extends BaseTransport {
 
   private static final Logger log = LoggerFactory.getLogger(JsonPTransport.class);
 
-  JsonPTransport(VertxInternal vertx, RouteMatcher rm, String basePath, final Map<String, Session> sessions, final AppConfig config,
+  JsonPTransport(VertxInternal vertx, RouteMatcher rm, String basePath, final Map<String, Session> sessions, final JsonObject config,
             final Handler<SockJSSocket> sockHandler) {
     super(vertx, sessions, config);
 
@@ -57,7 +57,7 @@ class JsonPTransport extends BaseTransport {
         }
 
         String sessionID = req.params().get("param0");
-        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
+        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
         session.register(new JsonPListener(req, session, callback));
       }
     });

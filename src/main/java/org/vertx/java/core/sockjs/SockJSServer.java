@@ -17,8 +17,10 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.sockjs.impl.EventBusBridge;
 
 import java.util.List;
 
@@ -61,21 +63,52 @@ public interface SockJSServer {
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
-  void installApp(AppConfig config, final Handler<SockJSSocket> sockHandler);
+  void installApp(JsonObject config, final Handler<SockJSSocket> sockHandler);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
    */
-  void bridge(AppConfig sjsConfig, List<JsonObject> permitted);
+  void bridge(JsonObject sjsConfig, JsonArray permitted);
 
   /**
-   * Install an app which bridges the SockJS server to the event bus
+   * Install an app which bridges the SockJS server to the event bus and which handles
+   * client side login
    * @param sjsConfig The config for the app
-   * @param permitted A JSON array of JSON objects which define permitted matches
+   * @param permitted A list of JSON objects which define permitted matches
+   * @param userCollection The name of the MongoDB collection which contains username/password information
+   * @param persistorAddress Address on the event bus of a MongoDB persistor
    */
-  void bridge(AppConfig sjsConfig, JsonArray permitted);
+  void bridge(JsonObject sjsConfig, JsonArray permitted,
+              String userCollection, String persistorAddress);
+
+  /**
+   * Install an app which bridges the SockJS server to the event bus and which handles
+   * client side login
+   * @param sjsConfig The config for the app
+   * @param permitted A list of JSON objects which define permitted matches
+   * @param userCollection The name of the MongoDB collection which contains username/password information
+   * @param persistorAddress Address on the event bus of a MongoDB persistor
+   * @param sessionTimeout Amount of time a login session will remain active
+   */
+  void bridge(JsonObject sjsConfig, JsonArray permitted,
+              String userCollection, String persistorAddress, Long sessionTimeout);
+
+  /**
+   * Install an app which bridges the SockJS server to the event bus and which handles
+   * client side login
+   * @param sjsConfig The config for the app
+   * @param permitted A list of JSON objects which define permitted matches
+   * @param userCollection The name of the MongoDB collection which contains username/password information
+   * @param persistorAddress Address on the event bus of a MongoDB persistor
+   * @param sessionTimeout Amount of time a login session will remain active
+   * @param loginAddress Address on the event bus where logins are handled
+   * @param loginAddress Address on the event bus where logouts are handled
+   */
+  void bridge(JsonObject sjsConfig, JsonArray permitted,
+              String userCollection, String persistorAddress, Long sessionTimeout,
+              String loginAddress, String logoutAddress);
 
 }
 

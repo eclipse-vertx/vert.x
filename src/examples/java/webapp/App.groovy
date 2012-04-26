@@ -22,29 +22,31 @@ def persistorConf = [
   address: 'demo.persistor',
   db_name: 'test_db'
 ]
-def authMgrConf = [
-  address: 'demo.authMgr',
-  user_collection: 'users',
-  persistor_address: 'demo.persistor'
-]
 
-def permitted =
-[
-  // Allow calls to get static album data from the persistor
-  [
-    'address' : 'demo.persistor',
-    'match' : [
-      'action' : 'find',
-      'collection' : 'albums'
+def webServerConf = [
+  port: 8080,
+  host: 'localhost',
+  ssl: true,
+  bridge: true,
+  persistor_address: 'demo.persistor',
+  permitted: [
+    // Allow calls to get static album data from the persistor
+    [
+      'address' : 'demo.persistor',
+      'match' : [
+        'action' : 'find',
+        'collection' : 'albums'
+      ]
+    ],
+    // And to place orders
+    [
+      'address' : 'demo.persistor',
+      'requires_auth' : true,
+      'match' : [
+        'action' : 'save',
+        'collection' : 'orders'
+      ]
     ]
-  ],
-  // Allow user to login
-  [
-    'address' : 'demo.authMgr.login'
-  ],
-  // Let through orders posted to the order manager
-  [
-    'address' : 'demo.orderMgr'
   ]
 ]
 
@@ -55,14 +57,9 @@ container.with {
   deployVerticle('mongo-persistor', persistorConf, 1, {
     deployVerticle('StaticData.groovy')
   })
-  deployVerticle('auth-mgr', authMgrConf)
-
-  // Start the order manager
-
-  deployVerticle('org.vertx.java.examples.webapp.OrderMgr')
 
   // Start the web server
 
-  deployVerticle('org.vertx.java.examples.webapp.WebServer', ['permitted': permitted])
+  deployVerticle('web-server', webServerConf)
 
 }

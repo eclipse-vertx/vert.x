@@ -120,8 +120,13 @@ public class JsonArray implements Iterable<Object> {
 
       @Override
       public void remove() {
+        iter.remove();
       }
     };
+  }
+
+  public boolean contains(Object value) {
+    return list.contains(value);
   }
 
   public String encode() throws EncodeException {

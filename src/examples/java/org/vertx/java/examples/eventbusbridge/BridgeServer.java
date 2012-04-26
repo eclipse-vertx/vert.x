@@ -3,8 +3,8 @@ package org.vertx.java.examples.eventbusbridge;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.deploy.Verticle;
 
@@ -27,10 +27,10 @@ public class BridgeServer extends Verticle {
       }
     });
 
-    List<JsonObject> permitted = new ArrayList<>();
+    JsonArray permitted = new JsonArray();
     permitted.add(new JsonObject()); // Let everything through
     SockJSServer sockJSServer = vertx.createSockJSServer(server);
-    sockJSServer.bridge(new AppConfig().setPrefix("/eventbus"), permitted);
+    sockJSServer.bridge(new JsonObject().putString("prefix", "/eventbus"), permitted);
 
     server.listen(8080);
   }

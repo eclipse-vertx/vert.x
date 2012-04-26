@@ -114,6 +114,36 @@ public class JsonObject {
     return Base64.decode(encoded);
   }
 
+  public String getString(String fieldName, String def) {
+    String str = getString(fieldName);
+    return str == null ? def : str;
+  }
+
+  public JsonObject getObject(String fieldName, JsonObject def) {
+    JsonObject obj = getObject(fieldName);
+    return obj == null ? def : obj;
+  }
+
+  public JsonArray getArray(String fieldName, JsonArray def) {
+    JsonArray arr = getArray(fieldName);
+    return arr == null ? def : arr;
+  }
+
+  public boolean getBoolean(String fieldName, boolean def) {
+    Boolean b = getBoolean(fieldName);
+    return b == null ? def : b;
+  }
+
+  public Number getNumber(String fieldName, int def) {
+    Number n = getNumber(fieldName);
+    return n == null ? def : n;
+  }
+
+  public byte[] getBinary(String fieldName, byte[] def) {
+    byte[] b = getBinary(fieldName);
+    return b == null ? def : b;
+  }
+
   public Set<String> getFieldNames() {
     return map.keySet();
   }
