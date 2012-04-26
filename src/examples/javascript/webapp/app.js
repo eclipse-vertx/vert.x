@@ -11,22 +11,22 @@ var persistorConf =  {
   address: 'demo.persistor',
   db_name: 'test_db'
 };
-var authMgrConf = {
-  address: 'demo.authMgr',
-  user_collection: 'users',
-  persistor_address: 'demo.persistor'
-};
+//var authMgrConf = {
+//  address: 'demo.authMgr',
+//  user_collection: 'users',
+//  persistor_address: 'demo.persistor'
+//};
 
 // Deploy the busmods
 
 vertx.deployVerticle('mongo-persistor', persistorConf, 1, function() {
   load('static_data.js');
 });
-vertx.deployVerticle('auth-mgr', authMgrConf);
+//vertx.deployVerticle('auth-mgr', authMgrConf);
 
 // Start the order manager
 
-vertx.deployVerticle('order_mgr.js');
+// vertx.deployVerticle('order_mgr.js');
 
 // Start the web server
 

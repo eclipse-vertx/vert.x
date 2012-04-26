@@ -31,7 +31,6 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -75,9 +74,39 @@ public class DefaultSockJSServer implements SockJSServer {
     httpServer.websocketHandler(wsMatcher);
   }
 
-  public void installApp(AppConfig config,
+  private JsonObject setDefaults(JsonObject config) {
+    config = config.copy();
+    //Set the defaults
+    if (config.getNumber("session_timeout") == null) {
+      config.putNumber("session_timeout", 5l * 1000);
+    }
+    if (config.getBoolean("insert_JSESSIONID") == null) {
+      config.putBoolean("insert_JSESSIONID", true);
+    }
+    if (config.getNumber("heartbeat_period") == null) {
+      config.putNumber("heartbeat_period", 25l * 1000);
+    }
+    if (config.getNumber("max_bytes_streaming") == null) {
+      config.putNumber("max_bytes_streaming", 128 * 1024);
+    }
+    if (config.getString("prefix") == null) {
+      config.putString("prefix", "/");
+    }
+    if (config.getString("library_url") == null) {
+      config.putString("library_url", "http://cdn.sockjs.org/sockjs-0.2.1.min.js");
+    }
+    if (config.getArray("disabled_transports") == null) {
+      config.putArray("disabled_transports", new JsonArray());
+    }
+    return config;
+  }
+
+  public void installApp(JsonObject config,
                          final Handler<SockJSSocket> sockHandler) {
-    String prefix = config.getPrefix();
+
+    config = setDefaults(config);
+
+    String prefix = config.getString("prefix");
 
     if (prefix == null || prefix.equals("") || prefix.endsWith("/")) {
       throw new IllegalArgumentException("Invalid prefix: " + prefix);
@@ -93,7 +122,8 @@ public class DefaultSockJSServer implements SockJSServer {
     });
 
     // Iframe handlers
-    String iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}", config.getLibraryURL());
+    String iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}",
+        config.getString("library_url", "http://cdn.sockjs.org/sockjs-0.2.1.min.js"));
     Handler<HttpServerRequest> iframeHandler = createIFrameHandler(iframeHTML);
 
     // Request exactly for iframe.html
@@ -112,29 +142,29 @@ public class DefaultSockJSServer implements SockJSServer {
 
     // Transports
 
-    Set<Transport> enabledTransports = new HashSet<>();
-    enabledTransports.add(Transport.EVENT_SOURCE);
-    enabledTransports.add(Transport.HTML_FILE);
-    enabledTransports.add(Transport.JSON_P);
-    enabledTransports.add(Transport.WEBSOCKETS);
-    enabledTransports.add(Transport.XHR);
-    for (Transport tr : config.getDisabledTransports()) {
-      enabledTransports.remove(tr);
+    Set<String> enabledTransports = new HashSet<>();
+    enabledTransports.add(Transport.EVENT_SOURCE.toString());
+    enabledTransports.add(Transport.HTML_FILE.toString());
+    enabledTransports.add(Transport.JSON_P.toString());
+    enabledTransports.add(Transport.WEBSOCKET.toString());
+    enabledTransports.add(Transport.XHR.toString());
+    for (Object tr : config.getArray("disabled_transports", new JsonArray())) {
+      enabledTransports.remove((String)tr);
     }
 
-    if (enabledTransports.contains(Transport.XHR)) {
+    if (enabledTransports.contains(Transport.XHR.toString())) {
       new XhrTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
-    if (enabledTransports.contains(Transport.EVENT_SOURCE)) {
+    if (enabledTransports.contains(Transport.EVENT_SOURCE.toString())) {
       new EventSourceTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
-    if (enabledTransports.contains(Transport.HTML_FILE)) {
+    if (enabledTransports.contains(Transport.HTML_FILE.toString())) {
       new HtmlFileTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
-    if (enabledTransports.contains(Transport.JSON_P)) {
+    if (enabledTransports.contains(Transport.JSON_P.toString())) {
       new JsonPTransport(vertx, rm, prefix, sessions, config, sockHandler);
     }
-    if (enabledTransports.contains(Transport.WEBSOCKETS)) {
+    if (enabledTransports.contains(Transport.WEBSOCKET.toString())) {
       new WebSocketTransport(vertx, wsMatcher, rm, prefix, sessions, config, sockHandler);
       new RawWebSocketTransport(vertx, wsMatcher, rm, prefix, sockHandler);
     }
@@ -148,23 +178,25 @@ public class DefaultSockJSServer implements SockJSServer {
     });
   }
 
-  public void bridge(AppConfig sjsConfig, JsonArray permitted) {
-    List<JsonObject> l = new ArrayList<>();
-    for (Object elem: permitted) {
-      if (!(elem instanceof JsonObject)) {
-        throw new IllegalArgumentException("Permitted must only contain JsonObject");
-      }
-      l.add((JsonObject)elem);
-    }
-    bridge(sjsConfig, l);
+  public void bridge(JsonObject sjsConfig, JsonArray permitted) {
+    new EventBusBridge(vertx, this, sjsConfig, permitted);
   }
 
-  public void bridge(AppConfig sjsConfig, List<JsonObject> permitted) {
-    SockJSBridgeHandler handler = new SockJSBridgeHandler(vertx.eventBus());
-    for (JsonObject perm: permitted) {
-      handler.addPermitted(perm);
-    }
-    installApp(sjsConfig, handler);
+  public void bridge(JsonObject sjsConfig, JsonArray permitted,
+                        String userCollection, String persistorAddress) {
+    new EventBusBridge(vertx, this, sjsConfig, permitted, userCollection, persistorAddress);
+  }
+
+  public void bridge(JsonObject sjsConfig, JsonArray permitted,
+                        String userCollection, String persistorAddress, Long sessionTimeout) {
+    new EventBusBridge(vertx, this, sjsConfig, permitted, userCollection, persistorAddress, sessionTimeout);
+  }
+
+  public void bridge(JsonObject sjsConfig, JsonArray permitted,
+                        String userCollection, String persistorAddress, Long sessionTimeout,
+                        String loginAddress, String logoutAddress) {
+    new EventBusBridge(vertx, this, sjsConfig, permitted, userCollection, persistorAddress, sessionTimeout,
+        loginAddress, logoutAddress);
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
@@ -301,7 +333,9 @@ public class DefaultSockJSServer implements SockJSServer {
   These applications are required by the SockJS protocol and QUnit tests
    */
   public void installTestApplications() {
-    installApp(new AppConfig().setPrefix("/echo").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
+    installApp(new JsonObject().putString("prefix", "/echo")
+                               .putNumber("max_bytes_streaming", 4096),
+               new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
@@ -310,14 +344,18 @@ public class DefaultSockJSServer implements SockJSServer {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/close").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
+    installApp(new JsonObject().putString("prefix", "/close")
+                               .putNumber("max_bytes_streaming", 4096),
+               new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         sock.close();
       }
     });
-    Set<Transport> disabled = new HashSet<>();
-    disabled.add(Transport.WEBSOCKETS);
-    installApp(new AppConfig().setPrefix("/disabled_websocket_echo").setMaxBytesStreaming(4096).setDisabledTransports(disabled),
+    JsonArray disabled = new JsonArray();
+    disabled.add(Transport.WEBSOCKET.toString());
+    installApp(new JsonObject().putString("prefix", "/disabled_websocket_echo")
+                               .putNumber("max_bytes_streaming", 4096)
+                               .putArray("disabled_transports",disabled),
         new Handler<SockJSSocket>() {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
@@ -327,7 +365,9 @@ public class DefaultSockJSServer implements SockJSServer {
             });
           }
         });
-    installApp(new AppConfig().setPrefix("/ticker").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
+    installApp(new JsonObject().putString("prefix", "/ticker")
+                               .putNumber("max_bytes_streaming", 4096),
+               new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
         final long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
@@ -341,7 +381,9 @@ public class DefaultSockJSServer implements SockJSServer {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/amplify").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
+    installApp(new JsonObject().putString("prefix", "/amplify")
+                               .putNumber("max_bytes_streaming", 4096),
+               new Handler<SockJSSocket>() {
       long timerID;
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
@@ -361,7 +403,9 @@ public class DefaultSockJSServer implements SockJSServer {
         });
       }
     });
-    installApp(new AppConfig().setPrefix("/broadcast").setMaxBytesStreaming(4096), new Handler<SockJSSocket>() {
+    installApp(new JsonObject().putString("prefix", "/broadcast")
+                               .putNumber("max_bytes_streaming", 4096),
+               new Handler<SockJSSocket>() {
       final Set<String> connections = vertx.sharedData().getSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID);

@@ -22,5 +22,5 @@ package org.vertx.java.core.sockjs.impl;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public enum Transport {
-  WEBSOCKETS, EVENT_SOURCE, HTML_FILE, JSON_P, XHR
+  WEBSOCKET, EVENT_SOURCE, HTML_FILE, JSON_P, XHR
 }

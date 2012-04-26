@@ -21,9 +21,9 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.Map;
@@ -62,7 +62,7 @@ class HtmlFileTransport extends BaseTransport {
     HTML_FILE_TEMPLATE = sb.toString();
   }
 
-  HtmlFileTransport(VertxInternal vertx, RouteMatcher rm, String basePath, Map<String, Session> sessions, final AppConfig config,
+  HtmlFileTransport(VertxInternal vertx, RouteMatcher rm, String basePath, Map<String, Session> sessions, final JsonObject config,
             final Handler<SockJSSocket> sockHandler) {
     super(vertx, sessions, config);
     String htmlFileRE = basePath + COMMON_PATH_ELEMENT_RE + "htmlfile";
@@ -81,8 +81,8 @@ class HtmlFileTransport extends BaseTransport {
         }
 
         String sessionID = req.params().get("param0");
-        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
-        session.register(new HtmlFileListener(config.getMaxBytesStreaming(), req, callback, session));
+        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
+        session.register(new HtmlFileListener((Integer)config.getNumber("max_bytes_streaming"), req, callback, session));
       }
     });
   }

@@ -21,9 +21,9 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.AppConfig;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.Map;
@@ -46,7 +46,7 @@ class XhrTransport extends BaseTransport {
     H_BLOCK = new Buffer(bytes);
   }
 
-  XhrTransport(VertxInternal vertx,RouteMatcher rm, String basePath, final Map<String, Session> sessions, final AppConfig config,
+  XhrTransport(VertxInternal vertx,RouteMatcher rm, String basePath, final Map<String, Session> sessions, final JsonObject config,
             final Handler<SockJSSocket> sockHandler) {
 
     super(vertx, sessions, config);
@@ -86,14 +86,14 @@ class XhrTransport extends BaseTransport {
   }
 
   private void registerHandler(RouteMatcher rm, final Handler<SockJSSocket> sockHandler, String re,
-                               final boolean streaming, final AppConfig config) {
+                               final boolean streaming, final JsonObject config) {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
         String sessionID = req.params().get("param0");
-        Session session = getSession(config.getSessionTimeout(), config.getHeartbeatPeriod(), sessionID, sockHandler);
+        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
 
-        session.register(streaming? new XhrStreamingListener(config.getMaxBytesStreaming(), req, session) : new XhrPollingListener(req, session));
+        session.register(streaming? new XhrStreamingListener((Integer)config.getNumber("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
       }
     });
   }

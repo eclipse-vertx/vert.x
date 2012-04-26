@@ -21,7 +21,6 @@ import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
-import org.vertx.java.core.sockjs.AppConfig
 
 /**
  *
@@ -51,7 +50,7 @@ import org.vertx.java.core.sockjs.AppConfig
  * client or receive data via the {@link SockJSSocket#dataHandler}.<p>
  *
  * You can register multiple applications with the same SockJSServer, each using different path prefixes, each
- * application will have its own handler, and configuration as described by {@link AppConfig}<p>
+ * application will have its own handler, and configuration as described by {@link JsonObject}<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -65,7 +64,7 @@ abstract class SockJSServer {
    * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
   void installApp(Map config, Closure sockHandler) {
-    jServer.installApp(new AppConfig(config), {
+    jServer.installApp(new JsonObject(config), {
       org.vertx.java.core.sockjs.SockJSSocket jSock = it
       sockHandler(new SockJSSocket(jSock) {
         
@@ -119,6 +118,6 @@ abstract class SockJSServer {
     for (Map<String, Object> map: permitted) {
       jList.add(new JsonObject(map))
     }
-    jServer.bridge(new AppConfig(config), jList)
+    jServer.bridge(new JsonObject(config), jList)
   }
 }

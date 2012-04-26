@@ -126,7 +126,7 @@ public class VerticleManager {
 
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
-                                    int instances, File modDir,
+                                    int instances, File currentModDir,
                                     final Handler<Void> doneHandler)
   {
     if (deployments.containsKey(name)) {
@@ -135,12 +135,12 @@ public class VerticleManager {
 
     // We first check if there is a module with the name, if so we deploy that
 
-    String deployID = deployMod(name, main, config, instances, doneHandler);
+    String deployID = deployMod(name, main, config, instances, currentModDir, doneHandler);
     if (deployID == null) {
       if (urls == null) {
         throw new IllegalStateException("urls cannot be null");
       }
-      return doDeploy(worker, name, main, config, urls, instances, modDir, doneHandler);
+      return doDeploy(worker, name, main, config, urls, instances, currentModDir, doneHandler);
     } else {
       return deployID;
     }
@@ -312,18 +312,20 @@ public class VerticleManager {
     return deploymentName;
   }
 
-  private String deployMod(String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
+  private String deployMod(String deployName, String modName, JsonObject config,
+                           int instances, File currentModDir, Handler<Void> doneHandler) {
     // First we look in the system mod dir then in the user mod dir (if any)
-    String res = doDeployMod(systemModRoot, deployName, modName, config, instances, doneHandler);
+    String res = doDeployMod(systemModRoot, deployName, modName, config, instances, currentModDir, doneHandler);
     if (res == null && userModRoot != null) {
-      res = doDeployMod(userModRoot, deployName, modName, config, instances, doneHandler);
+      res = doDeployMod(userModRoot, deployName, modName, config, instances, currentModDir, doneHandler);
     }
     return res;
   }
 
   // TODO execute this as a blocking action so as not to block the caller
   // TODO cache mod info?
-  private String doDeployMod(File dir, String deployName, String modName, JsonObject config, int instances, Handler<Void> doneHandler) {
+  private String doDeployMod(File dir, String deployName, String modName, JsonObject config,
+                             int instances, File currentModDir, Handler<Void> doneHandler) {
     File modDir = new File(dir, modName);
     if (modDir.exists()) {
       String conf;
@@ -361,6 +363,14 @@ public class VerticleManager {
       Boolean worker = json.getBoolean("worker");
       if (worker == null) {
         worker = Boolean.FALSE;
+      }
+      Boolean preserveCwd = json.getBoolean("preserve-cwd");
+      if (preserveCwd == null) {
+        preserveCwd = Boolean.FALSE;
+      }
+      if (preserveCwd) {
+        // Use the current module directory instead, or the cwd if not in a module
+        modDir = currentModDir;
       }
       return doDeploy(worker, deployName, main, config,
                       urls.toArray(new URL[urls.size()]), instances, modDir, doneHandler);

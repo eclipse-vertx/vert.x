@@ -158,6 +158,9 @@
     <antcall target="compile-java-mod">
       <param name="mod-name" value="work-queue"/>
     </antcall>
+    <antcall target="compile-java-mod">
+      <param name="mod-name" value="web-server"/>
+    </antcall>
   </target>
 
   <target name="compile-java-mod" depends="compile-platform" description="compile the out of the box java mods">
