@@ -247,7 +247,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
 <ul>
 <li>
-<p><code>-config &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
+<p><code>-conf &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
 </li>
 <li>
 <p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
@@ -287,7 +287,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 vertx run handler1.js -cluster -cluster-port 25501
 </pre>
 <p>Run a Ruby verticle passing it some config</p>
-<pre class="prettyprint">vertx run my_vert.rb -config my_vert.conf
+<pre class="prettyprint">vertx run my_vert.rb -conf my_vert.conf
 </pre>
 <p>Where <code>my_vert.conf</code> might contain something like:</p>
 <pre class="prettyprint">{
@@ -301,7 +301,7 @@ vertx run handler1.js -cluster -cluster-port 25501
 <pre class="prettyprint">vertx run my-mod
 </pre>
 <p>Run an installed module called <code>other-mod</code> specifying number of instances and some config</p>
-<pre class="prettyprint">vertx run other-mod -instances 10 -config other-mod.conf
+<pre class="prettyprint">vertx run other-mod -instances 10 -conf other-mod.conf
 </pre>
 <h2 id="running-a-verticle-in-a-standalone-vertx-server">Running a verticle in a standalone vert.x server</h2><br/>
 <p>Often you may have several verticles that make up your application - you could just start up each one in its own vert.x instance by using a separate <code>vertx run</code> for each verticle and have them communicate using the distributed event bus, but it might be a bit wasteful to have each one running in its own JVM instance.</p>

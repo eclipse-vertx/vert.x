@@ -208,7 +208,7 @@ If you're running an installed module (see the modules manual for more informati
 
 The `vertx run` command can take a few optional parameters, they are:
 
-* `-config <config_file>` Provide some configuration to the verticle. `config_file` is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.
+* `-conf <config_file>` Provide some configuration to the verticle. `config_file` is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.
 
 * `-cp <path>` The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to `.` (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by `:` (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be `-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar`
@@ -245,7 +245,7 @@ Run two JavaScript verticles on the same machine and let them cluster together w
     
 Run a Ruby verticle passing it some config
 
-    vertx run my_vert.rb -config my_vert.conf
+    vertx run my_vert.rb -conf my_vert.conf
     
 Where `my_vert.conf` might contain something like:
 
@@ -262,7 +262,7 @@ Run an installed module called `my-mod`
     
 Run an installed module called `other-mod` specifying number of instances and some config
 
-    vertx run other-mod -instances 10 -config other-mod.conf    
+    vertx run other-mod -instances 10 -conf other-mod.conf
     
 ## Running a verticle in a standalone vert.x server
 
