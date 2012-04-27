@@ -140,7 +140,7 @@ To that we use a SockJS bridge.
 
 SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.
 
-You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the Web-Server module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.
+You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the web-server module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.
 
 Edit the web server configuration so it looks like:
 
@@ -252,7 +252,7 @@ Once we get the albums we give them to knockout.js to render on the view.
 
 In order to actually send an order, you need to be logged in so we know who has placed the order.
 
-The bridge functionality in the `Web-Server` module automatically handles logins for you.
+The bridge functionality in the `web-server` module automatically handles logins for you.
 
 Basically, you send a login message to the address `vertx.bridge.login` with fields `username` and `password`, and if successful it replies with a message containing a unique session id.
 
@@ -284,7 +284,7 @@ It's as easy as that.
 
 Persisting an order is equally simple. We just send a message to the MongoDB persistor component saying we want to store the order.
 
-We also need to tell the bridge to let through any request to persist an order. We also need to add the further constraint that only logged-in users can persist orders.
+We also need to tell the bridge to let through requests to persist an order. We also need to add the further constraint that only logged-in users can persist orders.
 
 Edit the web server configuration so it looks like:
 
@@ -312,6 +312,7 @@ Edit the web server configuration so it looks like:
             collection : 'orders'
           }
         }
+      ]
     };
     
 Setting the `requires_auth` field to `true` means the bridge will only let through the message if the user is logged in.
@@ -388,7 +389,7 @@ You'll also need to provide a key store. The keystore is just a Java keystore wh
         
 Copy the keystore from the distribution
 
-    tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks . 
+    cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks . 
     
                   
 You'll also need to edit `web/js/client_app.js` so the line which creates the client side event bus instance now connects using `https`, not `http`.
@@ -411,7 +412,7 @@ Easy peasy. **It just works**
 
 ### Scaling the web server
 
-Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the verticle `web_server.js` to something like:
+Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the `web-server` module to something like:
 
     // Start 32 instances of the web server!
 

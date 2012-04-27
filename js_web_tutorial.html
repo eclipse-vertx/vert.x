@@ -161,7 +161,7 @@ vertx.deployVerticle('web-server', webServerConf);
 <p>We need to connect up the client side so it can interact with the persistor via the event bus.</p>
 <p>To that we use a SockJS bridge.</p>
 <p>SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.</p>
-<p>You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the Web-Server module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.</p>
+<p>You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the web-server module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.</p>
 <p>Edit the web server configuration so it looks like:</p>
 <pre class="prettyprint">var webServerConf = {  
   port: 8080,
@@ -242,7 +242,7 @@ vertx.deployVerticle('web-server', webServerConf);
 <p>Once we get the albums we give them to knockout.js to render on the view.</p>
 <h2 id="step-8-handling-login">Step 8. Handling Login</h2><br/>
 <p>In order to actually send an order, you need to be logged in so we know who has placed the order.</p>
-<p>The bridge functionality in the <code>Web-Server</code> module automatically handles logins for you.</p>
+<p>The bridge functionality in the <code>web-server</code> module automatically handles logins for you.</p>
 <p>Basically, you send a login message to the address <code>vertx.bridge.login</code> with fields <code>username</code> and <code>password</code>, and if successful it replies with a message containing a unique session id.</p>
 <p>This session id should then be sent in any message that is sent from the client to the server, that requires authentication (e.g. persisting an order).</p>
 <p>You can test login by attempting to log-in with username <code>tim</code> and password <code>password</code>. A message should appear on the left telling you you are logged in!.</p>
@@ -262,7 +262,7 @@ vertx.deployVerticle('web-server', webServerConf);
 <p>It's as easy as that.</p>
 <h2 id="step-9-persisting-orders">Step 9. Persisting Orders</h2><br/>
 <p>Persisting an order is equally simple. We just send a message to the MongoDB persistor component saying we want to store the order.</p>
-<p>We also need to tell the bridge to let through any request to persist an order. We also need to add the further constraint that only logged-in users can persist orders.</p>
+<p>We also need to tell the bridge to let through requests to persist an order. We also need to add the further constraint that only logged-in users can persist orders.</p>
 <p>Edit the web server configuration so it looks like:</p>
 <pre class="prettyprint">var webServerConf = {  
   port: 8080,
@@ -288,6 +288,7 @@ vertx.deployVerticle('web-server', webServerConf);
         collection : 'orders'
       }
     }
+  ]
 };
 </pre>
 <p>Setting the <code>requires_auth</code> field to <code>true</code> means the bridge will only let through the message if the user is logged in.</p>
@@ -333,7 +334,7 @@ vertx.deployVerticle('web-server', webServerConf);
 <p><img alt="Client Application" src="tutorial_4.png"/></p>
 <p><strong> Congratulations! You have just placed an order. </strong></p>
 <h2 id="step-11-securing-the-connection">Step 11. Securing the Connection</h2><br/>
-<p>So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea in a real application since we've been sending login credentials and orders.</p>
+<p>So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea in a real application since we're sending login credentials and orders.</p>
 <p>Configuring Vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please
 see the manual).</p>
 <p>Edit <code>app.js</code> again, and add the field <code>ssl</code> in the web server config, with the value <code>true</code>.</p>
@@ -347,7 +348,7 @@ see the manual).</p>
 <p>You'll also need to provide a key store. The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.      <br/>
 </p>
 <p>Copy the keystore from the distribution</p>
-<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks .
+<pre class="prettyprint">cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks .
 </pre>
 <p>You'll also need to edit <code>web/js/client_app.js</code> so the line which creates the client side event bus instance now connects using <code>https</code>, not <code>http</code>.</p>
 <pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
@@ -361,7 +362,7 @@ see the manual).</p>
 <p>Easy peasy. <strong>It just works</strong></p>
 <h2 id="step-12-scaling-the-application">Step 12. Scaling the application</h2><br/>
 <h3 id="scaling-the-web-server">Scaling the web server</h3><br/>
-<p>Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the verticle <code>web_server.js</code> to something like:</p>
+<p>Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the <code>web-server</code> module to something like:</p>
 <pre class="prettyprint">// Start 32 instances of the web server!
 
 vertx.deployVerticle('web-server', webServerConf, 32);
