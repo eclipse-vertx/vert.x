@@ -72,7 +72,7 @@
       action: "save",
       collection: "orders",
       document: {
-        username: "${username}", // This will get substituted on the server if the user is logged in
+        username: that.username(),
         items: orderItems
       }
     }
