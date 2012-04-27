@@ -8,7 +8,7 @@
 
     // Get the static data
 
-    eb.send('demo.persistor', {action: 'find', collection: 'albums', matcher: {} },
+    eb.send('vertx.mongopersistor', {action: 'find', collection: 'albums', matcher: {} },
       function(reply) {
         if (reply.status === 'ok') {
           var albumArray = [];
@@ -66,13 +66,18 @@
       return;
     }
 
-    var orderJson = ko.toJS(that.items);
-    var order = {
+    var orderItems = ko.toJS(that.items);
+    var orderMsg = {
       sessionID: that.sessionID(),
-      items: orderJson
+      action: "save",
+      collection: "orders",
+      document: {
+        username: "${username}", // This will get substituted on the server if the user is logged in
+        items: orderItems
+      }
     }
 
-    eb.send('demo.orderMgr', order, function(reply) {
+    eb.send('vertx.mongopersistor', orderMsg, function(reply) {
       if (reply.status === 'ok') {
         that.orderSubmitted(true);
         // Timeout the order confirmation box after 2 seconds
@@ -89,7 +94,7 @@
 
   that.login = function() {
     if (that.username().trim() != '' && that.password().trim() != '') {
-      eb.send('demo.authMgr.login', {username: that.username(), password: that.password()}, function (reply) {
+      eb.send('vertx.bridge.login', {username: that.username(), password: that.password()}, function (reply) {
         if (reply.status === 'ok') {
           that.sessionID(reply.sessionID);
         } else {

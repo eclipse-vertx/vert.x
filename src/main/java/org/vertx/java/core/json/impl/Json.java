@@ -36,7 +36,7 @@ public class Json {
       return mapper.writeValueAsString(obj);
     }
     catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON");
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
   }
 
@@ -45,7 +45,7 @@ public class Json {
       return mapper.readValue(str, clazz);
     }
     catch (Exception e) {
-      throw new DecodeException("Failed to decode");
+      throw new DecodeException("Failed to decode:" + e.getMessage());
     }
   }
 
