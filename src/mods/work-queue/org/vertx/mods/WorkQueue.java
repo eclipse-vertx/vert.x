@@ -41,10 +41,7 @@ public class WorkQueue extends BusModBase {
   private long processTimeout;
   private String persistorAddress;
   private String collection;
-
-  public WorkQueue() {
-    super(false);
-  }
+  private String address;
 
   /**
    * Start the busmod
@@ -52,6 +49,7 @@ public class WorkQueue extends BusModBase {
   public void start() {
     super.start();
 
+    address = getMandatoryStringConfig("address");
     processTimeout = super.getOptionalLongConfig("process_timeout", 5 * 60 * 1000);
     persistorAddress = super.getOptionalStringConfig("persistor_address", null);
     collection = super.getOptionalStringConfig("collection", null);

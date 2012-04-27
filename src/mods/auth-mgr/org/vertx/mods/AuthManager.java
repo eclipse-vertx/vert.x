@@ -40,6 +40,7 @@ public class AuthManager extends BusModBase {
   private final Map<String, String> sessions = new HashMap<>();
   private final Map<String, LoginInfo> logins = new HashMap<>();
 
+  private String address;
   private String userCollection;
   private String persistorAddress;
   private long sessionTimeout;
@@ -54,18 +55,15 @@ public class AuthManager extends BusModBase {
     }
   }
 
-  public AuthManager() {
-    super(false);
-  }
-
   /**
    * Start the busmod
    */
   public void start() {
     super.start();
 
-    this.userCollection = super.getMandatoryStringConfig("user_collection");
-    this.persistorAddress = super.getMandatoryStringConfig("persistor_address");
+    this.address = getMandatoryStringConfig("address");
+    this.userCollection = getMandatoryStringConfig("user_collection");
+    this.persistorAddress = getMandatoryStringConfig("persistor_address");
     Number timeout = config.getNumber("session_timeout");
     if (timeout != null) {
       if (timeout instanceof Long) {

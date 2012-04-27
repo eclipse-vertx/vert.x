@@ -117,7 +117,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           doLogin(message);
         }
       };
-      System.out.println("registered login handler at address " + loginAddress);
       eb.registerHandler(loginAddress, loginHandler);
       logoutHandler = new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> message) {
@@ -163,7 +162,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         }
         jsonObject = checkMatches(address, jsonObject);
         if (jsonObject != null) {
-          System.out.println("Sending on message " + jsonObject.encode());
           eb.send(address, jsonObject, replyHandler);
         } else {
           log.debug("Message rejected because there is no permitted match");

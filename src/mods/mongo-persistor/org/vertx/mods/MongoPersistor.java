@@ -40,6 +40,7 @@ import java.util.UUID;
  */
 public class MongoPersistor extends BusModBase implements Handler<Message<JsonObject>> {
 
+  private String address;
   private String host;
   private int port;
   private String dbName;
@@ -47,16 +48,13 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
   private Mongo mongo;
   private DB db;
 
-  public MongoPersistor() {
-    super(true); // Persistor must be run as a worker
-  }
-
   public void start() {
     super.start();
 
-    host = super.getOptionalStringConfig("host", "localhost");
-    port = super.getOptionalIntConfig("port", 27017);
-    dbName = super.getMandatoryStringConfig("db_name");
+    address = getOptionalStringConfig("address", "vertx.mongopersistor");
+    host = getOptionalStringConfig("host", "localhost");
+    port = getOptionalIntConfig("port", 27017);
+    dbName = getOptionalStringConfig("db_name", "default_db");
 
     try {
       mongo = new Mongo(host, port);

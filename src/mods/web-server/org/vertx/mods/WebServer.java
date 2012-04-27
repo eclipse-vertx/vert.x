@@ -16,13 +16,13 @@
 
 package org.vertx.mods;
 
+import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.SockJSServer;
-import org.vertx.java.deploy.Verticle;
 
 import java.io.File;
 
@@ -36,40 +36,40 @@ import java.io.File;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WebServer extends Verticle implements Handler<HttpServerRequest> {
+public class WebServer extends BusModBase implements Handler<HttpServerRequest> {
 
   private String webRootPrefix;
   private String indexPage;
 
-  public void start() throws Exception {
+  public void start() {
+    super.start();
+
     HttpServer server = vertx.createHttpServer();
 
-    JsonObject conf = container.getConfig();
-
-    if (conf.getBoolean("ssl", false)) {
-      server.setSSL(true).setKeyStorePassword(conf.getString("key_store_password", "wibble"))
-                         .setKeyStorePath(conf.getString("key_store_path", "server-keystore.jks"));
+    if (getOptionalBooleanConfig("ssl", false)) {
+      server.setSSL(true).setKeyStorePassword(getOptionalStringConfig("key_store_password", "wibble"))
+                         .setKeyStorePath(getOptionalStringConfig("key_store_path", "server-keystore.jks"));
     }
 
-    if (conf.getBoolean("static_files", true)) {
+    if (getOptionalBooleanConfig("static_files", true)) {
       server.requestHandler(this);
     }
 
-    boolean bridge = conf.getBoolean("bridge", false);
+    boolean bridge = getOptionalBooleanConfig("bridge", false);
     if (bridge) {
       SockJSServer sjsServer = vertx.createSockJSServer(server);
-      JsonArray permitted = container.getConfig().getArray("permitted");
+      JsonArray permitted = getOptionalArrayConfig("permitted", new JsonArray());
 
-      sjsServer.bridge(conf.getObject("sjs_config", new JsonObject().putString("prefix", "/eventbus")), permitted,
-                       conf.getString("users_collection", "users"), conf.getString("persistor_address", "vertx.persistor"));
+      sjsServer.bridge(getOptionalObjectConfig("sjs_config", new JsonObject().putString("prefix", "/eventbus")), permitted,
+                       getOptionalStringConfig("users_collection", "users"), getOptionalStringConfig("persistor_address", "vertx.mongopersistor"));
     }
 
-    String webRoot = conf.getString("web_root", "web");
-    String index = conf.getString("index_page", "index.html");
+    String webRoot = getOptionalStringConfig("web_root", "web");
+    String index = getOptionalStringConfig("index_page", "index.html");
     webRootPrefix = webRoot + File.separator;
     indexPage = webRootPrefix + index;
 
-    server.listen((Integer)conf.getNumber("port", 80), conf.getString("host", "0.0.0.0"));
+    server.listen(getOptionalIntConfig("port", 80), getOptionalStringConfig("host", "0.0.0.0"));
   }
 
   public void handle(HttpServerRequest req) {

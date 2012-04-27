@@ -8,9 +8,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.deploy.Verticle;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

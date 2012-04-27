@@ -18,6 +18,7 @@ package org.vertx.java.busmods;
 
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
@@ -31,27 +32,15 @@ public abstract class BusModBase extends Verticle {
 
   protected EventBus eb;
   protected JsonObject config;
-  protected String address;
-  protected boolean worker;
   protected Logger logger;
 
-  protected BusModBase(boolean worker) {
-    this.worker = worker;
-  }
 
   /**
    * Start the busmod
    */
   public void start() {
-    if (worker && vertx.isEventLoop()) {
-      throw new IllegalStateException(this.getClass().getName() + " must be started as a worker verticle");
-    }
     eb = vertx.eventBus();
     config = container.getConfig();
-    address = config.getString("address");
-    if (address == null) {
-      throw new IllegalArgumentException("address must be specified in config for busmod");
-    }
     logger = container.getLogger();
   }
 
@@ -121,11 +110,46 @@ public abstract class BusModBase extends Verticle {
     return l == null ? defaultValue : l.longValue();
   }
 
-  protected String getMandatoryStringConfig(String fieldName) {
-    String b = config.getString(fieldName);
+  protected JsonObject getOptionalObjectConfig(String fieldName, JsonObject defaultValue) {
+    JsonObject o = config.getObject(fieldName);
+    return o == null ? defaultValue : o;
+  }
+
+  protected JsonArray getOptionalArrayConfig(String fieldName, JsonArray defaultValue) {
+    JsonArray a = config.getArray(fieldName);
+    return a == null ? defaultValue : a;
+  }
+
+  protected boolean getMandatoryBooleanConfig(String fieldName) {
+    Boolean b = config.getBoolean(fieldName);
     if (b == null) {
       throw new IllegalArgumentException(fieldName + " must be specified in config for busmod");
     }
     return b;
   }
+
+  protected String getMandatoryStringConfig(String fieldName) {
+    String s = config.getString(fieldName);
+    if (s == null) {
+      throw new IllegalArgumentException(fieldName + " must be specified in config for busmod");
+    }
+    return s;
+  }
+
+  protected int getMandatoryIntConfig(String fieldName) {
+    Integer i = (Integer)config.getNumber(fieldName);
+    if (i == null) {
+      throw new IllegalArgumentException(fieldName + " must be specified in config for busmod");
+    }
+    return i;
+  }
+
+  protected long getMandatoryLongConfig(String fieldName) {
+    Long l = (Long)config.getNumber(fieldName);
+    if (l == null) {
+      throw new IllegalArgumentException(fieldName + " must be specified in config for busmod");
+    }
+    return l;
+  }
+
 }

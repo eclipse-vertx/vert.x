@@ -17,13 +17,8 @@
 package webapp
 
 // Our application config - you can maintain it here or alternatively you could
-// stick it in a app.json text file and specify that when starting the verticle
-
-// Configuration for the persistor
-def persistorConf = [
-  address: 'demo.persistor',  // The event bus address at which the persistor listens
-  db_name: 'test_db'          // The name of the MongoDB database
-]
+// stick it in a conf.json text file and specify that on the command line when
+// starting this verticle
 
 // Configuration for the web server
 def webServerConf = [
@@ -38,15 +33,11 @@ def webServerConf = [
   // This bridges messages from the client side to the server side event bus
   bridge: true,
 
-  // Address of persistor - the user/password info is stored in the database
-  // so we need this so the bridge can handle logins
-  persistor_address: 'demo.persistor',
-
   // This defines which messages from the client we will let through
   permitted: [
     // Allow calls to get static album data from the persistor
     [
-      'address' : 'demo.persistor',
+      'address' : 'vertx.mongopersistor',
       'match' : [
         'action' : 'find',
         'collection' : 'albums'
@@ -54,7 +45,7 @@ def webServerConf = [
     ],
     // And to place orders
     [
-      'address' : 'demo.persistor',
+      'address' : 'vertx.mongopersistor',
       'requires_auth' : true,  // User must be logged in to send let these through
       'match' : [
         'action' : 'save',
@@ -70,13 +61,15 @@ container.with {
 
   // Deploy a MongoDB persistor module
 
-  deployVerticle('mongo-persistor', persistorConf, 1, {
+  deployVerticle('mongo-persistor') {
 
     // And when it's deployed run a script to load it with some reference
     // data for the demo
 
+    println "deploying static data"
+
     deployVerticle('StaticData.groovy')
-  })
+  }
 
   // Start the web server, with the config we defined above
 
