@@ -21,7 +21,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
 
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -44,28 +43,24 @@ public class Mailer extends BusModBase implements Handler<Message<JsonObject>> {
   private Session session;
   private Transport transport;
 
+  private String address;
   private boolean ssl;
   private String host;
   private int port;
   private boolean auth;
   private String username;
   private String password;
-  private Logger logger;
-
-  public Mailer() {
-    super(true); // The Mailer must always be run as a worker
-  }
-
 
   @Override
   public void start() {
     super.start();
-    ssl = super.getOptionalBooleanConfig("ssl", false);
-    host = super.getOptionalStringConfig("host", "localhost");
-    port = super.getOptionalIntConfig("port", 25);
-    auth = super.getOptionalBooleanConfig("auth", false);
-    username = super.getOptionalStringConfig("username", null);
-    password = super.getOptionalStringConfig("password", null);
+    address = getOptionalStringConfig("address", "vertx.mailer");
+    ssl = getOptionalBooleanConfig("ssl", false);
+    host = getOptionalStringConfig("host", "localhost");
+    port = getOptionalIntConfig("port", 25);
+    auth = getOptionalBooleanConfig("auth", false);
+    username = getOptionalStringConfig("username", null);
+    password = getOptionalStringConfig("password", null);
 
     eb.registerHandler(address, this);
 

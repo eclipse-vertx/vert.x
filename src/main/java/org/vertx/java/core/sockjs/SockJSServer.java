@@ -17,12 +17,8 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.sockjs.impl.EventBusBridge;
-
-import java.util.List;
 
 /**
  *

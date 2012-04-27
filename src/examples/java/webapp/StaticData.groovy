@@ -17,7 +17,7 @@
 package webapp
 def eb = vertx.eventBus
 
-def pa = 'demo.persistor'
+def pa = 'vertx.mongopersistor'
 
 def albums = [
   [

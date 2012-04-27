@@ -8,7 +8,7 @@
 
     // Get the static data
 
-    eb.send('demo.persistor', {action: 'find', collection: 'albums', matcher: {} },
+    eb.send('vertx.mongopersistor', {action: 'find', collection: 'albums', matcher: {} },
       function(reply) {
         if (reply.status === 'ok') {
           var albumArray = [];
@@ -77,7 +77,7 @@
       }
     }
 
-    eb.send('demo.persistor', orderMsg, function(reply) {
+    eb.send('vertx.mongopersistor', orderMsg, function(reply) {
       if (reply.status === 'ok') {
         that.orderSubmitted(true);
         // Timeout the order confirmation box after 2 seconds

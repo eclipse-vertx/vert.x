@@ -241,7 +241,6 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     }
     checkWritten();
     File file = new File(PathAdjuster.adjust(filename));
-    System.out.println("Serving file " + file);
     if (!file.exists()) {
       sendNotFound();
     } else {

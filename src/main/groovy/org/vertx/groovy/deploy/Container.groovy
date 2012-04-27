@@ -50,6 +50,16 @@ class Container {
   /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  String deployWorkerVerticle(String main, Closure doneHandler) {
+    jContainer.deployWorkerVerticle(main, null, 1, doneHandler as Handler)
+  }
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
@@ -91,12 +101,22 @@ class Container {
   }
 
   /**
-   * Deploy a worker verticle programmatically
+   * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @return Unique deployment id
    */
   String deployVerticle(String main) {
     jContainer.deployVerticle(main)
+  }
+
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  String deployVerticle(String main, Closure doneHandler) {
+    jContainer.deployVerticle(main, null, 1, doneHandler as Handler)
   }
 
   /**
