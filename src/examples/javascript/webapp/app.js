@@ -23,7 +23,7 @@ var webServerConf = {
   bridge: true,
 
   // This defines which messages from the client we will let through
-  // from the client
+  // to the server side
   permitted: [
     // Allow calls to get static album data from the persistor
     {

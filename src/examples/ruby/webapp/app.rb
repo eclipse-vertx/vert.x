@@ -18,7 +18,7 @@ web_server_conf = {
   'bridge' => true,
 
   # This defines which messages from the client we will let through
-  # from the client
+  # to the server side
   'permitted' => [
     # Allow calls to get static album data from the persistor
     {
@@ -38,7 +38,7 @@ web_server_conf = {
       }
     }
   ]
-};
+}
 
 # Now we deploy the modules that we need
 
