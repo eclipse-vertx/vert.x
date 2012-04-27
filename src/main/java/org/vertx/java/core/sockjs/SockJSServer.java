@@ -48,7 +48,7 @@ import org.vertx.java.core.json.JsonObject;
  * client or receive data via the {@link SockJSSocket#dataHandler}.<p>
  *
  * You can register multiple applications with the same SockJSServer, each using different path prefixes, each
- * application will have its own handler, and configuration as described by {@link AppConfig}<p>
+ * application will have its own handler, and configuration.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -89,7 +89,7 @@ public interface SockJSServer {
    * @param sessionTimeout Amount of time a login session will remain active
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress, Long sessionTimeout);
+              String userCollection, String persistorAddress, long sessionTimeout);
 
   /**
    * Install an app which bridges the SockJS server to the event bus and which handles
@@ -100,10 +100,10 @@ public interface SockJSServer {
    * @param persistorAddress Address on the event bus of a MongoDB persistor
    * @param sessionTimeout Amount of time a login session will remain active
    * @param loginAddress Address on the event bus where logins are handled
-   * @param loginAddress Address on the event bus where logouts are handled
+   * @param logoutAddress Address on the event bus where logouts are handled
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress, Long sessionTimeout,
+              String userCollection, String persistorAddress, long sessionTimeout,
               String loginAddress, String logoutAddress);
 
 }

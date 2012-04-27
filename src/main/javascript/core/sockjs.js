@@ -26,37 +26,37 @@ if (!vertx.createSockJSServer) {
 
     var vertx = org.vertx.java.deploy.impl.VertxLocator.vertx;
 
-    function convertConfig(config) {
-      var jConfig = new org.vertx.java.core.sockjs.AppConfig();
-      var prefix = config['prefix'];
-      if (typeof prefix != 'undefined') jConfig.setPrefix(prefix);
-      var jsessionid = config['insert_JSESSIONID'];
-      if (typeof jsessionid != 'undefined') jConfig.setInsertJSESSIONID(jsessionid);
-      var session_timeout = config['session_timeout'];
-      if (typeof session_timeout != 'undefined') jConfig.setSessionTimeout(session_timeout);
-      var heartbeat_period = config['heartbeat_period'];
-      if (typeof heartbeat_period != 'undefined') jConfig.setHeartbeatPeriod(heartbeat_period);
-      var max_bytes_streaming = config['max_bytes_streaming'];
-      if (typeof max_bytes_streaming != 'undefined') jConfig.setMaxBytesStreaming(max_bytes_streaming);
-      var library_url = config['library_url'];
-      if (typeof library_url != 'undefined') jConfig.setLibraryURL(library_url);
-      return jConfig;
-    }
-
     var jserver = vertx.createSockJSServer(httpServer._to_java_server());
     var server = {
       installApp: function(config, handler) {
-        jserver.installApp(convertConfig(config), handler);
+        jserver.installApp(new org.vertx.java.core.json.JsonObject(JSON.stringify(config)), handler);
       },
-      bridge: function(config, permitted) {
-        var jList = new java.util.ArrayList();
+      bridge: function(config, permitted, userCollection, persistorAddress,
+                       sessionTimeout, loginAddress, logoutAddress) {
+        if (typeof userCollection === 'undefined') {
+          userCollection = null;
+        }
+        if (typeof persistorAddress === 'undefined') {
+          persistorAddress = null;
+        }
+        if (typeof sessionTimeout === 'undefined') {
+          sessionTimeout = 30 * 60 * 1000;
+        }
+        if (typeof loginAddress === 'undefined') {
+          loginAddress = null;
+        }
+        if (typeof logoutAddress === 'undefined') {
+          logoutAddress = null;
+        }
+
+        var json_arr = new org.vertx.java.core.json.JsonArray();
         for (var i = 0; i < permitted.length; i++) {
           var match = permitted[i];
           var json_str = JSON.stringify(match);
           var jJson = new org.vertx.java.core.json.JsonObject(json_str);
-          jList.add(jJson);
+          json_arr.add(jJson);
         }
-        jserver.bridge(convertConfig(config), jList);
+        jserver.bridge(new org.vertx.java.core.json.JsonObject(JSON.stringify(config)), json_arr);
       }
     }
     return server;

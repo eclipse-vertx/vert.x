@@ -2,7 +2,7 @@ require('vertx')
 
 eb = Vertx::EventBus
 
-pa = 'demo.persistor'
+pa = 'vertx.mongopersistor'
 
 albums = [
   {

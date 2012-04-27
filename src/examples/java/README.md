@@ -241,24 +241,6 @@ Run it with
 
 vertx run org.vertx.java.examples.resourceload.ResourceLoadExample -cp "classes:resourceload:resourceload/quux.jar"
 
-## Web application
-
-This is a full end-end "real-time" web appplication which has a modern JavaScript client side MVVM application that communicates with a set of verticle at the back end via the vert.x event bus.
-
-It's the same application from the tutorial.
-
-You will need an instance of MongoDB server (with default settings) running on localhost.
-
-This example uses a groovy script App.groovy to co-ordinate the rest of the application which contains two Java verticles. If you wanted you could co-ordinate the loading of the application with another Java verticle, but it makes more sense to use a scripting language to do that, since you can edit it and the configuration it contains without having to recompile;
-
-To run it simply `cd` into the webapp directory and `vertx run App.groovy -cp .:../classes/`
-
-Note that in this example we are in the webapp directory so we have to include the classes which are in the `classes` directory off the parent directory. In a real application you would probably put your own classes in the webapp directory or jar them up.
-
-Then point your browser at https://localhost:8080 and start shopping! (Note it's https not http!)
-
-To fully understand this example please follow the web app tutorial on the website
-
 
 
 

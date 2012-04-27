@@ -1,29 +1,56 @@
 require('vertx')
 
-# Our application config
+# Our application config - you can maintain it here or alternatively you could
+# stick it in a conf.json text file and specify that on the command line when
+# starting this verticle
 
-persistor_conf = {
-  'address' => 'demo.persistor',
-  'db_name' => 'test_db'
-}
-auth_mgr_conf = {
-  'address' => 'demo.authMgr',
-  'user_collection' => 'users',
-  'persistor_address' => 'demo.persistor'
-}
+# Configuration for the web server
+web_server_conf = {
 
-# Deploy the busmods
+  # Normal web server stuff
 
-Vertx.deploy_verticle('mongo-persistor', persistor_conf) do
-    load('static_data.rb')
+  'port' => 8080,
+  'host' => 'localhost',
+  'ssl' => true,
+
+  # Configuration for the event bus client side bridge
+  # This bridges messages from the client side to the server side event bus
+  'bridge' => true,
+
+  # This defines which messages from the client we will let through
+  # from the client
+  'permitted' => [
+    # Allow calls to get static album data from the persistor
+    {
+      'address' => 'vertx.mongopersistor',
+      'match' => {
+        'action' => 'find',
+        'collection' => 'albums'
+      }
+    },
+    # And to place orders
+    {
+      'address' => 'vertx.mongopersistor',
+      'requires_auth' => true,  # User must be logged in to send let these through
+      'match' => {
+        'action' => 'save',
+        'collection' => 'orders'
+      }
+    }
+  ]
+};
+
+# Now we deploy the modules that we need
+
+# Deploy a MongoDB persistor module
+
+Vertx.deploy_verticle('mongo-persistor') do
+
+  # And when it's deployed run a script to load it with some reference
+  # data for the demo
+  load('static_data.rb')
 end
 
-Vertx.deploy_verticle('auth-mgr', auth_mgr_conf)
+# Start the web server, with the config we defined above
 
-# Start the order manager
-
-Vertx.deploy_verticle('order_mgr.rb')
-
-# Start the web server
-
-Vertx.deploy_verticle('web_server.rb')
+Vertx.deploy_verticle('web-server', web_server_conf)

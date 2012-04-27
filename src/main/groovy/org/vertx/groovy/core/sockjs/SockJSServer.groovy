@@ -20,6 +20,7 @@ import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
 
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
+import org.vertx.java.core.json.JsonArray
 import org.vertx.java.core.json.JsonObject
 
 /**
@@ -109,15 +110,23 @@ abstract class SockJSServer {
   }
 
   /**
-   * Install an app which bridges the SockJS server to the event bus
-   * @param config The config for the app
+   * Install an app which bridges the SockJS server to the event bus.
+   * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
+   * @param userCollection The name of the MongoDB collection which contains username/password information.
+   * If null then login wouldn't be handled by the bridge
+   * @param persistorAddress Address on the event bus of a MongoDB persistor
+   * @param sessionTimeout Amount of time a login session will remain active
+   * @param loginAddress Address on the event bus where logins are handled
+   * @param logoutAddress Address on the event bus where logouts are handled
    */
-  void bridge(Map config, List<Map<String, Object>> permitted = [[:]]) {
-    List<JsonObject> jList = new ArrayList<>()
-    for (Map<String, Object> map: permitted) {
-      jList.add(new JsonObject(map))
-    }
-    jServer.bridge(new JsonObject(config), jList)
+  void bridge(Map sjsConfig, List<Map<String, Object>> permitted = [[:]],
+              String userCollection = null, String persistorAddress = null,
+              long sessionTimeout = 30 * 60 * 1000,
+              String loginAddress = null, String logoutAddress = null) {
+    jServer.bridge(new JsonObject(sjsConfig), new JsonArray(permitted),
+                   userCollection, persistorAddress, sessionTimeout,
+                   loginAddress, logoutAddress)
   }
+
 }

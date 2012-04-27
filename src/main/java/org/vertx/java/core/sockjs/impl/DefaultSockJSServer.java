@@ -187,12 +187,12 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray permitted,
-                        String userCollection, String persistorAddress, Long sessionTimeout) {
+                        String userCollection, String persistorAddress, long sessionTimeout) {
     new EventBusBridge(vertx, this, sjsConfig, permitted, userCollection, persistorAddress, sessionTimeout);
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray permitted,
-                        String userCollection, String persistorAddress, Long sessionTimeout,
+                        String userCollection, String persistorAddress, long sessionTimeout,
                         String loginAddress, String logoutAddress) {
     new EventBusBridge(vertx, this, sjsConfig, permitted, userCollection, persistorAddress, sessionTimeout,
         loginAddress, logoutAddress);
