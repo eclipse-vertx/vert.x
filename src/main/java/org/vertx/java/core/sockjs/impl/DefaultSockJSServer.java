@@ -122,8 +122,7 @@ public class DefaultSockJSServer implements SockJSServer {
     });
 
     // Iframe handlers
-    String iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}",
-        config.getString("library_url", "http://cdn.sockjs.org/sockjs-0.2.1.min.js"));
+    String iframeHTML = IFRAME_TEMPLATE.replace("{{ sockjs_url }}", config.getString("library_url"));
     Handler<HttpServerRequest> iframeHandler = createIFrameHandler(iframeHTML);
 
     // Request exactly for iframe.html
@@ -253,12 +252,12 @@ public class DefaultSockJSServer implements SockJSServer {
         List<TimeoutInfo> timeouts = new ArrayList<>();
 
         setTimeout(timeouts, 0, h);
-        setTimeout(timeouts,1, hs);
-        setTimeout(timeouts,5, h);
-        setTimeout(timeouts,25, h);
-        setTimeout(timeouts,125, h);
-        setTimeout(timeouts,625, h);
-        setTimeout(timeouts,3125, h);
+        setTimeout(timeouts, 1, hs);
+        setTimeout(timeouts, 5, h);
+        setTimeout(timeouts, 25, h);
+        setTimeout(timeouts, 125, h);
+        setTimeout(timeouts, 625, h);
+        setTimeout(timeouts, 3125, h);
 
         runTimeouts(timeouts, req.response);
 

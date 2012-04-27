@@ -27,6 +27,13 @@ import org.vertx.java.deploy.Verticle;
 import java.io.File;
 
 /**
+ * A simple web server module that can serve static files, and also can
+ * bridge event bus messages to/from client side JavaScript and the server side
+ * event bus.
+ *
+ * Please see the modules manual for full description of what configuration
+ * parameters it takes.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class WebServer extends Verticle implements Handler<HttpServerRequest> {
@@ -44,7 +51,9 @@ public class WebServer extends Verticle implements Handler<HttpServerRequest> {
                          .setKeyStorePath(conf.getString("key_store_path", "server-keystore.jks"));
     }
 
-    server.requestHandler(this);
+    if (conf.getBoolean("static_files", true)) {
+      server.requestHandler(this);
+    }
 
     boolean bridge = conf.getBoolean("bridge", false);
     if (bridge) {
