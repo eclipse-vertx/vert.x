@@ -80,7 +80,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       if (!(elem instanceof JsonObject)) {
         throw new IllegalArgumentException("Permitted must only contain JsonObject");
       }
-      l.add((JsonObject)elem);
+      l.add((JsonObject) elem);
     }
     return l;
   }
@@ -245,8 +245,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       return message;
     }
 
-    String userID = null;
     boolean authed = false;
+    boolean doneAuth = false;
 
     for (JsonObject matchHolder: permitted) {
       String matchAddress = matchHolder.getString("address");
@@ -254,19 +254,13 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         Boolean b = matchHolder.getBoolean("requires_auth");
         boolean requiresAuth = b != null && b.booleanValue();
         if (requiresAuth) {
-          if (!authed) {
+          if (!doneAuth) {
             String sessionID = message.getString("sessionID");
             if (sessionID != null) {
-              userID = sessions.get(sessionID);
-              if (userID != null) {
-                // Substitute the username wherever it appears in the message
-                //TODO - Find a quicker way to do this
-                message = new JsonObject(message.encode().replace("${username}", userID));
-                message.removeField("sessionID");
-              }
+              authed = sessions.containsKey(sessionID);
             }
           }
-          if (userID == null) {
+          if (!authed) {
             // No match since user is not authed
             log.debug("Rejecting match since user is not authenticated");
             break;
