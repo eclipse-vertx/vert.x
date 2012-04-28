@@ -28,6 +28,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory;
+import org.vertx.java.deploy.impl.java.JavaSourceVerticleFactory;
 import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
 import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
 import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
@@ -208,6 +209,8 @@ public class VerticleManager {
       type = VerticleType.RUBY;
     } else if (main.endsWith(".groovy")) {
       type = VerticleType.GROOVY;
+    } else if (main.endsWith(".java")) {
+        type = VerticleType.JAVA_SOURCE;
     }
 
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
@@ -228,6 +231,9 @@ public class VerticleManager {
           break;
         case GROOVY:
           verticleFactory = new GroovyVerticleFactory(vertx, this);
+          break;
+        case JAVA_SOURCE:
+          verticleFactory = new JavaSourceVerticleFactory(this);
           break;
         default:
           throw new IllegalArgumentException("Unsupported type: " + type);
