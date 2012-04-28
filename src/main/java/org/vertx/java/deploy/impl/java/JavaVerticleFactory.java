@@ -33,7 +33,7 @@ public class JavaVerticleFactory implements VerticleFactory {
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
 
-    Class clazz = cl.loadClass(main);
+    Class<?> clazz = loadClass(main, cl);
 
     Verticle verticle = (Verticle)clazz.newInstance();
 
@@ -49,6 +49,10 @@ public class JavaVerticleFactory implements VerticleFactory {
     return verticle;
 
   }
+
+  protected Class<?> loadClass(String main, ClassLoader cl) throws ClassNotFoundException {
+    return cl.loadClass(main);
+}
 
   public void reportException(Throwable t) {
     mgr.getLogger().error("Exception in Java verticle script", t);
