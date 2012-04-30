@@ -6,7 +6,7 @@
 
 Vert.x allows you to package up your applications or re-usable functionality into modules which can then be referenced by other applications or modules.
 
-For example, vert.x ships with several out of the box modules including a mailer, a MongoDB persistor and an authentication manager. You can also easily create your own modules.
+For example, vert.x ships with several out of the box modules including a web server, a mailer and a MongoDB persistor. You can also easily create your own modules.
 
 ### Modules location
 
@@ -167,21 +167,15 @@ The module name is `web-server`.
 The web-server configuration is as follows:
 
     {
-        // The following are parameters related to serving static files
-    
         "web_root": <web_root>,
         "index_page": <index_page>,
         "host", <host>,
         "port", <port>
         "static_files": <static_files>,
         
-        // The following are ssl related parameters
-        
         "ssl": <ssl>,        
         "key_store_password": <key_store_password>,
         "key_store_path": <key_store_path>,
-        
-        // The following are bridge related parameters
         
         "bridge": <bridge>,
         "permitted": <permitted>,
@@ -276,7 +270,7 @@ Let's take a look at each field in turn:
 * `address` The main address for the busmod. Every busmod has a main address. Defaults to `vertx.mongopersistor`.
 * `host` Host name or ip address of the MongoDB instance. Defaults to `localhost`.
 * `port` Port at which the MongoDB instance is listening. Defaults to `27017`.
-* `db_name` Name of the database in the MongoDB instance to use. This parameter is mandatory. If you want to access different MongoDB databases you can create multiple instances of this busmod.
+* `db_name` Name of the database in the MongoDB instance to use. Defaults to `default_db`.
 
 #### Operations
 

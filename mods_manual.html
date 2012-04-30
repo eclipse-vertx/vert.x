@@ -158,7 +158,7 @@
 <h1 id="modules">Modules</h1><br/>
 <h2 id="what-is-a-module-mod">What is a Module (mod) ?</h2><br/>
 <p>Vert.x allows you to package up your applications or re-usable functionality into modules which can then be referenced by other applications or modules.</p>
-<p>For example, vert.x ships with several out of the box modules including a mailer, a MongoDB persistor and an authentication manager. You can also easily create your own modules.</p>
+<p>For example, vert.x ships with several out of the box modules including a web server, a mailer and a MongoDB persistor. You can also easily create your own modules.</p>
 <h3 id="modules-location">Modules location</h3><br/>
 <p>Modules, by default, live in the <code>mods</code> directory in the vert.x installation directory. Vert.x comes with several modules pre-installed and they reside here.</p>
 <p>Vert.x always first searches for modules in the <code>mods</code> directory of the installation followed by the directory given by the environment variable <code>VERTX_MODS</code>, if specified.</p>
@@ -257,21 +257,15 @@ mods/my-web-app/web-root/index.html
 <h4 id="configuration_1">Configuration</h4><br/>
 <p>The web-server configuration is as follows:</p>
 <pre class="prettyprint">{
-    // The following are parameters related to serving static files
-
     "web_root": &lt;web_root&gt;,
     "index_page": &lt;index_page&gt;,
     "host", &lt;host&gt;,
     "port", &lt;port&gt;
     "static_files": &lt;static_files&gt;,
 
-    // The following are ssl related parameters
-
     "ssl": &lt;ssl&gt;,        
     "key_store_password": &lt;key_store_password&gt;,
     "key_store_path": &lt;key_store_path&gt;,
-
-    // The following are bridge related parameters
 
     "bridge": &lt;bridge&gt;,
     "permitted": &lt;permitted&gt;,
@@ -351,7 +345,7 @@ mods/my-web-app/web-root/index.html
 <li><code>address</code> The main address for the busmod. Every busmod has a main address. Defaults to <code>vertx.mongopersistor</code>.</li>
 <li><code>host</code> Host name or ip address of the MongoDB instance. Defaults to <code>localhost</code>.</li>
 <li><code>port</code> Port at which the MongoDB instance is listening. Defaults to <code>27017</code>.</li>
-<li><code>db_name</code> Name of the database in the MongoDB instance to use. This parameter is mandatory. If you want to access different MongoDB databases you can create multiple instances of this busmod.</li>
+<li><code>db_name</code> Name of the database in the MongoDB instance to use. Defaults to <code>default_db</code>.</li>
 </ul>
 <h4 id="operations">Operations</h4><br/>
 <p>The busmod supports the following operations</p>
