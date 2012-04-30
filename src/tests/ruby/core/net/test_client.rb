@@ -149,6 +149,36 @@ def test_echo_ssl
   }
 end
 
+def test_write_str
+
+  @server = NetServer.new.connect_handler { |socket|
+    @tu.check_context
+    socket.data_handler { |data|
+      @tu.check_context
+      socket.write_buffer(data) # Just echo it back
+    }
+  }.listen(8080)
+
+  @client = NetClient.new.connect(8080, "localhost") { |socket|
+    @tu.check_context
+    sent = 'some-string'
+    received = Buffer.create()
+
+    socket.data_handler { |data|
+      @tu.check_context
+      received.append_buffer(data)
+
+      if received.length == sent.length
+        @tu.azzert(sent == received.to_s)
+        @tu.test_complete
+      end
+    }
+
+    socket.write_str(sent)
+  }
+
+end
+
 # Basically we just need to touch all methods, the real testing occurs in the Java tests
 def test_methods
   @server = NetServer.new
