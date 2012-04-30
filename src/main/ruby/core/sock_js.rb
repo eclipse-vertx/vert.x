@@ -57,7 +57,7 @@ module Vertx
     # @param hndlr [Block] Handler to call when a new {SockJSSocket is created}
     def install_app(config, proc = nil, &hndlr)
       hndlr = proc if proc
-      j_config = convert_config(config)
+      j_config = org.vertx.java.core.json.JsonObject.new(config)
       @j_server.installApp(j_config) { |j_sock|
         hndlr.call(SockJSSocket.new(j_sock))
       }
