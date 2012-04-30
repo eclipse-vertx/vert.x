@@ -155,9 +155,9 @@ module Vertx
     # @param [Block] compl. The handler to call on completion.
     def write_str(str, enc = "UTF-8", &compl)
       if (compl == nil)
-        @j_del.writeString(str, enc)
+        @j_del.write(str, enc)
       else
-        @j_del.writeString(str, enc, compl)
+        @j_del.write(str, enc, compl)
       end
     end
 
