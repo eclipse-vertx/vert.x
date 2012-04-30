@@ -38,7 +38,19 @@ Inside the module directory you must provide a file called `mod.json` which cont
     
 At minimum `mod.json` must contain a field `main` which specifies the main verticle to start the module. Main would be something like `myscript.groovy`, `app.rb`, `foo.js` or `org.acme.MyApp`. (See the chapter on "running vert.x" in the main manual for a description of what a main is.)
 
+##### Worker modules
+
 If your main verticle is a worker verticle you must also specify the `worker` field with value `true`, otherwise it will be assumed it is not a worker.
+
+##### Preserving working directory
+
+By default when you're module is executing it will see its working directory as the module directory when using the Vert.x API. This is useful if you want to package up an application which contains its own static resources into a module.
+
+However in some cases, you don't want this behaviour, you want the module to see its working directory as the working directory of whoever started the module.
+
+An example of this would be the `web-server` module. With the web server, you use it to serve your own static files which exist either outside of a module or in your own module, they do not exist inside the `web-server` module itself.
+
+If you want to preserve current working directory, set the field `preserve-cwd` to `true` in `mod.json`. The default value is `false`.
 
 #### Module path
 
@@ -92,7 +104,9 @@ And server.js serves the file with:
     
 In the above case the web server expects the working directory to be the module directory.
 
-To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :)    
+To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :) 
+
+If you don't want this behaviour you can set the field `preserve-cwd` to `true` in `mod.json`. See above for a description of this field.   
 
 ### Creating and installing your own module
 
@@ -100,7 +114,7 @@ Creating your own module is simple, simply create your vert.x application as nor
 
 Then copy the entire directory to the module root directory (i.e. the `mods` directory in the install or your own module root given by `VERTX_MODS`)
 
-## What is a Bus Module (busmod) ?
+### What is a Bus Module (busmod) ?
 
 A *busmod* is a specific type of module that communicates on the event bus with over verticles by sending JSON messages.
 
@@ -110,35 +124,19 @@ JSON is the *lingua franca* of vert.x
 
 You don't have to write your application modules as busmods but it's highly recommended you do since it will make them easily and consistently usable from other verticles.
 
-There are a few more conventions that should be followed when writing busmods:
-
 ### Configuration
 
-Configuration for a busmod (if any) should be specified using a JSON configuration file when deploying from the command line using `vertx run` or `vertx deploy` or passed in when deploying a busmod programmatically.
+Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using `vertx run` or `vertx deploy` or passed in when deploying a busmod programmatically.
 
 Applying configuration this way allows it to be easily and consistently configured irrespective of the language.
 
-### Addresses
-
-Each busmod will register one or more handlers at specific addresses so it can receive messages on the event bus. As a convention, the main address should be passed to the busmod in the JSON configuration.
-
-If a busmod provides more than one function it often makes sense for it to register more than one handler. If it does so, a good convention for handler names is to use the main address as the root and create sub addresses from there, separated by dot `.`. For example, the `WorkQueue` busmod registers handlers at the following addresses, assuming the main address is `test.workQueue`
-
-* `test.workQueue`. Main handler registered at this address. Messages sent to this address are added to the queue
-* `test.workQueue.register . Messages sent to this address are requests to register a processor with the queue.
-* `test.workQueue.unregister . Messages sent to this address are requests to unregister a processor with the queue.
-
-### Clearing Up Handlers
-
-Remember to unregister any handlers in the cleanup function of the verticle.
-   
 ## Out of the box busmods
 
-The vert.x distribution contains several out-of-the-box budmods that you can use in your applications. These busmods are designed to handle common things that you might want to do in applications.
+The vert.x distribution contains several out-of-the-box modules that you can use in your applications. These modules are designed to handle common things that you might want to do in applications.
 
-#### Instantiating out-of-the-box busmods
+#### Instantiating out-of-the-box modules
 
-You can instantiate any out of the box busmo from the command line using `vertx run` or `vertx deploy` like any other verticle, i.e.
+You can instantiate any out of the box module from the command line using `vertx run` or `vertx deploy` like any other verticle, i.e.
 
     vertx run <bus_mode_name> -conf <config_file>
     
@@ -154,6 +152,91 @@ For example:
 
     vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
 
+### Web Server
+
+This is a simple web server which efficiently serves files from the file system.
+
+It can also be configured to act as an event bus bridge - bridging the server side event bus to client side JavaScript.
+
+#### Name
+
+The module name is `web-server`.
+
+#### Configuration
+
+The web-server configuration is as follows:
+
+    {
+        // The following are parameters related to serving static files
+    
+        "web_root": <web_root>,
+        "index_page": <index_page>,
+        "host", <host>,
+        "port", <port>
+        "static_files": <static_files>,
+        
+        // The following are ssl related parameters
+        
+        "ssl": <ssl>,        
+        "key_store_password": <key_store_password>,
+        "key_store_path": <key_store_path>,
+        
+        // The following are bridge related parameters
+        
+        "bridge": <bridge>,
+        "permitted": <permitted>,
+        "sjs_config": <sjs_config>,
+        "users_collection": <users_collection>,
+        "persistor_address": <persistor_address>
+        
+    }
+    
+* `web-root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
+* `index_page`. The page to serve when the root `/` is requested. Default is `index.html`.
+* `host`. The host or ip address to listen at for connections. `0.0.0.0` means listen at all available addresses. Default is `0.0.0.0`.
+* `port`. The port to listen at for connections. Default is `80`.
+* `static_files`. Should the server serve static files? Default is `true`. 
+* `ssl`. Should the server use `https` as a protocol? Default is `false`.
+* `key_store_password`. Password of Java keystore which holds the server certificate. Only used if `ssl` is `true`. Default is `wibble`.
+* `key_store_path`. Path to keystore which holds the server certificate. Default is `server-keystore.jks`. Only used if `ssl` is `true`. *Don't put the keystore under your webroot!*.
+* `bridge`. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is `false`.
+* `permitted`. This is an array of JSON objects representing the permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
+* `sjs_config`. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if `bridge` is `true`. Default to `{"prefix": "/eventbus"}`.
+* `users_collection`. The bridge can also handle login for any client side JS applications that use the event bus. This parameter represents the collection in the MongoDB database that will be used for looking up usernames and passwords. Only used if `bridge` is `true`. Default value is `users`. 
+* `persistor_address`. The bridge can also handle login for any client side JS applications that use the event bus. This parameter represents the address on the event bus of the `mongo-persistor` module that will be used for looking up usernames and passwords. Only used if `bridge` is `true`. Default value is `vertx.mongopersistor`.   
+
+##### Examples
+
+Here are some example:
+
+##### Simple static file web server
+
+This serves files from the web directory 
+
+    {
+        "host": mycompany.com        
+    {
+    
+##### Simple https server
+
+    {
+        "host": mycompany.com,
+        "ssl": true,
+        "key_store_path": "mycert.jks",
+        "key_store_password": "sausages"
+    }    
+    
+##### Event bus bridge    
+
+Pure event bus bridge that doesn't serve static files
+
+    {
+       "host": "bridgeserver.mycompany.com",
+       "static_files": false,
+       "bridge": true,
+       "permitted": [{"address":"myservice"}]       
+    }
+    
 ### MongoDB Persistor
 
 This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.
@@ -170,7 +253,7 @@ The module name is `mongo-persistor`.
 
 #### Configuration
 
-The mongo-persistor busmod requires the following configuration:
+The mongo-persistor busmod takes the following configuration:
 
     {
         "address": <address>,
@@ -190,7 +273,7 @@ For example:
     
 Let's take a look at each field in turn:
 
-* `address` The main address for the busmod. Every busmod has a main address.
+* `address` The main address for the busmod. Every busmod has a main address. Defaults to `vertx.mongopersistor`.
 * `host` Host name or ip address of the MongoDB instance. Defaults to `localhost`.
 * `port` Port at which the MongoDB instance is listening. Defaults to `27017`.
 * `db_name` Name of the database in the MongoDB instance to use. This parameter is mandatory. If you want to access different MongoDB databases you can create multiple instances of this busmod.
