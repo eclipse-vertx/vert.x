@@ -1782,7 +1782,7 @@ sockJSServer.installApp(config, function(sock) {
 
 httpServer.listen(8080);
 </pre>
-<p>The configuration can take the following fields:</p>
+<p>The configuration is a JSON object that takes the following fields:</p>
 <ul>
 <li><code>prefix</code>: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.</li>
 <li><code>insert_JSESSIONID</code>: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.</li>
