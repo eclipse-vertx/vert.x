@@ -45,6 +45,11 @@ public class RubyNetTest extends TestBase {
   }
 
   @Test
+  public void test_write_str() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void test_echo_ssl() throws Exception {
     startTest(getMethodName());
   }

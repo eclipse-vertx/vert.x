@@ -111,6 +111,7 @@ class WebSocketTransport extends BaseTransport {
     public void close() {
       if (!closed) {
         ws.close();
+        session.shutdown();
         closed = true;
       }
     }
