@@ -110,14 +110,18 @@
 <h1 id="introduction">Introduction</h1><br/>
 <h2 id="what-is-vertx">What is vert.x?</h2><br/>
 <p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
-<p>Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java and Groovy as well as JavaScript.</p>
+<p>Vert.x is an event driven application framework that runs on the JVM - a run-time with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So <em>you</em> choose what language you want to use. (Scala, Clojure and Python support is on the roadmap too).</p>
+<p>We also bundle a host of goodies out-of-the-box including a distributed event bus, Web Sockets, SockJS, a MongoDB persistor and many other features so you can write <em>real</em> applications from the set-off.</p>
 <p>Some of the key highlights include:</p>
 <ul>
 <li>
-<p>Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application. (Scala and Clojure support is scheduled too).</p>
+<p>Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application.</p>
 </li>
 <li>
-<p>Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.</p>
+<p>Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. (No more <code>synchronized</code>, <code>volatile</code> or explicit locking). </p>
+</li>
+<li>
+<p>Unlike other popular event driven frameworks, Vert.x takes advantage of the JVM and scales seamlessly over available cores without having to manually fork multiple servers and handle inter process communication between them.</p>
 </li>
 <li>
 <p>Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.</p>
@@ -126,11 +130,14 @@
 <p>Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless so-called <em>real-time</em> web applications.</p>
 </li>
 <li>
-<p>Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.</p>
+<p>Vert.x provides real power and simplicity, without being simplistic. No more sprawling xml configuration files.</p>
 </li>
 </ul>
+<p>Vert.x is a community project sponsored by VMware.</p>
+<p><em>Future applications will largely be running on mobile and embedded devices. These demand a platform that can scale with 10s, 100s or even millions of concurrent connections, and allow developers to write scalable, performant applications for them incredibly easily, in whatever language they prefer.</em></p>
+<p><strong>We believe Vert.x is that platform.</strong></p>
 <h2 id="vertx-embedded">Vert.x Embedded</h2><br/>
-<p>If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.</p>
+<p>If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, the event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.</p>
 <p>Just use the jar <code>vertx-core.jar</code> which is available in the <code>lib/jars</code> directory in the distribution.</p>
 <p>You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.</p>
 <p>Here's an example of a simple embedded web server in Java:</p>

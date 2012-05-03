@@ -6,23 +6,33 @@
       
 **Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
 
-Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java and Groovy as well as JavaScript.
+Vert.x is an event driven application framework that runs on the JVM - a run-time with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So *you* choose what language you want to use. (Scala, Clojure and Python support is on the roadmap too).
+
+We also bundle a host of goodies out-of-the-box including a distributed event bus, Web Sockets, SockJS, a MongoDB persistor and many other features so you can write *real* applications from the set-off.
       
 Some of the key highlights include:
 
-* Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application. (Scala and Clojure support is scheduled too).
+* Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application.
 
-* Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming.
+* Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. (No more `synchronized`, `volatile` or explicit locking). 
+
+* Unlike other popular event driven frameworks, Vert.x takes advantage of the JVM and scales seamlessly over available cores without having to manually fork multiple servers and handle inter process communication between them.
 
 * Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.
 
 * Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless so-called *real-time* web applications.
 
-* Vert.x provides real power and simplicity, without being simplistic. No more boilerplate or sprawling xml configuration files.
+* Vert.x provides real power and simplicity, without being simplistic. No more sprawling xml configuration files.
+
+Vert.x is a community project sponsored by VMware.
+
+*Future applications will largely be running on mobile and embedded devices. These demand a platform that can scale with 10s, 100s or even millions of concurrent connections, and allow developers to write scalable, performant applications for them incredibly easily, in whatever language they prefer.*
+
+**We believe Vert.x is that platform.**
 
 ## Vert.x Embedded
 
-If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.
+If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, the event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.
 
 Just use the jar `vertx-core.jar` which is available in the `lib/jars` directory in the distribution.
 
