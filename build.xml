@@ -320,12 +320,6 @@
       </fileset>
     </copy>
 
-    <copy todir="${dist-build}/lib/groovy">
-      <fileset dir="src/main/groovy">
-        <include name="**/*.groovy"/>
-      </fileset>
-    </copy>
-
     <copy todir="${dist-build}/lib/javascript">
       <fileset dir="src/main/javascript">
         <include name="**/*.js"/>
