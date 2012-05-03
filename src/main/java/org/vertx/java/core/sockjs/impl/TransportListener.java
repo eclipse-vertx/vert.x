@@ -24,4 +24,6 @@ interface TransportListener {
   void sendFrame(String body);
 
   void close();
+
+  void sessionClosed();
 }
