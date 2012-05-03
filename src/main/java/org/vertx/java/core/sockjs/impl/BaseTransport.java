@@ -91,6 +91,9 @@ class BaseTransport {
         }
       });
     }
+
+    public void sessionClosed() {
+    }
   }
 
   static void setJSESSIONID(JsonObject config, HttpServerRequest req) {
