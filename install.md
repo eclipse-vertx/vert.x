@@ -13,7 +13,7 @@ Alternatively you can build from source. To do that see the instructions on the 
 
 * Apache Ant. If you want to run the Java examples you will need Apache Ant installed. Otherwise you don't need it.
 
-* Ruby Gems. If you want to use Ruby Gems inside your Ruby verticles you'll need to have the `JRUBY_HOME` environment variable pointing at the base of your JRuby installation.
+* JRuby. If you want to use Ruby with Vert.x you will need to have installed JRuby and have the `JRUBY_HOME` environment variable pointing at the base of your JRuby installation. You will also need to install the `json` Ruby Gem since this is used in Vert.x. You can do this by running `jruby -S gem install json`. If you're not using Ruby in Vert.x you don't need any of this.
 
 # Install vert.x
 
