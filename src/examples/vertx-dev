@@ -36,7 +36,7 @@ $DIRNAME/../../lib/main/groovy-all.jar:\
 $DIRNAME/../../src/main/ruby:\
 $DIRNAME/../../src/main/javascript
 
-MODS_DIR=$SCRIPTDIR/../../target/dist-build/vert.x-1.0.beta10/mods
+MODS_DIR=$SCRIPTDIR/../../target/dist-build/vert.x-1.0.beta11/mods
 
 SERVER_OPTS="-server -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Xms500M -Xmx500M"
 
