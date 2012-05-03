@@ -64,6 +64,7 @@
     <fileset dir="${core-lib}">
       <include name="*.jar"/>
     </fileset>
+    <pathelement location="${env.JRUBY_HOME}/lib/jruby"/>
   </path>
 
   <path id="test-classpath">
@@ -309,7 +310,6 @@
     <copy file="${core-lib}/hazelcast.jar" tofile="${dist-build}/lib/jars/hazelcast.jar"/>
     <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/>
     <copy file="${core-lib}/groovy-all.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
-    <copy file="${core-lib}/jruby.jar" tofile="${dist-build}/lib/jars/jruby.jar"/>
     <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
     <copy file="src/client/vertxbus.js" todir="${dist-build}/client/"/>
