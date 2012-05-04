@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 
 /**
@@ -29,16 +30,12 @@ public class ServerID implements Serializable {
   
   private final String host;
 
+  @ConstructorProperties({"port", "host"})
   public ServerID(int port, String host) {
     this.port = port;
     this.host = host;
   }
 
-//  public ServerID() {
-//	this.port = -1;
-//	this.host = "localhost";
-//  }
-  
   public int getPort() {
 	  return port;
   }

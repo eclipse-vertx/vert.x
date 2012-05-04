@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -262,6 +263,8 @@ public class VertxMgr {
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
     mgr = new VerticleManager(vertx);
+    String name = "org.vertx:type=VerticleManager";
+    JMXUtil.register(mgr, name);
     if (clustered) {
       System.out.println("Started");
     }

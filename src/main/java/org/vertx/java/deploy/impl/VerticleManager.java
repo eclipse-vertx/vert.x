@@ -32,6 +32,7 @@ import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
 import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
 import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
 
+import java.beans.ConstructorProperties;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
@@ -50,13 +51,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VerticleManager {
+public class VerticleManager implements VerticleManagerMXBean {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
 
   private final VertxInternal vertx;
   // deployment name --> deployment
-  private final Map<String, Deployment> deployments = new HashMap();
+  private final Map<String, Deployment> deployments = new HashMap<>();
   // The out of the box busmods dirs
   private final File systemModRoot;
   // The user mods dir
@@ -64,6 +65,7 @@ public class VerticleManager {
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
 
+  @ConstructorProperties("vertx")
   public VerticleManager(VertxInternal vertx) {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
@@ -170,6 +172,10 @@ public class VerticleManager {
       throw new IllegalArgumentException("There is no deployment with name " + name);
     }
     doUndeploy(name, doneHandler);
+  }
+  
+  public Map<String, Integer> getInstances() {
+	  return listInstances();
   }
 
   public synchronized Map<String, Integer> listInstances() {

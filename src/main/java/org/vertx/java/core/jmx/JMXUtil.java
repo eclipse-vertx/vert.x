@@ -48,6 +48,8 @@ public class JMXUtil {
 	
 	public static void register(Object mbean, ObjectName name) {
 		
+		Thread.dumpStack();
+		
 		try {
 			mbeanServer.registerMBean(mbean, name);
 

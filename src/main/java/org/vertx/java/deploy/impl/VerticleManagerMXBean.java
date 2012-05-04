@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core;
+package org.vertx.java.deploy.impl;
+
+import java.net.URL;
+import java.util.Map;
 
 /**
  * @author pidster
  *
  */
-public interface VertxMXBean {
+public interface VerticleManagerMXBean {
+
+	Map<String, Integer> getInstances();
 	
-	int getBackgroundPoolSize();
+	String getDeploymentName();
 	
-	int getCorePoolSize();
+	URL[] getDeploymentURLs();
+	
 }
