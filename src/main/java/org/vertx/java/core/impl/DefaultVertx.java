@@ -148,7 +148,7 @@ public class DefaultVertx extends VertxInternal {
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
 	SockJSServer server = new DefaultSockJSServer(this, httpServer);
-	JMXUtil.register(server, "org.vertx:type=SockJSServer");
+	// JMXUtil.register(server, "org.vertx:type=SockJSServer");
 	return server;
   }
 

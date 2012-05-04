@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.http;
 
-import javax.management.MXBean;
-
 import org.vertx.java.core.Handler;
 
 /**
@@ -31,8 +29,7 @@ import org.vertx.java.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@MXBean
-public interface HttpServer {
+public interface HttpServer extends HttpServerMXBean {
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
