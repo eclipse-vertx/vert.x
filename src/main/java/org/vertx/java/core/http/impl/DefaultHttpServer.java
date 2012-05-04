@@ -49,6 +49,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerMXBean;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
@@ -89,7 +90,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServer implements HttpServer {
+public class DefaultHttpServer implements HttpServer, HttpServerMXBean {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
@@ -138,6 +139,18 @@ public class DefaultHttpServer implements HttpServer {
 
   public Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
+  }
+  
+  public ServerID getServerID() {
+	  return id;
+  }
+  
+  public int getPort() {
+	  return id.getPort();
+  }
+
+  public String getHost() {
+	  return id.getHost();
   }
 
   public HttpServer listen(int port) {

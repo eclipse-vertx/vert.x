@@ -25,8 +25,9 @@ public class ServerID implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  public int port;
-  public String host;
+  private final int port;
+  
+  private final String host;
 
   public ServerID(int port, String host) {
     this.port = port;
@@ -37,6 +38,14 @@ public class ServerID implements Serializable {
 //	this.port = -1;
 //	this.host = "localhost";
 //  }
+  
+  public int getPort() {
+	  return port;
+  }
+
+  public String getHost() {
+	  return host;
+  }
 
   @Override
   public boolean equals(Object o) {
