@@ -34,7 +34,7 @@ import java.net.URL;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Container {
+public class Container implements ContainerMXBean {
 
   private final VerticleManager mgr;
   
