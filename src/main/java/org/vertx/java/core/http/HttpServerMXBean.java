@@ -24,5 +24,23 @@ public interface HttpServerMXBean {
 	int getPort();
 
 	String getHost();
+	
+	boolean isSSL();
+
+	Boolean isTCPNoDelay();
+
+	Integer getSendBufferSize();
+
+	Integer getReceiveBufferSize();
+
+	Boolean isTCPKeepAlive();
+
+	Boolean isReuseAddress();
+
+	Boolean isSoLinger();
+
+	Integer getTrafficClass();
+
+	Integer getAcceptBacklog();
 
 }

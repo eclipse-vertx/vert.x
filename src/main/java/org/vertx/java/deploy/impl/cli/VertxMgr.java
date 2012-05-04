@@ -263,8 +263,7 @@ public class VertxMgr {
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
     mgr = new VerticleManager(vertx);
-    String name = "org.vertx:type=VerticleManager";
-    JMXUtil.register(mgr, name);
+    JMXUtil.register(mgr, "org.vertx:type=VerticleManager");
     if (clustered) {
       System.out.println("Started");
     }
