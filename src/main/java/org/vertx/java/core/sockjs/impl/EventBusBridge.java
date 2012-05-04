@@ -45,6 +45,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private static final Logger log = LoggerFactory.getLogger(EventBusBridge.class);
 
   private static final String DEFAULT_ADDRESS = "vertx.bridge";
+  private static final String DEFAULT_AUTH_ADDRESS = "vertx.basicauthmanager";
 
   private static final long SESSION_CACHE_TIMEOUT = 30 * 60 * 1000;
 
@@ -76,7 +77,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray permitted,
                  String authAddress) {
     this(vertx, sjsServer, sjsConfig, permitted, authAddress,
-         DEFAULT_ADDRESS);
+         null);
   }
 
   EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray permitted,
@@ -85,6 +86,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     this.vertx = vertx;
     this.eb = vertx.eventBus();
     this.permitted = convertArray(permitted);
+    if (authAddress == null) {
+      authAddress = DEFAULT_AUTH_ADDRESS;
+    }
     this.authAddress = authAddress;
     if (bridgeAddress == null) {
       bridgeAddress = DEFAULT_ADDRESS;
