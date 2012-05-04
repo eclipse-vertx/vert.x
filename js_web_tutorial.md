@@ -258,6 +258,15 @@ Basically, you send a login message to the address `vertx.bridge.login` with fie
 
 This session id should then be sent in any message that is sent from the client to the server, that requires authentication (e.g. persisting an order).
 
+The bridge delegates the actual login to an instance of the `auth-mgr` component. So we'll also need to start an instance of that.
+
+Edit `App.groovy` and add the following, just after where the Mongo Persistor is deployed.
+
+    // Deploy an auth manager to handle the authentication
+
+    vertx.deployVerticle('auth-mgr');
+       
+
 You can test login by attempting to log-in with username `tim` and password `password`. A message should appear on the left telling you you are logged in!.
 
 ![Client Application](tutorial_3.png)

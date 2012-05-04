@@ -271,9 +271,8 @@ mods/my-web-app/web-root/index.html
     "bridge": &lt;bridge&gt;,
     "permitted": &lt;permitted&gt;,
     "sjs_config": &lt;sjs_config&gt;,
-    "users_collection": &lt;users_collection&gt;,
-    "persistor_address": &lt;persistor_address&gt;
-
+    "auth_address": &lt;auth_address&gt;,
+    "bridge_address": &lt;bridge_address&gt;        
 }
 </pre>
 <ul>
@@ -288,9 +287,8 @@ mods/my-web-app/web-root/index.html
 <li><code>bridge</code>. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is <code>false</code>.</li>
 <li><code>permitted</code>. This is an array of JSON objects representing the permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
 <li><code>sjs_config</code>. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if <code>bridge</code> is <code>true</code>. Default to <code>{"prefix": "/eventbus"}</code>.</li>
-<li><code>users_collection</code>. The bridge can also handle login for any client side JS applications that use the event bus. This parameter represents the collection in the MongoDB database that will be used for looking up usernames and passwords. Only used if <code>bridge</code> is <code>true</code>. Default value is <code>users</code>. </li>
-<li><code>persistor_address</code>. The bridge can also handle login for any client side JS applications that use the event bus. This parameter represents the address on the event bus of the <code>mongo-persistor</code> module that will be used for looking up usernames and passwords. Only used if <code>bridge</code> is <code>true</code>. Default value is <code>vertx.mongopersistor</code>. <br/>
-</li>
+<li><code>auth_address</code>. The bridge can also handle login for any client side JS applications that use the event bus. In order to do the actual login, the bridge interacts with an instance of the <code>auth-mgr</code> busmod. This field determines the address at which to communicate with the <code>auth-mgr</code>. Only used if <code>bridge</code> is <code>true</code>. Default value is <code>vertx.basicauthmanager</code>. </li>
+<li><code>bridge_address</code>. If the bridge is being used, this field determines the address root at which the bridge will listen for login and logout messages from the client. It will listen for login messages at the address given by <code>&lt;bridge_address&gt; + '.login'</code> and it will listen for logout messages at the address given by <code>&lt;bridge_address&gt; + '.logout'</code>. The default value is <code>vertx.bridge</code>.</li>
 </ul>
 <h5 id="examples">Examples</h5><br/>
 <p>Here are some example:</p>
@@ -641,22 +639,16 @@ eb.send('foo.myPersistor', {
 }
 </pre>
 <h3 id="authentication-manager">Authentication Manager</h3><br/>
-<p>This busmod verifies usernames and passwords in a MongoDB database and generates time-limited session ids. These session ids can be passed around the event bus.</p>
-<p>The authentication manager can also verify a session id. This allows session ids to be passed around the event bus and validated if particular busmods want to find out if the user is logged in.</p>
-<p>A typical usage would be:</p>
-<ul>
-<li>Login with username and password. Obtain session id.</li>
-<li>Do something (e.g. place an order). Pass session id with order message.</li>
-<li>Order busmod verifies session id before placing order. If verifies ok, then order is allowed to be placed.</li>
-</ul>
+<p>This is a basic authentication manager that verifies usernames and passwords in a MongoDB database and generates time-limited session ids. These session ids can be passed around the event bus.</p>
+<p>The authentication manager can also authorise a session id. This allows session ids to be passed around the event bus and validated if particular busmods want to find out if the user is authorised.</p>
 <p>Sessions time out after a certain amount of time. After that time, they will not verify as ok.</p>
-<p>This busmod should not be run as a worker.</p>
+<p>This busmod, is used in the web applicatio tutorial to handle simple user/password authorisation for the application.</p>
 <h4 id="dependencies_2">Dependencies</h4><br/>
 <p>This busmod requires a MongoDB persistor busmod to be running to allow searching for usernames and passwords.</p>
 <h4 id="name_3">Name</h4><br/>
 <p>The module name is <code>auth-mgr</code>.</p>
 <h4 id="configuration_4">Configuration</h4><br/>
-<p>This busmod requires the following configuration:</p>
+<p>This busmod takes the following configuration:</p>
 <pre class="prettyprint">{
     "address": &lt;address&gt;,
     "user_collection": &lt;user_collection&gt;,
@@ -674,9 +666,9 @@ eb.send('foo.myPersistor', {
 </pre>
 <p>Let's take a look at each field in turn:</p>
 <ul>
-<li><code>address</code> The main address for the busmod. Every busmod has a main address.</li>
-<li><code>user_collection</code> The MongoDB collection in which to search for usernames and passwords. This field is mandatory.</li>
-<li><code>persistor_address</code> Address of the persistor busmod to use for usernames and passwords. This field is mandatory.</li>
+<li><code>address</code> The main address for the busmod. Optional field. Default value is <code>vertx.basicauthmanager</code></li>
+<li><code>user_collection</code> The MongoDB collection in which to search for usernames and passwords. Optional field. Default value is <code>users</code>.</li>
+<li><code>persistor_address</code> Address of the persistor busmod to use for usernames and passwords. This field is optional. Default value is <code>vertx.mongopersistor</code>.</li>
 <li><code>session_timeout</code> Timeout of a session, in milliseconds. This field is optional. Default value is <code>1800000</code> (30 minutes).</li>
 </ul>
 <h4 id="operations_1">Operations</h4><br/>

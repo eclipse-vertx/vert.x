@@ -180,9 +180,8 @@ The web-server configuration is as follows:
         "bridge": <bridge>,
         "permitted": <permitted>,
         "sjs_config": <sjs_config>,
-        "users_collection": <users_collection>,
-        "persistor_address": <persistor_address>
-        
+        "auth_address": <auth_address>,
+        "bridge_address": <bridge_address>        
     }
     
 * `web-root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
@@ -196,8 +195,8 @@ The web-server configuration is as follows:
 * `bridge`. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is `false`.
 * `permitted`. This is an array of JSON objects representing the permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
 * `sjs_config`. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if `bridge` is `true`. Default to `{"prefix": "/eventbus"}`.
-* `users_collection`. The bridge can also handle login for any client side JS applications that use the event bus. This parameter represents the collection in the MongoDB database that will be used for looking up usernames and passwords. Only used if `bridge` is `true`. Default value is `users`. 
-* `persistor_address`. The bridge can also handle login for any client side JS applications that use the event bus. This parameter represents the address on the event bus of the `mongo-persistor` module that will be used for looking up usernames and passwords. Only used if `bridge` is `true`. Default value is `vertx.mongopersistor`.   
+* `auth_address`. The bridge can also handle login for any client side JS applications that use the event bus. In order to do the actual login, the bridge interacts with an instance of the `auth-mgr` busmod. This field determines the address at which to communicate with the `auth-mgr`. Only used if `bridge` is `true`. Default value is `vertx.basicauthmanager`. 
+* `bridge_address`. If the bridge is being used, this field determines the address root at which the bridge will listen for login and logout messages from the client. It will listen for login messages at the address given by `<bridge_address> + '.login'` and it will listen for logout messages at the address given by `<bridge_address> + '.logout'`. The default value is `vertx.bridge`.
 
 ##### Examples
 
@@ -631,19 +630,13 @@ Or to send to multiple recipients:
     
 ### Authentication Manager
 
-This busmod verifies usernames and passwords in a MongoDB database and generates time-limited session ids. These session ids can be passed around the event bus.
+This is a basic authentication manager that verifies usernames and passwords in a MongoDB database and generates time-limited session ids. These session ids can be passed around the event bus.
 
-The authentication manager can also verify a session id. This allows session ids to be passed around the event bus and validated if particular busmods want to find out if the user is logged in.
-
-A typical usage would be:
-
-* Login with username and password. Obtain session id.
-* Do something (e.g. place an order). Pass session id with order message.
-* Order busmod verifies session id before placing order. If verifies ok, then order is allowed to be placed.
+The authentication manager can also authorise a session id. This allows session ids to be passed around the event bus and validated if particular busmods want to find out if the user is authorised.
 
 Sessions time out after a certain amount of time. After that time, they will not verify as ok.
 
-This busmod should not be run as a worker.
+This busmod, is used in the web applicatio tutorial to handle simple user/password authorisation for the application.
 
 #### Dependencies
 
@@ -655,7 +648,7 @@ The module name is `auth-mgr`.
 
 #### Configuration
 
-This busmod requires the following configuration:
+This busmod takes the following configuration:
 
     {
         "address": <address>,
@@ -675,9 +668,9 @@ For example:
     
 Let's take a look at each field in turn:
 
-* `address` The main address for the busmod. Every busmod has a main address.
-* `user_collection` The MongoDB collection in which to search for usernames and passwords. This field is mandatory.
-* `persistor_address` Address of the persistor busmod to use for usernames and passwords. This field is mandatory.
+* `address` The main address for the busmod. Optional field. Default value is `vertx.basicauthmanager`
+* `user_collection` The MongoDB collection in which to search for usernames and passwords. Optional field. Default value is `users`.
+* `persistor_address` Address of the persistor busmod to use for usernames and passwords. This field is optional. Default value is `vertx.mongopersistor`.
 * `session_timeout` Timeout of a session, in milliseconds. This field is optional. Default value is `1800000` (30 minutes).
 
 #### Operations
