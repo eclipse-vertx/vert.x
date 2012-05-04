@@ -32,8 +32,7 @@ import org.vertx.java.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@MXBean
-public interface NetServer {
+public interface NetServer extends NetServerMXBean {
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
