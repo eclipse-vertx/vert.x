@@ -240,6 +240,18 @@ public class DefaultNetServer implements NetServer {
       }
     });
   }
+  
+  public ServerID getServerID() {
+	  return id;
+  }
+  
+  public int getPort() {
+	  return id.getPort();
+  }
+  
+  public String getHost() {
+	  return id.getHost();
+  }
 
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
@@ -380,7 +392,7 @@ public class DefaultNetServer implements NetServer {
       NioWorker worker = ch.getWorker();
 
       //Choose a handler
-      final HandlerHolder handler = handlerManager.chooseHandler(worker);
+      final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
 
       if (handler == null) {
         //Ignore
@@ -407,7 +419,7 @@ public class DefaultNetServer implements NetServer {
       }
     }
 
-    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
+    private void connected(final NioSocketChannel ch, final HandlerHolder<NetSocket> handler) {
       handler.context.execute(new Runnable() {
         public void run() {
           DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);

@@ -59,6 +59,7 @@ import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.HandlerHolder;
@@ -126,6 +127,9 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
+	
+	String simpleName = requestHandler.getClass().getSimpleName();
+	JMXUtil.register(requestHandler, "org.vertx:type=Handler,type=HTTP,name=%s", simpleName);
     this.requestHandler = requestHandler;
     return this;
   }
@@ -135,6 +139,8 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
+	String simpleName = requestHandler.getClass().getSimpleName();
+	JMXUtil.register(requestHandler, "org.vertx:type=Handler,type=WebSocket,name=%s", simpleName);
     this.wsHandler = wsHandler;
     return this;
   }

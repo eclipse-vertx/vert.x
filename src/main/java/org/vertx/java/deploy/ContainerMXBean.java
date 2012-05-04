@@ -23,6 +23,11 @@ public interface ContainerMXBean {
 
 	String deployWorkerVerticle(String main);
 	
+	String deployWorkerVerticle(String main, int instances);
+	
 	String deployVerticle(String main);
 	
+	String deployVerticle(String main, int instances);
+
+	void undeployVerticle(String deploymentID);
 }

@@ -15,7 +15,6 @@
  */
 package org.vertx.java.deploy.impl;
 
-import java.net.URL;
 import java.util.Map;
 
 /**
@@ -27,7 +26,5 @@ public interface VerticleManagerMXBean {
 	Map<String, Integer> getInstances();
 	
 	String getDeploymentName();
-	
-	URL[] getDeploymentURLs();
 	
 }

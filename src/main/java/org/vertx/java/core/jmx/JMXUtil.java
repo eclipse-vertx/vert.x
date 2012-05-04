@@ -25,20 +25,31 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+
 /**
  * @author pidster
  *
  */
 public class JMXUtil {
 	
+	private static final Logger log = LoggerFactory.getLogger(JMXUtil.class);
+	
 	private static MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
 
-	public static ObjectName newObjectName(String name) {
+	public static ObjectName newObjectName(String name, Object... args) {
 		try {
-			return new ObjectName(name);
+			String objName = String.format(name, args);
+			return new ObjectName(objName);
 		} catch (MalformedObjectNameException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static void register(Object mbean, String name, Object... args) {
+		ObjectName objectName = newObjectName(name, args);
+		register(mbean, objectName);
 	}
 	
 	public static void register(Object mbean, String name) {
@@ -47,25 +58,19 @@ public class JMXUtil {
 	}
 	
 	public static void register(Object mbean, ObjectName name) {
-		
-		Thread.dumpStack();
-		
+
 		try {
 			mbeanServer.registerMBean(mbean, name);
 
 		} catch (InstanceAlreadyExistsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 
 		} catch (MBeanRegistrationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 
 		} catch (NotCompliantMBeanException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+			log.error(e.getMessage(), e);
+		}		
 	}
 
 	public static void unregister(String name) {
@@ -79,13 +84,10 @@ public class JMXUtil {
 			mbeanServer.unregisterMBean(name);
 
 		} catch (InstanceNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 
 		} catch (MBeanRegistrationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+			log.error(e.getMessage(), e);
+		}		
 	}
 }
