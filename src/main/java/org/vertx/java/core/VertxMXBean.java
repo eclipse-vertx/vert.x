@@ -15,9 +15,9 @@
  */
 package org.vertx.java.core;
 
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.eventbus.EventBusMXBean;
+import org.vertx.java.core.http.HttpServerMXBean;
+import org.vertx.java.core.net.NetServerMXBean;
 import org.vertx.java.core.shareddata.SharedData;
 
 /**
@@ -29,17 +29,17 @@ public interface VertxMXBean {
 	  /**
 	   * Create a TCP/SSL server
 	   */
-	  public abstract NetServer createNetServer();
+	  public abstract NetServerMXBean createNetServer();
 
 	  /**
 	   * Create an HTTP/HTTPS server
 	   */
-	  public abstract HttpServer createHttpServer();
+	  public abstract HttpServerMXBean createHttpServer();
 
 	  /**
 	   * The event bus
 	   */
-	  public abstract EventBus eventBus();
+	  public abstract EventBusMXBean eventBus();
 
 	  /**
 	   * The shared data object
