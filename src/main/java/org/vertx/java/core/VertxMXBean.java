@@ -18,7 +18,6 @@ package org.vertx.java.core;
 import org.vertx.java.core.eventbus.EventBusMXBean;
 import org.vertx.java.core.http.HttpServerMXBean;
 import org.vertx.java.core.net.NetServerMXBean;
-import org.vertx.java.core.shareddata.SharedData;
 
 /**
  * @author pidster
