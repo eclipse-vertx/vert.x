@@ -35,6 +35,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
+import java.beans.ConstructorProperties;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -74,6 +75,7 @@ public class DefaultEventBus implements EventBus {
 
   private final AtomicLong received = new AtomicLong(0);
 
+  @ConstructorProperties("vertx")
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
@@ -82,10 +84,12 @@ public class DefaultEventBus implements EventBus {
     this.subs = null;
   }
 
+  @ConstructorProperties({"vertx", "hostname"})
   public DefaultEventBus(VertxInternal vertx, String hostname) {
     this(vertx, DEFAULT_CLUSTER_PORT, hostname);
   }
 
+  @ConstructorProperties({"vertx", "port", "hostname"})
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
@@ -95,12 +99,12 @@ public class DefaultEventBus implements EventBus {
   }
   
   @Override
-  public long sent() {
+  public long getSent() {
 	return sent.get();
   }
 
   @Override
-  public long received() {
+  public long getReceived() {
 	return received.get();
   }
 

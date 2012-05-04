@@ -21,8 +21,8 @@ package org.vertx.java.core.eventbus;
  */
 public interface EventBusMXBean {
 	
-	long sent();
+	long getSent();
 
-	long received();
+	long getReceived();
 
 }

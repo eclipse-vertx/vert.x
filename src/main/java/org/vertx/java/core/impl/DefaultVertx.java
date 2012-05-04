@@ -42,6 +42,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
+import java.beans.ConstructorProperties;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,11 +89,13 @@ public class DefaultVertx extends VertxInternal {
     registerSelf(this);
   }
 
+  @ConstructorProperties({"hostname"})
   public DefaultVertx(String hostname) {
     this.eventBus = new DefaultEventBus(this, hostname);
     registerSelf(this);
   }
 
+  @ConstructorProperties({"port", "hostname"})
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname);
     registerSelf(this);

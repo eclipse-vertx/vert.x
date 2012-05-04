@@ -49,7 +49,6 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerMXBean;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
@@ -69,6 +68,8 @@ import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxWorkerPool;
 
 import javax.net.ssl.SSLEngine;
+
+import java.beans.ConstructorProperties;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -90,7 +91,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServer implements HttpServer, HttpServerMXBean {
+public class DefaultHttpServer implements HttpServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
@@ -110,6 +111,7 @@ public class DefaultHttpServer implements HttpServer, HttpServerMXBean {
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
+  @ConstructorProperties("vertx")
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
     ctx = vertx.getOrAssignContext();
