@@ -41,9 +41,4 @@ public interface VertxMXBean {
 	   */
 	  public abstract EventBusMXBean eventBus();
 
-	  /**
-	   * The shared data object
-	   */
-	  public abstract SharedData sharedData();
-
 }
