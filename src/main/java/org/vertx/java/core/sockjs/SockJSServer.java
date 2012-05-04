@@ -73,38 +73,22 @@ public interface SockJSServer {
    * client side login
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
+   * @param authAddress The address of an authentication/authorisation busmod
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress);
+              String authAddress);
 
   /**
    * Install an app which bridges the SockJS server to the event bus and which handles
    * client side login
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
-   * @param sessionTimeout Amount of time a login session will remain active
+   * @param authAddress The address of an authentication/authorisation busmod
+   * @param bridgeAddress The address the bridge will listen at for login and lougout.
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress, long sessionTimeout);
+              String authAddress, String bridgeAddress);
 
-  /**
-   * Install an app which bridges the SockJS server to the event bus and which handles
-   * client side login
-   * @param sjsConfig The config for the app
-   * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
-   * @param sessionTimeout Amount of time a login session will remain active
-   * @param loginAddress Address on the event bus where logins are handled
-   * @param logoutAddress Address on the event bus where logouts are handled
-   */
-  void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress, long sessionTimeout,
-              String loginAddress, String logoutAddress);
 
 }
 

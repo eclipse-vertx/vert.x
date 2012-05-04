@@ -69,6 +69,10 @@ container.with {
     deployVerticle('StaticData.groovy')
   }
 
+  // Deploy an auth manager to handle the authentication
+
+  deployVerticle('auth-mgr')
+
   // Start the web server, with the config we defined above
 
   deployVerticle('web-server', webServerConf)

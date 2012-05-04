@@ -51,6 +51,10 @@ Vertx.deploy_verticle('mongo-persistor') do
   load('static_data.rb')
 end
 
+# Deploy an auth manager to handle the authentication
+
+Vertx.deploy_verticle('auth-mgr')
+
 # Start the web server, with the config we defined above
 
 Vertx.deploy_verticle('web-server', web_server_conf)
