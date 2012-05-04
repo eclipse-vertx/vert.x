@@ -403,6 +403,10 @@ If you want to receive more info on cluster setup etc, then edit `conf/logging.p
 
 In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the `interfaces-enabled` element.
 
+# Performance Tuning
+
+[TODO]
+
 # Internals
 
 Vert.x uses the following amazing open source projects:

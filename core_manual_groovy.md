@@ -2436,11 +2436,6 @@ Here's an example of pumping data from a file on a client to a HTTP request:
 
 To close an AsyncFile call the `close` method. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler method as an argument.
 
-# Performance Tuning
-
-**TODO**
-
-
 *Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.*
 
 
