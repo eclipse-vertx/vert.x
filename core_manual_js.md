@@ -2202,6 +2202,31 @@ To let all messages through you can specify an array with a single empty JSON ob
     ...    
      
 **Be very careful!**
+
+## Handling authentication with the Bridge
+
+The bridge can also handle authentication for you, and you can configure it to only let certain messages through when the user has been authenticated.
+
+To enable authentication you need to make sure an instance of the `auth-mgr` busmod is available on the event bus. Please see the modules manual for a full description of it.
+
+For login, the client should send a JSON message with the fields `username` containing the user name, and the field `password` containing the password. The message should be sent to the address `vertx.bridge.login`. The root address `vertx.bridge` can be changed by the specifying the `bridgeAddress` parameter to the `bridge` method.
+
+If the login is successful the client will receive a reply with the field `status` set to `ok`, and the field `sessionID` containing a unique session id. This session id should be sent in any subsequent messages (e.g. to persist an order) that require authentication to be allowed through.
+
+To tell the bridge that certain messages require authentication before being passed, you add the field `requires_auth` with the value of `true` in the match. The default value is `false`. For example, the following match:
+
+    {
+      address : 'demo.persistor',
+      match : {
+        action : 'find',
+        collection : 'albums'
+      },
+      requires_auth: true
+    }
+
+This tells the bridge that any messages to save orders in the `orders` collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.
+
+To logout, the client should send a message with a field `sessionID` containing the sessionID to the address `vertx.bridge.logout`. This can also be overridden by specifying the `bridgeAddress` in the call to `bridge`.
     
 # File System
 
