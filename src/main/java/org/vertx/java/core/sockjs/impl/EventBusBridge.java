@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  *
@@ -45,34 +44,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   
   private static final Logger log = LoggerFactory.getLogger(EventBusBridge.class);
 
-  private static final String DEFAULT_LOGIN_ADDRESS = "vertx.bridge.login";
-  private static final String DEFAULT_LOGOUT_ADDRESS = "vertx.bridge.logout";
-  private static final long DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000;
+  private static final String DEFAULT_ADDRESS = "vertx.bridge";
+
+  private static final long SESSION_CACHE_TIMEOUT = 30 * 60 * 1000;
 
   private Handler<Message<JsonObject>> loginHandler;
   private Handler<Message<JsonObject>> logoutHandler;
-
-  private final Map<String, String> sessions = new HashMap<>();
-  private final Map<String, LoginInfo> logins = new HashMap<>();
-
+  private final Map<String, Session> sessionCache = new HashMap<>();
   private final List<JsonObject> permitted;
-  private final String userCollection;
-  private final String persistorAddress;
-  private long sessionTimeout;
+  private final String authAddress;
   private final Vertx vertx;
   private final EventBus eb;
   private final String loginAddress;
   private final String logoutAddress;
-
-  private static final class LoginInfo {
-    final long timerID;
-    final String sessionID;
-
-    private LoginInfo(long timerID, String sessionID) {
-      this.timerID = timerID;
-      this.sessionID = sessionID;
-    }
-  }
 
   private List<JsonObject> convertArray(JsonArray permitted) {
     List<JsonObject> l = new ArrayList<>();
@@ -86,32 +70,28 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray permitted) {
-    this(vertx, sjsServer, sjsConfig, permitted, null, null, DEFAULT_SESSION_TIMEOUT);
+    this(vertx, sjsServer, sjsConfig, permitted, null);
   }
 
   EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray permitted,
-                        String userCollection, String persistorAddress) {
-    this(vertx, sjsServer, sjsConfig, permitted, userCollection, persistorAddress, DEFAULT_SESSION_TIMEOUT);
+                 String authAddress) {
+    this(vertx, sjsServer, sjsConfig, permitted, authAddress,
+         DEFAULT_ADDRESS);
   }
 
   EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray permitted,
-                        String userCollection, String persistorAddress, Long sessionTimeout) {
-    this(vertx, sjsServer, sjsConfig, permitted, userCollection, persistorAddress, sessionTimeout,
-        DEFAULT_LOGIN_ADDRESS, DEFAULT_LOGOUT_ADDRESS);
-  }
-
-  EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray permitted,
-                        String userCollection, String persistorAddress, Long sessionTimeout,
-                        String loginAddress, String logoutAddress) {
+                 String authAddress,
+                 String bridgeAddress) {
     this.vertx = vertx;
     this.eb = vertx.eventBus();
     this.permitted = convertArray(permitted);
-    this.userCollection = userCollection;
-    this.persistorAddress = persistorAddress;
-    this.sessionTimeout = sessionTimeout;
-    this.loginAddress = loginAddress;
-    this.logoutAddress = logoutAddress;
-    if (userCollection != null) {
+    this.authAddress = authAddress;
+    if (bridgeAddress == null) {
+      bridgeAddress = DEFAULT_ADDRESS;
+    }
+    this.loginAddress = bridgeAddress + ".login";
+    this.logoutAddress = bridgeAddress + ".logout";
+    if (authAddress != null) {
       loginHandler = new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> message) {
           doLogin(message);
@@ -235,6 +215,20 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     });
   }
 
+  private boolean authorise(final JsonObject message) {
+    String sessionID = message.getString("sessionID");
+    if (sessionID != null) {
+      // If session id is in local cache we'll consider them authorised
+      if (sessionCache.containsKey(sessionID)) {
+        //TODO call authorise on auth manager
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
+  }
+
   /*
   Empty permitted means reject everything - this is the default.
   If at least one match is supplied and all the fields of any match match then the message permitted,
@@ -255,14 +249,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         boolean requiresAuth = b != null && b.booleanValue();
         if (requiresAuth) {
           if (!doneAuth) {
-            String sessionID = message.getString("sessionID");
-            if (sessionID != null) {
-              authed = sessions.containsKey(sessionID);
-            }
+            authed = authorise(message);
           }
           if (!authed) {
             // No match since user is not authed
-            log.debug("Rejecting match since user is not authenticated");
+            log.debug("Rejecting match since user is not authorised");
             break;
           }
         }
@@ -298,73 +289,45 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       log.debug("Handling login for " + username);
     }
 
-    JsonObject findMsg = new JsonObject().putString("action", "findone").putString("collection", userCollection);
-    JsonObject matcher = new JsonObject().putString("username", username).putString("password", password);
-    findMsg.putObject("matcher", matcher);
-
-    eb.send(persistorAddress, findMsg, new Handler<Message<JsonObject>>() {
+    eb.send(authAddress + ".login", message.body, new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> reply) {
-
         if (reply.body.getString("status").equals("ok")) {
-          if (reply.body.getObject("result") != null) {
-
-            // Check if already logged in, if so logout of the old session
-            LoginInfo info = logins.get(username);
-            if (info != null) {
-              logout(info.sessionID);
-            }
-
-            // Found
-            final String sessionID = UUID.randomUUID().toString();
-            long timerID = vertx.setTimer(sessionTimeout, new Handler<Long>() {
-              public void handle(Long timerID) {
-                sessions.remove(sessionID);
-                logins.remove(username);
-              }
-            });
-            sessions.put(sessionID, username);
-            logins.put(username, new LoginInfo(timerID, sessionID));
-            JsonObject jsonReply = new JsonObject().putString("sessionID", sessionID);
-            sendOK(message, jsonReply);
-            log.debug("Logged in ok");
-          } else {
-            // Not found
-            sendStatus("denied", message);
-            log.debug("Login failed");
+          String sessionID = reply.body.getString("sessionID");
+          if (sessionID == null) {
+            throw new IllegalArgumentException("sessionID field missing");
           }
+          sessionCache.put(sessionID, new Session(sessionID));
+          message.reply(reply.body);
+          log.debug("Login successful");
         } else {
-          log.error("Failed to execute login query: " + reply.body.getString("message"));
-          sendError(message, "Failed to excecute login");
+          sendStatus("denied", message);
+          log.debug("Login failed");
         }
       }
     });
   }
 
   private void doLogout(final Message<JsonObject> message) {
+
     final String sessionID = message.body.getString("sessionID");
     if (sessionID == null) {
       throw new IllegalArgumentException("Logout message must contain sessionID field");
     }
-    if (logout(sessionID)) {
-      sendOK(message);
-    } else {
-      sendError(message, "Not logged in");
+    Session session = sessionCache.remove(sessionID);
+    if (session != null) {
+      session.close();
     }
-  }
-
-  private boolean logout(String sessionID) {
-    String username = sessions.remove(sessionID);
-    if (username != null) {
-      LoginInfo info = logins.remove(username);
-      vertx.cancelTimer(info.timerID);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private void sendOK(Message<JsonObject> message) {
-    sendOK(message, null);
+    eb.send(authAddress + ".logout", message.body, new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> reply) {
+        if (reply.body.getString("status").equals("ok")) {
+          message.reply(reply.body);
+          log.debug("Logout successful");
+        } else {
+          sendError(message, "Not logged in");
+          log.debug("Not logged in ");
+        }
+      }
+    });
   }
 
   private void sendStatus(String status, Message<JsonObject> message) {
@@ -379,10 +342,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     message.reply(json);
   }
 
-  private void sendOK(Message<JsonObject> message, JsonObject json) {
-    sendStatus("ok", message, json);
-  }
-
   private void sendError(Message<JsonObject> message, String error) {
     sendError(message, error, null);
   }
@@ -392,4 +351,30 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     JsonObject json = new JsonObject().putString("status", "error").putString("message", error);
     message.reply(json);
   }
+
+  private class Session {
+    final long timerID;
+    final String sessionID;
+    long lastUpdated;
+
+    private Session(final String sessionID) {
+      this.sessionID = sessionID;
+      update();
+      this.timerID = vertx.setTimer(SESSION_CACHE_TIMEOUT, new Handler<Long>() {
+        public void handle(Long id) {
+          close();
+        }
+      });
+    }
+
+    void update() {
+      lastUpdated = System.currentTimeMillis();
+    }
+
+    void close() {
+      sessionCache.remove(sessionID);
+      vertx.cancelTimer(timerID);
+    }
+  }
+
 }

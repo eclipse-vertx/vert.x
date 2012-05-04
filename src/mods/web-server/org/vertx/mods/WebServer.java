@@ -61,7 +61,8 @@ public class WebServer extends BusModBase implements Handler<HttpServerRequest> 
       JsonArray permitted = getOptionalArrayConfig("permitted", new JsonArray());
 
       sjsServer.bridge(getOptionalObjectConfig("sjs_config", new JsonObject().putString("prefix", "/eventbus")), permitted,
-                       getOptionalStringConfig("users_collection", "users"), getOptionalStringConfig("persistor_address", "vertx.mongopersistor"));
+                       getOptionalStringConfig("auth_address", "vertx.basicauthmanager"),
+                       getOptionalStringConfig("bridge_address", null));
     }
 
     String webRoot = getOptionalStringConfig("web_root", "web");

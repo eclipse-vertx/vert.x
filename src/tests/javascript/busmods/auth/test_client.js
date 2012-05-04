@@ -82,7 +82,7 @@ function testLoginOKMultipleEntryInDB() {
 
 function testValidateDeniedNotLoggedIn() {
   deleteAll();
-  eb.send('test.authMgr.validate', {sessionID: 'uhiuhuhihu', password: 'foo'}, function(reply) {
+  eb.send('test.authMgr.authorise', {sessionID: 'uhiuhuhihu', password: 'foo'}, function(reply) {
     tu.azzert(reply.status === 'denied');
     tu.testComplete();
   });
@@ -90,7 +90,7 @@ function testValidateDeniedNotLoggedIn() {
 
 function testValidateDeniedInvalidSessionID() {
   deleteAll();
-  eb.send('test.authMgr.validate', {sessionID: 'uhiuhuhihu', password: 'foo'}, function(reply) {
+  eb.send('test.authMgr.authorise', {sessionID: 'uhiuhuhihu', password: 'foo'}, function(reply) {
     tu.azzert(reply.status === 'denied');
     tu.testComplete();
   });
@@ -102,7 +102,7 @@ function testValidateDeniedLoggedInWrongSessionID() {
   eb.send('test.authMgr.login', {username: 'tim', password: 'foo'}, function(reply) {
     tu.azzert(reply.status === 'ok');
     tu.azzert(typeof reply.sessionID != 'undefined');
-    eb.send('test.authMgr.validate', {sessionID: 'uhiuhuhihu', password: 'foo'}, function(reply) {
+    eb.send('test.authMgr.authorise', {sessionID: 'uhiuhuhihu', password: 'foo'}, function(reply) {
       tu.azzert(reply.status === 'denied');
       tu.testComplete();
     });
@@ -117,7 +117,7 @@ function testValidateDeniedLoggedOut() {
     var sessionID = reply.sessionID;
     eb.send('test.authMgr.logout', {sessionID: sessionID}, function(reply) {
       tu.azzert(reply.status === 'ok');
-      eb.send('test.authMgr.validate', {sessionID: sessionID}, function(reply) {
+      eb.send('test.authMgr.authorise', {sessionID: sessionID}, function(reply) {
         tu.azzert(reply.status === 'denied');
         tu.testComplete();
       });
@@ -132,7 +132,7 @@ function testValidateOK() {
     tu.azzert(reply.status === 'ok');
     tu.azzert(typeof reply.sessionID != 'undefined');
     var sessionID = reply.sessionID;
-    eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+    eb.send('test.authMgr.authorise', {sessionID: sessionID, password: 'foo'}, function(reply) {
       tu.azzert(reply.status === 'ok');
       tu.testComplete();
     });
@@ -153,13 +153,13 @@ function testLoginMoreThanOnce() {
       eb.send('test.authMgr.logout', {sessionID: sessionID}, function(reply) {
         tu.azzert(reply.status === 'error');
         tu.azzert(reply.message === 'Not logged in');
-        eb.send('test.authMgr.validate', {sessionID: sessionID}, function(reply) {
+        eb.send('test.authMgr.authorise', {sessionID: sessionID}, function(reply) {
           tu.azzert(reply.status === 'denied');
-          eb.send('test.authMgr.validate', {sessionID: newSessionID}, function(reply) {
+          eb.send('test.authMgr.authorise', {sessionID: newSessionID}, function(reply) {
             tu.azzert(reply.status === 'ok');
             eb.send('test.authMgr.logout', {sessionID: newSessionID}, function(reply) {
               tu.azzert(reply.status === 'ok');
-              eb.send('test.authMgr.validate', {sessionID: newSessionID}, function(reply) {
+              eb.send('test.authMgr.authorise', {sessionID: newSessionID}, function(reply) {
                 tu.azzert(reply.status === 'denied');
                 tu.testComplete();
               });
@@ -193,11 +193,11 @@ function testSessionTimeout() {
     tu.azzert(reply.status === 'ok');
     tu.azzert(typeof reply.sessionID != 'undefined');
     var sessionID = reply.sessionID;
-    eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+    eb.send('test.authMgr.authorise', {sessionID: sessionID, password: 'foo'}, function(reply) {
       tu.azzert(reply.status === 'ok');
       // Allow session to timeout then try and validate again
       vertx.setTimer(750, function() {
-        eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+        eb.send('test.authMgr.authorise', {sessionID: sessionID, password: 'foo'}, function(reply) {
           tu.azzert(reply.status === 'denied');
           tu.testComplete();
         });

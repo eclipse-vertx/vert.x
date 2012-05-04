@@ -56,6 +56,10 @@ vertx.deployVerticle('mongo-persistor', null, 1, function() {
   load('static_data.js');
 });
 
+// Deploy an auth manager to handle the authentication
+
+vertx.deployVerticle('auth-mgr');
+
 // Start the web server, with the config we defined above
 
 vertx.deployVerticle('web-server', webServerConf);
