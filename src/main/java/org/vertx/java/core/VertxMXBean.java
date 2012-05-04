@@ -16,10 +16,7 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.file.FileSystem;
-import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 
@@ -38,11 +35,6 @@ public interface VertxMXBean {
 	   * Create an HTTP/HTTPS server
 	   */
 	  public abstract HttpServer createHttpServer();
-
-	  /**
-	   * The File system object
-	   */
-	  public abstract FileSystem fileSystem();
 
 	  /**
 	   * The event bus
