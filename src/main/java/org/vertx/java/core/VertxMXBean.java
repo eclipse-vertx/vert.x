@@ -22,7 +22,6 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.core.sockjs.SockJSServer;
 
 /**
  * @author pidster
@@ -36,24 +35,9 @@ public interface VertxMXBean {
 	  public abstract NetServer createNetServer();
 
 	  /**
-	   * Create a TCP/SSL client
-	   */
-	  public abstract NetClient createNetClient();
-
-	  /**
 	   * Create an HTTP/HTTPS server
 	   */
 	  public abstract HttpServer createHttpServer();
-
-	  /**
-	   * Create a HTTP/HTTPS client
-	   */
-	  public abstract HttpClient createHttpClient();
-
-	  /**
-	   * Create a SockJS server that wraps an HTTP server
-	   */
-	  public abstract SockJSServer createSockJSServer(HttpServer httpServer);
 
 	  /**
 	   * The File system object
