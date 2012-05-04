@@ -67,7 +67,7 @@ public class DefaultNetServer implements NetServer {
   private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -161,7 +161,7 @@ public class DefaultNetServer implements NetServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        vertx.sharedNetServers().put(id, this);
+        vertx.registerSharedNetServer(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
@@ -207,7 +207,7 @@ public class DefaultNetServer implements NetServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      vertx.sharedNetServers().remove(id);
+      vertx.unregisterSharedNetServer(id);
     }
 
     for (DefaultNetSocket sock : socketMap.values()) {

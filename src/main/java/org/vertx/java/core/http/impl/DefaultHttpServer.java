@@ -206,7 +206,7 @@ public class DefaultHttpServer implements HttpServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        vertx.sharedHttpServers().put(id, this);
+        vertx.registerSharedHttpServer(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
@@ -385,7 +385,7 @@ public class DefaultHttpServer implements HttpServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      vertx.sharedHttpServers().remove(id);
+      vertx.unregisterSharedHttpServer(id);
     }
 
     for (ServerConnection conn : connectionMap.values()) {

@@ -30,6 +30,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -84,18 +85,33 @@ public class DefaultVertx extends VertxInternal {
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+	JMXUtil.register(eventBus, "org.vertx:type=EventBus");
   }
 
   public DefaultVertx(String hostname) {
     this.eventBus = new DefaultEventBus(this, hostname);
+	JMXUtil.register(eventBus, "org.vertx:type=EventBus");
   }
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname);
+	JMXUtil.register(eventBus, "org.vertx:type=EventBus");
   }
 
   public NetServer createNetServer() {
-    return new DefaultNetServer(this);
+	return new DefaultNetServer(this);
+  }
+
+  public void registerSharedNetServer(ServerID id, DefaultNetServer server) {
+	sharedNetServers.put(id, server);
+	String name = String.format("org.vertx:type=NetServer,id=", id.toString());	
+    JMXUtil.register(server, name);
+  }
+
+  public void unregisterSharedNetServer(ServerID id) {
+	sharedNetServers.remove(id);
+    String name = String.format("org.vertx:type=NetServer,id=", id.toString());
+    JMXUtil.unregister(name);
   }
 
   public NetClient createNetClient() {
@@ -111,7 +127,19 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public HttpServer createHttpServer() {
-    return new DefaultHttpServer(this);
+	return new DefaultHttpServer(this);
+  }
+
+  public void registerSharedHttpServer(ServerID id, DefaultHttpServer server) {
+	sharedHttpServers.put(id, server);
+	String name = String.format("org.vertx:type=HttpServer,id=", id.toString());	
+    JMXUtil.register(server, name);
+  }
+
+  public void unregisterSharedHttpServer(ServerID id) {
+	sharedHttpServers.remove(id);
+    String name = String.format("org.vertx:type=HttpServer,id=", id.toString());
+    JMXUtil.unregister(name);
   }
 
   public HttpClient createHttpClient() {
@@ -119,7 +147,9 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new DefaultSockJSServer(this, httpServer);
+	SockJSServer server = new DefaultSockJSServer(this, httpServer);
+	JMXUtil.register(server, "org.vertx:type=SockJSServer");
+	return server;
   }
 
   public EventBus eventBus() {
