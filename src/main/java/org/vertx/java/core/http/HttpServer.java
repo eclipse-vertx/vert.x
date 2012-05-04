@@ -29,7 +29,7 @@ import org.vertx.java.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpServer extends HttpServerMXBean {
+public interface HttpServer {
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,

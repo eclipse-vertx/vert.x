@@ -20,5 +20,9 @@ package org.vertx.java.core.http;
  *
  */
 public interface HttpServerMXBean {
+	
+	int getPort();
+
+	String getHost();
 
 }
