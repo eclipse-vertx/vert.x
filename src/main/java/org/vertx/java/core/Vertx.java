@@ -37,7 +37,7 @@ import org.vertx.java.core.sockjs.SockJSServer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class Vertx {
+public abstract class Vertx implements VertxMXBean {
 
   /**
    * Create a non clustered Vertx instance

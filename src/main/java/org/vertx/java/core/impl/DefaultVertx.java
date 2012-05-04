@@ -85,17 +85,22 @@ public class DefaultVertx extends VertxInternal {
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
-	JMXUtil.register(eventBus, "org.vertx:type=EventBus");
+    registerSelf(this);
   }
 
   public DefaultVertx(String hostname) {
     this.eventBus = new DefaultEventBus(this, hostname);
-	JMXUtil.register(eventBus, "org.vertx:type=EventBus");
+    registerSelf(this);
   }
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname);
-	JMXUtil.register(eventBus, "org.vertx:type=EventBus");
+    registerSelf(this);
+  }
+  
+  private void registerSelf(DefaultVertx vertx) {
+    JMXUtil.register(vertx, "org.vertx:type=Vertx");
+	JMXUtil.register(vertx.eventBus, "org.vertx:type=EventBus");
   }
 
   public NetServer createNetServer() {

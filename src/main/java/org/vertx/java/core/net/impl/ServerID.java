@@ -23,6 +23,8 @@ import java.io.Serializable;
  */
 public class ServerID implements Serializable {
 
+  private static final long serialVersionUID = 1L;
+
   public int port;
   public String host;
 
@@ -31,8 +33,10 @@ public class ServerID implements Serializable {
     this.host = host;
   }
 
-  public ServerID() {
-  }
+//  public ServerID() {
+//	this.port = -1;
+//	this.host = "localhost";
+//  }
 
   @Override
   public boolean equals(Object o) {
