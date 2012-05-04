@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.eventbus;
 
+import javax.management.MXBean;
+
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -48,6 +50,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@MXBean
 public interface EventBus {
 
   /**
