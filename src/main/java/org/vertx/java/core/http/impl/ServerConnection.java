@@ -16,6 +16,14 @@
 
 package org.vertx.java.core.http.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.channels.ClosedChannelException;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -34,14 +42,6 @@ import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.channels.ClosedChannelException;
-import java.util.LinkedList;
-import java.util.Queue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -127,10 +127,19 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  private void handleChunk(Buffer chunk) {
+  private void handleData(Buffer chunk) {
     try {
       setContext();
       currentRequest.handleData(chunk);
+    } catch (Throwable t) {
+      handleHandlerException(t);
+    }
+  }
+
+  private void handleChunk(HttpChunk chunk) {
+    try {
+      setContext();
+      currentRequest.handleChunk(chunk);
     } catch (Throwable t) {
       handleHandlerException(t);
     }
@@ -254,14 +263,25 @@ class ServerConnection extends AbstractConnection {
       boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
           (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.getHeader("Connection")));
       DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this, request.getProtocolVersion(), keepAlive);
-      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
-      handleRequest(req, resp);
+      String contentType = request.getHeader("Content-Type");
+      DefaultHttpServerRequest req = null;
+      if ("multipart/form-data".equals(contentType)) {
+        try {
+          req = new PostHttpServerRequest(this, method, uri, path, query, resp, request);
+        }
+        catch (Throwable t) {
+          handleHandlerException(t);
+        }
+      } else {
+        req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
+      }
+      if (req != null) handleRequest(req, resp);
 
       ChannelBuffer requestBody = request.getContent();
 
       if (requestBody.readable()) {
         if (!paused) {
-          handleChunk(new Buffer(requestBody));
+          handleData(new Buffer(requestBody));
         } else {
           // We need to requeue it
           pending.add(new DefaultHttpChunk(requestBody));
@@ -277,10 +297,7 @@ class ServerConnection extends AbstractConnection {
       }
     } else if (msg instanceof HttpChunk) {
       HttpChunk chunk = (HttpChunk) msg;
-      if (chunk.getContent().readable()) {
-        Buffer buff = new Buffer(chunk.getContent());
-        handleChunk(buff);
-      }
+      handleChunk(chunk);
 
       //TODO chunk trailers
       if (chunk.isLast()) {
