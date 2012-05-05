@@ -27,10 +27,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory;
-import org.vertx.java.deploy.impl.java.JavaVerticleFactory;
-import org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory;
-import org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory;
+import org.vertx.java.deploy.VerticleFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,13 +53,15 @@ public class VerticleManager {
 
   private final VertxInternal vertx;
   // deployment name --> deployment
-  private final Map<String, Deployment> deployments = new HashMap();
+  private final Map<String, Deployment> deployments = new HashMap<>();
   // The out of the box busmods dirs
   private final File systemModRoot;
   // The user mods dir
   private final File userModRoot;
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
+  
+  private Map<VerticleType, VerticleFactory> factories;
 
   public VerticleManager(VertxInternal vertx) {
     this.vertx = vertx;
@@ -81,6 +80,14 @@ public class VerticleManager {
       }
     } else {
       userModRoot = null;
+    }
+
+    this.factories = new HashMap<VerticleType, VerticleFactory>();
+
+    // Find and load VerticleFactories
+    Iterable<VerticleFactory> services = VerticleFactory.factories;
+    for (VerticleFactory vf : services) {
+      factories.put(vf.getLanguage(), vf);
     }
   }
 
@@ -127,8 +134,8 @@ public class VerticleManager {
   public synchronized String deploy(boolean worker, String name, final String main,
                                     final JsonObject config, final URL[] urls,
                                     int instances, File currentModDir,
-                                    final Handler<Void> doneHandler)
-  {
+                                    final Handler<Void> doneHandler) {
+  
     if (deployments.containsKey(name)) {
       throw new IllegalStateException("There is already a deployment with name: " + name);
     }
@@ -209,29 +216,17 @@ public class VerticleManager {
     } else if (main.endsWith(".groovy")) {
       type = VerticleType.GROOVY;
     }
-
+    
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
 
     log.debug("Deploying name : " + deploymentName  + " main: " + main +
                  " instances: " + instances);
 
-    final VerticleFactory verticleFactory;
-      switch (type) {
-        case JAVA:
-          verticleFactory = new JavaVerticleFactory(this);
-          break;
-        case RUBY:
-          verticleFactory = new JRubyVerticleFactory(this);
-          break;
-        case JS:
-          verticleFactory = new RhinoVerticleFactory(this);
-          break;
-        case GROOVY:
-          verticleFactory = new GroovyVerticleFactory(vertx, this);
-          break;
-        default:
-          throw new IllegalArgumentException("Unsupported type: " + type);
-      }
+    if (!factories.containsKey(type))
+    	throw new IllegalArgumentException("Unsupported type: " + type);
+
+    final VerticleFactory verticleFactory = factories.get(type);
+    verticleFactory.init(this);
 
     final int instCount = instances;
 

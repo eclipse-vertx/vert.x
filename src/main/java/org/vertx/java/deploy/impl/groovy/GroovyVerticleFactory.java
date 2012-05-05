@@ -24,8 +24,10 @@ import org.vertx.groovy.core.Vertx;
 import org.vertx.groovy.deploy.Container;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.VerticleFactory;
+import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.impl.VerticleType;
+import org.vertx.java.deploy.impl.VertxLocator;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -37,12 +39,22 @@ import java.net.URL;
  */
 public class GroovyVerticleFactory implements VerticleFactory {
 
-  private final VerticleManager mgr;
-  private final Vertx gVertx;
+  private VerticleManager mgr;
+  private Vertx gVertx;
 
-  public GroovyVerticleFactory(org.vertx.java.core.Vertx vertx, VerticleManager mgr) {
-    this.mgr = mgr;
-    this.gVertx = new Vertx((VertxInternal)vertx);
+  public GroovyVerticleFactory() {
+	  super();
+  }
+
+  @Override
+  public void init(VerticleManager mgr) {
+	this.mgr = mgr;  
+    this.gVertx = new Vertx((VertxInternal) VertxLocator.vertx);
+  }
+
+  @Override
+  public VerticleType getLanguage() {
+	return VerticleType.GROOVY;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
