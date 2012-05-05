@@ -19,7 +19,6 @@ package org.vertx.java.deploy;
 import java.util.ServiceLoader;
 
 import org.vertx.java.deploy.impl.VerticleManager;
-import org.vertx.java.deploy.impl.VerticleType;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -30,7 +29,9 @@ public interface VerticleFactory {
 
   void init(VerticleManager manager);
   
-  VerticleType getLanguage();
+  String getLanguage();
+  
+  boolean isFactoryFor(String main);
 
   Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
 

@@ -22,7 +22,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-import org.vertx.java.deploy.impl.VerticleType;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -44,8 +43,16 @@ public class RhinoVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public VerticleType getLanguage() {
-	return VerticleType.JS;
+  public String getLanguage() {
+	return "rhino";
+  }
+  
+  @Override
+  public boolean isFactoryFor(String main) {
+	if (main.endsWith(".js")) {
+		return true;
+	}
+	return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {

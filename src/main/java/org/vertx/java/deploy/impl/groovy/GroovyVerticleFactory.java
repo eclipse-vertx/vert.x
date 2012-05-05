@@ -26,7 +26,6 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-import org.vertx.java.deploy.impl.VerticleType;
 import org.vertx.java.deploy.impl.VertxLocator;
 
 import java.lang.reflect.Method;
@@ -53,8 +52,16 @@ public class GroovyVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public VerticleType getLanguage() {
-	return VerticleType.GROOVY;
+  public String getLanguage() {
+	return "groovy";
+  }
+  
+  @Override
+  public boolean isFactoryFor(String main) {
+	if (main.endsWith(".groovy")) {
+		return true;
+	}
+	return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {

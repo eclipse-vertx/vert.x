@@ -25,7 +25,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-import org.vertx.java.deploy.impl.VerticleType;
 
 import java.util.List;
 
@@ -45,8 +44,16 @@ public class JRubyVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public VerticleType getLanguage() {
-	return VerticleType.RUBY;
+  public String getLanguage() {
+	return "ruby";
+  }
+  
+  @Override
+  public boolean isFactoryFor(String main) {
+	if (main.endsWith(".rb")) {
+		return true;
+	}
+	return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
