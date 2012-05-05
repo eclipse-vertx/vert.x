@@ -17,25 +17,36 @@
 package org.vertx.java.deploy.impl.java;
 
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.VerticleFactory;
+import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.impl.VerticleType;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JavaVerticleFactory implements VerticleFactory {
 
-  public JavaVerticleFactory(VerticleManager mgr) {
-    this.mgr = mgr;
+  private VerticleManager mgr;
+  
+  public JavaVerticleFactory() {
+	  super();
   }
 
-  private final VerticleManager mgr;
+  @Override
+  public void init(VerticleManager mgr) {
+	this.mgr = mgr;  
+  }
+
+  @Override
+  public VerticleType getLanguage() {
+	return VerticleType.JAVA;
+  }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
 
-    Class clazz = cl.loadClass(main);
+    Class<?> clazz = cl.loadClass(main);
 
-    Verticle verticle = (Verticle)clazz.newInstance();
+    Verticle verticle = (Verticle) clazz.newInstance();
 
     // Sanity check - make sure app class didn't get loaded by the parent or system classloader
     // This might happen if it's been put on the server classpath
