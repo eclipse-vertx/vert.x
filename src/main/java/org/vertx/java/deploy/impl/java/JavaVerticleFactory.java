@@ -19,7 +19,6 @@ package org.vertx.java.deploy.impl.java;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-import org.vertx.java.deploy.impl.VerticleType;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -38,8 +37,23 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public VerticleType getLanguage() {
-	return VerticleType.JAVA;
+  public String getLanguage() {
+	return "java";
+  }
+  
+  @Override
+  public boolean isFactoryFor(String main) {
+	if (main.endsWith(".java")) {
+		// TODO requires dynamic compiler
+		return true;
+	}
+	if (main.endsWith(".class")) {
+		return true;
+	}
+	if (main.endsWith(".jar")) {
+		return true;
+	}	
+	return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {

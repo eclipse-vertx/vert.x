@@ -61,7 +61,7 @@ public class VerticleManager {
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
   
-  private Map<VerticleType, VerticleFactory> factories;
+  private Map<String, VerticleFactory> factories;
 
   public VerticleManager(VertxInternal vertx) {
     this.vertx = vertx;
@@ -82,7 +82,7 @@ public class VerticleManager {
       userModRoot = null;
     }
 
-    this.factories = new HashMap<VerticleType, VerticleFactory>();
+    this.factories = new HashMap<String, VerticleFactory>();
 
     // Find and load VerticleFactories
     Iterable<VerticleFactory> services = VerticleFactory.factories;
@@ -206,26 +206,24 @@ public class VerticleManager {
                           final Handler<Void> doneHandler)
   {
 
-    //Infer the main type
+    // Infer the main type
+	String language = "java";
+	LOOP: for (VerticleFactory vf : factories.values()) {
+		if (vf.isFactoryFor(main)) {
+			language = vf.getLanguage();
+			break LOOP;
+		}
+	}
 
-    VerticleType type = VerticleType.JAVA;
-    if (main.endsWith(".js")) {
-      type = VerticleType.JS;
-    } else if (main.endsWith(".rb")) {
-      type = VerticleType.RUBY;
-    } else if (main.endsWith(".groovy")) {
-      type = VerticleType.GROOVY;
-    }
-    
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
 
     log.debug("Deploying name : " + deploymentName  + " main: " + main +
                  " instances: " + instances);
 
-    if (!factories.containsKey(type))
-    	throw new IllegalArgumentException("Unsupported type: " + type);
+    if (!factories.containsKey(language))
+    	throw new IllegalArgumentException("Unsupported language: " + language);
 
-    final VerticleFactory verticleFactory = factories.get(type);
+    final VerticleFactory verticleFactory = factories.get(language);
     verticleFactory.init(this);
 
     final int instCount = instances;
