@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -299,6 +300,9 @@ public class VerticleManager implements VerticleManagerMXBean {
               setPathAdjustment(modDir);
             }
             verticle.start();
+            JMXUtil.register(verticle.getContainer(), "org.vertx:type=Container,deployment=%s", deploymentName);
+            JMXUtil.register(verticle, "org.vertx:type=Verticle,deployment=%s", deploymentName);
+            
           } catch (Throwable t) {
             vertx.reportException(t);
             doUndeploy(deploymentName, doneHandler);
@@ -416,7 +420,7 @@ public class VerticleManager implements VerticleManagerMXBean {
     }
   }
 
-  private void doUndeploy(String name, final UndeployCount count) {
+  private void doUndeploy(final String name, final UndeployCount count) {
 
     final Deployment deployment = deployments.remove(name);
 
@@ -433,6 +437,11 @@ public class VerticleManager implements VerticleManagerMXBean {
           public void run() {
             try {
               holder.verticle.stop();
+              String verticleName = String.format("org.vertx:type=Verticle,deployment=%s", deployment.name);
+              JMXUtil.unregister(verticleName);
+              String containerName = String.format("org.vertx:type=Container,deployment=%s", deployment.name);
+              JMXUtil.unregister(containerName);
+              
             } catch (Throwable t) {
               vertx.reportException(t);
             }

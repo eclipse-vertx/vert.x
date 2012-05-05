@@ -15,6 +15,8 @@
  */
 package org.vertx.java.deploy;
 
+import org.vertx.java.core.VertxMXBean;
+
 /**
  * @author pidster
  *
@@ -24,5 +26,9 @@ public interface VerticleMXBean {
 	void start() throws Exception;
 
 	void stop() throws Exception;
+	
+	VertxMXBean getVertx();
+	
+	ContainerMXBean getContainer();
 
 }
