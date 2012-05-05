@@ -27,4 +27,6 @@ public interface VerticleManagerMXBean {
 	
 	String getDeploymentName();
 	
+	// TODO Set<String> getLanguageFactories();
+	
 }
