@@ -36,7 +36,7 @@ public class HandlerManager<T> {
   private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
 
   private final VertxWorkerPool availableWorkers;
-  private Map<NioWorker, Handlers> handlerMap = new ConcurrentHashMap<>();
+  private Map<NioWorker, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
 
   public HandlerManager(VertxWorkerPool availableWorkers) {
     this.availableWorkers = availableWorkers;
@@ -47,7 +47,7 @@ public class HandlerManager<T> {
   }
 
   public synchronized HandlerHolder<T> chooseHandler(NioWorker worker) {
-    Handlers handlers = handlerMap.get(worker);
+    Handlers<T> handlers = handlerMap.get(worker);
     if (handlers == null) {
       return null;
     }
@@ -69,9 +69,9 @@ public class HandlerManager<T> {
   public synchronized void addHandler(Handler<T> handler, Context context) {
     NioWorker worker = getWorker(context);
     availableWorkers.addWorker(worker);
-    Handlers handlers = handlerMap.get(worker);
+    Handlers<T> handlers = handlerMap.get(worker);
     if (handlers == null) {
-      handlers = new Handlers();
+      handlers = new Handlers<>();
       handlerMap.put(worker, handlers);
     }
     handlers.addHandler(new HandlerHolder<>(context, handler));
@@ -79,32 +79,32 @@ public class HandlerManager<T> {
 
   public synchronized void removeHandler(Handler<T> handler, Context context) {
     NioWorker worker = getWorker(context);
-    Handlers handlers = handlerMap.get(worker);
+    Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
       throw new IllegalStateException("Can't find handler");
     }
     if (handlers.isEmpty()) {
       handlerMap.remove(worker);
     }
-    //Available workers does it's own reference counting -since workers can be sharedd across different Handlers
+    //Available workers does it's own reference counting -since workers can be shared across different Handlers
     availableWorkers.removeWorker(worker);
   }
 
-  private static class Handlers {
+  private static class Handlers<T> {
     int pos;
-    final List<HandlerHolder> list = new ArrayList<>();
-    HandlerHolder chooseHandler() {
-      HandlerHolder handler = list.get(pos);
+    final List<HandlerHolder<T>> list = new ArrayList<>();
+    HandlerHolder<T> chooseHandler() {
+      HandlerHolder<T> handler = list.get(pos);
       pos++;
       checkPos();
       return handler;
     }
 
-    void addHandler(HandlerHolder handler) {
+    void addHandler(HandlerHolder<T> handler) {
       list.add(handler);
     }
 
-    boolean removeHandler(HandlerHolder handler) {
+    boolean removeHandler(HandlerHolder<T> handler) {
       if (list.remove(handler)) {
         checkPos();
         return true;
