@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.deploy.impl.java;
 
-import java.io.Serializable;
+import org.vertx.java.deploy.impl.VerticleManager;
 
-/**
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
-public enum VerticleType implements Serializable {
-  JAVA, RUBY, GROOVY, JS, JAVA_SOURCE
+public class JavaSourceVerticleFactory extends JavaVerticleFactory {
+
+  public JavaSourceVerticleFactory(VerticleManager mgr) {
+    super(mgr);
+  }
+
+  @Override
+  protected Class<?> loadClass(String main, ClassLoader cl) throws ClassNotFoundException {    
+    String className = main.substring(0, main.length() - ".java".length()).replaceAll("/", ".");
+    return new CompilingClassLoader(cl, main).loadClass(className);
+  }
 }
