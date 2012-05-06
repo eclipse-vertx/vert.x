@@ -23,6 +23,7 @@
   <!-- set global properties for this build -->
   <property name="target" value="target"/>
   <property name="core-jar-file" value="vert.x-core.jar"/>
+  <property name="boot-jar-file" value="vert.x-boot.jar"/>
   <property name="platform-jar-file" value="vert.x-platform.jar"/>
   <property name="test-framework-jar-file" value="vert.x-testframework.jar"/>
   <property name="version-number" value="1.0.beta11"/>
@@ -187,14 +188,24 @@
     <jar jarfile="${target}/${platform-jar-file}" basedir="${java-target}">
       <exclude name="**/core/**/*"/>
       <exclude name="**/core/"/>
+  	  <exclude name="**/*/VertxBoot*.*"/>
     </jar>
+  </target>
+
+  <target name="jar-boot" depends="compile-platform" description="generate the boot jar">
+	<jar jarfile="${target}/${boot-jar-file}" basedir="${java-target}">
+	  <include name="**/*/VertxBoot*.*"/>
+  	  <manifest>
+  	    <attribute name="Main-class" value="org.vertx.java.deploy.impl.VertxBoot"/>
+  	  </manifest>
+	</jar>
   </target>
 
   <target name="jar-test-framework" depends="compile-test-framework" description="generate the test framework jar">
     <jar jarfile="${target}/${test-framework-jar-file}" basedir="${tests-target}" includes="**/framework/**/*.class"/>
   </target>
 
-  <target name="jars" depends="jar-core,jar-platform,jar-test-framework"/>
+  <target name="jars" depends="jar-core,jar-platform,jar-boot,jar-test-framework"/>
 
   <target name="clean" description="clean up">
     <delete dir="${target}"/>
@@ -202,7 +213,7 @@
     <delete dir="${test-tmp}"/>
   </target>
 
-  <target name="compile-test-framework" depends="jar-core,jar-platform">
+  <target name="compile-test-framework" depends="jar-core,jar-platform,jar-boot">
     <mkdir dir="${tests-target}"/>
 
     <javac destdir="${tests-target}" classpathref="test-classpath"
@@ -212,7 +223,7 @@
     </javac>
   </target>
 
-  <target name="compile-tests" depends="compile-test-framework,jar-core,jar-platform">
+  <target name="compile-tests" depends="compile-test-framework,jar-core,jar-platform,jar-boot">
     <mkdir dir="${tests-target}"/>
 
     <javac destdir="${tests-target}" classpathref="test-classpath"
@@ -292,15 +303,17 @@
   </target>
 
 
-  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-test-framework,compile-java-mods">
+  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-boot,jar-test-framework,compile-java-mods">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
     <copy file="${target}/${platform-jar-file}" todir="${dist-build}/lib/jars"/>
+    <copy file="${target}/${boot-jar-file}" todir="${dist-build}/bin"/>
     <copy file="${target}/${test-framework-jar-file}" todir="${dist-build}/lib/jars"/>
 
     <mkdir dir="${dist-build}/conf"/>
 
+    <copy file="conf/vertx.properties" todir="${dist-build}/conf"/>
     <copy file="conf/logging.properties" todir="${dist-build}/conf"/>
     <copy file="conf/cluster.xml" todir="${dist-build}/conf"/>
 
@@ -399,6 +412,7 @@
     </tar>
 
     <gzip destfile="${target}/vert.x-${version-number}.tar.gz" src="${target}/vert.x-${version-number}.tar"/>
+
   </target>
 
 </project>
