@@ -341,20 +341,4 @@ public class DefaultVertx extends VertxInternal {
     }
   }
 
-  private static class VertxThreadFactory implements ThreadFactory {
-
-    private String prefix;
-    private AtomicInteger threadCount = new AtomicInteger(0);
-
-    VertxThreadFactory(String prefix) {
-      this.prefix = prefix;
-    }
-
-    public Thread newThread(Runnable runnable) {
-      Thread t = new Thread(runnable, prefix + threadCount.getAndIncrement());
-      // All vert.x threads are daemons
-      t.setDaemon(true);
-      return t;
-    }
-  }
 }
