@@ -57,6 +57,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
+import org.vertx.java.core.impl.AbstractServer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -64,7 +65,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.HandlerHolder;
 import org.vertx.java.core.net.impl.HandlerManager;
 import org.vertx.java.core.net.impl.ServerID;
-import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxWorkerPool;
 
 import javax.net.ssl.SSLEngine;
@@ -89,13 +89,10 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServer implements HttpServer {
+public class DefaultHttpServer extends AbstractServer<HttpServerRequest> implements HttpServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
-  private final VertxInternal vertx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Context ctx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
@@ -110,16 +107,7 @@ public class DefaultHttpServer implements HttpServer {
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultHttpServer(VertxInternal vertx) {
-    this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
-    if (vertx.isWorker()) {
-      throw new IllegalStateException("Cannot be used in a worker application");
-    }
-    ctx.addCloseHook(new Runnable() {
-      public void run() {
-        close();
-      }
-    });
+	super(vertx);
   }
 
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
@@ -139,8 +127,8 @@ public class DefaultHttpServer implements HttpServer {
   public Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
   }
-
-  public HttpServer listen(int port) {
+  
+  public final HttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
@@ -152,29 +140,29 @@ public class DefaultHttpServer implements HttpServer {
       throw new IllegalStateException("Listen already called");
     }
 
-    synchronized (vertx.sharedHttpServers()) {
+    synchronized (getVertxInternal().sharedHttpServers()) {
       serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
       id = new ServerID(port, host);
-      DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
+      DefaultHttpServer shared = getVertxInternal().sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
             new NioServerSocketChannelFactory(
-                vertx.getAcceptorPool(),
+                getVertxInternal().getAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
+        bootstrap.setOptions(getTCPSSLHelper().generateConnectionOptions(true));
 
-        tcpHelper.checkSSL();
+        getTCPSSLHelper().checkSSL();
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
             ChannelPipeline pipeline = Channels.pipeline();
 
-            if (tcpHelper.isSSL()) {
-              SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
+            if (getTCPSSLHelper().isSSL()) {
+              SSLEngine engine = getTCPSSLHelper().getSSLContext().createSSLEngine();
               engine.setUseClientMode(false);
-              switch (tcpHelper.getClientAuth()) {
+              switch (getTCPSSLHelper().getClientAuth()) {
                 case REQUEST: {
                   engine.setWantClientAuth(true);
                   break;
@@ -206,17 +194,17 @@ public class DefaultHttpServer implements HttpServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        vertx.sharedHttpServers().put(id, this);
+        getVertxInternal().sharedHttpServers().put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
       }
       if (requestHandler != null) {
-        actualServer.reqHandlerManager.addHandler(requestHandler, ctx);
+        actualServer.reqHandlerManager.addHandler(requestHandler, getContext());
       }
       if (wsHandler != null) {
-        actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
+        actualServer.wsHandlerManager.addHandler(wsHandler, getContext());
       }
     }
     listening = true;
@@ -230,162 +218,41 @@ public class DefaultHttpServer implements HttpServer {
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
-        executeCloseDone(ctx, done);
+        executeCloseDone(getContext(), done);
       }
       return;
     }
     listening = false;
 
-    synchronized (vertx.sharedHttpServers()) {
+    synchronized (getVertxInternal().sharedHttpServers()) {
 
       if (actualServer != null) {
 
         if (requestHandler != null) {
-          actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
+          actualServer.reqHandlerManager.removeHandler(requestHandler, getContext());
         }
         if (wsHandler != null) {
-          actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
+          actualServer.wsHandlerManager.removeHandler(wsHandler, getContext());
         }
 
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(ctx, done);
+            executeCloseDone(getContext(), done);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(ctx, done);
+          actualServer.actualClose(getContext(), done);
         }
       }
     }
   }
 
-  public HttpServer setSSL(boolean ssl) {
-    tcpHelper.setSSL(ssl);
-    return this;
-  }
-
-  public HttpServer setKeyStorePath(String path) {
-    tcpHelper.setKeyStorePath(path);
-    return this;
-  }
-
-  public HttpServer setKeyStorePassword(String pwd) {
-    tcpHelper.setKeyStorePassword(pwd);
-    return this;
-  }
-
-  public HttpServer setTrustStorePath(String path) {
-    tcpHelper.setTrustStorePath(path);
-    return this;
-  }
-
-  public HttpServer setTrustStorePassword(String pwd) {
-    tcpHelper.setTrustStorePassword(pwd);
-    return this;
-  }
-
-  public HttpServer setClientAuthRequired(boolean required) {
-    tcpHelper.setClientAuthRequired(required);
-    return this;
-  }
-
-  public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
-    tcpHelper.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  public HttpServer setSendBufferSize(int size) {
-    tcpHelper.setSendBufferSize(size);
-    return this;
-  }
-
-  public HttpServer setReceiveBufferSize(int size) {
-    tcpHelper.setReceiveBufferSize(size);
-    return this;
-  }
-  public HttpServer setTCPKeepAlive(boolean keepAlive) {
-    tcpHelper.setTCPKeepAlive(keepAlive);
-    return this;
-  }
-
-  public HttpServer setReuseAddress(boolean reuse) {
-    tcpHelper.setReuseAddress(reuse);
-    return this;
-  }
-
-  public HttpServer setSoLinger(boolean linger) {
-    tcpHelper.setSoLinger(linger);
-    return this;
-  }
-
-  public HttpServer setTrafficClass(int trafficClass) {
-    tcpHelper.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  public HttpServer setAcceptBacklog(int backlog) {
-    tcpHelper.setAcceptBacklog(backlog);
-    return this;
-  }
-
-  public Boolean isTCPNoDelay() {
-    return tcpHelper.isTCPNoDelay();
-  }
-
-  public Integer getSendBufferSize() {
-    return tcpHelper.getSendBufferSize();
-  }
-
-  public Integer getReceiveBufferSize() {
-    return tcpHelper.getReceiveBufferSize();
-  }
-
-  public Boolean isTCPKeepAlive() {
-    return tcpHelper.isTCPKeepAlive();
-  }
-
-  public Boolean isReuseAddress() {
-    return tcpHelper.isReuseAddress();
-  }
-
-  public Boolean isSoLinger() {
-    return tcpHelper.isSoLinger();
-  }
-
-  public Integer getTrafficClass() {
-    return tcpHelper.getTrafficClass();
-  }
-
-  public Integer getAcceptBacklog() {
-    return tcpHelper.getAcceptBacklog();
-  }
-
-  public boolean isSSL() {
-    return tcpHelper.isSSL();
-  }
-
-  public String getKeyStorePath() {
-    return tcpHelper.getKeyStorePath();
-  }
-
-  public String getKeyStorePassword() {
-    return tcpHelper.getKeyStorePassword();
-  }
-
-  public String getTrustStorePath() {
-    return tcpHelper.getTrustStorePath();
-  }
-
-  public String getTrustStorePassword() {
-    return tcpHelper.getTrustStorePassword();
-  }
-
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      vertx.sharedHttpServers().remove(id);
+      getVertxInternal().sharedHttpServers().remove(id);
     }
 
     for (ServerConnection conn : connectionMap.values()) {
@@ -490,7 +357,7 @@ public class DefaultHttpServer implements HttpServer {
               throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
             }
 
-            final ServerConnection wsConn = new ServerConnection(vertx, ch, wsHandler.context);
+            final ServerConnection wsConn = new ServerConnection(getVertxInternal(), ch, wsHandler.context);
             wsConn.wsHandler(wsHandler.handler);
             Runnable connectRunnable = new Runnable() {
               public void run() {
@@ -506,7 +373,7 @@ public class DefaultHttpServer implements HttpServer {
                 }
               }
             };
-            DefaultWebSocket ws = new DefaultWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
+            DefaultWebSocket ws = new DefaultWebSocket(getVertxInternal(), theURI.getPath(), wsConn, connectRunnable);
             wsConn.handleWebsocketConnect(ws);
             if (ws.rejected) {
               if (firstHandler == null) {
@@ -523,7 +390,7 @@ public class DefaultHttpServer implements HttpServer {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
-              conn = new ServerConnection(vertx, ch, reqHandler.context);
+              conn = new ServerConnection(getVertxInternal(), ch, reqHandler.context);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);

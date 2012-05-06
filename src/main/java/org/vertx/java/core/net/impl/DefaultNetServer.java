@@ -42,6 +42,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.AbstractServer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -49,7 +50,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -60,13 +60,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultNetServer implements NetServer {
+public class DefaultNetServer extends AbstractServer<NetSocket> implements NetServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
-  private final VertxInternal vertx;
-  private final Context ctx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
@@ -77,17 +74,8 @@ public class DefaultNetServer implements NetServer {
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultNetServer(VertxInternal vertx) {
-    this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
-    if (vertx.isWorker()) {
-      throw new IllegalStateException("Cannot be used in a worker application");
-    }
-    ctx.addCloseHook(new Runnable() {
-      public void run() {
-        close();
-      }
-    });
-    tcpHelper.setReuseAddress(true);
+	super(vertx);
+	getTCPSSLHelper().setReuseAddress(true);
   }
 
   public NetServer connectHandler(Handler<NetSocket> connectHandler) {
@@ -95,11 +83,10 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public NetServer listen(int port) {
-    listen(port, "0.0.0.0");
-    return this;
+  public final NetServer listen(int port) {
+    return listen(port, "0.0.0.0");
   }
-
+  
   public NetServer listen(int port, String host) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
@@ -109,27 +96,27 @@ public class DefaultNetServer implements NetServer {
     }
     listening = true;
 
-    synchronized (vertx.sharedNetServers()) {
+    synchronized (getVertxInternal().sharedNetServers()) {
       id = new ServerID(port, host);
-      DefaultNetServer shared = vertx.sharedNetServers().get(id);
+      DefaultNetServer shared = getVertxInternal().sharedNetServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
         ChannelFactory factory =
             new NioServerSocketChannelFactory(
-                vertx.getAcceptorPool(),
+            		getVertxInternal().getAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
-        tcpHelper.checkSSL();
+        getTCPSSLHelper().checkSSL();
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
             ChannelPipeline pipeline = Channels.pipeline();
-            if (tcpHelper.isSSL()) {
-              SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
+            if (getTCPSSLHelper().isSSL()) {
+              SSLEngine engine = getTCPSSLHelper().getSSLContext().createSSLEngine();
               engine.setUseClientMode(false);
-              switch (tcpHelper.getClientAuth()) {
+              switch (getTCPSSLHelper().getClientAuth()) {
                 case REQUEST: {
                   engine.setWantClientAuth(true);
                   break;
@@ -151,7 +138,7 @@ public class DefaultNetServer implements NetServer {
           }
         });
 
-        bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
+        bootstrap.setOptions(getTCPSSLHelper().generateConnectionOptions(true));
 
         try {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
@@ -161,14 +148,14 @@ public class DefaultNetServer implements NetServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        vertx.sharedNetServers().put(id, this);
+        getVertxInternal().sharedNetServers().put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
         checkConfigs(actualServer, this);
         actualServer = shared;
       }
-      actualServer.handlerManager.addHandler(connectHandler, ctx);
+      actualServer.handlerManager.addHandler(connectHandler, getContext());
     }
     return this;
   }
@@ -180,26 +167,26 @@ public class DefaultNetServer implements NetServer {
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
-        executeCloseDone(ctx, done);
+        executeCloseDone(getContext(), done);
       }
       return;
     }
     listening = false;
-    synchronized (vertx.sharedNetServers()) {
+    synchronized (getVertxInternal().sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, ctx);
+        actualServer.handlerManager.removeHandler(connectHandler, getContext());
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(ctx, done);
+            executeCloseDone(getContext(), done);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(ctx, done);
+          actualServer.actualClose(getContext(), done);
         }
       }
     }
@@ -207,7 +194,7 @@ public class DefaultNetServer implements NetServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      vertx.sharedNetServers().remove(id);
+      getVertxInternal().sharedNetServers().remove(id);
     }
 
     for (DefaultNetSocket sock : socketMap.values()) {
@@ -241,136 +228,6 @@ public class DefaultNetServer implements NetServer {
     });
   }
 
-  public Boolean isTCPNoDelay() {
-    return tcpHelper.isTCPNoDelay();
-  }
-
-  public Integer getSendBufferSize() {
-    return tcpHelper.getSendBufferSize();
-  }
-
-  public Integer getReceiveBufferSize() {
-    return tcpHelper.getReceiveBufferSize();
-  }
-
-  public Boolean isTCPKeepAlive() {
-    return tcpHelper.isTCPKeepAlive();
-  }
-
-  public Boolean isReuseAddress() {
-    return tcpHelper.isReuseAddress();
-  }
-
-  public Boolean isSoLinger() {
-    return tcpHelper.isSoLinger();
-  }
-
-  public Integer getTrafficClass() {
-    return tcpHelper.getTrafficClass();
-  }
-
-  public Integer getAcceptBacklog() {
-    return tcpHelper.getAcceptBacklog();
-  }
-
-  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
-    tcpHelper.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  public NetServer setSendBufferSize(int size) {
-    tcpHelper.setSendBufferSize(size);
-    return this;
-  }
-
-  public NetServer setReceiveBufferSize(int size) {
-    tcpHelper.setReceiveBufferSize(size);
-    return this;
-  }
-
-  public NetServer setTCPKeepAlive(boolean keepAlive) {
-    tcpHelper.setTCPKeepAlive(keepAlive);
-    return this;
-  }
-
-  public NetServer setReuseAddress(boolean reuse) {
-    tcpHelper.setReuseAddress(reuse);
-    return this;
-  }
-
-  public NetServer setSoLinger(boolean linger) {
-    tcpHelper.setSoLinger(linger);
-    return this;
-  }
-
-  public NetServer setTrafficClass(int trafficClass) {
-    tcpHelper.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  public NetServer setAcceptBacklog(int backlog) {
-    tcpHelper.setAcceptBacklog(backlog);
-    return this;
-  }
-
-  public boolean isSSL() {
-    return tcpHelper.isSSL();
-  }
-
-  public String getKeyStorePath() {
-    return tcpHelper.getKeyStorePath();
-  }
-
-  public String getKeyStorePassword() {
-    return tcpHelper.getKeyStorePassword();
-  }
-
-  public String getTrustStorePath() {
-    return tcpHelper.getTrustStorePath();
-  }
-
-  public String getTrustStorePassword() {
-    return tcpHelper.getTrustStorePassword();
-  }
-
-  public TCPSSLHelper.ClientAuth getClientAuth() {
-    return tcpHelper.getClientAuth();
-  }
-
-  public SSLContext getSSLContext() {
-    return tcpHelper.getSSLContext();
-  }
-
-  public NetServer setSSL(boolean ssl) {
-    tcpHelper.setSSL(ssl);
-    return this;
-  }
-
-  public NetServer setKeyStorePath(String path) {
-    tcpHelper.setKeyStorePath(path);
-    return this;
-  }
-
-  public NetServer setKeyStorePassword(String pwd) {
-    tcpHelper.setKeyStorePassword(pwd);
-    return this;
-  }
-
-  public NetServer setTrustStorePath(String path) {
-    tcpHelper.setTrustStorePath(path);
-    return this;
-  }
-
-  public NetServer setTrustStorePassword(String pwd) {
-    tcpHelper.setTrustStorePassword(pwd);
-    return this;
-  }
-
-  public NetServer setClientAuthRequired(boolean required) {
-    tcpHelper.setClientAuthRequired(required);
-    return this;
-  }
-
   private class ServerHandler extends SimpleChannelHandler {
 
     @Override
@@ -387,7 +244,7 @@ public class DefaultNetServer implements NetServer {
         return;
       }
 
-      if (tcpHelper.isSSL()) {
+      if (getTCPSSLHelper().isSSL()) {
         SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
 
         ChannelFuture fut = sslHandler.handshake();
@@ -410,7 +267,7 @@ public class DefaultNetServer implements NetServer {
     private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       handler.context.execute(new Runnable() {
         public void run() {
-          DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
+          DefaultNetSocket sock = new DefaultNetSocket(getVertxInternal(), ch, handler.context);
           socketMap.put(ch, sock);
           handler.handler.handle(sock);
         }
