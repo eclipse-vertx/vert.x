@@ -40,7 +40,7 @@ public class Json {
     }
   }
 
-  public static Object decodeValue(String str, Class clazz) throws DecodeException {
+  public static Object decodeValue(String str, Class<?> clazz) throws DecodeException {
     try {
       return mapper.readValue(str, clazz);
     }

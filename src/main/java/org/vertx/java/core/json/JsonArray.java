@@ -32,9 +32,9 @@ import java.util.Map;
  */
 public class JsonArray implements Iterable<Object> {
 
-  final List list;
+  final List<Object> list;
 
-  public JsonArray(List array) {
+  public JsonArray(List<Object> array) {
     this.list = array;
   }
 
@@ -43,11 +43,12 @@ public class JsonArray implements Iterable<Object> {
   }
 
   public JsonArray() {
-    this.list = new ArrayList();
+    this.list = new ArrayList<>();
   }
 
+  @SuppressWarnings("unchecked")
   public JsonArray(String jsonString) {
-    list = (List)Json.decodeValue(jsonString, List.class);
+    list = (List<Object>) Json.decodeValue(jsonString, List.class);
   }
 
   public JsonArray addString(String str) {
@@ -95,24 +96,25 @@ public class JsonArray implements Iterable<Object> {
     return list.size();
   }
 
-  public Iterator iterator() {
-    return new Iterator() {
+  public Iterator<Object> iterator() {
+    return new Iterator<Object>() {
 
-      Iterator iter = list.iterator();
+      Iterator<Object> iter = list.iterator();
 
       @Override
       public boolean hasNext() {
         return iter.hasNext();
       }
 
-      @Override
+      @SuppressWarnings("unchecked")
+	  @Override
       public Object next() {
         Object next = iter.next();
         if (next != null) {
           if (next instanceof List) {
-            next = new JsonArray((List)next);
+            next = new JsonArray((List<Object>) next);
           } else if (next instanceof Map) {
-            next = new JsonObject((Map)next);
+            next = new JsonObject((Map<String, Object>) next);
           }
         }
         return next;
@@ -142,7 +144,7 @@ public class JsonArray implements Iterable<Object> {
 
     if (this.list.size() != that.list.size()) return false;
 
-    Iterator iter = that.iterator();
+    Iterator<?> iter = that.iterator();
     for (Object entry: this.list) {
       Object other = iter.next();
       if (!entry.equals(other)) {
@@ -156,14 +158,15 @@ public class JsonArray implements Iterable<Object> {
     return convertList(list);
   }
 
-  static Object[] convertList(List list) {
+  @SuppressWarnings("unchecked")
+  static Object[] convertList(List<?> list) {
     Object[] arr = new Object[list.size()];
     int index = 0;
     for (Object obj: list) {
       if (obj instanceof Map) {
-        arr[index] = JsonObject.convertMap((Map)obj);
+        arr[index] = JsonObject.convertMap((Map<String, Object>) obj);
       } else if (obj instanceof List) {
-        arr[index] = convertList((List)obj);
+        arr[index] = convertList((List<?>) obj);
       } else {
         arr[index] = obj;
       }
