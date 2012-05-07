@@ -68,12 +68,12 @@ public class VerticleManager {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
-    String installDir = System.getProperty("vertx.install");
+    String installDir = System.getProperty("vertx.home"); // now de-relativized
     if (installDir == null) {
       installDir = ".";
     }
     systemModRoot = new File(installDir, "mods");
-    String modDir = System.getProperty("vertx.mods");
+    String modDir = System.getProperty("vertx.mods"); // now explicitly configured
     if (modDir != null && !modDir.trim().equals("")) {
       userModRoot = new File(modDir);
       if (!userModRoot.exists()) {

@@ -44,9 +44,23 @@ import java.util.Set;
  *
  */
 public class VertxBoot {
+	
+	private static final boolean DEBUG = Boolean.getBoolean("vertx.boot.debug");
 
 	public static void main(String... args) {
+		
+		if (DEBUG) {
+			System.out.println("vert.x starting with DEBUG=true");
+		}
+
 		URL[] classpath = createClasspath();
+
+		if (DEBUG) {
+			for (URL url : classpath) {
+				System.out.format("url:%s %n", url);
+			}
+		}
+
 		startMain(classpath, args);
 	}
 
@@ -54,50 +68,60 @@ public class VertxBoot {
 		
 		// The minimum we need is a system property telling us
 		// what our own install directory is
-		Path vertx = Paths.get(System.getProperty("vertx.home"))
-				.toAbsolutePath().normalize();
+		Path userDir = stringToPath(System.getProperty("user.dir"));
+		
+		// The minimum we need is a system property telling us
+		// what our own install directory is
+		Path vertx = stringToPath(System.getProperty("vertx.home"));
+		System.setProperty("vertx.home", vertx.toString());
 
 		// The conf directory is relative to 'vertx.home'
 		Path props = vertx.resolve("conf/vertx.properties");
-		
-		// The lib directory is relative to 'vertx.home'
-		// we'll use this to reduce the filesystem scanning
-		// when loading jars
-		Path lib = vertx.resolve("lib");
+		if (!Files.isReadable(props)) {
+			throw new RuntimeException("conf/vertx.properties file missing or unreadable!");
+		}
 		
 		Properties vertxProps = new Properties();
+		
+		if (DEBUG) {
+			System.out.format("vertx.home: %s %n", vertx);
+		}
 
 		Set<URL> found = new HashSet<URL>();
 
 		// Use Java 7 try-with-resources
 		try (InputStream is = Files.newInputStream(props, StandardOpenOption.READ)) {
 			vertxProps.load(is);
-
-			// add the loaded properties to System
-			System.getProperties().putAll(vertxProps);
 			
 			// resolve variables
 			resolvePropertyVariables(vertxProps);
 
+			// add the loaded & translate properties to System
+			System.getProperties().putAll(vertxProps);
+			
 			// if there's no libs this will blow up fairly quickly
 			String loader = vertxProps.getProperty("vertx.libs");
 			String[] paths = loader.split(",");
 			
 			for (String url : paths) {
+				
+				if (DEBUG) {
+					System.out.format("url:%s %n", url);
+				}
+
+				// TODO check this works on Windows
+				if (url.startsWith(".")) {
+					url = stringToPath(url).toString(); // resolve against relative path
+				}
+
+				// TODO check this works on Windows
+				if (!url.startsWith(File.separator) && !url.matches("^[A-Z]\\:\\/.*")) {
+					url = resolve(userDir, url).toString(); // resolve against current dir
+				}
 
 				if (url.indexOf('*') > -1) {
-
-					// TODO check this works on Windows
-					if (url.startsWith(".")) {
-						url = Paths.get(url).normalize().toAbsolutePath().toString();
-					}
-					// TODO check this works on Windows
-					else if (!url.startsWith(File.separator) && !url.matches("^[A-Z]\\:\\/.*")) {
-						url = resolve(vertx, url).toString();
-					}
-
 					URLMatchingGlobbedPathVisitor visitor = new URLMatchingGlobbedPathVisitor(url);
-					Files.walkFileTree(lib, visitor);
+					Files.walkFileTree(vertx, visitor); // relative to vertx.home
 					found.addAll(visitor.getMatches());
 				}
 				else {
@@ -140,9 +164,13 @@ public class VertxBoot {
 			properties.setProperty(name, modified);
 		}
 	}
-	
+
 	private static Path resolve(Path base, String path) {
 		return base.resolve(path).toAbsolutePath().normalize();
+	}
+
+	private static Path stringToPath(String first) {
+		return Paths.get(first).toAbsolutePath().normalize();
 	}
 
 	/**
@@ -188,6 +216,9 @@ public class VertxBoot {
 				BasicFileAttributes attrs) throws IOException {
 
 			if (matcher.matches(file) && Files.isReadable(file)) {
+				if (DEBUG) {
+					System.out.format("path: %s %n", file);
+				}
 				matches.add(file.toUri().toURL());
 			}
 

@@ -13,6 +13,10 @@ while [ -h "$PRG" ] ; do
   fi
 done
 
+if [ "x" == "x$VERTX_BOOT_DEBUG" ]; then
+  VERTX_BOOT_DEBUG="false"
+fi
+
 # The path to this script from the place it was called
 DIRNAME=`dirname "$PRG"`
 VERTX_DIR=`dirname "$DIRNAME"`
@@ -22,5 +26,9 @@ CURRDIR=`pwd`
 SCRIPTDIR=`cd $DIRNAME;pwd`
 cd $CURRDIR
 
-java -Dvertx.home=$VERTX_DIR -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties -Djruby.home=$JRUBY_HOME \
--Dvertx.mods=$VERTX_MODS -Dvertx.install=$SCRIPTDIR/.. -jar $VERTX_DIR/bin/vert.x-boot.jar "$@"
+java -Djava.util.logging.config.file=$VERTX_DIR/conf/logging.properties \
+-Dvertx.boot.debug=$VERTX_BOOT_DEBUG \
+-Dvertx.home=$VERTX_DIR \
+-Dvertx.install=$VERTX_DIR \
+-Djruby.home=$JRUBY_HOME \
+-jar $VERTX_DIR/bin/vert.x-boot.jar "$@"
