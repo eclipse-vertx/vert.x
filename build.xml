@@ -144,6 +144,11 @@
       <include name="org/vertx/groovy/deploy/**/*.groovy"/>
       <include name="org/vertx/groovy/busmods/**/*.groovy"/>
     </groovyc>
+  	<copy todir="${java-target}">
+  	  <fileset dir="${java-src-root}">
+  	    <include name="META-INF/services/*"/>
+  	  </fileset>
+  	</copy>
   </target>
 
   <target name="compile-java-mods">
@@ -186,6 +191,7 @@
   <target name="jar-platform" depends="compile-platform" description="generate the platform jar">
     <jar jarfile="${target}/${platform-jar-file}" basedir="${java-target}">
       <exclude name="**/core/**/*"/>
+      <exclude name="**/core/"/>
       <exclude name="**/core/"/>
     </jar>
   </target>

@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.deploy;
 
-import org.vertx.java.deploy.Verticle;
+import java.util.ServiceLoader;
+
+import org.vertx.java.deploy.impl.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface VerticleFactory {
+	
+  public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
+
+  void init(VerticleManager manager);
+  
+  String getLanguage();
+  
+  boolean isFactoryFor(String main);
 
   Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
 
