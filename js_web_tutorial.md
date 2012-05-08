@@ -441,6 +441,33 @@ Scaling up the web server part is trivial. Simply start up more instances of the
     
 (*Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances*.)
 
+### More complex web applications
+
+In this simple web application, there was no need to write any customer server side modules, but in more complex applications you might want to write your own server side services which can be used by clients (or by other server side code).
+
+Doing this with Vert.x is very straightforward. Here's an example of a trivial server side service which listens on the event bus for messages and sends back the current time to the caller:
+
+    load('vertx.js');
+    
+    vertx.eventBus.registerHandler("acme.timeService", function(message, replier) {
+        replier.reply({current_time: new Date().getTime()});        
+    });    
+    
+Save this in `time_service.js`, and add a line in your `app.js` to load it on startup.
+
+Then you can just call it from client side JavaScript, or other server side components:
+
+    eventBus.send("acme.timeService", null, function(reply) {
+        console.log("Time is " + reply.current_time);
+    });
+    
+### Packaging up your code as a Module
+
+You can package up your entire application, or just individual Verticles as modules, so they can be easily reused by other applications, or started on the command line more easily.
+
+For an explanation of how to do this, please see the modules manual.    
+    
+
 *Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.*
 
           

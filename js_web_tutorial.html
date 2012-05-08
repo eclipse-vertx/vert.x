@@ -385,6 +385,25 @@ see the manual).</p>
 vertx.deployVerticle('web-server', webServerConf, 32);
 </pre>
 <p>(<em>Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances</em>.)</p>
+<h3 id="more-complex-web-applications">More complex web applications</h3><br/>
+<p>In this simple web application, there was no need to write any customer server side modules, but in more complex applications you might want to write your own server side services which can be used by clients (or by other server side code).</p>
+<p>Doing this with Vert.x is very straightforward. Here's an example of a trivial server side service which listens on the event bus for messages and sends back the current time to the caller:</p>
+<pre class="prettyprint">load('vertx.js');
+
+vertx.eventBus.registerHandler("acme.timeService", function(message, replier) {
+    replier.reply({current_time: new Date().getTime()});        
+});
+</pre>
+<p>Save this in <code>time_service.js</code>, and add a line in your <code>app.js</code> to load it on startup.</p>
+<p>Then you can just call it from client side JavaScript, or other server side components:</p>
+<pre class="prettyprint">eventBus.send("acme.timeService", null, function(reply) {
+    console.log("Time is " + reply.current_time);
+});
+</pre>
+<h3 id="packaging-up-your-code-as-a-module">Packaging up your code as a Module</h3><br/>
+<p>You can package up your entire application, or just individual Verticles as modules, so they can be easily reused by other applications, or started on the command line more easily.</p>
+<p>For an explanation of how to do this, please see the modules manual.  <br/>
+</p>
 <p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
       </div>
     </div>
