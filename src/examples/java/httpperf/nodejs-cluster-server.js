@@ -1,7 +1,7 @@
 var cluster = require('cluster');
 var http = require('http');
-//var numCPUs = require('os').cpus().length;
-var numCPUs = 8;
+var fs = require('fs');
+var numCPUs = 6;
 
 if (cluster.isMaster) {
   console.log("Master starting");
@@ -17,6 +17,16 @@ if (cluster.isMaster) {
   console.log("Child starting");
   // Worker processes have a http server.
   http.Server(function(req, res) {
-    res.end();
+    //res.end();
+    
+   fs.readFile("foo.html", "binary", function(err, file) { 
+     if (err) {
+        console.error(err);
+     } else {   
+         res.writeHead(200, {"Content-Type": "text/html", "Content-Length": file.length});
+         res.write(file, "binary");
+         res.end();
+     }
+  });
   }).listen(8080);
 }

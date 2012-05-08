@@ -621,6 +621,7 @@ module Vertx
     # @param [Block] hndlr. The handler
     # @return [HttpServerResponse] self So multiple operations can be chained.
     def write_str(str, enc = "UTF-8", &hndlr)
+      puts "writing str: #{str}"
       @j_del.write(str, enc)
       self
     end
@@ -651,20 +652,14 @@ module Vertx
     # Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.
     # Once the response has ended, it cannot be used any more, and if keep alive is true the underlying connection will
     # be closed.
-    # @param [String,Buffer] data. Optional String or Buffer to write before ending the response
-    def end(data = nil)
-      if (data.is_a? String) || (data.is_a? Buffer)
-        @j_del.end(data)
-      else
-        @j_del.end
-      end
+    def end()
+      @j_del.end
     end
 
     # Close the underlying TCP connection
     def close
       @j_del.close
     end
-
 
   end
 
