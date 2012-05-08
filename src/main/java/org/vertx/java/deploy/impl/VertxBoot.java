@@ -39,195 +39,195 @@ import java.util.Set;
  * This class relies on the existence of a vertx.properties file
  * which contains a pointer to the resources which are to be
  * loaded onto the classpath, and the real main class.
- * 
+ *
  * @author pidster
  *
  */
 public class VertxBoot {
-	
-	private static final boolean DEBUG = Boolean.getBoolean("vertx.boot.debug");
 
-	public static void main(String... args) {
-		
-		if (DEBUG) {
-			System.out.println("vert.x starting with DEBUG=true");
-		}
+    private static final boolean DEBUG = Boolean.getBoolean("vertx.boot.debug");
 
-		URL[] classpath = createClasspath();
+    public static void main(String... args) {
 
-		if (DEBUG) {
-			for (URL url : classpath) {
-				System.out.format("url:%s %n", url);
-			}
-		}
+        if (DEBUG) {
+            System.out.println("vert.x starting with DEBUG=true");
+        }
 
-		startMain(classpath, args);
-	}
+        URL[] classpath = createClasspath();
 
-	private static URL[] createClasspath() {
-		
-		// The minimum we need is a system property telling us
-		// what our own install directory is
-		Path userDir = stringToPath(System.getProperty("user.dir"));
-		
-		// The minimum we need is a system property telling us
-		// what our own install directory is
-		Path vertx = stringToPath(System.getProperty("vertx.home"));
-		System.setProperty("vertx.home", vertx.toString());
+        if (DEBUG) {
+            for (URL url : classpath) {
+                System.out.format("url:%s %n", url);
+            }
+        }
 
-		// The conf directory is relative to 'vertx.home'
-		Path props = vertx.resolve("conf/vertx.properties");
-		if (!Files.isReadable(props)) {
-			throw new RuntimeException("conf/vertx.properties file missing or unreadable!");
-		}
-		
-		Properties vertxProps = new Properties();
-		
-		if (DEBUG) {
-			System.out.format("vertx.home: %s %n", vertx);
-		}
+        startMain(classpath, args);
+    }
 
-		Set<URL> found = new HashSet<URL>();
+    private static URL[] createClasspath() {
 
-		// Use Java 7 try-with-resources
-		try (InputStream is = Files.newInputStream(props, StandardOpenOption.READ)) {
-			vertxProps.load(is);
-			
-			// resolve variables
-			resolvePropertyVariables(vertxProps);
+        // The minimum we need is a system property telling us
+        // what our own install directory is
+        Path userDir = stringToPath(System.getProperty("user.dir"));
 
-			// add the loaded & translate properties to System
-			System.getProperties().putAll(vertxProps);
-			
-			// if there's no libs this will blow up fairly quickly
-			String loader = vertxProps.getProperty("vertx.libs");
-			String[] paths = loader.split(",");
-			
-			for (String url : paths) {
-				
-				if (DEBUG) {
-					System.out.format("url:%s %n", url);
-				}
+        // The minimum we need is a system property telling us
+        // what our own install directory is
+        Path vertx = stringToPath(System.getProperty("vertx.home"));
+        System.setProperty("vertx.home", vertx.toString());
 
-				// TODO check this works on Windows
-				if (url.startsWith(".")) {
-					url = stringToPath(url).toString(); // resolve against relative path
-				}
+        // The conf directory is relative to 'vertx.home'
+        String vertxConf = System.getProperty("vertx.conf", "conf/vertx.properties");
+        Path props = vertx.resolve(vertxConf);
+        if (!Files.isReadable(props)) {
+            throw new RuntimeException("vertx.properties file missing or unreadable!");
+        }
 
-				// TODO check this works on Windows
-				if (!url.startsWith(File.separator) && !url.matches("^[A-Z]\\:\\/.*")) {
-					url = resolve(userDir, url).toString(); // resolve against current dir
-				}
+        Properties vertxProps = new Properties();
 
-				if (url.indexOf('*') > -1) {
-					URLMatchingGlobbedPathVisitor visitor = new URLMatchingGlobbedPathVisitor(url);
-					Files.walkFileTree(vertx, visitor); // relative to vertx.home
-					found.addAll(visitor.getMatches());
-				}
-				else {
-					Path p = resolve(vertx, url);
-					if (Files.isReadable(p)) {
-						found.add(p.toUri().toURL());
-					}
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        if (DEBUG) {
+            System.out.format("vertx.home: %s %n", vertx);
+        }
 
-		return found.toArray(new URL[found.size()]);
-	}
+        Set<URL> found = new HashSet<URL>();
 
-	/**
-	 * @param vertxProps
-	 */
-	private static void resolvePropertyVariables(Properties properties) {
-		
-		Set<String> names = properties.stringPropertyNames();
-		for (String name : names) {
-			String modified = properties.getProperty(name);
-			String value = properties.getProperty(name);
+        // Use Java 7 try-with-resources
+        try (InputStream is = Files.newInputStream(props, StandardOpenOption.READ)) {
+            vertxProps.load(is);
 
-			int match = -1;
-			while ((match = value.indexOf("${", match)) > -1) {
+            // resolve variables
+            resolvePropertyVariables(vertxProps);
 
-				int end = value.indexOf("}", match + 1);
-				String variable = value.substring(match + 2, end);
+            // add the loaded & translate properties to System
+            System.getProperties().putAll(vertxProps);
 
-				match = end;
-				
-				if (System.getProperties().containsKey(variable)) {
-					modified = modified.replaceFirst("\\$\\{" + variable + "\\}", System.getProperty(variable));
-				}
-			}
+            // if there's no libs this will blow up fairly quickly
+            String loader = vertxProps.getProperty("vertx.libs");
+            String[] paths = loader.split(",");
 
-			properties.setProperty(name, modified);
-		}
-	}
+            for (String url : paths) {
 
-	private static Path resolve(Path base, String path) {
-		return base.resolve(path).toAbsolutePath().normalize();
-	}
+                if (DEBUG) {
+                    System.out.format("url:%s %n", url);
+                }
 
-	private static Path stringToPath(String first) {
-		return Paths.get(first).toAbsolutePath().normalize();
-	}
+                // TODO check this works on Windows
+                if (url.startsWith(".")) {
+                    url = stringToPath(url).toString(); // resolve against relative path
+                }
 
-	/**
-	 * @param found
-	 * @param sargs
-	 * @throws ClassNotFoundException
-	 * @throws NoSuchMethodException
-	 * @throws IllegalAccessException
-	 * @throws InvocationTargetException
-	 */
-	private static void startMain(URL[] resources, String[] sargs) {
-		
-		try {
-			URLClassLoader cl = new URLClassLoader(resources, null);
-			Class<?> c = cl.loadClass(System.getProperty("vertx.main"));
-			Class<?>[] argTypes = { String[].class };
+                // TODO check this works on Windows
+                if (!url.startsWith(File.separator) && !url.matches("^[A-Z]\\:\\/.*")) {
+                    url = resolve(userDir, url).toString(); // resolve against current dir
+                }
 
-			Method method = c.getMethod("main", argTypes);
-			method.invoke(null, (Object) sargs);
+                if (url.indexOf('*') > -1) {
+                    URLMatchingGlobbedPathVisitor visitor = new URLMatchingGlobbedPathVisitor(url);
+                    Files.walkFileTree(vertx, visitor); // relative to vertx.home
+                    found.addAll(visitor.getMatches());
+                }
+                else {
+                    Path p = resolve(vertx, url);
+                    if (Files.isReadable(p)) {
+                        found.add(p.toUri().toURL());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-		} catch (ClassNotFoundException | NoSuchMethodException
-				| SecurityException | IllegalAccessException
-				| IllegalArgumentException | InvocationTargetException e) {
+        return found.toArray(new URL[found.size()]);
+    }
 
-			throw new RuntimeException(e);
-		}
-	}
+    /**
+     * @param vertxProps
+     */
+    private static void resolvePropertyVariables(Properties properties) {
 
-	private static class URLMatchingGlobbedPathVisitor extends SimpleFileVisitor<Path> {
+        Set<String> names = properties.stringPropertyNames();
+        for (String name : names) {
+            String modified = properties.getProperty(name);
+            String value = properties.getProperty(name);
 
-		private final Set<URL> matches;
+            int match = -1;
+            while ((match = value.indexOf("${", match)) > -1) {
 
-		private final PathMatcher matcher;
-		
-		public URLMatchingGlobbedPathVisitor(String glob) {
-			this.matches = new HashSet<URL>();
-			this.matcher = FileSystems.getDefault()
-					.getPathMatcher(String.format("glob:%s", glob));
-		}
+                int end = value.indexOf("}", match + 1);
+                String variable = value.substring(match + 2, end);
 
-		@Override
-		public FileVisitResult visitFile(Path file,
-				BasicFileAttributes attrs) throws IOException {
+                match = end;
 
-			if (matcher.matches(file) && Files.isReadable(file)) {
-				if (DEBUG) {
-					System.out.format("path: %s %n", file);
-				}
-				matches.add(file.toUri().toURL());
-			}
+                if (System.getProperties().containsKey(variable)) {
+                    modified = modified.replaceFirst("\\$\\{" + variable + "\\}", System.getProperty(variable));
+                }
+            }
 
-			return FileVisitResult.CONTINUE;
-		}
-		
-		public Set<URL> getMatches() {
-			return matches;
-		}
-	}
+            properties.setProperty(name, modified);
+        }
+    }
 
+    private static Path resolve(Path base, String path) {
+        return base.resolve(path).toAbsolutePath().normalize();
+    }
+
+    private static Path stringToPath(String first) {
+        return Paths.get(first).toAbsolutePath().normalize();
+    }
+
+    /**
+     * @param found
+     * @param sargs
+     * @throws ClassNotFoundException
+     * @throws NoSuchMethodException
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     */
+    private static void startMain(URL[] resources, String[] sargs) {
+
+        try {
+            URLClassLoader cl = new URLClassLoader(resources, null);
+            Class<?> c = cl.loadClass(System.getProperty("vertx.main"));
+            Class<?>[] argTypes = { String[].class };
+
+            Method method = c.getMethod("main", argTypes);
+            method.invoke(null, (Object) sargs);
+
+        } catch (ClassNotFoundException | NoSuchMethodException
+                | SecurityException | IllegalAccessException
+                | IllegalArgumentException | InvocationTargetException e) {
+
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class URLMatchingGlobbedPathVisitor extends SimpleFileVisitor<Path> {
+
+        private final Set<URL> matches;
+
+        private final PathMatcher matcher;
+
+        public URLMatchingGlobbedPathVisitor(String glob) {
+            this.matches = new HashSet<URL>();
+            this.matcher = FileSystems.getDefault()
+                    .getPathMatcher(String.format("glob:%s", glob));
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file,
+                BasicFileAttributes attrs) throws IOException {
+
+            if (matcher.matches(file) && Files.isReadable(file)) {
+                if (DEBUG) {
+                    System.out.format("path: %s %n", file);
+                }
+                matches.add(file.toUri().toURL());
+            }
+
+            return FileVisitResult.CONTINUE;
+        }
+
+        public Set<URL> getMatches() {
+            return matches;
+        }
+    }
 }
