@@ -239,16 +239,26 @@ end
 <p>In this case, the reply contains a JSON message with a field <code>results</code> which contains a JSON array containing the albums.</p>
 <p>Once we get the albums we give them to knockout.js to render on the view.</p>
 <h2 id="step-8-handling-login">Step 8. Handling Login</h2><br/>
-<p>In order to actually send an order, you need to be logged in so we know who has placed the order.</p>
-<p>The bridge functionality in the <code>web-server</code> module automatically handles logins for you.</p>
-<p>Basically, you send a login message to the address <code>vertx.bridge.login</code> with fields <code>username</code> and <code>password</code>, and if successful it replies with a message containing a unique session id.</p>
-<p>This session id should then be sent in any message that is sent from the client to the server, that requires authentication (e.g. persisting an order).</p>
-<p>The bridge delegates the actual login to an instance of the <code>auth-mgr</code> component. So we'll also need to start an instance of that.</p>
-<p>Edit <code>App.groovy</code> and add the following, just after where the Mongo Persistor is deployed.</p>
+<p>In order to actually send an order, you need to be logged in.</p>
+<p>To handle login we will start an instance of the out-of-the-box <code>auth-mgr</code> component. This is a simple busmod which handles simple user/password authentication and authorisation. Users credentials are stored in the MongoDB database. Fore more sophisticated auth, you can easily write your own auth busmod and the bridge can talk to that instead.</p>
+<p>To login, the client sends a message on the event bus to the address <code>vertx.basicauthmanager.login</code> with fields <code>username</code> and <code>credentials</code>, and if successful it replies with a message containing a unique session id, in the <code>sessionID</code> field.</p>
+<p>This session id should then be sent in any subsequent message from the client to the server that requires authentication (e.g. persisting an order).</p>
+<p>When the bridge receives a message with a <code>sessionID</code> field in it, it will contact the auth manager to see if the session is authorised for that resource.</p>
+<p>Let's add a line to start the <code>auth-mgr</code>:</p>
+<p>Edit <code>app.rb</code> and add the following, just after where the Mongo Persistor is deployed.</p>
 <pre class="prettyprint"># Deploy an auth manager to handle the authentication
 
 Vertx.deploy_verticle('auth-mgr')
 </pre>
+<p>We'll also need to tell the bridge to let through any login messages:</p>
+<pre class="prettyprint">'permitted' =&gt; [
+  # Allow calls to login
+  {
+    'address' =&gt; 'vertx.basicauthmanager.login'
+  },   
+  ...
+</pre>
+<p>Save, and restart the app.</p>
 <p>You can test login by attempting to log-in with username <code>tim</code> and password <code>password</code>. A message should appear on the left telling you you are logged in!.</p>
 <p><img alt="Client Application" src="tutorial_3.png"/></p>
 <p>Let's take a look at the client side code which does the login.</p>

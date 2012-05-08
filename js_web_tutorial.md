@@ -250,22 +250,34 @@ Once we get the albums we give them to knockout.js to render on the view.
 
 ## Step 8. Handling Login
 
-In order to actually send an order, you need to be logged in so we know who has placed the order.
+In order to actually send an order, you need to be logged in.
 
-The bridge functionality in the `web-server` module automatically handles logins for you.
+To handle login we will start an instance of the out-of-the-box `auth-mgr` component. This is a simple busmod which handles simple user/password authentication and authorisation. Users credentials are stored in the MongoDB database. Fore more sophisticated auth, you can easily write your own auth busmod and the bridge can talk to that instead.
 
-Basically, you send a login message to the address `vertx.bridge.login` with fields `username` and `password`, and if successful it replies with a message containing a unique session id.
+To login, the client sends a message on the event bus to the address `vertx.basicauthmanager.login` with fields `username` and `credentials`, and if successful it replies with a message containing a unique session id, in the `sessionID` field.
 
-This session id should then be sent in any message that is sent from the client to the server, that requires authentication (e.g. persisting an order).
+This session id should then be sent in any subsequent message from the client to the server that requires authentication (e.g. persisting an order).
 
-The bridge delegates the actual login to an instance of the `auth-mgr` component. So we'll also need to start an instance of that.
+When the bridge receives a message with a `sessionID` field in it, it will contact the auth manager to see if the session is authorised for that resource.
 
-Edit `App.groovy` and add the following, just after where the Mongo Persistor is deployed.
+Let's add a line to start the `auth-mgr`:
+
+Edit `app.js` and add the following, just after where the Mongo Persistor is deployed.
 
     // Deploy an auth manager to handle the authentication
 
     vertx.deployVerticle('auth-mgr');
+    
+We'll also need to tell the bridge to let through any login messages:
+
+    permitted: [
+      // Allow calls to login and authorise
+      {
+        address: 'vertx.basicauthmanager.login'
+      },
+      ...
        
+Save, and restart the app.
 
 You can test login by attempting to log-in with username `tim` and password `password`. A message should appear on the left telling you you are logged in!.
 

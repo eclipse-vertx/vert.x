@@ -271,8 +271,8 @@ mods/my-web-app/web-root/index.html
     "bridge": &lt;bridge&gt;,
     "permitted": &lt;permitted&gt;,
     "sjs_config": &lt;sjs_config&gt;,
-    "auth_address": &lt;auth_address&gt;,
-    "bridge_address": &lt;bridge_address&gt;        
+    "auth_timeout": &lt;auth_timeout&gt;,
+    "auth_address": &lt;auth_address&gt;
 }
 </pre>
 <ul>
@@ -287,8 +287,8 @@ mods/my-web-app/web-root/index.html
 <li><code>bridge</code>. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is <code>false</code>.</li>
 <li><code>permitted</code>. This is an array of JSON objects representing the permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
 <li><code>sjs_config</code>. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if <code>bridge</code> is <code>true</code>. Default to <code>{"prefix": "/eventbus"}</code>.</li>
-<li><code>auth_address</code>. The bridge can also handle login for any client side JS applications that use the event bus. In order to do the actual login, the bridge interacts with an instance of the <code>auth-mgr</code> busmod. This field determines the address at which to communicate with the <code>auth-mgr</code>. Only used if <code>bridge</code> is <code>true</code>. Default value is <code>vertx.basicauthmanager</code>. </li>
-<li><code>bridge_address</code>. If the bridge is being used, this field determines the address root at which the bridge will listen for login and logout messages from the client. It will listen for login messages at the address given by <code>&lt;bridge_address&gt; + '.login'</code> and it will listen for logout messages at the address given by <code>&lt;bridge_address&gt; + '.logout'</code>. The default value is <code>vertx.bridge</code>.</li>
+<li><code>auth_timeout</code>. The bridge can also cache authorisations. This determines how long the bridge will cache one for. Default value is five minutes.</li>
+<li><code>auth_address</code>. The bridge can also call an authorisation manager to do authorisation. This is the address to which it will send authorisation messages. Default value is <code>vertx.basicauthmanager.authorise</code>. </li>
 </ul>
 <h5 id="examples">Examples</h5><br/>
 <p>Here are some example:</p>
