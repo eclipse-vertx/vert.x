@@ -117,9 +117,9 @@ abstract class SockJSServer {
    * @param bridgeAddress The address the bridge will listen at for login and lougout.
    */
   void bridge(Map sjsConfig, List<Map<String, Object>> permitted = [[:]],
-              String authAddress = null, String bridgeAddress = null) {
+              long authTimeout = 5 * 60 * 1000, String authAddress = null) {
     jServer.bridge(new JsonObject(sjsConfig), new JsonArray(permitted),
-                   authAddress, bridgeAddress)
+                   authTimeout, authAddress)
   }
 
 }

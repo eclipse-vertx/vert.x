@@ -69,26 +69,23 @@ public interface SockJSServer {
   void bridge(JsonObject sjsConfig, JsonArray permitted);
 
   /**
-   * Install an app which bridges the SockJS server to the event bus and which handles
-   * client side login
+   * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param authAddress The address of an authentication/authorisation busmod
+   * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String authAddress);
+              long authTimeout);
 
   /**
-   * Install an app which bridges the SockJS server to the event bus and which handles
-   * client side login
+   * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param authAddress The address of an authentication/authorisation busmod
-   * @param bridgeAddress The address the bridge will listen at for login and lougout.
+   * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
+   * @param authAddress Address of auth manager. Defaults to 'vertx.basicauthmanager.authorise'
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String authAddress, String bridgeAddress);
-
+              long authTimeout, String authAddress);
 
 }
 

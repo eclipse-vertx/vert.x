@@ -182,13 +182,13 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray permitted,
-                        String authAddress) {
-    new EventBusBridge(vertx, this, sjsConfig, permitted, authAddress);
+                     long authTimeout) {
+    new EventBusBridge(vertx, this, sjsConfig, permitted, authTimeout);
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray permitted,
-                        String authAddress, String bridgeAddress) {
-    new EventBusBridge(vertx, this, sjsConfig, permitted, authAddress, bridgeAddress);
+                     long authTimeout, String authAddress) {
+    new EventBusBridge(vertx, this, sjsConfig, permitted, authTimeout, authAddress);
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
