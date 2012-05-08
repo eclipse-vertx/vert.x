@@ -251,7 +251,13 @@ class FileSystem {
    * Do not user this method to read very large files or you risk running out of available RAM.
    */
   void readFile(String path, Closure handler) {
-    jFS.readFile(path, handler as AsyncResultHandler)
+    jFS.readFile(path, { ar ->
+      if (ar.succeeded()) {
+        handler.call(new AsyncResult<Buffer>(new Buffer(ar.result)))
+      } else {
+        handler.call(ar)
+      }
+    } as AsyncResultHandler)
   }
 
   /**

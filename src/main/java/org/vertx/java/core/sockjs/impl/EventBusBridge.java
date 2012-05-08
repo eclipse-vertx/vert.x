@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
@@ -193,7 +194,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     final String sessionID = jsonObject.getString("sessionID");
     if (sessionID != null) {
-      authorise(jsonObject, sessionID, new Handler<AsyncResult<Boolean>>() {
+      authorise(jsonObject, sessionID, new AsyncResultHandler<Boolean>() {
         public void handle(AsyncResult<Boolean> res) {
           if (res.succeeded()) {
             if (res.result) {
@@ -232,7 +233,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void authorise(final JsonObject message, final String sessionID,
-                         final Handler<AsyncResult<Boolean>> handler) {
+                         final AsyncResultHandler<Boolean> handler) {
     // If session id is in local cache we'll consider them authorised
     if (authCache.containsKey(sessionID)) {
       handler.handle(new AsyncResult<>(true));
