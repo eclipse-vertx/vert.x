@@ -1383,9 +1383,11 @@ Also, individual HTTP response trailers can be written using the `put_trailer` m
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.
+Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.
 
-To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
+Using `send_file` is usually more efficient for large files, but may be slower than using `readFile` to manually read the file as a buffer and write it directly to the response.
+
+To do this use the `send_file` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
     server = Vertx::HttpServer.new
 
@@ -1399,7 +1401,7 @@ To do this use the `sendfile` function on the HTTP response. Here's a simple HTT
       req.response.send_file('web/' + file)
     end.listen(8080, 'localhost')
 
-*Note: If you use `sendfile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
+*Note: If you use `send_file` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
 **If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
 

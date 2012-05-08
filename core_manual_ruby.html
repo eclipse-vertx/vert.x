@@ -1281,8 +1281,9 @@ request.response.write_buffer(myBuffer)
 </pre>
 <h3 id="serving-files-directly-disk">Serving files directly disk</h3><br/>
 <p>If you were writing a web server, one way to serve a file from disk would be to open it as an <code>AsyncFile</code> and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.</p>
-<p>Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all, and as such maybe highly efficient.</p>
-<p>To do this use the <code>sendfile</code> function on the HTTP response. Here's a simple HTTP web server that serves static files from the local <code>web</code> directory:</p>
+<p>Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.</p>
+<p>Using <code>send_file</code> is usually more efficient for large files, but may be slower than using <code>readFile</code> to manually read the file as a buffer and write it directly to the response.</p>
+<p>To do this use the <code>send_file</code> function on the HTTP response. Here's a simple HTTP web server that serves static files from the local <code>web</code> directory:</p>
 <pre class="prettyprint">server = Vertx::HttpServer.new
 
 server.request_handler do |req|
@@ -1295,7 +1296,7 @@ server.request_handler do |req|
   req.response.send_file('web/' + file)
 end.listen(8080, 'localhost')
 </pre>
-<p><em>Note: If you use <code>sendfile</code> while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
+<p><em>Note: If you use <code>send_file</code> while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
 <p><strong>If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.</strong></p>
 <h3 id="pumping-responses">Pumping Responses</h3><br/>
 <p>Since the HTTP Response implements <code>WriteStream</code> you can pump to it from any <code>ReadStream</code>, e.g. an <code>AsyncFile</code>, <code>NetSocket</code> or <code>HttpServerRequest</code>.</p>
