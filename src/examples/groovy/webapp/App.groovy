@@ -36,6 +36,10 @@ def webServerConf = [
   // This defines which messages from the client we will let through
   // to the server side
   permitted: [
+    // Allow calls to login
+    [
+      address: 'vertx.basicauthmanager.login'
+    ],
     // Allow calls to get static album data from the persistor
     [
       address : 'vertx.mongopersistor',

@@ -31,12 +31,12 @@ if (!vertx.createSockJSServer) {
       installApp: function(config, handler) {
         jserver.installApp(new org.vertx.java.core.json.JsonObject(JSON.stringify(config)), handler);
       },
-      bridge: function(config, permitted, authAddress, bridgeAddress) {
+      bridge: function(config, permitted, authTimeout, authAddress) {
+        if (typeof authTimeout === 'undefined') {
+          authTimeout = 5 * 50 * 1000;
+        }
         if (typeof authAddress === 'undefined') {
           authAddress = null;
-        }
-        if (typeof bridgeAddress === 'undefined') {
-          bridgeAddress = null;
         }
         var json_arr = new org.vertx.java.core.json.JsonArray();
         for (var i = 0; i < permitted.length; i++) {
@@ -45,7 +45,7 @@ if (!vertx.createSockJSServer) {
           var jJson = new org.vertx.java.core.json.JsonObject(json_str);
           json_arr.add(jJson);
         }
-        jserver.bridge(new org.vertx.java.core.json.JsonObject(JSON.stringify(config)), json_arr, authAddress, bridgeAddress);
+        jserver.bridge(new org.vertx.java.core.json.JsonObject(JSON.stringify(config)), json_arr, authTimeout, authAddress);
       }
     }
     return server;
