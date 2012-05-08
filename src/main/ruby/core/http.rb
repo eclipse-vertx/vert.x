@@ -652,8 +652,13 @@ module Vertx
     # Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.
     # Once the response has ended, it cannot be used any more, and if keep alive is true the underlying connection will
     # be closed.
-    def end()
-      @j_del.end
+    # @param [String,Buffer] data. Optional String or Buffer to write before ending the response
+    def end(data = nil)
+      if (data.is_a? String) || (data.is_a? Buffer)
+        @j_del.end(data)
+      else
+        @j_del.end
+      end
     end
 
     # Close the underlying TCP connection
