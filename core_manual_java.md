@@ -1470,7 +1470,7 @@ Like headers, individual HTTP response trailers can also be written using the `p
     request.response.putTrailer("Cat-Food", "Whiskas").putTrailer("Eye-Wear", "Monocle");
     
 
-### Serving files directly disk
+### Serving files directly from disk
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
@@ -2285,6 +2285,30 @@ To let all messages through you can specify an array with a single empty JSON ob
     ...
      
 **Be very careful!**
+
+## Messages that require authorisation
+
+The bridge can also refuse to let certain messages through if the user is not authorised.
+
+To enable this you need to make sure an instance of the `auth-mgr` busmod is available on the event bus. (Please see the modules manual for a full description of it).
+
+To tell the bridge that certain messages require authorisation before being passed, you add the field `requires_auth` with the value of `true` in the match. The default value is `false`. For example, the following match:
+
+    {
+      address : 'demo.persistor',
+      match : {
+        action : 'find',
+        collection : 'albums'
+      },
+      requires_auth: true
+    }
+    
+This tells the bridge that any messages to save orders in the `orders` collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    
+    
+When a message is sent from the client that requires authorisation, the client must pass a field `sessionID` with the message that contains the unique session ID that they obtained when they logged in with the `auth-mgr`.
+
+When the bridge receives such a message, it will send a message to the `auth-mgr` to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)
+
     
 # File System
 

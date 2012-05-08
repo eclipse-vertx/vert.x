@@ -188,7 +188,7 @@
 <li><a href="#chunked-http-responses-and-trailers">Chunked HTTP Responses and Trailers</a></li>
 </ul>
 </li>
-<li><a href="#serving-files-directly-disk">Serving files directly disk</a></li>
+<li><a href="#serving-files-directly-from-disk">Serving files directly from disk</a></li>
 <li><a href="#pumping-responses">Pumping Responses</a></li>
 </ul>
 </li>
@@ -246,7 +246,7 @@
 <li><a href="#setting-up-the-bridge">Setting up the Bridge</a></li>
 <li><a href="#using-the-event-bus-from-client-side-javascript">Using the Event Bus from client side JavaScript</a></li>
 <li><a href="#securing-the-bridge">Securing the Bridge</a></li>
-<li><a href="#handling-authentication-with-the-bridge">Handling authentication with the Bridge</a></li>
+<li><a href="#messages-that-require-authorisation">Messages that require authorisation</a></li>
 </ul>
 </li>
 <li><a href="#file-system">File System</a><ul>
@@ -1323,7 +1323,7 @@ request.response.write(myBuffer);
 <p>You can also put multiple trailers in one go:</p>
 <pre class="prettyprint">request.response.putAllTrailers({'Some-Trailer': 'foo', 'Other-Trailer': 'bar'});
 </pre>
-<h3 id="serving-files-directly-disk">Serving files directly disk</h3><br/>
+<h3 id="serving-files-directly-from-disk">Serving files directly from disk</h3><br/>
 <p>If you were writing a web server, one way to serve a file from disk would be to open it as an <code>AsyncFile</code> and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.</p>
 <p>Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.</p>
 <p>Using <code>sendfile</code> is usually more efficient for large files, but may be slower than using <code>readFile</code> to manually read the file as a buffer and write it directly to the response.</p>
@@ -1939,12 +1939,10 @@ sockJSServer.bridge({prefix : '/eventbus'}, [{}]);
 ...
 </pre>
 <p><strong>Be very careful!</strong></p>
-<h2 id="handling-authentication-with-the-bridge">Handling authentication with the Bridge</h2><br/>
-<p>The bridge can also handle authentication for you, and you can configure it to only let certain messages through when the user has been authenticated.</p>
-<p>To enable authentication you need to make sure an instance of the <code>auth-mgr</code> busmod is available on the event bus. Please see the modules manual for a full description of it.</p>
-<p>For login, the client should send a JSON message with the fields <code>username</code> containing the user name, and the field <code>password</code> containing the password. The message should be sent to the address <code>vertx.bridge.login</code>. The root address <code>vertx.bridge</code> can be changed by the specifying the <code>bridgeAddress</code> parameter to the <code>bridge</code> method.</p>
-<p>If the login is successful the client will receive a reply with the field <code>status</code> set to <code>ok</code>, and the field <code>sessionID</code> containing a unique session id. This session id should be sent in any subsequent messages (e.g. to persist an order) that require authentication to be allowed through.</p>
-<p>To tell the bridge that certain messages require authentication before being passed, you add the field <code>requires_auth</code> with the value of <code>true</code> in the match. The default value is <code>false</code>. For example, the following match:</p>
+<h2 id="messages-that-require-authorisation">Messages that require authorisation</h2><br/>
+<p>The bridge can also refuse to let certain messages through if the user is not authorised.</p>
+<p>To enable this you need to make sure an instance of the <code>auth-mgr</code> busmod is available on the event bus. (Please see the modules manual for a full description of it).</p>
+<p>To tell the bridge that certain messages require authorisation before being passed, you add the field <code>requires_auth</code> with the value of <code>true</code> in the match. The default value is <code>false</code>. For example, the following match:</p>
 <pre class="prettyprint">{
   address : 'demo.persistor',
   match : {
@@ -1954,8 +1952,10 @@ sockJSServer.bridge({prefix : '/eventbus'}, [{}]);
   requires_auth: true
 }
 </pre>
-<p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.</p>
-<p>To logout, the client should send a message with a field <code>sessionID</code> containing the sessionID to the address <code>vertx.bridge.logout</code>. This can also be overridden by specifying the <code>bridgeAddress</code> in the call to <code>bridge</code>.</p>
+<p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.  <br/>
+</p>
+<p>When a message is sent from the client that requires authorisation, the client must pass a field <code>sessionID</code> with the message that contains the unique session ID that they obtained when they logged in with the <code>auth-mgr</code>.</p>
+<p>When the bridge receives such a message, it will send a message to the <code>auth-mgr</code> to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)</p>
 <h1 id="file-system">File System</h1><br/>
 <p>Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
 The first argument passed into the callback is an exception, if an error occurred. This will be <code>null</code> if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.</p>

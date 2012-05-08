@@ -1279,7 +1279,7 @@ Like headers, individual HTTP response trailers can also be written using the `p
     request.response.putTrailer("Cat-Food", "Whiskas").putTrailer("Eye-Wear", "Monocle")
 
 
-### Serving files directly disk
+### Serving files directly from disk
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
@@ -2008,27 +2008,24 @@ To let all messages through you can specify a list with a single empty map which
 
 **Be very careful!**
 
-## Handling authentication with the Bridge
+## Messages that require authorisation
 
-The bridge can also handle authentication for you, and you can configure it to only let certain messages through when the user has been authenticated.
+The bridge can also refuse to let certain messages through if the user is not authorised.
 
-To enable authentication you need to make sure an instance of the `auth-mgr` busmod is available on the event bus. Please see the modules manual for a full description of it.
+To enable this you need to make sure an instance of the `auth-mgr` busmod is available on the event bus. (Please see the modules manual for a full description of it).
 
-For login, the client should send a JSON message with the fields `username` containing the user name, and the field `password` containing the password. The message should be sent to the address `vertx.bridge.login`. The root address `vertx.bridge` can be changed by the specifying the `bridgeAddress` parameter to the `bridge` method.
-
-If the login is successful the client will receive a reply with the field `status` set to `ok`, and the field `sessionID` containing a unique session id. This session id should be sent in any subsequent messages (e.g. to persist an order) that require authentication to be allowed through.
-
-To tell the bridge that certain messages require authentication before being passed, you add the field `requires_auth` with the value of `true` in the match. The default value is `false`. For example:
+To tell the bridge that certain messages require authorisation before being passed, you add the field `requires_auth` with the value of `true` in the match. The default value is `false`. For example, the following match:
 
     permitted << ["address": "demo.persistor",
                   "match": [ "action": "save",
                              "collection": "orders"],
                   "requires_auth": true]
+    
+This tells the bridge that any messages to save orders in the `orders` collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    
+    
+When a message is sent from the client that requires authorisation, the client must pass a field `sessionID` with the message that contains the unique session ID that they obtained when they logged in with the `auth-mgr`.
 
-This tells the bridge that any messages to save orders in the `orders` collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.
-
-To logout, the client should send a message with a field `sessionID` containing the sessionID to the address `vertx.bridge.logout`. This can also be overridden by specifying the `bridgeAddress` in the call to `bridge`.
-
+When the bridge receives such a message, it will send a message to the `auth-mgr` to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)
 
 # File System
 
