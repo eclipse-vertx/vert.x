@@ -74,7 +74,11 @@
 <li><a href="#what-is-a-module-mod">What is a Module (mod) ?</a><ul>
 <li><a href="#modules-location">Modules location</a></li>
 <li><a href="#module-directory-structure">Module directory structure</a><ul>
-<li><a href="#module-descriptor">Module descriptor</a></li>
+<li><a href="#module-descriptor">Module descriptor</a><ul>
+<li><a href="#worker-modules">Worker modules</a></li>
+<li><a href="#preserving-working-directory">Preserving working directory</a></li>
+</ul>
+</li>
 <li><a href="#module-path">Module path</a></li>
 </ul>
 </li>
@@ -82,16 +86,12 @@
 <li><a href="#running-a-module-programmatically">Running a module programmatically</a></li>
 <li><a href="#module-working-directory">Module working directory</a></li>
 <li><a href="#creating-and-installing-your-own-module">Creating and installing your own module</a></li>
-</ul>
-</li>
-<li><a href="#what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</a><ul>
+<li><a href="#what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</a></li>
 <li><a href="#configuration">Configuration</a></li>
-<li><a href="#addresses">Addresses</a></li>
-<li><a href="#clearing-up-handlers">Clearing Up Handlers</a></li>
 </ul>
 </li>
 <li><a href="#out-of-the-box-busmods">Out of the box busmods</a><ul>
-<li><a href="#instantiating-out-of-the-box-busmods">Instantiating out-of-the-box busmods</a></li>
+<li><a href="#instantiating-out-of-the-box-modules">Instantiating out-of-the-box modules</a></li>
 <li><a href="#web-server">Web Server</a><ul>
 <li><a href="#name">Name</a></li>
 <li><a href="#configuration_1">Configuration</a><ul>
@@ -159,7 +159,7 @@
 <h1 id="modules">Modules</h1><br/>
 <h2 id="what-is-a-module-mod">What is a Module (mod) ?</h2><br/>
 <p>Vert.x allows you to package up your applications or re-usable functionality into modules which can then be referenced by other applications or modules.</p>
-<p>For example, vert.x ships with several out of the box modules including a mailer, a MongoDB persistor and an authentication manager. You can also easily create your own modules.</p>
+<p>For example, vert.x ships with several out of the box modules including a web server, a mailer and a MongoDB persistor. You can also easily create your own modules.</p>
 <h3 id="modules-location">Modules location</h3><br/>
 <p>Modules, by default, live in the <code>mods</code> directory in the vert.x installation directory. Vert.x comes with several modules pre-installed and they reside here.</p>
 <p>Vert.x always first searches for modules in the <code>mods</code> directory of the installation followed by the directory given by the environment variable <code>VERTX_MODS</code>, if specified.</p>
@@ -179,7 +179,13 @@ mods/widget#v1.1
 }
 </pre>
 <p>At minimum <code>mod.json</code> must contain a field <code>main</code> which specifies the main verticle to start the module. Main would be something like <code>myscript.groovy</code>, <code>app.rb</code>, <code>foo.js</code> or <code>org.acme.MyApp</code>. (See the chapter on "running vert.x" in the main manual for a description of what a main is.)</p>
+<h5 id="worker-modules">Worker modules</h5><br/>
 <p>If your main verticle is a worker verticle you must also specify the <code>worker</code> field with value <code>true</code>, otherwise it will be assumed it is not a worker.</p>
+<h5 id="preserving-working-directory">Preserving working directory</h5><br/>
+<p>By default when you're module is executing it will see its working directory as the module directory when using the Vert.x API. This is useful if you want to package up an application which contains its own static resources into a module.</p>
+<p>However in some cases, you don't want this behaviour, you want the module to see its working directory as the working directory of whoever started the module.</p>
+<p>An example of this would be the <code>web-server</code> module. With the web server, you use it to serve your own static files which exist either outside of a module or in your own module, they do not exist inside the <code>web-server</code> module itself.</p>
+<p>If you want to preserve current working directory, set the field <code>preserve-cwd</code> to <code>true</code> in <code>mod.json</code>. The default value is <code>false</code>.</p>
 <h4 id="module-path">Module path</h4><br/>
 <p>Any scripts or classes you place in the module directory will be available to the module (placed on the module path). If you have any jar dependencies you can also place these in a directory called <code>lib</code> and these will be added to the module path.</p>
 <p>Here's an example JS module:</p>
@@ -215,34 +221,24 @@ mods/my-web-app/web-root/index.html
 <pre class="prettyprint">req.response.sendFile('web-root/index.html');
 </pre>
 <p>In the above case the web server expects the working directory to be the module directory.</p>
-<p>To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :)  <br/>
+<p>To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :) </p>
+<p>If you don't want this behaviour you can set the field <code>preserve-cwd</code> to <code>true</code> in <code>mod.json</code>. See above for a description of this field. <br/>
 </p>
 <h3 id="creating-and-installing-your-own-module">Creating and installing your own module</h3><br/>
 <p>Creating your own module is simple, simply create your vert.x application as normal, then put it all in a directory whose name is the module name, and provide a <code>mod.json</code> file as described above.</p>
 <p>Then copy the entire directory to the module root directory (i.e. the <code>mods</code> directory in the install or your own module root given by <code>VERTX_MODS</code>)</p>
-<h2 id="what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</h2><br/>
+<h3 id="what-is-a-bus-module-busmod">What is a Bus Module (busmod) ?</h3><br/>
 <p>A <em>busmod</em> is a specific type of module that communicates on the event bus with over verticles by sending JSON messages.</p>
 <p>Since it communicates only with JSON messages then the busmod is instantly usable by other verticles irrespective of which language they are written in, since all the supported languages allow sending and receiving JSON messages from the event bus. </p>
 <p>JSON is the <em>lingua franca</em> of vert.x</p>
 <p>You don't have to write your application modules as busmods but it's highly recommended you do since it will make them easily and consistently usable from other verticles.</p>
-<p>There are a few more conventions that should be followed when writing busmods:</p>
 <h3 id="configuration">Configuration</h3><br/>
-<p>Configuration for a busmod (if any) should be specified using a JSON configuration file when deploying from the command line using <code>vertx run</code> or <code>vertx deploy</code> or passed in when deploying a busmod programmatically.</p>
+<p>Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using <code>vertx run</code> or <code>vertx deploy</code> or passed in when deploying a busmod programmatically.</p>
 <p>Applying configuration this way allows it to be easily and consistently configured irrespective of the language.</p>
-<h3 id="addresses">Addresses</h3><br/>
-<p>Each busmod will register one or more handlers at specific addresses so it can receive messages on the event bus. As a convention, the main address should be passed to the busmod in the JSON configuration.</p>
-<p>If a busmod provides more than one function it often makes sense for it to register more than one handler. If it does so, a good convention for handler names is to use the main address as the root and create sub addresses from there, separated by dot <code>.</code>. For example, the <code>WorkQueue</code> busmod registers handlers at the following addresses, assuming the main address is <code>test.workQueue</code></p>
-<ul>
-<li><code>test.workQueue</code>. Main handler registered at this address. Messages sent to this address are added to the queue</li>
-<li>`test.workQueue.register . Messages sent to this address are requests to register a processor with the queue.</li>
-<li>`test.workQueue.unregister . Messages sent to this address are requests to unregister a processor with the queue.</li>
-</ul>
-<h3 id="clearing-up-handlers">Clearing Up Handlers</h3><br/>
-<p>Remember to unregister any handlers in the cleanup function of the verticle.</p>
 <h2 id="out-of-the-box-busmods">Out of the box busmods</h2><br/>
-<p>The vert.x distribution contains several out-of-the-box budmods that you can use in your applications. These busmods are designed to handle common things that you might want to do in applications.</p>
-<h4 id="instantiating-out-of-the-box-busmods">Instantiating out-of-the-box busmods</h4><br/>
-<p>You can instantiate any out of the box busmo from the command line using <code>vertx run</code> or <code>vertx deploy</code> like any other verticle, i.e.</p>
+<p>The vert.x distribution contains several out-of-the-box modules that you can use in your applications. These modules are designed to handle common things that you might want to do in applications.</p>
+<h4 id="instantiating-out-of-the-box-modules">Instantiating out-of-the-box modules</h4><br/>
+<p>You can instantiate any out of the box module from the command line using <code>vertx run</code> or <code>vertx deploy</code> like any other verticle, i.e.</p>
 <pre class="prettyprint">vertx run &lt;bus_mode_name&gt; -conf &lt;config_file&gt;
 </pre>
 <p>For example:</p>
@@ -254,7 +250,6 @@ mods/my-web-app/web-root/index.html
 <p>For example:</p>
 <pre class="prettyprint">vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});
 </pre>
-<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p>
 <h3 id="web-server">Web Server</h3><br/>
 <p>This is a simple web server which efficiently serves files from the file system.</p>
 <p>It can also be configured to act as an event bus bridge - bridging the server side event bus to client side JavaScript.</p>
@@ -320,22 +315,6 @@ mods/my-web-app/web-root/index.html
    "permitted": [{"address":"myservice"}]       
 }
 </pre>
-<p>=======</p>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages</p>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
 <h3 id="mongodb-persistor">MongoDB Persistor</h3><br/>
 <p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.</p>
 <p>This is a worker busmod and must be started as a worker verticle.</p>
@@ -344,7 +323,7 @@ mods/my-web-app/web-root/index.html
 <h4 id="name_1">Name</h4><br/>
 <p>The module name is <code>mongo-persistor</code>.</p>
 <h4 id="configuration_2">Configuration</h4><br/>
-<p>The mongo-persistor busmod requires the following configuration:</p>
+<p>The mongo-persistor busmod takes the following configuration:</p>
 <pre class="prettyprint">{
     "address": &lt;address&gt;,
     "host": &lt;host&gt;,
@@ -362,10 +341,10 @@ mods/my-web-app/web-root/index.html
 </pre>
 <p>Let's take a look at each field in turn:</p>
 <ul>
-<li><code>address</code> The main address for the busmod. Every busmod has a main address.</li>
+<li><code>address</code> The main address for the busmod. Every busmod has a main address. Defaults to <code>vertx.mongopersistor</code>.</li>
 <li><code>host</code> Host name or ip address of the MongoDB instance. Defaults to <code>localhost</code>.</li>
 <li><code>port</code> Port at which the MongoDB instance is listening. Defaults to <code>27017</code>.</li>
-<li><code>db_name</code> Name of the database in the MongoDB instance to use. This parameter is mandatory. If you want to access different MongoDB databases you can create multiple instances of this busmod.</li>
+<li><code>db_name</code> Name of the database in the MongoDB instance to use. Defaults to <code>default_db</code>.</li>
 </ul>
 <h4 id="operations">Operations</h4><br/>
 <p>The busmod supports the following operations</p>
