@@ -2,6 +2,7 @@ var inSearch = null;
 var searchIndex = 0;
 var searchCache = [];
 var searchString = '';
+<<<<<<< HEAD
 var regexSearchString = '';
 var caseSensitiveMatch = false;
 var ignoreKeyCodeMin = 8;
@@ -11,12 +12,15 @@ var commandKey = 91;
 RegExp.escape = function(text) {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 
 function fullListSearch() {
   // generate cache
   searchCache = [];
   $('#full_list li').each(function() {
     var link = $(this).find('.object_link a');
+<<<<<<< HEAD
     var fullName = link.attr('title').split(' ')[0];
     searchCache.push({name:link.text(), fullName:fullName, node:$(this), link:link});
   });
@@ -37,6 +41,16 @@ function fullListSearch() {
       clearTimeout(inSearch);
       inSearch = null;
       $('ul .search_uncollapsed').removeClass('search_uncollapsed');
+=======
+    searchCache.push({name:link.text(), node:$(this), link:link});
+  });
+  
+  $('#search input').keyup(function() {
+    searchString = this.value.toLowerCase();
+    if (searchString === "") {
+      clearTimeout(inSearch);
+      inSearch = null;
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
       $('#full_list, #content').removeClass('insearch');
       $('#full_list li').removeClass('found').each(function() {
         
@@ -68,18 +82,30 @@ var lastRowClass = '';
 function searchItem() {
   for (var i = 0; i < searchCache.length / 50; i++) {
     var item = searchCache[searchIndex];
+<<<<<<< HEAD
     var searchName = (searchString.indexOf('::') != -1 ? item.fullName : item.name);
     var matchString = regexSearchString;
     var matchRegexp = new RegExp(matchString, caseSensitiveMatch ? "" : "i");
     if (searchName.match(matchRegexp) == null) {
+=======
+    if (item.name.toLowerCase().indexOf(searchString) == -1) {
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
       item.node.removeClass('found');
     }
     else {
       item.node.css('padding-left', '10px').addClass('found');
+<<<<<<< HEAD
       item.node.parents().addClass('search_uncollapsed');
       item.node.removeClass(lastRowClass).addClass(lastRowClass == 'r1' ? 'r2' : 'r1');
       lastRowClass = item.node.hasClass('r1') ? 'r1' : 'r2';
       item.link.html(item.name.replace(matchRegexp, "<strong>$&</strong>"));
+=======
+      item.node.removeClass(lastRowClass).addClass(lastRowClass == 'r1' ? 'r2' : 'r1');
+      lastRowClass = item.node.hasClass('r1') ? 'r1' : 'r2';
+      item.link.html(item.name.replace(new RegExp("(" + 
+        searchString.replace(/([\/.*+?|()\[\]{}\\])/g, "\\$1") + ")", "ig"), 
+        '<strong>$1</strong>'));
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
     }
 
     if (searchCache.length === searchIndex + 1) {

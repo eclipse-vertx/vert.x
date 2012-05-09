@@ -123,8 +123,12 @@ by one from the file and written to the outgoing socket.
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -144,10 +148,22 @@ by one from the file and written to the outgoing socket.
 
 </div>
 
+<<<<<<< HEAD
 
 
 
 
+=======
+  
+  
+  
+  
+
+
+  
+  
+  
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 
   
     <h2>
@@ -511,7 +527,10 @@ to write to the body
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -538,6 +557,7 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
+<<<<<<< HEAD
 647
 648
 649
@@ -550,6 +570,20 @@ self So multiple operations can be chained.
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setChunked identifier id'>setChunked</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+646
+647
+648
+649</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 646</span>
+
+<span class='def def kw'>def</span> <span class='chunked= identifier id'>chunked=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='setChunked identifier id'>setChunked</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -574,13 +608,17 @@ Close the underlying TCP connection
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
+<<<<<<< HEAD
 665
 666
 667</pre>
@@ -591,6 +629,18 @@ Close the underlying TCP connection
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_close identifier id'>close</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_close identifier id'>close</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+664
+665
+666</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 664</span>
+
+<span class='def def kw'>def</span> <span class='close identifier id'>close</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='close identifier id'>close</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -639,18 +689,26 @@ Optional String or Buffer to write before ending the response
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
+<<<<<<< HEAD
+=======
+655
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 656
 657
 658
 659
 660
+<<<<<<< HEAD
 661
 662</pre>
     </td>
@@ -664,6 +722,20 @@ Optional String or Buffer to write before ending the response
     <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_end identifier id'>end</span>
   <span class='rubyid_end end kw'>end</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+661</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 655</span>
+
+<span class='def def kw'>def</span> <span class='end end kw'>end</span><span class='lparen token'>(</span><span class='data identifier id'>data</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='String constant id'>String</span><span class='rparen token'>)</span> <span class='orop op'>||</span> <span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='Buffer constant id'>Buffer</span><span class='rparen token'>)</span>
+    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='end identifier id'>end</span><span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='rparen token'>)</span>
+  <span class='else else kw'>else</span>
+    <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='end identifier id'>end</span>
+  <span class='end end kw'>end</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -687,8 +759,12 @@ The response headers
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Returns:</h3>
+=======
+  <h3>Returns:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="return">
   
     <li>
@@ -724,12 +800,21 @@ The response headers
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 576</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_headers identifier id'>headers</span>
   <span class='rubyid_if if kw'>if</span> <span class='notop op'>!</span><span class='rubyid_@headers ivar id'>@headers</span>
     <span class='rubyid_@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_headers identifier id'>headers</span>
   <span class='rubyid_end end kw'>end</span>
   <span class='rubyid_@headers ivar id'>@headers</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='headers identifier id'>headers</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@headers ivar id'>@headers</span>
+    <span class='@headers ivar id'>@headers</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='headers identifier id'>headers</span>
+  <span class='end end kw'>end</span>
+  <span class='@headers ivar id'>@headers</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -792,7 +877,10 @@ String value to insert.
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -827,10 +915,17 @@ self So multiple operations can be chained.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 587</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put_header identifier id'>put_header</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='comma token'>,</span> <span class='rubyid_value identifier id'>value</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_putHeader identifier id'>putHeader</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='comma token'>,</span> <span class='rubyid_value identifier id'>value</span><span class='dot token'>.</span><span class='rubyid_to_s identifier id'>to_s</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='put_header identifier id'>put_header</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='comma token'>,</span> <span class='value identifier id'>value</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='putHeader identifier id'>putHeader</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='comma token'>,</span> <span class='value identifier id'>value</span><span class='dot token'>.</span><span class='to_s identifier id'>to_s</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -893,7 +988,10 @@ String value to insert.
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -928,10 +1026,17 @@ self So multiple operations can be chained.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 596</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put_trailer identifier id'>put_trailer</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='comma token'>,</span> <span class='rubyid_value identifier id'>value</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_putTrailer identifier id'>putTrailer</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='comma token'>,</span> <span class='rubyid_value identifier id'>value</span><span class='dot token'>.</span><span class='rubyid_to_s identifier id'>to_s</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='put_trailer identifier id'>put_trailer</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='comma token'>,</span> <span class='value identifier id'>value</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='putTrailer identifier id'>putTrailer</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='comma token'>,</span> <span class='value identifier id'>value</span><span class='dot token'>.</span><span class='to_s identifier id'>to_s</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -978,7 +1083,10 @@ Path to file to send.
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -1005,6 +1113,7 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
+<<<<<<< HEAD
 633
 634
 635
@@ -1017,6 +1126,20 @@ self So multiple operations can be chained.
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_sendFile identifier id'>sendFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+632
+633
+634
+635</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 632</span>
+
+<span class='def def kw'>def</span> <span class='send_file identifier id'>send_file</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='sendFile identifier id'>sendFile</span><span class='lparen token'>(</span><span class='path identifier id'>path</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1062,7 +1185,10 @@ The HTTP status code.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1076,9 +1202,15 @@ The HTTP status code.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 567</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_status_code= identifier id'>status_code=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_statusCode identifier id'>statusCode</span> <span class='assign token'>=</span> <span class='rubyid_val identifier id'>val</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='status_code= identifier id'>status_code=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='statusCode identifier id'>statusCode</span> <span class='assign token'>=</span> <span class='val identifier id'>val</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1105,9 +1237,15 @@ The HTTP status code.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 571</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_status_message= identifier id'>status_message=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_statusMessage identifier id'>statusMessage</span> <span class='assign token'>=</span> <span class='rubyid_val identifier id'>val</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='status_message= identifier id'>status_message=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='statusMessage identifier id'>statusMessage</span> <span class='assign token'>=</span> <span class='val identifier id'>val</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1132,7 +1270,10 @@ The response trailers
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1149,12 +1290,21 @@ The response trailers
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 602</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trailers identifier id'>trailers</span>
   <span class='rubyid_if if kw'>if</span> <span class='notop op'>!</span><span class='rubyid_@trailers ivar id'>@trailers</span>
     <span class='rubyid_@trailers ivar id'>@trailers</span> <span class='assign token'>=</span> <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_trailers identifier id'>trailers</span>
   <span class='rubyid_end end kw'>end</span>
   <span class='rubyid_@trailers ivar id'>@trailers</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='trailers identifier id'>trailers</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='@trailers ivar id'>@trailers</span>
+    <span class='@trailers ivar id'>@trailers</span> <span class='assign token'>=</span> <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='trailers identifier id'>trailers</span>
+  <span class='end end kw'>end</span>
+  <span class='@trailers ivar id'>@trailers</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1217,7 +1367,10 @@ The handler
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -1252,10 +1405,17 @@ self So multiple operations can be chained.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 613</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_buffer identifier id'>write_buffer</span><span class='lparen token'>(</span><span class='rubyid_chunk identifier id'>chunk</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_writeBuffer identifier id'>writeBuffer</span><span class='lparen token'>(</span><span class='rubyid_chunk identifier id'>chunk</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='write_buffer identifier id'>write_buffer</span><span class='lparen token'>(</span><span class='chunk identifier id'>chunk</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='writeBuffer identifier id'>writeBuffer</span><span class='lparen token'>(</span><span class='chunk identifier id'>chunk</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1335,7 +1495,10 @@ The handler
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -1365,17 +1528,28 @@ self So multiple operations can be chained.
 623
 624
 625
+<<<<<<< HEAD
 626
 627</pre>
+=======
+626</pre>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 623</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_str identifier id'>write_str</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_puts identifier id'>puts</span> <span class='dstring node'>&quot;writing str: #{str}&quot;</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_write identifier id'>write</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='write_str identifier id'>write_str</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='write identifier id'>write</span><span class='lparen token'>(</span><span class='str identifier id'>str</span><span class='comma token'>,</span> <span class='enc identifier id'>enc</span><span class='rparen token'>)</span>
+  <span class='self self kw'>self</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1387,9 +1561,15 @@ self So multiple operations can be chained.
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:35 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:14 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

@@ -133,8 +133,12 @@ matching one will be used.
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -157,8 +161,11 @@ matching one will be used.
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Instance Method Summary
@@ -746,7 +753,10 @@ A new instance of RouteMatcher
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -760,9 +770,15 @@ A new instance of RouteMatcher
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 787</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_http identifier id'>http</span><span class='dot token'>.</span><span class='rubyid_RouteMatcher constant id'>RouteMatcher</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span>
+  <span class='@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='http identifier id'>http</span><span class='dot token'>.</span><span class='RouteMatcher constant id'>RouteMatcher</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -851,7 +867,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -866,10 +885,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 887</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_all identifier id'>all</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_all identifier id'>all</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='all identifier id'>all</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='all identifier id'>all</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -951,7 +977,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -966,10 +995,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 977</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_all_re identifier id'>all_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_allWithRegEx identifier id'>allWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='all_re identifier id'>all_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='allWithRegEx identifier id'>allWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1051,7 +1087,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1066,10 +1105,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 878</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect identifier id'>connect</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_connect identifier id'>connect</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='connect identifier id'>connect</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='connect identifier id'>connect</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1151,7 +1197,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1166,10 +1215,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 968</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect_re identifier id'>connect_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_connectWithRegEx identifier id'>connectWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='connect_re identifier id'>connect_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='connectWithRegEx identifier id'>connectWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1251,7 +1307,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1266,10 +1325,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 833</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1351,7 +1417,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1366,10 +1435,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 923</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delete_re identifier id'>delete_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_deleteWithRegEx identifier id'>deleteWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='delete_re identifier id'>delete_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='deleteWithRegEx identifier id'>deleteWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1451,7 +1527,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1466,10 +1545,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 806</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_get identifier id'>get</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_get identifier id'>get</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='get identifier id'>get</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='get identifier id'>get</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1551,7 +1637,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1566,10 +1655,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 896</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_get_re identifier id'>get_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_getWithRegEx identifier id'>getWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='get_re identifier id'>get_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='getWithRegEx identifier id'>getWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1651,7 +1747,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1666,10 +1765,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 851</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_head identifier id'>head</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_head identifier id'>head</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='head identifier id'>head</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='head identifier id'>head</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1751,7 +1857,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1766,10 +1875,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 941</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_head_re identifier id'>head_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_headWithRegEx identifier id'>headWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='head_re identifier id'>head_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='headWithRegEx identifier id'>headWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1815,7 +1931,10 @@ Input request to the parser.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1829,9 +1948,15 @@ Input request to the parser.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 798</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_input identifier id'>input</span><span class='lparen token'>(</span><span class='rubyid_request identifier id'>request</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_handle identifier id'>handle</span><span class='lparen token'>(</span><span class='rubyid_request identifier id'>request</span><span class='dot token'>.</span><span class='rubyid__to_java_request identifier id'>_to_java_request</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='input identifier id'>input</span><span class='lparen token'>(</span><span class='request identifier id'>request</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='handle identifier id'>handle</span><span class='lparen token'>(</span><span class='request identifier id'>request</span><span class='dot token'>.</span><span class='_to_java_request identifier id'>_to_java_request</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1897,7 +2022,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1912,10 +2040,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 986</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_no_match identifier id'>no_match</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_noMatch identifier id'>noMatch</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='no_match identifier id'>no_match</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='noMatch identifier id'>noMatch</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1997,7 +2132,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2012,10 +2150,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 842</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_options identifier id'>options</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_options identifier id'>options</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='options identifier id'>options</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='options identifier id'>options</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2097,7 +2242,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2112,10 +2260,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 932</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_options_re identifier id'>options_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_optionsWithRegEx identifier id'>optionsWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='options_re identifier id'>options_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='optionsWithRegEx identifier id'>optionsWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2197,7 +2352,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2212,10 +2370,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 869</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_patch identifier id'>patch</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_patch identifier id'>patch</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='patch identifier id'>patch</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='patch identifier id'>patch</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2297,7 +2462,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2312,10 +2480,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 959</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_patch_re identifier id'>patch_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_patchWithRegEx identifier id'>patchWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='patch_re identifier id'>patch_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='patchWithRegEx identifier id'>patchWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2397,7 +2572,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2412,10 +2590,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 824</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_post identifier id'>post</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_post identifier id'>post</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='post identifier id'>post</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='post identifier id'>post</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2497,7 +2682,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2512,10 +2700,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 914</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_post_re identifier id'>post_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_postWithRegEx identifier id'>postWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='post_re identifier id'>post_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='postWithRegEx identifier id'>postWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2597,7 +2792,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2612,10 +2810,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 815</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put identifier id'>put</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_put identifier id'>put</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='put identifier id'>put</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='put identifier id'>put</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2697,7 +2902,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2712,10 +2920,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 905</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put_re identifier id'>put_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_putWithRegEx identifier id'>putWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='put_re identifier id'>put_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='putWithRegEx identifier id'>putWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2797,7 +3012,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2812,10 +3030,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 860</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trace identifier id'>trace</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_trace identifier id'>trace</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='trace identifier id'>trace</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='trace identifier id'>trace</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2897,7 +3122,10 @@ A block to be used as the handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -2912,10 +3140,17 @@ A block to be used as the handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 950</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trace_re identifier id'>trace_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_traceWithRegEx identifier id'>traceWithRegEx</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='trace_re identifier id'>trace_re</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='traceWithRegEx identifier id'>traceWithRegEx</span><span class='lparen token'>(</span><span class='pattern identifier id'>pattern</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_req identifier id'>j_req</span><span class='bitor op'>|</span> <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='HttpServerRequest constant id'>HttpServerRequest</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_req identifier id'>j_req</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -2927,9 +3162,15 @@ A block to be used as the handler
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:35 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:14 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

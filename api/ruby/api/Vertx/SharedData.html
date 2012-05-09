@@ -108,19 +108,32 @@ were shareddata between event loops.
 <p>
 The following types can be stored in a shareddata data structure:
 </p>
+<<<<<<< HEAD
 <pre class="code ruby"><code>
   <span class='rubyid_String constant id'>String</span>
   <span class='rubyid_FixNum constant id'>FixNum</span>
   <span class='rubyid_Float constant id'>Float</span>
   <span class='lbrace token'>{</span><span class='rubyid_Buffer constant id'>Buffer</span><span class='rbrace token'>}</span> <span class='rubyid_this identifier id'>this</span> <span class='rubyid_will identifier id'>will</span> <span class='rubyid_be identifier id'>be</span> <span class='rubyid_automatically identifier id'>automatically</span> <span class='rubyid_copied identifier id'>copied</span><span class='comma token'>,</span> <span class='rubyid_and and kw'>and</span> <span class='rubyid_the identifier id'>the</span> <span class='rubyid_copy identifier id'>copy</span> <span class='rubyid_will identifier id'>will</span> <span class='rubyid_be identifier id'>be</span> <span class='rubyid_stored identifier id'>stored</span> <span class='rubyid_in in kw'>in</span> <span class='rubyid_the identifier id'>the</span> <span class='rubyid_structure identifier id'>structure</span><span class='dot token'>.</span>
 </code></pre>
+=======
+<pre class="code">
+  <span class='String constant id'>String</span>
+  <span class='FixNum constant id'>FixNum</span>
+  <span class='Float constant id'>Float</span>
+  <span class='lbrace token'>{</span><span class='Buffer constant id'>Buffer</span><span class='rbrace token'>}</span> <span class='this identifier id'>this</span> <span class='will identifier id'>will</span> <span class='be identifier id'>be</span> <span class='automatically identifier id'>automatically</span> <span class='copied identifier id'>copied</span><span class='comma token'>,</span> <span class='and and kw'>and</span> <span class='the identifier id'>the</span> <span class='copy identifier id'>copy</span> <span class='will identifier id'>will</span> <span class='be identifier id'>be</span> <span class='stored identifier id'>stored</span> <span class='in in kw'>in</span> <span class='the identifier id'>the</span> <span class='structure identifier id'>structure</span><span class='dot token'>.</span>
+</pre>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 
 
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -146,7 +159,11 @@ The following types can be stored in a shareddata data structure:
         <dt id="j_sd-classvariable" class="">@@j_sd =
           
         </dt>
+<<<<<<< HEAD
         <dd><pre class="code"><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_sharedData identifier id'>sharedData</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+=======
+        <dd><pre class="code"><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='sharedData identifier id'>sharedData</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre></dd>
       
     </dl>
@@ -156,8 +173,11 @@ The following types can be stored in a shareddata data structure:
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Class Method Summary
@@ -361,7 +381,10 @@ Get the hash with the key.
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -396,10 +419,17 @@ the hash.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 42</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='rubyid_get_hash identifier id'>get_hash</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='rubyid_map identifier id'>map</span> <span class='assign token'>=</span> <span class='rubyid_@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='rubyid_getMap identifier id'>getMap</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='rubyid_SharedHash constant id'>SharedHash</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_map identifier id'>map</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='get_hash identifier id'>get_hash</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='map identifier id'>map</span> <span class='assign token'>=</span> <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='getMap identifier id'>getMap</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='SharedHash constant id'>SharedHash</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='map identifier id'>map</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -445,7 +475,10 @@ Get the set with the key.
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -480,10 +513,17 @@ the set.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 51</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='rubyid_get_set identifier id'>get_set</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='rubyid_set identifier id'>set</span> <span class='assign token'>=</span> <span class='rubyid_@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='rubyid_getSet identifier id'>getSet</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='rubyid_SharedSet constant id'>SharedSet</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_set identifier id'>set</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='get_set identifier id'>get_set</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='set identifier id'>set</span> <span class='assign token'>=</span> <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='getSet identifier id'>getSet</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='SharedSet constant id'>SharedSet</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='set identifier id'>set</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -529,7 +569,10 @@ The key of the hash.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -543,9 +586,15 @@ The key of the hash.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 58</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='rubyid_remove_hash identifier id'>remove_hash</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='rubyid_removeMap identifier id'>removeMap</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='remove_hash identifier id'>remove_hash</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='removeMap identifier id'>removeMap</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -591,7 +640,10 @@ The key of the set.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -605,9 +657,15 @@ The key of the set.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 64</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='rubyid_remove_set identifier id'>remove_set</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='rubyid_removeSet identifier id'>removeSet</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='SharedData constant id'>SharedData</span><span class='dot token'>.</span><span class='remove_set identifier id'>remove_set</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+  <span class='@@j_sd ivar id'>@@j_sd</span><span class='dot token'>.</span><span class='removeSet identifier id'>removeSet</span><span class='lparen token'>(</span><span class='key identifier id'>key</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -644,6 +702,7 @@ The key of the set.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 102</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='eq op'>==</span><span class='lparen token'>(</span><span class='rubyid_other identifier id'>other</span><span class='rparen token'>)</span>
   <span class='rubyid_if if kw'>if</span> <span class='rubyid_other identifier id'>other</span><span class='dot token'>.</span><span class='rubyid_is_a? fid id'>is_a?</span><span class='lparen token'>(</span><span class='rubyid_SharedHash constant id'>SharedHash</span><span class='rparen token'>)</span>
     <span class='rubyid_@hash ivar id'>@hash</span><span class='dot token'>.</span><span class='rubyid_equal? fid id'>equal?</span><span class='lparen token'>(</span><span class='rubyid_other identifier id'>other</span><span class='dot token'>.</span><span class='rubyid__to_java_map identifier id'>_to_java_map</span><span class='rparen token'>)</span>
@@ -651,6 +710,15 @@ The key of the set.
     <span class='rubyid_false false kw'>false</span>
   <span class='rubyid_end end kw'>end</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='eq op'>==</span><span class='lparen token'>(</span><span class='other identifier id'>other</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='other identifier id'>other</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span><span class='lparen token'>(</span><span class='SharedHash constant id'>SharedHash</span><span class='rparen token'>)</span>
+    <span class='@hash ivar id'>@hash</span><span class='dot token'>.</span><span class='equal? fid id'>equal?</span><span class='lparen token'>(</span><span class='other identifier id'>other</span><span class='dot token'>.</span><span class='_to_java_map identifier id'>_to_java_map</span><span class='rparen token'>)</span>
+  <span class='else else kw'>else</span>
+    <span class='false false kw'>false</span>
+  <span class='end end kw'>end</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -677,9 +745,15 @@ The key of the set.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/shared_data.rb', line 110</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid__to_java_map identifier id'>_to_java_map</span>
   <span class='rubyid_@hash ivar id'>@hash</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='_to_java_map identifier id'>_to_java_map</span>
+  <span class='@hash ivar id'>@hash</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -691,9 +765,15 @@ The key of the set.
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:36 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:15 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

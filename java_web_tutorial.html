@@ -1,0 +1,699 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+  <script src="less-1.2.1.min.js"></script>
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <title>Vert.x Web Application Tutorial</title>
+  <script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30144458-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+</head>
+
+<body onload="prettyPrint()">
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li class="active"><a href="/">Home</a></li>
+          <li><a href="https://github.com/purplefox/vert.x/downloads">Download</a></li>
+          <li><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
+          <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+        <h1 style="font-size: 35px;">Java Web Application Tutorial</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+<div>
+<p>In this tutorial we're going to write a real web-application using vert.x.</p>
+<p>The application is a shop application called "vToons" which allows you to buy tracks online.</p>
+<p>The application consists of a client-side JavaScript MVVM application which communicates with a set of server-side components via the vert.x event bus.</p>
+<p>In this version of this tutorial we've written the main components in Java, with a couple of scripts in Groovy to co-ordinate loading of the applications.. If you'd prefer to use Ruby, JavaScript or pure Groovy please see the version for that language. You could also mix and match - writing your components in a variety of languages.</p>
+<p>If you'd rather just look at the code than work through the tutorial, the complete working example is present in the <code>webapp</code> directory of the examples in the distribution. Read the README there for instructions on how to run it.</p>
+<h2 id="step-1-install-vertx">Step 1. Install vert.x</h2><br/>
+<p>If you haven't yet installed vert.x, <a href="install.html">do that now</a>. </p>
+<p>The rest of the tutorial will assume you have installed vert.x in directory <code>VERTX_HOME</code>.</p>
+<h2 id="step-2-create-a-web-server">Step 2. Create a Web Server</h2><br/>
+<p>Open a console, and create a new, empty directory. <code>cd</code> into it.</p>
+<p>The first thing we're going to need is a web server, so let's write one.</p>
+<p>Open a text editor and copy the following into it:</p>
+<pre class="prettyprint">import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.deploy.Verticle;
+
+public class WebServer extends Verticle implements Handler&lt;HttpServerRequest&gt; {
+
+  public void start() throws Exception {
+    container.vertx.createHttpServer().requestHandler(this).listen(8080, "localhost");
+  }
+
+  public void handle(HttpServerRequest req) {
+    if (req.path.equals("/")) {
+      req.response.sendFile("web/index.html");
+    } else if (!req.path.contains("..")) {
+      req.response.sendFile("web/" + req.path);
+    } else {
+      req.response.statusCode = 404;
+      req.response.end();
+    }
+  }
+}
+</pre>
+<p>We're creating an instance of <code>HttpServer</code> and we're setting a request handler function on it. The request handler is implemented in the <code>handle</code> method. The request handler gets called every time an HTTP request arrives on the server.</p>
+<p>If the request is for the root, we just serve <code>index.html</code>. Otherwise we serve a file from the <code>web</code> directory corresponding to the path requested.</p>
+<p>If the path url contains the string <code>..</code> we just return a 404. This is to prevent someone reading files outside of the <code>web</code> directory.  <br/>
+</p>
+<p>Save it as <code>WebServer.java</code>.</p>
+<p>Clearly, in a real project you'd have some kind of package structure, but for simplicity in this example we'll just put the source in the top level directory.</p>
+<p>Compile it with:</p>
+<pre class="prettyprint">javac WebServer.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar
+</pre>
+<p>Now, create a directory called web with a file <code>index.html</code> in it:</p>
+<pre class="prettyprint">tim@Ethel:~/tutorial$ mkdir web
+tim@Ethel:~/tutorial$ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/index.html
+</pre>
+<p>And run the web server:</p>
+<pre class="prettyprint">tim@Ethel:~/tutorial$ vertx run WebServer
+</pre>
+<p>Point your browser at <code>http://localhost:8080</code>. You should see a page returned with 'Hello World'.  <br/>
+</p>
+<p>That's the web server done.</p>
+<h2 id="step-3-serve-the-client-side-app">Step 3. Serve the client-side app</h2><br/>
+<p>Now we have a working web server, we need to serve the actual client side app.</p>
+<p>For this demo, we've written it using <a href="http://knockoutjs.com/">knockout.js</a> and <a href="http://twitter.github.com/bootstrap/">Twitter bootstrap</a>, but in your apps you can use whatever client side toolset you feel most comfortable with (e.g. jQuery, backbone.js, ember.js or whatever). Vert.x is 100% agnostic about what client side tools you use.</p>
+<p>The purpose of this tutorial is not to show you how knockout.js or Twitter bootstrap works so we won't delve into the client app in much detail.</p>
+<p>Copy the client side application from the vert.x installation into our web directory as follows:<br/>
+</p>
+<pre class="prettyprint">tim@Ethel:~/tutorial$ cp -r $VERTX_HOME/examples/java/webapp/web/* web
+</pre>
+<p>Open the file <code>web/js/client_app.js</code> in your text editor, and edit the line:</p>
+<pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+</pre>
+<p>So it reads:</p>
+<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+</pre>
+<p>Now, refresh your browser. The client application should now be served.</p>
+<p>Of course, it won't do anything useful yet, since we haven't connected it up to anything, but you should at least see the layout. It should look like this: </p>
+<p><img alt="Client Application" src="tutorial_1.png"/></p>
+<p>Take some time to click around the app. It's pretty self explanatory.</p>
+<p>In the centre there's a set of tabs which let you flick between the shop, and your cart.</p>
+<p>On the left hand bar there's a form which allows you to login.  <br/>
+</p>
+<h3 id="step-4-get-the-persistor-up-and-running">Step 4. Get the Persistor up and running</h3><br/>
+<p>Vert.x ships with an out of the box bus module (busmod) called <code>mongo-persistor</code>. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.</p>
+<p>The <code>mongo-persistor</code> busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the modules manual).</p>
+<p>We're going to use a persistor in our application for a few different things:</p>
+<ul>
+<li>Storing the catalogue of track data.</li>
+<li>Storing usernames and passwords of users</li>
+<li>Storing orders</li>
+</ul>
+<p>You could start a persistor on the command line by calling <code>vertx run mongo-persistor</code> but we're going to need to start several components to form our application, so it makes sense to create a controlling script that starts up all the other components for us.</p>
+<p>We could use a Java class to do this, but the script is more convenient since it contains our config too. We've used a Groovy script here but you could use JavaScript or Ruby if you prefer. </p>
+<p>The script can also contain the JSON configuration for our application. All verticles can be configured using JSON.</p>
+<p>Open a text editor and copy in the following:</p>
+<pre class="prettyprint">// Our application config
+
+def persistorConf = [
+  address: 'demo.persistor',
+  db_name: 'test_db'
+]
+
+container.with {
+
+  // Deploy the busmods
+
+  deployVerticle('mongo-persistor', persistorConf)
+
+  // Start the web server
+
+  deployVerticle('WebServer')
+}
+</pre>
+<p>Save it as <code>App.groovy</code>.</p>
+<p>The calls to <code>deployVerticle</code> are a programmatic way of starting other verticles from inside the code of a verticle.</p>
+<p>As you can see, the persistor needs some configuration and that is passed in when we deploy the persistor verticle. The configuration is a a JSON object (expressed as a Groovy Map literal)</p>
+<p>The persistor needs two pieces of information:</p>
+<ul>
+<li>
+<p>The address that it will listen to on the event bus for incoming messages.</p>
+</li>
+<li>
+<p>The name of the database.</p>
+</li>
+</ul>
+<p>Of course you'll also need to make sure you have installed a MongoDB instance on the local machine, with default settings.</p>
+<p>Now CTRL-C the web server you started earlier and run <code>App.groovy</code> with </p>
+<pre class="prettyprint">tim@Ethel:~/tutorial$ vertx run App.groovy
+</pre>
+<p>The persistor and web server should be running and it should serve the client application as before.</p>
+<h2 id="step-5-connecting-up-the-client-side-to-the-event-bus">Step 5. Connecting up the client side to the Event Bus</h2><br/>
+<p>So far we have a web server running, and a server side persistor listening on the event bus, but not doing anything.</p>
+<p>We need to connect up the client side so it can interact with the persistor on the event bus.</p>
+<p>To that we use a SockJS bridge.</p>
+<p>SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.</p>
+<p>The SockJS bridge is a server side vert.x component which uses SockJS to connect up the browser with the vert.x event bus on the server side.</p>
+<p>SockJS and the SockJS bridge is explained in detail in the documentation, so we won't go into more detail here.</p>
+<p>To create a SockJS bridge, we call the 'createSockJSServer()' method on our vertx instance to create the SockJS server and then we call the <code>bridge</code> method on it to create the bridge between SockJS and the event bus.</p>
+<p>Edit <code>WebServer.java</code> so it looks like:</p>
+<pre class="prettyprint">import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.deploy.Verticle;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.core.sockjs.SockJSServer;
+
+public class WebServer extends Verticle implements Handler&lt;HttpServerRequest&gt; {
+
+  public void start() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    server.requestHandler(this);
+
+    SockJSServer sjsServer = vertx.createSockJSServer(server);
+    JsonArray permitted = new JsonArray();
+    sjsServer.bridge(new AppConfig().setPrefix("/eventbus"), permitted);
+
+    server.listen(8080, "localhost");
+  }
+
+  public void handle(HttpServerRequest req) {
+    if (req.path.equals("/")) {
+      req.response.sendFile("web/index.html");
+    } else if (!req.path.contains("..")) {
+      req.response.sendFile("web/" + req.path);
+    } else {
+      req.response.statusCode = 404;
+      req.response.end();
+    }
+  }
+}
+</pre>
+<p>What we're doing here is creating an instance of a SockJS server and telling it that any requests it receives with the prefix <code>/eventbus</code> should be considered traffic for the event bus.</p>
+<p>The original request handler for the static resources is still there, and that will still be invoked for any requests that don't have the prefix <code>/eventbus</code> on their path.</p>
+<p>There's one other thing we have to do here.</p>
+<p>For security reasons, by default, the SockJS bridge will reject all event bus messages sent from the client side. After all, we don't want just anyone being able to delete everything in the database.</p>
+<p>To allow messages through we have to tell the bridge what sort of messages we're going to allow through. This is done by specifying permitted matches, using the second parameter when creating the bridge.</p>
+<p>Initially, we only want to allow through requests to the persistor to find albums. This will be used by the client side application to request the catalogue so it can display the list of available items to buy.</p>
+<p>Since it's easier to maintain JSON config in a script, than in a Java class, we will maintain the JSON array of permitted matches in <code>App.groovy</code> and pass it through to the <code>WebServer</code> verticle when we deploy it.</p>
+<p>Edit the code in <code>WebServer.java</code> so it looks like:</p>
+<pre class="prettyprint">import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.deploy.Verticle;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.sockjs.AppConfig;
+import org.vertx.java.core.sockjs.SockJSServer;
+
+public class WebServer extends Verticle implements Handler&lt;HttpServerRequest&gt; {
+
+  public void start() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    server.requestHandler(this);
+
+    SockJSServer sjsServer = vertx.createSockJSServer(server);
+    JsonArray permitted = container.getConfig().getArray("permitted");
+    sjsServer.bridge(new AppConfig().setPrefix("/eventbus"), permitted);
+
+    server.listen(8080, "localhost");
+  }
+
+  public void handle(HttpServerRequest req) {
+    if (req.path.equals("/")) {
+      req.response.sendFile("web/index.html");
+    } else if (!req.path.contains("..")) {
+      req.response.sendFile("web/" + req.path);
+    } else {
+      req.response.statusCode = 404;
+      req.response.end();
+    }
+  }
+}
+</pre>
+<p>And edit <code>App.groovy</code> so it reads:</p>
+<pre class="prettyprint">// Our application config
+
+def persistorConf = [
+  address: 'demo.persistor',
+  db_name: 'test_db'
+]
+
+def permitted =
+[
+  // Allow calls to get static album data from the persistor
+  [
+    'address' : 'demo.persistor',
+    'match' : [
+      'action' : 'find',
+      'collection' : 'albums'
+    ]
+  ]
+]
+
+container.with {
+
+  // Deploy the busmods
+
+  deployVerticle('mongo-persistor', persistorConf)
+
+  // Start the web server
+
+  deployVerticle('WebServer', ['permitted': permitted])
+}
+</pre>
+<p>Every verticle has access to a JSON object of config that can be specified when it is deployed. In this case we set our array of JSON matches as the <code>permitted</code> field of the config.</p>
+<p>This array of JSON objects determines which messages we're going to let through to the event bus from the client side.</p>
+<p>In our case, we're going to allow through any event bus messages from the client side to the address <code>demo.persistor</code> (which is where the persistor is listening), where the action field has the value <code>find</code>, and the <code>collection</code> field has the value <code>albums</code>.</p>
+<p>Save the file, and recompile <code>WebServer.java</code>.</p>
+<h2 id="step-6-inserting-the-static-data">Step 6. Inserting the Static Data</h2><br/>
+<p>We're almost at the point where the client side app can see the catalogue data. But first we need to insert some static data.</p>
+<p>To do this we will create a script called <code>StaticData.groovy</code> which just inserts catalogue and other data needed by the application in the database. It does this by sending JSON messages on the event bus. Again, you could do this in Java but it's more convenient in Groovy since it contains JSON data.</p>
+<p>Copy <code>StaticData.groovy</code> into your directory as follows:</p>
+<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/java/webapp/StaticData.groovy .
+</pre>
+<p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>App.groovy</code> as follows:</p>
+<pre class="prettyprint">deployVerticle('mongo-persistor', persistorConf, 1) {
+    deployVerticle('StaticData.groovy')
+}
+</pre>
+<p>The block that we're specifying in the call to <code>deployVerticle</code> will be invoked when the persistor is fully started. In that block we just load the static data script.</p>
+<p>Save the edited <code>App.groovy</code> and restart it.</p>
+<pre class="prettyprint">vertx run App.groovy
+</pre>
+<p>Refresh your browser.</p>
+<p>You should now see the catalogue displayed in the client side app:</p>
+<p><img alt="Client Application" src="tutorial_2.png"/><br/>
+</p>
+<p>Now there is some stuff to buy, you should be able to add stuff to your cart, and view the contents of your cart by clicking on the cart tab.</p>
+<h2 id="step-7-requesting-data-from-the-server">Step 7. Requesting data from the server</h2><br/>
+<p>As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a quick look at the code in the client side app that requests the catalogue data and populates the shop.</p>
+<p>The client side application JavaScript is contained in the file <code>web/js/client_app.js</code>. If you open this in your text editor you will see the following line, towards the top of the script:</p>
+<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+</pre>
+<p>This is using the <code>vertxbus.js</code> library to create an <code>EventBus</code> object. This object is then used to send and receive messages from the event bus.</p>
+<p>If you look a little further down the script, you will find the part which loads the catalogue data from the server and renders it:</p>
+<pre class="prettyprint">eb.onopen = function() {
+
+    // Get the static data
+
+    eb.send('demo.persistor', {action: 'find', collection: 'albums', matcher: {} },
+      function(reply) {
+        if (reply.status === 'ok') {
+          var albumArray = [];
+          for (var i = 0; i &lt; reply.results.length; i++) {
+            albumArray[i] = new Album(reply.results[i]);
+          }
+          that.albums = ko.observableArray(albumArray);
+          ko.applyBindings(that);
+        } else {
+          console.error('Failed to retrieve albums: ' + reply.message);
+        }
+      });
+  };
+</pre>
+<p>}; </p>
+<p>The <code>onopen</code> is called when, unsurprisingly, the event bus connection is fully setup and open.<br/>
+</p>
+<p>At that point we are calling the <code>send</code> function on the event bus to a send a JSON message to the address <code>demo.persistor</code>. This is the address of the MongoDB persistor busmod that we configured earlier.</p>
+<p>The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor busmod expects you can consult the modules manual).</p>
+<p>The final argument that we pass to to <code>send</code> is a reply handler. This is a function that gets called when the persistor has processed the operation and sent the reply back here. The first argument to the reply handler is the reply itself.</p>
+<p>In this case, the reply contains a JSON message with a field <code>results</code> which contains a JSON array containing the albums.</p>
+<p>Once we get the albums we give them to knockout.js to render on the view.</p>
+<h2 id="step-8-handling-login">Step 8. Handling Login</h2><br/>
+<p>In order to actually send an order, you need to be logged in so we know who has placed the order.</p>
+<p>Vert.x ships with an out of the box busmod called <code>auth-mgr</code>. This is a very simple authentication manager which sits on the event bus and provides a couple of services:</p>
+<ul>
+<li>
+<p>Login. This receives a username and password, validates it in the database, and if it is ok, a session is created and the session id sent back in the reply message.</p>
+</li>
+<li>
+<p>Validate. This validates a session id, returning whether it is valid or not.</p>
+</li>
+</ul>
+<p>For detailed information on this component please consult the modules manual.</p>
+<p>We're going to add an authentication manager component to our application so the user can login.</p>
+<p>Open up <code>App.groovy</code> again, and add the following line immediately after the deployment of the mongo persistor:</p>
+<pre class="prettyprint">deployVerticle('auth-mgr', authMgrConf)
+</pre>
+<p>Also add the following:</p>
+<pre class="prettyprint">def authMgrConf = [
+    address: 'demo.authMgr',
+    user_collection: 'users',
+    persistor_address: 'demo.persistor'
+]
+</pre>
+<p>We also need to tell the SockJS bridge to expect login messages coming onto the event bus.</p>
+<p>Add the following match to the list of permitted matches:</p>
+<pre class="prettyprint">// Allow user to login
+[
+  'address' : 'demo.authMgr.login'
+]
+</pre>
+<p>So, App.groovy should now look like this:</p>
+<pre class="prettyprint">// Our application config
+
+def persistorConf = [
+   address: 'demo.persistor',
+   db_name: 'test_db'
+]
+def authMgrConf = [
+   address: 'demo.authMgr',
+   user_collection: 'users',
+   persistor_address: 'demo.persistor'
+]
+
+def permitted =
+[
+  // Allow calls to get static album data from the persistor
+  [
+    'address' : 'demo.persistor',
+    'match' : [
+      'action' : 'find',
+      'collection' : 'albums'
+    ]
+  ],
+  // Allow user to login
+  [
+    'address' : 'demo.authMgr.login'
+  ]
+]
+
+container.with {
+
+  // Deploy the busmods
+
+  deployVerticle('mongo-persistor', persistorConf, 1) {
+    deployVerticle('StaticData.groovy')
+  }
+  deployVerticle('auth-mgr', authMgrConf)
+
+  // Start the web server
+
+  deployVerticle('WebServer', ['permitted': permitted])
+
+}
+</pre>
+<p>Now restart the application</p>
+<pre class="prettyprint">vertx run App.groovy
+</pre>
+<p>And refresh your browser.</p>
+<p>Attempt to log-in with username <code>tim</code> and password <code>password</code>. A message should appear on the left telling you you are logged in!.</p>
+<p><img alt="Client Application" src="tutorial_3.png"/></p>
+<p>Let's take a look at the client side code which does the login.</p>
+<p>Open <code>web/js/client_app.js</code> and scroll down to the <code>login</code> function. This gets trigged by knockout when the login button is pressed on the page.</p>
+<pre class="prettyprint">eb.send('demo.authMgr.login', {username: that.username(), password: that.password()}, function (reply) {
+    if (reply.status === 'ok') {
+      that.sessionID(reply.sessionID);
+    } else {
+      alert('invalid login');
+    }
+  });
+</pre>
+<p>As you can see, it sends a login JSON message to the authentication manager busmod with the username and password.</p>
+<p>When the reply comes back with status <code>ok</code>, it stores the session id which causes knockout to display the "Logged in as... " message.</p>
+<p>It's as easy as that.</p>
+<h2 id="step-9-processing-orders">Step 9. Processing Orders</h2><br/>
+<p>The next part to implement is processing of orders.</p>
+<p>One naive way to do this would be to directly insert the order in the database by sending a message to the MongoDB persistor, then sending another message to the mailer to send an order confirmation email.</p>
+<p>Problem is we don't want to just anyone inserting data into the database or sending emails from the client side (we don't want to become a spam relay!).</p>
+<p>A better solution is to write a simple order manager verticle which sits on the event bus on the server and handles the whole order processing for us.</p>
+<p>As orders arrive we want to</p>
+<ol>
+<li>Validate the user is logged in</li>
+<li>If ok, then persist the order in the database</li>
+<li>If ok, then send back a confirmation to the client side.</li>
+</ol>
+<p>Copy the following into your editor and save it as <code>OrderMgr.java</code> in your tutorial top-level directory.</p>
+<pre class="prettyprint">import org.vertx.java.core.Handler;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.deploy.Verticle;
+
+public class OrderMgr extends Verticle {
+
+  private EventBus eb;
+  private Logger log;
+
+  public void start() throws Exception {
+    eb = vertx.eventBus();
+    log = container.getLogger();
+
+    eb.registerHandler("demo.orderMgr", new Handler&lt;Message&lt;JsonObject&gt;&gt;() {
+      public void handle(Message&lt;JsonObject&gt; message) {
+        validateUser(message);
+      }
+    });
+  }
+
+  private void validateUser(final Message&lt;JsonObject&gt; message) {
+    JsonObject validateMessage =
+        new JsonObject().putString("sessionID", message.body.getString("sessionID"));
+    eb.send("demo.authMgr.validate", validateMessage, new Handler&lt;Message&lt;JsonObject&gt;&gt;() {
+      public void handle(Message&lt;JsonObject&gt; reply) {
+        if (reply.body.getString("status").equals("ok")) {
+          message.body.putString("username", reply.body.getString("username"));
+          saveOrder(message);
+        } else {
+          log.error("Failed to validate user");
+        }
+      }
+    });
+  }
+
+  private void saveOrder(final Message&lt;JsonObject&gt; message) {
+    JsonObject saveMessage = new JsonObject().putString("action", "save").
+                                              putString("collection", "orders").
+                                              putObject("document", message.body);
+    eb.send("demo.persistor", saveMessage, new Handler&lt;Message&lt;JsonObject&gt;&gt;() {
+      public void handle(Message&lt;JsonObject&gt; reply) {
+        if (reply.body.getString("status").equals("ok")) {
+          log.info("Order successfully processed");
+          message.reply(new JsonObject().putString("status", "ok"));
+        } else {
+          log.error("Failed to save user");
+        }
+      }
+    });
+  }
+}
+</pre>
+<p>The order manager verticle registers a handler on the address <code>demo.orderMgr</code>. When any message arrives on the event bus a <code>Message</code> object is passed to the handler.</p>
+<p>The actual order is in the <code>body</code> attribute of the message. When an order message arrives the first thing it does is sends a message to the authentication manager to validate if the user is logged in, given their session id (which is passed in the order message).</p>
+<p>If the user was logged in ok, the order is then persisted using the MongoDB persistor. If that returns ok, we send back a message to the client.</p>
+<p>All messages have a <code>reply</code> function which can be invoked to send back a reply to the sender of the message. In other words, it's an implementation of the <em>request-response</em> pattern.</p>
+<p>Compile the order manager with:</p>
+<pre class="prettyprint">javac OrderMgr.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar
+</pre>
+<p>We'll also need to add another accepted match on the permitted matches in <code>App.groovy</code> to tell it to let through orders:</p>
+<pre class="prettyprint">// Let through orders posted to the order manager
+[
+  'address' : 'demo.orderMgr'
+]
+</pre>
+<p>We'll also have to add a line to <code>App.groovy</code> to load the <code>OrderMgr.groovy</code> verticle, just before the web server is started:</p>
+<pre class="prettyprint">// Start the order manager
+
+deployVerticle('OrderMgr.groovy')
+</pre>
+<p>So, <code>App.groovy</code> should look like this:</p>
+<pre class="prettyprint">// Our application config
+
+def persistorConf = [
+   address: 'demo.persistor',
+   db_name: 'test_db'
+]
+def authMgrConf = [
+   address: 'demo.authMgr',
+   user_collection: 'users',
+   persistor_address: 'demo.persistor'
+]
+
+def permitted =
+[
+  // Allow calls to get static album data from the persistor
+  [
+    'address' : 'demo.persistor',
+    'match' : [
+      'action' : 'find',
+      'collection' : 'albums'
+    ]
+  ],
+  // Allow user to login
+  [
+    'address' : 'demo.authMgr.login'
+  ],
+  // Let through orders posted to the order manager
+  [
+    'address' : 'demo.orderMgr'
+  ]
+]
+
+container.with {
+
+  // Deploy the busmods
+
+  deployVerticle('mongo-persistor', persistorConf, 1) {
+    deployVerticle('StaticData.groovy')
+  }
+  deployVerticle('auth-mgr', authMgrConf)
+
+  // Start the order manager
+
+  deployVerticle('OrderMgr')
+
+  // Start the web server
+
+  deployVerticle('WebServer', ['permitted': permitted])
+
+}
+</pre>
+<p>Ok, let's take a look at the client side code which sends the order.</p>
+<p>Open up <code>web/js/client_app.js</code> again, and look for the function <code>submitOrder</code>.</p>
+<pre class="prettyprint">that.submitOrder = function() {
+
+    if (!orderReady()) {
+      return;
+    }
+
+    var orderJson = ko.toJS(that.items);
+    var order = {
+      sessionID: that.sessionID(),
+      items: orderJson
+    }
+
+    eb.send('demo.orderMgr', order, function(reply) {
+      if (reply.status === 'ok') {
+        that.orderSubmitted(true);
+        // Timeout the order confirmation box after 2 seconds
+        window.setTimeout(function() { that.orderSubmitted(false); }, 2000);
+      } else {
+        console.error('Failed to accept order');
+      }
+    });
+  }; 
+};
+</pre>
+<p>This function simply converts the order into a JSON object, then calls <code>send</code> on the event bus to send it to the order manager verticle that we registered on address <code>demo.orderMgr</code>.</p>
+<p>When the reply comes back we tell knockout to display a message.</p>
+<p>Everything should be in order, so restart the app again:</p>
+<pre class="prettyprint">vertx run App.groovy
+</pre>
+<p>Refresh the browser.</p>
+<p>Now log-in and add a few items into your cart. Click on the cart tab and click "Submit Order". The message "Your order has been accepted, an email will be on your way to you shortly" should appear!</p>
+<p>Take a look in the console window of the application. You should see the order has been logged.</p>
+<p><img alt="Client Application" src="tutorial_4.png"/></p>
+<p><strong> Congratulations! You have just placed an order. </strong></p>
+<h2 id="step-11-securing-the-connection">Step 11. Securing the Connection</h2><br/>
+<p>So far in this tutorial, all client-server traffic has been over an unsecured socket. That's not a very good idea since we've been sending login credentials and orders.</p>
+<p>Configuring vert.x to use secure sockets is very easy. (For detailed information on configuring HTTPS, please see the manual).</p>
+<p>Edit <code>WebServer.java</code> again, and after the line that creates the HTTP server, add the following line:</p>
+<pre class="prettyprint">server.setSSL(true).setKeyStorePath("server-keystore.jks").
+                    setKeyStorePassword("wibble");
+</pre>
+<p>Recompile <code>WebServer.java</code>.                      <br/>
+</p>
+<p>Copy the keystore from the distribution</p>
+<pre class="prettyprint">tim@Ethel:~/tutorial$ cp $VERTX_HOME/examples/java/webapp/server-keystore.jks .
+</pre>
+<p><em>The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.</em>         <br/>
+</p>
+<p>You'll also need to edit <code>web/js/client_app.js</code> so the line which creates the client side event bus instance now uses <code>https</code> as the protocol:</p>
+<pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+</pre>
+<p>Now restart the app again.</p>
+<pre class="prettyprint">vertx run App.groovy
+</pre>
+<p>And go to your browser. This time point your browser at <code>https://localhost:8080</code>. <em>Note it is <strong>https</strong> not http</em>.</p>
+<p><em>You'll initially get a warning from your browser saying the server certificate is unknown. This is to be expected since we haven't told the browser to trust it. You can ignore that for now. On a real server your server cert would probably be from a trusted certificate authority.</em></p>
+<p>Now login, and place an order as before.</p>
+<p>Easy peasy. <strong>It just works</strong></p>
+<h2 id="step-12-scaling-the-application">Step 12. Scaling the application</h2><br/>
+<h3 id="scaling-the-web-server">Scaling the web server</h3><br/>
+<p>Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the verticle <code>WebServer.groovy</code> to something like:</p>
+<pre class="prettyprint">// Start 32 instances of the web server!
+
+deployVerticle('WebServer', ['permitted': permitted], 32)
+</pre>
+<p>(<em>Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances</em>.)</p>
+<h3 id="scaling-the-processing">Scaling the processing.</h3><br/>
+<p>In our trivial example it probably won't make much difference, but if you have some fairly intensive processing that needs to be done on the orders, it might make sense to maintain a farm of order processors, and as orders come into the order manager, to farm them out to one of the available processors.</p>
+<p>You can then spread the processing load not just between multiple processors on the same machine, but between many processors on different machines of the network.</p>
+<p>Doing this is easy with vert.x. Vert.x ships with an out-of-the-box busmod called <code>work-queue</code> which allows you to easily create queues of work can be shared out amongst many processors.</p>
+<p>Please consult the modules manual for more information on this.</p>
+<h3 id="packaging-as-a-module">Packaging as a module</h3><br/>
+<p>Vert.x applications and other functionality can be installed as modules. This makes them easier to manage and allow them to be easily referenced from other applications. For detailed information on modules, please see the modules manual.</p>
+<p>Let's package our web application as a module.</p>
+<p>By default modules live in the <code>mods</code> directory from the vert.x installation directory, but you can also set an environment variable <code>VERTX_MODS</code> to a directory of your choice where modules will be located. In this tutorial we'll just put the module in the <code>mods</code> directory for the sake of simplicity.</p>
+<p>To install the app as a module we'll just copy the tutorial directory into the <code>mods</code> dir</p>
+<pre class="prettyprint">cd ..
+cp -r tutorial $VERTX_INSTALL/mods/webapp
+</pre>
+<p>Now create a file called <code>mod.json</code> which contains the following:</p>
+<pre class="prettyprint">{
+    "main": "App.groovy"
+}
+</pre>
+<p>And save it in the directory $VERTX_INSTALL/mods/webapp</p>
+<p>That's it. The module is installed!</p>
+<p>To run the module (first make sure the web app isn't already running, if so CTRL-C).
+Then go to another console... you can be in any directory and type:</p>
+<pre class="prettyprint">vertx run webapp
+</pre>
+<p>The web application will now be running. Go to <code>https://localhost:8080</code> to see.      <br/>
+</p>
+<h2 id="final-thoughts">Final Thoughts</h2><br/>
+<p>This tutorial gives you just a taste of the kinds of things you can do with vert.x. </p>
+<p>With a small amount of code you've created a real, scalable web-app.</p>
+<p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -2108,7 +2108,7 @@ For example, to create a SockJS echo application:
     
     SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
     
-    JsonObject config = new JsonObject().putString("prefix", "/echo");
+    AppConfig config = new AppConfig().setPrefix("/echo");
     
     sockJSServer.installApp(config, new Handler<SockJSSocket>() {
         public void handle(SockJSSocket sock) {
@@ -2118,7 +2118,7 @@ For example, to create a SockJS echo application:
     
     httpServer.listen(8080);
     
-The configuration is an instance of `org.vertx.java.core.json.JsonObject`, which takes the following fields:
+The configuration is an instance of `org.vertx.java.core.sockjs.AppConfig`, and has the following properties:
 
 * `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
 * `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
@@ -2177,9 +2177,9 @@ The following example bridges the event bus to client side JavaScript:
 
     HttpServer server = vertx.createHttpServer();
     
-    JsonObject config = new JsonObject().putString("prefix", "/echo");
+    AppConfig config = new AppConfig().setPrefix("/eventbus");
     
-    vertx.createSockJSServer(server).bridge(config, new JsonArray());
+    vertx.createSockJSServer(server).bridge(config, new ArrayList<>());
     
     server.listen(8080);
     
@@ -2231,7 +2231,7 @@ To deal with this, a SockJS bridge will, by default refuse to forward any messag
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in a JSON array which contains JSON objects that represent *matches*, as the final argument to the `bridge` method.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects that represent *matches*, as the final argument to the `bridge` method.
 
 Each match has two fields:
 
@@ -2248,9 +2248,9 @@ Here is an example:
 
     HttpServer server = vertx.createHttpServer();
     
-    JsonObject config = new JsonObject().putString("prefix", "/echo");
+    AppConfig config = new AppConfig().setPrefix("/eventbus");
     
-    JsonArray permitted = new JsonArray();
+    List<JsonObject> permitted = new ArrayList<>();
     
     // Let through any messages sent to 'demo.orderMgr'
     JsonObject permitted1 = new JsonObject().putString("address", "demo.orderMgr");
@@ -2277,7 +2277,7 @@ To let all messages through you can specify an array with a single empty JSON ob
 
     ...
 
-    JsonArray permitted = new JsonArray();
+    List<JsonObject> permitted = new ArrayList<>();
     permitted.add(new JsonObject());
 
     vertx.createSockJSBridge(server).bridge(config, permitted);

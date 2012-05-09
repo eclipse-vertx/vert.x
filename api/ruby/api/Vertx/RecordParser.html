@@ -103,6 +103,7 @@ Instances of this class take as input <span class='object_link'><a href="Buffer.
 bytes, and output records. For example, if I had a simple ASCII text
 protocol delimited by &#8217;\n&#8217; and the input was the following:
 </p>
+<<<<<<< HEAD
 <pre class="code ruby"><code>
   <span class='rubyid_buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>\<span class='rubyid_nHOW identifier id'>nHOW</span> <span class='rubyid_ARE constant id'>ARE</span> <span class='rubyid_Y constant id'>Y</span>
   <span class='rubyid_buffer2 identifier id'>buffer2</span><span class='symbol val'>:OU?</span>\<span class='rubyid_nI identifier id'>nI</span> <span class='rubyid_AM constant id'>AM</span>
@@ -117,6 +118,22 @@ Then the output would be:
   <span class='rubyid_buffer2 identifier id'>buffer2</span><span class='symbol val'>:HOW</span> <span class='rubyid_ARE constant id'>ARE</span> <span class='rubyid_YOU? constant id'>YOU?</span>
   <span class='rubyid_buffer3 identifier id'>buffer3</span><span class='symbol val'>:I</span> <span class='rubyid_AM constant id'>AM</span> <span class='rubyid_DOING constant id'>DOING</span> <span class='rubyid_OK constant id'>OK</span>
 </code></pre>
+=======
+<pre class="code">
+  <span class='buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>\<span class='nHOW identifier id'>nHOW</span> <span class='ARE constant id'>ARE</span> <span class='Y constant id'>Y</span>
+  <span class='buffer2 identifier id'>buffer2</span><span class='symbol val'>:OU?</span>\<span class='nI identifier id'>nI</span> <span class='AM constant id'>AM</span>
+  <span class='buffer3 identifier id'>buffer3</span><span class='colon op'>:</span> <span class='DOING constant id'>DOING</span> <span class='OK constant id'>OK</span>
+  <span class='buffer4 identifier id'>buffer4</span><span class='symbol val'>:\</span><span class='n identifier id'>n</span>
+</pre>
+<p>
+Then the output would be:
+</p>
+<pre class="code">
+  <span class='buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>
+  <span class='buffer2 identifier id'>buffer2</span><span class='symbol val'>:HOW</span> <span class='ARE constant id'>ARE</span> <span class='YOU? constant id'>YOU?</span>
+  <span class='buffer3 identifier id'>buffer3</span><span class='symbol val'>:I</span> <span class='AM constant id'>AM</span> <span class='DOING constant id'>DOING</span> <span class='OK constant id'>OK</span>
+</pre>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <p>
 Instances of this class can be changed between delimited mode and fixed
 size record mode on the fly as individual records are read, this allows you
@@ -134,8 +151,12 @@ extend this class to cope with arbitrary character encodings.
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -158,8 +179,11 @@ extend this class to cope with arbitrary character encodings.
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Class Method Summary
@@ -385,7 +409,10 @@ A block to be used as the output handler
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -420,10 +447,17 @@ a new RecordParser
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 67</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_new_delimited identifier id'>new_delimited</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_output_block identifier id'>output_block</span><span class='rparen token'>)</span>
   <span class='rubyid_output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_parsetools identifier id'>parsetools</span><span class='dot token'>.</span><span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_newDelimited identifier id'>newDelimited</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='comma token'>,</span> <span class='rubyid_output_block identifier id'>output_block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new_delimited identifier id'>new_delimited</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span>
+  <span class='output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='parsetools identifier id'>parsetools</span><span class='dot token'>.</span><span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='newDelimited identifier id'>newDelimited</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='comma token'>,</span> <span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -504,7 +538,10 @@ A block to be used as the output handler
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -539,10 +576,17 @@ a new RecordParser
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 77</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_new_fixed identifier id'>new_fixed</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_output_block identifier id'>output_block</span><span class='rparen token'>)</span>
   <span class='rubyid_output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_parsetools identifier id'>parsetools</span><span class='dot token'>.</span><span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_newFixed identifier id'>newFixed</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='comma token'>,</span> <span class='rubyid_output_block identifier id'>output_block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new_fixed identifier id'>new_fixed</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span>
+  <span class='output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='parsetools identifier id'>parsetools</span><span class='dot token'>.</span><span class='RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='newFixed identifier id'>newFixed</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='comma token'>,</span> <span class='output_block identifier id'>output_block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -595,7 +639,10 @@ The delimiter string.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -609,9 +656,15 @@ The delimiter string.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 85</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delimited_mode identifier id'>delimited_mode</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='rparen token'>)</span>
   <span class='rubyid_@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='rubyid_delimitedMode identifier id'>delimitedMode</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='delimited_mode identifier id'>delimited_mode</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='rparen token'>)</span>
+  <span class='@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='delimitedMode identifier id'>delimitedMode</span><span class='lparen token'>(</span><span class='delim identifier id'>delim</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -658,7 +711,10 @@ The record size.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -672,9 +728,15 @@ The record size.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 92</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_fixed_size_mode identifier id'>fixed_size_mode</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='rparen token'>)</span>
   <span class='rubyid_@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='rubyid_fixedSizeMode identifier id'>fixedSizeMode</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='fixed_size_mode identifier id'>fixed_size_mode</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='rparen token'>)</span>
+  <span class='@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='fixedSizeMode identifier id'>fixedSizeMode</span><span class='lparen token'>(</span><span class='size identifier id'>size</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -720,7 +782,10 @@ Input data to the parser.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -734,9 +799,15 @@ Input data to the parser.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 57</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_input identifier id'>input</span><span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span><span class='rparen token'>)</span>
   <span class='rubyid_@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='rubyid_handle identifier id'>handle</span><span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='input identifier id'>input</span><span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='rparen token'>)</span>
+  <span class='@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='handle identifier id'>handle</span><span class='lparen token'>(</span><span class='data identifier id'>data</span><span class='dot token'>.</span><span class='_to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -748,9 +819,15 @@ Input data to the parser.
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:36 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:15 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

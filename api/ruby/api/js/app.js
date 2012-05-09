@@ -2,11 +2,19 @@ function createSourceLinks() {
     $('.method_details_list .source_code').
         before("<span class='showSource'>[<a href='#' class='toggleSource'>View source</a>]</span>");
     $('.toggleSource').toggle(function() {
+<<<<<<< HEAD
        $(this).parent().nextAll('.source_code').slideDown(100);
        $(this).text("Hide source");
     },
     function() {
         $(this).parent().nextAll('.source_code').slideUp(100);
+=======
+       $(this).parent().next().slideDown(100);
+       $(this).text("Hide source");
+    },
+    function() {
+        $(this).parent().next().slideUp(100);
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
         $(this).text("View source");
     });
 }
@@ -109,10 +117,17 @@ function summaryToggle() {
   $('.summary_toggle').click(function() {
     localStorage.summaryCollapsed = $(this).text();
     $(this).text($(this).text() == "collapse" ? "expand" : "collapse");
+<<<<<<< HEAD
     var next = $(this).parent().parent().nextAll('ul.summary').first();
     if (next.hasClass('compact')) {
       next.toggle();
       next.nextAll('ul.summary').first().toggle();
+=======
+    var next = $(this).parent().parent().next();
+    if (next.hasClass('compact')) {
+      next.toggle();
+      next.next().toggle();
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
     } 
     else if (next.hasClass('summary')) {
       var list = $('<ul class="summary compact" />');

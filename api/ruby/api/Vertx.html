@@ -89,9 +89,15 @@ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
 you may not use this file except in compliance with the License. You may
 obtain a copy of the License at
 </p>
+<<<<<<< HEAD
 <pre class="code ruby"><code>
      <span class='rubyid_http identifier id'>http</span><span class='symbol val'>:/</span><span class='regexp val'>/www.apache.org/</span><span class='rubyid_licenses identifier id'>licenses</span><span class='div op'>/</span><span class='rubyid_LICENSE constant id'>LICENSE</span><span class='minus op'>-</span><span class='float val'>2.0</span>
 </code></pre>
+=======
+<pre class="code">
+     <span class='http identifier id'>http</span><span class='symbol val'>:/</span><span class='regexp val'>/www.apache.org/</span><span class='licenses identifier id'>licenses</span><span class='div op'>/</span><span class='LICENSE constant id'>LICENSE</span><span class='minus op'>-</span><span class='float val'>2.0</span>
+</pre>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <p>
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
@@ -105,7 +111,10 @@ limitations under the License.
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><h2>Defined Under Namespace</h2>
 <p class="children">
    
@@ -126,7 +135,11 @@ limitations under the License.
         <dt id="j_vertx-classvariable" class="">@@j_vertx =
           
         </dt>
+<<<<<<< HEAD
         <dd><pre class="code"><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+=======
+        <dd><pre class="code"><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre></dd>
       
     </dl>
@@ -136,8 +149,11 @@ limitations under the License.
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Class Method Summary
@@ -411,7 +427,10 @@ the id of the timer, as returned from <span class='object_link'><a href="#set_ti
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -445,9 +464,15 @@ true if the timer was cancelled, false if it wasn&#8217;t found.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 44</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_cancel_timer identifier id'>cancel_timer</span><span class='lparen token'>(</span><span class='rubyid_id identifier id'>id</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='rubyid_cancelTimer identifier id'>cancelTimer</span><span class='lparen token'>(</span><span class='rubyid_id identifier id'>id</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='cancel_timer identifier id'>cancel_timer</span><span class='lparen token'>(</span><span class='id identifier id'>id</span><span class='rparen token'>)</span>
+  <span class='@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='cancelTimer identifier id'>cancelTimer</span><span class='lparen token'>(</span><span class='id identifier id'>id</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -471,8 +496,12 @@ Get config for the verticle
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Returns:</h3>
+=======
+  <h3>Returns:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="return">
   
     <li>
@@ -509,6 +538,7 @@ The JSON config for the verticle
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 52</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_config identifier id'>config</span>
   <span class='rubyid_if if kw'>if</span> <span class='notop op'>!</span><span class='rubyid_defined? defined kw'>defined?</span> <span class='rubyid_@@j_conf ivar id'>@@j_conf</span>
     <span class='rubyid_@@j_conf ivar id'>@@j_conf</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_getConfig identifier id'>getConfig</span>
@@ -516,6 +546,15 @@ The JSON config for the verticle
   <span class='rubyid_end end kw'>end</span>
   <span class='rubyid_@@j_conf ivar id'>@@j_conf</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='config identifier id'>config</span>
+  <span class='if if kw'>if</span> <span class='notop op'>!</span><span class='defined? defined kw'>defined?</span> <span class='@@j_conf ivar id'>@@j_conf</span>
+    <span class='@@j_conf ivar id'>@@j_conf</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='container identifier id'>container</span><span class='dot token'>.</span><span class='getConfig identifier id'>getConfig</span>
+    <span class='@@j_conf ivar id'>@@j_conf</span> <span class='assign token'>=</span> <span class='JSON constant id'>JSON</span><span class='dot token'>.</span><span class='parse identifier id'>parse</span><span class='lparen token'>(</span><span class='@@j_conf ivar id'>@@j_conf</span><span class='dot token'>.</span><span class='encode identifier id'>encode</span><span class='rparen token'>)</span> <span class='if if_mod kw'>if</span> <span class='@@j_conf ivar id'>@@j_conf</span>
+  <span class='end end kw'>end</span>
+  <span class='@@j_conf ivar id'>@@j_conf</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -615,7 +654,10 @@ Block will be executed when deploy has completed
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -653,6 +695,7 @@ Unique id of deployment
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 23</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_deploy_verticle identifier id'>deploy_verticle</span><span class='lparen token'>(</span><span class='rubyid_main identifier id'>main</span><span class='comma token'>,</span> <span class='rubyid_config identifier id'>config</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='rubyid_instances identifier id'>instances</span> <span class='assign token'>=</span> <span class='integer val'>1</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_if if kw'>if</span> <span class='rubyid_config identifier id'>config</span>
     <span class='rubyid_json_str identifier id'>json_str</span> <span class='assign token'>=</span> <span class='rubyid_JSON constant id'>JSON</span><span class='dot token'>.</span><span class='rubyid_generate identifier id'>generate</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='rparen token'>)</span>
@@ -660,6 +703,15 @@ Unique id of deployment
   <span class='rubyid_end end kw'>end</span>
   <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_deployVerticle identifier id'>deployVerticle</span><span class='lparen token'>(</span><span class='rubyid_main identifier id'>main</span><span class='comma token'>,</span> <span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_instances identifier id'>instances</span><span class='comma token'>,</span> <span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='deploy_verticle identifier id'>deploy_verticle</span><span class='lparen token'>(</span><span class='main identifier id'>main</span><span class='comma token'>,</span> <span class='config identifier id'>config</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='instances identifier id'>instances</span> <span class='assign token'>=</span> <span class='integer val'>1</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='config identifier id'>config</span>
+    <span class='json_str identifier id'>json_str</span> <span class='assign token'>=</span> <span class='JSON constant id'>JSON</span><span class='dot token'>.</span><span class='generate identifier id'>generate</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='rparen token'>)</span>
+    <span class='config identifier id'>config</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='json identifier id'>json</span><span class='dot token'>.</span><span class='JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='json_str identifier id'>json_str</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='container identifier id'>container</span><span class='dot token'>.</span><span class='deployVerticle identifier id'>deployVerticle</span><span class='lparen token'>(</span><span class='main identifier id'>main</span><span class='comma token'>,</span> <span class='config identifier id'>config</span><span class='comma token'>,</span> <span class='instances identifier id'>instances</span><span class='comma token'>,</span> <span class='block identifier id'>block</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -760,7 +812,10 @@ Block will be executed when deploy has completed
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -778,6 +833,7 @@ Block will be executed when deploy has completed
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 36</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_deploy_worker_verticle identifier id'>deploy_worker_verticle</span><span class='lparen token'>(</span><span class='rubyid_main identifier id'>main</span><span class='comma token'>,</span> <span class='rubyid_config identifier id'>config</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='rubyid_instances identifier id'>instances</span> <span class='assign token'>=</span> <span class='integer val'>1</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_if if kw'>if</span> <span class='rubyid_config identifier id'>config</span>
     <span class='rubyid_json_str identifier id'>json_str</span> <span class='assign token'>=</span> <span class='rubyid_JSON constant id'>JSON</span><span class='dot token'>.</span><span class='rubyid_generate identifier id'>generate</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='rparen token'>)</span>
@@ -785,6 +841,15 @@ Block will be executed when deploy has completed
   <span class='rubyid_end end kw'>end</span>
   <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_deployWorkerVerticle identifier id'>deployWorkerVerticle</span><span class='lparen token'>(</span><span class='rubyid_main identifier id'>main</span><span class='comma token'>,</span> <span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_instances identifier id'>instances</span><span class='comma token'>,</span> <span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='deploy_worker_verticle identifier id'>deploy_worker_verticle</span><span class='lparen token'>(</span><span class='main identifier id'>main</span><span class='comma token'>,</span> <span class='config identifier id'>config</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='instances identifier id'>instances</span> <span class='assign token'>=</span> <span class='integer val'>1</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='block identifier id'>block</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='config identifier id'>config</span>
+    <span class='json_str identifier id'>json_str</span> <span class='assign token'>=</span> <span class='JSON constant id'>JSON</span><span class='dot token'>.</span><span class='generate identifier id'>generate</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='rparen token'>)</span>
+    <span class='config identifier id'>config</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='json identifier id'>json</span><span class='dot token'>.</span><span class='JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='json_str identifier id'>json_str</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='container identifier id'>container</span><span class='dot token'>.</span><span class='deployWorkerVerticle identifier id'>deployWorkerVerticle</span><span class='lparen token'>(</span><span class='main identifier id'>main</span><span class='comma token'>,</span> <span class='config identifier id'>config</span><span class='comma token'>,</span> <span class='instances identifier id'>instances</span><span class='comma token'>,</span> <span class='block identifier id'>block</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -808,8 +873,12 @@ Get the logger for the verticle
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Returns:</h3>
+=======
+  <h3>Returns:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="return">
   
     <li>
@@ -842,9 +911,15 @@ Get the logger for the verticle
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/logger.rb', line 19</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_logger identifier id'>logger</span>
   <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_getLogger identifier id'>getLogger</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='logger identifier id'>logger</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='container identifier id'>container</span><span class='dot token'>.</span><span class='getLogger identifier id'>getLogger</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -910,7 +985,10 @@ a block representing the code that will be run ASAP
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -925,10 +1003,17 @@ a block representing the code that will be run ASAP
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 52</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_run_on_loop identifier id'>run_on_loop</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='rubyid_runOnLoop identifier id'>runOnLoop</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='run_on_loop identifier id'>run_on_loop</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='runOnLoop identifier id'>runOnLoop</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1009,7 +1094,10 @@ a block representing the code that will be when the timer fires
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -1044,10 +1132,17 @@ the unique id of the timer
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 36</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_set_periodic identifier id'>set_periodic</span><span class='lparen token'>(</span><span class='rubyid_delay identifier id'>delay</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='rubyid_setPeriodic identifier id'>setPeriodic</span><span class='lparen token'>(</span><span class='rubyid_delay identifier id'>delay</span><span class='comma token'>,</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='set_periodic identifier id'>set_periodic</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='setPeriodic identifier id'>setPeriodic</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1129,7 +1224,10 @@ a block representing the code that will be run after the delay
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -1164,10 +1262,17 @@ the unique id of the timer
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/timers.rb', line 25</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_set_timer identifier id'>set_timer</span><span class='lparen token'>(</span><span class='rubyid_delay identifier id'>delay</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='rubyid_setTimer identifier id'>setTimer</span><span class='lparen token'>(</span><span class='rubyid_delay identifier id'>delay</span><span class='comma token'>,</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='set_timer identifier id'>set_timer</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@@j_vertx ivar id'>@@j_vertx</span><span class='dot token'>.</span><span class='setTimer identifier id'>setTimer</span><span class='lparen token'>(</span><span class='delay identifier id'>delay</span><span class='comma token'>,</span> <span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1213,7 +1318,10 @@ The unique id of the deployment
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -1227,9 +1335,15 @@ The unique id of the deployment
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 46</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_undeploy_verticle identifier id'>undeploy_verticle</span><span class='lparen token'>(</span><span class='rubyid_id identifier id'>id</span><span class='rparen token'>)</span>
   <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_undeployVerticle identifier id'>undeployVerticle</span><span class='lparen token'>(</span><span class='rubyid_id identifier id'>id</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='undeploy_verticle identifier id'>undeploy_verticle</span><span class='lparen token'>(</span><span class='id identifier id'>id</span><span class='rparen token'>)</span>
+  <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='container identifier id'>container</span><span class='dot token'>.</span><span class='undeployVerticle identifier id'>undeployVerticle</span><span class='lparen token'>(</span><span class='id identifier id'>id</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -1241,9 +1355,15 @@ The unique id of the deployment
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:33 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:12 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

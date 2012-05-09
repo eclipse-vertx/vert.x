@@ -2021,7 +2021,7 @@ For example, to create a SockJS echo application:
     
     httpServer.listen(8080);
     
-The configuration is a JSON object that takes the following fields:
+The configuration can take the following fields:
 
 * `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
 * `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.

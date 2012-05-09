@@ -138,8 +138,12 @@ reply method which can be used to reply to it.
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -171,7 +175,11 @@ reply method which can be used to reply to it.
         <dt id="j_eventbus-classvariable" class="">@@j_eventbus =
           
         </dt>
+<<<<<<< HEAD
         <dd><pre class="code"><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_eventBus identifier id'>eventBus</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+=======
+        <dd><pre class="code"><span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='eventBus identifier id'>eventBus</span><span class='lparen token'>(</span><span class='rparen token'>)</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre></dd>
       
     </dl>
@@ -181,8 +189,11 @@ reply method which can be used to reply to it.
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Class Method Summary
@@ -373,7 +384,10 @@ The handler
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -416,6 +430,7 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 74</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='rubyid_register_handler identifier id'>register_handler</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='rubyid_false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;An address must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_address identifier id'>address</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span>
@@ -428,6 +443,20 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
   <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='rubyid_internal identifier id'>internal</span>
   <span class='rubyid_id identifier id'>id</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='register_handler identifier id'>register_handler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;An address must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='address identifier id'>address</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='message_hndlr identifier id'>message_hndlr</span>
+  <span class='internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='local_only identifier id'>local_only</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+  <span class='else else kw'>else</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+  <span class='@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='internal identifier id'>internal</span>
+  <span class='id identifier id'>id</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -493,7 +522,10 @@ The handler
     </li>
   
 </ul>
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <h3>Returns:</h3>
 <ul class="return">
   
@@ -535,6 +567,7 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 92</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='rubyid_register_simple_handler identifier id'>register_simple_handler</span><span class='lparen token'>(</span><span class='rubyid_local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='rubyid_false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span>
   <span class='rubyid_internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='rubyid_InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
@@ -546,6 +579,19 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
   <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='rubyid_internal identifier id'>internal</span>
   <span class='rubyid_id identifier id'>id</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='register_simple_handler identifier id'>register_simple_handler</span><span class='lparen token'>(</span><span class='local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='message_hndlr identifier id'>message_hndlr</span>
+  <span class='internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='local_only identifier id'>local_only</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+  <span class='else else kw'>else</span>
+    <span class='id identifier id'>id</span> <span class='assign token'>=</span> <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='internal identifier id'>internal</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+  <span class='@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='internal identifier id'>internal</span>
+  <span class='id identifier id'>id</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -609,7 +655,10 @@ replyHandler An optional reply handler.
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -630,6 +679,7 @@ replyHandler An optional reply handler.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 57</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='rubyid_send identifier id'>send</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_message identifier id'>message</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;An address must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_address identifier id'>address</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A message must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_message identifier id'>message</span> <span class='eq op'>==</span> <span class='rubyid_nil nil kw'>nil</span>
@@ -640,6 +690,18 @@ replyHandler An optional reply handler.
     <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_send identifier id'>send</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_message identifier id'>message</span><span class='rparen token'>)</span>
   <span class='rubyid_end end kw'>end</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;An address must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='address identifier id'>address</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A message must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='message identifier id'>message</span> <span class='eq op'>==</span> <span class='nil nil kw'>nil</span>
+  <span class='message identifier id'>message</span> <span class='assign token'>=</span> <span class='convert_msg identifier id'>convert_msg</span><span class='lparen token'>(</span><span class='message identifier id'>message</span><span class='rparen token'>)</span>
+  <span class='if if kw'>if</span> <span class='reply_handler identifier id'>reply_handler</span> <span class='neq op'>!=</span> <span class='nil nil kw'>nil</span>
+    <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='comma token'>,</span> <span class='InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='else else kw'>else</span>
+    <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='send identifier id'>send</span><span class='lparen token'>(</span><span class='address identifier id'>address</span><span class='comma token'>,</span> <span class='message identifier id'>message</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -686,7 +748,10 @@ The id of the handler to unregister. Returned from
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -703,12 +768,21 @@ The id of the handler to unregister. Returned from
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/event_bus.rb', line 106</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='rubyid_unregister_handler identifier id'>unregister_handler</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A handler_id must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_handler_id identifier id'>handler_id</span>
   <span class='rubyid_handler identifier id'>handler</span> <span class='assign token'>=</span> <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='dstring node'>&quot;Cannot find handler for id #{handler_id}&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_handler identifier id'>handler</span>
   <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='unregister_handler identifier id'>unregister_handler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;A handler_id must be specified&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='handler_id identifier id'>handler_id</span>
+  <span class='handler identifier id'>handler</span> <span class='assign token'>=</span> <span class='@@handler_map ivar id'>@@handler_map</span><span class='dot token'>.</span><span class='delete identifier id'>delete</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='dstring node'>&quot;Cannot find handler for id #{handler_id}&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='handler identifier id'>handler</span>
+  <span class='@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -720,9 +794,15 @@ The id of the handler to unregister. Returned from
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:36 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:15 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

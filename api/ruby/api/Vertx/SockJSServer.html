@@ -133,8 +133,12 @@ and configuration is described in a Hash.
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -157,8 +161,11 @@ and configuration is described in a Hash.
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Instance Method Summary
@@ -170,7 +177,11 @@ and configuration is described in a Hash.
         <li class="public ">
   <span class="summary_signature">
     
+<<<<<<< HEAD
       <a href="#bridge-instance_method" title="#bridge (instance method)">- (Object) <strong>bridge</strong>(config, permitted, auth_timeout = 5*60*1000, auth_address = nil) </a>
+=======
+      <a href="#bridge-instance_method" title="#bridge (instance method)">- (Object) <strong>bridge</strong>(config, permitted) </a>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
     
 
     
@@ -283,7 +294,10 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -297,9 +311,15 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 50</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='rubyid_http_server identifier id'>http_server</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_server ivar id'>@j_server</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_createSockJSServer identifier id'>createSockJSServer</span><span class='lparen token'>(</span><span class='rubyid_http_server identifier id'>http_server</span><span class='dot token'>.</span><span class='rubyid__to_java_server identifier id'>_to_java_server</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='rparen token'>)</span>
+  <span class='@j_server ivar id'>@j_server</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='impl identifier id'>impl</span><span class='dot token'>.</span><span class='VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='createSockJSServer identifier id'>createSockJSServer</span><span class='lparen token'>(</span><span class='http_server identifier id'>http_server</span><span class='dot token'>.</span><span class='_to_java_server identifier id'>_to_java_server</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -316,7 +336,11 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
       <div class="method_details first">
   <p class="signature first" id="bridge-instance_method">
   
+<<<<<<< HEAD
     - (<tt>Object</tt>) <strong>bridge</strong>(config, permitted, auth_timeout = 5*60*1000, auth_address = nil) 
+=======
+    - (<tt>Object</tt>) <strong>bridge</strong>(config, permitted) 
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
 
   
@@ -329,15 +353,36 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
 66
 67
 68
+<<<<<<< HEAD
 69</pre>
+=======
+69
+70
+71
+72
+73
+74</pre>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 66</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_permitted identifier id'>permitted</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span> <span class='assign token'>=</span> <span class='integer val'>5</span> <span class='mult op'>*</span> <span class='integer val'>60</span> <span class='mult op'>*</span> <span class='integer val'>1000</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_a_json identifier id'>a_json</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonArray constant id'>JsonArray</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_permitted identifier id'>permitted</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='rparen token'>)</span><span class='comma token'>,</span> <span class='rubyid_a_json identifier id'>a_json</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='comma token'>,</span> <span class='permitted identifier id'>permitted</span><span class='rparen token'>)</span>
+  <span class='j_list identifier id'>j_list</span> <span class='assign token'>=</span> <span class='java identifier id'>java</span><span class='dot token'>.</span><span class='util identifier id'>util</span><span class='dot token'>.</span><span class='ArrayList constant id'>ArrayList</span><span class='dot token'>.</span><span class='new identifier id'>new</span>
+  <span class='permitted identifier id'>permitted</span><span class='dot token'>.</span><span class='each identifier id'>each</span> <span class='do do kw'>do</span> <span class='bitor op'>|</span><span class='match identifier id'>match</span><span class='bitor op'>|</span>
+    <span class='json_str identifier id'>json_str</span> <span class='assign token'>=</span> <span class='JSON constant id'>JSON</span><span class='dot token'>.</span><span class='generate identifier id'>generate</span><span class='lparen token'>(</span><span class='match identifier id'>match</span><span class='rparen token'>)</span>
+    <span class='j_json identifier id'>j_json</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='json identifier id'>json</span><span class='dot token'>.</span><span class='JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='json_str identifier id'>json_str</span><span class='rparen token'>)</span>
+    <span class='j_list identifier id'>j_list</span><span class='dot token'>.</span><span class='add identifier id'>add</span><span class='lparen token'>(</span><span class='j_json identifier id'>j_json</span><span class='rparen token'>)</span>
+  <span class='end end kw'>end</span>
+  <span class='@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='convert_config identifier id'>convert_config</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='rparen token'>)</span><span class='comma token'>,</span> <span class='j_list identifier id'>j_list</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -419,7 +464,10 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -437,6 +485,7 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 58</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_install_app identifier id'>install_app</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_j_config identifier id'>j_config</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='rparen token'>)</span>
@@ -444,6 +493,15 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
     <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_SockJSSocket constant id'>SockJSSocket</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_sock identifier id'>j_sock</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
   <span class='rbrace token'>}</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='install_app identifier id'>install_app</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='comma token'>,</span> <span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='j_config identifier id'>j_config</span> <span class='assign token'>=</span> <span class='convert_config identifier id'>convert_config</span><span class='lparen token'>(</span><span class='config identifier id'>config</span><span class='rparen token'>)</span>
+  <span class='@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='installApp identifier id'>installApp</span><span class='lparen token'>(</span><span class='j_config identifier id'>j_config</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_sock identifier id'>j_sock</span><span class='bitor op'>|</span>
+    <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='SockJSSocket constant id'>SockJSSocket</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_sock identifier id'>j_sock</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='rbrace token'>}</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -455,9 +513,15 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:36 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:15 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

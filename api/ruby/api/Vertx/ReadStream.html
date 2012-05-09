@@ -95,8 +95,12 @@ from a <span class='object_link'><a href="" title="Vertx::ReadStream (module)">R
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -119,8 +123,11 @@ from a <span class='object_link'><a href="" title="Vertx::ReadStream (module)">R
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Instance Method Summary
@@ -298,7 +305,10 @@ The data handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -315,12 +325,21 @@ The data handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 75</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_data_handler identifier id'>data_handler</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_dataHandler identifier id'>dataHandler</span><span class='lparen token'>(</span><span class='rubyid_Proc constant id'>Proc</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='bitor op'>|</span>
     <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
   <span class='rbrace token'>}</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='data_handler identifier id'>data_handler</span><span class='lparen token'>(</span><span class='proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='proc identifier id'>proc</span> <span class='if if_mod kw'>if</span> <span class='proc identifier id'>proc</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='dataHandler identifier id'>dataHandler</span><span class='lparen token'>(</span><span class='Proc constant id'>Proc</span><span class='dot token'>.</span><span class='new identifier id'>new</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='j_buff identifier id'>j_buff</span><span class='bitor op'>|</span>
+    <span class='hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='call identifier id'>call</span><span class='lparen token'>(</span><span class='Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='new identifier id'>new</span><span class='lparen token'>(</span><span class='j_buff identifier id'>j_buff</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='rbrace token'>}</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -367,7 +386,10 @@ The exception handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -381,9 +403,15 @@ The exception handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 100</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_end_handler identifier id'>end_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_endHandler identifier id'>endHandler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='end_handler identifier id'>end_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='endHandler identifier id'>endHandler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -429,7 +457,10 @@ The exception handler
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -443,9 +474,15 @@ The exception handler
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 94</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_exception_handler identifier id'>exception_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_exceptionHandler identifier id'>exceptionHandler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='exception_handler identifier id'>exception_handler</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='exceptionHandler identifier id'>exceptionHandler</span><span class='lparen token'>(</span><span class='hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -471,7 +508,10 @@ no more data to the <span class='object_link'><a href="#data_handler-instance_me
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -485,9 +525,15 @@ no more data to the <span class='object_link'><a href="#data_handler-instance_me
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 83</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_pause identifier id'>pause</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_pause identifier id'>pause</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='pause identifier id'>pause</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='pause identifier id'>pause</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -513,7 +559,10 @@ on it.
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -527,9 +576,15 @@ on it.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 88</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_resume identifier id'>resume</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_resume identifier id'>resume</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='resume identifier id'>resume</span>
+  <span class='@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='resume identifier id'>resume</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -541,9 +596,15 @@ on it.
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:36 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:15 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>

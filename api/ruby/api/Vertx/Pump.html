@@ -119,8 +119,12 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Author:</h3>
+=======
+  <h3>Author:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="author">
   
     <li>
@@ -143,8 +147,11 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
   
     <h2>
       Instance Method Summary
@@ -299,7 +306,10 @@ A new instance of Pump
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -317,6 +327,7 @@ A new instance of Pump
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 127</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='rubyid_read_stream identifier id'>read_stream</span><span class='comma token'>,</span> <span class='rubyid_write_stream identifier id'>write_stream</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;read_stream is not a ReadStream&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_read_stream identifier id'>read_stream</span><span class='dot token'>.</span><span class='rubyid_is_a? fid id'>is_a?</span> <span class='rubyid_ReadStream constant id'>ReadStream</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;write_stream is not a WriteStream&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_write_stream identifier id'>write_stream</span><span class='dot token'>.</span><span class='rubyid_is_a? fid id'>is_a?</span> <span class='rubyid_WriteStream constant id'>WriteStream</span>
@@ -324,6 +335,15 @@ A new instance of Pump
   <span class='rubyid_j_ws identifier id'>j_ws</span> <span class='assign token'>=</span> <span class='rubyid_write_stream identifier id'>write_stream</span><span class='dot token'>.</span><span class='rubyid__to_write_stream identifier id'>_to_write_stream</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_streams identifier id'>streams</span><span class='dot token'>.</span><span class='rubyid_Pump constant id'>Pump</span><span class='dot token'>.</span><span class='rubyid_createPump identifier id'>createPump</span><span class='lparen token'>(</span><span class='rubyid_j_rs identifier id'>j_rs</span><span class='comma token'>,</span> <span class='rubyid_j_ws identifier id'>j_ws</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='read_stream identifier id'>read_stream</span><span class='comma token'>,</span> <span class='write_stream identifier id'>write_stream</span><span class='rparen token'>)</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;read_stream is not a ReadStream&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='read_stream identifier id'>read_stream</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='ReadStream constant id'>ReadStream</span>
+  <span class='raise identifier id'>raise</span> <span class='string val'>&quot;write_stream is not a WriteStream&quot;</span> <span class='if if_mod kw'>if</span> <span class='notop op'>!</span><span class='write_stream identifier id'>write_stream</span><span class='dot token'>.</span><span class='is_a? fid id'>is_a?</span> <span class='WriteStream constant id'>WriteStream</span>
+  <span class='j_rs identifier id'>j_rs</span> <span class='assign token'>=</span> <span class='read_stream identifier id'>read_stream</span><span class='dot token'>.</span><span class='_to_read_stream identifier id'>_to_read_stream</span>
+  <span class='j_ws identifier id'>j_ws</span> <span class='assign token'>=</span> <span class='write_stream identifier id'>write_stream</span><span class='dot token'>.</span><span class='_to_write_stream identifier id'>_to_write_stream</span>
+  <span class='@j_pump ivar id'>@j_pump</span> <span class='assign token'>=</span> <span class='org identifier id'>org</span><span class='dot token'>.</span><span class='vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='java identifier id'>java</span><span class='dot token'>.</span><span class='core identifier id'>core</span><span class='dot token'>.</span><span class='streams identifier id'>streams</span><span class='dot token'>.</span><span class='Pump constant id'>Pump</span><span class='dot token'>.</span><span class='createPump identifier id'>createPump</span><span class='lparen token'>(</span><span class='j_rs identifier id'>j_rs</span><span class='comma token'>,</span> <span class='j_ws identifier id'>j_ws</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -354,8 +374,12 @@ Return the total number of bytes pumped by this pump.
   </div>
 </div>
 <div class="tags">
+<<<<<<< HEAD
   
 <h3>Returns:</h3>
+=======
+  <h3>Returns:</h3>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 <ul class="return">
   
     <li>
@@ -388,9 +412,15 @@ Return the total number of bytes pumped by this pump.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 152</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_bytes_pumped identifier id'>bytes_pumped</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_getBytesPumped identifier id'>getBytesPumped</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='bytes_pumped identifier id'>bytes_pumped</span>
+  <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='getBytesPumped identifier id'>getBytesPumped</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -415,7 +445,10 @@ Start the Pump. The Pump can be started and stopped multiple times.
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -429,9 +462,15 @@ Start the Pump. The Pump can be started and stopped multiple times.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 142</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_start identifier id'>start</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_start identifier id'>start</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='start identifier id'>start</span>
+  <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='start identifier id'>start</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -456,7 +495,10 @@ Stop the Pump. The Pump can be started and stopped multiple times.
 </div>
 <div class="tags">
   
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -470,9 +512,15 @@ Stop the Pump. The Pump can be started and stopped multiple times.
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 147</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_stop identifier id'>stop</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_stop identifier id'>stop</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='stop identifier id'>stop</span>
+  <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='stop identifier id'>stop</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -518,7 +566,10 @@ write queue max size
   
 </ul>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div><table class="source_code">
   <tr>
     <td>
@@ -532,9 +583,15 @@ write queue max size
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 137</span>
 
+<<<<<<< HEAD
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_queue_max_size= identifier id'>write_queue_max_size=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_setWriteQueueMaxSize identifier id'>setWriteQueueMaxSize</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
+=======
+<span class='def def kw'>def</span> <span class='write_queue_max_size= identifier id'>write_queue_max_size=</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+  <span class='@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='setWriteQueueMaxSize identifier id'>setWriteQueueMaxSize</span><span class='lparen token'>(</span><span class='val identifier id'>val</span><span class='rparen token'>)</span>
+<span class='end end kw'>end</span>
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </pre>
     </td>
   </tr>
@@ -546,9 +603,15 @@ write queue max size
 </div>
     
     <div id="footer">
+<<<<<<< HEAD
   Generated on Wed May 09 11:25:36 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
+=======
+  Generated on Tue Apr 17 13:34:15 2012 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.7.2 (ruby-1.8.7).
+>>>>>>> parent of bfa1e6a... Merge branch 'ws_beta10' into gh-pages
 </div>
 
   </body>
