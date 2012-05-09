@@ -3116,7 +3116,7 @@ Path of the file to read.
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 398</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_file_as_buffer identifier id'>read_file_as_buffer</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
-  <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readFile identifier id'>readFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
+  <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readFile identifier id'>readFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='bitor op'>|</span> <span class='rubyid_Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
 </pre>
     </td>
@@ -3738,7 +3738,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.write_buffer_to_f
 </div>
     
     <div id="footer">
-  Generated on Tue May 01 18:45:52 2012 by 
+  Generated on Wed May 09 11:25:37 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
 </div>

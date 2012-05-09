@@ -386,7 +386,7 @@ deployVerticle('web-server', webServerConf, 32)
 </pre>
 <p>(<em>Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances</em>.)</p>
 <h3 id="more-complex-web-applications">More complex web applications</h3><br/>
-<p>In this simple web application, there was no need to write any customer server side modules, but in more complex applications you might want to write your own server side services which can be used by clients (or by other server side code).</p>
+<p>In this simple web application, there was no need to write any custom server side modules, but in more complex applications you might want to write your own server side services which can be used by clients (or by other server side code).</p>
 <p>Doing this with Vert.x is very straightforward. Here's an example of a trivial server side service which listens on the event bus for messages and sends back the current time to the caller:</p>
 <pre class="prettyprint">vertx.eventBus.registerHandler("acme.timeService") { message -&gt;
     message.reply([current_time: System.currentTimeMillis()])        

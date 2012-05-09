@@ -538,13 +538,13 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-646
 647
 648
-649</pre>
+649
+650</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 646</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 647</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_chunked= identifier id'>chunked=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setChunked identifier id'>setChunked</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -581,12 +581,12 @@ Close the underlying TCP connection
       <pre class="lines">
 
 
-664
 665
-666</pre>
+666
+667</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 664</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 665</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_close identifier id'>close</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_close identifier id'>close</span>
@@ -646,16 +646,16 @@ Optional String or Buffer to write before ending the response
       <pre class="lines">
 
 
-655
 656
 657
 658
 659
 660
-661</pre>
+661
+662</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 655</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 656</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_end end kw'>end</span><span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_if if kw'>if</span> <span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span><span class='dot token'>.</span><span class='rubyid_is_a? fid id'>is_a?</span> <span class='rubyid_String constant id'>String</span><span class='rparen token'>)</span> <span class='orop op'>||</span> <span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span><span class='dot token'>.</span><span class='rubyid_is_a? fid id'>is_a?</span> <span class='rubyid_Buffer constant id'>Buffer</span><span class='rparen token'>)</span>
@@ -1005,13 +1005,13 @@ self So multiple operations can be chained.
       <pre class="lines">
 
 
-632
 633
 634
-635</pre>
+635
+636</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 632</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 633</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_send_file identifier id'>send_file</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_sendFile identifier id'>sendFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
@@ -1365,12 +1365,14 @@ self So multiple operations can be chained.
 623
 624
 625
-626</pre>
+626
+627</pre>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 623</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_str identifier id'>write_str</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
+  <span class='rubyid_puts identifier id'>puts</span> <span class='dstring node'>&quot;writing str: #{str}&quot;</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_write identifier id'>write</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span><span class='rparen token'>)</span>
   <span class='rubyid_self self kw'>self</span>
 <span class='rubyid_end end kw'>end</span>
@@ -1385,7 +1387,7 @@ self So multiple operations can be chained.
 </div>
     
     <div id="footer">
-  Generated on Tue May 01 18:45:50 2012 by 
+  Generated on Wed May 09 11:25:35 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
 </div>

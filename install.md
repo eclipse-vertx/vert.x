@@ -7,7 +7,7 @@ Alternatively you can build from source. To do that see the instructions on the 
 
 # Pre-requisites
 
-* Operating System. vert.x runs out of the box on Linux or OSX. If you are running Windows, the best way to run vert.x is to create a Linux (I recommend Ubuntu) vitrtual machine using your favourite virtualisation software (VMware Workstation, of course!) and run it in that.
+* Operating System. vert.x runs out of the box on Linux, OSX or Windows.
 
 * JDK. Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your `PATH`.
 

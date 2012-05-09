@@ -179,19 +179,8 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives.</p>
 <p>You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.</p>
 <p>Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.</p>
-<p>Why have been chosen an event based approach? The answer is, if we want our application to scale with many connections, <em>we don't have a choice</em>.</p>
 <p>Let's imagine for a minute that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.</p>
 <p>For such a blocking model to work and the system to remain responsive, each verticle instance would need to be assigned its own thread. Now consider what happens when we have thousands, 10s of thousands, or 100s of thousands of verticles running. We clearly can't have that many threads - the overhead due to context switching and stack space would be horrendous. It's clear to see such a blocking model just doesn't scale.</p>
-<p>The only way to make it scale is have a 100% non blocking api. There are two ways to do this:</p>
-<ul>
-<li>
-<p>Use an asynchronous, event based API. Let the system call you when events occur. Do not block waiting for things to happen.</p>
-</li>
-<li>
-<p>Use [continuations] (http://en.wikipedia.org/wiki/Continuation). Continuations allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However continuations are not currently supported across all the different languages, or versions of languages that we support in vert.x.</p>
-</li>
-</ul>
-<p>Vert.x currently takes the event-based api approach. As support for continuations in various languages matures we will consider also supporting them in the api.</p>
 <h3 id="event-loops">Event Loops</h3><br/>
 <p>Internally, a vert.x instance manages a small set of threads, normally matching the number of threads to the available cores on the server. We call these threads <em>event loops</em>, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, for example, handling some dcata that's been read from a socket, or executing a timer.</p>
 <p>When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.</p>

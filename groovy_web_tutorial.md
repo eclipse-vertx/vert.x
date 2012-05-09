@@ -443,7 +443,7 @@ Scaling up the web server part is trivial. Simply start up more instances of the
 
 ### More complex web applications
 
-In this simple web application, there was no need to write any customer server side modules, but in more complex applications you might want to write your own server side services which can be used by clients (or by other server side code).
+In this simple web application, there was no need to write any custom server side modules, but in more complex applications you might want to write your own server side services which can be used by clients (or by other server side code).
 
 Doing this with Vert.x is very straightforward. Here's an example of a trivial server side service which listens on the event bus for messages and sends back the current time to the caller:
 
