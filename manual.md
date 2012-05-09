@@ -96,19 +96,9 @@ You also set handlers to receive messages from the event bus, to receive HTTP re
 
 Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.
 
-Why have been chosen an event based approach? The answer is, if we want our application to scale with many connections, *we don't have a choice*.
-
 Let's imagine for a minute that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.
 
 For such a blocking model to work and the system to remain responsive, each verticle instance would need to be assigned its own thread. Now consider what happens when we have thousands, 10s of thousands, or 100s of thousands of verticles running. We clearly can't have that many threads - the overhead due to context switching and stack space would be horrendous. It's clear to see such a blocking model just doesn't scale.
-
-The only way to make it scale is have a 100% non blocking api. There are two ways to do this:
-
-* Use an asynchronous, event based API. Let the system call you when events occur. Do not block waiting for things to happen.
-
-* Use [continuations] (http://en.wikipedia.org/wiki/Continuation). Continuations allow you to suspend the execution of a piece of code and come back to a later when an event occurs. However continuations are not currently supported across all the different languages, or versions of languages that we support in vert.x.
-
-Vert.x currently takes the event-based api approach. As support for continuations in various languages matures we will consider also supporting them in the api.
 
 ### Event Loops
 
