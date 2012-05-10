@@ -41,7 +41,6 @@ public class RedisClient extends BusModBase implements
 	private String address;
 	private String host;
 	private int port;
-	private String password;
 	private Jedis redis;
 
 	public void start() {
@@ -50,7 +49,6 @@ public class RedisClient extends BusModBase implements
 		address = getOptionalStringConfig("address", "vertx.redis-client");
 		host = getOptionalStringConfig("host", "localhost");
 		port = getOptionalIntConfig("port", 6379);
-		password = getOptionalStringConfig("password", "");
 
 		try {
 			redis = new Jedis(host, port);
@@ -68,8 +66,6 @@ public class RedisClient extends BusModBase implements
 	public void handle(Message<JsonObject> message) {
 		String action = message.body.getString("action");
 
-		System.out.println("handle");
-		
 		if (action == null) {
 			sendError(message, "action must be specified");
 			return;
@@ -100,6 +96,7 @@ public class RedisClient extends BusModBase implements
 			sendError(message, "key can not be null");
 			return;
 		}
+		
 		String value = getMandatoryString("value", message);
 		if (value == null) {
 			sendError(message, "value can not be null");
