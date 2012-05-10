@@ -204,7 +204,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>By default, verticle event handlers should not take a long time to execute, however there are cases where you can't avoid blocking, or you genuinely have computationally intensive operations to perform.</p>
 <p>An example of the former would be calling a third-party blocking database API from a verticle. In this case you don't have control of the client library you are using so you just have to block until you get the result back.</p>
 <p>Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time on different circuits around the event loop, but this is awkward, and just a little bit silly ;)</p>
-<p>For cases like these, vert.x allows you to mark a particular verticle instance as a <em>worker verticle</em>. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the <em>background pool</em>. </p>
+<p>For cases like these, vert.x allows you to mark a particular verticle inststance as a <em>worker verticle</em>. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the <em>background pool</em>. </p>
 <p>Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.</p>
 <p>Worker verticles should be kept to a minimum, since a blocking approach doesn't scale if you want to deal with many concurrent connections.</p>
 <h3 id="core-and-busmods">Core and BusMods</h3><br/>
@@ -306,13 +306,14 @@ vertx run handler1.js -cluster -cluster-port 25501
 <p>In such cases it often makes sense to start up a standalone vert.x instance and deploy multiple verticles to that instance.</p>
 <p>This can be done using the <code>vertx start</code> and <code>vertx deploy</code> commands.</p>
 <h3 id="starting-a-standalone-vertx-server">Starting a Standalone vert.x server</h3><br/>
+<p>In most cases it's simpler to just use <code>vertx run</code> to run your application but if you want to deploy multiple isolated application inside the same JVM instance you can use a standalone vert.x server.</p>
 <p>To start a standalone vert.x server you simply type the command:</p>
 <pre class="prettyprint">vertx start
 </pre>
 <p>The <code>vertx start</code> command also takes a few optional parameters, some of which have the same meaning as the corresponding parameter in the <code>vertx run</code> command:</p>
 <ul>
 <li>
-<p><code>-port</code> This specifies which port the server will listen to for deployments. Default is <code>25571</code>. You'd want to change this if you had multiple standalone vert.x servers running on the same host. </p>
+<p><code>-deploy-port</code> This specifies which port the server will listen to for deployments. Default is <code>25571</code>. You'd want to change this if you had multiple standalone vert.x servers running on the same host. </p>
 </li>
 <li>
 <p><code>-cluster</code> This has the same meaning of the <code>-cluster</code> parameter in <code>vertx run</code>. </p>
@@ -330,11 +331,11 @@ vertx run handler1.js -cluster -cluster-port 25501
 </pre>
 <p>Start two unclustered vert.x servers on the same host - they need to be given unique deployment ports</p>
 <pre class="prettyprint">vertx start
-vertx start -port 25572
+vertx start -deploy-port 25572
 </pre>
 <p>Start two clustered vert.x servers on the same host - they need to be given unique deployment and clustering ports </p>
 <pre class="prettyprint">vertx start -cluster
-vertx start -cluster -port 25572 -cluster-port 25501
+vertx start -cluster -deploy-port 25572 -cluster-port 25501
 </pre>
 <p>Once the vert.x server has started, the <code>vertx start</code> command will block until the server is stopped.     <br/>
 </p>

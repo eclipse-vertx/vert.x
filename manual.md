@@ -146,7 +146,7 @@ An example of the former would be calling a third-party blocking database API fr
 
 Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time on different circuits around the event loop, but this is awkward, and just a little bit silly ;)
 
-For cases like these, vert.x allows you to mark a particular verticle instance as a *worker verticle*. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the *background pool*. 
+For cases like these, vert.x allows you to mark a particular verticle inststance as a *worker verticle*. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the *background pool*. 
 
 Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.
 
@@ -274,13 +274,15 @@ This can be done using the `vertx start` and `vertx deploy` commands.
 
 ### Starting a Standalone vert.x server
 
+In most cases it's simpler to just use `vertx run` to run your application but if you want to deploy multiple isolated application inside the same JVM instance you can use a standalone vert.x server.
+
 To start a standalone vert.x server you simply type the command:
 
     vertx start    
     
 The `vertx start` command also takes a few optional parameters, some of which have the same meaning as the corresponding parameter in the `vertx run` command:
 
-* `-port` This specifies which port the server will listen to for deployments. Default is `25571`. You'd want to change this if you had multiple standalone vert.x servers running on the same host. 
+* `-deploy-port` This specifies which port the server will listen to for deployments. Default is `25571`. You'd want to change this if you had multiple standalone vert.x servers running on the same host. 
 
 * `-cluster` This has the same meaning of the `-cluster` parameter in `vertx run`. 
 
@@ -297,12 +299,12 @@ Start a clustered vert.x server:
 Start two unclustered vert.x servers on the same host - they need to be given unique deployment ports
 
     vertx start
-    vertx start -port 25572
+    vertx start -deploy-port 25572
     
 Start two clustered vert.x servers on the same host - they need to be given unique deployment and clustering ports 
 
     vertx start -cluster
-    vertx start -cluster -port 25572 -cluster-port 25501    
+    vertx start -cluster -deploy-port 25572 -cluster-port 25501    
     
 Once the vert.x server has started, the `vertx start` command will block until the server is stopped.       
 
