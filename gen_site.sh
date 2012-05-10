@@ -9,7 +9,6 @@
 ./gen_section.sh install.md install_manual_templ.html install.html
 ./gen_section.sh js_web_tutorial.md js_web_tutorial_templ.html js_web_tutorial.html
 ./gen_section.sh ruby_web_tutorial.md ruby_web_tutorial_templ.html ruby_web_tutorial.html
-./gen_section.sh java_web_tutorial.md java_web_tutorial_templ.html java_web_tutorial.html
 ./gen_section.sh groovy_web_tutorial.md groovy_web_tutorial_templ.html groovy_web_tutorial.html
 
 
