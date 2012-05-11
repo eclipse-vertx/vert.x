@@ -28,10 +28,15 @@ import redis.clients.jedis.exceptions.JedisException;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class ExistsCommand extends BusModBase implements Command {
+public class ExistsCommand extends Command {
 	
 	public static final String COMMAND = "exists";
 
+	public ExistsCommand() {
+		super(COMMAND);
+	}
+	
+	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) {
 		String key = getMandatoryString("key", message);

@@ -16,7 +16,8 @@
 
 package org.vertx.mods.redis;
 
-
+import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,11 +37,8 @@ import org.vertx.mods.redis.commands.IncrByCommand;
 import org.vertx.mods.redis.commands.IncrCommand;
 import org.vertx.mods.redis.commands.SetCommand;
 
-
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisException;
-
-
 
 /**
  * RedisClient Bus Module
@@ -52,19 +50,10 @@ import redis.clients.jedis.exceptions.JedisException;
  */
 public class RedisClient extends BusModBase implements
 		Handler<Message<JsonObject>>, CommandContext {
-	
+
 	private static final Map<String, Command> commands = new HashMap<String, Command>();
 	static {
-		commands.put(SetCommand.COMMAND, new SetCommand());
-		commands.put(GetCommand.COMMAND, new GetCommand());
-		commands.put(ExistsCommand.COMMAND, new ExistsCommand());
-		commands.put(DelCommand.COMMAND, new DelCommand());
-		commands.put(GetSetCommand.COMMAND, new GetSetCommand());
-		
-		commands.put(IncrCommand.COMMAND, new IncrCommand());
-		commands.put(IncrByCommand.COMMAND, new IncrByCommand());
-		commands.put(DecrCommand.COMMAND, new DecrCommand());
-		commands.put(DecrByCommand.COMMAND, new DecrByCommand());
+		find("org.vertx.mods.redis.commands");
 	}
 
 	private String address;
@@ -99,9 +88,9 @@ public class RedisClient extends BusModBase implements
 			sendError(message, "action must be specified");
 			return;
 		}
-		
+
 		Command commandHandler = commands.get(command.toLowerCase());
-		
+
 		if (commandHandler != null) {
 			try {
 				commandHandler.handle(message, this);
@@ -114,13 +103,59 @@ public class RedisClient extends BusModBase implements
 		}
 	}
 
-
 	@Override
 	public Jedis getClient() {
 		return redis;
 	}
 
-	
-	
+	/**
+	 * Helper to load all commands from a package
+	 * @param pckgname
+	 */
+	private static void find(String pckgname) {
+		// Code from JWhich
+		// ======
+		// Translate the package name into an absolute path
+		String name = new String(pckgname);
+		if (!name.startsWith("/")) {
+			name = "/" + name;
+		}
+		name = name.replace('.', '/');
+
+		// Get a File object for the package
+		URL url = RedisClient.class.getResource(name);
+		File directory = new File(url.getFile());
+		// New code
+		// ======
+		if (directory.exists()) {
+			// Get the list of the files contained in the package
+			String[] files = directory.list();
+			for (int i = 0; i < files.length; i++) {
+
+				// we are only interested in .class files
+				if (files[i].endsWith(".class")) {
+					// removes the .class extension
+					String classname = files[i].substring(0,
+							files[i].length() - 6);
+					try {
+						Class<?> clazz = Class.forName(pckgname + "." + classname);
+						// loaded class is a command
+						if (Command.class.isAssignableFrom(clazz)) {
+							Object o = clazz.newInstance();
+							commands.put(((Command) o).getName(), (Command) o);
+						}
+					} catch (ClassNotFoundException cnfex) {
+						System.err.println(cnfex);
+					} catch (InstantiationException iex) {
+						// We try to instantiate an interface
+						// or an object that does not have a
+						// default constructor
+					} catch (IllegalAccessException iaex) {
+						// The class is not public
+					}
+				}
+			}
+		}
+	}
 
 }

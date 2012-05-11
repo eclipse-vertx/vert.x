@@ -16,6 +16,7 @@
 
 package org.vertx.mods.redis.commands;
 
+import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
@@ -26,11 +27,22 @@ import org.vertx.mods.redis.CommandContext;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public interface Command {
+public abstract class Command extends BusModBase {
+	
+	private String name;
+	
+	public Command (String name) {
+		this.name = name;
+	}
+	
 	/**
 	 * Handles the command provided in the message
 	 * 
 	 * @param message The eventbus message
 	 */
-	public void handle (Message<JsonObject> message, CommandContext context) throws CommandException;
+	public abstract void handle (Message<JsonObject> message, CommandContext context) throws CommandException;
+	
+	public String getName () {
+		return name;
+	}
 }

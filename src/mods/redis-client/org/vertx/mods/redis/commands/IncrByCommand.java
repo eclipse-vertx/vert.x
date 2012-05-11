@@ -28,10 +28,14 @@ import redis.clients.jedis.exceptions.JedisException;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends BusModBase implements Command {
+public class IncrByCommand extends Command {
 	
 	public static final String COMMAND = "incrby";
 
+	public IncrByCommand () {
+		super(COMMAND);
+	}
+	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) {
 		String key = getMandatoryString("key", message);

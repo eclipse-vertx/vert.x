@@ -28,9 +28,13 @@ import redis.clients.jedis.exceptions.JedisException;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class GetSetCommand extends BusModBase implements Command {
+public class GetSetCommand extends Command {
 	
 	public static final String COMMAND = "getset";
+	
+	public GetSetCommand () {
+		super(COMMAND);
+	}
 
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) {

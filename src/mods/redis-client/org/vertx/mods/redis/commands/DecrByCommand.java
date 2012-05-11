@@ -28,9 +28,13 @@ import redis.clients.jedis.exceptions.JedisException;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class DecrByCommand extends BusModBase implements Command {
+public class DecrByCommand extends Command {
 	
 	public static final String COMMAND = "decrby";
+	
+	public DecrByCommand() {
+		super(COMMAND);
+	}
 
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) {
