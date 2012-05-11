@@ -1,4 +1,4 @@
-vertx=require('./vertx.common');
+vertx=require('vertx');
 
 module.exports = function(port, host){
     var server = vertx.createHttpServer();
