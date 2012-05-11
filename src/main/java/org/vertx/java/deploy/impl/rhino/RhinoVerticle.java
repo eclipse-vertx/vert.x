@@ -18,16 +18,30 @@ package org.vertx.java.deploy.impl.rhino;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.commonjs.module.ModuleScript;
+import org.mozilla.javascript.commonjs.module.Require;
+import org.mozilla.javascript.commonjs.module.RequireBuilder;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
+import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
+import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -64,6 +78,62 @@ public class RhinoVerticle extends Verticle {
     ScriptableObject.putProperty(scope, "stderr", jsStderr);
   }
 
+  // Extracted from Rhino1_7R3_RELEASE/toolsrc/org/mozilla/javascript/tools/shell/Global.java
+  public static Require installRequire(Context cx, ScriptableObject scope, List<String> modulePath, boolean sandboxed) {
+    RequireBuilder rb = new RequireBuilder();
+    rb.setSandboxed(sandboxed);
+    List<URI> uris = new ArrayList<URI>();
+    if (modulePath != null) {
+      for (String path : modulePath) {
+        try {
+          URI uri = new URI(path);
+          if (!uri.isAbsolute()) {
+            // call resolve("") to canonify the path
+            uri = new File(path).toURI().resolve("");
+          }
+          if (!uri.toString().endsWith("/")) {
+            // make sure URI always terminates with slash to
+            // avoid loading from unintended locations
+            uri = new URI(uri + "/");
+          }
+          uris.add(uri);
+        } catch (URISyntaxException usx) {
+          throw new RuntimeException(usx);
+        }
+      }
+    }
+    rb.setModuleScriptProvider(
+            new SoftCachingModuleScriptProvider(new UrlModuleSourceProvider(uris, null)){
+              @Override
+              public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, Scriptable paths) throws Exception {
+                // Allow loading modules from <dir>/index.js
+                if(uri != null && new File(uri).isDirectory()){
+                  uri = URI.create(moduleId + File.separator + "index.js");
+                }
+                return super.getModuleScript(cx, moduleId, uri, paths);
+              }
+            });
+    Require require = rb.createRequire(cx, scope);
+    require.install(scope);
+    return require;
+  }
+
+  private static Require installRequire(ClassLoader cl, Context cx, ScriptableObject scope){
+    List<String> modulePaths= new ArrayList<>();
+
+    // Add the classpath URLs
+    URL[] urls = ((URLClassLoader)cl).getURLs();
+    for(URL url : urls){
+      modulePaths.add(url.getPath());
+    }
+
+    // Hack to add the javascript core library to the module path
+    String corePath = new File(cl.getResource("vertx.js").getPath()).getParent();
+    modulePaths.add(corePath);
+
+    return installRequire(cx, scope, modulePaths, false);
+  }
+
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
@@ -83,6 +153,7 @@ public class RhinoVerticle extends Verticle {
       scope = cx.initStandardObjects();
 
       addStandardObjectsToScope(scope);
+
       scope.defineFunctionProperties(new String[] { "load" }, RhinoVerticle.class, ScriptableObject.DONTENUM);
 
       // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and
@@ -90,7 +161,8 @@ public class RhinoVerticle extends Verticle {
       scopeThreadLocal.set(scope);
       clThreadLocal.set(cl);
 
-      loadScript(cl, cx, scope, scriptName);
+      Require require = installRequire(cl, cx, scope);
+      require.requireMain(cx, scriptName);
 
       try {
         stopFunction = (Function)scope.get("vertxStop", scope);
