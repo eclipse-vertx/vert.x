@@ -107,20 +107,14 @@ public class RhinoVerticle extends Verticle {
     return require;
   }
 
-  private static void installRequire(ClassLoader cl, Context cx, ScriptableObject scope){
+  private static Require installRequire(ClassLoader cl, Context cx, ScriptableObject scope){
     List<String> modulePaths= new ArrayList<>();
 
-    // Get the URLs
-    // Must add current path since Rhino can't resolve relative module IDs when require() is used outside of a module
-    URL[] urls = ((URLClassLoader)cl).getURLs();
-    for(URL url : urls){
-      modulePaths.add(url.getPath());
-    }
     // Hack to add the javascript core library to the module path
     String corePath = new File(cl.getResource("vertx.js").getPath()).getParent();
     modulePaths.add(corePath);
 
-    installRequire(cx, scope, modulePaths, false);
+    return installRequire(cx, scope, modulePaths, false);
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
@@ -150,8 +144,8 @@ public class RhinoVerticle extends Verticle {
       scopeThreadLocal.set(scope);
       clThreadLocal.set(cl);
 
-      installRequire(cl, cx, scope);
-      loadScript(cl, cx, scope, scriptName);
+      Require require = installRequire(cl, cx, scope);
+      require.requireMain(cx, scriptName);
 
       try {
         stopFunction = (Function)scope.get("vertxStop", scope);
