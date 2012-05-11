@@ -26,9 +26,14 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
+import org.vertx.mods.redis.commands.DecrByCommand;
+import org.vertx.mods.redis.commands.DecrCommand;
 import org.vertx.mods.redis.commands.DelCommand;
 import org.vertx.mods.redis.commands.ExistsCommand;
 import org.vertx.mods.redis.commands.GetCommand;
+import org.vertx.mods.redis.commands.GetSetCommand;
+import org.vertx.mods.redis.commands.IncrByCommand;
+import org.vertx.mods.redis.commands.IncrCommand;
 import org.vertx.mods.redis.commands.SetCommand;
 
 
@@ -54,6 +59,12 @@ public class RedisClient extends BusModBase implements
 		commands.put(GetCommand.COMMAND, new GetCommand());
 		commands.put(ExistsCommand.COMMAND, new ExistsCommand());
 		commands.put(DelCommand.COMMAND, new DelCommand());
+		commands.put(GetSetCommand.COMMAND, new GetSetCommand());
+		
+		commands.put(IncrCommand.COMMAND, new IncrCommand());
+		commands.put(IncrByCommand.COMMAND, new IncrByCommand());
+		commands.put(DecrCommand.COMMAND, new DecrCommand());
+		commands.put(DecrByCommand.COMMAND, new DecrByCommand());
 	}
 
 	private String address;
