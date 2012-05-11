@@ -167,6 +167,9 @@
     <antcall target="compile-java-mod">
       <param name="mod-name" value="web-server"/>
     </antcall>
+	<antcall target="compile-java-mod">
+      <param name="mod-name" value="redis-client"/>
+    </antcall>
   </target>
 
   <target name="compile-java-mod" depends="compile-platform" description="compile the out of the box java mods">
