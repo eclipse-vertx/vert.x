@@ -18,9 +18,12 @@ package org.vertx.java.deploy.impl.rhino;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.commonjs.module.ModuleScript;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.vertx.java.core.logging.Logger;
@@ -100,8 +103,16 @@ public class RhinoVerticle extends Verticle {
       }
     }
     rb.setModuleScriptProvider(
-            new SoftCachingModuleScriptProvider(
-                    new UrlModuleSourceProvider(uris, null)));
+            new SoftCachingModuleScriptProvider(new UrlModuleSourceProvider(uris, null)){
+              @Override
+              public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, Scriptable paths) throws Exception {
+                // Allow loading modules from <dir>/index.js
+                if(uri != null && new File(uri).isDirectory()){
+                  uri = URI.create(moduleId + File.separator + "index.js");
+                }
+                return super.getModuleScript(cx, moduleId, uri, paths);
+              }
+            });
     Require require = rb.createRequire(cx, scope);
     require.install(scope);
     return require;
@@ -109,6 +120,12 @@ public class RhinoVerticle extends Verticle {
 
   private static Require installRequire(ClassLoader cl, Context cx, ScriptableObject scope){
     List<String> modulePaths= new ArrayList<>();
+
+    // Add the classpath URLs
+    URL[] urls = ((URLClassLoader)cl).getURLs();
+    for(URL url : urls){
+      modulePaths.add(url.getPath());
+    }
 
     // Hack to add the javascript core library to the module path
     String corePath = new File(cl.getResource("vertx.js").getPath()).getParent();
