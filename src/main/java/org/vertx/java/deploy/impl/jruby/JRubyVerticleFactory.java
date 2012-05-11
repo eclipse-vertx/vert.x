@@ -40,20 +40,20 @@ public class JRubyVerticleFactory implements VerticleFactory {
 
   @Override
   public void init(VerticleManager mgr) {
-	this.mgr = mgr;  
+	  this.mgr = mgr;
   }
 
   @Override
   public String getLanguage() {
-	return "ruby";
+	  return "ruby";
   }
   
   @Override
   public boolean isFactoryFor(String main) {
-	if (main.endsWith(".rb")) {
-		return true;
-	}
-	return false;
+    if (main.endsWith(".rb")) {
+      return true;
+    }
+    return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
