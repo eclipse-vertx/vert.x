@@ -21,10 +21,8 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.framework.TestClientBase;
-import org.vertx.mods.RedisClient;
 
 /**
  * 
@@ -83,15 +81,4 @@ public class TestClient extends TestClientBase {
 			}
 		});
 	}
-	
-	public static void main (String args[]) throws Exception {
-		
-		TestClient test = new TestClient();
-		test.start();
-		
-		test.testPersistor();
-		
-		test.stop();
-	}
-
 }
