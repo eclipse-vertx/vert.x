@@ -39,20 +39,20 @@ public class RhinoVerticleFactory implements VerticleFactory {
 
   @Override
   public void init(VerticleManager mgr) {
-	this.mgr = mgr;  
+	  this.mgr = mgr;
   }
 
   @Override
   public String getLanguage() {
-	return "rhino";
+	  return "rhino";
   }
   
   @Override
   public boolean isFactoryFor(String main) {
-	if (main.endsWith(".js")) {
-		return true;
-	}
-	return false;
+    if (main.endsWith(".js")) {
+      return true;
+    }
+    return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {

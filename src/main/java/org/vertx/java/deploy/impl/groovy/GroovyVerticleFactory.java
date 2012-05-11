@@ -31,15 +31,12 @@ import org.vertx.java.deploy.impl.VertxLocator;
 import java.lang.reflect.Method;
 import java.net.URL;
 
-//import org.vertx.groovy.deploy.Container;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class GroovyVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
-  private Vertx gVertx;
 
   public GroovyVerticleFactory() {
 	  super();
@@ -47,21 +44,20 @@ public class GroovyVerticleFactory implements VerticleFactory {
 
   @Override
   public void init(VerticleManager mgr) {
-	this.mgr = mgr;  
-    this.gVertx = new Vertx((VertxInternal) VertxLocator.vertx);
+	  this.mgr = mgr;
   }
 
   @Override
   public String getLanguage() {
-	return "groovy";
+	  return "groovy";
   }
   
   @Override
   public boolean isFactoryFor(String main) {
-	if (main.endsWith(".groovy")) {
-		return true;
-	}
-	return false;
+    if (main.endsWith(".groovy")) {
+      return true;
+    }
+	  return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
@@ -95,7 +91,7 @@ public class GroovyVerticleFactory implements VerticleFactory {
 
     // Inject vertx into the script binding
     Binding binding = new Binding();
-    binding.setVariable("vertx", gVertx);
+    binding.setVariable("vertx", new Vertx((VertxInternal) VertxLocator.vertx));
     binding.setVariable("container", new Container(new org.vertx.java.deploy.Container((mgr))));
     verticle.setBinding(binding);
 
