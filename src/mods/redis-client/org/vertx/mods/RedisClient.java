@@ -64,7 +64,7 @@ public class RedisClient extends BusModBase implements
 	}
 
 	public void handle(Message<JsonObject> message) {
-		String action = message.body.getString("action");
+		String action = message.body.getString("command");
 
 		if (action == null) {
 			sendError(message, "action must be specified");
@@ -80,6 +80,9 @@ public class RedisClient extends BusModBase implements
 			break;
 		case "get":
 			doGet(message);
+			break;
+		case "getSet":
+			doGetSet(message);
 			break;
 		case "del":
 			doDel(message);
@@ -107,6 +110,31 @@ public class RedisClient extends BusModBase implements
 			
 			redis.set(key, value);
 			sendOK(message);
+		} catch (JedisException e) {
+			sendError(message, e.getLocalizedMessage());
+		}
+		
+	}
+	
+	private void doGetSet(Message<JsonObject> message) {
+		String key = getMandatoryString("key", message);
+		if (key == null) {
+			sendError(message, "key can not be null");
+			return;
+		}
+		
+		String value = getMandatoryString("value", message);
+		if (value == null) {
+			sendError(message, "value can not be null");
+			return;
+		}
+		
+		try {
+			
+			value = redis.getSet(key, value);
+			
+			JsonObject reply = new JsonObject().putString("value", value);
+			sendOK(message, reply);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}
