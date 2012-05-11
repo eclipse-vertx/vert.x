@@ -20,13 +20,13 @@ Run the rate counter in a console (give it a unique cluster port)
 
 `vertx run org.vertx.java.examples.perf.RateCounter -cp classes -cluster -cluster-port 25501`
 
-Run the server in another console (give it 8 instances to utilise the cores on the server)
+Run the server in another console (give it 6 instances to utilise the cores on the server)
 
-`vertx run org.vertx.java.examples.httpperf.PerfServer -cp classes -instances 8`
+`vertx run org.vertx.java.examples.httpperf.PerfServer -cp classes -instances 6`
 
 Run the client in another console:
 
-`vertx run org.vertx.java.examples.httpperf.PerfClient -cp classes -instances 8 -cluster -cluster-port 25502`
+`vertx run org.vertx.java.examples.httpperf.PerfClient -cp classes -instances 6 -cluster`
 
 Of course, you can run client and server on different machines. You'll probably need a fast network to avoid getting IO bound.
 
