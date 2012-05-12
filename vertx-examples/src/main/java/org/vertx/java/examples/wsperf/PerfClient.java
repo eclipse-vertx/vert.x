@@ -18,7 +18,7 @@ package org.vertx.java.examples.wsperf;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.buffer.impl.BufferImpl;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.WebSocket;
@@ -68,8 +68,8 @@ public class PerfClient extends Verticle {
         connectCount++;
 
         ws.setWriteQueueMaxSize(BUFF_SIZE);
-        ws.dataHandler(new Handler<BufferImpl>() {
-          public void handle(BufferImpl data) {
+        ws.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
             if (!wss.contains(ws)) {
               wss.add(ws);
               if (wss.size() == CONNS) {
@@ -127,7 +127,7 @@ public class PerfClient extends Verticle {
   private void writeWebSocket(final WebSocket ws) {
     if (!ws.writeQueueFull()) {
       //ws.writeTextFrame(message);
-      ws.writeBinaryFrame(new BufferImpl(message));
+      ws.writeBinaryFrame(new Buffer(message));
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
           writeWebSocket(ws);

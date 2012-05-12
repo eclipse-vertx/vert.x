@@ -17,7 +17,7 @@
 package org.vertx.java.examples.websockets;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.impl.BufferImpl;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.lang.Verticle;
@@ -28,8 +28,8 @@ public class WebsocketsExample extends Verticle {
     vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         if (ws.path.equals("/myapp")) {
-          ws.dataHandler(new Handler<BufferImpl>() {
-            public void handle(BufferImpl data) {
+          ws.dataHandler(new Handler<Buffer>() {
+            public void handle(Buffer data) {
               ws.writeTextFrame(data.toString()); // Echo it back
             }
           });

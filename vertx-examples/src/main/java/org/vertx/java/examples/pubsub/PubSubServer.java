@@ -17,7 +17,7 @@
 package org.vertx.java.examples.pubsub;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.impl.BufferImpl;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.lang.Verticle;
@@ -29,8 +29,8 @@ public class PubSubServer extends Verticle {
   public void start() {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        socket.dataHandler(RecordParser.newDelimited("\n", new Handler<BufferImpl>() {
-          public void handle(BufferImpl frame) {
+        socket.dataHandler(RecordParser.newDelimited("\n", new Handler<Buffer>() {
+          public void handle(Buffer frame) {
             String line = frame.toString().trim();
             System.out.println("Line is " + line);
             String[] parts = line.split("\\,");
@@ -45,7 +45,7 @@ public class PubSubServer extends Verticle {
               Set<String> actorIDs = vertx.sharedData().getSet(parts[1]);
               for (String actorID : actorIDs) {
                 System.out.println("Sending to verticle");
-                vertx.eventBus().send(actorID, new BufferImpl(parts[2]));
+                vertx.eventBus().send(actorID, new Buffer(parts[2]));
               }
             }
           }

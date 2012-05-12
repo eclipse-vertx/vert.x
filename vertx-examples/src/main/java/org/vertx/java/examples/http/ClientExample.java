@@ -17,7 +17,7 @@
 package org.vertx.java.examples.http;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.impl.BufferImpl;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.lang.Verticle;
 
@@ -26,8 +26,8 @@ public class ClientExample extends Verticle {
   public void start() {
     vertx.createHttpClient().setPort(8080).setHost("localhost").getNow("/", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
-        response.bodyHandler(new Handler<BufferImpl>() {
-          public void handle(BufferImpl data) {
+        response.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
             System.out.println(data);
           }
         });
