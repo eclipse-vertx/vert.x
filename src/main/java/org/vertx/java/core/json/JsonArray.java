@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.json;
 
-import org.vertx.java.core.http.impl.ws.Base64;
+import org.vertx.java.core.util.Base64;
 
 import java.util.ArrayList;
 import java.util.Arrays;
