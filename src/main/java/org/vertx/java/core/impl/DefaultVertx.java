@@ -22,6 +22,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;

@@ -17,8 +17,8 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;

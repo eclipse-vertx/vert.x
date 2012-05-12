@@ -18,6 +18,7 @@ package org.vertx.java.core.impl;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.VertxInternal;
 
 /**
  * <p>Internal class used to run specific blocking actions on the worker pool.</p>

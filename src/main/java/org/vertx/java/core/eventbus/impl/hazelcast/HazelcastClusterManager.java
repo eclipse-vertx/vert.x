@@ -20,9 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.SubsMap;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
