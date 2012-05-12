@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.net.impl;
+package org.vertx.java.core.net;
 
 import java.io.Serializable;
 

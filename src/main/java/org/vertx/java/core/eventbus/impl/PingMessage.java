@@ -17,7 +17,7 @@
 package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.net.ServerID;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

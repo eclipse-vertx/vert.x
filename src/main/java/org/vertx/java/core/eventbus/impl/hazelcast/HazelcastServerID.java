@@ -17,7 +17,8 @@
 package org.vertx.java.core.eventbus.impl.hazelcast;
 
 import com.hazelcast.nio.DataSerializable;
-import org.vertx.java.core.net.impl.ServerID;
+
+import org.vertx.java.core.net.ServerID;
 
 import java.io.DataInput;
 import java.io.DataOutput;

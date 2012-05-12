@@ -48,6 +48,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.ServerID;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;

@@ -26,7 +26,7 @@ import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.net.ServerID;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
