@@ -19,7 +19,7 @@ package org.vertx.java.examples.wsperf;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class ConnectClient extends Verticle {
 

@@ -18,7 +18,7 @@ package org.vertx.java.examples.perf;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class RateCounter extends Verticle implements Handler<Message<Integer>> {
 

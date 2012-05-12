@@ -17,18 +17,18 @@
 package org.vertx.java.examples.proxy;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.buffer.impl.BufferImpl;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class Client extends Verticle {
 
   public void start() {
     HttpClientRequest req = vertx.createHttpClient().setPort(8080).setHost("localhost").put("/some-url", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse response) {
-        response.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
+        response.dataHandler(new Handler<BufferImpl>() {
+          public void handle(BufferImpl data) {
             System.out.println("Got response data:" + data);
           }
         });

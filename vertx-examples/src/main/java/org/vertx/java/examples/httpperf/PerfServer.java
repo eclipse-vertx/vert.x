@@ -19,9 +19,9 @@ package org.vertx.java.examples.httpperf;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.buffer.impl.BufferImpl;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class PerfServer extends Verticle {
 
@@ -33,8 +33,8 @@ public class PerfServer extends Verticle {
 
         // If you want to serve a real file uncomment this and comment previous line
         //req.response.sendFile("httpperf/foo.html");
-        vertx.fileSystem().readFile("httpperf/foo.html", new AsyncResultHandler<Buffer>() {
-          public void handle(AsyncResult<Buffer> ar) {
+        vertx.fileSystem().readFile("httpperf/foo.html", new AsyncResultHandler<BufferImpl>() {
+          public void handle(AsyncResult<BufferImpl> ar) {
             req.response.putHeader("Content-Length", ar.result.length());
             req.response.putHeader("Content-Type", "text/html");
             req.response.end(ar.result);

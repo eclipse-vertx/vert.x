@@ -74,6 +74,7 @@ project(":vertx-cli") {
 }
 
 project(":vertx-lang-groovy") {
+	apply plugin: 'groovy'
 	dependencies {
 		compile project(":vertx-api");
 		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
@@ -103,7 +104,7 @@ project(":vertx-mods-auth-mgr") {
 project(":vertx-mods-mailer") {
 	dependencies {
 		compile project(":vertx-api");
-		compile "javamail:mail:$javamailVersion"
+		compile "javax.mail:mail:$javamailVersion"
 	}
 }
 
@@ -128,6 +129,7 @@ project(":vertx-mods-work-queue") {
 
 
 project(":vertx-examples") {
+	apply plugin: 'groovy'
 	dependencies {
 		compile project(":vertx-api");
 	}

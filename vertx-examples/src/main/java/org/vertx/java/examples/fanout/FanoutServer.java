@@ -18,9 +18,9 @@ package org.vertx.java.examples.fanout;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.buffer.impl.BufferImpl;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 import java.util.Set;
 
@@ -32,8 +32,8 @@ public class FanoutServer extends Verticle {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         connections.add(socket.getWriteHandlerID());
-        socket.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer buffer) {
+        socket.dataHandler(new Handler<BufferImpl>() {
+          public void handle(BufferImpl buffer) {
             for (String actorID : connections) {
               vertx.eventBus().send(actorID, buffer);
             }

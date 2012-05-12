@@ -18,7 +18,7 @@ package org.vertx.java.examples.wsperf;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
