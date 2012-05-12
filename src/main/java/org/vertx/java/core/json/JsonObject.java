@@ -17,7 +17,6 @@
 package org.vertx.java.core.json;
 
 import org.vertx.java.core.http.impl.ws.Base64;
-import org.vertx.java.core.json.impl.Json;
 
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +54,7 @@ public class JsonObject {
    */
   @SuppressWarnings("unchecked")
   public JsonObject(String jsonString) {
-    map = (Map<String, Object>) Json.decodeValue(jsonString, Map.class);
+    map = (Map<String, Object>) JsonMapper.decodeValue(jsonString, Map.class);
   }
 
   public JsonObject putString(String fieldName, String value) {
@@ -177,7 +176,7 @@ public class JsonObject {
   }
 
   public String encode() {
-    return Json.encode(this.map);
+    return JsonMapper.encode(this.map);
   }
 
   public JsonObject copy() {

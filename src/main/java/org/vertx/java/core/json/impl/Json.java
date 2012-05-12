@@ -25,6 +25,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Deprecated
 public class Json {
 
   private static final Logger log = LoggerFactory.getLogger(Json.class);
