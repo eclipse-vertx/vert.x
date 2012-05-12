@@ -1,0 +1,9 @@
+jar {
+	archiveName = "${archivesBaseName}-${vertxVersion}.jar"
+	manifest {
+			attributes (
+					'Implementation-Title': "$title",
+					'Implementation-Version': "$vertxVersion"
+			)
+	}
+}
