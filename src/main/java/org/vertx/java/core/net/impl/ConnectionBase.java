@@ -115,7 +115,7 @@ public abstract class ConnectionBase {
     return context;
   }
 
-  protected void handleException(Exception e) {
+  public void handleException(Exception e) {
     if (exceptionHandler != null) {
       setContext();
       try {

@@ -29,7 +29,7 @@ import org.vertx.groovy.core.sockjs.SockJSServer
 import org.vertx.groovy.core.sockjs.impl.DefaultSockJSServer
 import org.vertx.java.core.Handler
 import org.vertx.java.core.impl.DefaultVertx
-import org.vertx.java.core.impl.VertxInternal
+import org.vertx.java.core.VertxInternal
 import org.vertx.java.core.shareddata.SharedData
 
 /**

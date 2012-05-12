@@ -37,7 +37,7 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
-public class DefaultNetSocket extends NetSocket {
+public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetSocket.class);
 
@@ -45,15 +45,21 @@ public class DefaultNetSocket extends NetSocket {
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private Handler<Message<Buffer>> writeHandler;
+  private String writeHandlerID;
 
   public DefaultNetSocket(VertxInternal vertx, Channel channel, ContextImpl context) {
-    super(vertx, channel, UUID.randomUUID().toString(), context);
+    super(vertx, channel, context);
     writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> msg) {
         writeBuffer(msg.body);
       }
     };
+    writeHandlerID = UUID.randomUUID().toString();
     vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
+  }
+  
+  public String getWriteHandlerID() {
+	  return writeHandlerID;
   }
 
   public void writeBuffer(Buffer data) {
@@ -120,7 +126,7 @@ public class DefaultNetSocket extends NetSocket {
     super.sendFile(f);
   }
 
-  protected Context getContext() {
+  public Context getContext() {
     return super.getContext();
   }
 

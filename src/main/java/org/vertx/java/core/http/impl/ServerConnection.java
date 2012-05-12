@@ -199,7 +199,7 @@ class ServerConnection extends AbstractConnection {
     return super.getContext();
   }
 
-  protected void handleException(Exception e) {
+  public void handleException(Exception e) {
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);

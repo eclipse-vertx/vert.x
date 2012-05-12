@@ -17,7 +17,7 @@
 package org.vertx.groovy.core.net.impl
 
 import org.vertx.groovy.core.net.NetServer
-import org.vertx.java.core.impl.VertxInternal
+import org.vertx.java.core.VertxInternal
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

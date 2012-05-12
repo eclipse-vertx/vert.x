@@ -18,7 +18,7 @@ package org.vertx.groovy.core.sockjs.impl
 
 import org.vertx.groovy.core.http.HttpServer
 import org.vertx.groovy.core.sockjs.SockJSServer
-import org.vertx.java.core.impl.VertxInternal
+import org.vertx.java.core.VertxInternal
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

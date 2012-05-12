@@ -44,7 +44,7 @@ public class FanoutServer extends Verticle {
     server.connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         tu.checkContext();
-        connections.add(socket.writeHandlerID);
+        connections.add(socket.getWriteHandlerID());
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             tu.checkContext();
@@ -56,7 +56,7 @@ public class FanoutServer extends Verticle {
         socket.closedHandler(new SimpleHandler() {
           public void handle() {
             tu.checkContext();
-            connections.remove(socket.writeHandlerID);
+            connections.remove(socket.getWriteHandlerID());
           }
         });
       }

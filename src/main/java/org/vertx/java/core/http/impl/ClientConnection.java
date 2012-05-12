@@ -68,7 +68,7 @@ class ClientConnection extends AbstractConnection {
 
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<DefaultHttpClientRequest> requests = new ConcurrentLinkedQueue();
+  private final Queue<DefaultHttpClientRequest> requests = new ConcurrentLinkedQueue<>();
   private volatile DefaultHttpClientResponse currentResponse;
   private DefaultWebSocket ws;
 
@@ -235,7 +235,7 @@ class ClientConnection extends AbstractConnection {
     return super.getContext();
   }
 
-  protected void handleException(Exception e) {
+  public void handleException(Exception e) {
     super.handleException(e);
 
     if (currentRequest != null) {
