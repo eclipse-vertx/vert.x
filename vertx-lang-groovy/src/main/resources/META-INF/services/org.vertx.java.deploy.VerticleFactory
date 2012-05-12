@@ -1,1 +1,1 @@
-org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory
+org.vertx.lang.groovy.GroovyVerticleFactory
