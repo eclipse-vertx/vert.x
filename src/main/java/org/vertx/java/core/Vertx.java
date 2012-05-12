@@ -40,15 +40,19 @@ import org.vertx.java.core.sockjs.SockJSServer;
  */
 public abstract class Vertx {
 
-  private static VertxFactory loadFactory() {
+  private static VertxFactory loadFactory() throws VertxException {
 	  ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
-	  return factories.iterator().next();
+	  try {
+	    return factories.iterator().next();
+    } catch (Exception e) {
+    	throw new VertxException(e);
+    }
   }
 
   /**
    * Create a non clustered Vertx instance
    */
-  public static Vertx newVertx() {
+  public static Vertx newVertx() throws VertxException {
 	return loadFactory().createVertx();
   }
 
@@ -56,7 +60,7 @@ public abstract class Vertx {
    * Create a clustered Vertx instance listening for cluster connections on the default port 25500
    * @param hostname The hostname or ip address to listen for cluster connections
    */
-  public static Vertx newVertx(String hostname) {
+  public static Vertx newVertx(String hostname) throws VertxException {
 	return loadFactory().createVertx(hostname);
   }
 
@@ -65,7 +69,7 @@ public abstract class Vertx {
    * @param port The port to listen for cluster connections
    * @param hostname The hostname or ip address to listen for cluster connections
    */
-  public static Vertx newVertx(int port, String hostname) {
+  public static Vertx newVertx(int port, String hostname) throws VertxException {
 	return loadFactory().createVertx(port, hostname);
   }
 
