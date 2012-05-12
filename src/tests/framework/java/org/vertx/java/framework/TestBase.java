@@ -26,8 +26,8 @@ import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.VerticleManager;
 import org.vertx.java.deploy.impl.DefaultVerticleManager;
-import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.lang.reflect.Method;
 import java.net.URL;

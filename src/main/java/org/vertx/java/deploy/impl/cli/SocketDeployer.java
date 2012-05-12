@@ -24,7 +24,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
