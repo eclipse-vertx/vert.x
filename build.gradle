@@ -38,18 +38,24 @@ task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper"
 
 project(":vertx-logging") {
 	dependencies {
-		//
+		compile "log4j:log4j:$log4jVersion"
+		compile "org.slf4j:slf4j-api:$slf4jVersion"
 	}
 }
 
 project(":vertx-api") {
 	dependencies {
 		compile project(":vertx-logging");
+		compile "io.netty:netty:$nettyVersion"
 	}
 }
 
 project(":vertx-impl") {
 	dependencies {
-		compile project(":vertx-logging");
+		compile project(":vertx-api");
+		compile "io.netty:netty:$nettyVersion"
+		compile "com.hazelcast:hazelcast:$hazelcastVersion"
+		compile "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
+		compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 	}
 }
