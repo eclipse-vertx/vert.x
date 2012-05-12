@@ -156,7 +156,7 @@ public class DefaultHttpServer implements HttpServer {
     synchronized (vertx.sharedHttpServers()) {
       serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
       id = new ServerID(port, host);
-      DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
+      DefaultHttpServer shared = (DefaultHttpServer) vertx.sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
