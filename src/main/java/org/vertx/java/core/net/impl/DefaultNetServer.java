@@ -69,7 +69,7 @@ public class DefaultNetServer implements NetServer {
   private final VertxInternal vertx;
   private final ContextImpl ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -113,7 +113,7 @@ public class DefaultNetServer implements NetServer {
 
     synchronized (vertx.sharedNetServers()) {
       id = new ServerID(port, host);
-      DefaultNetServer shared = vertx.sharedNetServers().get(id);
+      DefaultNetServer shared = (DefaultNetServer) vertx.sharedNetServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
@@ -382,7 +382,7 @@ public class DefaultNetServer implements NetServer {
       NioWorker worker = ch.getWorker();
 
       //Choose a handler
-      final HandlerHolder handler = handlerManager.chooseHandler(worker);
+      final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
 
       if (handler == null) {
         //Ignore
@@ -409,7 +409,7 @@ public class DefaultNetServer implements NetServer {
       }
     }
 
-    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
+    private void connected(final NioSocketChannel ch, final HandlerHolder<NetSocket> handler) {
       handler.context.execute(new Runnable() {
         public void run() {
           DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
