@@ -23,5 +23,5 @@ import java.io.Serializable;
  */
 @Deprecated
 public enum VerticleType implements Serializable {
-  JAVA, RUBY, GROOVY, JS, JAVA_SOURCE
+  JAVA, RUBY, GROOVY, JS
 }
