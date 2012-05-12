@@ -69,42 +69,23 @@ public interface SockJSServer {
   void bridge(JsonObject sjsConfig, JsonArray permitted);
 
   /**
-   * Install an app which bridges the SockJS server to the event bus and which handles
-   * client side login
+   * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
+   * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress);
+              long authTimeout);
 
   /**
-   * Install an app which bridges the SockJS server to the event bus and which handles
-   * client side login
+   * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
-   * @param sessionTimeout Amount of time a login session will remain active
+   * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
+   * @param authAddress Address of auth manager. Defaults to 'vertx.basicauthmanager.authorise'
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress, long sessionTimeout);
-
-  /**
-   * Install an app which bridges the SockJS server to the event bus and which handles
-   * client side login
-   * @param sjsConfig The config for the app
-   * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
-   * @param sessionTimeout Amount of time a login session will remain active
-   * @param loginAddress Address on the event bus where logins are handled
-   * @param logoutAddress Address on the event bus where logouts are handled
-   */
-  void bridge(JsonObject sjsConfig, JsonArray permitted,
-              String userCollection, String persistorAddress, long sessionTimeout,
-              String loginAddress, String logoutAddress);
+              long authTimeout, String authAddress);
 
 }
 

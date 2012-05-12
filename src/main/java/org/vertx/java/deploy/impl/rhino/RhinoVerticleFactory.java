@@ -20,7 +20,7 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.VerticleFactory;
+import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 /**
@@ -32,11 +32,28 @@ public class RhinoVerticleFactory implements VerticleFactory {
     ContextFactory.initGlobal(new RhinoContextFactory());
   }
 
-  public RhinoVerticleFactory(VerticleManager mgr) {
-    this.mgr = mgr;
+  private VerticleManager mgr;
+
+  public RhinoVerticleFactory() {
   }
 
-  private final VerticleManager mgr;
+  @Override
+  public void init(VerticleManager mgr) {
+	  this.mgr = mgr;
+  }
+
+  @Override
+  public String getLanguage() {
+	  return "rhino";
+  }
+  
+  @Override
+  public boolean isFactoryFor(String main) {
+    if (main.endsWith(".js")) {
+      return true;
+    }
+    return false;
+  }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     Verticle app = new RhinoVerticle(main, cl);

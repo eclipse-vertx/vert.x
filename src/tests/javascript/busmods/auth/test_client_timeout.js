@@ -27,11 +27,11 @@ function testSessionTimeout() {
     tu.azzert(reply.status === 'ok');
     tu.azzert(typeof reply.sessionID != 'undefined');
     var sessionID = reply.sessionID;
-    eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+    eb.send('test.authMgr.authorise', {sessionID: sessionID, password: 'foo'}, function(reply) {
       tu.azzert(reply.status === 'ok');
       // Allow session to timeout then try and validate again
       vertx.setTimer(750, function() {
-        eb.send('test.authMgr.validate', {sessionID: sessionID, password: 'foo'}, function(reply) {
+        eb.send('test.authMgr.authorise', {sessionID: sessionID, password: 'foo'}, function(reply) {
           tu.azzert(reply.status === 'denied');
           tu.testComplete();
         });

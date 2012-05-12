@@ -28,7 +28,7 @@ $DIRNAME/../lib/jars/vert.x-platform.jar:\
 $DIRNAME/../lib/jars/netty.jar:\
 $DIRNAME/../lib/jars/jackson-core.jar:$DIRNAME/../lib/jars/jackson-mapper.jar:\
 $DIRNAME/../lib/jars/hazelcast.jar:\
-$DIRNAME/../lib/jars/jruby.jar:\
+$JRUBY_HOME/lib/jruby.jar:\
 $DIRNAME/../lib/jars/groovy.jar:\
 $DIRNAME/../lib/jars/js.jar:\
 $DIRNAME/../lib/ruby:\

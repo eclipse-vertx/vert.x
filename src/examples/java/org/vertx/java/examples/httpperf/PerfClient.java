@@ -32,7 +32,7 @@ public class PerfClient extends Verticle implements Handler<HttpClientResponse> 
   private int count = 0;
 
   // This determines the degree of pipelining
-  private static final int CREDITS_BATCH = 500;
+  private static final int CREDITS_BATCH = 2000;
 
   // Number of connections to create
   private static final int MAX_CONNS = 10;
@@ -48,7 +48,7 @@ public class PerfClient extends Verticle implements Handler<HttpClientResponse> 
     response.endHandler(new SimpleHandler() {
       public void handle() {
         count++;
-        if (count % 10000 == 0) {
+        if (count % 2000 == 0) {
           eb.send("rate-counter", count);
           count = 0;
         }

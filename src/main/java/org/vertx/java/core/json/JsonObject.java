@@ -53,8 +53,9 @@ public class JsonObject {
    * Create a JSON object from a string form of a JSON object
    * @param jsonString The string form of a JSON object
    */
+  @SuppressWarnings("unchecked")
   public JsonObject(String jsonString) {
-    map = (Map)Json.decodeValue(jsonString, Map.class);
+    map = (Map<String, Object>) Json.decodeValue(jsonString, Map.class);
   }
 
   public JsonObject putString(String fieldName, String value) {
@@ -91,13 +92,15 @@ public class JsonObject {
     return (String)map.get(fieldName);
   }
 
+  @SuppressWarnings("unchecked")
   public JsonObject getObject(String fieldName) {
-    Map m = (Map)map.get(fieldName);
+    Map<String, Object> m = (Map<String, Object>) map.get(fieldName);
     return m == null ? null : new JsonObject(m);
   }
 
+  @SuppressWarnings("unchecked")
   public JsonArray getArray(String fieldName) {
-    List l = (List)map.get(fieldName);
+    List<Object> l = (List<Object>) map.get(fieldName);
     return l == null ? null : new JsonArray(l);
   }
 
@@ -148,12 +151,13 @@ public class JsonObject {
     return map.keySet();
   }
 
+  @SuppressWarnings("unchecked")
   public Object getField(String fieldName) {
     Object obj = map.get(fieldName);
     if (obj instanceof Map) {
-      return new JsonObject((Map)obj);
+      return new JsonObject((Map<String, Object>) obj);
     } else if (obj instanceof List) {
-      return new JsonArray((List)obj);
+      return new JsonArray((List<Object>) obj);
     } else {
       return obj;
     }
@@ -212,15 +216,16 @@ public class JsonObject {
     return convertMap(map);
   }
 
+  @SuppressWarnings("unchecked")
   static Map<String, Object> convertMap(Map<String, Object> map) {
     Map<String, Object> converted = new HashMap<>(map.size());
     for (Map.Entry<String, Object> entry: map.entrySet()) {
       Object obj = entry.getValue();
       if (obj instanceof Map) {
-        Map jm = (Map)obj;
+        Map<String, Object> jm = (Map<String, Object>) obj;
         converted.put(entry.getKey(), convertMap(jm));
       } else if (obj instanceof List) {
-        List list = (List)obj;
+        List<Object> list = (List<Object>) obj;
         converted.put(entry.getKey(), JsonArray.convertList(list));
       } else {
         converted.put(entry.getKey(), obj);

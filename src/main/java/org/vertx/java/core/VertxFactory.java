@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.vertx.java.core.sockjs.impl;
+package org.vertx.java.core;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author pidster
+ *
  */
-interface TransportListener {
+public interface VertxFactory {
 
-  void sendFrame(String body);
+	Vertx createVertx();
+	
+	Vertx createVertx(String hostname);
+	
+	Vertx createVertx(int port, String hostname);
 
-  void close();
-
-  void sessionClosed();
 }

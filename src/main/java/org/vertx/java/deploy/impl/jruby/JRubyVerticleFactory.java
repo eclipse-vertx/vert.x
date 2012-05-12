@@ -23,7 +23,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.VerticleFactory;
+import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.util.List;
@@ -33,10 +33,27 @@ import java.util.List;
  */
 public class JRubyVerticleFactory implements VerticleFactory {
 
-  private final VerticleManager mgr;
+  private VerticleManager mgr;
 
-  public JRubyVerticleFactory(VerticleManager mgr) {
-    this.mgr = mgr;
+  public JRubyVerticleFactory() {
+  }
+
+  @Override
+  public void init(VerticleManager mgr) {
+	  this.mgr = mgr;
+  }
+
+  @Override
+  public String getLanguage() {
+	  return "ruby";
+  }
+  
+  @Override
+  public boolean isFactoryFor(String main) {
+    if (main.endsWith(".rb")) {
+      return true;
+    }
+    return false;
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {

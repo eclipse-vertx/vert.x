@@ -115,5 +115,12 @@ class WebSocketTransport extends BaseTransport {
         closed = true;
       }
     }
+
+    public void sessionClosed() {
+      session.writeClosed(this);
+      closed = true;
+      ws.close();
+    }
+
   }
 }

@@ -396,7 +396,7 @@ module Vertx
     # Read the contents of an entire file as a {Buffer}, asynchronously.
     # @param [String] path Path of the file to read.
     def FileSystem.read_file_as_buffer(path, &block)
-      @@j_fs.readFile(path, FSWrappedHandler.new(block))
+      @@j_fs.readFile(path, FSWrappedHandler.new(block) { |j_buff| Buffer.new(j_buff)})
     end
 
     # Synchronous version of {#FileSystem.read_file_as_buffer}
