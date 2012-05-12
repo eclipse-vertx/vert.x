@@ -20,6 +20,10 @@ web_server_conf = {
   # This defines which messages from the client we will let through
   # to the server side
   'permitted' => [
+    # Allow calls to login
+    {
+      'address' => 'vertx.basicauthmanager.login'
+    },
     # Allow calls to get static album data from the persistor
     {
       'address' => 'vertx.mongopersistor',
@@ -50,6 +54,10 @@ Vertx.deploy_verticle('mongo-persistor') do
   # data for the demo
   load('static_data.rb')
 end
+
+# Deploy an auth manager to handle the authentication
+
+Vertx.deploy_verticle('auth-mgr')
 
 # Start the web server, with the config we defined above
 

@@ -621,6 +621,7 @@ module Vertx
     # @param [Block] hndlr. The handler
     # @return [HttpServerResponse] self So multiple operations can be chained.
     def write_str(str, enc = "UTF-8", &hndlr)
+      puts "writing str: #{str}"
       @j_del.write(str, enc)
       self
     end
@@ -664,7 +665,6 @@ module Vertx
     def close
       @j_del.close
     end
-
 
   end
 

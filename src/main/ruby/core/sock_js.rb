@@ -63,12 +63,9 @@ module Vertx
       }
     end
 
-    def bridge(config, permitted, user_collection = nil, persistor_address = nil,
-               session_timeout = 30 * 60 * 1000,
-               login_address = nil, logout_address = nil)
+    def bridge(config, permitted, auth_timeout = 5 * 60 * 1000, auth_address = nil)
       a_json = org.vertx.java.core.json.JsonArray.new(permitted)
-      @j_server.bridge(org.vertx.java.core.json.JsonObject.new(config), a_json, user_collection, persistor_address,
-                       session_timeout, login_address, logout_address)
+      @j_server.bridge(org.vertx.java.core.json.JsonObject.new(config), a_json, auth_timeout, auth_address)
     end
 
   end

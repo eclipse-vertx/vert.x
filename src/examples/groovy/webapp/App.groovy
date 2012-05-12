@@ -36,6 +36,10 @@ def webServerConf = [
   // This defines which messages from the client we will let through
   // to the server side
   permitted: [
+    // Allow calls to login
+    [
+      address: 'vertx.basicauthmanager.login'
+    ],
     // Allow calls to get static album data from the persistor
     [
       address : 'vertx.mongopersistor',
@@ -68,6 +72,10 @@ container.with {
     // data for the demo
     deployVerticle('StaticData.groovy')
   }
+
+  // Deploy an auth manager to handle the authentication
+
+  deployVerticle('auth-mgr')
 
   // Start the web server, with the config we defined above
 

@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
+ * Unfortunately the SockJS close behaviour is badly spec'd so this is kind of
+ * ugly
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class Session extends SockJSSocket {
@@ -52,6 +55,7 @@ class Session extends SockJSSocket {
   private int messagesSize;
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
+  private boolean handleCalled;
 
   Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
     this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler);
@@ -146,6 +150,9 @@ class Session extends SockJSSocket {
       endHandler.handle(null);
     }
     closed = true;
+    if (listener != null && handleCalled) {
+      listener.sessionClosed();
+    }
   }
 
   boolean isClosed() {
@@ -194,16 +201,17 @@ class Session extends SockJSSocket {
       lst.close();
     } else {
 
-      this.listener = lst;
-
       if (timeoutTimerID != -1) {
         vertx.cancelTimer(timeoutTimerID);
         timeoutTimerID = -1;
       }
 
+      this.listener = lst;
+
       if (!openWritten) {
         writeOpen(lst);
         sockHandler.handle(this);
+        handleCalled = true;
       }
 
       if (listener != null) {
@@ -259,7 +267,7 @@ class Session extends SockJSSocket {
     }
   }
 
-  private void writeClosed(TransportListener lst) {
+  public void writeClosed(TransportListener lst) {
     writeClosed(lst, 3000, "Go away!");
   }
 

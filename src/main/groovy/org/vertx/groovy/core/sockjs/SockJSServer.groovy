@@ -113,20 +113,13 @@ abstract class SockJSServer {
    * Install an app which bridges the SockJS server to the event bus.
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
-   * @param userCollection The name of the MongoDB collection which contains username/password information.
-   * If null then login wouldn't be handled by the bridge
-   * @param persistorAddress Address on the event bus of a MongoDB persistor
-   * @param sessionTimeout Amount of time a login session will remain active
-   * @param loginAddress Address on the event bus where logins are handled
-   * @param logoutAddress Address on the event bus where logouts are handled
+   * @param authAddress The address of an authentication/authorisation busmod
+   * @param bridgeAddress The address the bridge will listen at for login and lougout.
    */
   void bridge(Map sjsConfig, List<Map<String, Object>> permitted = [[:]],
-              String userCollection = null, String persistorAddress = null,
-              long sessionTimeout = 30 * 60 * 1000,
-              String loginAddress = null, String logoutAddress = null) {
+              long authTimeout = 5 * 60 * 1000, String authAddress = null) {
     jServer.bridge(new JsonObject(sjsConfig), new JsonArray(permitted),
-                   userCollection, persistorAddress, sessionTimeout,
-                   loginAddress, logoutAddress)
+                   authTimeout, authAddress)
   }
 
 }

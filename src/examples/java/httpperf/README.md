@@ -1,4 +1,4 @@
-Http Performance example
+# Http Performance example
 
 Consists of a server, a client and a rate counter (written in Java)
 
@@ -12,38 +12,42 @@ The rate counter just sits on the event bus and displays rate statistics, as it 
 
 The client and rate counter therefore need to be clustered since they communicate on the event bus.
 
-How to run stuff:
+## How to run stuff:
 
 (Run everything from the parent directory of this directory).
 
 Run the rate counter in a console (give it a unique cluster port)
 
-vertx run org.vertx.java.examples.perf.RateCounter -cp classes -cluster -cluster-port 25501
+`vertx run org.vertx.java.examples.perf.RateCounter -cp classes -cluster -cluster-port 25501`
 
-Run the server in another console (give it 8 instances to utilise the cores on the server)
+Run the server in another console (give it 6 instances to utilise the cores on the server)
 
-vertx run run org.vertx.java.examples.httpperf.PerfServer -cp classes -instances 8
+`vertx run org.vertx.java.examples.httpperf.PerfServer -cp classes -instances 6`
 
 Run the client in another console:
 
-vertx run run org.vertx.java.examples.httpperf.PerfClient -cp classes -instances 8 -cluster -cluster-port 25502
+`vertx run org.vertx.java.examples.httpperf.PerfClient -cp classes -instances 6 -cluster`
 
 Of course, you can run client and server on different machines. You'll probably need a fast network to avoid getting IO bound.
 
 To compare it with the equivalent node.js server, instead of running the vert.x server run the node.js server as follows:
 
-node nodejs-server.js
+`node nodejs-server.js`
 
 and compare the performance.
 
 You can run a clustered node.js too:
 
-node nodejs-cluster-server.js
+`node nodejs-cluster-server.js`
 
 Also.. you can run a vert.x JavaScript server instead of a Java one if you like:
 
-vertx run vertx-server.js -instances 8
+`vertx run vertx-server.js -instances 8`
 
 or the Ruby server:
 
-vertx run vertx_server.rb -instances 8
+`vertx run vertx_server.rb -instances 8`
+
+or the Groovy server:
+
+`vertx run vertx_server.groovy -instances 8`

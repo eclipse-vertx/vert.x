@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Authentication Manager Bus Module<p>
+ * Basic Authentication Manager Bus Module<p>
  * Please see the busmods manual for a full description<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -35,10 +35,12 @@ public class AuthManager extends BusModBase {
 
   private Handler<Message<JsonObject>> loginHandler;
   private Handler<Message<JsonObject>> logoutHandler;
-  private Handler<Message<JsonObject>> validateHandler;
+  private Handler<Message<JsonObject>> authoriseHandler;
 
-  private final Map<String, String> sessions = new HashMap<>();
-  private final Map<String, LoginInfo> logins = new HashMap<>();
+  protected final Map<String, String> sessions = new HashMap<>();
+  protected final Map<String, LoginInfo> logins = new HashMap<>();
+
+  private static final long DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000;
 
   private String address;
   private String userCollection;
@@ -61,9 +63,9 @@ public class AuthManager extends BusModBase {
   public void start() {
     super.start();
 
-    this.address = getMandatoryStringConfig("address");
-    this.userCollection = getMandatoryStringConfig("user_collection");
-    this.persistorAddress = getMandatoryStringConfig("persistor_address");
+    this.address = getOptionalStringConfig("address", "vertx.basicauthmanager");
+    this.userCollection = getOptionalStringConfig("user_collection", "users");
+    this.persistorAddress = getOptionalStringConfig("persistor_address", "vertx.mongopersistor");
     Number timeout = config.getNumber("session_timeout");
     if (timeout != null) {
       if (timeout instanceof Long) {
@@ -72,7 +74,7 @@ public class AuthManager extends BusModBase {
         this.sessionTimeout = (Integer)timeout;
       }
     } else {
-      this.sessionTimeout = 30 * 60 * 1000;
+      this.sessionTimeout = DEFAULT_SESSION_TIMEOUT;
     }
 
     loginHandler = new Handler<Message<JsonObject>>() {
@@ -87,12 +89,12 @@ public class AuthManager extends BusModBase {
       }
     };
     eb.registerHandler(address + ".logout", logoutHandler);
-    validateHandler = new Handler<Message<JsonObject>>() {
+    authoriseHandler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
-        doValidate(message);
+        doAuthorise(message);
       }
     };
-    eb.registerHandler(address + ".validate", validateHandler);
+    eb.registerHandler(address + ".authorise", authoriseHandler);
   }
 
   private void doLogin(final Message<JsonObject> message) {
@@ -146,7 +148,7 @@ public class AuthManager extends BusModBase {
     });
   }
 
-  private void doLogout(final Message<JsonObject> message) {
+  protected void doLogout(final Message<JsonObject> message) {
     final String sessionID = getMandatoryString("sessionID", message);
     if (sessionID != null) {
       if (logout(sessionID)) {
@@ -157,7 +159,7 @@ public class AuthManager extends BusModBase {
     }
   }
 
-  private boolean logout(String sessionID) {
+  protected boolean logout(String sessionID) {
     String username = sessions.remove(sessionID);
     if (username != null) {
       LoginInfo info = logins.remove(username);
@@ -168,12 +170,16 @@ public class AuthManager extends BusModBase {
     }
   }
 
-  private void doValidate(Message<JsonObject> message) {
+  protected void doAuthorise(Message<JsonObject> message) {
     String sessionID = getMandatoryString("sessionID", message);
     if (sessionID == null) {
       return;
     }
     String username = sessions.get(sessionID);
+
+    // In this basic auth manager we don't do any resource specific authorisation
+    // The user is always authorised if they are logged in
+
     if (username != null) {
       JsonObject reply = new JsonObject().putString("username", username);
       sendOK(message, reply);

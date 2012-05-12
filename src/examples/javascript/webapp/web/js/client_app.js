@@ -110,7 +110,7 @@
 
   that.login = function() {
     if (that.username().trim() != '' && that.password().trim() != '') {
-      eb.send('vertx.bridge.login', {username: that.username(), password: that.password()}, function (reply) {
+      eb.send('vertx.basicauthmanager.login', {username: that.username(), password: that.password()}, function (reply) {
         if (reply.status === 'ok') {
           that.sessionID(reply.sessionID);
         } else {
