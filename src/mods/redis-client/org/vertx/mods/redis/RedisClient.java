@@ -27,15 +27,15 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
-import org.vertx.mods.redis.commands.DecrByCommand;
-import org.vertx.mods.redis.commands.DecrCommand;
-import org.vertx.mods.redis.commands.GetCommand;
-import org.vertx.mods.redis.commands.GetSetCommand;
-import org.vertx.mods.redis.commands.SetCommand;
 import org.vertx.mods.redis.commands.keys.DelCommand;
 import org.vertx.mods.redis.commands.keys.ExistsCommand;
-import org.vertx.mods.redis.commands.keys.IncrByCommand;
-import org.vertx.mods.redis.commands.keys.IncrCommand;
+import org.vertx.mods.redis.commands.strings.DecrByCommand;
+import org.vertx.mods.redis.commands.strings.DecrCommand;
+import org.vertx.mods.redis.commands.strings.GetCommand;
+import org.vertx.mods.redis.commands.strings.GetSetCommand;
+import org.vertx.mods.redis.commands.strings.IncrByCommand;
+import org.vertx.mods.redis.commands.strings.IncrCommand;
+import org.vertx.mods.redis.commands.strings.SetCommand;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisException;
@@ -53,7 +53,8 @@ public class RedisClient extends BusModBase implements
 
 	private static final Map<String, Command> commands = new HashMap<String, Command>();
 	static {
-		find("org.vertx.mods.redis.commands");
+		find("org.vertx.mods.redis.commands.strings");
+		find("org.vertx.mods.redis.commands.keys");
 	}
 
 	private String address;
@@ -95,7 +96,7 @@ public class RedisClient extends BusModBase implements
 			try {
 				commandHandler.handle(message, this);
 			} catch (CommandException e) {
-				sendError(message, e.getLocalizedMessage());
+				sendError(message, e.getMessage());
 			}
 		} else {
 			sendError(message, "Invalid command: " + command);

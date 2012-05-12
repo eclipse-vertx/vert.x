@@ -47,10 +47,38 @@ public abstract class Command extends BusModBase {
 	}
 	
 	protected void response (Message<JsonObject> message, Long response, String error) {
+		response(message, response, error);
+	}
+	protected void response (Message<JsonObject> message, Long response, String error, JsonObject result) {
 		if (response == 1) {
+			if (result != null) {
+				sendOK(message, result);
+			} else {
+				sendOK(message);
+			}
+		} else {
+			sendError(message, error);
+		}
+	}
+	
+	protected void response (Message<JsonObject> message, String response, String error) {
+		if (response.equalsIgnoreCase("ok")) {
 			sendOK(message);
 		} else {
 			sendError(message, error);
 		}
 	}
+	
+	
+	protected void checkType (Object value, Class<?> type, String error) throws CommandException {
+		if (!type.isInstance(value)) {
+			throw new CommandException(error);
+		}
+	}
+	protected void checkNull (Object value, String error) throws CommandException {
+		if (value == null) {
+			throw new CommandException(error);
+		}
+	}
+	
 }
