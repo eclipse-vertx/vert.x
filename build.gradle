@@ -52,7 +52,7 @@ project(":vertx-logging") {
 project(":vertx-api") {
 	dependencies {
 		compile project(":vertx-logging");
-		compile "io.netty:netty:$nettyVersion" // core.buffer.Buffer
+		compile "io.netty:netty:$nettyVersion" // o.v.j.c.buffer.Buffer
 	}
 }
 
