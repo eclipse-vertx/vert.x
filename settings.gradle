@@ -1,0 +1,3 @@
+include 'vertx-logging'
+include 'vertx-api'
+include 'vertx-impl'
