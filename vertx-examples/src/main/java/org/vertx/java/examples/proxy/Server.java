@@ -18,7 +18,7 @@ package org.vertx.java.examples.proxy;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.buffer.impl.BufferImpl;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.lang.Verticle;
 
@@ -32,8 +32,8 @@ public class Server extends Verticle {
         for (String key : req.headers().keySet()) {
           System.out.println(key + ":" + req.headers().get(key));
         }
-        req.dataHandler(new Handler<BufferImpl>() {
-          public void handle(BufferImpl data) {
+        req.dataHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
             System.out.println("Got data: " + data);
           }
         });
