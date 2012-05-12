@@ -17,7 +17,6 @@
 package org.vertx.java.core.json;
 
 import org.vertx.java.core.http.impl.ws.Base64;
-import org.vertx.java.core.json.impl.Json;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +47,7 @@ public class JsonArray implements Iterable<Object> {
 
   @SuppressWarnings("unchecked")
   public JsonArray(String jsonString) {
-    list = (List<Object>) Json.decodeValue(jsonString, List.class);
+    list = (List<Object>) JsonMapper.decodeValue(jsonString, List.class);
   }
 
   public JsonArray addString(String str) {
@@ -132,7 +131,7 @@ public class JsonArray implements Iterable<Object> {
   }
 
   public String encode() throws EncodeException {
-    return Json.encode(this.list);
+    return JsonMapper.encode(this.list);
   }
 
   public boolean equals(Object o) {

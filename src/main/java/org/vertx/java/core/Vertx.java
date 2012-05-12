@@ -41,8 +41,8 @@ import org.vertx.java.core.sockjs.SockJSServer;
 public abstract class Vertx {
 
   private static VertxFactory loadFactory() throws VertxException {
-	  ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
-	  try {
+	ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
+	try {
 	    return factories.iterator().next();
     } catch (Exception e) {
     	throw new VertxException(e);
