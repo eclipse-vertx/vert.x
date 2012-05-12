@@ -1,3 +1,6 @@
 include 'vertx-logging'
 include 'vertx-api'
 include 'vertx-impl'
+include 'vertx-lang-groovy'
+include 'vertx-lang-javascript'
+include 'vertx-lang-jruby'
