@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.groovy.deploy
+package org.vertx.lang.groovy
 
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject

@@ -77,7 +77,8 @@ project(":vertx-lang-groovy") {
 	apply plugin: 'groovy'
 	dependencies {
 		compile project(":vertx-api");
-		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+		compile project(":vertx-impl"); // FIXME This isn't so good
+		groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	}
 }
 
@@ -132,6 +133,8 @@ project(":vertx-examples") {
 	apply plugin: 'groovy'
 	dependencies {
 		compile project(":vertx-api");
+		groovy project(":vertx-lang-groovy");
+		groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	}
 }
 
