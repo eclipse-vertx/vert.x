@@ -17,7 +17,6 @@ package org.vertx.java.core;
 
 import java.nio.file.Path;
 
-import org.vertx.java.core.impl.DeploymentHandle;
 
 /**
  * @author pidster
