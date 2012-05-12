@@ -17,6 +17,8 @@
 package org.vertx.java.core.eventbus.impl;
 
 /**
+ * TODO consider moving this to API
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface ClusterManager {
