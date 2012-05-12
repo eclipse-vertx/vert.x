@@ -17,11 +17,11 @@
 package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Context;
+import org.vertx.java.core.DeploymentHandle;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.impl.ContextImpl;
-import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;

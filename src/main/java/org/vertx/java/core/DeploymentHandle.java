@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.impl;
+package org.vertx.java.core;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
