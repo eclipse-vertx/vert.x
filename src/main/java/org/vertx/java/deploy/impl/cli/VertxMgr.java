@@ -29,6 +29,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.deploy.impl.Args;
+import org.vertx.java.deploy.impl.DefaultVerticleManager;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
@@ -261,7 +262,7 @@ public class VertxMgr {
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
-    mgr = new VerticleManager(vertx);
+    mgr = new DefaultVerticleManager(vertx);
     if (clustered) {
       System.out.println("Started");
     }

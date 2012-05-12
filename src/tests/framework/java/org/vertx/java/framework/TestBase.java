@@ -26,6 +26,7 @@ import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.impl.DefaultVerticleManager;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.lang.reflect.Method;
@@ -48,7 +49,7 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   protected static VertxInternal vertx = new DefaultVertx();
-  private static VerticleManager verticleManager = new VerticleManager(vertx);
+  private static VerticleManager verticleManager = new DefaultVerticleManager(vertx);
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils(vertx);
   private volatile Handler<Message<JsonObject>> handler;
