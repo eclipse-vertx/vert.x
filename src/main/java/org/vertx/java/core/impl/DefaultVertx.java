@@ -21,6 +21,7 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.eventbus.EventBus;
@@ -138,7 +139,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public boolean isEventLoop() {
-    Context context = Context.getContext();
+    Context context = ContextImpl.getContext();
     if (context != null) {
       return context instanceof EventLoopContext;
     }
@@ -146,7 +147,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public boolean isWorker() {
-    Context context = Context.getContext();
+    Context context = ContextImpl.getContext();
     if (context != null) {
       return context instanceof WorkerContext;
     }
@@ -218,8 +219,8 @@ public class DefaultVertx extends VertxInternal {
   }
 
 
-  public Context getOrAssignContext() {
-    Context ctx = Context.getContext();
+  public ContextImpl getOrAssignContext() {
+    ContextImpl ctx = ContextImpl.getContext();
     if (ctx == null) {
       // Assign a context
       ctx = createEventLoopContext();
@@ -228,7 +229,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    Context ctx = Context.getContext();
+    Context ctx = ContextImpl.getContext();
     if (ctx != null) {
       ctx.reportException(t);
     } else {
@@ -280,7 +281,7 @@ public class DefaultVertx extends VertxInternal {
     return cancelTimeout(id);
   }
 
-  public Context createEventLoopContext() {
+  public ContextImpl createEventLoopContext() {
     getBackgroundPool();
     NioWorker worker = getWorkerPool().nextWorker();
     return new EventLoopContext(orderedFact.getExecutor(), worker);

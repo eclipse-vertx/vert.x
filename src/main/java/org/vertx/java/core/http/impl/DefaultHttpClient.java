@@ -36,6 +36,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
@@ -47,7 +48,7 @@ import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.ConnectionPool;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -65,7 +66,7 @@ public class DefaultHttpClient implements HttpClient {
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final ContextImpl ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
@@ -429,7 +430,7 @@ public class DefaultHttpClient implements HttpClient {
           }
         });
         connectionMap.put(ch, conn);
-        Context.setContext(ctx);
+        ContextImpl.setContext(ctx);
         connectHandler.handle(conn);
       }
     });
@@ -439,7 +440,7 @@ public class DefaultHttpClient implements HttpClient {
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          Context.setContext(ctx);
+          ContextImpl.setContext(ctx);
           exceptionHandler.handle((Exception) t);
         }
       });

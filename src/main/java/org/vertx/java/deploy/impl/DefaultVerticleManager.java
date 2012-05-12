@@ -16,10 +16,11 @@
 
 package org.vertx.java.deploy.impl;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -241,7 +242,7 @@ public synchronized Map<String, Integer> listInstances() {
     Path cwd = Paths.get(".").toAbsolutePath().getParent();
     Path pmodDir = Paths.get(modDir.getAbsolutePath());
     Path relative = cwd.relativize(pmodDir);
-    Context.getContext().setPathAdjustment(relative);
+    ContextImpl.getContext().setPathAdjustment(relative);
   }
 
   private String doDeploy(boolean worker, String name, final String main,
@@ -422,7 +423,7 @@ public synchronized Map<String, Integer> listInstances() {
   private synchronized void addVerticle(Deployment deployment, Verticle verticle) {
     String loggerName = deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
-    Context context = Context.getContext();
+    Context context = ContextImpl.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger, deployment.config);
     deployment.verticles.add(holder);
@@ -430,7 +431,7 @@ public synchronized Map<String, Integer> listInstances() {
   }
 
   private VerticleHolder getVerticleHolder() {
-    Context context = Context.getContext();
+    Context context = ContextImpl.getContext();
     if (context != null) {
       VerticleHolder holder = (VerticleHolder)context.getDeploymentHandle();
       return holder;

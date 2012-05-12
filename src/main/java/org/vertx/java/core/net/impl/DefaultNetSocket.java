@@ -21,13 +21,14 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.util.CharsetUtil;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
@@ -45,7 +46,7 @@ public class DefaultNetSocket extends NetSocket {
   private Handler<Void> drainHandler;
   private Handler<Message<Buffer>> writeHandler;
 
-  public DefaultNetSocket(VertxInternal vertx, Channel channel, Context context) {
+  public DefaultNetSocket(VertxInternal vertx, Channel channel, ContextImpl context) {
     super(vertx, channel, UUID.randomUUID().toString(), context);
     writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> msg) {

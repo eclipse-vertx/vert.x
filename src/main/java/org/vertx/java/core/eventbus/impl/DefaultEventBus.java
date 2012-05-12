@@ -18,6 +18,7 @@ package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
@@ -25,7 +26,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -287,7 +288,7 @@ public class DefaultEventBus implements EventBus {
 
   private void send(final BaseMessage message, final Handler replyHandler) {
     try {
-    Context context = vertx.getOrAssignContext();
+    ContextImpl context = vertx.getOrAssignContext();
     try {
       message.sender = serverID;
       if (replyHandler != null) {
@@ -327,7 +328,7 @@ public class DefaultEventBus implements EventBus {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
       // of the current thread can change
       if (context != null) {
-        Context.setContext(context);
+        ContextImpl.setContext(context);
       }
     }
     } catch (ConcurrentModificationException e) {

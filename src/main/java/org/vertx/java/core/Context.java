@@ -13,33 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.vertx.java.core.file.impl;
-
-import org.vertx.java.core.Context;
-import org.vertx.java.core.impl.ContextImpl;
+package org.vertx.java.core;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import org.vertx.java.core.impl.DeploymentHandle;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author pidster
+ *
  */
-public class PathAdjuster {
+public interface Context {
 
-  public static Path adjust(Path path) {
-    Context context = ContextImpl.getContext();
-    if (context != null) {
-      Path adjustment = context.getPathAdjustment();
-      if (adjustment != null) {
-        return adjustment.resolve(path);
-      }
-    }
-    return path;
-  }
+	public abstract void setDeploymentHandle(DeploymentHandle deploymentHandle);
 
-  public static String adjust(String path) {
-    Path adjustment = adjust(Paths.get(path));
-    return adjustment.toString();
-  }
+	public abstract DeploymentHandle getDeploymentHandle();
+
+	public abstract Path getPathAdjustment();
+
+	public abstract void setPathAdjustment(Path pathAdjustment);
+
+	public abstract void reportException(Throwable t);
+
+	public abstract void addCloseHook(Runnable hook);
+
+	public abstract void runCloseHooks();
+
+	public abstract void execute(Runnable handler);
+
+	public abstract void executeOnWorker(final Runnable task);
+
 }

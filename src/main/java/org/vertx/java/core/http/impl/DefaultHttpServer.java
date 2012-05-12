@@ -47,6 +47,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.http.HttpServer;
@@ -58,7 +59,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.ServerID;
@@ -95,7 +96,7 @@ public class DefaultHttpServer implements HttpServer {
 
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Context ctx;
+  private final ContextImpl ctx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
@@ -383,7 +384,7 @@ public class DefaultHttpServer implements HttpServer {
     return tcpHelper.getTrustStorePassword();
   }
 
-  private void actualClose(final Context closeContext, final Handler<Void> done) {
+  private void actualClose(final ContextImpl closeContext, final Handler<Void> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
     }
@@ -395,7 +396,7 @@ public class DefaultHttpServer implements HttpServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    ContextImpl.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
