@@ -1,5 +1,0 @@
-This is the 3rd party JS libs used by the front-end JS app.
-
-The only thing that vert.x actually needs here is SockJS.
-
-The rest is just because we decided to make the fron end app using knockout.js and Twitter bootstrap, but you could use whatever front-end JS toolkit you are most comfortable with.
