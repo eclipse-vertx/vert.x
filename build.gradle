@@ -36,11 +36,20 @@ task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper"
 // --------------------------------------------------------------------
 // Sub projects
 
+project(":vertx-logging") {
+	dependencies {
+		//
+	}
+}
+
 project(":vertx-api") {
+	dependencies {
+		compile project(":vertx-logging");
+	}
 }
 
 project(":vertx-impl") {
-}
-
-
+	dependencies {
+		compile project(":vertx-logging");
+	}
 }
