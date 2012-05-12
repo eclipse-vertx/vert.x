@@ -94,6 +94,39 @@ project(":vertx-lang-jruby") {
 	}
 }
 
+project(":vertx-mods-auth-mgr") {
+	dependencies {
+		compile project(":vertx-api");
+	}
+}
+
+project(":vertx-mods-mailer") {
+	dependencies {
+		compile project(":vertx-api");
+		compile "javamail:mail:$javamailVersion"
+	}
+}
+
+project(":vertx-mods-mongo-persistor") {
+	dependencies {
+		compile project(":vertx-api");
+		compile "org.mongodb:mongo-java-driver:$mongoVersion"
+	}
+}
+
+project(":vertx-mods-web-server") {
+	dependencies {
+		compile project(":vertx-api");
+	}
+}
+
+project(":vertx-mods-work-queue") {
+	dependencies {
+		compile project(":vertx-api");
+	}
+}
+
+
 project(":vertx-examples") {
 	dependencies {
 		compile project(":vertx-api");
