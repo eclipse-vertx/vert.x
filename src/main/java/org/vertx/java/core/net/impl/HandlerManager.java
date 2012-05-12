@@ -17,8 +17,9 @@
 package org.vertx.java.core.net.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -66,7 +67,7 @@ public class HandlerManager<T> {
     return worker;
   }
 
-  public synchronized void addHandler(Handler<T> handler, Context context) {
+  public synchronized void addHandler(Handler<T> handler, ContextImpl context) {
     NioWorker worker = getWorker(context);
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = handlerMap.get(worker);
@@ -77,7 +78,7 @@ public class HandlerManager<T> {
     handlers.addHandler(new HandlerHolder<>(context, handler));
   }
 
-  public synchronized void removeHandler(Handler<T> handler, Context context) {
+  public synchronized void removeHandler(Handler<T> handler, ContextImpl context) {
     NioWorker worker = getWorker(context);
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {

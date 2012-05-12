@@ -17,7 +17,7 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.http.impl.DefaultHttpServer;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 
@@ -42,7 +42,7 @@ public abstract class VertxInternal extends Vertx {
 
   public abstract Context startInBackground(Runnable runnable);
 
-  public abstract Context getOrAssignContext();
+  public abstract ContextImpl getOrAssignContext();
 
   public abstract void reportException(Throwable t);
 

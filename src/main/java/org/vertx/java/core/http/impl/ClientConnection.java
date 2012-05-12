@@ -23,6 +23,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
@@ -34,7 +35,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -51,7 +52,7 @@ class ClientConnection extends AbstractConnection {
 
   ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, String hostHeader, boolean ssl,
                    boolean keepAlive,
-                   Context context) {
+                   ContextImpl context) {
     super(vertx, channel, context);
     this.client = client;
     this.hostHeader = hostHeader;

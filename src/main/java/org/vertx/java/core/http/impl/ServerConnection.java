@@ -24,6 +24,7 @@ import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
@@ -31,7 +32,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -62,7 +63,7 @@ class ServerConnection extends AbstractConnection {
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
 
-  ServerConnection(VertxInternal vertx, Channel channel, Context context) {
+  ServerConnection(VertxInternal vertx, Channel channel, ContextImpl context) {
     super(vertx, channel, context);
   }
 

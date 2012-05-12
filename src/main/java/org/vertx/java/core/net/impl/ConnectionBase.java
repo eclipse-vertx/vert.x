@@ -24,10 +24,11 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VertxInternal;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
@@ -46,7 +47,7 @@ public abstract class ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, Context context) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
@@ -54,7 +55,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final Channel channel;
-  protected final Context context;
+  protected final ContextImpl context;
 
   protected Handler<Exception> exceptionHandler;
   protected Handler<Void> closedHandler;
@@ -161,7 +162,7 @@ public abstract class ConnectionBase {
   }
 
   protected void setContext() {
-    Context.setContext(context);
+    ContextImpl.setContext(context);
   }
 
   protected void handleHandlerException(Throwable t) {

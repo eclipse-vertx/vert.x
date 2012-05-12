@@ -37,7 +37,7 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -56,7 +56,7 @@ public class DefaultNetClient implements NetClient {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final ContextImpl ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
@@ -333,7 +333,7 @@ public class DefaultNetClient implements NetClient {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             tcpHelper.runOnCorrectThread(ch, new Runnable() {
               public void run() {
-                Context.setContext(ctx);
+                ContextImpl.setContext(ctx);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
                 //Set a timer to retry connection
                 vertx.setTimer(reconnectInterval, new Handler<Long>() {
@@ -355,7 +355,7 @@ public class DefaultNetClient implements NetClient {
   private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        Context.setContext(ctx);
+        ContextImpl.setContext(ctx);
         DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, ctx);
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
@@ -367,7 +367,7 @@ public class DefaultNetClient implements NetClient {
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          Context.setContext(ctx);
+          ContextImpl.setContext(ctx);
           exceptionHandler.handle((Exception) t);
         }
       });

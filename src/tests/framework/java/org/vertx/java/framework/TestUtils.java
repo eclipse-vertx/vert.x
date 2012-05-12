@@ -16,12 +16,13 @@
 
 package org.vertx.java.framework;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -49,7 +50,7 @@ public class TestUtils {
     if (vertx == null) throw new NullPointerException("vertx");
     this.vertx = vertx;
     this.th = Thread.currentThread();
-    this.context = Context.getContext();
+    this.context = ContextImpl.getContext();
   }
 
   public void azzert(boolean result) {
@@ -232,7 +233,7 @@ public class TestUtils {
       throw new IllegalStateException("Don't call checkContext if utils were created with a null context");
     }
     azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
-    azzert(context.equals(Context.getContext()), "Expected:" + context + " Actual:" + Context.getContext());
+    azzert(context.equals(ContextImpl.getContext()), "Expected:" + context + " Actual:" + ContextImpl.getContext());
   }
 
 }

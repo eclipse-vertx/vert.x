@@ -20,7 +20,7 @@ import org.jboss.netty.channel.Channel;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
@@ -95,7 +95,7 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    */
   public abstract void sendFile(String filename);
 
-  protected NetSocket(VertxInternal vertx, Channel channel, String writeHandlerID, Context context) {
+  protected NetSocket(VertxInternal vertx, Channel channel, String writeHandlerID, ContextImpl context) {
     super(vertx, channel, context);
     this.writeHandlerID = writeHandlerID;
   }

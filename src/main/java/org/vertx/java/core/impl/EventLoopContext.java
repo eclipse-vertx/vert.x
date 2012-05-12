@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EventLoopContext extends Context {
+public class EventLoopContext extends ContextImpl {
 
   private final NioWorker worker;
 

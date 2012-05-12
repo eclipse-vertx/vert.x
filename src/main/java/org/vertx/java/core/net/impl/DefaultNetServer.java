@@ -40,10 +40,11 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
@@ -66,7 +67,7 @@ public class DefaultNetServer implements NetServer {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final ContextImpl ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
   private Handler<NetSocket> connectHandler;
@@ -206,7 +207,7 @@ public class DefaultNetServer implements NetServer {
     }
   }
 
-  private void actualClose(final Context closeContext, final Handler<Void> done) {
+  private void actualClose(final ContextImpl closeContext, final Handler<Void> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
@@ -218,7 +219,7 @@ public class DefaultNetServer implements NetServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    ContextImpl.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {

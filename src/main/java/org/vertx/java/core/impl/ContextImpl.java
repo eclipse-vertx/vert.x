@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.impl;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -27,48 +28,68 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class Context {
+public abstract class ContextImpl implements Context {
 
-  private static final Logger log = LoggerFactory.getLogger(Context.class);
+  private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
-  private static final ThreadLocal<Context> contextTL = new ThreadLocal<>();
+  private static final ThreadLocal<ContextImpl> contextTL = new ThreadLocal<>();
 
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
 
   private List<Runnable> closeHooks;
 
-  protected Context(Executor bgExec) {
+  protected ContextImpl(Executor bgExec) {
     this.bgExec = bgExec;
   }
 
   private final Executor bgExec;
 
-  public static void setContext(Context context) {
+  public static void setContext(ContextImpl context) {
     contextTL.set(context);
   }
 
-  public static Context getContext() {
+  public static ContextImpl getContext() {
     return contextTL.get();
   }
 
-  public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#setDeploymentHandle(org.vertx.java.core.impl.DeploymentHandle)
+ */
+@Override
+public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
     this.deploymentContext = deploymentHandle;
   }
 
-  public DeploymentHandle getDeploymentHandle() {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#getDeploymentHandle()
+ */
+@Override
+public DeploymentHandle getDeploymentHandle() {
     return deploymentContext;
   }
 
-  public Path getPathAdjustment() {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#getPathAdjustment()
+ */
+@Override
+public Path getPathAdjustment() {
     return pathAdjustment;
   }
 
-  public void setPathAdjustment(Path pathAdjustment) {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#setPathAdjustment(java.nio.file.Path)
+ */
+@Override
+public void setPathAdjustment(Path pathAdjustment) {
     this.pathAdjustment = pathAdjustment;
   }
 
-  public void reportException(Throwable t) {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#reportException(java.lang.Throwable)
+ */
+@Override
+public void reportException(Throwable t) {
     if (deploymentContext != null) {
       deploymentContext.reportException(t);
     } else {
@@ -76,14 +97,22 @@ public abstract class Context {
     }
   }
 
-  public void addCloseHook(Runnable hook) {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#addCloseHook(java.lang.Runnable)
+ */
+@Override
+public void addCloseHook(Runnable hook) {
     if (closeHooks == null) {
       closeHooks = new ArrayList<>();
     }
     closeHooks.add(hook);
   }
 
-  public void runCloseHooks() {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#runCloseHooks()
+ */
+@Override
+public void runCloseHooks() {
     if (closeHooks != null) {
       for (Runnable hook: closeHooks) {
         try {
@@ -95,9 +124,17 @@ public abstract class Context {
     }
   }
 
-  public abstract void execute(Runnable handler);
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#execute(java.lang.Runnable)
+ */
+@Override
+public abstract void execute(Runnable handler);
 
-  public void executeOnWorker(final Runnable task) {
+  /* (non-Javadoc)
+ * @see org.vertx.java.core.impl.Context#executeOnWorker(java.lang.Runnable)
+ */
+@Override
+public void executeOnWorker(final Runnable task) {
     bgExec.execute(new Runnable() {
       public void run() {
         wrapTask(task).run();
@@ -109,7 +146,7 @@ public abstract class Context {
     return new Runnable() {
       public void run() {
         try {
-          setContext(Context.this);
+          setContext(ContextImpl.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);

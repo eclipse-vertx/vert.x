@@ -18,13 +18,14 @@ package org.vertx.java.core.file.impl;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
@@ -394,9 +395,9 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   private void checkContext() {
-    if (!Context.getContext().equals(context)) {
+    if (!ContextImpl.getContext().equals(context)) {
       throw new IllegalStateException("AsyncFile must only be used in the context that created it, expected: "
-          + context + " actual " + Context.getContext());
+          + context + " actual " + ContextImpl.getContext());
     }
   }
 
