@@ -40,6 +40,7 @@ import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.net.impl.DefaultNetClient;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.core.shareddata.impl.SharedDataImpl;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
@@ -61,7 +62,7 @@ public class DefaultVertx extends VertxInternal {
 
   private final FileSystem fileSystem = new DefaultFileSystem(this);
   private final EventBus eventBus;
-  private final SharedData sharedData = new SharedData();
+  private final SharedData sharedData = new SharedDataImpl();
 
   private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
