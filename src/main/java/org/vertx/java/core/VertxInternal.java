@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.impl;
+package org.vertx.java.core;
 
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 

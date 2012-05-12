@@ -18,9 +18,9 @@ package org.vertx.java.core.net;
 
 import org.jboss.netty.channel.Channel;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;

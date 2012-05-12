@@ -17,6 +17,7 @@
 package org.vertx.java.core.file.impl;
 
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileProps;
@@ -25,7 +26,6 @@ import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
