@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.http.impl.HttpReadStreamBase;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 

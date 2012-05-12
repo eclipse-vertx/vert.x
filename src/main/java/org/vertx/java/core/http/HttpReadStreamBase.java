@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.http.impl;
+package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
