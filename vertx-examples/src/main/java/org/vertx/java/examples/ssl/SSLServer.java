@@ -17,17 +17,17 @@
 package org.vertx.java.examples.ssl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.buffer.impl.BufferImpl;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class SSLServer extends Verticle {
 
   public void start() {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        socket.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer buffer) {
+        socket.dataHandler(new Handler<BufferImpl>() {
+          public void handle(BufferImpl buffer) {
             socket.write(buffer);
           }
         });

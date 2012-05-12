@@ -18,12 +18,12 @@ package org.vertx.java.examples.proxy;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.buffer.impl.BufferImpl;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class ProxyServer extends Verticle {
 
@@ -40,8 +40,8 @@ public class ProxyServer extends Verticle {
             req.response.statusCode = cRes.statusCode;
             req.response.headers().putAll(cRes.headers());
             req.response.setChunked(true);
-            cRes.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer data) {
+            cRes.dataHandler(new Handler<BufferImpl>() {
+              public void handle(BufferImpl data) {
                 System.out.println("Proxying response body:" + data);
                 req.response.write(data);
               }
@@ -55,8 +55,8 @@ public class ProxyServer extends Verticle {
         });
         cReq.headers().putAll(req.headers());
         cReq.setChunked(true);
-        req.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
+        req.dataHandler(new Handler<BufferImpl>() {
+          public void handle(BufferImpl data) {
             System.out.println("Proxying request body:" + data);
             cReq.write(data);
           }

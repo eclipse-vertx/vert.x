@@ -21,7 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class PerfClient extends Verticle implements Handler<HttpClientResponse> {
 

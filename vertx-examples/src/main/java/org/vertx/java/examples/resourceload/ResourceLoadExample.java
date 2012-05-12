@@ -17,7 +17,7 @@
 package org.vertx.java.examples.resourceload;
 
 
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 import java.net.URL;
 

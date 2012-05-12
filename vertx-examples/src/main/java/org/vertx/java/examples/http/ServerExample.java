@@ -18,7 +18,7 @@ package org.vertx.java.examples.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 public class ServerExample extends Verticle {
 
