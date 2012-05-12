@@ -26,10 +26,10 @@ import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.Container;
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.VerticleFactory;
-import org.vertx.java.deploy.VerticleManager;
+import org.vertx.lang.Container;
+import org.vertx.lang.Verticle;
+import org.vertx.lang.VerticleFactory;
+import org.vertx.lang.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;

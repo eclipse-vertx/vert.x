@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl.cli;
+package org.vertx.lang;
 
-import org.vertx.lang.VerticleManager;
+import java.util.ServiceLoader;
+
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class StopCommand extends VertxCommand {
+public interface VerticleFactory {
+	
+  public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
 
-  public String execute(VerticleManager appMgr) {
-    appMgr.unblock();
-    return "OK";
-  }
+  void init(VerticleManager manager);
+  
+  String getLanguage();
+  
+  boolean isFactoryFor(String main);
 
-  @Override
-  public boolean isBlock() {
-    return false;
-  }
+  Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
+
+  void reportException(Throwable t);
+
 }

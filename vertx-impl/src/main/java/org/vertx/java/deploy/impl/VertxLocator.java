@@ -1,7 +1,7 @@
 package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Vertx;
-import org.vertx.java.deploy.Container;
+import org.vertx.lang.Container;
 
 /**
  * Used by the vert.x API in a scripting language to get references to the Java API

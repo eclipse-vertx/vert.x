@@ -16,7 +16,7 @@
 
 package org.vertx.java.deploy.impl.cli;
 
-import org.vertx.java.deploy.VerticleManager;
+import org.vertx.lang.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

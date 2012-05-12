@@ -19,9 +19,9 @@ package org.vertx.java.deploy.impl.rhino;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.VerticleFactory;
-import org.vertx.java.deploy.VerticleManager;
+import org.vertx.lang.Verticle;
+import org.vertx.lang.VerticleFactory;
+import org.vertx.lang.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

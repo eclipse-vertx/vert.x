@@ -21,7 +21,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

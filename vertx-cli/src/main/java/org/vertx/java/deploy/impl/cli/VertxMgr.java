@@ -28,9 +28,9 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
-import org.vertx.java.deploy.VerticleManager;
 import org.vertx.java.deploy.impl.Args;
 import org.vertx.java.deploy.impl.DefaultVerticleManager;
+import org.vertx.lang.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;

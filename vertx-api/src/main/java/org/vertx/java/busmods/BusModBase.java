@@ -21,7 +21,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.lang.Verticle;
 
 /**
  * Base helper class for Java busmods

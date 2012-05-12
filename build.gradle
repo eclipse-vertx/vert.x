@@ -52,7 +52,7 @@ project(":vertx-logging") {
 project(":vertx-api") {
 	dependencies {
 		compile project(":vertx-logging");
-		compile "io.netty:netty:$nettyVersion"
+		compile "io.netty:netty:$nettyVersion" // core.buffer.Buffer
 	}
 }
 
@@ -63,6 +63,13 @@ project(":vertx-impl") {
 		compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 		compile "com.hazelcast:hazelcast:$hazelcastVersion"
 		compile "io.netty:netty:$nettyVersion"
+	}
+}
+
+project(":vertx-cli") {
+	dependencies {
+		compile project(":vertx-api");
+		compile project(":vertx-impl");
 	}
 }
 
@@ -84,6 +91,12 @@ project(":vertx-lang-jruby") {
 	dependencies {
 		compile project(":vertx-api");
 		compile "org.jruby:jruby:$jrubyVersion"
+	}
+}
+
+project(":vertx-examples") {
+	dependencies {
+		compile project(":vertx-api");
 	}
 }
 
