@@ -22,9 +22,9 @@ import org.jruby.embed.EvalFailedException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.VerticleFactory;
-import org.vertx.java.deploy.VerticleManager;
+import org.vertx.lang.Verticle;
+import org.vertx.lang.VerticleFactory;
+import org.vertx.lang.VerticleManager;
 
 import java.util.List;
 
