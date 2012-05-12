@@ -39,6 +39,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
+/**
+ * @author Janne Hietam&auml;ki
+ */
 public class CompilingClassLoader extends ClassLoader {
   private final String sourceName;
   private final Map<String, ByteArrayOutputStream> compiledClasses = new HashMap<String, ByteArrayOutputStream>();
@@ -49,6 +52,10 @@ public class CompilingClassLoader extends ClassLoader {
     compile();
   }
 
+  public String resolveMainClassName() {
+    return sourceName.substring(0, sourceName.length() - ".java".length());
+  }
+  
   private void compile() {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
     JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
