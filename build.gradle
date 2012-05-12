@@ -1,5 +1,11 @@
 
-configurations.all {
+configurations {
+	all {
+		
+	}
+	maven {
+		
+	}
 }
 
 allprojects {
@@ -8,7 +14,7 @@ allprojects {
 
 subprojects {
 
-	// apply plugin: 'idea'            // adds support for IDEA project generation
+	// apply plugin: 'idea'         // adds support for IDEA project generation
 	apply plugin: 'java'            // adds support for java
 
 	repositories {
@@ -53,9 +59,32 @@ project(":vertx-api") {
 project(":vertx-impl") {
 	dependencies {
 		compile project(":vertx-api");
-		compile "io.netty:netty:$nettyVersion"
-		compile "com.hazelcast:hazelcast:$hazelcastVersion"
 		compile "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
 		compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
+		compile "com.hazelcast:hazelcast:$hazelcastVersion"
+		compile "io.netty:netty:$nettyVersion"
 	}
 }
+
+project(":vertx-lang-groovy") {
+	dependencies {
+		compile project(":vertx-api");
+		compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+	}
+}
+
+project(":vertx-lang-javascript") {
+	dependencies {
+		compile project(":vertx-api");
+		compile "org.mozilla:rhino:$rhinoVersion"
+	}
+}
+
+project(":vertx-lang-jruby") {
+	dependencies {
+		compile project(":vertx-api");
+		compile "org.jruby:jruby:$jrubyVersion"
+	}
+}
+
+
