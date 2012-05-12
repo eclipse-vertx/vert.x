@@ -1,4 +1,4 @@
-package org.vertx.java.core.http.impl.ws;
+package org.vertx.java.core.util;
 
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
