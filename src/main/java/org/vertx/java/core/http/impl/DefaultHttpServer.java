@@ -61,9 +61,9 @@ import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.net.impl.HandlerHolder;
 import org.vertx.java.core.net.impl.HandlerManager;
-import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxWorkerPool;
 

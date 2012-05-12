@@ -18,8 +18,8 @@ package org.vertx.java.core;
 
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.net.ServerID;
 import org.vertx.java.core.net.impl.DefaultNetServer;
-import org.vertx.java.core.net.impl.ServerID;
 
 import java.util.Map;
 import java.util.concurrent.Executor;

@@ -17,7 +17,7 @@
 package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.net.ServerID;
 
 import java.util.Collection;
 

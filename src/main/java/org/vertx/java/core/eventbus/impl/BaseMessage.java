@@ -24,7 +24,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.net.ServerID;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
