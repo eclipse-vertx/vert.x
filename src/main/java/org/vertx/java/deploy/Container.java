@@ -19,7 +19,6 @@ package org.vertx.java.deploy;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
 import java.net.URL;

@@ -16,8 +16,6 @@
 
 package org.vertx.java.deploy;
 
-import org.vertx.java.deploy.impl.VerticleManager;
-
 import java.util.ServiceLoader;
 
 /**

@@ -25,7 +25,7 @@ import org.vertx.groovy.deploy.Container;
 import org.vertx.java.core.VertxInternal;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.VerticleManager;
 import org.vertx.java.deploy.impl.VertxLocator;
 
 import java.lang.reflect.Method;

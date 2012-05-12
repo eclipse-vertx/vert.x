@@ -28,6 +28,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
+import org.vertx.java.deploy.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;

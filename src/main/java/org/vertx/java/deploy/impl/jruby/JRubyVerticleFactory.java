@@ -24,7 +24,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.VerticleManager;
 
 import java.util.List;
 
