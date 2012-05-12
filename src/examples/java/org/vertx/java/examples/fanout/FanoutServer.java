@@ -31,7 +31,7 @@ public class FanoutServer extends Verticle {
 
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        connections.add(socket.writeHandlerID);
+        connections.add(socket.getWriteHandlerID());
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
@@ -41,7 +41,7 @@ public class FanoutServer extends Verticle {
         });
         socket.closedHandler(new SimpleHandler() {
           public void handle() {
-            connections.remove(socket.writeHandlerID);
+            connections.remove(socket.getWriteHandlerID());
           }
         });
       }

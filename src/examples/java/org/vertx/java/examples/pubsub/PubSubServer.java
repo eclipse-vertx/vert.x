@@ -37,9 +37,9 @@ public class PubSubServer extends Verticle {
             if (line.startsWith("subscribe")) {
               System.out.println("Topic is " + parts[1]);
               Set<String> set = vertx.sharedData().getSet(parts[1]);
-              set.add(socket.writeHandlerID);
+              set.add(socket.getWriteHandlerID());
             } else if (line.startsWith("unsubscribe")) {
-              vertx.sharedData().getSet(parts[1]).remove(socket.writeHandlerID);
+              vertx.sharedData().getSet(parts[1]).remove(socket.getWriteHandlerID());
             } else if (line.startsWith("publish")) {
               System.out.println("Publish to topic is " + parts[1]);
               Set<String> actorIDs = vertx.sharedData().getSet(parts[1]);

@@ -16,12 +16,9 @@
 
 package org.vertx.java.core.net;
 
-import org.jboss.netty.channel.Channel;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.ContextImpl;
-import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -37,7 +34,22 @@ import org.vertx.java.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
+public interface NetSocket extends ReadStream, WriteStream {
+	
+//	  protected NetSocket(VertxInternal vertx, Channel channel, String writeHandlerID, ContextImpl context) {
+//	    super(vertx, channel, context);
+//	    this.writeHandlerID = writeHandlerID;
+//	  }
+
+  public abstract void close();
+  
+  public abstract void closedHandler(Handler<Void> handler);
+  
+  public abstract void handleException(Exception e);
+  
+  public abstract Context getContext();
+  
+  public abstract String getWriteHandlerID();
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
@@ -46,7 +58,7 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
    * allows you to write data to other connections which are owned by different event loops.
    */
-  public final String writeHandlerID;
+  // public final String writeHandlerID;
 
   /** {@inheritDoc} */
   public abstract void writeBuffer(Buffer data);
@@ -94,11 +106,6 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    */
   public abstract void sendFile(String filename);
-
-  protected NetSocket(VertxInternal vertx, Channel channel, String writeHandlerID, ContextImpl context) {
-    super(vertx, channel, context);
-    this.writeHandlerID = writeHandlerID;
-  }
 
   /** {@inheritDoc} */
   public abstract void dataHandler(Handler<Buffer> dataHandler);
