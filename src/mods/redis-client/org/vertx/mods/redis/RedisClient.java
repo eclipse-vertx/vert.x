@@ -29,13 +29,13 @@ import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
 import org.vertx.mods.redis.commands.DecrByCommand;
 import org.vertx.mods.redis.commands.DecrCommand;
-import org.vertx.mods.redis.commands.DelCommand;
-import org.vertx.mods.redis.commands.ExistsCommand;
 import org.vertx.mods.redis.commands.GetCommand;
 import org.vertx.mods.redis.commands.GetSetCommand;
-import org.vertx.mods.redis.commands.IncrByCommand;
-import org.vertx.mods.redis.commands.IncrCommand;
 import org.vertx.mods.redis.commands.SetCommand;
+import org.vertx.mods.redis.commands.keys.DelCommand;
+import org.vertx.mods.redis.commands.keys.ExistsCommand;
+import org.vertx.mods.redis.commands.keys.IncrByCommand;
+import org.vertx.mods.redis.commands.keys.IncrCommand;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisException;

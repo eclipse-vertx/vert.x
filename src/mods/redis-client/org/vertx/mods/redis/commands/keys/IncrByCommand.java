@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands;
+package org.vertx.mods.redis.commands.keys;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
+import org.vertx.mods.redis.commands.Command;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -28,14 +29,14 @@ import redis.clients.jedis.exceptions.JedisException;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class DecrByCommand extends Command {
+public class IncrByCommand extends Command {
 	
-	public static final String COMMAND = "decrby";
-	
-	public DecrByCommand() {
+	public static final String COMMAND = "incrby";
+
+	public IncrByCommand () {
 		super(COMMAND);
 	}
-
+	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) {
 		String key = getMandatoryString("key", message);
@@ -44,19 +45,19 @@ public class DecrByCommand extends Command {
 			return;
 		}
 
-		Number decrement = message.body.getNumber("decrement");
-		if (decrement == null) {
-			sendError(message, "decrement can not be null");
+		Number increment = message.body.getNumber("increment");
+		if (increment == null) {
+			sendError(message, "increment can not be null");
 			return;
 		}
-		if (!(decrement instanceof Integer) || !(decrement instanceof Long)) {
-			sendError(message, "decrement must be an integer or long");
+		if (!(increment instanceof Integer) || !(increment instanceof Long)) {
+			sendError(message, "value must be an integer or long");
 			return;
 		}
 
 		try {
 
-			Number value = context.getClient().decrBy(key, decrement.longValue());
+			Number value = context.getClient().incrBy(key, increment.longValue());
 			JsonObject reply = new JsonObject().putNumber("value", value);
 			sendOK(message, reply);
 		} catch (JedisException e) {

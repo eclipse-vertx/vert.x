@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands;
+package org.vertx.mods.redis.commands.keys;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
+import org.vertx.mods.redis.commands.Command;
 
 import redis.clients.jedis.exceptions.JedisException;
 

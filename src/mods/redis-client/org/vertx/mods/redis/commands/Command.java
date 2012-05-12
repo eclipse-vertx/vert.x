@@ -45,4 +45,12 @@ public abstract class Command extends BusModBase {
 	public String getName () {
 		return name;
 	}
+	
+	protected void response (Message<JsonObject> message, Long response, String error) {
+		if (response == 1) {
+			sendOK(message);
+		} else {
+			sendError(message, error);
+		}
+	}
 }

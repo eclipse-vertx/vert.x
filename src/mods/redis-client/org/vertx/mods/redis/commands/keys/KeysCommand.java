@@ -13,37 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands;
+package org.vertx.mods.redis.commands.keys;
+
+import java.util.Set;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
+import org.vertx.mods.redis.commands.Command;
 
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * DelCommand
+ * KeysCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class DelCommand extends Command {
+public class KeysCommand extends Command {
+	
+	public static final String COMMAND = "keys";
 
-	public static final String COMMAND = "del";
-
-	public DelCommand () {
+	public KeysCommand () {
 		super(COMMAND);
 	}
 	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) {
 		String key = getMandatoryString("key", message);
+		if (key == null) {
+			sendError(message, "key can not be null");
+			return;
+		}
+
+		String pattern = getMandatoryString("pattern", message);
+		if (pattern == null) {
+			sendError(message, "pattern can not be null");
+			return;
+		}
+		
 
 		try {
-			context.getClient().del(key);
 
-			sendOK(message);
+			Set<String> keys = context.getClient().keys(pattern);
+			
+			JsonArray keys_json;
+			if (keys != null && !keys.isEmpty()) {
+				keys_json = new JsonArray(keys.toArray());
+			} else {
+				 keys_json = new JsonArray();
+			}
+			JsonObject reply = new JsonObject().putArray("keys", keys_json);
+			sendOK(message, reply);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

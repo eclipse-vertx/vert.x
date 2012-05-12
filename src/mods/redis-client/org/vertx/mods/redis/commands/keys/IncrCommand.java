@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands;
+package org.vertx.mods.redis.commands.keys;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
+import org.vertx.mods.redis.commands.Command;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -28,11 +29,11 @@ import redis.clients.jedis.exceptions.JedisException;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
+public class IncrCommand extends Command {
 	
-	public static final String COMMAND = "incrby";
+	public static final String COMMAND = "incr";
 
-	public IncrByCommand () {
+	public IncrCommand () {
 		super(COMMAND);
 	}
 	
@@ -44,19 +45,10 @@ public class IncrByCommand extends Command {
 			return;
 		}
 
-		Number value = message.body.getNumber("value");
-		if (value == null) {
-			sendError(message, "value can not be null");
-			return;
-		}
-		if (!(value instanceof Integer) || !(value instanceof Long)) {
-			sendError(message, "value must be an integer or long");
-			return;
-		}
 
 		try {
 
-			value = context.getClient().incrBy(key, value.longValue());
+			Long value = context.getClient().incr(key);
 			JsonObject reply = new JsonObject().putNumber("value", value);
 			sendOK(message, reply);
 		} catch (JedisException e) {

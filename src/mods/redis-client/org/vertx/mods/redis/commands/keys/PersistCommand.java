@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands;
+package org.vertx.mods.redis.commands.keys;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
+import org.vertx.mods.redis.commands.Command;
 
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * PersisCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrCommand extends Command {
+public class PersistCommand extends Command {
 	
-	public static final String COMMAND = "incr";
+	public static final String COMMAND = "persist";
 
-	public IncrCommand () {
+	public PersistCommand () {
 		super(COMMAND);
 	}
 	
@@ -47,9 +48,13 @@ public class IncrCommand extends Command {
 
 		try {
 
-			Long value = context.getClient().incr(key);
-			JsonObject reply = new JsonObject().putNumber("value", value);
-			sendOK(message, reply);
+			Long value = context.getClient().persist(key);
+			if (value == 1) {
+				sendOK(message);
+			} else {
+				sendError(message, "key does not exist or does not have an associated timeout");
+			}
+			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}
