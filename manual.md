@@ -66,7 +66,7 @@ In this section I'll give an overview of the main concepts in vert.x. Many of th
 
 ### Verticle
 
-The unit of deployment in vert.x is called a *verticle* (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby or Java (We have some partial Groovy support and we're looking to support Scala and Clojure going ahead).
+The unit of deployment in vert.x is called a *verticle* (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Groovy, Ruby or Java (We're looking to support other languages as we progress).
 
 A verticle is defined by having a *main* which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.
 

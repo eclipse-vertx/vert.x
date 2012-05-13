@@ -164,7 +164,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <h2 id="concepts-in-vertx">Concepts in vert.x</h2><br/>
 <p>In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.</p>
 <h3 id="verticle">Verticle</h3><br/>
-<p>The unit of deployment in vert.x is called a <em>verticle</em> (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby or Java (We have some partial Groovy support and we're looking to support Scala and Clojure going ahead).</p>
+<p>The unit of deployment in vert.x is called a <em>verticle</em> (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Groovy, Ruby or Java (We're looking to support other languages as we progress).</p>
 <p>A verticle is defined by having a <em>main</em> which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.</p>
 <p>When you write an application, you might write a single verticle, or your application could consist of a whole set of verticles communicating with each other using the event bus.</p>
 <h3 id="vertx-instances">Vert.x Instances</h3><br/>
