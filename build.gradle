@@ -1,21 +1,28 @@
+import org.apache.ivy.plugins.parser.m2.PomReader.PomDependencyData;
+
 
 configurations {
 	all {
 		
 	}
-	maven {
-		
-	}
 }
+
+ext.groupId = 'org.vertx'
+ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 allprojects {
 	defaultTasks ['assemble']
+	groupId = 'org.vertx'
 }
 
 subprojects {
 
 	// apply plugin: 'idea'         // adds support for IDEA project generation
 	apply plugin: 'java'            // adds support for java
+	apply plugin: 'maven'
+	apply plugin: 'signing'
+	
+	groupId = 'org.vertx'
 
 	repositories {
 		mavenCentral()
@@ -28,6 +35,90 @@ subprojects {
 	jar {
 		manifest.attributes provider: 'gradle'
 	}
+	
+	task sourceJar(type: Jar) {
+		description = 'Builds a source jar artifact suitable for maven deployment.'
+		classifier = 'sources'
+		from sourceSets.main.java
+	}
+
+	build.dependsOn sourceJar
+
+	artifacts {
+		archives sourceJar
+	}
+	
+	signing {
+//		required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+//		sign configurations.archives
+	}
+
+	configure(install.repositories.mavenInstaller) {
+		pom.project {
+			name "$title"
+			description "$description"
+			groupId 'org.vertx'
+			inceptionYear 2011
+			organization {
+				name = 'VMware, Inc'
+			}
+			licenses {
+				license {
+					name 'The Apache Software License, Version 2.0'
+					url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					distribution 'repo'
+				}
+			}
+			developers {
+				developer {
+					id = 'purplefox'
+					name = 'Tim Fox'
+					email = 'tim [at] tfox.org'
+				}
+			}
+			scm {
+				connection 'scm:git:https://github.com/purplefox/vert.x.git'
+				developerConnection 'scm:git:git@github.com:purplefox/vert.x.git'
+				url 'https://github.com/purplefox/vert.x'
+			}
+		}
+	}
+	
+	/*
+	uploadArchives {
+		repositories {
+			mavenDeployer {
+				// beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+				// configuration = configurations.deployerJars
+				configuration = configurations.archives
+				repository(url: 'scp:')
+				pom.project {
+					groupId 'org.vertx'
+					inceptionYear 2011
+					licenses {
+						license {
+							name 'The Apache Software License, Version 2.0'
+							url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+							distribution 'repo'
+						}
+					}
+					developers {
+						developer {
+							id = 'purplefox'
+							name = 'Tim Fox'
+							email = 'tim [at] tfox.org'
+						}
+					}
+					scm {
+						connection 'scm:git:https://github.com/purplefox/vert.x.git'
+						developerConnection 'scm:git:git@github.com:purplefox/vert.x.git'
+						url 'https://github.com/purplefox/vert.x'
+					}
+				}
+			}
+		}
+	}
+	*/
 }
 
 // --------------------------------------------------------------------
@@ -36,6 +127,61 @@ subprojects {
 task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper") {
 	group = 'Project Setup'
 	gradleVersion = "$gradleVersion"
+}
+
+/*
+task rubyTests(type: Exec, dependsOn: testClasses) {
+	group = 'verification'
+	workingDir = file('src/tests/ruby')
+	executable = file('src/tests/ruby/run_tests.sh')
+}
+
+task yardoc(type: Exec) {
+	rubySrc = "src/main/ruby/core/**"
+	vertxRbSrc = "src/main/ruby/vertx.rb"
+	licenseSrc = "LICENSE.txt"
+	readmeSrc = "README.md"
+	destDir = "target/docs/ruby/api/"
+
+	inputs.files licenseSrc, vertxRbSrc, readmeSrc
+	inputs.dir rubySrc
+	outputs.dir destDir
+
+	commandLine = [
+		"yardoc",
+		"--title",
+		"'vert.x Ruby API'",
+		"--readme",
+		readmeSrc,
+		"--no-private",
+		"--output-dir",
+		destDir,
+		vertxRbSrc,
+		rubySrc,
+		"-",
+		licenseSrc
+	]
+}
+*/
+
+task dist() {
+	// TODO
+	group = 'Vert.x'
+}
+
+task tarDist() {
+	// TODO
+	group = 'Vert.x'
+}
+
+task tag() {
+	// TODO
+	group = 'Vert.x'
+}
+
+task release() {
+	// TODO
+	group = 'Vert.x'
 }
 
 
@@ -52,7 +198,7 @@ project(":vertx-logging") {
 project(":vertx-api") {
 	dependencies {
 		compile project(":vertx-logging");
-		compile "io.netty:netty:$nettyVersion" // o.v.j.c.buffer.Buffer
+		compile "io.netty:netty:$nettyVersion" // FIXME remove netty dep in o.v.j.c.buffer.Buffer
 	}
 }
 
