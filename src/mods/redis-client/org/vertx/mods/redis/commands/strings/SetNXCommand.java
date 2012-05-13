@@ -53,8 +53,8 @@ public class SetNXCommand extends Command {
 		try {
 
 			Long response = context.getClient().setrange(key, offset.longValue(), value);
-			JsonObject result = new JsonObject().putNumber("length", response);
-			response(message, response, "key was not set", result);
+
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

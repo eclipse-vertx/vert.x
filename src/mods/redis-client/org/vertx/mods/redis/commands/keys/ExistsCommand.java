@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -39,18 +40,14 @@ public class ExistsCommand extends Command {
 	
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
 		
 		try {
 			boolean exists = context.getClient().exists(key);
 			
-			JsonObject reply = new JsonObject().putBoolean("exists", exists);
-			sendOK(message, reply);
+			response(message, exists);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

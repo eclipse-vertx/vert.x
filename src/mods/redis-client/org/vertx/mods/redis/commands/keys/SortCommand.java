@@ -23,6 +23,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.SortingParams;
 import redis.clients.jedis.exceptions.JedisException;
@@ -42,12 +43,10 @@ public class SortCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
+
 		String resultkey = getMandatoryString("resultkey", message);
 		
 		
@@ -77,8 +76,8 @@ public class SortCommand extends Command {
 			} else {
 				result = new JsonArray();
 			}
-			JsonObject obj = new JsonObject().putArray("values", result);
-			sendOK(message, obj);
+
+			response(message, result);
 			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
@@ -137,7 +136,7 @@ public class SortCommand extends Command {
 			storeResult = context.getClient().sort(key, resultkey);
 		}
 		
-		response(message, storeResult, "error store result");
+		response(message, storeResult);
 	}
 	
 	

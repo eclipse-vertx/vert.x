@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,23 +39,17 @@ public class RenameNXCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
 
 		String newkey = getMandatoryString("newkey", message);
-		if (newkey == null) {
-			sendError(message, "newkey can not be null");
-			return;
-		}
+		checkNull(newkey, "newkey can not be null");
 
 		try {
 
 			Long response = context.getClient().renamenx(key, newkey);
-			response(message, response, "newkey already exists");
+			response(message, response);
 			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

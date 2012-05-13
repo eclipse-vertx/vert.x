@@ -23,6 +23,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -41,18 +42,9 @@ public class KeysCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
-		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
-
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String pattern = getMandatoryString("pattern", message);
-		if (pattern == null) {
-			sendError(message, "pattern can not be null");
-			return;
-		}
+		checkNull(pattern, "pattern can not be null");
 		
 
 		try {
@@ -65,8 +57,8 @@ public class KeysCommand extends Command {
 			} else {
 				 keys_json = new JsonArray();
 			}
-			JsonObject reply = new JsonObject().putArray("keys", keys_json);
-			sendOK(message, reply);
+			response(message, keys_json);
+
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

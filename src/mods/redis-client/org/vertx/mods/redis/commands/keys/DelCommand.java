@@ -15,11 +15,17 @@
  */
 package org.vertx.mods.redis.commands.keys;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,13 +44,30 @@ public class DelCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
-		String key = getMandatoryString("key", message);
-
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
+		JsonArray keys = message.body.getArray("keys");
+		
+		if (keys == null) {
+			throw new CommandException("keys can not be null");
+		}
+		
 		try {
-			context.getClient().del(key);
+			
+			List<String> keyvalue = new ArrayList<String>();
+			
+			Iterator<Object> values = keys.iterator();
+			while (values.hasNext()) {
+				Object temp = values.next();
+				if (!(temp instanceof String)) {
+					throw new CommandException("only string values are allowed");
+				}
+				keyvalue.add((String) temp);
+			}
+			
+			Long response = context.getClient().del(keyvalue.toArray(new String[keyvalue.size()]));
+			
 
-			sendOK(message);
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

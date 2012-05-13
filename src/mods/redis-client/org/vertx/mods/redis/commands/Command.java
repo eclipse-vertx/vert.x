@@ -18,6 +18,7 @@ package org.vertx.mods.redis.commands;
 
 import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 
@@ -46,29 +47,24 @@ public abstract class Command extends BusModBase {
 		return name;
 	}
 	
-	protected void response (Message<JsonObject> message, Long response, String error) {
-		response(message, response, error);
-	}
-	protected void response (Message<JsonObject> message, Long response, String error, JsonObject result) {
-		if (response == 1) {
-			if (result != null) {
-				sendOK(message, result);
-			} else {
-				sendOK(message);
-			}
-		} else {
-			sendError(message, error);
-		}
+	protected void response (Message<JsonObject> message, JsonArray response) {
+		JsonObject value = new JsonObject().putArray("value", response);
+		sendOK(message, value);
 	}
 	
-	protected void response (Message<JsonObject> message, String response, String error) {
-		if (response.equalsIgnoreCase("ok")) {
-			sendOK(message);
-		} else {
-			sendError(message, error);
-		}
+	protected void response (Message<JsonObject> message, Long response) {
+		JsonObject value = new JsonObject().putNumber("value", response);
+		sendOK(message, value);
 	}
 	
+	protected void response (Message<JsonObject> message, String response) {
+		JsonObject value = new JsonObject().putString("value", response);
+		sendOK(message, value);
+	}
+	protected void response (Message<JsonObject> message, boolean response) {
+		JsonObject value = new JsonObject().putBoolean("value", response);
+		sendOK(message, value);
+	}
 	
 	protected void checkType (Object value, Class<?> type, String error) throws CommandException {
 		if (!type.isInstance(value)) {

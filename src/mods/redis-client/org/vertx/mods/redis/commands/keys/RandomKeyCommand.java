@@ -43,8 +43,7 @@ public class RandomKeyCommand extends Command {
 
 			String value = context.getClient().randomKey();
 			
-			JsonObject ret_value = new JsonObject().putString("key", value);
-			sendOK(message, ret_value);
+			response(message, value);
 			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,21 +39,16 @@ public class SelectCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		Number index = message.body.getNumber("index");
-		if (index == null) {
-			sendError(message, "index can not be null");
-			return;
-		}
-		if (!(index instanceof Integer)) {
-			sendError(message, "index must be an integer");
-			return;
-		}
+
+		checkNull(index, "index can not be null");
+		checkType(index, Integer.class, "index must be an integer");
 
 		try {
 
-			context.getClient().select(index.intValue());
-			sendOK(message);
+			String response = context.getClient().select(index.intValue());
+			response(message, response);
 			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

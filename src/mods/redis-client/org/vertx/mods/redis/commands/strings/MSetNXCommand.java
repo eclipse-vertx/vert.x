@@ -64,7 +64,7 @@ public class MSetNXCommand extends Command {
 			
 			Long response = context.getClient().msetnx(keyvalue.toArray(new String[keyvalue.size()]));
 			
-			response(message, response, "at least one key already existed");
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

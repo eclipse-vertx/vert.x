@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,31 +39,18 @@ public class MoveCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
 
 		Number index = message.body.getNumber("index");
-		if (index == null) {
-			sendError(message, "index can not be null");
-			return;
-		}
-		if (!(index instanceof Integer)) {
-			sendError(message, "index must be an integer");
-			return;
-		}
+		checkNull(index, "index can not be null");
+		checkType(index, Integer.class, "index must be an integer");
 
 		try {
 
 			Long value = context.getClient().move(key, index.intValue());
-			if (value == 1) {
-				sendOK(message);
-			} else {
-				sendError(message, "key was not moved");
-			}
+			response(message, value);
 			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

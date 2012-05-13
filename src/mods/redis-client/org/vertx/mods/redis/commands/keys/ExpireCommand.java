@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,31 +39,19 @@ public class ExpireCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException{
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
 
 		Number seconds = message.body.getNumber("seconds");
-		if (seconds == null) {
-			sendError(message, "seconds can not be null");
-			return;
-		}
-		if (!(seconds instanceof Integer)) {
-			sendError(message, "seconds must be an integer");
-			return;
-		}
+		checkNull(seconds, "seconds can not be null");
+		
+		checkType(seconds, Integer.class, "seconds must be an integer");
 
 		try {
 
 			Long value = context.getClient().expire(key, seconds.intValue());
-			if (value == 1) {
-				sendOK(message);
-			} else {
-				sendError(message, "key does not exist or the timeout could not be set");
-			}
+			response(message, value);
 			
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

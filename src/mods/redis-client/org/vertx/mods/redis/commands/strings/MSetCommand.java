@@ -64,7 +64,7 @@ public class MSetCommand extends Command {
 			
 			String response = context.getClient().mset(keyvalue.toArray(new String[keyvalue.size()]));
 			
-			response(message, response, "");
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}
