@@ -22,7 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
  * size records.<p>
- * Instances of this class take as input {@link BufferImpl} instances containing raw bytes, and output records.<p>
+ * Instances of this class take as input {@link Buffer} instances containing raw bytes, and output records.<p>
  * For example, if I had a simple ASCII text protocol delimited by '\n' and the input was the following:<p>
  * <pre>
  * buffer1:HELLO\nHOW ARE Y
