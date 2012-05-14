@@ -11,7 +11,7 @@ Copy the following into a text editor and save it as `server.js`
 
     load('vertx.js')
 
-    var server = new vertx.NetServer();
+    var server = vertx.createNetServer();
 
     server.connectHandler(function(sock) {
       new vertx.Pump(sock, sock).start();
