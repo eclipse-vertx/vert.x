@@ -17,7 +17,6 @@ package org.vertx.mods.redis.commands.keys;
 
 import java.util.Set;
 
-import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;

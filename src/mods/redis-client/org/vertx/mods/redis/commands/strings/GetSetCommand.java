@@ -15,7 +15,6 @@
  */
 package org.vertx.mods.redis.commands.strings;
 
-import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;

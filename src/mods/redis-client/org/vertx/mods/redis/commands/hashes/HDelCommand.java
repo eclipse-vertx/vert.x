@@ -13,9 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands.strings;
+package org.vertx.mods.redis.commands.hashes;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
@@ -24,34 +29,50 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * HDelCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
-	
-	public static final String COMMAND = "incrby";
+public class HDelCommand extends Command {
 
-	public IncrByCommand () {
+	public static final String COMMAND = "hdel";
+
+	public HDelCommand () {
 		super(COMMAND);
 	}
 	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
+		
 		String key = getMandatoryString("key", message);
 		checkNull(key, "key can not be null");
-
-		Number increment = message.body.getNumber("increment");
-		checkNull(increment, "increment can not be null");
-		checkType(increment, Integer.class, "increment must be an integer or long");
-		checkType(increment, Long.class, "increment must be an integer or long");
-
+		
+		
+		JsonArray fields = message.body.getArray("fields");
+		
+		if (fields == null) {
+			throw new CommandException("fields can not be null");
+		}
+		
 		try {
-
-			Number value = context.getClient().incrBy(key, increment.longValue());
 			
-			response(message, value);
+			List<String> keyvalue = new ArrayList<String>();
+			
+			
+			Iterator<Object> values = fields.iterator();
+			while (values.hasNext()) {
+				Object temp = values.next();
+				if (!(temp instanceof String)) {
+					throw new CommandException("only string values are allowed");
+				}
+				keyvalue.add((String) temp);
+			}	
+			
+			Long response = context.getClient().hdel(key, keyvalue.toArray(new String[keyvalue.size()]));
+			
+
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

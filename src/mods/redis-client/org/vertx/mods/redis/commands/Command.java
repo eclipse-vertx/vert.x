@@ -52,6 +52,11 @@ public abstract class Command extends BusModBase {
 		sendOK(message, value);
 	}
 	
+	protected void response (Message<JsonObject> message, JsonObject response) {
+		JsonObject value = new JsonObject().putObject("value", response);
+		sendOK(message, value);
+	}
+	
 	protected void response (Message<JsonObject> message, Number response) {
 		JsonObject value = new JsonObject().putNumber("value", response);
 		sendOK(message, value);

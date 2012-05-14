@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands.strings;
+package org.vertx.mods.redis.commands.hashes;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -24,16 +24,16 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * HSetNXCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
+public class HSetNXCommand extends Command {
 	
-	public static final String COMMAND = "incrby";
+	public static final String COMMAND = "hsetnx";
 
-	public IncrByCommand () {
+	public HSetNXCommand () {
 		super(COMMAND);
 	}
 	
@@ -42,16 +42,16 @@ public class IncrByCommand extends Command {
 		String key = getMandatoryString("key", message);
 		checkNull(key, "key can not be null");
 
-		Number increment = message.body.getNumber("increment");
-		checkNull(increment, "increment can not be null");
-		checkType(increment, Integer.class, "increment must be an integer or long");
-		checkType(increment, Long.class, "increment must be an integer or long");
+		String value = getMandatoryString("value", message);
+		checkNull(value, "value can not be null");
 
+		String field = getMandatoryString("field", message);
+		checkNull(field, "field can not be null");
+		
 		try {
 
-			Number value = context.getClient().incrBy(key, increment.longValue());
-			
-			response(message, value);
+			Long response = context.getClient().hsetnx(key, field, value);
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands.strings;
+package org.vertx.mods.redis.commands.hashes;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -24,33 +24,29 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * HLenCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
-	
-	public static final String COMMAND = "incrby";
+public class HLenCommand extends Command {
 
-	public IncrByCommand () {
+	public static final String COMMAND = "hlen";
+
+	public HLenCommand () {
 		super(COMMAND);
 	}
 	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
+		
 		String key = getMandatoryString("key", message);
 		checkNull(key, "key can not be null");
-
-		Number increment = message.body.getNumber("increment");
-		checkNull(increment, "increment can not be null");
-		checkType(increment, Integer.class, "increment must be an integer or long");
-		checkType(increment, Long.class, "increment must be an integer or long");
-
+		
+		
 		try {
+			Long value = context.getClient().hlen(key);
 
-			Number value = context.getClient().incrBy(key, increment.longValue());
-			
 			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands.strings;
+package org.vertx.mods.redis.commands.hashes;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -24,34 +27,45 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * HMSetCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
-	
-	public static final String COMMAND = "incrby";
+public class HMSetCommand extends Command {
 
-	public IncrByCommand () {
+	public static final String COMMAND = "hmset";
+
+	public HMSetCommand() {
 		super(COMMAND);
 	}
-	
+
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
+		
 		String key = getMandatoryString("key", message);
 		checkNull(key, "key can not be null");
-
-		Number increment = message.body.getNumber("increment");
-		checkNull(increment, "increment can not be null");
-		checkType(increment, Integer.class, "increment must be an integer or long");
-		checkType(increment, Long.class, "increment must be an integer or long");
-
+		
+		JsonObject fields = message.body.getObject("fields");
+		
+		checkNull(fields, "fieldscan not be null");
+		
 		try {
-
-			Number value = context.getClient().incrBy(key, increment.longValue());
 			
-			response(message, value);
+			Map<String, String> fieldvalues = new HashMap<String, String>();
+			
+			for (String fn : fields.getFieldNames()) {
+				Object fv = fields.getField(fn);
+				if (!(fv instanceof String)) {
+					throw new CommandException("only stringvalues are allowed for field values");
+				}
+				fieldvalues.put(fn, (String) fv);
+			}
+			
+			
+			String response = context.getClient().hmset(key, fieldvalues);
+			
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

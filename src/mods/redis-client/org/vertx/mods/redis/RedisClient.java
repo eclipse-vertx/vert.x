@@ -27,15 +27,6 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
-import org.vertx.mods.redis.commands.keys.DelCommand;
-import org.vertx.mods.redis.commands.keys.ExistsCommand;
-import org.vertx.mods.redis.commands.strings.DecrByCommand;
-import org.vertx.mods.redis.commands.strings.DecrCommand;
-import org.vertx.mods.redis.commands.strings.GetCommand;
-import org.vertx.mods.redis.commands.strings.GetSetCommand;
-import org.vertx.mods.redis.commands.strings.IncrByCommand;
-import org.vertx.mods.redis.commands.strings.IncrCommand;
-import org.vertx.mods.redis.commands.strings.SetCommand;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisException;
@@ -55,6 +46,7 @@ public class RedisClient extends BusModBase implements
 	static {
 		find("org.vertx.mods.redis.commands.strings");
 		find("org.vertx.mods.redis.commands.keys");
+		find("org.vertx.mods.redis.commands.hashes");
 	}
 
 	private String address;

@@ -22,6 +22,11 @@ package org.vertx.mods.redis.commands;
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
 public class CommandException extends Exception {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1373570365074664728L;
+	
 	public CommandException () {
 		super();
 	}
