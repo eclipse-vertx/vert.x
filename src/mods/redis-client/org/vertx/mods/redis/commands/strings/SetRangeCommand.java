@@ -47,7 +47,7 @@ public class SetRangeCommand extends Command {
 
 		Number offset = message.body.getNumber("offset");
 		checkNull(value, "offset can not be null");
-		checkType(offset, Integer.class, "offset must be of type");
+		checkType(offset, "offset must be of type", new Class<?> []{Integer.class});
 		
 		try {
 

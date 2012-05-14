@@ -44,7 +44,7 @@ public class MoveCommand extends Command {
 
 		Number index = message.body.getNumber("index");
 		checkNull(index, "index can not be null");
-		checkType(index, Integer.class, "index must be an integer");
+		checkType(index, "index must be an integer", new Class<?> []{Integer.class});
 
 		try {
 

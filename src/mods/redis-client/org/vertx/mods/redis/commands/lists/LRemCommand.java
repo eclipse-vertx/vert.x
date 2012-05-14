@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands.strings;
+package org.vertx.mods.redis.commands.lists;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -24,33 +24,35 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * LRemCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
+public class LRemCommand extends Command {
 	
-	public static final String COMMAND = "incrby";
+	public static final String COMMAND = "lrem";
 
-	public IncrByCommand () {
+	public LRemCommand () {
 		super(COMMAND);
 	}
 	
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		checkNull(key, "key can not be null");
+		checkNull(key, "key can not be null");		
 
-		Number increment = message.body.getNumber("increment");
-		checkNull(increment, "increment can not be null");
-		checkType(increment, "increment must be an integer or long", new Class<?> []{Integer.class, Long.class});
-
+		String value = getMandatoryString("value", message);
+		checkNull(value, "value can not be null");
+		
+		Number count = message.body.getNumber("count");
+		checkNull(count, "count can not be null");
+		checkType(count, "count must be an integer or long", new Class<?> []{Integer.class, Long.class});
+		
 		try {
-
-			Number value = context.getClient().incrBy(key, increment.longValue());
+			Long response = context.getClient().lrem(key, count.longValue(), value);
 			
-			response(message, value);
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

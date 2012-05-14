@@ -44,8 +44,8 @@ public class GetBitCommand extends Command {
 
 		Number offset = message.body.getNumber("offset");
 		checkNull(offset, "offset can not be null");
-		checkType(offset, Integer.class, "offset must be an integer or long");
-		checkType(offset, Long.class, "offset must be an integer or long");
+		checkType(offset, "offset must be an integer or long", new Class<?> []{Integer.class, Long.class});
+		
 		
 		
 		try {

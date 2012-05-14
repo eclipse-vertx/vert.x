@@ -44,7 +44,7 @@ public class ExpireAtCommand extends Command {
 
 		Number timestamp = message.body.getNumber("timestamp");
 		checkNull(timestamp, "timestamp can not be null");
-		checkType(timestamp, Long.class, "timestamp must be an long");
+		checkType(timestamp, "timestamp must be an long", new Class<?> []{Long.class});
 
 		try {
 

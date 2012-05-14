@@ -71,8 +71,20 @@ public abstract class Command extends BusModBase {
 		sendOK(message, value);
 	}
 	
-	protected void checkType (Object value, Class<?> type, String error) throws CommandException {
-		if (!type.isInstance(value)) {
+//	protected void checkType (Object value, Class<?> type, String error) throws CommandException {
+//		if (!type.isInstance(value)) {
+//			throw new CommandException(error);
+//		}
+//	}
+	protected void checkType (Object value, String error, Class<?>... types) throws CommandException {
+		boolean check = false;
+		for (Class<?> type : types) {
+			if (type.isInstance(value)) {
+				check = true;
+				break;
+			}
+		}
+		if (!check) {
 			throw new CommandException(error);
 		}
 	}

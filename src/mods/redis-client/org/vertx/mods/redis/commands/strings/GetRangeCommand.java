@@ -44,13 +44,12 @@ public class GetRangeCommand extends Command {
 
 		Number start = message.body.getNumber("start");
 		checkNull(start, "start can not be null");
-		checkType(start, Integer.class, "start must be an integer or long");
-		checkType(start, Long.class, "start must be an integer or long");
+		checkType(start, "start must be an integer or long", new Class<?> []{Integer.class, Long.class});
+		
 		
 		Number end = message.body.getNumber("end");
 		checkNull(end, "end can not be null");
-		checkType(end, Integer.class, "end must be an integer or long");
-		checkType(end, Long.class, "end must be an integer or long");
+		checkType(end, "end must be an integer or long", new Class<?> []{Integer.class, Long.class});
 		
 		try {
 			String value = context.getClient().getrange(key, start.longValue(), end.longValue());

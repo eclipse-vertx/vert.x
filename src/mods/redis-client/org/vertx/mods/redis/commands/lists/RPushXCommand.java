@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.mods.redis.commands.strings;
+package org.vertx.mods.redis.commands.lists;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
@@ -24,16 +24,16 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * GetSetCommand
+ * RPushXCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class IncrByCommand extends Command {
+public class RPushXCommand extends Command {
 	
-	public static final String COMMAND = "incrby";
+	public static final String COMMAND = "rpushx";
 
-	public IncrByCommand () {
+	public RPushXCommand () {
 		super(COMMAND);
 	}
 	
@@ -41,16 +41,14 @@ public class IncrByCommand extends Command {
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
 		checkNull(key, "key can not be null");
-
-		Number increment = message.body.getNumber("increment");
-		checkNull(increment, "increment can not be null");
-		checkType(increment, "increment must be an integer or long", new Class<?> []{Integer.class, Long.class});
-
+		
+		String value = getMandatoryString("value", message);
+		checkNull(value, "value can not be null");
+		
 		try {
-
-			Number value = context.getClient().incrBy(key, increment.longValue());
+			Long response = context.getClient().rpushx(key, value);
 			
-			response(message, value);
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

@@ -47,7 +47,7 @@ public class SetEXCommand extends Command {
 
 		Number seconds = message.body.getNumber("seconds");
 		checkNull(seconds, "seconds can not be null");
-		checkType(seconds, Integer.class, "seconds must be of type integer");
+		checkType(seconds, "seconds must be of type integer", new Class<?> []{Integer.class});
 		
 		try {
 

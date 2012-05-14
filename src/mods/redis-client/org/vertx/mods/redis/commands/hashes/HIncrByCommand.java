@@ -49,8 +49,7 @@ public class HIncrByCommand extends Command {
 		
 		Number increment = message.body.getNumber("increment");
 		checkNull(increment, "increment can not be null");
-		checkType(increment, Integer.class, "increment must be of type integer or long");
-		checkType(increment, Long.class, "increment must be of type integer or long");
+		checkType(increment, "increment must be of type integer or long", new Class<?> []{Integer.class, Long.class});
 		
 		try {
 			Long value = context.getClient().hincrBy(key, field, increment.longValue());

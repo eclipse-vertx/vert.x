@@ -45,7 +45,7 @@ public class ExpireCommand extends Command {
 		Number seconds = message.body.getNumber("seconds");
 		checkNull(seconds, "seconds can not be null");
 		
-		checkType(seconds, Integer.class, "seconds must be an integer");
+		checkType(seconds, "seconds must be an integer", new Class<?> []{Integer.class});
 
 		try {
 

@@ -44,8 +44,7 @@ public class DecrByCommand extends Command {
 
 		Number decrement = message.body.getNumber("decrement");
 		checkNull(decrement, "decrement can not be null");
-		checkType(decrement, Integer.class, "decrement must be an integer or long");
-		checkType(decrement, Long.class, "decrement must be an integer or long");
+		checkType(decrement, "decrement must be an integer or long", new Class<?> []{Integer.class, Long.class});
 		
 		
 
