@@ -69,7 +69,7 @@ class XhrTransport extends BaseTransport {
 
     rm.postWithRegEx(xhrSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-
+        if (log.isTraceEnabled()) log.trace("XHR send, post, " + req.uri);
         String sessionID = req.params().get("param0");
 
         final Session session = sessions.get(sessionID);
@@ -89,7 +89,7 @@ class XhrTransport extends BaseTransport {
                                final boolean streaming, final JsonObject config) {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-
+        if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri);
         String sessionID = req.params().get("param0");
         Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
 
@@ -119,6 +119,7 @@ class XhrTransport extends BaseTransport {
           req.response.statusCode = 204;
           req.response.end();
         }
+        if (log.isTraceEnabled()) log.trace("XHR send processed ok");
       }
     });
   }
@@ -135,6 +136,7 @@ class XhrTransport extends BaseTransport {
     }
 
     public void sendFrame(String body) {
+      if (log.isTraceEnabled()) log.trace("XHR sending frame");
       if (!headersWritten) {
         req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
@@ -164,6 +166,7 @@ class XhrTransport extends BaseTransport {
     }
 
     public void close() {
+      if (log.isTraceEnabled()) log.trace("XHR poll closing listener");
       if (!closed) {
         try {
           session.resetListener();
@@ -205,6 +208,7 @@ class XhrTransport extends BaseTransport {
     }
 
     public void close() {
+      if (log.isTraceEnabled()) log.trace("XHR stream closing listener");
       if (!closed) {
         session.resetListener();
         try {

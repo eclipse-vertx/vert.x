@@ -16,9 +16,9 @@
 
 package org.vertx.java.deploy;
 
-import java.util.ServiceLoader;
-
 import org.vertx.java.deploy.impl.VerticleManager;
+
+import java.util.ServiceLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

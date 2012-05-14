@@ -48,6 +48,7 @@ class WebSocketTransport extends BaseTransport {
     wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
 
       public void handle(final WebSocketMatcher.Match match) {
+        if (log.isTraceEnabled()) log.trace("WS, handler");
         final Session session = new Session(vertx, sessions, (Long)config.getNumber("heartbeat_period"), sockHandler);
         session.register(new WebSocketListener(match.ws, session));
       }
@@ -55,6 +56,7 @@ class WebSocketTransport extends BaseTransport {
 
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
+        if (log.isTraceEnabled()) log.trace("WS, get: " + request.uri);
         request.response.statusCode = 400;
         request.response.end("Can \"Upgrade\" only to \"WebSocket\".");
       }
@@ -62,6 +64,7 @@ class WebSocketTransport extends BaseTransport {
 
     rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
+        if (log.isTraceEnabled()) log.trace("WS, all: " + request.uri);
         request.response.headers().put("Allow", "GET");
         request.response.statusCode = 405;
         request.response.end();
@@ -103,6 +106,7 @@ class WebSocketTransport extends BaseTransport {
     }
 
     public void sendFrame(final String body) {
+      if (log.isTraceEnabled()) log.trace("WS, sending frame");
       if (!closed) {
         ws.writeTextFrame(body);
       }

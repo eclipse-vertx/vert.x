@@ -45,7 +45,7 @@ class JsonPTransport extends BaseTransport {
 
     rm.getWithRegEx(jsonpRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-
+        if (log.isTraceEnabled()) log.trace("JsonP, get: " + req.uri);
         String callback = req.params().get("callback");
         if (callback == null) {
           callback = req.params().get("c");
@@ -66,6 +66,7 @@ class JsonPTransport extends BaseTransport {
 
     rm.postWithRegEx(jsonpSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+        if (log.isTraceEnabled()) log.trace("JsonP, post: " + req.uri);
         String sessionID = req.params().get("param0");
         final Session session = sessions.get(sessionID);
         if (session != null) {
@@ -118,6 +119,7 @@ class JsonPTransport extends BaseTransport {
           setJSESSIONID(config, req);
           req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
           req.response.end("ok");
+          if (log.isTraceEnabled()) log.trace("send handled ok");
         }
       }
     });
@@ -140,6 +142,8 @@ class JsonPTransport extends BaseTransport {
 
 
     public void sendFrame(String body) {
+
+      if (log.isTraceEnabled()) log.trace("JsonP, sending frame");
 
       if (!headersWritten) {
         req.response.setChunked(true);
