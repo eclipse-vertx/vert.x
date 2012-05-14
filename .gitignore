@@ -6,6 +6,8 @@ bin
 target
 out
 *.iml
+*.ipr
+*.iws
 test-output
 Scratch.java
 ScratchTest.java
