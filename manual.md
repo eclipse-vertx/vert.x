@@ -222,7 +222,7 @@ The `vertx run` command can take a few optional parameters, they are:
 
 * `-cluster-port` If the `cluster` option has also been specified then this determines which port will be used for cluster communication with other vert.x instances. Default is `25500`. If you are running more than one vert.x instance on the same host and want to cluster them, then you'll need to make sure each instance has its own cluster port to avoid port conflicts.
 
-* `-cluster-host` If the `cluster` option has also been specified then this determines which host addresses  will be used for cluster communication with other vert.x instances. Default is `0.0.0.0` (all available interfaces).
+* `-cluster-host` If the `cluster` option has also been specified then this determines which host address will be used for cluster communication with other vert.x instances. By default it will try and pick one from the available interfaces. If you have more than one interface and you want to use a specific one, specify it here.
 
 Here are some examples of `vertx run`:
 

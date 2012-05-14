@@ -266,7 +266,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p><code>-cluster-port</code> If the <code>cluster</code> option has also been specified then this determines which port will be used for cluster communication with other vert.x instances. Default is <code>25500</code>. If you are running more than one vert.x instance on the same host and want to cluster them, then you'll need to make sure each instance has its own cluster port to avoid port conflicts.</p>
 </li>
 <li>
-<p><code>-cluster-host</code> If the <code>cluster</code> option has also been specified then this determines which host addresses  will be used for cluster communication with other vert.x instances. Default is <code>0.0.0.0</code> (all available interfaces).</p>
+<p><code>-cluster-host</code> If the <code>cluster</code> option has also been specified then this determines which host address will be used for cluster communication with other vert.x instances. By default it will try and pick one from the available interfaces. If you have more than one interface and you want to use a specific one, specify it here.</p>
 </li>
 </ul>
 <p>Here are some examples of <code>vertx run</code>:</p>
