@@ -43,6 +43,7 @@ class EventSourceTransport extends BaseTransport {
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+        if (log.isTraceEnabled()) log.trace("EventSource transport, get: " + req.uri);
         String sessionID = req.params().get("param0");
         Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
         session.register(new EventSourceListener((Integer)config.getNumber("max_bytes_streaming"), req, session));
@@ -68,6 +69,7 @@ class EventSourceTransport extends BaseTransport {
     }
 
     public void sendFrame(String body) {
+      if (log.isTraceEnabled()) log.trace("EventSource, sending frame");
       if (!headersWritten) {
         req.response.headers().put("Content-Type", "text/event-stream; charset=UTF-8");
         req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
@@ -84,6 +86,7 @@ class EventSourceTransport extends BaseTransport {
       req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
+        if (log.isTraceEnabled()) log.trace("More than maxBytes sent so closing connection");
         // Reset and close the connection
         close();
       }

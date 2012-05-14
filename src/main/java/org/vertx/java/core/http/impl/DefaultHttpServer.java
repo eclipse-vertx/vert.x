@@ -441,7 +441,10 @@ public class DefaultHttpServer implements HttpServer {
       Object msg = e.getMessage();
       ServerConnection conn = connectionMap.get(ch);
       if (msg instanceof HttpRequest) {
+
         final HttpRequest request = (HttpRequest) msg;
+
+        if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
         if (HttpHeaders.is100ContinueExpected(request)) {
           ch.write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));

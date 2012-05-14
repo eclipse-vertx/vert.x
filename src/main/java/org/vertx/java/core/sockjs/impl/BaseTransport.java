@@ -65,6 +65,7 @@ class BaseTransport {
   }
 
   protected void sendInvalidJSON(HttpServerResponse response) {
+    if (log.isTraceEnabled()) log.trace("Broken JSON");
     response.statusCode = 500;
     response.end("Broken JSON encoding.");
   }
@@ -84,6 +85,7 @@ class BaseTransport {
     protected void addCloseHandler(HttpServerResponse resp, final Session session) {
       resp.closeHandler(new SimpleHandler() {
         public void handle() {
+          if (log.isTraceEnabled()) log.trace("Connection closed (from client?), closing session");
           // Connection has been closed fron the client or network error so
           // we remove the session
           session.shutdown();
@@ -135,6 +137,7 @@ class BaseTransport {
     return new Handler<HttpServerRequest>() {
       boolean websocket = !config.getArray("disabled_transports").contains(Transport.WEBSOCKET.toString());
       public void handle(HttpServerRequest req) {
+        if (log.isTraceEnabled()) log.trace("In Info handler");
         req.response.headers().put("Content-Type", "application/json; charset=UTF-8");
         req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         JsonObject json = new JsonObject();
@@ -153,6 +156,7 @@ class BaseTransport {
   static Handler<HttpServerRequest> createCORSOptionsHandler(final JsonObject config, final String methods) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
+        if (log.isTraceEnabled()) log.trace("In CORS options handler");
         req.response.headers().put("Cache-Control", "public,max-age=31536000");
         long oneYearSeconds = 365 * 24 * 60 * 60;
         long oneYearms = oneYearSeconds * 1000;

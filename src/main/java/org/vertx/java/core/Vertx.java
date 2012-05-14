@@ -16,8 +16,6 @@
 
 package org.vertx.java.core;
 
-import java.util.ServiceLoader;
-
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
@@ -26,6 +24,8 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
+
+import java.util.ServiceLoader;
 
 /**
  * The control centre of vert.x<p>
@@ -49,7 +49,7 @@ public abstract class Vertx {
    * Create a non clustered Vertx instance
    */
   public static Vertx newVertx() {
-	return loadFactory().createVertx();
+  	return loadFactory().createVertx();
   }
 
   /**
@@ -57,7 +57,7 @@ public abstract class Vertx {
    * @param hostname The hostname or ip address to listen for cluster connections
    */
   public static Vertx newVertx(String hostname) {
-	return loadFactory().createVertx(hostname);
+	  return loadFactory().createVertx(hostname);
   }
 
   /**
@@ -66,7 +66,7 @@ public abstract class Vertx {
    * @param hostname The hostname or ip address to listen for cluster connections
    */
   public static Vertx newVertx(int port, String hostname) {
-	return loadFactory().createVertx(port, hostname);
+	  return loadFactory().createVertx(port, hostname);
   }
 
   /**
