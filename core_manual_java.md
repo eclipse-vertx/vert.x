@@ -27,7 +27,7 @@ Copy the following into a text editor and save it as `Server.java`
     
 Now, go to the directory where you saved the file and compile it with:
 
-    javac Server.java -cp $VERTX_HOME/lib/jars/vert.x.jar  
+    javac Server.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar  
     
 *Where VERTX_HOME is the directory where you installed vert.x*      
     
