@@ -25,14 +25,14 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * SetCommand
+ * SetNXCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
 public class SetNXCommand extends Command {
 	
-	public static final String COMMAND = "set";
+	public static final String COMMAND = "setnx";
 
 	public SetNXCommand () {
 		super(COMMAND);
@@ -46,14 +46,9 @@ public class SetNXCommand extends Command {
 		String value = getMandatoryString("value", message);
 		checkNull(value, "value can not be null");
 
-		Number offset = message.body.getNumber("offset");
-		checkNull(value, "offset can not be null");
-		checkType(offset, Integer.class, "offset must be of type");
-		
 		try {
 
-			Long response = context.getClient().setrange(key, offset.longValue(), value);
-
+			Long response = context.getClient().setnx(key, value);
 			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());

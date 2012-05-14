@@ -46,8 +46,7 @@ public class StrLenCommand extends Command {
 		try {
 			Long value = context.getClient().strlen(key);
 			
-			JsonObject reply = new JsonObject().putNumber("length", value);
-			sendOK(message, reply);
+			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

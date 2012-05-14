@@ -41,10 +41,8 @@ public class SetBitCommand extends Command {
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");		
+
 		Number offset = message.body.getNumber("offset");
 		checkNull(offset, "offset can not be null");
 		checkType(offset, Integer.class, "offset must be an integer or long");
@@ -56,8 +54,7 @@ public class SetBitCommand extends Command {
 		try {
 			value = context.getClient().setbit(key, offset.longValue(), value);
 			
-			JsonObject reply = new JsonObject().putBoolean("value", value);
-			sendOK(message, reply);
+			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

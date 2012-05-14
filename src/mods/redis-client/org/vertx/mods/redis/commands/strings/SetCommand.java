@@ -48,8 +48,8 @@ public class SetCommand extends Command {
 
 		try {
 
-			context.getClient().set(key, value);
-			sendOK(message);
+			String response = context.getClient().set(key, value);
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

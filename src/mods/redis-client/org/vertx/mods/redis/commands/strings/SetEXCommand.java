@@ -52,8 +52,8 @@ public class SetEXCommand extends Command {
 		
 		try {
 
-			context.getClient().setex(key, seconds.intValue(), value);
-			sendOK(message);
+			String response = context.getClient().setex(key, seconds.intValue(), value);
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

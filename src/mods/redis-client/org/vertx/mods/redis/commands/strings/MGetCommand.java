@@ -57,8 +57,7 @@ public class MGetCommand extends Command {
 				result = new JsonArray();
 			}
 			
-			JsonObject reply = new JsonObject().putArray("values", result);
-			sendOK(message, reply);
+			response(message, result);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

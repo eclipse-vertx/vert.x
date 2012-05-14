@@ -46,8 +46,8 @@ public class GetCommand extends Command {
 		try {
 			String value = new String(context.getClient().get(key));
 			
-			JsonObject reply = new JsonObject().putString("value", value);
-			sendOK(message, reply);
+			
+			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,28 +39,22 @@ public class DecrByCommand extends Command {
 	}
 
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
 
 		Number decrement = message.body.getNumber("decrement");
-		if (decrement == null) {
-			sendError(message, "decrement can not be null");
-			return;
-		}
-		if (!(decrement instanceof Integer) || !(decrement instanceof Long)) {
-			sendError(message, "decrement must be an integer or long");
-			return;
-		}
+		checkNull(decrement, "decrement can not be null");
+		checkType(decrement, Integer.class, "decrement must be an integer or long");
+		checkType(decrement, Long.class, "decrement must be an integer or long");
+		
+		
 
 		try {
 
 			Number value = context.getClient().decrBy(key, decrement.longValue());
-			JsonObject reply = new JsonObject().putNumber("value", value);
-			sendOK(message, reply);
+			
+			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

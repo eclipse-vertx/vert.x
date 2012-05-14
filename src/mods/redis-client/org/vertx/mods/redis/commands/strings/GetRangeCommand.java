@@ -41,10 +41,8 @@ public class GetRangeCommand extends Command {
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");		
+
 		Number start = message.body.getNumber("start");
 		checkNull(start, "start can not be null");
 		checkType(start, Integer.class, "start must be an integer or long");
@@ -58,8 +56,7 @@ public class GetRangeCommand extends Command {
 		try {
 			String value = context.getClient().getrange(key, start.longValue(), end.longValue());
 			
-			JsonObject reply = new JsonObject().putString("value", value);
-			sendOK(message, reply);
+			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}

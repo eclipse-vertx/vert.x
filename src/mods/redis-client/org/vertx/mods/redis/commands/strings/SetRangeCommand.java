@@ -32,7 +32,7 @@ import redis.clients.jedis.exceptions.JedisException;
  */
 public class SetRangeCommand extends Command {
 	
-	public static final String COMMAND = "set";
+	public static final String COMMAND = "setrange";
 
 	public SetRangeCommand () {
 		super(COMMAND);
@@ -46,13 +46,17 @@ public class SetRangeCommand extends Command {
 		String value = getMandatoryString("value", message);
 		checkNull(value, "value can not be null");
 
+		Number offset = message.body.getNumber("offset");
+		checkNull(value, "offset can not be null");
+		checkType(offset, Integer.class, "offset must be of type");
+		
 		try {
 
-			context.getClient().set(key, value);
-			sendOK(message);
+			Long response = context.getClient().setrange(key, offset.longValue(), value);
+
+			response(message, response);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}
-
 	}
 }

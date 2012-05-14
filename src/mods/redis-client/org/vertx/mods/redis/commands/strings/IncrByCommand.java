@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
+import org.vertx.mods.redis.commands.CommandException;
 
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,28 +39,20 @@ public class IncrByCommand extends Command {
 	}
 	
 	@Override
-	public void handle(Message<JsonObject> message, CommandContext context) {
+	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
 		String key = getMandatoryString("key", message);
-		if (key == null) {
-			sendError(message, "key can not be null");
-			return;
-		}
+		checkNull(key, "key can not be null");
 
 		Number increment = message.body.getNumber("increment");
-		if (increment == null) {
-			sendError(message, "increment can not be null");
-			return;
-		}
-		if (!(increment instanceof Integer) || !(increment instanceof Long)) {
-			sendError(message, "increment must be an integer or long");
-			return;
-		}
+		checkNull(increment, "increment can not be null");
+		checkType(increment, Integer.class, "increment must be an integer or long");
+		checkType(increment, Long.class, "increment must be an integer or long");
 
 		try {
 
 			Number value = context.getClient().incrBy(key, increment.longValue());
-			JsonObject reply = new JsonObject().putNumber("value", value);
-			sendOK(message, reply);
+			
+			response(message, value);
 		} catch (JedisException e) {
 			sendError(message, e.getLocalizedMessage());
 		}
