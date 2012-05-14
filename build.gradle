@@ -1,5 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 version = '1.0.beta1'
 
