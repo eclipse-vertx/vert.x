@@ -116,6 +116,7 @@ public class DefaultSockJSServer implements SockJSServer {
 
     rm.getWithRegEx(prefix + "\\/?", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
+        if (log.isTraceEnabled()) log.trace("Returning welcome response");
         req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
         req.response.end("Welcome to SockJS!\n");
       }
@@ -148,7 +149,7 @@ public class DefaultSockJSServer implements SockJSServer {
     enabledTransports.add(Transport.WEBSOCKET.toString());
     enabledTransports.add(Transport.XHR.toString());
     for (Object tr : config.getArray("disabled_transports", new JsonArray())) {
-      enabledTransports.remove((String)tr);
+      enabledTransports.remove(tr);
     }
 
     if (enabledTransports.contains(Transport.XHR.toString())) {
@@ -171,6 +172,7 @@ public class DefaultSockJSServer implements SockJSServer {
 
     rm.getWithRegEx(prefix + "\\/.+", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
+        if (log.isTraceEnabled()) log.trace("Request: " + req.uri + " does not match, returning 404");
         req.response.statusCode = 404;
         req.response.end();
       }
@@ -262,6 +264,7 @@ public class DefaultSockJSServer implements SockJSServer {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         try {
+          if (log.isTraceEnabled()) log.trace("In Iframe handler");
           String etag = getMD5String(iframeHTML);
           if (etag.equals(req.headers().get("If-None-Match"))) {
             req.response.statusCode = 304;

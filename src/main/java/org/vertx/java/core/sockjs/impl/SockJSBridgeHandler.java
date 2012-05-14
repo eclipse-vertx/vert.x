@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SockJSBridgeHandler implements Handler<SockJSSocket> {
+class SockJSBridgeHandler implements Handler<SockJSSocket> {
 
   private static final Logger log = LoggerFactory.getLogger(SockJSBridgeHandler.class);
 

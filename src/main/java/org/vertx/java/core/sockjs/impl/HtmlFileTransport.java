@@ -69,7 +69,7 @@ class HtmlFileTransport extends BaseTransport {
 
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-
+        if (log.isTraceEnabled()) log.trace("HtmlFile, get: " + req.uri);
         String callback = req.params().get("callback");
         if (callback == null) {
           callback = req.params().get("c");
@@ -106,6 +106,7 @@ class HtmlFileTransport extends BaseTransport {
     }
 
     public void sendFrame(String body) {
+      if (log.isTraceEnabled()) log.trace("HtmlFile, sending frame");
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
         req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
@@ -124,6 +125,7 @@ class HtmlFileTransport extends BaseTransport {
       req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
+        if (log.isTraceEnabled()) log.trace("More than maxBytes sent so closing connection");
         // Reset and close the connection
         close();
       }
