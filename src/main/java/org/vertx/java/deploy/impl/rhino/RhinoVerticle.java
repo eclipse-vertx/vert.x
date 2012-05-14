@@ -29,6 +29,8 @@ import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.JsonObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -42,6 +44,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -106,9 +109,36 @@ public class RhinoVerticle extends Verticle {
             new SoftCachingModuleScriptProvider(new UrlModuleSourceProvider(uris, null)){
               @Override
               public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, Scriptable paths) throws Exception {
-                // Allow loading modules from <dir>/index.js
+
                 if(uri != null && new File(uri).isDirectory()){
-                  uri = URI.create(moduleId + File.separator + "index.js");
+
+                  String main = "index.js";
+
+                  // Allow loading modules from <dir>/package.json
+                  File packageFile = new File(uri.getPath(), "package.json");
+
+                  if(packageFile.exists()){
+
+                    String conf = null;
+                    try {
+                      conf = new Scanner(packageFile).useDelimiter("\\A").next();
+                    } catch (FileNotFoundException e) {}
+
+                    JsonObject json;
+                    try {
+                      json = new JsonObject(conf);
+                    } catch (DecodeException e) {
+                      throw new IllegalStateException("Module " + moduleId + " package.json contains invalid json");
+                    }
+
+                    main = json.getString("main");
+                  }
+
+                  // Allow loading modules from <dir>/<main>.js
+                  if (new File(uri.getPath(), main).exists()) {
+                    uri = URI.create(moduleId + File.separator + main);
+                  }
+
                 }
                 return super.getModuleScript(cx, moduleId, uri, paths);
               }
