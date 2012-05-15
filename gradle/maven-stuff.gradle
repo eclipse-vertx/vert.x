@@ -1,0 +1,143 @@
+/*
+ * Copyright 2012 the original author or authors. 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+ext.groupId = 'org.vertx'
+ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
+
+task sourceJar(type: Jar) {
+	description = 'Builds a source jar artifact suitable for maven deployment.'
+	classifier = 'sources'
+	from sourceSets.main.java
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	description = 'Builds a javadoc jar artifact suitable for maven deployment.'
+	classifier = 'javadoc'
+	from javadoc
+}
+
+// TODO add groovydoc?
+//task groovydocJar(type: Jar, dependsOn: groovydoc) {
+//	classifier = 'javadoc'
+//	from '$buildDir/docs/groovydoc'
+//}
+
+// TODO add conditional if for groovy projects, build.dependsOn groovydocJar
+build.dependsOn sourceJar, javadocJar
+
+signing {
+	sign configurations.archives
+}
+
+artifacts {
+	archives sourceJar, javadocJar
+}
+
+configurations {
+	deployerJars
+}
+
+dependencies {
+	// deployerJars ""
+}
+
+// Copied from some Spring builds...
+// Remove the archive configuration from the runtime configuration, so that anything added to archives
+// (such as the source jar) is no longer included in the runtime classpath
+configurations.default.extendsFrom = [configurations.runtime] as Set
+// Add the main jar into the default configuration
+artifacts {
+	'default' jar
+}
+
+def repoURL = (isReleaseVersion) ?
+	"https://oss.sonatype.org/service/local/staging/deploy/maven2" :
+	"https://oss.sonatype.org/content/repositories/snapshots"
+
+uploadArchives {
+	repositories.mavenDeployer { deployer ->
+		beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+		checkAuthentication()
+		repository(url: repoURL) {
+			authentication(userName: sonatypeUsername, password: sonatypePassword)
+		}
+
+		configuration = configurations.deployerJars
+		customizePom(deployer.pom)
+	}
+}
+
+install {
+	customizePom(repositories.mavenInstaller.pom)
+}
+
+def checkAuthentication() {
+	return
+	
+//	Console console = System.console()
+//	console.printf("Preparing upload to Sonatype OSS repo. Checking for credentials...\n")
+//	if (sonatypeUsername == null || "$sonatypeUsername" == "") {
+//		ext.sonatypeUsername = console.readLine('Enter username: ')
+//	}
+//
+//	if (sonatypePassword == null || "$sonatypePassword" == "") {
+//		ext.sonatypePassword = console.readLine('Enter password: ')
+//	}
+//
+//	console.printf("Using credentials: $sonatypeUsername and ${[sonatypePassword.length()].join('*')}\n")
+
+}
+
+def customizePom(pom) {
+	pom.project {
+		name "$title"
+		description "$description"
+		url 'http://vertx.io/'
+		packaging 'jar'
+		groupId 'io.vertx'
+		inceptionYear 2011
+		organization {
+			name = 'VMware, Inc'
+		}
+		licenses {
+			license {
+				name 'The Apache Software License, Version 2.0'
+				url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+				distribution 'repo'
+			}
+		}
+		scm {
+			connection 'scm:git:https://github.com/purplefox/vert.x.git'
+			developerConnection 'scm:git:git@github.com:purplefox/vert.x.git'
+			url 'https://github.com/purplefox/vert.x'
+		}
+		developers {
+			developer {
+				id = 'purplefox'
+				name = 'Tim Fox'
+				email = 'tim [at] tfox.org'
+			}
+		}
+		properties {
+			'project.build.sourceEncoding' 'UTF-8'
+			'project.reporting.outputEncoding' 'UTF-8'
+		}
+	}
+}
+

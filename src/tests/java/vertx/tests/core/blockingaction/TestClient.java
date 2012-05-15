@@ -18,8 +18,8 @@ package vertx.tests.core.blockingaction;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.VertxInternal;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.framework.TestClientBase;
 
 /**
