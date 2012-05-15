@@ -76,27 +76,27 @@ public abstract class Vertx {
   /**
    * Create a TCP/SSL server
    */
-  public abstract NetServer createNetServer();
+  public abstract NetServer createNetServer() throws VertxException;
 
   /**
    * Create a TCP/SSL client
    */
-  public abstract NetClient createNetClient();
+  public abstract NetClient createNetClient() throws VertxException;
 
   /**
    * Create an HTTP/HTTPS server
    */
-  public abstract HttpServer createHttpServer();
+  public abstract HttpServer createHttpServer() throws VertxException;
 
   /**
    * Create a HTTP/HTTPS client
    */
-  public abstract HttpClient createHttpClient();
+  public abstract HttpClient createHttpClient() throws VertxException;
 
   /**
    * Create a SockJS server that wraps an HTTP server
    */
-  public abstract SockJSServer createSockJSServer(HttpServer httpServer);
+  public abstract SockJSServer createSockJSServer(HttpServer httpServer) throws VertxException;
 
   /**
    * The File system object
@@ -118,26 +118,26 @@ public abstract class Vertx {
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  public abstract long setTimer(long delay, Handler<Long> handler);
+  public abstract long setTimer(long delay, Handler<Long> handler) throws VertxException;
 
   /**
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  public abstract long setPeriodic(long delay, Handler<Long> handler);
+  public abstract long setPeriodic(long delay, Handler<Long> handler) throws VertxException;
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
    * {@code false} if the timer does not exist.
    */
-  public abstract boolean cancelTimer(long id);
+  public abstract boolean cancelTimer(long id) throws VertxException;
 
   /**
    * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
    * been processed
    */
-  public abstract void runOnLoop(Handler<Void> handler);
+  public abstract void runOnLoop(Handler<Void> handler) throws VertxException;
 
   /**
    * Is the current thread an event loop thread?

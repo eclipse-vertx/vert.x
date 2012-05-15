@@ -17,6 +17,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 
 /**
  * An HTTP and WebSockets server<p>
@@ -64,14 +65,14 @@ public interface HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  HttpServer listen(int port);
+  HttpServer listen(int port) throws VertxException;
 
   /**
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
    *
    * @return a reference to this, so methods can be chained.
    */
-  HttpServer listen(int port, String host);
+  HttpServer listen(int port, String host) throws VertxException;
   
   /**
    * Close the server. Any open HTTP connections will be closed.

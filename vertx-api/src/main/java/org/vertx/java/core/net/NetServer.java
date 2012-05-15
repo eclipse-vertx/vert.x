@@ -17,6 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 
 /**
  * Represents a TCP or SSL server<p>
@@ -44,14 +45,14 @@ public interface NetServer {
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetServer listen(int port);
+  NetServer listen(int port) throws VertxException;
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetServer listen(int port, String host);
+  NetServer listen(int port, String host) throws VertxException;
 
   /**
    * Close the server. This will close any currently open connections.

@@ -18,6 +18,8 @@ package org.vertx.lang;
 
 import java.util.ServiceLoader;
 
+import org.vertx.java.core.VertxException;
+
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -26,13 +28,13 @@ public interface VerticleFactory {
 	
   public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
 
-  void init(VerticleManager manager);
+  void init(VerticleManager manager) throws VertxException;
   
   String getLanguage();
   
   boolean isFactoryFor(String main);
 
-  Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
+  Verticle createVerticle(String main, ClassLoader parentCL) throws VertxException;
 
   void reportException(Throwable t);
 
