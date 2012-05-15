@@ -28,4 +28,5 @@
     load('core/filesystem.js');
     load('core/deploy.js');
     load('core/logger.js');
-}).call((this.module && module.exports)? module.exports : this);
+    (this.module && module.exports)? module.exports = vertx : this.vertx = vertx;
+})();
