@@ -19,8 +19,20 @@ apply plugin: 'application'
 
 mainClassName = "org.vertx.java.deploy.impl.cli.VertxMgr"
 
-configurations.all { }
-configurations.runtime { }
+configurations.all { 
+}
+
+configurations {
+	core {
+		transitive false
+	}
+}
+
+configurations {
+	platform { 
+		transitive true
+	}
+}
 
 allprojects {
 	defaultTasks ['assemble']
@@ -49,7 +61,7 @@ subprojects {
 
 ext.currentVersionDir = "${rootProject.buildDir}/dist/${project.name}-${version}"
 ext.distSpec = copySpec {
-	from configurations.all
+	from configurations.platform
 	into("$currentVersionDir/lib")
 }
 
@@ -116,7 +128,7 @@ task yardoc(type: Exec) {
 
 project(":vertx-logging") {
 	configurations {
-		runtime { }
+		core { }
 		platform { }
 	}
 	dependencies {
@@ -124,14 +136,14 @@ project(":vertx-logging") {
 		compile "org.slf4j:slf4j-api:$slf4jVersion"
 	}
 	artifacts {
-		runtime jar
+		core jar
 		platform jar
 	}
 }
 
 project(":vertx-api") {
 	configurations {
-		runtime
+		core
 		platform
 	}
 	dependencies {
@@ -139,14 +151,14 @@ project(":vertx-api") {
 		compile "io.netty:netty:$nettyVersion" // FIXME remove netty dep in o.v.j.c.buffer.Buffer
 	}
 	artifacts {
-		runtime jar
+		core jar
 		platform jar
 	}
 }
 
 project(":vertx-impl") {
 	configurations {
-		runtime
+		core
 		platform
 	}
 	dependencies {
@@ -157,7 +169,7 @@ project(":vertx-impl") {
 		compile "io.netty:netty:$nettyVersion"
 	}
 	artifacts {
-		runtime jar
+		core jar
 		platform jar
 	}
 }

@@ -62,14 +62,18 @@ dependencies {
 // (such as the source jar) is no longer included in the runtime classpath
 configurations.default.extendsFrom = [configurations.runtime] as Set
 // Add the main jar into the default configuration
-artifacts { 
+artifacts {
 	'default' jar
 }
+
+def repoURL = (isReleaseVersion) ?
+	"https://oss.sonatype.org/service/local/staging/deploy/maven2" :
+	"https://oss.sonatype.org/content/repositories/snapshots"
 
 uploadArchives {
 	repositories.mavenDeployer { deployer ->
 		beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-		repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+		repository(url: repoURL) {
 			authentication(userName: sonatypeUsername, password: sonatypePassword)
 		}
 
