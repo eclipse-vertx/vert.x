@@ -302,7 +302,7 @@ To unregister a handler it's just as straightforward. You simply call `unregiste
 
     eb.unregisterHandler("test.address", myHandler);    
     
-A single handler can be registered multiple times on the same, or different addresses so in order to identify it uniquely you have to specify both the address and the handler.
+A single handler can be registered multiple times on the same, or different, addresses so in order to identify it uniquely you have to specify both the address and the handler.
 
 Alternatively, can unregister a handler using a unique id that was returned from the call to `registerHandler`. 
 
