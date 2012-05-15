@@ -21,6 +21,7 @@ import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.lang.Verticle;
 import org.vertx.lang.VerticleFactory;
@@ -56,7 +57,7 @@ public class JRubyVerticleFactory implements VerticleFactory {
     return false;
   }
 
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
+  public Verticle createVerticle(String main, ClassLoader cl) throws VertxException {
     if (System.getProperty("jruby.home") == null) {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +
           "at your JRuby installation");

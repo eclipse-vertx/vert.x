@@ -18,6 +18,7 @@ package org.vertx.java.deploy.impl.rhino;
 
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.lang.Verticle;
 import org.vertx.lang.VerticleFactory;
@@ -55,7 +56,7 @@ public class RhinoVerticleFactory implements VerticleFactory {
     return false;
   }
 
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
+  public Verticle createVerticle(String main, ClassLoader cl) throws VertxException {
     Verticle app = new RhinoVerticle(main, cl);
     return app;
   }

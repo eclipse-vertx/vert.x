@@ -1,6 +1,7 @@
 package org.vertx.java.examples.eventbusbridge;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonArray;
@@ -13,7 +14,7 @@ import org.vertx.lang.Verticle;
  */
 public class BridgeServer extends Verticle {
 
-  public void start() throws Exception {
+  public void start() throws VertxException {
     HttpServer server = vertx.createHttpServer();
 
     // Also serve the static resources. In real life this would probably be done by a CDN

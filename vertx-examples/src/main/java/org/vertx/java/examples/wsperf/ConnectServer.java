@@ -17,6 +17,7 @@
 package org.vertx.java.examples.wsperf;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.lang.Verticle;
 
@@ -29,7 +30,7 @@ public class ConnectServer extends Verticle {
 
   int count = 0;
 
-  public void start() throws Exception {
+  public void start() throws VertxException {
     vertx.createHttpServer().setReceiveBufferSize(BUFF_SIZE).setSendBufferSize(BUFF_SIZE).
         websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(ServerWebSocket ws) {

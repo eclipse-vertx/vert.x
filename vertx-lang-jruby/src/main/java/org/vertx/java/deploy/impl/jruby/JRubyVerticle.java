@@ -20,6 +20,7 @@ import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.lang.Verticle;
@@ -48,7 +49,7 @@ public class JRubyVerticle extends Verticle {
     this.scriptName = scriptName;
   }
 
-  public void start() throws Exception {
+  public void start() throws VertxException {
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
       throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
@@ -61,7 +62,7 @@ public class JRubyVerticle extends Verticle {
     }
   }
 
-  public void stop() throws Exception {
+  public void stop() throws VertxException {
     try {
       // We call the script with receiver = null - this causes the method to be called on the top level
       // script

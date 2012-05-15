@@ -16,6 +16,7 @@
 
 package org.vertx.java.deploy.impl.java;
 
+import org.vertx.java.core.VertxException;
 import org.vertx.lang.Verticle;
 import org.vertx.lang.VerticleFactory;
 import org.vertx.lang.VerticleManager;
@@ -56,23 +57,31 @@ public class JavaVerticleFactory implements VerticleFactory {
     return false;
   }
 
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
+  public Verticle createVerticle(String main, ClassLoader cl) throws VertxException {
 
-    Class<?> clazz = cl.loadClass(main);
+    Verticle verticle;
+	try {
+		Class<?> clazz = cl.loadClass(main);
 
-    Verticle verticle = (Verticle) clazz.newInstance();
+		verticle = (Verticle) clazz.newInstance();
 
-    // Sanity check - make sure app class didn't get loaded by the parent or system classloader
-    // This might happen if it's been put on the server classpath
-    // Out of the box busmods are ok though
-    ClassLoader system = ClassLoader.getSystemClassLoader();
-    ClassLoader appCL = clazz.getClassLoader();
-    if (!main.startsWith("org.vertx.java.busmods") && (appCL == cl.getParent() || (system != null && appCL == system))) {
-      throw new IllegalStateException("Do not add application classes to the vert.x classpath");
-    }
+		// Sanity check - make sure app class didn't get loaded by the parent or system classloader
+		// This might happen if it's been put on the server classpath
+		// Out of the box busmods are ok though
+		ClassLoader system = ClassLoader.getSystemClassLoader();
+		ClassLoader appCL = clazz.getClassLoader();
+		if (!main.startsWith("org.vertx.java.busmods") && (appCL == cl.getParent() || (system != null && appCL == system))) {
+		  throw new VertxException("Do not add application classes to the vert.x classpath");
+		}
+	} catch (ClassNotFoundException e) {
+		throw new VertxException(e);
+	} catch (InstantiationException e) {
+		throw new VertxException(e);
+	} catch (IllegalAccessException e) {
+		throw new VertxException(e);
+	}
 
     return verticle;
-
   }
 
   public void reportException(Throwable t) {

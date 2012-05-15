@@ -19,6 +19,7 @@ package org.vertx.java.deploy.impl.rhino;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.lang.Verticle;
@@ -77,7 +78,7 @@ public class RhinoVerticle extends Verticle {
     }
   }
 
-  public void start() throws Exception {
+  public void start() throws VertxException {
     Context cx = Context.enter();
     try {
       scope = cx.initStandardObjects();
@@ -99,12 +100,14 @@ public class RhinoVerticle extends Verticle {
         stopFunction = null;
       }
 
-    } finally {
+    } catch (Exception e) {
+      throw new VertxException(e);
+	} finally {
       Context.exit();
     }
   }
 
-  public void stop() throws Exception {
+  public void stop() throws VertxException {
     if (stopFunction != null) {
       Context cx = Context.enter();
       try {

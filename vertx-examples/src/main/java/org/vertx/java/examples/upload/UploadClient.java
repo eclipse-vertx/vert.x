@@ -20,6 +20,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
@@ -27,12 +28,13 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.lang.Verticle;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class UploadClient extends Verticle {
 
-  public void start() throws Exception {
+  public void start() throws VertxException {
 
     HttpClient client = vertx.createHttpClient().setPort(8080).setHost("localhost");
 
@@ -44,8 +46,12 @@ public class UploadClient extends Verticle {
 
     String filename = "upload/upload.txt";
 
-    // For a non-chunked upload you need to specify size of upload up-front
-    req.headers().put("Content-Length", Files.size(Paths.get(filename)));
+    try {
+		// For a non-chunked upload you need to specify size of upload up-front
+		req.headers().put("Content-Length", Files.size(Paths.get(filename)));
+	} catch (IOException e) {
+		throw new VertxException(e);
+	}
 
     // For a chunked upload you don't need to specify size, just do:
     // req.setChunked(true);
