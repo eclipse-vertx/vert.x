@@ -468,7 +468,7 @@ container.undeployVerticle(deploymentID);
 <p>Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.</p>
 <p>It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.</p>
 <h2 id="event-bus-api">Event Bus API</h2><br/>
-<p>Let's jump into the API</p>
+<p>Let's jump into the API.</p>
 <h3 id="registering-and-unregistering-handlers">Registering and Unregistering Handlers</h3><br/>
 <p>To set a message handler on the address <code>test.address</code>, you do the following:</p>
 <pre class="prettyprint">EventBus eb = vertx.eventBus();
@@ -741,7 +741,7 @@ vertx.cancelTimer(timerID);
 <p>Creating TCP servers and clients is incredibly easy with vert.x.</p>
 <h2 id="net-server">Net Server</h2><br/>
 <h3 id="creating-a-net-server">Creating a Net Server</h3><br/>
-<p>To create a TCP server you call the <code>createNetServer</code> method on your vertx instance.</p>
+<p>To create a TCP server you call the <code>createNetServer</code> method on your <code>vertx</code> instance.</p>
 <pre class="prettyprint">NetServer server = vertx.createNetServer();
 </pre>
 <h3 id="start-the-server-listening">Start the Server Listening</h3><br/>
@@ -751,7 +751,7 @@ vertx.cancelTimer(timerID);
 
 server.listen(1234, "myhost");
 </pre>
-<p>The first parameter to <code>listen</code> is the port. The second parameter is the hostname or ip address. If it is ommitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
+<p>The first parameter to <code>listen</code> is the port. The second parameter is the hostname or ip address. If it is omitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
 <h3 id="getting-notified-of-incoming-connections">Getting Notified of Incoming Connections</h3><br/>
 <p>Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.</p>
 <p>To be notified when a connection occurs we need to call the <code>connectHandler</code> method of the server, passing in a handler. The handler will be called when a connection is made:</p>
@@ -910,7 +910,7 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 }).listen(1234, "localhost");
 </pre>
 <h3 id="read-and-write-streams">Read and Write Streams</h3><br/>
-<p>NetSocket also implements <code>org.vertx.java.core.streams.ReadStream</code> and <code>org.vertx.java.core.streams.WriteStream</code>. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, websockets and asynchronous files.</p>
+<p>NetSocket also implements <code>org.vertx.java.core.streams.ReadStream</code> and <code>org.vertx.java.core.streams.WriteStream</code>. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.</p>
 <p>This will be discussed in depth in the chapter on streams and pumps.</p>
 <h2 id="scaling-tcp-servers">Scaling TCP Servers</h2><br/>
 <p>A verticle instance is strictly single threaded.</p>
@@ -929,7 +929,7 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 <h2 id="netclient">NetClient</h2><br/>
 <p>A NetClient is used to make TCP connections to servers.</p>
 <h3 id="creating-a-net-client">Creating a Net Client</h3><br/>
-<p>To create a TCP client you call the <code>createNetClient</code> method on your vertx instance.</p>
+<p>To create a TCP client you call the <code>createNetClient</code> method on your <code>vertx</code> instance.</p>
 <pre class="prettyprint">NetClient client = vertx.createNetClient();
 </pre>
 <h3 id="making-a-connection">Making a Connection</h3><br/>
@@ -978,11 +978,11 @@ client.setReconnectInterval(500);
 <h2 id="ssl-servers">SSL Servers</h2><br/>
 <p>Net servers can also be configured to work with <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">Transport Layer Security</a> (previously known as SSL).</p>
 <p>When a <code>NetServer</code> is working as an SSL Server the API of the <code>NetServer</code> and <code>NetSocket</code> is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the <code>NetServer</code> before <code>listen</code> is called.</p>
-<p>To enabled ssl the function <code>setSSL(true)</code> must be called on the Net Server.</p>
+<p>To enabled SSL the function <code>setSSL(true)</code> must be called on the Net Server.</p>
 <p>The server must also be configured with a <em>key store</em> and an optional <em>trust store</em>.</p>
 <p>These are both <em>Java keystores</em> which can be managed using the <a href="http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html">keytool</a> utility which ships with the JDK.</p>
 <p>The keytool command allows you to create keystores, and import and export certificates from them.</p>
-<p>The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over ssl if the server does not have a certificate.</p>
+<p>The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over SSL if the server does not have a certificate.</p>
 <p>The key store is configured on the server using the <code>setKeyStorePath</code> and <code>setKeyStorePassword</code> methods.</p>
 <p>The trust store is optional and contains the certificates of any clients it should trust. This is only used if client authentication is required. </p>
 <p>To configure a server to use server certificates only:</p>
@@ -1008,7 +1008,7 @@ client.setReconnectInterval(500);
 <p>To enable SSL on a <code>NetClient</code> the function <code>setSSL(true)</code> is called.</p>
 <p>If the <code>setTrustAll(true)</code> is invoked on the client, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is <code>false</code>.</p>
 <p>If <code>setTrustAll(true)</code> has not been invoked then a client trust store must be configured and should contain the certificates of the servers that the client trusts.</p>
-<p>The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function <code>setTrustStorePath</code> on the <code>NetClient</code>. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.</p>
+<p>The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trust store location is set by using the function <code>setTrustStorePath</code> on the <code>NetClient</code>. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.</p>
 <p>If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it's just a regular Java key store. The client keystore location is set by using the function <code>setKeyStorePath</code> on the <code>NetClient</code>. </p>
 <p>To configure a client to trust all server certificates (dangerous):</p>
 <pre class="prettyprint">NetClient client = vertx.createNetClient()
@@ -1037,7 +1037,7 @@ client.setReconnectInterval(500);
 <p>To solve this problem a simple flow control capability is provided by some objects in the vert.x API.</p>
 <p>Any flow control aware object that can be written to implements <code>org.vertx.java.core.streams.ReadStream</code>, and any flow control object that can be read from is said to implement <code>org.vertx.java.core.streams.WriteStream</code>.</p>
 <p>Let's take an example where we want to read from a <code>ReadStream</code> and write the data to a <code>WriteStream</code>.</p>
-<p>A very simple example would be reading from a <code>NetSocket</code> on a server and writing back to the same <code>NetSocket</code> - since <code>NetSocket</code> implements both <code>ReadStream</code> and <code>WriteStream</code>, but you can do this between any <code>ReadStream</code> and any <code>WriteStream</code>, including HTTP requests and response, async files, websockets, etc.</p>
+<p>A very simple example would be reading from a <code>NetSocket</code> on a server and writing back to the same <code>NetSocket</code> - since <code>NetSocket</code> implements both <code>ReadStream</code> and <code>WriteStream</code>, but you can do this between any <code>ReadStream</code> and any <code>WriteStream</code>, including HTTP requests and response, async files, WebSockets, etc.</p>
 <p>A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:</p>
 <pre class="prettyprint">NetServer server = vertx.createNetServer();
 
@@ -1150,17 +1150,17 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 <h2 id="pump">Pump</h2><br/>
 <p>Instances of <code>Pump</code> have the following methods:</p>
 <ul>
-<li><code>start()</code>. Start the pump.</li>
-<li><code>stop()</code>. Stops the pump. When the pump starts it is in stopped mode.</li>
-<li><code>setWriteQueueMaxSize()</code>. This has the same meaning as <code>setWriteQueueMaxSize</code> on the <code>WriteStream</code>.</li>
-<li><code>getBytesPumped()</code>. Returns total number of bytes pumped.</li>
+<li><code>start()</code>: Start the pump.</li>
+<li><code>stop()</code>: Stops the pump. When the pump starts it is in stopped mode.</li>
+<li><code>setWriteQueueMaxSize()</code>: This has the same meaning as <code>setWriteQueueMaxSize</code> on the <code>WriteStream</code>.</li>
+<li><code>getBytesPumped()</code>: Returns total number of bytes pumped.</li>
 </ul>
 <p>A pump can be started and stopped multiple times.</p>
 <h1 id="writing-http-servers-and-clients">Writing HTTP Servers and Clients</h1><br/>
 <h2 id="writing-http-servers">Writing HTTP servers</h2><br/>
 <p>Vert.x allows you to easily write full featured, highly performant and scalable HTTP servers.</p>
 <h3 id="creating-an-http-server">Creating an HTTP Server</h3><br/>
-<p>To create an HTTP server you call the <code>createHttpServer</code> method on your vertx instance.</p>
+<p>To create an HTTP server you call the <code>createHttpServer</code> method on your <code>vertx</code> instance.</p>
 <pre class="prettyprint">HttpServer server = vertx.createHttpServer();
 </pre>
 <h3 id="start-the-server-listening_1">Start the Server Listening</h3><br/>
@@ -1169,7 +1169,7 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 
 server.listen(8080, "myhost");
 </pre>
-<p>The first parameter to <code>listen</code> is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
+<p>The first parameter to <code>listen</code> is the port. The second parameter is the hostname or ip address. If the hostname is omitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
 <h3 id="getting-notified-of-incoming-requests">Getting Notified of Incoming Requests</h3><br/>
 <p>To be notified when a request arrives you need to set a request handler. This is done by calling the <code>requestHandler</code> method of the server, passing in the handler:</p>
 <pre class="prettyprint">HttpServer server = vertx.createHttpServer();
@@ -1202,7 +1202,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
 }).listen(8080, "localhost");
 </pre>
 <h3 id="handling-http-requests">Handling HTTP Requests</h3><br/>
-<p>So far we have seen how to create an HTTPServer and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.</p>
+<p>So far we have seen how to create an <code>HttpServer</code> and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.</p>
 <p>When a request arrives, the request handler is called passing in an instance of <code>HttpServerRequest</code>. This object represents the server side HTTP request.</p>
 <p>The handler is called when the headers of the request have been fully read. If the request contains a body, that body may arrive at the server some time after the request handler has been called.</p>
 <p>It contains functions to get the URI, path, request headers and request parameters. It also contains a <code>response</code> property which is a reference to an object that represents the server side HTTP response for the object.</p>
@@ -1246,12 +1246,12 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
 <p>Request parameters are sent on the request URI, after the path. For example if the URI was:</p>
 <pre class="prettyprint">http://localhost:8080/page.html?param1=abc&amp;param2=xyz
 </pre>
-<p>Then the params mapa would contain the following entries</p>
+<p>Then the params map would contain the following entries:</p>
 <pre class="prettyprint">param1: 'abc'
 param2: 'xyz
 </pre>
 <h4 id="reading-data-from-the-request-body">Reading Data from the Request Body</h4><br/>
-<p>Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the <code>HTTPServerRequest</code> object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.</p>
+<p>Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the <code>HttpServerRequest</code> object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.</p>
 <p>To receive the body, you set the <code>dataHandler</code> on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:</p>
 <pre class="prettyprint">HttpServer server = vertx.createHttpServer();
 
@@ -1398,8 +1398,8 @@ request.response.trailers().put("Fav-Shakin-Stevens-Song", "Behind the Green Doo
 <h3 id="serving-files-directly-from-disk">Serving files directly from disk</h3><br/>
 <p>If you were writing a web server, one way to serve a file from disk would be to open it as an <code>AsyncFile</code> and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.</p>
 <p>Alternatively, vert.x provides a method which allows you to send serve a file from disk to an HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.</p>
-<p>Using <code>sendfile</code> is usually more efficient for large files, but may be slower than using <code>readFile</code> to manually read the file as a buffer and write it directly to the response.</p>
-<p>To do this use the <code>sendfile</code> function on the HTTP response. Here's a simple HTTP web server that serves static files from the local <code>web</code> directory:</p>
+<p>Using <code>sendFile</code> is usually more efficient for large files, but may be slower than using <code>readFile</code> to manually read the file as a buffer and write it directly to the response.</p>
+<p>To do this use the <code>sendFile</code> function on the HTTP response. Here's a simple HTTP web server that serves static files from the local <code>web</code> directory:</p>
 <pre class="prettyprint">HttpServer server = vertx.createHttpServer();
 
 server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
@@ -1414,7 +1414,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
     }
 }).listen(8080, "localhost");
 </pre>
-<p><em>Note: If you use <code>sendfile</code> while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
+<p><em>Note: If you use <code>sendFile</code> while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
 <p><strong>If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.</strong></p>
 <h3 id="pumping-responses">Pumping Responses</h3><br/>
 <p>Since the HTTP Response implements <code>WriteStream</code> you can pump to it from any <code>ReadStream</code>, e.g. an <code>AsyncFile</code>, <code>NetSocket</code> or <code>HttpServerRequest</code>.</p>
@@ -1435,7 +1435,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
 </pre>
 <h2 id="writing-http-clients">Writing HTTP Clients</h2><br/>
 <h3 id="creating-an-http-client">Creating an HTTP Client</h3><br/>
-<p>To create an HTTP client you call the <code>createHttpClient</code> method on your vertx instance:</p>
+<p>To create an HTTP client you call the <code>createHttpClient</code> method on your <code>vertx</code> instance:</p>
 <pre class="prettyprint">HttpClient client = vertx.createHttpClient();
 </pre>
 <p>You set the port and hostname (or ip address) that the client will connect to using the <code>setHost</code> and <code>setPort</code> functions:</p>
@@ -1589,8 +1589,8 @@ client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientRespo
 });
 </pre>
 <h4 id="reading-data-from-the-response-body">Reading Data from the Response Body</h4><br/>
-<p>The API for reading a http client response body is very similar to the API for reading a http server request body.</p>
-<p>Sometimes an HTTP response contains a request body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.</p>
+<p>The API for reading an HTTP client response body is very similar to the API for reading a HTTP server request body.</p>
+<p>Sometimes an HTTP response contains a body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.</p>
 <p>To receive the response body, you set a <code>dataHandler</code> on the response object which gets called as parts of the HTTP response arrive. Here's an example:</p>
 <pre class="prettyprint">HttpClient client = vertx.createHttpClient();
 
@@ -1817,7 +1817,7 @@ server.websocketHandler(new Handler&lt;ServerWebSocket&gt;() {
 </pre>
 <h2 id="websockets-on-the-http-client">WebSockets on the HTTP client</h2><br/>
 <p>To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the <code>connectWebsocket</code> function, passing in the URI that you wish to connect to at the server, and a handler.</p>
-<p>The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.</p>
+<p>The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it - then any exception handler on the HTTP client will be called.</p>
 <p>Here's an example of WebSocket connection;</p>
 <pre class="prettyprint">HttpClient client = vertx.createHttpClient();
 
@@ -1855,7 +1855,7 @@ client.connectWebsocket("http://localhost:8080/some-uri", new Handler&lt;WebSock
 </p>
 <h1 id="sockjs">SockJS</h1><br/>
 <p>WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.</p>
-<p>Moreover, websockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a websocket connection is going to succeed for every user.</p>
+<p>Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSockets connection is going to succeed for every user.</p>
 <p>Enter SockJS.</p>
 <p>SockJS is a client side JavaScript library and protocol which provides a simple WebSocket-like interface to the client side JavaScript developer irrespective of whether the actual browser or network will allow real WebSockets.</p>
 <p>It does this by supporting various different transports between browser and server, and choosing one at runtime according to browser and network capabilities. All this is transparent to you - you are simply presented with the WebSocket-like interface which <em>just works</em>.</p>
@@ -1863,7 +1863,7 @@ client.connectWebsocket("http://localhost:8080/some-uri", new Handler&lt;WebSock
 <h2 id="sockjs-server">SockJS Server</h2><br/>
 <p>Vert.x provides a complete server side SockJS implementation.</p>
 <p>This enables vert.x to be used for modern, so-called <em>real-time</em> (this is the <em>modern</em> meaning of <em>real-time</em>, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.</p>
-<p>To create a SockJS server you simply create a HTTP server as normal and then call the <code>createSockJSServer</code> method of your vertx instance passing in the Http server:</p>
+<p>To create a SockJS server you simply create a HTTP server as normal and then call the <code>createSockJSServer</code> method of your <code>vertx</code> instance passing in the Http server:</p>
 <pre class="prettyprint">HttpServer httpServer = vertx.createHttpServer();
 
 SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
@@ -2099,13 +2099,13 @@ r--r--r--
 <p><code>props(file, handler)</code></p>
 <p><code>file</code> is the file name. The props are returned in the handler. The results is an object with the following properties:</p>
 <ul>
-<li><code>creationTime</code>. Time of file creation.</li>
-<li><code>lastAccessTime</code>. Time of last file access.</li>
-<li><code>lastModifiedTime</code>. Time file was last modified.</li>
-<li><code>isDirectory</code>. This will have the value <code>true</code> if the file is a directory.</li>
-<li><code>isRegularFile</code>. This will have the value <code>true</code> if the file is a regular file (not symlink or directory).</li>
-<li><code>isSymbolicLink</code>. This will have the value <code>true</code> if the file is a symbolic link.</li>
-<li><code>isOther</code>. This will have the value <code>true</code> if the file is another type.</li>
+<li><code>creationTime</code>: Time of file creation.</li>
+<li><code>lastAccessTime</code>: Time of last file access.</li>
+<li><code>lastModifiedTime</code>: Time file was last modified.</li>
+<li><code>isDirectory</code>: This will have the value <code>true</code> if the file is a directory.</li>
+<li><code>isRegularFile</code>: This will have the value <code>true</code> if the file is a regular file (not symlink or directory).</li>
+<li><code>isSymbolicLink</code>: This will have the value <code>true</code> if the file is a symbolic link.</li>
+<li><code>isOther</code>: This will have the value <code>true</code> if the file is another type.</li>
 </ul>
 <p>Here's an example:</p>
 <pre class="prettyprint">vertx.fileSystem().props("foo.dat", "bar.dat", new AsyncResultHandler&lt;FileProps&gt;() {
@@ -2251,9 +2251,9 @@ r--r--r--
 <p><code>fsProps(file, handler)</code>. Where <code>file</code> is any file on the file system.</p>
 <p>The result is returned in the handler. The result object is an instance of <code>org.vertx.java.core.file.FileSystemProps</code> has the following fields:</p>
 <ul>
-<li><code>totalSpace</code>. Total space on the file system in bytes.</li>
-<li><code>unallocatedSpace</code>. Unallocated space on the file system in bytes.</li>
-<li><code>usableSpace</code>. Usable space on the file system in bytes.</li>
+<li><code>totalSpace</code>: Total space on the file system in bytes.</li>
+<li><code>unallocatedSpace</code>: Unallocated space on the file system in bytes.</li>
+<li><code>usableSpace</code>: Usable space on the file system in bytes.</li>
 </ul>
 <p>Here is an example:</p>
 <pre class="prettyprint">vertx.fileSystem().fsProps("mydir", new AsyncResultHandler&lt;FileSystemProps&gt;() {
@@ -2304,13 +2304,16 @@ r--r--r--
 </pre>
 <h2 id="asyncfile">AsyncFile</h2><br/>
 <p>Instances of <code>org.vertx.java.core.file.AsyncFile</code> are returned from calls to <code>open</code> and you use them to read from and write to files asynchronously. They allow asynchronous random file access.</p>
-<p>AsyncFile can provide instances of <code>ReadStream</code> and <code>WriteStream</code> via the <code>getReadStream</code> and <code>getWriteStream</code> functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.</p>
+<p><code>AsyncFile</code> can provide instances of <code>ReadStream</code> and <code>WriteStream</code> via the <code>getReadStream</code> and <code>getWriteStream</code> functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and WebSockets.</p>
 <p>They also allow you to read and write directly to them.</p>
 <h3 id="random-access-writes">Random access writes</h3><br/>
-<p>To use an AsyncFile for random access writing you use the write method.</p>
+<p>To use an <code>AsyncFile</code> for random access writing you use the <code>write</code> method.</p>
 <p><code>write(buffer, position, handler)</code>.</p>
-<p>The first parameter <code>buffer</code> is the buffer to write.</p>
-<p>The second parameter <code>position</code> is an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.</p>
+<p>The parameters to the method are: </p>
+<ul>
+<li><code>buffer</code>: the buffer to write.</li>
+<li><code>position</code>: an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.</li>
+</ul>
 <p>Here is an example of random access writes:</p>
 <pre class="prettyprint">vertx.fileSystem().open("some-file.dat", new AsyncResultHandler&lt;AsyncFile&gt;() {
     public void handle(AsyncResult&lt;AsyncFile&gt; ar) {
@@ -2337,12 +2340,15 @@ r--r--r--
 });
 </pre>
 <h3 id="random-access-reads">Random access reads</h3><br/>
-<p>To use an AsyncFile for random access reads you use the read method.</p>
+<p>To use an <code>AsyncFile</code> for random access reads you use the <code>read</code> method.</p>
 <p><code>read(buffer, offset, position, length, handler)</code>.</p>
-<p><code>buffer</code> is the buffer into which the data will be read.</p>
-<p><code>offset</code> is an integer offset into the buffer where the read data will be placed.</p>
-<p><code>position</code> is the position in the file where to read data from.</p>
-<p><code>length</code> is the number of bytes of data to read</p>
+<p>The parameters to the method are: </p>
+<ul>
+<li><code>buffer</code>: the buffer into which the data will be read.</li>
+<li><code>offset</code>: an integer offset into the buffer where the read data will be placed.</li>
+<li><code>position</code>: the position in the file where to read data from.</li>
+<li><code>length</code>: the number of bytes of data to read</li>
+</ul>
 <p>Here's an example of random access reads:</p>
 <pre class="prettyprint">vertx.fileSystem().open("some-file.dat", new AsyncResultHandler&lt;AsyncFile&gt;() {
     public void handle(AsyncResult&lt;AsyncFile&gt; ar) {
@@ -2368,7 +2374,7 @@ r--r--r--
 });
 </pre>
 <h3 id="flushing-data-to-underlying-storage">Flushing data to underlying storage.</h3><br/>
-<p>If the AsyncFile was not opened with <code>flush = true</code>, then you can manually flush any writes from the OS cache by calling the <code>flush</code> method.</p>
+<p>If the <code>AsyncFile</code> was not opened with <code>flush = true</code>, then you can manually flush any writes from the OS cache by calling the <code>flush</code> method.</p>
 <p>This method can also be called with an handler which will be called when the flush is complete.</p>
 <h3 id="using-asyncfile-as-readstream-and-writestream">Using AsyncFile as <code>ReadStream</code> and <code>WriteStream</code></h3><br/>
 <p>Use the functions <code>getReadStream</code> and <code>getWriteStream</code> to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.</p>
@@ -2400,7 +2406,7 @@ vertx.fileSystem().open("some-file.dat", new AsyncResultHandler&lt;AsyncFile&gt;
 });
 </pre>
 <h3 id="closing-an-asyncfile">Closing an AsyncFile</h3><br/>
-<p>To close an AsyncFile call the <code>close</code> function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument.</p>
+<p>To close an <code>AsyncFile</code> call the <code>close</code> function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument.</p>
 <p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
       </div>
     </div>

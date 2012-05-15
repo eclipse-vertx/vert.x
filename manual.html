@@ -112,7 +112,7 @@
 <h1 id="introduction">Introduction</h1><br/>
 <h2 id="what-is-vertx">What is vert.x?</h2><br/>
 <p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
-<p>Vert.x is an event driven application framework that runs on the JVM - a run-time with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So <em>you</em> choose what language you want to use. (Scala, Clojure and Python support is on the roadmap too).</p>
+<p>Vert.x is an event driven application framework that runs on the JVM - a run-time with <em>real</em> concurrency and unrivaled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So <em>you</em> choose what language you want to use. Scala, Clojure and Python support is on the roadmap too.</p>
 <p>We also bundle a host of goodies out-of-the-box including a distributed event bus, Web Sockets, SockJS, a MongoDB persistor and many other features so you can write <em>real</em> applications from the set-off.</p>
 <p>Some of the key highlights include:</p>
 <ul>
@@ -164,14 +164,14 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <h2 id="concepts-in-vertx">Concepts in vert.x</h2><br/>
 <p>In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.</p>
 <h3 id="verticle">Verticle</h3><br/>
-<p>The unit of deployment in vert.x is called a <em>verticle</em> (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby or Java (We have some partial Groovy support and we're looking to support Scala and Clojure going ahead).</p>
+<p>The unit of deployment in vert.x is called a <em>verticle</em> (think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby, Java, or Groovy (we're looking to support Clojure, Scala and Python going ahead).</p>
 <p>A verticle is defined by having a <em>main</em> which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.</p>
 <p>When you write an application, you might write a single verticle, or your application could consist of a whole set of verticles communicating with each other using the event bus.</p>
 <h3 id="vertx-instances">Vert.x Instances</h3><br/>
 <p>Verticles run inside a vert.x <em>instance</em>. A single vert.x instance runs inside its own JVM instance. There can be many verticles running inside a single vert.x instance at any one time. Vert.x makes sure each verticle is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.</p>
 <p>There can be many vert.x instances running on the same host, or on different hosts on the network at the same time. The instances can be configured to cluster with each other forming a distributed event bus over which verticle instances can communicate.</p>
 <h3 id="polyglot">Polyglot</h3><br/>
-<p>We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby and Java, but we aim to support Groovy, Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.</p>
+<p>We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby, Java, and Groovy, and we aim to support Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.</p>
 <h3 id="concurrency">Concurrency</h3><br/>
 <p>A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief since you don't have to synchronize access to your state. This means a whole class of race conditions disappear, and OS thread deadlocks are a thing of the past. </p>
 <h3 id="event-based-programming-model">Event-based Programming Model</h3><br/>
@@ -182,7 +182,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>Let's imagine for a minute that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.</p>
 <p>For such a blocking model to work and the system to remain responsive, each verticle instance would need to be assigned its own thread. Now consider what happens when we have thousands, 10s of thousands, or 100s of thousands of verticles running. We clearly can't have that many threads - the overhead due to context switching and stack space would be horrendous. It's clear to see such a blocking model just doesn't scale.</p>
 <h3 id="event-loops">Event Loops</h3><br/>
-<p>Internally, a vert.x instance manages a small set of threads, normally matching the number of threads to the available cores on the server. We call these threads <em>event loops</em>, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, for example, handling some dcata that's been read from a socket, or executing a timer.</p>
+<p>Internally, a vert.x instance manages a small set of threads, normally matching the number of threads to the available cores on the server. We call these threads <em>event loops</em>, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, for example, handling some data that's been read from a socket, or executing a timer.</p>
 <p>When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.</p>
 <p>We call this the <em>multi-reactor pattern</em>. It's like the <a href="http://en.wikipedia.org/wiki/Reactor_pattern">reactor pattern</a> but there's more than one event loop.</p>
 <h3 id="message-passing">Message Passing</h3><br/>
@@ -204,7 +204,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>By default, verticle event handlers should not take a long time to execute, however there are cases where you can't avoid blocking, or you genuinely have computationally intensive operations to perform.</p>
 <p>An example of the former would be calling a third-party blocking database API from a verticle. In this case you don't have control of the client library you are using so you just have to block until you get the result back.</p>
 <p>Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time on different circuits around the event loop, but this is awkward, and just a little bit silly ;)</p>
-<p>For cases like these, vert.x allows you to mark a particular verticle inststance as a <em>worker verticle</em>. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the <em>background pool</em>. </p>
+<p>For cases like these, vert.x allows you to mark a particular verticle instance as a <em>worker verticle</em>. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the <em>background pool</em>. </p>
 <p>Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.</p>
 <p>Worker verticles should be kept to a minimum, since a blocking approach doesn't scale if you want to deal with many concurrent connections.</p>
 <h3 id="core-and-busmods">Core and BusMods</h3><br/>
@@ -225,7 +225,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <li>Logging</li>
 <li>Accessing configuration</li>
 <li>Writing SockJS servers</li>
-<li>Deploying/Undeploying verticles</li>
+<li>Deploying and undeploying verticles</li>
 </ul>
 <p>Vert.x core is fairly static and is not envisaged that it will grow much over time. This is good since every service in core has to be provided in each of the languages we support - that's a lot of API adaptors to write.</p>
 <h4 id="busmods">BusMods</h4><br/>
@@ -240,7 +240,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>If you just type <code>vertx</code> at a command line you can see the different options the command takes.</p>
 <p>The command <code>vertx run</code> is used to start a vert.x verticle in <em>its own instance</em> of a vert.x server. This is the simplest way to run a verticle.</p>
 <p>At minimum <code>vertx run</code> takes a single parameter - the name of the main or module to run.</p>
-<p>If you're running a local verticle then if it's a JavaScript or Ruby verticle then it's just the name of the script, e.g. <code>server.js</code> or <code>server.rb</code>. (it doesn't have to be called server, you can name it anything as long as it has the right extension). If it's Java the main is the fully qualified class name of the main classs.</p>
+<p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name is the fully qualified class name of the Main class.</p>
 <p>If you're running an installed module (see the modules manual for more information on modules), then <code>vertx run</code> takes the name of the module to run.</p>
 <p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
 <ul>
@@ -253,7 +253,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
     Always use the path to reference any resources that your verticle requires. Please, <strong>do not</strong> put them on the system classpath as this can cause isolation issues between deployed verticles.</p>
 </li>
 <li>
-<p><code>-instances &lt;instances&gt;</code> The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If ommitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.</p>
+<p><code>-instances &lt;instances&gt;</code> The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.</p>
 </li>
 <li>
 <p><code>-worker</code> This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.<br/>
