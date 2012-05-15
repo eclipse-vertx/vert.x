@@ -88,9 +88,12 @@ public class RhinoVerticle extends Verticle {
               public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, Scriptable paths) throws Exception {
 
                 // Check for cached version
-                ModuleScript script = super.getModuleScript(cx, moduleId, uri, paths);
-                if(script != null)
-                  return script;
+                CachedModuleScript cachedModule = getLoadedModule(moduleId);
+                if(cachedModule != null) {
+                  // cachedModule.getModule() is not public
+                  // super.getModuleScript uses moduleSourceProvider.loadSource to check for modifications
+                  return super.getModuleScript(cx, moduleId, uri, paths);
+                }
 
                 // If loading from classpath get a proper URI
                 // Must check for each possible file to avoid getting other folders
