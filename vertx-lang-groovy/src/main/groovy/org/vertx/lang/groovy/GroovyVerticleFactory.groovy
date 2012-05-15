@@ -22,6 +22,7 @@ import groovy.lang.GroovyCodeSource
 import groovy.lang.Script
 import org.vertx.groovy.core.Vertx
 import org.vertx.java.core.VertxInternal
+import org.vertx.java.core.VertxException
 import org.vertx.lang.Verticle
 import org.vertx.lang.VerticleFactory
 import org.vertx.lang.VerticleManager
@@ -38,6 +39,7 @@ import java.net.URL
 public class GroovyVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
+
   private Vertx gVertx
 
   public GroovyVerticleFactory() {
@@ -64,7 +66,7 @@ public class GroovyVerticleFactory implements VerticleFactory {
 	return false
   }
 
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
+  public Verticle createVerticle(String main, ClassLoader cl) throws VertxException {
 
     URL url = cl.getResource(main)
     GroovyCodeSource gcs = new GroovyCodeSource(url)
