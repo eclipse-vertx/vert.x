@@ -73,6 +73,7 @@ def repoURL = (isReleaseVersion) ?
 uploadArchives {
 	repositories.mavenDeployer { deployer ->
 		beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+		checkAuthentication()
 		repository(url: repoURL) {
 			authentication(userName: sonatypeUsername, password: sonatypePassword)
 		}
@@ -86,13 +87,30 @@ install {
 	customizePom(repositories.mavenInstaller.pom)
 }
 
+def checkAuthentication() {
+	return
+	
+//	Console console = System.console()
+//	console.printf("Preparing upload to Sonatype OSS repo. Checking for credentials...\n")
+//	if (sonatypeUsername == null || "$sonatypeUsername" == "") {
+//		ext.sonatypeUsername = console.readLine('Enter username: ')
+//	}
+//
+//	if (sonatypePassword == null || "$sonatypePassword" == "") {
+//		ext.sonatypePassword = console.readLine('Enter password: ')
+//	}
+//
+//	console.printf("Using credentials: $sonatypeUsername and ${[sonatypePassword.length()].join('*')}\n")
+
+}
+
 def customizePom(pom) {
 	pom.project {
 		name "$title"
 		description "$description"
 		url 'http://vertx.io/'
 		packaging 'jar'
-		groupId 'org.vertx'
+		groupId 'io.vertx'
 		inceptionYear 2011
 		organization {
 			name = 'VMware, Inc'
