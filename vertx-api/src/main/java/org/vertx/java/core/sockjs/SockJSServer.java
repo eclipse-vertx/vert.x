@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
@@ -59,14 +60,14 @@ public interface SockJSServer {
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
-  void installApp(JsonObject config, final Handler<SockJSSocket> sockHandler);
+  void installApp(JsonObject config, final Handler<SockJSSocket> sockHandler) throws VertxException;
 
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
    * @param permitted A list of JSON objects which define permitted matches
    */
-  void bridge(JsonObject sjsConfig, JsonArray permitted);
+  void bridge(JsonObject sjsConfig, JsonArray permitted) throws VertxException;
 
   /**
    * Install an app which bridges the SockJS server to the event bus
@@ -75,7 +76,7 @@ public interface SockJSServer {
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              long authTimeout);
+              long authTimeout) throws VertxException;
 
   /**
    * Install an app which bridges the SockJS server to the event bus
@@ -85,7 +86,7 @@ public interface SockJSServer {
    * @param authAddress Address of auth manager. Defaults to 'vertx.basicauthmanager.authorise'
    */
   void bridge(JsonObject sjsConfig, JsonArray permitted,
-              long authTimeout, String authAddress);
+              long authTimeout, String authAddress) throws VertxException;
 
 }
 

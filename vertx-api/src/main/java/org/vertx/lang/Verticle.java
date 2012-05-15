@@ -17,6 +17,7 @@
 package org.vertx.lang;
 
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxException;
 
 /**
  * A verticle is the unit of deployment in vert.x<p>
@@ -67,13 +68,13 @@ public abstract class Verticle {
    * Vert.x calls the start method when the verticle is deployed
    * @throws Exception
    */
-  public abstract void start() throws Exception;
+  public abstract void start() throws VertxException;
 
   /**
    * Vert.x calls the stop method when the verticle is undeployed.
    * Put any cleanup code for your verticle in here
    * @throws Exception
    */
-  public void stop() throws Exception {
+  public void stop() throws VertxException {
   }
 }

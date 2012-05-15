@@ -17,6 +17,7 @@
 package org.vertx.lang;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
@@ -46,7 +47,7 @@ public class Container {
    * @param main The main of the verticle
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main) {
+  public String deployWorkerVerticle(String main) throws VertxException {
     return deployWorkerVerticle(main, null, 1);
   }
 
@@ -56,7 +57,7 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, int instances) {
+  public String deployWorkerVerticle(String main, int instances) throws VertxException {
     return deployWorkerVerticle(main, null, 1);
   }
 
@@ -66,7 +67,7 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, JsonObject config) {
+  public String deployWorkerVerticle(String main, JsonObject config) throws VertxException {
     return deployWorkerVerticle(main, config, 1);
   }
 
@@ -77,7 +78,7 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, JsonObject config, int instances) {
+  public String deployWorkerVerticle(String main, JsonObject config, int instances) throws VertxException {
     return deployWorkerVerticle(main, config, instances, null);
   }
 
@@ -89,7 +90,7 @@ public class Container {
    * @param doneHandler The handler will be called when deployment is complete
    * @return Unique deployment id
    */
-  public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
+  public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) throws VertxException {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
     return mgr.deploy(true, null, main, config, currURLs, instances, modDir, doneHandler);
@@ -100,7 +101,7 @@ public class Container {
    * @param main The main of the verticle
    * @return Unique deployment id
    */
-  public String deployVerticle(String main) {
+  public String deployVerticle(String main) throws VertxException {
     return deployVerticle(main, null, 1);
   }
 
@@ -110,7 +111,7 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, int instances) {
+  public String deployVerticle(String main, int instances) throws VertxException {
     return deployVerticle(main, null, instances);
   }
 
@@ -120,7 +121,7 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, JsonObject config) {
+  public String deployVerticle(String main, JsonObject config) throws VertxException {
     return deployVerticle(main, config, 1);
   }
 
@@ -131,7 +132,7 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, JsonObject config, int instances) {
+  public String deployVerticle(String main, JsonObject config, int instances) throws VertxException {
     return deployVerticle(main, config, instances, null);
   }
 
@@ -143,7 +144,7 @@ public class Container {
    * @param doneHandler The handler will be called when deployment is complete
    * @return Unique deployment id
    */
-  public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
+  public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) throws VertxException {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
     return mgr.deploy(false, null, main, config, currURLs, instances, modDir, doneHandler);
@@ -153,7 +154,7 @@ public class Container {
    * Undeploy a verticle
    * @param deploymentID The deployment ID
    */
-  public void undeployVerticle(String deploymentID) {
+  public void undeployVerticle(String deploymentID) throws VertxException {
     undeployVerticle(deploymentID, null);
   }
 
@@ -162,7 +163,7 @@ public class Container {
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
+  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) throws VertxException {
     mgr.undeploy(deploymentID, doneHandler);
   }
 

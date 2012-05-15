@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.Map;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 
@@ -29,28 +30,28 @@ import org.vertx.java.core.logging.Logger;
  */
 public interface VerticleManager {
 
-	public abstract void block();
+	void block();
 
-	public abstract void unblock();
+	void unblock();
 
-	public abstract JsonObject getConfig();
+	JsonObject getConfig();
 
-	public abstract String getDeploymentName();
+	String getDeploymentName();
 
-	public abstract URL[] getDeploymentURLs();
+	URL[] getDeploymentURLs();
 
-	public abstract File getDeploymentModDir();
+	File getDeploymentModDir();
 
-	public abstract Logger getLogger();
+	Logger getLogger();
 
-	public abstract String deploy(boolean worker, String name,
+	String deploy(boolean worker, String name,
 	        final String main, final JsonObject config, final URL[] urls,
-	        int instances, File currentModDir, final Handler<Void> doneHandler);
+	        int instances, File currentModDir, final Handler<Void> doneHandler) throws VertxException;
 
-	public abstract void undeployAll(final Handler<Void> doneHandler);
+	void undeployAll(final Handler<Void> doneHandler);
 
-	public abstract void undeploy(String name, final Handler<Void> doneHandler);
+	void undeploy(String name, final Handler<Void> doneHandler) throws VertxException;
 
-	public abstract Map<String, Integer> listInstances();
+	Map<String, Integer> listInstances();
 
 }
