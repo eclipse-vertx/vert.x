@@ -108,7 +108,7 @@ Then, in `my_verticle.rb` you can access the config via `vertx.config` as previo
 
 ## Using a Verticle to co-ordinate loading of an application
 
-If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
+If you have an application that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
 
 For example, you could create a verticle `app.rb` as follows:
 
@@ -537,8 +537,8 @@ Buffers:
     
 ## Other buffer methods:
 
-* `length`. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.
-* `copy`. Copy the entire buffer
+* `length`: To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.
+* `copy`: Copy the entire buffer
 
 See the Yardoc for more detailed method level documentation.    
 
@@ -778,7 +778,7 @@ You can set an exception handler on the socket that will be called if an excepti
 
 ### Read and Write Streams
 
-NetSocket also can at as a `ReadStream` and a `WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, websockets and asynchronous files.
+NetSocket also can at as a `ReadStream` and a `WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.
 
 This will be discussed in depth in the chapter on streams and pumps.
 
@@ -861,7 +861,7 @@ A NetClient can be configured to automatically retry connecting or reconnecting 
 
 `reconnect_attempts` determines how many times the client will try to connect to the server before giving up. A value of `-1` represents an infinite number of times. The default value is `0`. I.e. no reconnection is attempted.
 
-`reconnect_interval` detemines how long, in milliseconds, the client will wait between reconnect attempts. The default value is `1000`.
+`reconnect_interval` determines how long, in milliseconds, the client will wait between reconnect attempts. The default value is `1000`.
 
 If an exception handler is set on the client, and reconnect attempts is not equal to `0`. Then the exception handler will not be called until the client gives up reconnecting.
 
@@ -878,7 +878,7 @@ Net servers can also be configured to work with [Transport Layer Security](http:
 
 When a `NetServer` is working as an SSL Server the API of the `NetServer` and `NetSocket` is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the `NetServer` before `listen` is called.
 
-To enabled ssl set the attribute `ssl` to `true` on the `NetServer`.
+To enabled SSL set the attribute `ssl` to `true` on the `NetServer`.
 
 The server must also be configured with a *key store* and an optional *trust store*.
 
@@ -886,7 +886,7 @@ These are both *Java keystores* which can be managed using the [keytool](http://
 
 The keytool command allows you to create keystores, and import and export certificates from them.
 
-The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over ssl if the server does not have a certificate.
+The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over SSL if the server does not have a certificate.
 
 The key store is configured on the server using the attributes `key_store_path` and `key_store_password`.
 
@@ -967,7 +967,7 @@ Any flow control aware object that can be written to is said to implement `ReadS
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
-A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, websockets, etc.
+A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, WebSockets, etc.
 
 A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
@@ -1096,7 +1096,7 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 
 ### Creating an HTTP Server
 
-To create an HTTP server you simply create an instance of vertx.net.HttpServer.
+To create an HTTP server you simply create an instance of `vertx.net.HttpServer`.
 
     server = Vertx::HttpServer.new
 
@@ -1108,7 +1108,7 @@ To tell that server to listen for incoming requests you use the `listen` method:
 
     server.listen(8080, 'myhost')
 
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
 
 ### Getting Notified of Incoming Requests
@@ -1142,7 +1142,7 @@ Or:
 
 ### Handling HTTP Requests
 
-So far we have seen how to create an HTTPServer and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
+So far we have seen how to create an `HttpServer` and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
 
 When a request arrives, the request handler is called passing in an instance of `HttpServerRequest`. This object represents the server side HTTP request.
 
@@ -1211,7 +1211,7 @@ Then the params hash would be the following JS object:
 
 #### Reading Data from the Request Body
 
-Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HTTPServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
+Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HttpServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
 
 To receive the body, you set the `data_handler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
 
@@ -1428,7 +1428,7 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
 
 ### Creating an HTTP Client
 
-To create an HTTP client you simply create an instance of vertx.HttpClient
+To create an HTTP client you simply create an instance of `vertx.HttpClient`:
 
     client = Vertx::HttpClient.new
 
@@ -1438,13 +1438,13 @@ You set the port and hostname (or ip address) that the client will connect to us
     client.port = 8181
     client.host = 'foo.com'
 
-A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
+A single `HttpClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
 The default value for hostname is `localhost`, and the default value for port is `80`.
 
 ### Pooling and Keep Alive
 
-By default the `HTTPClient` pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.
+By default the `HttpClient` pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.
 
 If you do not want connections to be pooled you can call `setKeepAlive` with `false`:
 
@@ -1486,7 +1486,7 @@ Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `c
 
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
-The return value from the appropriate request method is an `HTTPClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
+The return value from the appropriate request method is an `HttpClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
 Once you have finished with the request you must call the `end` method.
 
@@ -1865,7 +1865,7 @@ Another method `write_text_frame` also exists for writing text data. This is equ
 
 Sometimes you may only want to accept WebSockets which connect at a specific path.
 
-To check the path, you can query the `path` property of the websocket. You can then call the `reject` method to reject the websocket.
+To check the path, you can query the `path` property of the `websocket`. You can then call the `reject` method to reject the websocket.
 
     server = Vertx::HttpServer.new
 
@@ -1933,7 +1933,7 @@ For more information see the [WebSocket API documentation](http://dev.w3.org/htm
 
 WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.
 
-Moreover, websockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a websocket connection is going to succeed for every user.
+Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSocket connection is going to succeed for every user.
 
 Enter SockJS.
 
@@ -2245,7 +2245,7 @@ Change permissions on a file.
 
 * `chmod(file, perms, dir_perms)`.
 
-Recursively change permissionson a directory. `file` is the directory name. `perms` is a Unix style permissions to apply recursively to any files in the directory. `dir_perms` is a Unix style permissions string to apply to the directory and any other child directories recursively.
+Recursively change permissions on a directory. `file` is the directory name. `perms` is a Unix style permissions to apply recursively to any files in the directory. `dir_perms` is a Unix style permissions string to apply to the directory and any other child directories recursively.
 
 ## props
 
@@ -2255,13 +2255,13 @@ Retrieve properties of a file.
 
 `file` is the file name. The props are returned in the handler. The results is an object with the following properties/methods:
 
-* `creation_time`. Time of file creation.
-* `last_access_time`. Time of last file access.
-* `last_modified_time`. Time file was last modified.
-* `directory?`. This will have the value `true` if the file is a directory.
-* `regular_file?`. This will have the value `true` if the file is a regular file (not symlink or directory).
-* `symbolic_link?`. This will have the value `true` if the file is a symbolic link.
-* `other?`. This will have the value `true` if the file is another type.
+* `creation_time`: Time of file creation.
+* `last_access_time`: Time of last file access.
+* `last_modified_time`: Time file was last modified.
+* `directory?`: This will have the value `true` if the file is a directory.
+* `regular_file?`: This will have the value `true` if the file is a regular file (not symlink or directory).
+* `symbolic_link?`: This will have the value `true` if the file is a symbolic link.
+* `other?`: This will have the value `true` if the file is another type.
 
 Here's an example:
 
@@ -2287,7 +2287,7 @@ Create a hard link.
 
 `link(link, existing)`
 
-`link` is the name of the link. `existing` is the exsting file (i.e. where to point the link at).
+`link` is the name of the link. `existing` is the existing file (i.e. where to point the link at).
 
 ## symlink
 
@@ -2295,7 +2295,7 @@ Create a symbolic link.
 
 `sym_link(link, existing)`
 
-`link` is the name of the symlink. `existing` is the exsting file (i.e. where to point the symlink at).
+`link` is the name of the symlink. `existing` is the existing file (i.e. where to point the symlink at).
 
 ## unlink
 
@@ -2451,26 +2451,28 @@ When the file is opened, an instance of `AsyncFile` is passed into the result ha
         end
     end
     
-If `read` is `true`, the file will be opened for reading. If `write` is `true` the file will be opened for writing. If `create_new` is `true`, the file wil be created if it doesn't already exist. If `flush` is `true` then every write on the file will be automatically flushed (synced) from the OS cache.    
+If `read` is `true`, the file will be opened for reading. If `write` is `true` the file will be opened for writing. If `create_new` is `true`, the file will be created if it doesn't already exist. If `flush` is `true` then every write on the file will be automatically flushed (synced) from the OS cache.    
 If the file is created, `perms` is a Unix-style permissions string used to describe the file permissions for the newly created file.
 
 ## AsyncFile
 
 Instances of `AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
 
-AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.
+AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and WebSockets.
 
 They also allow you to read and write directly to them.
 
 ### Random access writes
 
-To use an AsyncFile for random access writing you use the write method.
+To use an AsyncFile for random access writing you use the `write` method.
 
-`write(buffer, position)`.
+`write(buffer, position, &block)`.
 
-The first parameter `buffer` is the buffer to write.
+The parameters to the method are: 
 
-The second parameter `position` is an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.
+* `buffer`: the buffer to write.
+* `position`: an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.
+* `block`: a block to call when the operation is complete.
 
 Here is an example of random access writes:
 
@@ -2494,17 +2496,17 @@ Here is an example of random access writes:
 
 ### Random access reads
 
-To use an AsyncFile for random access reads you use the read method.
+To use an AsyncFile for random access reads you use the `read` method.
 
-`read(buffer, offset, position, length, handler)`.
+`read(buffer, offset, position, length, &block)`.
 
-`buffer` is the buffer into which the data will be read.
+The parameters to the method are: 
 
-`offset` is an integer offset into the buffer where the read data will be placed.
-
-`position` is the position in the file where to read data from.
-
-`length` is the number of bytes of data to read
+* `buffer`: the buffer into which the data will be read.
+* `offset`: an integer offset into the buffer where the read data will be placed.
+* `position`: the position in the file where to read data from.
+* `length`: the number of bytes of data to read
+* `block`: a block to call when the operation is complete.
 
 Here's an example of random access reads:
 

@@ -6,7 +6,7 @@
       
 **Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
 
-Vert.x is an event driven application framework that runs on the JVM - a run-time with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So *you* choose what language you want to use. (Scala, Clojure and Python support is on the roadmap too).
+Vert.x is an event driven application framework that runs on the JVM - a run-time with *real* concurrency and unrivaled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So *you* choose what language you want to use. Scala, Clojure and Python support is on the roadmap too.
 
 We also bundle a host of goodies out-of-the-box including a distributed event bus, Web Sockets, SockJS, a MongoDB persistor and many other features so you can write *real* applications from the set-off.
       
@@ -66,7 +66,7 @@ In this section I'll give an overview of the main concepts in vert.x. Many of th
 
 ### Verticle
 
-The unit of deployment in vert.x is called a *verticle* (Think of a particle, for vert.x). Verticles can currently be written in JavaScript, Groovy, Ruby or Java (We're looking to support other languages as we progress).
+The unit of deployment in vert.x is called a *verticle* (think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby, Java, or Groovy (we're looking to support Clojure, Scala and Python going ahead).
 
 A verticle is defined by having a *main* which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.
 
@@ -80,7 +80,7 @@ There can be many vert.x instances running on the same host, or on different hos
 
 ### Polyglot
 
-We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby and Java, but we aim to support Groovy, Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.
+We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby, Java, and Groovy, and we aim to support Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.
 
 ### Concurrency
 
@@ -102,7 +102,7 @@ For such a blocking model to work and the system to remain responsive, each vert
 
 ### Event Loops
 
-Internally, a vert.x instance manages a small set of threads, normally matching the number of threads to the available cores on the server. We call these threads *event loops*, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, for example, handling some dcata that's been read from a socket, or executing a timer.
+Internally, a vert.x instance manages a small set of threads, normally matching the number of threads to the available cores on the server. We call these threads *event loops*, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, for example, handling some data that's been read from a socket, or executing a timer.
 
 When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.
 
@@ -146,7 +146,7 @@ An example of the former would be calling a third-party blocking database API fr
 
 Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time on different circuits around the event loop, but this is awkward, and just a little bit silly ;)
 
-For cases like these, vert.x allows you to mark a particular verticle inststance as a *worker verticle*. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the *background pool*. 
+For cases like these, vert.x allows you to mark a particular verticle instance as a *worker verticle*. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the *background pool*. 
 
 Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.
 
@@ -174,7 +174,7 @@ The API will be described in detail in the Core API manual, but includes service
 * Logging
 * Accessing configuration
 * Writing SockJS servers
-* Deploying/Undeploying verticles
+* Deploying and undeploying verticles
 
 Vert.x core is fairly static and is not envisaged that it will grow much over time. This is good since every service in core has to be provided in each of the languages we support - that's a lot of API adaptors to write.
 
@@ -202,7 +202,7 @@ The command `vertx run` is used to start a vert.x verticle in *its own instance*
 
 At minimum `vertx run` takes a single parameter - the name of the main or module to run.
 
-If you're running a local verticle then if it's a JavaScript or Ruby verticle then it's just the name of the script, e.g. `server.js` or `server.rb`. (it doesn't have to be called server, you can name it anything as long as it has the right extension). If it's Java the main is the fully qualified class name of the main classs.
+If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. `server.js`, `server.rb`, or `server.groovy`. (It doesn't have to be called `server`, you can name it anything as long as it has the right extension). If the verticle is written in Java the name is the fully qualified class name of the Main class.
 
 If you're running an installed module (see the modules manual for more information on modules), then `vertx run` takes the name of the module to run.
 
@@ -214,7 +214,7 @@ The `vertx run` command can take a few optional parameters, they are:
     An example path might be `-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar`
     Always use the path to reference any resources that your verticle requires. Please, **do not** put them on the system classpath as this can cause isolation issues between deployed verticles.
     
-* `-instances <instances>` The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If ommitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.
+* `-instances <instances>` The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.
 
 * `-worker` This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.  
 

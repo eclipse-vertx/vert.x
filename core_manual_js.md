@@ -113,7 +113,7 @@ Then, in `my_verticle.js` you can access the config via `vertx.getConfig` as pre
     
 ## Using a Verticle to co-ordinate loading of an application
 
-If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
+If you have an application that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
 
 For example, you could create a verticle `app.js` as follows:
 
@@ -239,7 +239,7 @@ It's highly recommended you use JSON messages to communicate between verticles. 
 
 Let's jump into the API
 
-The eventbus is accessible as the `eventBus` property on the vertx instance.
+The eventbus is accessible as the `eventBus` property on the `vertx` instance.
 
 ### Registering and Unregistering Handlers
 
@@ -265,7 +265,7 @@ To unregister a handler it's just as straightforward. You simply call `unregiste
 
     eb.unregisterHandler('test.address', myHandler);    
     
-A single handler can be registered multiple times on the same, or different addresses so in order to identify it uniquely you have to specify both the address and the handler. 
+A single handler can be registered multiple times on the same, or different, addresses so in order to identify it uniquely you have to specify both the address and the handler. 
 
 As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another function to the registerHandler as the third argument. E.g. :
 
@@ -605,7 +605,7 @@ Creating TCP servers and clients is incredibly easy with vert.x.
 
 ### Creating a Net Server
 
-To create a TCP server you invoke the `createNetServer` function on the vertx instance
+To create a TCP server you invoke the `createNetServer` function on the `vertx` instance
 
     var server = vertx.createNetServer();
     
@@ -617,7 +617,7 @@ To tell that server to listen for connections we do:
 
     server.listen(1234, 'myhost');
     
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If it is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
 
 ### Getting Notified of Incoming Connections
@@ -789,7 +789,7 @@ You can set an exception handler on the socket that will be called if an excepti
     
 ### Read and Write Streams
 
-NetSocket also can at as a `ReadStream` and a `WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, websockets and asynchronous files.
+NetSocket also can at as a `ReadStream` and a `WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.
 
 This will be discussed in depth in the chapter on streams and pumps.
 
@@ -825,7 +825,7 @@ A NetClient is used to make TCP connections to servers.
 
 ### Creating a Net Client
 
-To create a TCP client you invoke the `createNetClient` function on the vertx instance.
+To create a TCP client you invoke the `createNetClient` function on the `vertx` instance.
 
     var client = vertx.createNetClient();
 
@@ -839,7 +839,7 @@ To actually connect to a server you invoke the `connect` method:
         log.info('We have connected');
     });
     
-The connect method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
+The `connect` method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
 
 The argument passed into the connect handler is an instance of `NetSocket`, exactly the same as what is passed into the server side connect handler. Once given the `NetSocket` you can read and write data from the socket in exactly the same way as you do on the server side.
 
@@ -889,7 +889,7 @@ Net servers can also be configured to work with [Transport Layer Security](http:
 
 When a `NetServer` is working as an SSL Server the API of the `NetServer` and `NetSocket` is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the `NetServer` before `listen` is called.
 
-To enabled ssl the function `setSSL(true)` must be called on the Net Server.
+To enabled SSL the function `setSSL(true)` must be called on the Net Server.
 
 The server must also be configured with a *key store* and an optional *trust store*.
 
@@ -897,7 +897,7 @@ These are both *Java keystores* which can be managed using the [keytool](http://
 
 The keytool command allows you to create keystores, and import and export certificates from them.
 
-The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over ssl if the server does not have a certificate.
+The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over SSL if the server does not have a certificate.
 
 The key store is configured on the server using the `setKeyStorePath` and `setKeyStorePassword` functions.
 
@@ -936,7 +936,7 @@ If the `setTrustAll(true)` is invoked on the client, then the client will trust 
 
 If `setTrustAll(true)` has not been invoked then a client trust store must be configured and should contain the certificates of the servers that the client trusts.
 
-The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trustore location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
+The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trust store location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
 If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it#s just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
 
@@ -979,7 +979,7 @@ Any flow control aware object that can be written to is said to implement `ReadS
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
-A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, websockets, etc.
+A very simple example would be reading from a `NetSocket` on a server and writing back to the same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response, async files, WebSockets, etc.
 
 A naive way to do this would be to directly take the data that's been read and immediately write it to the NetSocket, for example:
 
@@ -1096,10 +1096,10 @@ Functions:
 
 Instances of `Pump` have the following methods:
 
-* `start()`. Start the pump.
-* `stop()`. Stops the pump. When the pump starts it is in stopped mode.
-* `setWriteQueueMaxSize()`. This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
-* `getBytesPumped()`. Returns total number of bytes pumped.
+* `start()`: Start the pump.
+* `stop()`: Stops the pump. When the pump starts it is in stopped mode.
+* `setWriteQueueMaxSize()`: This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
+* `getBytesPumped()`: Returns total number of bytes pumped.
 
 A pump can be started and stopped multiple times.
 
@@ -1111,7 +1111,7 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 
 ### Creating an HTTP Server
 
-To create an HTTP server you invoke the `createHttpServer` function on the vertx instance.
+To create an HTTP server you invoke the `createHttpServer` function on the `vertx` instance.
 
     var server = vertx.createHttpServer();
     
@@ -1123,7 +1123,7 @@ To tell that server to listen for incoming requests you use the `listen` method:
 
     server.listen(8080, 'myhost');
     
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is ommitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
 
 ### Getting Notified of Incoming Requests
@@ -1157,7 +1157,7 @@ Or:
        
 ### Handling HTTP Requests
 
-So far we have seen how to create an HTTPServer and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
+So far we have seen how to create an 'HttpServer' and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
 
 When a request arrives, the request handler is called passing in an instance of `HttpServerRequest`. This object represents the server side HTTP request.
 
@@ -1226,7 +1226,7 @@ Then the params hash would be the following JS object:
     
 #### Reading Data from the Request Body
 
-Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HTTPServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
+Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HttpServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
 
 To receive the body, you set the `dataHandler` on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:
 
@@ -1412,9 +1412,9 @@ If you were writing a web server, one way to serve a file from disk would be to 
 
 Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.
 
-Using `sendfile` is usually more efficient for large files, but may be slower than using `readFile` to manually read the file as a buffer and write it directly to the response.
+Using `sendFile` is usually more efficient for large files, but may be slower than using `readFile` to manually read the file as a buffer and write it directly to the response.
 
-To do this use the `sendfile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
+To do this use the `sendFile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
     var server = vertx.createHttpServer();
 
@@ -1428,7 +1428,7 @@ To do this use the `sendfile` function on the HTTP response. Here's a simple HTT
       req.response.sendFile('web/' + file);   
     }).listen(8080, 'localhost');
     
-*Note: If you use `sendfile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
+*Note: If you use `sendFile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
 **If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
 
@@ -1455,7 +1455,7 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
 
 ### Creating an HTTP Client
 
-To create an HTTP client you invoke the `createHttpClient` function on the vertx instance.
+To create an HTTP client you invoke the `createHttpClient` function on the `vertx` instance.
 
     var client = vertx.createHttpClient();
     
@@ -1913,7 +1913,7 @@ Another method `writeTextFrame` also exists for writing text data. This is equiv
 
 Sometimes you may only want to accept WebSockets which connect at a specific path.
 
-To check the path, you can query the `path` property of the websocket. You can then call the `reject` function to reject the websocket.
+To check the path, you can query the `path` property of the `websocket`. You can then call the `reject` function to reject the websocket.
 
     var server = vertx.createHttpServer();
 
@@ -1978,7 +1978,7 @@ For more information see the [WebSocket API documentation](http://dev.w3.org/htm
 
 WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.
 
-Moreover, websockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a websocket connection is going to succeed for every user.
+Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSocket connection is going to succeed for every user.
 
 Enter SockJS.
 
@@ -1994,7 +1994,7 @@ Vert.x provides a complete server side SockJS implementation.
 
 This enables vert.x to be used for modern, so-called *real-time* (this is the *modern* meaning of *real-time*, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
 
-To create a SockJS server you simply create a HTTP server as normal and then invoke the `createSockJSServer` function on the vertx instance, specifying the HTTP server:
+To create a SockJS server you simply create a HTTP server as normal and then invoke the `createSockJSServer` function on the `vertx` instance, specifying the HTTP server:
 
     var httpServer = vertx.createHttpServer();
     
@@ -2014,7 +2014,7 @@ For example, to create a SockJS echo application:
     
     sockJSServer.installApp(config, function(sock) {
     
-        var p = new.vertx.Pump(sock, sock);
+        var p = new vertx.Pump(sock, sock);
         
         p.start();
     });
@@ -2295,7 +2295,7 @@ Change permissions on a file.
   
 * `chmod(file, perms, dirPerms, handler)`.  
 
-Recursively change permissionson a directory. `file` is the directory name. `perms` is a Unix style permissions to apply recursively to any files in the directory. `dirPerms` is a Unix style permissions string to apply to the directory and any other child directories recursively.
+Recursively change permissions on a directory. `file` is the directory name. `perms` is a Unix style permissions to apply recursively to any files in the directory. `dirPerms` is a Unix style permissions string to apply to the directory and any other child directories recursively.
 
 ## props
 
@@ -2337,7 +2337,7 @@ Create a hard link.
 
 `link(link, existing, handler)`
 
-`link` is the name of the link. `existing` is the exsting file (i.e. where to point the link at).
+`link` is the name of the link. `existing` is the existing file (i.e. where to point the link at).
 
 ## symlink
 
@@ -2345,7 +2345,7 @@ Create a symbolic link.
 
 `symlink(link, existing, handler)`
 
-`link` is the name of the symlink. `existing` is the exsting file (i.e. where to point the symlink at).
+`link` is the name of the symlink. `existing` is the existing file (i.e. where to point the symlink at).
 
 ## unlink
 
@@ -2516,7 +2516,7 @@ Opens a file using the specified open flags. `file` is the file name. `openFlags
     vertx.fileSystem.OPEN_WRITE = 2
     vertx.fileSystem.CREATE_NEW = 4
   
-For example
+For example:
 
     // Open for reading only
     var flags = vertx.FileSystem.OPEN_READ;
@@ -2551,19 +2551,20 @@ This is the same as `open(file, openFlags, flush, handler)` but you can also spe
 
 Instances of `AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
 
-AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and websockets.
+AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, HTTP requests and responses, and WebSockets.
 
 They also allow you to read and write directly to them.
 
 ### Random access writes
 
-To use an AsyncFile for random access writing you use the write method.
+To use an AsyncFile for random access writing you use the `write` method.
 
 `write(buffer, position, handler)`.
 
-The first parameter `buffer` is the buffer to write.
+The parameters to the method are: 
 
-The second parameter `position` is an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.
+* `buffer`: the buffer to write.
+* `position`: an integer position in the file where to write the buffer. If the position is greater or equal to the size of the file, the file will be enlarged to accomodate the offset.
 
 Here is an example of random access writes:
 
@@ -2587,17 +2588,16 @@ Here is an example of random access writes:
 
 ### Random access reads
 
-To use an AsyncFile for random access reads you use the read method.
+To use an AsyncFile for random access reads you use the `read` method.
 
 `read(buffer, offset, position, length, handler)`.
 
-`buffer` is the buffer into which the data will be read.
+The parameters to the method are: 
 
-`offset` is an integer offset into the buffer where the read data will be placed.
-
-`position` is the position in the file where to read data from.
-
-`length` is the number of bytes of data to read
+* `buffer`: the buffer into which the data will be read.
+* `offset`: an integer offset into the buffer where the read data will be placed.
+* `position`: the position in the file where to read data from.
+* `length`: the number of bytes of data to read
 
 Here's an example of random access reads:
 
