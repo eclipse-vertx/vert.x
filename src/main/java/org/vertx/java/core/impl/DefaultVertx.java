@@ -30,6 +30,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -41,6 +42,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
+import java.beans.ConstructorProperties;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,18 +84,50 @@ public class DefaultVertx extends VertxInternal {
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+    registerSelf(this);
   }
 
+  @ConstructorProperties({"hostname"})
   public DefaultVertx(String hostname) {
     this.eventBus = new DefaultEventBus(this, hostname);
+    registerSelf(this);
   }
 
+  @ConstructorProperties({"port", "hostname"})
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname);
+    registerSelf(this);
+  }
+
+  @Override
+  public int getBackgroundPoolSize() {
+	return backgroundPoolSize;
+  }
+
+  @Override
+  public int getCorePoolSize() {
+	return corePoolSize;
+  }
+
+  private void registerSelf(DefaultVertx vertx) {
+    JMXUtil.register(vertx, "org.vertx:type=Vertx");
+	JMXUtil.register(vertx.eventBus, "org.vertx:type=EventBus");
+  }
+
+  public void registerSharedNetServer(ServerID id, DefaultNetServer server) {
+	sharedNetServers.put(id, server);
+	String name = String.format("org.vertx:type=NetServer,host=%s,port=%d", id.getHost(), id.getPort());	
+    JMXUtil.register(server, name);
+  }
+
+  public void unregisterSharedNetServer(ServerID id) {
+	sharedNetServers.remove(id);
+    String name = String.format("org.vertx:type=NetServer,host=%s,port=%d", id.getHost(), id.getPort());
+    JMXUtil.unregister(name);
   }
 
   public NetServer createNetServer() {
-    return new DefaultNetServer(this);
+	return new DefaultNetServer(this);
   }
 
   public NetClient createNetClient() {
@@ -108,8 +142,20 @@ public class DefaultVertx extends VertxInternal {
     return sharedData;
   }
 
+  public void registerSharedHttpServer(ServerID id, DefaultHttpServer server) {
+	sharedHttpServers.put(id, server);
+	String name = String.format("org.vertx:type=HttpServer,host=%s,port=%d", id.getHost(), id.getPort());	
+    JMXUtil.register(server, name);
+  }
+
+  public void unregisterSharedHttpServer(ServerID id) {
+	sharedHttpServers.remove(id);
+    String name = String.format("org.vertx:type=HttpServer,host=%s,port=%d", id.getHost(), id.getPort());
+    JMXUtil.unregister(name);
+  }
+
   public HttpServer createHttpServer() {
-    return new DefaultHttpServer(this);
+	return new DefaultHttpServer(this);
   }
 
   public HttpClient createHttpClient() {
@@ -117,7 +163,9 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new DefaultSockJSServer(this, httpServer);
+	SockJSServer server = new DefaultSockJSServer(this, httpServer);
+	// JMXUtil.register(server, "org.vertx:type=SockJSServer");
+	return server;
   }
 
   public EventBus eventBus() {
