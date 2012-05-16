@@ -98,14 +98,13 @@ public class RhinoVerticle extends Verticle {
                 // If loading from classpath get a proper URI
                 // Must check for each possible file to avoid getting other folders
                 // Could also use getResources and iterate
-                //ClassLoader cl = clThreadLocal.get();
                 if(uri == null) {
                   URL url =  cl.getResource(moduleId + File.separator + "package.json");
                   if( url == null){
                     url = cl.getResource(moduleId + File.separator + "index.json");
                   }
                   if( url != null) {
-                    url = new URL(new File(url.getFile()).getParent());
+                    url = new File(url.getFile()).getParentFile().toURI().toURL();
                   } else {
                     String resourceName = moduleId;
                     if(!moduleId.endsWith(".js")){
@@ -141,11 +140,15 @@ public class RhinoVerticle extends Verticle {
                     }
 
                     main = json.getString("main");
+
+                    if(!main.endsWith(".js")){
+                      main = main + ".js";
+                    }
                   }
 
                   // Allow loading modules from <dir>/<main>.js
                   if (new File(uri.getPath(), main).exists()) {
-                    uri = URI.create(moduleId + File.separator + main);
+                    uri =  uri.resolve(main);
                   }
 
                 }
