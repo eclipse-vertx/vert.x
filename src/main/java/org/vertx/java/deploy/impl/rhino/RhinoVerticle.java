@@ -147,8 +147,9 @@ public class RhinoVerticle extends Verticle {
                   }
 
                   // Allow loading modules from <dir>/<main>.js
-                  if (new File(uri.getPath(), main).exists()) {
-                    uri =  uri.resolve(main);
+                  File mainFile = new File(uri.getPath(), main);
+                  if (mainFile.exists()) {
+                    uri = mainFile.toURI();
                   }
 
                 }
