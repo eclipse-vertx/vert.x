@@ -38,7 +38,7 @@ import java.util.ServiceLoader;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class Vertx {
+public abstract class Vertx implements VertxMXBean {
 
   private static VertxFactory loadFactory() {
 	  ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
