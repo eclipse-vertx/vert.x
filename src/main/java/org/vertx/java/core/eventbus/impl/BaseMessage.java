@@ -80,15 +80,15 @@ public abstract class BaseMessage<T> extends Message<T> {
   }
 
   protected void write(NetSocket socket) {
-    int length = 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
+    int length = 1 + 4 + address.length() + 1 + 4 * sender.getHost().length() +
         4 + (replyAddress == null ? 0 : replyAddress.length()) +
         getBodyLength();
     Buffer totBuff = new Buffer(length);
     totBuff.appendInt(0);
     totBuff.appendByte(type());
     writeString(totBuff, address);
-    totBuff.appendInt(sender.port);
-    writeString(totBuff, sender.host);
+    totBuff.appendInt(sender.getPort());
+    writeString(totBuff, sender.getHost());
     if (replyAddress != null) {
       writeString(totBuff, replyAddress);
     } else {
