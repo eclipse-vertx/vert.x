@@ -89,6 +89,9 @@
     <pathelement location="${tests-base}/framework/groovy"/>
     <pathelement location="src/main/groovy"/>
     <pathelement location="${conf-dir}"/>
+  	
+  	<pathelement location="target/mods/redis-client"/>
+  	<pathelement location="src/mods/redis-client/lib/jedis-2.1.0.jar"/>
   </path>
 
   <taskdef name="groovyc"
@@ -297,7 +300,9 @@
   jruby -S gem install rdiscount
   -->
   <target name="yardoc">
+  	<!--
     <exec executable="yardoc"/>
+    -->
   </target>
 
 
