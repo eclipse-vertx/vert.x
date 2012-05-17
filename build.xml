@@ -300,9 +300,9 @@
   jruby -S gem install rdiscount
   -->
   <target name="yardoc">
-  	<!--
+  	
     <exec executable="yardoc"/>
-    -->
+    
   </target>
 
 
