@@ -24,6 +24,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,7 +67,18 @@ public class RhinoVerticle extends Verticle {
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
-    InputStream is = cl.getResourceAsStream(scriptName);
+    InputStream is;
+    File file = new File(scriptName);
+
+    // TODO - Handle relative paths - need to get current file's path
+    // Try to load using and absolute path
+    if(file.exists()) {
+      is = new FileInputStream(file);
+    } else {
+    // Try to load from the classpath
+      is = cl.getResourceAsStream(scriptName);
+    }
+
     if (is == null) {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
     }
