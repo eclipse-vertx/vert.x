@@ -37,6 +37,7 @@ import java.util.UUID;
  * Please see the busmods manual for a full description<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Thomas Risberg
  */
 public class MongoPersistor extends BusModBase implements Handler<Message<JsonObject>> {
 
@@ -44,6 +45,8 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
   private String host;
   private int port;
   private String dbName;
+  private String username;
+  private String password;
 
   private Mongo mongo;
   private DB db;
@@ -55,10 +58,15 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
     host = getOptionalStringConfig("host", "localhost");
     port = getOptionalIntConfig("port", 27017);
     dbName = getOptionalStringConfig("db_name", "default_db");
+    username = getOptionalStringConfig("username", null);
+    password = getOptionalStringConfig("password", null);
 
     try {
       mongo = new Mongo(host, port);
       db = mongo.getDB(dbName);
+      if (username != null && password != null) {
+        db.authenticate(username, password.toCharArray());
+      }
       eb.registerHandler(address, this);
     } catch (UnknownHostException e) {
       logger.error("Failed to connect to mongo server", e);
