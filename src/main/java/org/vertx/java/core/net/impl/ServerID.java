@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 
 /**
@@ -23,15 +24,24 @@ import java.io.Serializable;
  */
 public class ServerID implements Serializable {
 
-  public int port;
-  public String host;
+  private static final long serialVersionUID = 1L;
 
+  private final int port;
+  
+  private final String host;
+
+  @ConstructorProperties({"port", "host"})
   public ServerID(int port, String host) {
     this.port = port;
     this.host = host;
   }
 
-  public ServerID() {
+  public int getPort() {
+	  return port;
+  }
+
+  public String getHost() {
+	  return host;
   }
 
   @Override
