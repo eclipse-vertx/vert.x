@@ -48,7 +48,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface EventBus extends EventBusMXBean {
+public interface EventBus {
 
   /**
    * Send a JSON object as a message

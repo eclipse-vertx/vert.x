@@ -59,7 +59,6 @@ import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.HandlerHolder;
@@ -69,8 +68,6 @@ import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxWorkerPool;
 
 import javax.net.ssl.SSLEngine;
-
-import java.beans.ConstructorProperties;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -112,7 +109,6 @@ public class DefaultHttpServer implements HttpServer {
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  @ConstructorProperties("vertx")
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
     ctx = vertx.getOrAssignContext();
@@ -127,9 +123,6 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
-	
-	String simpleName = requestHandler.getClass().getSimpleName();
-	JMXUtil.register(requestHandler, "org.vertx:type=Handler,type=HTTP,name=%s", simpleName);
     this.requestHandler = requestHandler;
     return this;
   }
@@ -139,26 +132,12 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
-	String simpleName = requestHandler.getClass().getSimpleName();
-	JMXUtil.register(requestHandler, "org.vertx:type=Handler,type=WebSocket,name=%s", simpleName);
     this.wsHandler = wsHandler;
     return this;
   }
 
   public Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
-  }
-  
-  public ServerID getServerID() {
-	  return id;
-  }
-  
-  public int getPort() {
-	  return id.getPort();
-  }
-
-  public String getHost() {
-	  return id.getHost();
   }
 
   public HttpServer listen(int port) {
@@ -227,7 +206,7 @@ public class DefaultHttpServer implements HttpServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        vertx.registerSharedHttpServer(id, this);
+        vertx.sharedHttpServers().put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
@@ -406,7 +385,7 @@ public class DefaultHttpServer implements HttpServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      vertx.unregisterSharedHttpServer(id);
+      vertx.sharedHttpServers().remove(id);
     }
 
     for (ServerConnection conn : connectionMap.values()) {

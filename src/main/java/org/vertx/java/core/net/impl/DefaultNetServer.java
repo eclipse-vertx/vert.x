@@ -67,7 +67,7 @@ public class DefaultNetServer implements NetServer {
   private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -161,7 +161,7 @@ public class DefaultNetServer implements NetServer {
         } catch (UnknownHostException e) {
           log.error("Failed to bind", e);
         }
-        vertx.registerSharedNetServer(id, this);
+        vertx.sharedNetServers().put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
@@ -207,7 +207,7 @@ public class DefaultNetServer implements NetServer {
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
-      vertx.unregisterSharedNetServer(id);
+      vertx.sharedNetServers().remove(id);
     }
 
     for (DefaultNetSocket sock : socketMap.values()) {
@@ -239,18 +239,6 @@ public class DefaultNetServer implements NetServer {
         done.handle(null);
       }
     });
-  }
-  
-  public ServerID getServerID() {
-	  return id;
-  }
-  
-  public int getPort() {
-	  return id.getPort();
-  }
-  
-  public String getHost() {
-	  return id.getHost();
   }
 
   public Boolean isTCPNoDelay() {
@@ -392,7 +380,7 @@ public class DefaultNetServer implements NetServer {
       NioWorker worker = ch.getWorker();
 
       //Choose a handler
-      final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
+      final HandlerHolder handler = handlerManager.chooseHandler(worker);
 
       if (handler == null) {
         //Ignore
@@ -419,7 +407,7 @@ public class DefaultNetServer implements NetServer {
       }
     }
 
-    private void connected(final NioSocketChannel ch, final HandlerHolder<NetSocket> handler) {
+    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
       handler.context.execute(new Runnable() {
         public void run() {
           DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);

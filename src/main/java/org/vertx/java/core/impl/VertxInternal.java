@@ -48,14 +48,6 @@ public abstract class VertxInternal extends Vertx {
 
   public abstract Map<ServerID, DefaultHttpServer> sharedHttpServers();
 
-  public abstract void registerSharedHttpServer(ServerID id, DefaultHttpServer server);
-
-  public abstract void unregisterSharedHttpServer(ServerID id);
-
   public abstract Map<ServerID, DefaultNetServer> sharedNetServers();
-  
-  public abstract void registerSharedNetServer(ServerID id, DefaultNetServer server);
-
-  public abstract void unregisterSharedNetServer(ServerID id);
 
 }

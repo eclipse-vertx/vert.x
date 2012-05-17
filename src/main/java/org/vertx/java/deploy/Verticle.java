@@ -23,7 +23,7 @@ import org.vertx.java.core.Vertx;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class Verticle implements VerticleMXBean {
+public abstract class Verticle {
 
   /**
    * A reference to the vert.x runtime

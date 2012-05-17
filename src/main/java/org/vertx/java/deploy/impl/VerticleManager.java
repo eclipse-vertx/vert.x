@@ -21,7 +21,6 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.jmx.JMXUtil;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -30,7 +29,6 @@ import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 
-import java.beans.ConstructorProperties;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
@@ -49,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VerticleManager implements VerticleManagerMXBean {
+public class VerticleManager {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
 
@@ -65,7 +63,6 @@ public class VerticleManager implements VerticleManagerMXBean {
   
   private Map<String, VerticleFactory> factories;
 
-  @ConstructorProperties("vertx")
   public VerticleManager(VertxInternal vertx) {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
@@ -181,10 +178,6 @@ public class VerticleManager implements VerticleManagerMXBean {
     }
     doUndeploy(name, doneHandler);
   }
-  
-  public Map<String, Integer> getInstances() {
-	  return listInstances();
-  }
 
   public synchronized Map<String, Integer> listInstances() {
     Map<String, Integer> map = new HashMap<>();
@@ -293,9 +286,6 @@ public class VerticleManager implements VerticleManagerMXBean {
               setPathAdjustment(modDir);
             }
             verticle.start();
-            JMXUtil.register(verticle.getContainer(), "org.vertx:type=Container,deployment=%s", deploymentName);
-            JMXUtil.register(verticle, "org.vertx:type=Verticle,deployment=%s", deploymentName);
-            
           } catch (Throwable t) {
             vertx.reportException(t);
             doUndeploy(deploymentName, doneHandler);
@@ -413,7 +403,7 @@ public class VerticleManager implements VerticleManagerMXBean {
     }
   }
 
-  private void doUndeploy(final String name, final UndeployCount count) {
+  private void doUndeploy(String name, final UndeployCount count) {
 
     final Deployment deployment = deployments.remove(name);
 
@@ -430,11 +420,6 @@ public class VerticleManager implements VerticleManagerMXBean {
           public void run() {
             try {
               holder.verticle.stop();
-              String verticleName = String.format("org.vertx:type=Verticle,deployment=%s", deployment.name);
-              JMXUtil.unregister(verticleName);
-              String containerName = String.format("org.vertx:type=Container,deployment=%s", deployment.name);
-              JMXUtil.unregister(containerName);
-              
             } catch (Throwable t) {
               vertx.reportException(t);
             }
