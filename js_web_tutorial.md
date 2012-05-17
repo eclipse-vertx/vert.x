@@ -70,14 +70,7 @@ Copy the client side application from the vert.x installation into our web direc
   
     
     cp -r $VERTX_HOME/examples/javascript/webapp/web/* web
-    
-Open the file `web/js/client_app.js` in your text editor, and edit the line:
-
-    var eb = new vertx.EventBus('https://localhost:8080/eventbus');
-    
-So it reads:
-
-    var eb = new vertx.EventBus('http://localhost:8080/eventbus');    
+      
                   
 Now, refresh your browser. The client application should now be served.
 
@@ -210,7 +203,7 @@ As previously mentioned, this isn't a tutorial on how to write a knockout.js cli
 
 The client side application JavaScript is contained in the file `web/js/client_app.js`. If you open this in your text editor you will see the following line, towards the top of the script:
 
-    var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+    var eb = new vertx.EventBus(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/eventbus');
     
 This is using the `vertxbus.js` library to create an `EventBus` object. This object is then used to send and receive messages from the event bus.
 
@@ -411,11 +404,7 @@ You'll also need to provide a key store. The keystore is just a Java keystore wh
 Copy the keystore from the distribution
 
     cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks . 
-    
-                  
-You'll also need to edit `web/js/client_app.js` so the line which creates the client side event bus instance now connects using `https`, not `http`.
-
-    var eb = new vertx.EventBus('https://localhost:8080/eventbus');
+                     
     
 Now restart the app again.
 
