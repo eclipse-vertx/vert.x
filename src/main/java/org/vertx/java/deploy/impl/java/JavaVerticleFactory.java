@@ -62,7 +62,7 @@ public class JavaVerticleFactory implements VerticleFactory {
   public Verticle createVerticle(String main, ClassLoader loader) throws Exception {
     ClassLoader cl = loader;
     String className = main;
-    if(isJavaSource(main)) {
+    if (isJavaSource(main)) {
       CompilingClassLoader compilingLoader = new CompilingClassLoader(loader, main);
       className = compilingLoader.resolveMainClassName();
       cl = compilingLoader;

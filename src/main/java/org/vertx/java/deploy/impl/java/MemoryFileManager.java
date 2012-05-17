@@ -16,6 +16,11 @@
 
 package org.vertx.java.deploy.impl.java;
 
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,12 +29,6 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.tools.FileObject;
-import javax.tools.ForwardingJavaFileManager;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-
 /**
  * Java in-memory file manager used by {@link CompilingClassLoader} to handle
  * compiled classes
@@ -37,14 +36,15 @@ import javax.tools.SimpleJavaFileObject;
  * @author Janne Hietam&auml;ki
  */
 public class MemoryFileManager extends ForwardingJavaFileManager<JavaFileManager> {
-  private final Map<String, ByteArrayOutputStream> compiledClasses = new HashMap<String, ByteArrayOutputStream>();
+  private final Map<String, ByteArrayOutputStream> compiledClasses = new HashMap<>();
 
   public MemoryFileManager(JavaFileManager fileManager) {
     super(fileManager);
   }
   
   @Override
-  public JavaFileObject getJavaFileForOutput(Location location, final String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
+  public JavaFileObject getJavaFileForOutput(Location location, final String className,
+                                             JavaFileObject.Kind kind, FileObject sibling) throws IOException {
     try {
       return new SimpleJavaFileObject(new URI(""), kind) {
         public OutputStream openOutputStream() throws IOException {
