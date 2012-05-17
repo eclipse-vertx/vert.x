@@ -39,8 +39,8 @@ public class HazelcastServerID implements DataSerializable {
 
   @Override
   public void writeData(DataOutput dataOutput) throws IOException {
-    dataOutput.writeInt(serverID.port);
-    dataOutput.writeUTF(serverID.host);
+    dataOutput.writeInt(serverID.getPort());
+    dataOutput.writeUTF(serverID.getHost());
   }
 
   @Override
