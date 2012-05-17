@@ -43,8 +43,7 @@ public class JavaVerticleFactory implements VerticleFactory {
   
   @Override
   public boolean isFactoryFor(String main) {
-    if (main.endsWith(".java")) {
-      // TODO requires dynamic compiler
+    if (isJavaSource(main)) {
       return true;
     }
     if (main.endsWith(".class")) {
@@ -55,10 +54,20 @@ public class JavaVerticleFactory implements VerticleFactory {
     }
     return false;
   }
+  
+  private boolean isJavaSource(String main) {
+    return main.endsWith(".java");
+  }
 
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-
-    Class<?> clazz = cl.loadClass(main);
+  public Verticle createVerticle(String main, ClassLoader loader) throws Exception {
+    ClassLoader cl = loader;
+    String className = main;
+    if(isJavaSource(main)) {
+      CompilingClassLoader compilingLoader = new CompilingClassLoader(loader, main);
+      className = compilingLoader.resolveMainClassName();
+      cl = compilingLoader;
+    }
+    Class<?> clazz = cl.loadClass(className);
 
     Verticle verticle = (Verticle) clazz.newInstance();
 
@@ -74,7 +83,7 @@ public class JavaVerticleFactory implements VerticleFactory {
     return verticle;
 
   }
-
+    
   public void reportException(Throwable t) {
     mgr.getLogger().error("Exception in Java verticle script", t);
   }
