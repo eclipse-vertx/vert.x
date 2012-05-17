@@ -35,7 +35,6 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
-import java.beans.ConstructorProperties;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -44,9 +43,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.NotificationBroadcasterSupport;
 
 /**
  *
@@ -56,8 +52,6 @@ public class DefaultEventBus implements EventBus {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
 
-  private final NotificationBroadcasterSupport notificationBroadcasterSupport = new NotificationBroadcasterSupport();
-  
   private static final Buffer PONG = new Buffer(new byte[] { (byte)1 });
   private static final long PING_INTERVAL = 20000;
   private static final long PING_REPLY_INTERVAL = 20000;
@@ -70,12 +64,7 @@ public class DefaultEventBus implements EventBus {
   private final ConcurrentMap<String, Map<HandlerHolder, String>> handlers = new ConcurrentHashMap<>();
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
   private final Map<String, HandlerInfo> handlersByID = new ConcurrentHashMap<>();
-  
-  private final AtomicLong sent = new AtomicLong(0);
 
-  private final AtomicLong received = new AtomicLong(0);
-
-  @ConstructorProperties("vertx")
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
@@ -84,28 +73,16 @@ public class DefaultEventBus implements EventBus {
     this.subs = null;
   }
 
-  @ConstructorProperties({"vertx", "hostname"})
   public DefaultEventBus(VertxInternal vertx, String hostname) {
     this(vertx, DEFAULT_CLUSTER_PORT, hostname);
   }
 
-  @ConstructorProperties({"vertx", "port", "hostname"})
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
     ClusterManager mgr = new HazelcastClusterManager(vertx);
-    this.subs = mgr.getSubsMap("subs");
+    subs = mgr.getSubsMap("subs");
     this.server = setServer();
-  }
-  
-  @Override
-  public long getSent() {
-	return sent.get();
-  }
-
-  @Override
-  public long getReceived() {
-	return received.get();
   }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
@@ -297,7 +274,7 @@ public class DefaultEventBus implements EventBus {
         parser.setOutput(handler);
         socket.dataHandler(parser);
       }
-    }).listen(serverID.getPort(), serverID.getHost());
+    }).listen(serverID.port, serverID.host);
   }
 
   private void sendToSubs(Collection<ServerID> subs, BaseMessage message) {
@@ -463,7 +440,6 @@ public class DefaultEventBus implements EventBus {
         holder.connect(client, serverID, message.address);
       }
     }
-    sent.incrementAndGet();
     holder.writeMessage(message);
   }
 
@@ -509,7 +485,6 @@ public class DefaultEventBus implements EventBus {
       replyAddressCache.put(msg.replyAddress, msg.sender);
     }
     msg.bus = this;
-    received.incrementAndGet();
     final Map<HandlerHolder, String> map = handlers.get(msg.address);
     if (map != null) {
       boolean replyHandler = false;
@@ -615,7 +590,7 @@ public class DefaultEventBus implements EventBus {
     }
 
     void connect(NetClient client, final ServerID serverID, final String address) {
-      client.connect(serverID.getPort(), serverID.getHost(), new Handler<NetSocket>() {
+      client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
         public void handle(final NetSocket socket) {
           connected(socket, address);
         }

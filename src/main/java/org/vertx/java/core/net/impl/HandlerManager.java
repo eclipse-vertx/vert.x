@@ -23,7 +23,6 @@ import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.beans.ConstructorProperties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ public class HandlerManager<T> {
   private final VertxWorkerPool availableWorkers;
   private Map<NioWorker, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
 
-  @ConstructorProperties({"availableWorkers"})
   public HandlerManager(VertxWorkerPool availableWorkers) {
     this.availableWorkers = availableWorkers;
   }

@@ -21,7 +21,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.impl.VerticleManager;
 
-import java.beans.ConstructorProperties;
 import java.io.File;
 import java.net.URL;
 
@@ -35,13 +34,12 @@ import java.net.URL;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Container implements ContainerMXBean {
+public class Container {
 
   private final VerticleManager mgr;
   
-  @ConstructorProperties({"mgr"})
-  public Container(final VerticleManager mgr) {
-    this.mgr = mgr;    
+  public Container(final VerticleManager vertx) {
+    this.mgr = vertx;    
   }
 
   /**
