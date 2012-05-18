@@ -18,16 +18,29 @@ package org.vertx.java.deploy.impl.rhino;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Script;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.commonjs.module.ModuleScript;
+import org.mozilla.javascript.commonjs.module.Require;
+import org.mozilla.javascript.commonjs.module.RequireBuilder;
+import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
+import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.JsonObject;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
+import java.util.Scanner;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -64,6 +77,103 @@ public class RhinoVerticle extends Verticle {
     ScriptableObject.putProperty(scope, "stderr", jsStderr);
   }
 
+  private static Require installRequire(final ClassLoader cl, Context cx, ScriptableObject scope){
+    RequireBuilder rb = new RequireBuilder();
+    rb.setSandboxed(false);
+
+    rb.setModuleScriptProvider(
+            new SoftCachingModuleScriptProvider(new UrlModuleSourceProvider(null, null)){
+
+              @Override
+              public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, Scriptable paths) throws Exception {
+
+                // Check for cached version
+                CachedModuleScript cachedModule = getLoadedModule(moduleId);
+                if(cachedModule != null) {
+                  // cachedModule.getModule() is not public
+                  // super.getModuleScript uses moduleSourceProvider.loadSource to check for modifications
+                  return super.getModuleScript(cx, moduleId, uri, paths);
+                }
+
+                // If loading from classpath get a proper URI
+                // Must check for each possible file to avoid getting other folders
+                // Could also use getResources and iterate
+                if(uri == null) {
+                  URL url =  cl.getResource(moduleId + File.separator + "package.json");
+                  if( url == null){
+                    url = cl.getResource(moduleId + File.separator + "index.json");
+                  }
+                  if( url != null) {
+                    url = new File(url.getFile()).getParentFile().toURI().toURL();
+                  } else {
+                    String resourceName = moduleId;
+                    if(!moduleId.endsWith(".js")){
+                      resourceName = moduleId + ".js";
+                    }
+                    url = cl.getResource(resourceName);
+                  }
+
+                  if(url!=null){
+                    uri = url.toURI();
+                  }
+                }
+
+                if(uri != null && new File(uri).isDirectory()){
+
+                  String main = "index.js";
+
+                  // Allow loading modules from <dir>/package.json
+                  File packageFile = new File(uri.getPath(), "package.json");
+
+                  if(packageFile.exists()){
+
+                    String conf = null;
+                    try {
+                      conf = new Scanner(packageFile).useDelimiter("\\A").next();
+                    } catch (FileNotFoundException e) {}
+
+                    JsonObject json;
+                    try {
+                      json = new JsonObject(conf);
+                    } catch (DecodeException e) {
+                      throw new IllegalStateException("Module " + moduleId + " package.json contains invalid json");
+                    }
+
+                    main = json.getString("main");
+
+                    if(!main.endsWith(".js")){
+                      main = main + ".js";
+                    }
+                  }
+
+                  // Allow loading modules from <dir>/<main>.js
+                  File mainFile = new File(uri.getPath(), main);
+                  if (mainFile.exists()) {
+                    uri = mainFile.toURI();
+                  }
+
+                }
+
+                return super.getModuleScript(cx, moduleId, uri, paths);
+              }
+            });
+
+    // Force export of vertxStop
+    rb.setPostExec(new Script() {
+      @Override
+      public Object exec(Context context, Scriptable scope) {
+        String js = "if(typeof vertxStop == 'function'){ " +
+                "module.exports.vertxStop = vertxStop;" +
+                "}";
+        return context.evaluateString(scope, js,"postExec",1,null);
+      }
+    });
+
+    Require require = rb.createRequire(cx, scope);
+
+    return require;
+  }
+
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
@@ -90,10 +200,12 @@ public class RhinoVerticle extends Verticle {
       scopeThreadLocal.set(scope);
       clThreadLocal.set(cl);
 
-      loadScript(cl, cx, scope, scriptName);
+      Require require = installRequire(cl, cx, scope);
+
+      Scriptable script = require.requireMain(cx, scriptName);
 
       try {
-        stopFunction = (Function)scope.get("vertxStop", scope);
+        stopFunction = (Function)script.get("vertxStop", scope);
       } catch (ClassCastException e) {
         // Get CCE if no such function
         stopFunction = null;
