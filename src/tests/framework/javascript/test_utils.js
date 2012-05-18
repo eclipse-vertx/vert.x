@@ -56,4 +56,14 @@ var TestUtils = function() {
     return jutils.buffersEqual(buff1, buff2);
   }
 
-}
+};
+
+(function() {
+    var instance = null;
+    this.get =  function() {
+        if(instance == null){
+            instance = new TestUtils();
+		}
+        return instance;
+    };
+}).call((this.module && module.exports)? module.exports : this.TestUtils);
